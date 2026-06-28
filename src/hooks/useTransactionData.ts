@@ -262,7 +262,7 @@ export function useTransactionData() {
     try {
       const { error } = await supabase
         .from('transactions')
-        .update({ match_type: matchType, is_verified: matchType === 'no_match_category' ? true : null } as any)
+        .update({ match_type: matchType, is_verified: matchType === 'no_match_category' ? true : null })
         .in('id', ids)
         .eq('company_id', selectedCompany.id);
       if (error) throw error;

@@ -7,6 +7,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/use-toast';
 import { AccountyMissingItem, AccountyCompanySummary, fetchAllMissingItems, fetchAllMissingItemsFull, invalidateAccountyCache } from './useAccountyHelpers';
 
 // ── Missing Items (per company, paginated) ──
@@ -284,6 +285,7 @@ export function useAccountyCompanySummary() {
 export function useIgnoreMissingItem() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (itemId: string) => {
@@ -301,6 +303,10 @@ export function useIgnoreMissingItem() {
     },
     onSuccess: () => {
       invalidateAccountyCache(queryClient, 'missing');
+      toast({ title: 'Mellőzve', description: 'A tétel figyelmen kívül lett hagyva.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
     },
   });
 }
@@ -308,6 +314,7 @@ export function useIgnoreMissingItem() {
 export function useResolveMissingItem() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (itemId: string) => {
@@ -324,12 +331,17 @@ export function useResolveMissingItem() {
     },
     onSuccess: () => {
       invalidateAccountyCache(queryClient, 'missing');
+      toast({ title: 'Rendezve', description: 'A tétel sikeresen rendezve lett.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
     },
   });
 }
 
 export function useAddMissingItem() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (item: {
@@ -362,6 +374,10 @@ export function useAddMissingItem() {
     },
     onSuccess: () => {
       invalidateAccountyCache(queryClient, 'missing');
+      toast({ title: 'Hozzáadva', description: 'Az új hiányzó tétel sikeresen rögzítve.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
     },
   });
 }

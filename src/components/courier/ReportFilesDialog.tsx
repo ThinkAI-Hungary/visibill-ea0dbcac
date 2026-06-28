@@ -177,7 +177,7 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
       // Unlink courier_reports from this upload
       await supabase
         .from('courier_reports')
-        .update({ upload_id: null } as any)
+        .update({ upload_id: null })
         .eq('upload_id', upload.id);
 
       // Delete upload record

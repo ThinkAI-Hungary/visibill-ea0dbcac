@@ -32,10 +32,10 @@ const PettyCashPage = () => {
     queryKey: queryKeys.pettyCashSummary(companyId),
     queryFn: async () => {
       const [regRes, obRes, entRes] = await Promise.all([
-        supabase.from('petty_cash_registers' as any).select('*').eq('company_id', companyId),
+        supabase.from('petty_cash_registers').select('*').eq('company_id', companyId),
         // P3: Only fetch opening balances for registers belonging to this company (via join-like filter)
-        supabase.from('petty_cash_opening_balances' as any).select('*'),
-        supabase.from('petty_cash_entries' as any).select('register_id, currency, amount').eq('company_id', companyId),
+        supabase.from('petty_cash_opening_balances').select('*'),
+        supabase.from('petty_cash_entries').select('register_id, currency, amount').eq('company_id', companyId),
       ]);
 
       const registers = (regRes.data || []) as any[];

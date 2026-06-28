@@ -59,7 +59,7 @@ export function useHasAccountyAccess() {
     queryKey: ['has-accounty-access', user?.id],
     queryFn: async () => {
       const { count } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('id', { count: 'exact', head: true })
         .eq('accountant_user_id', user!.id);
       return (count ?? 0) > 0;

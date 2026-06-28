@@ -229,7 +229,7 @@ export function useInvoiceData(
       for (let i = 0; i < currentTxIds.length; i += CHUNK) {
         const chunk = currentTxIds.slice(i, i + CHUNK);
         const { data } = await supabase
-          .from('transaction_invoice_matches' as any)
+          .from('transaction_invoice_matches')
           .select('transaction_id, invoice_id, invoice_source')
           .in('transaction_id', chunk);
         if (data) all.push(...data);

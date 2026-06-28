@@ -126,7 +126,7 @@ export default function AccountySidebar({
       </div>
 
       {/* Navigation — Collapsible groups */}
-      <nav className="flex-1 p-2 overflow-y-auto">
+      <nav className="flex-1 p-2 overflow-y-auto" data-sidebar-nav>
         {/* Search trigger */}
         {isCollapsed ? (
           <div className="flex justify-center mb-2">

@@ -14,7 +14,7 @@ export function VatTrendChart({ companyId }: { companyId: string }) {
     queryKey: ['vat_return_history', companyId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('vat_returns' as any)
+        .from('vat_returns')
         .select('period_year, period_month, total_payable_tax, total_deductible_tax, net_result')
         .eq('company_id', companyId)
         .order('period_year', { ascending: true })

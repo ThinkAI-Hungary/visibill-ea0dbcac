@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ClipboardList, ArrowLeft, ChevronRight, Info, ExternalLink,
@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
+import { useEvRecordCounts } from '@/hooks/useEvData';
 
 // ─── Records definitions ───────────────────────────────────────────────────
 
@@ -21,17 +22,17 @@ interface RecordType {
 }
 
 const RECORDS: RecordType[] = [
-  { id: 'vevo-szallito', name: 'Vevő-szállító nyilvántartás', description: 'Kintlévőségek és kötelezettségek', legalRef: 'Szt. 161. §', icon: Users, color: 'from-blue-500 to-indigo-600', required: true, entryCount: 47 },
-  { id: 'tao-kesz', name: 'Tárgyi eszköz nyilvántartás', description: 'Befektetett eszközök leltárja', legalRef: 'Szt. 162. §', icon: Package, color: 'from-teal-500 to-emerald-600', required: true, entryCount: 12 },
+  { id: 'vevo-szallito', name: 'Vevő-szállító nyilvántartás', description: 'Kintlévőségek és kötelezettségek', legalRef: 'Szt. 161. §', icon: Users, color: 'from-blue-500 to-indigo-600', required: true, entryCount: 0 },
+  { id: 'tao-kesz', name: 'Tárgyi eszköz nyilvántartás', description: 'Befektetett eszközök leltárja', legalRef: 'Szt. 162. §', icon: Package, color: 'from-teal-500 to-emerald-600', required: true, entryCount: 0 },
   { id: 'keszlet', name: 'Készletnyilvántartás', description: 'Anyagok, áruk, félkész termékek', legalRef: 'Szt. 163. §', icon: Package, color: 'from-amber-500 to-orange-600', required: true, entryCount: 0 },
-  { id: 'utnyilv', name: 'Útnyilvántartás', description: 'Üzleti célú gépjármű-használat', legalRef: 'Szja tv. 5. sz. mell.', icon: Car, color: 'from-rose-500 to-pink-600', required: false, entryCount: 156 },
+  { id: 'utnyilv', name: 'Útnyilvántartás', description: 'Üzleti célú gépjármű-használat', legalRef: 'Szja tv. 5. sz. mell.', icon: Car, color: 'from-rose-500 to-pink-600', required: false, entryCount: 0 },
   { id: 'berbeadas', name: 'Bérbeadás nyilvántartás', description: 'Ingatlan bérbeadásból származó jövedelmek', legalRef: 'Szja tv. 74. §', icon: Home, color: 'from-violet-500 to-purple-600', required: false, entryCount: 0 },
-  { id: 'valuta', name: 'Valutapénztár nyilvántartás', description: 'Devizás készpénz mozgások', legalRef: 'Szt. 164. §', icon: Coins, color: 'from-cyan-500 to-blue-600', required: false, entryCount: 8 },
+  { id: 'valuta', name: 'Valutapénztár nyilvántartás', description: 'Devizás készpénz mozgások', legalRef: 'Szt. 164. §', icon: Coins, color: 'from-cyan-500 to-blue-600', required: false, entryCount: 0 },
   { id: 'munkaber', name: 'Munkabér-nyilvántartás', description: 'Alkalmazottak bér- és járulékadatai', legalRef: 'Mt. 154. §', icon: Users, color: 'from-green-500 to-emerald-600', required: false, entryCount: 0 },
-  { id: 'penztarkonyv', name: 'Pénztárkönyv', description: 'Bevételek és kiadások napi nyilvántartása', legalRef: 'Szt. 160. §', icon: BookOpen, color: 'from-indigo-500 to-violet-600', required: true, entryCount: 234 },
-  { id: 'selejtezes', name: 'Selejtezési jegyzőkönyv', description: 'Kiselejtezett eszközök dokumentálása', legalRef: 'Szt. 165. §', icon: FileText, color: 'from-slate-500 to-gray-600', required: false, entryCount: 2 },
-  { id: 'lekerdezes', name: 'Lekérdezés napló', description: 'NAV online adatlekérdezések naplózása', legalRef: 'Art. 129. §', icon: ExternalLink, color: 'from-sky-500 to-blue-600', required: false, entryCount: 18 },
-  { id: 'jog-bizt', name: 'Biztosítási jogviszony', description: 'Biztosítotti jogviszony nyilvántartás', legalRef: 'Tbj. 44. §', icon: FileText, color: 'from-fuchsia-500 to-pink-600', required: true, entryCount: 12 },
+  { id: 'penztarkonyv', name: 'Pénztárkönyv', description: 'Bevételek és kiadások napi nyilvántartása', legalRef: 'Szt. 160. §', icon: BookOpen, color: 'from-indigo-500 to-violet-600', required: true, entryCount: 0 },
+  { id: 'selejtezes', name: 'Selejtezési jegyzőkönyv', description: 'Kiselejtezett eszközök dokumentálása', legalRef: 'Szt. 165. §', icon: FileText, color: 'from-slate-500 to-gray-600', required: false, entryCount: 0 },
+  { id: 'lekerdezes', name: 'Lekérdezés napló', description: 'NAV online adatlekérdezések naplózása', legalRef: 'Art. 129. §', icon: ExternalLink, color: 'from-sky-500 to-blue-600', required: false, entryCount: 0 },
+  { id: 'jog-bizt', name: 'Biztosítási jogviszony', description: 'Biztosítotti jogviszony nyilvántartás', legalRef: 'Tbj. 44. §', icon: FileText, color: 'from-fuchsia-500 to-pink-600', required: true, entryCount: 0 },
 ];
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -39,11 +40,19 @@ const RECORDS: RecordType[] = [
 export default function EvRecordsOverviewPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
+  const { data: counts = {} } = useEvRecordCounts(id, 2026);
 
-  const requiredRecords = RECORDS.filter(r => r.required);
-  const optionalRecords = RECORDS.filter(r => !r.required);
-  const totalEntries = RECORDS.reduce((s, r) => s + r.entryCount, 0);
-  const activeRecords = RECORDS.filter(r => r.entryCount > 0).length;
+  const records = useMemo(() => {
+    return RECORDS.map(r => ({
+      ...r,
+      entryCount: counts[r.id] ?? 0
+    }));
+  }, [counts]);
+
+  const requiredRecords = records.filter(r => r.required);
+  const optionalRecords = records.filter(r => !r.required);
+  const totalEntries = records.reduce((s, r) => s + r.entryCount, 0);
+  const activeRecords = records.filter(r => r.entryCount > 0).length;
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">

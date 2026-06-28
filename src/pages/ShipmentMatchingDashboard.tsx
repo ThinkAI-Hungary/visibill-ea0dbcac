@@ -172,11 +172,11 @@ export default function ShipmentMatchingDashboard() {
       const { matchId, shipmentId, invoiceId } = invoiceDetachTarget;
       // 1. Update match status → pending_shipment (keep the record so escalation list can find it)
       //    Also clear shipment_id so the match is no longer tied to this shipment
-      await supabase.from('shipment_matches' as any)
+      await supabase.from('shipment_matches')
         .update({ status: 'pending_shipment', shipment_id: null, confidence_score: 0 })
         .eq('id', matchId);
       // 2. Reset shipment status
-      await supabase.from('shipments' as any)
+      await supabase.from('shipments')
         .update({ match_status: 'unmatched', matched_invoice_id: null })
         .eq('id', shipmentId);
       // 3. Reset invoice status → pending_shipment (escalation queue)
@@ -186,7 +186,7 @@ export default function ShipmentMatchingDashboard() {
       // 4. CMR transport_docs: csak a shipment-linket töröljük, az invoice-link MARAD
       //    A CMR a számlához tartozik → 'linked' státuszra visszaállítva (nem 'orphaned'!)
       await supabase.from('transport_documents')
-        .update({ linked_shipment_id: null, status: 'linked' } as any)
+        .update({ linked_shipment_id: null, status: 'linked' })
         .eq('linked_invoice_id', invoiceId);
 
       toast({ title: 'Számla leválasztva', description: `${invoiceDetachTarget.bizonylat} visszakerül az eszkalációs sorba.` });
@@ -208,14 +208,14 @@ export default function ShipmentMatchingDashboard() {
       const { docId, shipmentId, uploadId } = docDetachTarget;
       // 1. Unlink transport_document from shipment
       await supabase.from('transport_documents')
-        .update({ linked_shipment_id: null, linked_invoice_id: null, status: 'orphaned' } as any)
+        .update({ linked_shipment_id: null, linked_invoice_id: null, status: 'orphaned' })
         .eq('id', docId);
       // 2. If there's a corresponding invoice_upload, set it back to cmr_escalated (with manual_detach flag)
       if (uploadId) {
         const { data: uRow } = await supabase.from('invoice_uploads').select('metadata').eq('id', uploadId).single();
         const mergedMeta = { ...((uRow as any)?.metadata ?? {}), manual_detach: true };
         await supabase.from('invoice_uploads')
-          .update({ processing_status: 'cmr_escalated', metadata: mergedMeta } as any)
+          .update({ processing_status: 'cmr_escalated', metadata: mergedMeta })
           .eq('id', uploadId);
       } else {
         // Fallback: find invoice_uploads linked via metadata->cmr_result->cmr_id, then merge manual_detach flag
@@ -227,7 +227,7 @@ export default function ShipmentMatchingDashboard() {
         for (const u of (matchedUploads ?? []) as { id: string; metadata: Record<string, unknown> | null }[]) {
           const mergedMeta = { ...(u.metadata ?? {}), manual_detach: true };
           await supabase.from('invoice_uploads')
-            .update({ processing_status: 'cmr_escalated', metadata: mergedMeta } as any)
+            .update({ processing_status: 'cmr_escalated', metadata: mergedMeta })
             .eq('id', u.id);
         }
       }
@@ -248,7 +248,7 @@ export default function ShipmentMatchingDashboard() {
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
-        .from('shipments' as any)
+        .from('shipments')
         .select(`
           *,
           shipment_matches(

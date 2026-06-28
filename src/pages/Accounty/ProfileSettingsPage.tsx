@@ -82,7 +82,7 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
     let token = '';
     for (let i = 0; i < 6; i++) token += chars[bytes[i] % chars.length];
     const now = new Date().toISOString();
-    const { error } = await supabase.from('companies').update({ share_token: token, share_token_created_at: now } as any).eq('id', companyId);
+    const { error } = await supabase.from('companies').update({ share_token: token, share_token_created_at: now }).eq('id', companyId);
     if (error) toast({ title: "Hiba", description: "Nem sikerült a kód generálása.", variant: "destructive" });
     else { setShareToken(token); setTokenCreatedAt(now); toast({ title: "Siker", description: "Meghívó kód generálva! 10 percig érvényes." }); }
     setGenerating(false);
@@ -133,10 +133,10 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; userId: string; name: string } | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const { data: members = [], isLoading: loading } = useQuery({
-    queryKey: ['accounty-firm-members', companyId],
+    queryKey: queryKeys.accountyFirmMembers(companyId),
     queryFn: async () => {
       const { data } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('id, accountant_user_id, role, created_at')
         .eq('accounting_firm_id', companyId);
       if (data && data.length > 0) {
@@ -181,8 +181,8 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
   const updateMemberRole = async (memberId: string, newRole: string) => {
     setUpdatingRole(memberId);
     const { data, error } = await supabase
-      .from('accounty_assignments' as any)
-      .update({ role: newRole } as any)
+      .from('accounty_assignments')
+      .update({ role: newRole })
       .eq('id', memberId)
       .select();
     if (error) {
@@ -191,14 +191,14 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
       toast({ title: "Hiba", description: "Nincs jogosultságod a szerepkör módosításához.", variant: "destructive" });
     } else {
       toast({ title: "Siker", description: "Szerepkör frissítve." });
-      queryClient.invalidateQueries({ queryKey: ['accounty-firm-members', companyId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.accountyFirmMembers(companyId) });
     }
     setUpdatingRole(null);
   };
 
   const removeMember = async (memberId: string, userId: string) => {
     if (userId === user?.id) return; // Can't remove yourself
-    const { error } = await supabase.from('accounty_assignments' as any).delete().eq('id', memberId);
+    const { error } = await supabase.from('accounty_assignments').delete().eq('id', memberId);
     if (error) toast({ title: "Hiba", description: "Nem sikerült a tag eltávolítása.", variant: "destructive" });
     else { toast({ title: "Siker", description: "Tag eltávolítva." }); queryClient.invalidateQueries({ queryKey: ['accounty-firm-members', companyId] }); }
   };
@@ -271,7 +271,7 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
         onOpenChange={setInviteOpen}
         companyId={companyId}
         companyName={companyName}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['accounty-firm-members', companyId] })}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: queryKeys.accountyFirmMembers(companyId) })}
         toast={toast}
         isAccounty
       />
@@ -322,10 +322,10 @@ export default function ProfileSettingsPage() {
 
   // Fetch the accounting firm name for the current user
   const { data: firmData } = useQuery({
-    queryKey: ['accounty-firm-info', user?.id],
+    queryKey: queryKeys.accountyFirmData(user?.id || ''),
     queryFn: async () => {
       const { data } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('accounting_firm_id')
         .eq('accountant_user_id', user!.id)
         .limit(1);

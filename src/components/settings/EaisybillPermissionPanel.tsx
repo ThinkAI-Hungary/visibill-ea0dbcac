@@ -55,7 +55,7 @@ function useCompanyModulePermissions(companyId: string) {
     queryKey: ['eaisybill-company-module-permissions', companyId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('eaisybill_module_permissions' as any)
+        .from('eaisybill_module_permissions')
         .select('id, user_id, module_name, can_read, can_write')
         .eq('company_id', companyId);
 
@@ -154,20 +154,20 @@ export function EaisybillPermissionPanel({ companyId, toast }: EaisybillPermissi
       const existing = modulePerms.find(p => p.userId === args.userId && p.moduleName === args.moduleName);
       if (existing) {
         const { error } = await supabase
-          .from('eaisybill_module_permissions' as any)
-          .update({ can_read: args.canRead, can_write: args.canWrite, updated_at: new Date().toISOString() } as any)
+          .from('eaisybill_module_permissions')
+          .update({ can_read: args.canRead, can_write: args.canWrite, updated_at: new Date().toISOString() })
           .eq('id', existing.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('eaisybill_module_permissions' as any)
+          .from('eaisybill_module_permissions')
           .insert({
             company_id: companyId,
             user_id: args.userId,
             module_name: args.moduleName,
             can_read: args.canRead,
             can_write: args.canWrite,
-          } as any);
+          });
         if (error) throw error;
       }
     },
@@ -184,7 +184,7 @@ export function EaisybillPermissionPanel({ companyId, toast }: EaisybillPermissi
   const deleteMutation = useMutation({
     mutationFn: async (permId: string) => {
       const { error } = await supabase
-        .from('eaisybill_module_permissions' as any)
+        .from('eaisybill_module_permissions')
         .delete()
         .eq('id', permId);
       if (error) throw error;
@@ -228,19 +228,19 @@ export function EaisybillPermissionPanel({ companyId, toast }: EaisybillPermissi
         const existing = modulePerms.find(p => p.userId === row.userId && p.moduleName === row.moduleName);
         if (existing) {
           return supabase
-            .from('eaisybill_module_permissions' as any)
-            .update({ can_read: row.canRead, can_write: row.canWrite, updated_at: new Date().toISOString() } as any)
+            .from('eaisybill_module_permissions')
+            .update({ can_read: row.canRead, can_write: row.canWrite, updated_at: new Date().toISOString() })
             .eq('id', existing.id);
         } else {
           return supabase
-            .from('eaisybill_module_permissions' as any)
+            .from('eaisybill_module_permissions')
             .insert({
               company_id: companyId,
               user_id: row.userId,
               module_name: row.moduleName,
               can_read: row.canRead,
               can_write: row.canWrite,
-            } as any);
+            });
         }
       });
       const results = await Promise.all(promises);
@@ -291,7 +291,7 @@ export function EaisybillPermissionPanel({ companyId, toast }: EaisybillPermissi
 
     const promises = overridesToDelete.map(perm => 
       supabase
-        .from('eaisybill_module_permissions' as any)
+        .from('eaisybill_module_permissions')
         .delete()
         .eq('id', perm!.id)
     );

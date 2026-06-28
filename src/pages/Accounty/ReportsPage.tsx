@@ -17,6 +17,7 @@ import { useAccountyFullReportData, type FullReportData, type InvoiceReportRow, 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { reportError } from '@/lib/errorReporter';
+import { ReportGeneratorModal } from './reports/ReportGeneratorModal';
 import {
   addToApprovalQueue,
   type OutgoingMessage,
@@ -440,180 +441,30 @@ ThinkAI`;
       </div>
 
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
-          <div 
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" 
-            onClick={() => setIsModalOpen(false)}
-          ></div>
-          
-          <div className="relative bg-card rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 z-10 flex flex-col max-h-[90vh]">
-            {/* Header */}
-            <div className="flex justify-between items-start p-6 border-b border-border shrink-0">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Riport generálása</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Állítsd be a riport paramétereit</p>
-              </div>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-
-            {/* Body */}
-            <div className="p-6 space-y-6 overflow-y-auto">
-              {/* Report Type */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Riport típusa</Label>
-                <RadioGroup value={selectedType} onValueChange={(v) => { setSelectedType(v as ReportType); setGenerated(false); setShowPreview(false); }} className="grid grid-cols-2 gap-3">
-                  {reportTypes.filter(r => r.id !== 'hianyzo').map(r => (
-                    <div key={r.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={r.id} id={`type-${r.id}`} className="border-slate-300 text-slate-900 dark:text-slate-100" />
-                      <Label htmlFor={`type-${r.id}`} className="text-sm font-normal cursor-pointer">{r.title}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-
-
-              {/* Date Range */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Időszak</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-500 dark:text-slate-400">Kezdő dátum</Label>
-                    <Input 
-                      type="date" 
-                      value={dateFrom} 
-                      onChange={(e) => { setDateFrom(e.target.value); setGenerated(false); setShowPreview(false); }}
-                      className="bg-card border-border text-sm" 
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-500 dark:text-slate-400">Záró dátum</Label>
-                    <Input 
-                      type="date" 
-                      value={dateTo} 
-                      onChange={(e) => { setDateTo(e.target.value); setGenerated(false); setShowPreview(false); }}
-                      className="bg-card border-border text-sm" 
-                    />
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-400">{reportData.invoices.length} számla a kiválasztott időszakban</p>
-              </div>
-
-
-              {/* Format */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Formátum</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button 
-                    onClick={() => setFormat('pdf')}
-                    className={cn(
-                      "flex items-center gap-2 p-3 rounded-xl border-2 transition-colors text-sm font-medium",
-                      format === 'pdf' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200"
-                    )}
-                  >
-                    <FileText className={cn("w-4 h-4", format === 'pdf' ? "text-red-500" : "text-slate-400")} />
-                    PDF
-                  </button>
-                  <button 
-                    onClick={() => setFormat('excel')}
-                    className={cn(
-                      "flex items-center gap-2 p-3 rounded-xl border-2 transition-colors text-sm font-medium",
-                      format === 'excel' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200"
-                    )}
-                  >
-                    <FileJson className={cn("w-4 h-4", format === 'excel' ? "text-primary" : "text-slate-400")} />
-                    Excel
-                  </button>
-                </div>
-              </div>
-
-
-              {/* Options */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Opciók</Label>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="opt-1" checked={includeDetails} onCheckedChange={(c) => setIncludeDetails(!!c)} className="border-slate-300 rounded" />
-                    <Label htmlFor="opt-1" className="text-sm font-normal cursor-pointer">Részletes tételsorok</Label>
-                  </div>
-                </div>
-              </div>
-
-
-              {/* Inline Preview */}
-              {showPreview && (
-                <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400"> Előnézet — {currentTypeLabel}</span>
-                    <button onClick={() => setShowPreview(false)} className="text-slate-400 hover:text-slate-600">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="p-4 max-h-[200px] overflow-y-auto text-xs">
-                    <PreviewTable data={reportData} type={selectedType} options={{ details: includeDetails }} />
-                  </div>
-                </div>
-              )}
-            </div>
-
-
-            {/* Footer */}
-            <div className="p-4 border-t border-border flex items-center justify-between shrink-0 dark:bg-slate-900/50">
-              <Button variant="ghost" className="text-slate-500 dark:text-slate-400 hover:text-slate-700 whitespace-nowrap" onClick={() => setIsModalOpen(false)}>
-                Mégse
-              </Button>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={handleSendEmail}
-                  disabled={isGenerating}
-                  className={cn(
-                    "gap-2 bg-card border-border whitespace-nowrap transition-all",
-                    emailSent ? "text-primary border-primary/30" : "text-slate-700 dark:text-slate-300"
-                  )}
-                >
-                  {emailSent ? <><Check className="w-4 h-4" /> Elküldve!</> : <><Mail className="w-4 h-4" /> Generálás és küldés</>}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handlePreview}
-                  className={cn(
-                    "gap-2 bg-card border-border whitespace-nowrap",
-                    showPreview ? "text-indigo-600 border-indigo-300" : "text-slate-700 dark:text-slate-300"
-                  )}
-                >
-                  <Eye className="w-4 h-4" /> Előnézet
-                </Button>
-                <Button 
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                  className={cn(
-                    "gap-2 whitespace-nowrap transition-all",
-                    generated 
-                      ? "bg-primary text-white hover:bg-primary/90" 
-                      : "bg-primary text-primary-foreground hover:bg-primary/90"
-                  )}
-                >
-                  {isGenerating ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Generálás...</>
-                  ) : generated ? (
-                    <><Check className="w-4 h-4" /> Letöltve!</>
-                  ) : (
-                    <><Download className="w-4 h-4" /> Generálás</>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ReportGeneratorModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedType={selectedType}
+        onTypeChange={(v) => { setSelectedType(v); setGenerated(false); setShowPreview(false); }}
+        format={format}
+        onFormatChange={setFormat}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={(v) => { setDateFrom(v); setGenerated(false); setShowPreview(false); }}
+        onDateToChange={(v) => { setDateTo(v); setGenerated(false); setShowPreview(false); }}
+        includeDetails={includeDetails}
+        onIncludeDetailsChange={setIncludeDetails}
+        isGenerating={isGenerating}
+        generated={generated}
+        showPreview={showPreview}
+        emailSent={emailSent}
+        reportData={reportData}
+        currentTypeLabel={currentTypeLabel}
+        onGenerate={handleGenerate}
+        onPreview={handlePreview}
+        onSendEmail={handleSendEmail}
+        onHidePreview={() => setShowPreview(false)}
+      />
     </div>
   );
 }

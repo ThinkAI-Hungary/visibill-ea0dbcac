@@ -51,7 +51,7 @@ export default function EntriesTab() {
     queryKey: queryKeys.pettyCashRegisters(companyId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('petty_cash_registers' as any).select('*').eq('company_id', companyId)
+        .from('petty_cash_registers').select('*').eq('company_id', companyId)
         .order('is_default', { ascending: false }).order('name');
       if (error) throw error;
       return (data || []) as unknown as PettyCashRegister[];
@@ -64,7 +64,7 @@ export default function EntriesTab() {
     queryKey: [...queryKeys.pettyCashEntries(companyId), dateFromFormatted, dateToFormatted],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('petty_cash_entries' as any)
+        .from('petty_cash_entries')
         .select('*')
         .eq('company_id', companyId)
         .gte('entry_date', dateFromFormatted)
@@ -140,8 +140,8 @@ export default function EntriesTab() {
 
   const moveEntryMutation = useMutation({
     mutationFn: async ({ entryId, targetRegisterId }: { entryId: string; targetRegisterId: string }) => {
-      const { error } = await supabase.from('petty_cash_entries' as any)
-        .update({ register_id: targetRegisterId, routed_by: 'manual' } as any)
+      const { error } = await supabase.from('petty_cash_entries')
+        .update({ register_id: targetRegisterId, routed_by: 'manual' })
         .eq('id', entryId);
       if (error) throw error;
     },
@@ -397,7 +397,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId }:
       const rawAmount = parseFloat(form.amount) || 0;
       const signed = form.isExpense ? -Math.abs(rawAmount) : Math.abs(rawAmount);
       const rounded = roundHuf(signed, form.currency);
-      const { error } = await supabase.from('petty_cash_entries' as any)
+      const { error } = await supabase.from('petty_cash_entries')
         .insert({
           company_id: companyId,
           register_id: form.register_id,
@@ -408,7 +408,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId }:
           source_type: 'manual',
           routed_by: 'manual',
           created_by: userId,
-        } as any);
+        });
       if (error) throw error;
     },
     onSuccess: () => {

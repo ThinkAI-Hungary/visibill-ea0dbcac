@@ -27,6 +27,9 @@ import {
 import { getPriorityBadge, getStatusBadge } from './missing-invoices/badges';
 import HistoryView from './missing-invoices/HistoryView';
 import InvoiceDetailModal, { type InvoiceItem } from './missing-invoices/InvoiceDetailModal';
+import { MissingInvoicesTimeline } from './missing-invoices/MissingInvoicesTimeline';
+import { MissingInvoicesBulkBar } from './missing-invoices/MissingInvoicesBulkBar';
+import { AddMissingInvoiceModal } from './missing-invoices/AddMissingInvoiceModal';
 
 
 // InvoiceItem type is imported from ./missing-invoices/InvoiceDetailModal
@@ -291,13 +294,13 @@ export default function ClientMissingInvoicesPage() {
 
       // Reset status and clear uploaded_files
       const { error } = await supabase
-        .from('accounty_missing_items' as any)
+        .from('accounty_missing_items')
         .update({
           status: 'open',
           resolved_at: null,
           resolved_by: null,
           uploaded_files: [],
-        } as any)
+        })
         .eq('id', idToUnresolve);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
@@ -393,59 +396,7 @@ export default function ClientMissingInvoicesPage() {
             Előzmények
           </button>
           
-          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-            <DialogTrigger asChild>
-              <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-card/80 dark:hover:bg-primary/90 transition-colors text-sm font-medium shadow-soft">
-                <Plus className="w-4 h-4" />
-                Hiányzó hozzáadása
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Hiányzó számla hozzáadása</DialogTitle>
-                <DialogDescription>
-                  Add meg a hiányzó számla adatait
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Szállító neve</label>
-                  <input type="text" value={newInvoiceForm.vendor} onChange={e => setNewInvoiceForm({...newInvoiceForm, vendor: e.target.value})} placeholder="pl. Telekom Magyarország" className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Típus/Leírás</label>
-                  <input type="text" value={newInvoiceForm.subtext} onChange={e => setNewInvoiceForm({...newInvoiceForm, subtext: e.target.value})} placeholder="pl. Telefon számla" className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Becsült összeg</label>
-                    <input type="text" value={newInvoiceForm.amount} onChange={e => setNewInvoiceForm({...newInvoiceForm, amount: e.target.value})} className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Időszak</label>
-                    <input type="text" value={newInvoiceForm.period} onChange={e => setNewInvoiceForm({...newInvoiceForm, period: e.target.value})} className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Prioritás</label>
-                  <select value={newInvoiceForm.priority} onChange={e => setNewInvoiceForm({...newInvoiceForm, priority: e.target.value})} className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer">
-                    <option value="Sürgős">Sürgős</option>
-                    <option value="Magas">Magas</option>
-                    <option value="Közepes">Közepes</option>
-                    <option value="Alacsony">Alacsony</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Megjegyzés</label>
-                  <textarea value={newInvoiceForm.note} onChange={e => setNewInvoiceForm({...newInvoiceForm, note: e.target.value})} placeholder="További információk..." className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[100px] resize-none" />
-                </div>
-              </div>
-              <DialogFooter>
-                <button onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm font-medium">Mégse</button>
-                <button onClick={handleAddInvoice} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-card/80 dark:hover:bg-primary/90 transition-colors text-sm font-medium">Hozzáadás</button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <AddMissingInvoiceModal open={isAddModalOpen} onOpenChange={setIsAddModalOpen} form={newInvoiceForm} onFormChange={setNewInvoiceForm} onSubmit={handleAddInvoice} />
         </div>
       </div>
 
@@ -453,7 +404,7 @@ export default function ClientMissingInvoicesPage() {
       {/* KPI Cards – server-side counts, no need to load all rows */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Ã–sszes hiányzó</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Összes hiányzó</p>
           <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{missingCounts?.total?.toLocaleString('hu-HU') ?? '–'}</h3>
         </div>
         
@@ -652,77 +603,8 @@ export default function ClientMissingInvoicesPage() {
       </div>
 
 
-      {/* Quick History Section */}
-      <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden mt-8">
-        <div className="px-6 py-5 border-b border-border">
-          <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Felszólítás előzmények</h2>
-        </div>
-        <div className="p-6 space-y-0 relative">
-          <div className="absolute top-8 bottom-8 left-[43px] w-[2px] bg-slate-100 dark:bg-slate-800 z-0"></div>
-          
-          {[
-            { id: 1, title: 'Felszólítás küldve', date: '2024-01-14 10:30', icon: Mail, status: 'Elküldve', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800', iconColor: 'text-slate-400' },
-            { id: 2, title: 'Üzenet kézbesítve', date: '2024-01-12 14:15', icon: MessageSquare, status: 'Kézbesítve', color: 'text-primary dark:text-primary bg-accent-subtle dark:bg-accent border-accent dark:border-accent', iconColor: 'text-slate-400' },
-            { id: 3, title: 'Email megnyitva', date: '2024-01-10 09:00', icon: Mail, status: 'Megnyitva', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 border-amber-200 dark:border-amber-800', iconColor: 'text-slate-400' }
-          ].map((item) => (
-            <div key={item.id} className="relative z-10 flex items-center justify-between p-4 group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors rounded-xl -ml-2 -mr-2">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center shadow-soft">
-                  <item.icon className={`w-4 h-4 ${item.iconColor}`} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.title}</h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {item.date}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${item.color}`}>
-                  {item.status}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-
-      {/* Floating Action Bar */}
-      {selectedIds.length > 0 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-4xl bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-xl flex items-center justify-between animate-in slide-in-from-bottom-10 fade-in duration-300 z-50">
-          <div className="text-sm font-semibold text-slate-700 dark:text-slate-300 pl-2">
-            {selectedIds.length} kijelölve
-          </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => {
-                const selectedItems = invoices.filter(inv => selectedIds.includes(inv.id));
-                handleSendToApprovalQueue(selectedItems);
-                setSelectedIds([]);
-              }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-card/80 dark:hover:bg-primary/90 transition-colors text-sm font-medium shadow-soft"
-            >
-              <Send className="w-4 h-4" />
-              Felszólítás küldése
-            </button>
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-card border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm font-medium shadow-soft">
-              <CheckCircle className="w-4 h-4" />
-              Megérkezett
-            </button>
-            <button 
-              onClick={handleBulkDelete}
-              className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-sm font-medium shadow-soft"
-            >
-              <Trash2 className="w-4 h-4" />
-              Törlés
-            </button>
-          </div>
-        </div>
-      )}
-
-
-      {/* Invoice Details Modal */}
+      <MissingInvoicesTimeline />\n\n      {/* Floating Action Bar */}      {/* Floating Action Bar */}
+      <MissingInvoicesBulkBar selectedIds={selectedIds} invoices={invoices} onSendToApprovalQueue={handleSendToApprovalQueue} onBulkDelete={handleBulkDelete} onClearSelection={() => setSelectedIds([])} />\n\n      {/* Invoice Details Modal */}      {/* Invoice Details Modal */}
       <InvoiceDetailModal
         invoice={selectedInvoiceForDetails}
         onClose={() => setSelectedInvoiceForDetails(null)}

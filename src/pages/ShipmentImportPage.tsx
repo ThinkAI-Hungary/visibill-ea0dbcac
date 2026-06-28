@@ -90,7 +90,7 @@ export default function ShipmentImportPage() {
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
-        .from('shipment_import_batches' as any)
+        .from('shipment_import_batches')
         .select('*')
         .eq('company_id', selectedCompany.id)
         .order('created_at', { ascending: false });
@@ -259,7 +259,7 @@ export default function ShipmentImportPage() {
     try {
       // 1. Create Import Batch entry
       const { data: batch, error: batchError } = await supabase
-        .from('shipment_import_batches' as any)
+        .from('shipment_import_batches')
         .insert({
           company_id: selectedCompany.id,
           file_name: file.name,
@@ -279,7 +279,7 @@ export default function ShipmentImportPage() {
       // 2. Check which position_numbers already exist for this company
       const positionNumbers = parsedRows.map(r => r.position_number);
       const { data: existingShipments, error: existingError } = await supabase
-        .from('shipments' as any)
+        .from('shipments')
         .select('position_number, match_status, matched_invoice_id')
         .eq('company_id', selectedCompany.id)
         .in('position_number', positionNumbers);
@@ -337,7 +337,7 @@ export default function ShipmentImportPage() {
       let insertedCount = 0;
       if (newRows.length > 0) {
         const { error: insertError } = await supabase
-          .from('shipments' as any)
+          .from('shipments')
           .insert(newRows);
         if (insertError) throw insertError;
         insertedCount = newRows.length;
@@ -347,7 +347,7 @@ export default function ShipmentImportPage() {
       let updatedCount = 0;
       if (updateRows.length > 0) {
         const { error: upsertError } = await supabase
-          .from('shipments' as any)
+          .from('shipments')
           .upsert(updateRows, { onConflict: 'company_id,position_number' });
         if (upsertError) throw upsertError;
         updatedCount = updateRows.length;
@@ -357,7 +357,7 @@ export default function ShipmentImportPage() {
 
       // 6. Update batch status to completed with breakdown
       await supabase
-        .from('shipment_import_batches' as any)
+        .from('shipment_import_batches')
         .update({
           status: 'completed',
           imported_rows: insertedCount,
@@ -747,7 +747,7 @@ export default function ShipmentImportPage() {
                 try {
                   // 1. Delete all shipments that belong to this batch
                   const { error: shipmentsError } = await supabase
-                    .from('shipments' as any)
+                    .from('shipments')
                     .delete()
                     .eq('import_batch_id', confirmDeleteBatch.id);
 
@@ -755,7 +755,7 @@ export default function ShipmentImportPage() {
 
                   // 2. Delete the batch record itself
                   const { error: batchError } = await supabase
-                    .from('shipment_import_batches' as any)
+                    .from('shipment_import_batches')
                     .delete()
                     .eq('id', confirmDeleteBatch.id);
 

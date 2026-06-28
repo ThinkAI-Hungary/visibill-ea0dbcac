@@ -61,7 +61,7 @@ export function useSzepCardData() {
     queryKey: ['szep-card-transactions', selectedCompany?.id, dateFromStr, dateToStr],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('szep_card_transactions' as any)
+        .from('szep_card_transactions')
         .select('*')
         .eq('company_id', selectedCompany!.id)
         .gte('transaction_date', dateFromStr)

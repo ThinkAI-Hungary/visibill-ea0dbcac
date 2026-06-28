@@ -12,7 +12,7 @@ export function ReturnHistoryTable({ companyId, currentReturnId, onNavigate }: H
     queryKey: ['vat_return_history', companyId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('vat_returns' as any)
+        .from('vat_returns')
         .select('id, period_year, period_month, status, total_payable_tax, total_deductible_tax, net_result, amount_to_pay, amount_reclaimable, updated_at')
         .eq('company_id', companyId)
         .order('period_year', { ascending: false })

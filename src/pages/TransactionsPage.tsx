@@ -101,7 +101,7 @@ const TransactionsPage = () => {
     queryKey: ['bank-uploads-unified', selectedCompany?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('transaction_uploads' as any)
+        .from('transaction_uploads')
         .select('id, detected_bank, processing_status')
         .eq('company_id', selectedCompany!.id)
         .not('detected_bank', 'is', null);

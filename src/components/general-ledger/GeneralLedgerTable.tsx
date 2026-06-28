@@ -461,7 +461,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           target_preset_id: presetId,
           processing_status: 'pending',
           message: `AI átsorolás indítva (${orphanCount} besorolatlan tétel)`
-        } as any);
+        });
 
       if (error) {
         reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'GL queue insert hiba:', error: error });

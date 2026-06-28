@@ -37,7 +37,7 @@ export default function RegistersTab() {
     queryKey: queryKeys.pettyCashRegisters(companyId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('petty_cash_registers' as any)
+        .from('petty_cash_registers')
         .select('*')
         .eq('company_id', companyId)
         .order('is_default', { ascending: false })
@@ -51,19 +51,19 @@ export default function RegistersTab() {
   const saveRegister = useMutation({
     mutationFn: async (reg: Partial<PettyCashRegister>) => {
       if (reg.id) {
-        const { error } = await supabase.from('petty_cash_registers' as any)
-          .update({ name: reg.name, location: reg.location, currencies: reg.currencies } as any)
+        const { error } = await supabase.from('petty_cash_registers')
+          .update({ name: reg.name, location: reg.location, currencies: reg.currencies })
           .eq('id', reg.id);
         if (error) throw error;
       } else {
         // Check if there's already a default register for this company
-        const { count } = await supabase.from('petty_cash_registers' as any)
+        const { count } = await supabase.from('petty_cash_registers')
           .select('id', { count: 'exact', head: true })
           .eq('company_id', companyId)
           .eq('is_default', true);
         const hasDefault = (count ?? 0) > 0;
 
-        const { error } = await supabase.from('petty_cash_registers' as any)
+        const { error } = await supabase.from('petty_cash_registers')
           .insert({
             company_id: companyId,
             name: reg.name,
@@ -71,7 +71,7 @@ export default function RegistersTab() {
             currencies: reg.currencies || ['HUF'],
             is_default: !hasDefault,
             created_by: user?.id,
-          } as any);
+          });
         if (error) throw error;
       }
     },
@@ -88,14 +88,14 @@ export default function RegistersTab() {
   const setDefault = useMutation({
     mutationFn: async (registerId: string) => {
       // Remove old default
-      const { error: e1 } = await supabase.from('petty_cash_registers' as any)
-        .update({ is_default: false } as any)
+      const { error: e1 } = await supabase.from('petty_cash_registers')
+        .update({ is_default: false })
         .eq('company_id', companyId)
         .eq('is_default', true);
       if (e1) throw e1;
       // Set new default
-      const { error: e2 } = await supabase.from('petty_cash_registers' as any)
-        .update({ is_default: true } as any)
+      const { error: e2 } = await supabase.from('petty_cash_registers')
+        .update({ is_default: true })
         .eq('id', registerId);
       if (e2) throw e2;
     },
@@ -108,7 +108,7 @@ export default function RegistersTab() {
 
   const deleteRegister = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('petty_cash_registers' as any).delete().eq('id', id);
+      const { error } = await supabase.from('petty_cash_registers').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -126,7 +126,7 @@ export default function RegistersTab() {
       const regIds = registers.map(r => r.id);
       if (regIds.length === 0) return [];
       const { data } = await supabase
-        .from('petty_cash_opening_balances' as any)
+        .from('petty_cash_opening_balances')
         .select('register_id, currency, amount')
         .in('register_id', regIds);
       return (data || []) as { register_id: string; currency: string; amount: number }[];
@@ -329,7 +329,7 @@ function OpeningBalancesEditor({ registerId, currencies }: { registerId: string;
     queryKey: queryKeys.pettyCashOpeningBalances(registerId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('petty_cash_opening_balances' as any)
+        .from('petty_cash_opening_balances')
         .select('*')
         .eq('register_id', registerId);
       if (error) throw error;
@@ -358,7 +358,7 @@ function OpeningBalancesEditor({ registerId, currencies }: { registerId: string;
         if (!draft) continue;
         const amount = parseFloat(draft.amount) || 0;
         const rounded = roundHuf(amount, cur);
-        const { error } = await supabase.from('petty_cash_opening_balances' as any)
+        const { error } = await supabase.from('petty_cash_opening_balances')
           .upsert({
             register_id: registerId,
             currency: cur,

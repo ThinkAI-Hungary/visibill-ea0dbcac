@@ -24,7 +24,7 @@ export function UserActivityDialog({ userId, userName, isSystem, companyId, open
     queryKey: ['user_audit_logs_dialog', companyId, userId, isSystem],
     queryFn: async () => {
       let query = supabase
-        .from('audit_logs' as any)
+        .from('audit_logs')
         .select('*')
         .eq('company_id', companyId)
         .order('created_at', { ascending: false })

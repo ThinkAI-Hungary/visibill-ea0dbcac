@@ -97,6 +97,7 @@ import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { IdleWarningModal } from "./components/IdleWarningModal";
 import { Toaster } from "./components/ui/toaster";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { supabase } from "./integrations/supabase/client";
 
 // Route-level code splitting – each page loads as a separate chunk
@@ -475,6 +476,7 @@ const App = () => (
               <TooltipProvider>
 
                 <Toaster />
+                <OfflineBanner />
                 <ErrorBoundary>
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <ScrollToTop />
@@ -627,8 +629,8 @@ const App = () => (
                       <Route path="client/:id/ev/lifecycle" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvLifecyclePage /></Suspense>} />
                       {/* EV — tax form calculators */}
                       <Route path="client/:id/ev/flat-rate" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvFlatRatePage /></Suspense>} />
-                      <Route path="client/:id/ev/entrepreneurial" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvEntrepreneurialBasePage /></Suspense>} />
-                      <Route path="client/:id/ev/dividend" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvEntrepreneurialDividendPage /></Suspense>} />
+                      <Route path="client/:id/ev/entrepreneurial/base" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvEntrepreneurialBasePage /></Suspense>} />
+                      <Route path="client/:id/ev/entrepreneurial/dividend" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvEntrepreneurialDividendPage /></Suspense>} />
                       <Route path="client/:id/ev/depreciation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvDepreciationPage /></Suspense>} />
                       <Route path="client/:id/ev/kata" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvKataPage /></Suspense>} />
                       <Route path="client/:id/ev/compare" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvComparePage /></Suspense>} />

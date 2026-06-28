@@ -188,7 +188,7 @@ export default function GeneralLedgerPage() {
           target_preset_id: activePresetId,
           processing_status: 'pending',
           message: 'AI besorolás indítva a felhasználó által'
-        } as any);
+        });
 
       if (error) throw new Error(error.message);
       toast({ title: 'Sikeres indítás', description: 'Az AI besorolás elindult a paramétereknek megfelelően.' });

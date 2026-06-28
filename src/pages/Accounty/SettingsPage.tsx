@@ -10,6 +10,7 @@ import { useAccountyRole } from './AccountyRoleContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 
 // Tab components
 import GeneralSettingsTab from './settings/GeneralSettingsTab';
@@ -89,10 +90,10 @@ export default function SettingsPage() {
 
   // ── Firm data from DB ──
   const { data: firmData } = useQuery({
-    queryKey: ['accounty-firm-data', user?.id],
+    queryKey: queryKeys.accountyFirmData(user?.id || ''),
     queryFn: async () => {
       const { data: assignments } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('accounting_firm_id')
         .eq('accountant_user_id', user!.id)
         .limit(1);
@@ -121,11 +122,11 @@ export default function SettingsPage() {
   const ROLE_PRIORITY: Record<string, number> = { iroda_admin: 4, senior_könyvelő: 3, könyvelő: 2, asszisztens: 1 };
 
   const { data: teamMembers = [] } = useQuery({
-    queryKey: ['accounty-team-members', firmData?.firmId],
+    queryKey: queryKeys.accountyTeamMembers(firmData?.firmId),
     queryFn: async () => {
       const firmId = firmData!.firmId;
       const { data: assignments } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('accountant_user_id, company_id, role')
         .eq('accounting_firm_id', firmId);
       if (!assignments || assignments.length === 0) return [];

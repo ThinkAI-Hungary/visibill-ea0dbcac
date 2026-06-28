@@ -327,9 +327,9 @@ export function useDashboardData() {
     queryFn: async () => {
 
       const [regRes, obRes, entRes] = await Promise.all([
-        supabase.from('petty_cash_registers' as any).select('id').eq('company_id', companyId),
-        supabase.from('petty_cash_opening_balances' as any).select('register_id, currency, amount'),
-        supabase.from('petty_cash_entries' as any).select('register_id, currency, amount').eq('company_id', companyId),
+        supabase.from('petty_cash_registers').select('id').eq('company_id', companyId),
+        supabase.from('petty_cash_opening_balances').select('register_id, currency, amount'),
+        supabase.from('petty_cash_entries').select('register_id, currency, amount').eq('company_id', companyId),
       ]);
 
 
@@ -375,7 +375,7 @@ export function useDashboardData() {
     queryFn: async () => {
       // 1. Check if daily_exchange_rates has any data
       const { count } = await supabase
-        .from('daily_exchange_rates' as any)
+        .from('daily_exchange_rates')
         .select('id', { count: 'exact', head: true })
         .limit(1);
 

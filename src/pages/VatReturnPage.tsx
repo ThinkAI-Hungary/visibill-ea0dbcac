@@ -60,7 +60,7 @@ function VatReturnViewTab() {
     queryKey: ['vat_return', selectedCompany?.id, year, month, frequency],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vat_returns' as any)
+        .from('vat_returns')
         .select('*')
         .eq('company_id', selectedCompany!.id)
         .eq('period_year', year)
@@ -78,7 +78,7 @@ function VatReturnViewTab() {
     queryKey: ['vat_return_lines', vatReturn?.id],
     queryFn: async () => {
       if (!vatReturn?.id) return [];
-      const { data, error } = await supabase.from('vat_return_lines' as any).select('*').eq('vat_return_id', vatReturn.id);
+      const { data, error } = await supabase.from('vat_return_lines').select('*').eq('vat_return_id', vatReturn.id);
       if (error) { reportError({ type: 'db_query', component: 'VatReturnPage', action: 'error', message: 'vat_return_lines error:', error: error }); return []; }
       return (data || []) as unknown as ReturnLine[];
     },
@@ -89,7 +89,7 @@ function VatReturnViewTab() {
     queryKey: ['vat_return_m_lines', vatReturn?.id],
     queryFn: async () => {
       if (!vatReturn?.id) return [];
-      const { data, error } = await supabase.from('vat_return_m_lines' as any).select('*').eq('vat_return_id', vatReturn.id).order('base_amount_rounded', { ascending: false });
+      const { data, error } = await supabase.from('vat_return_m_lines').select('*').eq('vat_return_id', vatReturn.id).order('base_amount_rounded', { ascending: false });
       if (error) { reportError({ type: 'db_query', component: 'VatReturnPage', action: 'error', message: 'vat_return_m_lines error:', error: error }); return []; }
       return (data || []) as unknown as MLine[];
     },
@@ -99,7 +99,7 @@ function VatReturnViewTab() {
   const { data: formRows = [] } = useQuery({
     queryKey: ['vat_form_rows'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('vat_form_rows' as any).select('*').order('sort_order');
+      const { data, error } = await supabase.from('vat_form_rows').select('*').order('sort_order');
       if (error) { reportError({ type: 'db_query', component: 'VatReturnPage', action: 'error', message: 'vat_form_rows error:', error: error }); return []; }
       return (data || []) as unknown as FormRow[];
     },
@@ -113,7 +113,7 @@ function VatReturnViewTab() {
     queryKey: ['vat_return_prev', selectedCompany?.id, prevYear, prevMonth],
     queryFn: async () => {
       const { data } = await supabase
-        .from('vat_returns' as any)
+        .from('vat_returns')
         .select('id, total_payable_tax, total_deductible_tax, net_result')
         .eq('company_id', selectedCompany!.id)
         .eq('period_year', prevYear)
@@ -128,7 +128,7 @@ function VatReturnViewTab() {
     queryKey: ['vat_return_lines_prev', prevReturn?.id],
     queryFn: async () => {
       if (!prevReturn?.id) return [];
-      const { data } = await supabase.from('vat_return_lines' as any).select('row_number, base_amount_rounded, tax_amount_rounded').eq('vat_return_id', prevReturn.id);
+      const { data } = await supabase.from('vat_return_lines').select('row_number, base_amount_rounded, tax_amount_rounded').eq('vat_return_id', prevReturn.id);
       return (data || []) as unknown as ReturnLine[];
     },
     enabled: !!prevReturn?.id,
@@ -160,7 +160,7 @@ function VatReturnViewTab() {
   const validateReturn = useMutation({
     mutationFn: async () => {
       if (!vatReturn?.id) throw new Error('Nincs bevallás');
-      const { error } = await supabase.from('vat_returns' as any).update({ status: 'validated' } as any).eq('id', (vatReturn as any).id);
+      const { error } = await supabase.from('vat_returns').update({ status: 'validated' }).eq('id', (vatReturn as any).id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -173,7 +173,7 @@ function VatReturnViewTab() {
   const finalizeReturn = useMutation({
     mutationFn: async () => {
       if (!vatReturn?.id) throw new Error('Nincs bevallás');
-      const { error } = await supabase.from('vat_returns' as any).update({ status: 'finalized' } as any).eq('id', (vatReturn as any).id);
+      const { error } = await supabase.from('vat_returns').update({ status: 'finalized' }).eq('id', (vatReturn as any).id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -186,7 +186,7 @@ function VatReturnViewTab() {
   const reopenReturn = useMutation({
     mutationFn: async () => {
       if (!vatReturn?.id) throw new Error('Nincs bevallás');
-      const { error } = await supabase.from('vat_returns' as any).update({ status: 'draft' } as any).eq('id', (vatReturn as any).id);
+      const { error } = await supabase.from('vat_returns').update({ status: 'draft' }).eq('id', (vatReturn as any).id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -204,13 +204,13 @@ function VatReturnViewTab() {
       // Update row 82
       const line82 = lines.find(l => l.row_number === '82');
       if (line82) {
-        await supabase.from('vat_return_lines' as any)
-          .update({ tax_amount_rounded: newVal, tax_amount: newVal * 1000 } as any)
+        await supabase.from('vat_return_lines')
+          .update({ tax_amount_rounded: newVal, tax_amount: newVal * 1000 })
           .eq('vat_return_id', returnId)
           .eq('row_number', '82');
       } else {
-        await supabase.from('vat_return_lines' as any)
-          .insert({ vat_return_id: returnId, row_number: '82', tax_amount_rounded: newVal, tax_amount: newVal * 1000, is_calculated: false } as any);
+        await supabase.from('vat_return_lines')
+          .insert({ vat_return_id: returnId, row_number: '82', tax_amount_rounded: newVal, tax_amount: newVal * 1000, is_calculated: false });
       }
       // Recalculate 83-86
       const payTax = getVal('36', 'tax');
@@ -219,12 +219,12 @@ function VatReturnViewTab() {
       const upsertLine = async (row: string, taxEft: number) => {
         const existing = lines.find(l => l.row_number === row);
         if (existing) {
-          await supabase.from('vat_return_lines' as any)
-            .update({ tax_amount_rounded: taxEft, tax_amount: taxEft * 1000 } as any)
+          await supabase.from('vat_return_lines')
+            .update({ tax_amount_rounded: taxEft, tax_amount: taxEft * 1000 })
             .eq('vat_return_id', returnId).eq('row_number', row);
         } else {
-          await supabase.from('vat_return_lines' as any)
-            .insert({ vat_return_id: returnId, row_number: row, tax_amount_rounded: taxEft, tax_amount: taxEft * 1000, is_calculated: true } as any);
+          await supabase.from('vat_return_lines')
+            .insert({ vat_return_id: returnId, row_number: row, tax_amount_rounded: taxEft, tax_amount: taxEft * 1000, is_calculated: true });
         }
       };
       await upsertLine('83', net83);
@@ -238,14 +238,14 @@ function VatReturnViewTab() {
         await upsertLine('86', Math.abs(net83));
       }
       // Update header
-      await supabase.from('vat_returns' as any)
+      await supabase.from('vat_returns')
         .update({
           prev_period_carryforward: newVal * 1000,
           net_result: net83 * 1000,
           amount_to_pay: net83 > 0 ? net83 * 1000 : 0,
           amount_reclaimable: net83 < 0 ? Math.abs(net83) * 1000 : 0,
           amount_carryforward: net83 < 0 ? Math.abs(net83) * 1000 : 0,
-        } as any)
+        })
         .eq('id', returnId);
       return { newVal, net83 };
     },
@@ -309,7 +309,7 @@ function VatReturnViewTab() {
   const saveDetailRow = React.useCallback(async (rowNumber: string, base: number, tax: number) => {
     if (!vatReturn?.id) return;
     const { error } = await supabase
-      .from('vat_return_lines' as any)
+      .from('vat_return_lines')
       .upsert({
         vat_return_id: (vatReturn as any).id,
         row_number: rowNumber,

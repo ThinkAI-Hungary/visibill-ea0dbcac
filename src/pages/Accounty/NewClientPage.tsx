@@ -118,7 +118,7 @@ export default function NewClientPage() {
             accountant_user_id: user.id, company_id: companyId, role: 'junior', is_primary: true,
           } as any, { onConflict: 'accountant_user_id,company_id' });
           if (assignErr) throw assignErr;
-          await supabase.from('accounty_communication_preferences' as any).upsert({
+          await supabase.from('accounty_communication_preferences').upsert({
             company_id: companyId, contact_name: contactName || null, contact_email: contactEmail || null, contact_phone: contactPhone || null,
             channel_email: selectedChannels.includes('email'), channel_viber: selectedChannels.includes('viber'), channel_sms: selectedChannels.includes('telegram'), channel_phone: false, auto_reminder: true,
           } as any, { onConflict: 'company_id' });

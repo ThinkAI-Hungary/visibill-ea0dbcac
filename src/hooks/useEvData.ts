@@ -808,7 +808,7 @@ export function useEvVatReturns(companyId: string | undefined, taxYear: number =
     queryKey: ['ev-vat-returns', companyId, taxYear],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('accounty_ev_vat_returns' as any)
+        .from('accounty_ev_vat_returns')
         .select('*')
         .eq('company_id', companyId!)
         .eq('tax_year', taxYear)
@@ -836,7 +836,7 @@ export function useEvChamberPayments(companyId: string | undefined) {
     queryKey: ['ev-chamber-payments', companyId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('accounty_ev_chamber_payments' as any)
+        .from('accounty_ev_chamber_payments')
         .select('*')
         .eq('company_id', companyId!)
         .order('tax_year', { ascending: false });
@@ -864,7 +864,7 @@ export function useOrgReportLines(companyId: string | undefined, taxYear: number
     queryKey: ['org-report-lines', companyId, taxYear, reportType],
     queryFn: async () => {
       let query = supabase
-        .from('accounty_org_report_lines' as any)
+        .from('accounty_org_report_lines')
         .select('*')
         .eq('company_id', companyId!)
         .eq('tax_year', taxYear)
@@ -893,22 +893,73 @@ export function useOrgReportLines(companyId: string | undefined, taxYear: number
 }
 
 /**
- * Fetch cashbook entries for ledger view.
+ * Fetch counts of entries for all EV registers.
  */
-export function useCashbookEntries(companyId: string | undefined, taxYear: number = 2026) {
+export function useEvRecordCounts(companyId: string | undefined, taxYear: number = 2026) {
   return useQuery({
-    queryKey: ['cashbook-entries', companyId, taxYear],
+    queryKey: ['ev-record-counts', companyId, taxYear],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('accounty_penztarkonyv_tetel')
-        .select('*')
-        .eq('company_id', companyId!)
-        .eq('tax_year', taxYear)
-        .order('entry_date', { ascending: true })
-        .order('serial_number', { ascending: true });
-      if (error) throw error;
-      return (data || []) as PenztarkonyvTetel[];
+      if (!companyId) return {} as Record<string, number>;
+
+      const getCount = async (table: string, filterField?: string, filterVal?: any) => {
+        let q = supabase
+          .from(table as any)
+          .select('*', { count: 'exact', head: true })
+          .eq('company_id', companyId);
+
+        if (table !== 'accounty_ev_audit_log') {
+          q = q.eq('tax_year', taxYear);
+        }
+
+        if (filterField && filterVal !== undefined) {
+          q = q.eq(filterField, filterVal);
+        }
+
+        const { count, error } = await q;
+        if (error) {
+          console.error(`Error fetching count for ${table}:`, error);
+          return 0;
+        }
+        return count || 0;
+      };
+
+      const [
+        vevo,
+        assets,
+        inventory,
+        log,
+        claims,
+        wages,
+        cashbook,
+        scrapping,
+        auditLog
+      ] = await Promise.all([
+        getCount('accounty_ev_records_receivables'),
+        getCount('accounty_ev_records_fixed_assets'),
+        getCount('accounty_ev_records_inventory'),
+        getCount('accounty_ev_records_vehicle_log'),
+        getCount('accounty_ev_records_other_claims'),
+        getCount('accounty_ev_records_wages'),
+        getCount('accounty_penztarkonyv_tetel'),
+        getCount('accounty_ev_records_scrapping'),
+        getCount('accounty_ev_audit_log'),
+      ]);
+
+      return {
+        'vevo-szallito': vevo,
+        'tao-kesz': assets,
+        'keszlet': inventory,
+        'utnyilv': log,
+        'berbeadas': Math.round(claims / 2),
+        'valuta': Math.round(claims / 2),
+        'munkaber': Math.round(wages / 2),
+        'penztarkonyv': cashbook,
+        'selejtezes': scrapping,
+        'lekerdezes': auditLog,
+        'jog-bizt': Math.round(wages / 2),
+      };
     },
     enabled: !!companyId,
   });
 }
+

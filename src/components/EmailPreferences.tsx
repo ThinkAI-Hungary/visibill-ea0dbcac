@@ -38,7 +38,7 @@ export function EmailPreferences() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('user_email_preferences' as any)
+        .from('user_email_preferences')
         .select('id, user_id, invoice_processed, invoice_failed, weekly_summary, monthly_summary, subscription_warnings')
         .eq('user_id', user.id)
         .maybeSingle();
@@ -70,7 +70,7 @@ export function EmailPreferences() {
     try {
       setSaving(true);
       const { error } = await supabase
-        .from('user_email_preferences' as any)
+        .from('user_email_preferences')
         .upsert(
           {
             user_id: user.id,

@@ -30,7 +30,7 @@ function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNumber: st
     queryKey: ['nav_invoice_items_drill', companyId, invoiceNumber],
     queryFn: async () => {
       const { data: inv } = await supabase
-        .from('nav_invoices' as any)
+        .from('nav_invoices')
         .select('id')
         .eq('company_id', companyId)
         .eq('invoice_number', invoiceNumber)
@@ -38,7 +38,7 @@ function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNumber: st
         .maybeSingle();
       if (!(inv as any)?.id) return [];
       const { data: items } = await supabase
-        .from('nav_invoice_items' as any)
+        .from('nav_invoice_items')
         .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate')
         .eq('nav_invoice_id', (inv as any).id)
         .order('line_number');
@@ -113,7 +113,7 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
   const { data: vatCodes = [] } = useQuery({
     queryKey: ['vat_codes', companyId],
     queryFn: async () => {
-      const { data } = await supabase.from('vat_codes' as any).select('*').eq('company_id', companyId);
+      const { data } = await supabase.from('vat_codes').select('*').eq('company_id', companyId);
       return (data || []) as unknown as VatCode[];
     },
     staleTime: 60_000,
@@ -145,7 +145,7 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
 
       // Query nav_invoices with their items
       let query = supabase
-        .from('nav_invoices' as any)
+        .from('nav_invoices')
         .select(`
           id, invoice_number, supplier_name, customer_name, invoice_direction,
           invoice_delivery_date, currency,

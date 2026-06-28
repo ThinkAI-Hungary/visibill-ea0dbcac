@@ -297,7 +297,7 @@ function EscalatedUploadDetail({
 
       // 3. If invoice already has a matched shipment, also link CMR → that shipment
       const { data: matchRow } = await supabase
-        .from('shipment_matches' as any)
+        .from('shipment_matches')
         .select('shipment_id')
         .eq('invoice_id', foundInvoice.id)
         .eq('status', 'confirmed')
@@ -632,7 +632,7 @@ export default function EscalationListPage() {
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
-        .from('shipment_matches' as any)
+        .from('shipment_matches')
         .select(`
           id, confidence_score, discrepancies, status, invoice_id, shipment_id, created_at,
           invoice:invoices(id, bizonylatsorszam, elado_nev, vevo_nev, brutto_vegosszeg, penznem, kibocsatas_datuma, planned_payment_date, position_numbers, melleklet_url, image_url),
@@ -691,9 +691,9 @@ export default function EscalationListPage() {
   const handleAcceptMatch = async (match: EscalatedMatch) => {
     setIsActionLoading(true);
     try {
-      const { error: matchError } = await supabase.from('shipment_matches' as any).update({ status: 'confirmed' }).eq('id', match.id);
+      const { error: matchError } = await supabase.from('shipment_matches').update({ status: 'confirmed' }).eq('id', match.id);
       if (matchError) throw matchError;
-      await supabase.from('shipments' as any).update({ match_status: 'matched', matched_invoice_id: match.invoice.id }).eq('id', match.shipment.id);
+      await supabase.from('shipments').update({ match_status: 'matched', matched_invoice_id: match.invoice.id }).eq('id', match.shipment.id);
       await supabase.from('invoices').update({ shipment_match_status: 'matched' }).eq('id', match.invoice.id);
       toast({ title: 'Párosítás elfogadva', description: 'A manuális párosítás rögzítve.' });
       setSelectedMatch(null);
@@ -709,9 +709,9 @@ export default function EscalationListPage() {
   const handleRejectMatch = async (match: EscalatedMatch) => {
     setIsActionLoading(true);
     try {
-      const { error: matchError } = await supabase.from('shipment_matches' as any).update({ status: 'rejected' }).eq('id', match.id);
+      const { error: matchError } = await supabase.from('shipment_matches').update({ status: 'rejected' }).eq('id', match.id);
       if (matchError) throw matchError;
-      await supabase.from('shipments' as any).update({ match_status: 'unmatched', matched_invoice_id: null }).eq('id', match.shipment.id);
+      await supabase.from('shipments').update({ match_status: 'unmatched', matched_invoice_id: null }).eq('id', match.shipment.id);
       await supabase.from('invoices').update({ shipment_match_status: 'unmatched' }).eq('id', match.invoice.id);
       toast({ title: 'Párosítás elutasítva', description: 'A javasolt párosítás elutasítva.' });
       setSelectedMatch(null);
@@ -728,7 +728,7 @@ export default function EscalationListPage() {
     setIsActionLoading(true);
     try {
       const { data: newShipment, error: findError } = await supabase
-        .from('shipments' as any)
+        .from('shipments')
         .select('id, carrier_name')
         .eq('company_id', selectedCompany?.id)
         .eq('position_number', reassignPos.trim())
@@ -739,8 +739,8 @@ export default function EscalationListPage() {
         setIsActionLoading(false);
         return;
       }
-      await supabase.from('shipment_matches' as any).delete().eq('id', match.id);
-      const { error: matchError } = await supabase.from('shipment_matches' as any).insert({
+      await supabase.from('shipment_matches').delete().eq('id', match.id);
+      const { error: matchError } = await supabase.from('shipment_matches').insert({
         company_id: selectedCompany?.id,
         invoice_id: match.invoice.id,
         shipment_id: (newShipment as any).id,
@@ -750,7 +750,7 @@ export default function EscalationListPage() {
         match_details: { reassigned_from: match.shipment.position_number },
       });
       if (matchError) throw matchError;
-      await supabase.from('shipments' as any).update({ match_status: 'matched', matched_invoice_id: match.invoice.id }).eq('id', (newShipment as any).id);
+      await supabase.from('shipments').update({ match_status: 'matched', matched_invoice_id: match.invoice.id }).eq('id', (newShipment as any).id);
       await supabase.from('invoices').update({ shipment_match_status: 'matched' }).eq('id', match.invoice.id);
       toast({ title: 'Sikeres átirányítás', description: `Számla hozzárendelve: „${reassignPos.trim()}"` });
       setSelectedMatch(null);
@@ -772,7 +772,7 @@ export default function EscalationListPage() {
     setPendingShipmentResults([]);
     try {
       const { data } = await supabase
-        .from('shipments' as any)
+        .from('shipments')
         .select('id, position_number, carrier_name')
         .eq('company_id', selectedCompany.id)
         .ilike('position_number', `%${pendingAssignPos.trim()}%`)
@@ -802,7 +802,7 @@ export default function EscalationListPage() {
     try {
       // 1. pending_shipment match rekord frissítése → confirmed
       const { error: matchErr } = await supabase
-        .from('shipment_matches' as any)
+        .from('shipment_matches')
         .update({
           shipment_id: target.id,
           match_type: 'manual',
@@ -816,7 +816,7 @@ export default function EscalationListPage() {
 
       // 2. Shipment: matched állapotba
       await supabase
-        .from('shipments' as any)
+        .from('shipments')
         .update({ match_status: 'matched', matched_invoice_id: selectedMatch.invoice_id })
         .eq('id', target.id);
 
@@ -940,7 +940,7 @@ export default function EscalationListPage() {
         .filter('metadata->cmr_result->>cmr_id', 'eq', cmrDetachTarget.id);
       for (const uRow of uploadRows ?? []) {
         const mergedMeta = { ...(uRow.metadata ?? {}), manual_detach: true };
-        await supabase.from('invoice_uploads').update({ processing_status: 'cmr_escalated', metadata: mergedMeta } as any).eq('id', uRow.id);
+        await supabase.from('invoice_uploads').update({ processing_status: 'cmr_escalated', metadata: mergedMeta }).eq('id', uRow.id);
       }
       toast({ title: 'CMR leválasztva', description: cmrDetachTarget.file_name + ' visszakerül az eszkalációba.' });
       setCmrDetachOpen(false);
@@ -963,8 +963,8 @@ export default function EscalationListPage() {
       const prevShipmentId = selectedMatch.shipment_id;
       await (supabase as any).from('shipment_matches').update({ shipment_id: null, status: 'pending_shipment', confidence_score: null, discrepancies: [] }).eq('id', selectedMatch.id);
       if (prevShipmentId) await (supabase as any).from('shipments').update({ match_status: 'unmatched', matched_invoice_id: null }).eq('id', prevShipmentId);
-      await supabase.from('invoices').update({ shipment_match_status: 'matched_no_shipment' } as any).eq('id', selectedMatch.invoice_id);
-      await supabase.from('transport_documents').update({ linked_shipment_id: null } as any).eq('linked_invoice_id', selectedMatch.invoice_id).not('linked_shipment_id', 'is', null);
+      await supabase.from('invoices').update({ shipment_match_status: 'matched_no_shipment' }).eq('id', selectedMatch.invoice_id);
+      await supabase.from('transport_documents').update({ linked_shipment_id: null }).eq('linked_invoice_id', selectedMatch.invoice_id).not('linked_shipment_id', 'is', null);
       toast({ title: 'Fuvarriport leválasztva', description: 'A számla visszakerül a várakozó riport listába.' });
       setShipmentDetachOpen(false);
       setSelectedMatch(null);

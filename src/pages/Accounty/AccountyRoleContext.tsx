@@ -2,6 +2,7 @@ import React, { createContext, useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 export type AccountyRole = 'iroda_admin' | 'senior_könyvelő' | 'könyvelő' | 'asszisztens';
 
@@ -32,10 +33,10 @@ export function AccountyRoleProvider({ children }: { children: React.ReactNode }
   const { user } = useAuth();
 
   const { data: role = 'könyvelő' as AccountyRole, isPending } = useQuery({
-    queryKey: ['accounty-role', user?.id],
+    queryKey: queryKeys.accountyRole(user?.id || ''),
     queryFn: async (): Promise<AccountyRole> => {
       const { data, error } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('role')
         .eq('accountant_user_id', user!.id);
 

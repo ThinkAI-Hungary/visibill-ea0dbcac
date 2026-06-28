@@ -630,7 +630,7 @@ export default function PayrollCyclePage() {
             disabled={updateStep.isPending}
             onClick={async () => {
               if (!cycle?.id) return;
-              await supabase.from('payroll_cycles').update({ status: 'closed', current_step: 8 } as any).eq('id', cycle.id);
+              await supabase.from('payroll_cycles').update({ status: 'closed', current_step: 8 }).eq('id', cycle.id);
               toast({ title: ' Ciklus lezárva', description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva.` });
               navigate(`/accounty/payroll/${companyId}`);
             }}

@@ -29,7 +29,7 @@ export function useAuditLog(filters: AuditLogFilters = {}) {
     queryKey: ['accounty-audit-log', filters],
     queryFn: async () => {
       let query = supabase
-        .from('accounty_audit_log' as any)
+        .from('accounty_audit_log')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -58,7 +58,7 @@ export function useGdprRequests() {
     queryKey: ['accounty-gdpr-requests'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('accounty_gdpr_requests' as any)
+        .from('accounty_gdpr_requests')
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -74,7 +74,7 @@ export function useCreateGdprRequest() {
   return useMutation({
     mutationFn: async (req: { company_id: string; employee_id?: string; employee_name: string; request_type: string; notes?: string }) => {
       const { data, error } = await supabase
-        .from('accounty_gdpr_requests' as any)
+        .from('accounty_gdpr_requests')
         .insert(req as any)
         .select()
         .single();
@@ -98,7 +98,7 @@ export function useUpdateGdprRequest() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; status?: string; notes?: string; completed_at?: string; handled_by?: string }) => {
       const { error } = await supabase
-        .from('accounty_gdpr_requests' as any)
+        .from('accounty_gdpr_requests')
         .update(updates as any)
         .eq('id', id);
       if (error) throw error;
@@ -120,7 +120,7 @@ export function useTemplates(category?: string) {
     queryKey: ['accounty-templates', category],
     queryFn: async () => {
       let query = supabase
-        .from('accounty_templates' as any)
+        .from('accounty_templates')
         .select('*')
         .order('updated_at', { ascending: false });
       if (category) query = query.eq('category', category);
@@ -140,32 +140,32 @@ export function useSaveTemplate() {
       if (template.id) {
         // Save version history first
         const { data: existing } = await supabase
-          .from('accounty_templates' as any)
+          .from('accounty_templates')
           .select('version, body_markdown, subject')
           .eq('id', template.id)
           .single();
 
         if (existing) {
-          await supabase.from('accounty_template_versions' as any).insert({
+          await supabase.from('accounty_template_versions').insert({
             template_id: template.id,
             version: (existing as any).version,
             body_markdown: (existing as any).body_markdown,
             subject: (existing as any).subject,
-          } as any);
+          });
         }
 
         const { error } = await supabase
-          .from('accounty_templates' as any)
+          .from('accounty_templates')
           .update({
             ...template,
             version: ((existing as any)?.version || 0) + 1,
             updated_at: new Date().toISOString(),
-          } as any)
+          })
           .eq('id', template.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('accounty_templates' as any)
+          .from('accounty_templates')
           .insert(template as any);
         if (error) throw error;
       }
@@ -186,7 +186,7 @@ export function useTemplateVersions(templateId?: string) {
     queryFn: async () => {
       if (!templateId) return [];
       const { data, error } = await supabase
-        .from('accounty_template_versions' as any)
+        .from('accounty_template_versions')
         .select('*')
         .eq('template_id', templateId)
         .order('version', { ascending: false });
@@ -207,7 +207,7 @@ export function useJobCodes(activeOnly = false) {
     queryKey: ['accounty-job-codes', activeOnly],
     queryFn: async () => {
       let query = supabase
-        .from('accounty_job_codes' as any)
+        .from('accounty_job_codes')
         .select('*')
         .order('code', { ascending: true });
       if (activeOnly) query = query.eq('is_active', true);
@@ -226,13 +226,13 @@ export function useUpsertJobCode() {
     mutationFn: async (code: { id?: string; code: string; name: string; is_insured: boolean; min_contribution_base_rule?: string; is_active: boolean; valid_from?: string; valid_to?: string; notes?: string }) => {
       if (code.id) {
         const { error } = await supabase
-          .from('accounty_job_codes' as any)
-          .update({ ...code, updated_at: new Date().toISOString() } as any)
+          .from('accounty_job_codes')
+          .update({ ...code, updated_at: new Date().toISOString() })
           .eq('id', code.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('accounty_job_codes' as any)
+          .from('accounty_job_codes')
           .insert(code as any);
         if (error) throw error;
       }
@@ -257,7 +257,7 @@ export function useGlobalTaxParams(year: number) {
     queryKey: ['accounty-global-tax-params', year],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('accounty_tax_params_global' as any)
+        .from('accounty_tax_params_global')
         .select('*')
         .eq('year', year)
         .order('key', { ascending: true });
@@ -274,8 +274,8 @@ export function useUpdateGlobalTaxParam() {
   return useMutation({
     mutationFn: async ({ id, value, legal_reference }: { id: string; value: number; legal_reference?: string }) => {
       const { error } = await supabase
-        .from('accounty_tax_params_global' as any)
-        .update({ value, legal_reference, updated_at: new Date().toISOString() } as any)
+        .from('accounty_tax_params_global')
+        .update({ value, legal_reference, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
     },
@@ -293,7 +293,7 @@ export function useDuplicateTaxYear() {
   return useMutation({
     mutationFn: async ({ fromYear, toYear }: { fromYear: number; toYear: number }) => {
       const { data: existing } = await supabase
-        .from('accounty_tax_params_global' as any)
+        .from('accounty_tax_params_global')
         .select('key, value, legal_reference')
         .eq('year', fromYear);
 
@@ -308,7 +308,7 @@ export function useDuplicateTaxYear() {
       }));
 
       const { error } = await supabase
-        .from('accounty_tax_params_global' as any)
+        .from('accounty_tax_params_global')
         .upsert(newParams as any, { onConflict: 'year,key' });
       if (error) throw error;
     },
@@ -329,7 +329,7 @@ export function useLegalUpdates() {
     queryKey: ['accounty-legal-updates'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('accounty_legal_updates' as any)
+        .from('accounty_legal_updates')
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -345,7 +345,7 @@ export function useAddLegalUpdate() {
   return useMutation({
     mutationFn: async (update: { title: string; source: string; published_at?: string; affected_modules?: string[]; implementation_status?: string; notes?: string }) => {
       const { error } = await supabase
-        .from('accounty_legal_updates' as any)
+        .from('accounty_legal_updates')
         .insert(update as any);
       if (error) throw error;
     },
@@ -362,8 +362,8 @@ export function useUpdateLegalUpdate() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; implementation_status?: string; notes?: string; title?: string }) => {
       const { error } = await supabase
-        .from('accounty_legal_updates' as any)
-        .update({ ...updates, updated_at: new Date().toISOString() } as any)
+        .from('accounty_legal_updates')
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
     },
@@ -384,7 +384,7 @@ export function useTaoYearly(companyId?: string, taxYear?: number) {
     queryFn: async () => {
       if (!companyId || !taxYear) return null;
       const { data, error } = await supabase
-        .from('accounty_tao_yearly' as any)
+        .from('accounty_tao_yearly')
         .select('*')
         .eq('company_id', companyId)
         .eq('tax_year', taxYear)
@@ -410,7 +410,7 @@ export function useSaveTaoYearly() {
     }) => {
       // Upsert by company_id + tax_year
       const { data, error } = await supabase
-        .from('accounty_tao_yearly' as any)
+        .from('accounty_tao_yearly')
         .upsert(
           { ...record, updated_at: new Date().toISOString() } as any,
           { onConflict: 'company_id,tax_year' }

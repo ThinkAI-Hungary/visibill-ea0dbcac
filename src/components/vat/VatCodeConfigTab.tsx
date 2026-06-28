@@ -144,7 +144,7 @@ function VatCodeDialog({ open, onOpenChange, code, formRows, onSave, saving }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Mégse</Button>
-          <Button onClick={() => onSave({ ...(code ? { id: code.id } : {}), ...form } as any)} disabled={saving || !form.code || !form.label}>
+          <Button onClick={() => onSave({ ...(code ? { id: code.id } : {}), ...form })} disabled={saving || !form.code || !form.label}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
             Mentés
           </Button>
@@ -169,7 +169,7 @@ export function VatCodeConfigTab() {
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
-        .from('vat_codes' as any)
+        .from('vat_codes')
         .select('*')
         .eq('company_id', selectedCompany.id)
         .order('sort_order');
@@ -183,7 +183,7 @@ export function VatCodeConfigTab() {
     queryKey: ['vat_form_rows'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vat_form_rows' as any)
+        .from('vat_form_rows')
         .select('*')
         .order('sort_order');
       if (error) throw error;
@@ -209,7 +209,7 @@ export function VatCodeConfigTab() {
 
   const deleteCode = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('vat_codes' as any).delete().eq('id', id);
+      const { error } = await supabase.from('vat_codes').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -221,10 +221,10 @@ export function VatCodeConfigTab() {
   const saveCode = useMutation({
     mutationFn: async (code: Partial<VatCode>) => {
       if (code.id) {
-        const { error } = await supabase.from('vat_codes' as any).update(code as any).eq('id', code.id);
+        const { error } = await supabase.from('vat_codes').update(code as any).eq('id', code.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('vat_codes' as any).insert({ ...code, company_id: selectedCompany!.id } as any);
+        const { error } = await supabase.from('vat_codes').insert({ ...code, company_id: selectedCompany!.id });
         if (error) throw error;
       }
     },

@@ -166,7 +166,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         attachmentUrls = await Promise.all(uploadPromises);
       }
 
-      const { error } = await supabase.from("feedback" as any).insert({
+      const { error } = await supabase.from("feedback").insert({
         id: ticketId,
         user_id: user.id,
         company_id: companyId,
@@ -178,7 +178,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         user_name: user.user_metadata?.name || null,
         page_url: window.location.pathname,
         ...(attachmentUrls.length > 0 ? { attachments: attachmentUrls } : {}),
-      } as any);
+      });
 
       if (error) throw error;
 

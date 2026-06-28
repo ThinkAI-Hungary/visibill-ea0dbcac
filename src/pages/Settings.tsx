@@ -85,7 +85,7 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
     let token = '';
     for (let i = 0; i < 6; i++) token += chars[bytes[i] % chars.length];
     const now = new Date().toISOString();
-    const { error } = await supabase.from('companies').update({ share_token: token, share_token_created_at: now } as any).eq('id', companyId);
+    const { error } = await supabase.from('companies').update({ share_token: token, share_token_created_at: now }).eq('id', companyId);
     if (error) { reportError({ type: 'db_query', component: 'Settings', action: 'generateToken', message: 'Share token generation failed', error }); toast({ title: "Hiba", description: "Nem sikerült a kód generálása.", variant: "destructive" }); }
     else { setShareToken(token); setTokenCreatedAt(now); toast({ title: "Siker", description: "Meghívó kód generálva! 10 percig érvényes." }); }
     setGenerating(false);
@@ -167,7 +167,7 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
     setUpdatingRole(memberId);
     const { data, error, count } = await supabase
       .from('company_members')
-      .update({ role: newRole } as any)
+      .update({ role: newRole })
       .eq('id', memberId)
       .select();
     if (error) {
@@ -300,7 +300,7 @@ function FxSettingsCard({ companyId, toast }: { companyId: string; toast: any })
     queryKey: queryKeys.fxSettings(companyId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('company_fx_settings' as any)
+        .from('company_fx_settings')
         .select('*')
         .eq('company_id', companyId)
         .maybeSingle();
@@ -320,14 +320,14 @@ function FxSettingsCard({ companyId, toast }: { companyId: string; toast: any })
     try {
       if (fxSettings) {
         const { error } = await supabase
-          .from('company_fx_settings' as any)
-          .update({ rate_source: rateSource, updated_at: new Date().toISOString() } as any)
+          .from('company_fx_settings')
+          .update({ rate_source: rateSource, updated_at: new Date().toISOString() })
           .eq('company_id', companyId);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('company_fx_settings' as any)
-          .insert({ company_id: companyId, rate_source: rateSource } as any);
+          .from('company_fx_settings')
+          .insert({ company_id: companyId, rate_source: rateSource });
         if (error) throw error;
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.fxSettings(companyId) });
@@ -461,7 +461,7 @@ export default function Settings() {
     queryFn: async () => {
       if (!user) return null;
       const { data: assignments, error } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('accounting_firm_id, role')
         .eq('accountant_user_id', user.id);
       

@@ -60,7 +60,7 @@ export default function ShipmentsPage() {
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
-        .from('shipments' as any)
+        .from('shipments')
         .select('*')
         .eq('company_id', selectedCompany.id)
         .order('created_at', { ascending: false });
@@ -94,7 +94,7 @@ export default function ShipmentsPage() {
     queryFn: async () => {
       if (!selectedShipment?.id) return [];
       const { data, error } = await supabase
-        .from('transport_documents' as any)
+        .from('transport_documents')
         .select('*')
         .eq('linked_shipment_id', selectedShipment.id);
 

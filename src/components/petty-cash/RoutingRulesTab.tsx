@@ -32,7 +32,7 @@ export default function RoutingRulesTab() {
   const { data: registers = [] } = useQuery({
     queryKey: queryKeys.pettyCashRegisters(companyId),
     queryFn: async () => {
-      const { data, error } = await supabase.from('petty_cash_registers' as any).select('*').eq('company_id', companyId);
+      const { data, error } = await supabase.from('petty_cash_registers').select('*').eq('company_id', companyId);
       if (error) throw error;
       return (data || []) as unknown as PettyCashRegister[];
     },
@@ -43,7 +43,7 @@ export default function RoutingRulesTab() {
     queryKey: queryKeys.pettyCashRoutingRules(companyId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('petty_cash_routing_rules' as any).select('*').eq('company_id', companyId).order('priority', { ascending: false });
+        .from('petty_cash_routing_rules').select('*').eq('company_id', companyId).order('priority', { ascending: false });
       if (error) throw error;
       return (data || []) as unknown as RoutingRule[];
     },
@@ -59,12 +59,12 @@ export default function RoutingRulesTab() {
   const saveRule = useMutation({
     mutationFn: async (rule: Partial<RoutingRule>) => {
       if (rule.id) {
-        const { error } = await supabase.from('petty_cash_routing_rules' as any)
+        const { error } = await supabase.from('petty_cash_routing_rules')
           .update(rule as any).eq('id', rule.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('petty_cash_routing_rules' as any)
-          .insert({ ...rule, company_id: companyId } as any);
+        const { error } = await supabase.from('petty_cash_routing_rules')
+          .insert({ ...rule, company_id: companyId });
         if (error) throw error;
       }
     },
@@ -79,7 +79,7 @@ export default function RoutingRulesTab() {
 
   const deleteRule = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('petty_cash_routing_rules' as any).delete().eq('id', id);
+      const { error } = await supabase.from('petty_cash_routing_rules').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -90,8 +90,8 @@ export default function RoutingRulesTab() {
 
   const toggleActive = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      const { error } = await supabase.from('petty_cash_routing_rules' as any)
-        .update({ is_active: active } as any).eq('id', id);
+      const { error } = await supabase.from('petty_cash_routing_rules')
+        .update({ is_active: active }).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.pettyCashRoutingRules(companyId) }),

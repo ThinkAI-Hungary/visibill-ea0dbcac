@@ -150,7 +150,7 @@ export default function AnnualReportPage() {
           fiscal_year: selectedYear,
           created_by: session?.user?.id,
           representative_name: selectedCompany?.name || '',
-        } as any)
+        })
         .select()
         .single();
       if (error) throw error;
@@ -871,7 +871,7 @@ export default function AnnualReportPage() {
                             className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground gap-1"
                             onClick={() => {
                               const sections = ((report.notes_sections as any[]) || []).filter((s: any) => s.section_key !== tmpl.section_key);
-                              updateReport.mutate({ notes_sections: sections } as any);
+                              updateReport.mutate({ notes_sections: sections });
                               // Clear local draft too
                               setDraftFields(prev => {
                                 const next = { ...prev };
@@ -964,7 +964,7 @@ export default function AnnualReportPage() {
                             const idx = sections.findIndex((s: any) => s.section_key === tmpl.section_key);
                             const entry = { section_key: tmpl.section_key, text: newText };
                             if (idx >= 0) sections[idx] = entry; else sections.push(entry);
-                            updateReport.mutate({ notes_sections: sections } as any);
+                            updateReport.mutate({ notes_sections: sections });
                           }, 1200);
                         }}
                         placeholder={tmpl.section_title}
@@ -1020,7 +1020,7 @@ export default function AnnualReportPage() {
                       className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
                       onClick={() => {
                         const sections = ((report.notes_sections as any[]) || []).filter((x: any) => x.section_key !== s.section_key);
-                        updateReport.mutate({ notes_sections: sections } as any);
+                        updateReport.mutate({ notes_sections: sections });
                       }}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1039,7 +1039,7 @@ export default function AnnualReportPage() {
                           const sections = [...((report.notes_sections as any[]) || [])];
                           const idx = sections.findIndex((x: any) => x.section_key === s.section_key);
                           if (idx >= 0) sections[idx] = { ...s, text: newText };
-                          updateReport.mutate({ notes_sections: sections } as any);
+                          updateReport.mutate({ notes_sections: sections });
                           setDraftFields(prev => {
                             const next = { ...prev };
                             delete next[`note_${s.section_key}`];
@@ -1072,7 +1072,7 @@ export default function AnnualReportPage() {
                       text: '',
                       is_custom: true
                     }];
-                    updateReport.mutate({ notes_sections: sections } as any);
+                    updateReport.mutate({ notes_sections: sections });
                     setNewSectionTitle('');
                     toast({ title: 'Szekció hozzáadva', description: newSectionTitle.trim() });
                   }}
@@ -1454,7 +1454,7 @@ export default function AnnualReportPage() {
                         className="w-full gap-2"
                         disabled={!report.frozen_at || !report.validated_at}
                         onClick={() => {
-                          updateReport.mutate({ status: 'finalized' } as any);
+                          updateReport.mutate({ status: 'finalized' });
                           toast({ title: '🎉 Beszámoló véglegesítve!', description: 'A beszámoló sikeresen zárolva. Gratulálunk!' });
                         }}
                       >
@@ -1465,7 +1465,7 @@ export default function AnnualReportPage() {
                         variant="outline"
                         className="w-full gap-2"
                         onClick={() => {
-                          updateReport.mutate({ status: 'draft' } as any);
+                          updateReport.mutate({ status: 'draft' });
                           toast({ title: 'Zárolás feloldva', description: 'A beszámoló újra szerkeszthető.' });
                         }}
                       >

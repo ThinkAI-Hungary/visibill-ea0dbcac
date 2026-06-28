@@ -163,11 +163,11 @@ export default function InvoiceDetailModal({ invoice, onClose, onSendToApprovalQ
                             try {
                               await supabase.storage.from('accounty_uploads').remove([filePath]);
                               const newFiles = invoice.uploadedFiles.filter((_, i) => i !== idx);
-                              await supabase.from('accounty_missing_items' as any)
+                              await supabase.from('accounty_missing_items')
                                 .update({
                                   uploaded_files: newFiles,
                                   ...(newFiles.length === 0 ? { status: 'open', resolved_at: null, resolved_by: null } : {}),
-                                } as any)
+                                })
                                 .eq('id', invoice.id);
                               queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
                               toast({ title: 'Fájl törölve' });

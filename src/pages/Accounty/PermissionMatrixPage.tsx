@@ -129,7 +129,7 @@ function usePermissionMatrix() {
 
       // 6. Get module permissions for all users in this firm
       const { data: modulePermsRaw } = await supabase
-        .from('accounty_module_permissions' as any)
+        .from('accounty_module_permissions')
         .select('id, user_id, module_name, can_read, can_write')
         .eq('accounting_firm_id', firmId);
 
@@ -254,7 +254,7 @@ function useToggleModulePermission() {
       if (params.existingId) {
         // Update existing
         const { error } = await supabase
-          .from('accounty_module_permissions' as any)
+          .from('accounty_module_permissions')
           .update({
             can_read: params.canRead,
             can_write: params.canWrite,
@@ -265,7 +265,7 @@ function useToggleModulePermission() {
       } else {
         // Insert new
         const { error } = await supabase
-          .from('accounty_module_permissions' as any)
+          .from('accounty_module_permissions')
           .insert({
             accounting_firm_id: params.firmId,
             user_id: params.userId,
