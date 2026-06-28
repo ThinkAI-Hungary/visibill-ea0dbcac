@@ -1,7 +1,7 @@
 import { Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { NumberInput, fmt } from './taoWizardData';
-import type { TaoStepProps } from './taoWizardTypes';
+import { NumberInput, fmt } from '../taoWizardData';
+import type { TaoStepProps } from '../taoWizardTypes';
 
 // ── Step 1: Eredménykimutatás alapadatok ──
 export function RenderStep1({ data, upd }: TaoStepProps) {
