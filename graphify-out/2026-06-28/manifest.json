@@ -55,8 +55,8 @@
     "semantic_hash": "776b0ac81256e0da4d6748f1fe84e130"
   },
   "src/App.tsx": {
-    "mtime": 1782600671.5913537,
-    "ast_hash": "b6085a6d2b67cb16e30d630ac8c12081",
+    "mtime": 1782614266.0646086,
+    "ast_hash": "d7e70c345c8aa78c775c1fdb547759cd",
     "semantic_hash": ""
   },
   "src/__tests__/accounty-features.test.ts": {
@@ -3655,8 +3655,8 @@
     "semantic_hash": ""
   },
   "src/lib/errorReporter.ts": {
-    "mtime": 1782600687.9896564,
-    "ast_hash": "c13536ad437b2c0089bef67f4d91f37b",
+    "mtime": 1782614262.47649,
+    "ast_hash": "3e5f8c7ca9c41b3f0c6432fa85d2ffb8",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/error-logger.ts": {

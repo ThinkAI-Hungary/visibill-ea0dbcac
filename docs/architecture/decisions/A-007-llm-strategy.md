@@ -93,15 +93,31 @@ retry(
 # llm_tracker.py
 tracker = LLMCostTracker(file_name="szamla.pdf", pipeline="invoice")
 tracker.add(response)          # Minden litellm hívás után
+tracker.drain_vision_costs()   # Vision OCR költségek begyűjtése (2026-06-28)
 await tracker.save(upload_id=..., company_id=...)  # Pipeline végén → DB
 ```
 
 **Rögzített adatok:**
-- Input/output token count
-- Modell neve
-- Becsült költség (USD)
+- Input/output token count (text LLM + Vision OCR összesítve)
+- Modell neve (per-model tracking: DeepSeek + gpt-4o külön)
+- Becsült költség (USD) — per-model árazással kalkulálva
 - Feldolgozási idő (ms)
 - Pipeline típus (invoice/transaction/gl/payroll)
+
+**Vision OCR Cost Tracking** (hozzáadva: 2026-06-28):
+
+A gpt-4o Vision hívások (`_send_to_vision_api`, `_vision_ocr_page`) module-level
+`VisionCostAccumulator`-ban gyűlnek, amit a worker pipeline `drain_vision_costs()`-szal
+olvas ki a `tracker.save()` előtt. Így a Vision és text LLM költségek egyetlen
+`llm_koltsegek` rekordban jelennek meg, per-model bontásban.
+
+```
+ocr_markitdown.py / pdf_splitter.py    →    VisionCostAccumulator (module-level)
+                                                    ↓
+worker.py: tracker.drain_vision_costs()  →  LLMCostTracker._model_usage
+                                                    ↓
+                                            tracker.save() → llm_koltsegek DB
+```
 
 **Modell árazás (hardcoded a kódban, per 1M token, USD):**
 
@@ -109,7 +125,8 @@ await tracker.save(upload_id=..., company_id=...)  # Pipeline végén → DB
 |--------|-------|--------|
 | DeepSeek V4 Flash | $0.14 | $0.28 |
 | Claude Sonnet 4 | $3.00 | $15.00 |
-| GPT-4o | $2.50 | $10.00 |
+| GPT-4o (Vision OCR) | $2.50 | $10.00 |
+| GPT-4o-mini | $0.15 | $0.60 |
 
 ---
 
@@ -152,7 +169,8 @@ OCR_VISION_MODEL=gpt-4o                       # Vision OCR modell (külön)
 - LiteLLM dependency — ha a library változik, frissíteni kell
 - Prompt-ok implicitven Claude-ra optimalizáltak lehetnek (JSON mode, tool calling eltérések)
 - A modell árazás hardcoded → manuálisan frissítendő árváltozáskor
-- A Vision OCR nem LiteLLM-en megy (közvetlenül OpenAI API) → nem provider-agnosztikus
+- A Vision OCR részben LiteLLM-en (ocr_markitdown.py), részben közvetlen OpenAI SDK-n (pdf_splitter.py) megy — nem teljesen provider-agnosztikus
+- A Vision cost tracking module-level accumulator-ra épül — nem a legelegánsabb, de minimális coupling
 
 ## Kapcsolódó ADR-ek (Worker)
 - [Worker ADR-002: LiteLLM mint AI wrapper](../../../worker/docs/DECISIONS.md#adr-002-litellm-mint-ai-wrapper)
