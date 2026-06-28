@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-06-28  
-> **Összesen:** 21 döntés | ✅ Decided: 20 | ⛔ Superseded: 1
+> **Összesen:** 22 döntés | ✅ Decided: 21 | ⛔ Superseded: 1
 
 ---
 
@@ -31,6 +31,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 |---|--------|---------|------|
 | A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
 | A-005 | Edge Functions (Deno) — 50 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
+| A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
 
 ## 🤖 AI & Feldolgozás
 
