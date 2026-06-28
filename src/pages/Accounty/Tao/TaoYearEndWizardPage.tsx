@@ -1,25 +1,21 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowRight, CheckCircle, Calculator, FileText, TrendingUp,
-  TrendingDown, Scale, Globe, Shield, Landmark, Heart, Send, Save,
-  ChevronRight, AlertTriangle, Info, Loader2, Download, FileCheck
+  ArrowLeft, ArrowRight, Calculator, Landmark, Save, Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
 import { useAccountyClients } from '@/hooks/accounty';
 import { useTaoYearly, useSaveTaoYearly } from '@/hooks/useAdminData';
 import { toast } from '@/hooks/use-toast';
 import {
   STEPS, DECREASING_ITEMS, INCREASING_ITEMS, CREDIT_ITEMS, DONATION_ITEMS,
-  fmt, NumberInput,
+  fmt,
 } from './taoWizardData';
-import type { TaoFormData, TaoComputed } from './taoWizardTypes';
+import type { TaoFormData } from './taoWizardTypes';
 import { RenderStep1, RenderStep2 } from './wizard-steps/TaoBasicInfoSteps';
 import { RenderItemsStep, RenderStep5, RenderStep6 } from './wizard-steps/TaoAdjustmentSteps';
 import { RenderStep7, RenderStep10, RenderStep11 } from './wizard-steps/TaoResultSteps';
-
+import { TaoWizardStepper, TaoWizardSidebar } from './TaoWizardShell';
 
 
 // =============================================================================
@@ -131,31 +127,24 @@ export default function TaoYearEndWizardPage() {
     const totalCosts = data.material_costs + data.personnel_costs + data.depreciation + data.other_costs;
     const aee = totalRevenue - totalCosts + data.financial_result;
 
-
     const decreasingTotal = Object.values(data.decreasing).reduce((s, v) => s + (v || 0), 0);
     const increasingTotal = Object.values(data.increasing).reduce((s, v) => s + (v || 0), 0);
-
 
     const ebitda = aee + data.depreciation;
     const interestLimit = Math.round(ebitda * 0.3);
     const interestAdjustment = Math.max(0, data.interest_expense - interestLimit);
 
-
     const modifiedTaxBase = aee + increasingTotal - decreasingTotal + interestAdjustment;
     const taxBase = Math.max(0, modifiedTaxBase);
 
-
     const calculatedTax = Math.round(taxBase * 0.09);
-
 
     const creditsTotal = Object.values(data.credits).reduce((s, v) => s + (v || 0), 0);
     const donationsTotal = Object.values(data.donations).reduce((s, v) => s + (v || 0), 0);
     const maxDonation = Math.round(calculatedTax * 0.8);
     const effectiveDonations = Math.min(donationsTotal, maxDonation);
 
-
     const payableTax = Math.max(0, calculatedTax - creditsTotal - effectiveDonations - data.advance_payments);
-
 
     return {
       totalRevenue, totalCosts, aee,
@@ -283,43 +272,7 @@ export default function TaoYearEndWizardPage() {
 
 
       {/* Stepper */}
-      <div className="flex items-center gap-0 overflow-x-auto pb-2">
-        {STEPS.map((s, i) => {
-          const isDone = s.num < step;
-          const isCurrent = s.num === step;
-          return (
-            <React.Fragment key={s.num}>
-              <button
-                onClick={() => setStep(s.num)}
-                className="flex flex-col items-center min-w-[68px] group"
-              >
-                <div className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all',
-                  isDone ? 'bg-emerald-500 text-white' :
-                  isCurrent ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-400' :
-                  'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700'
-                )}>
-                  {isDone ? <CheckCircle className="w-4 h-4" /> : s.num}
-                </div>
-                <span className={cn(
-                  'text-[10px] mt-1.5 text-center whitespace-nowrap',
-                  isDone ? 'text-emerald-600 font-medium' :
-                  isCurrent ? 'text-emerald-700 dark:text-emerald-300 font-bold' :
-                  'text-slate-400'
-                )}>
-                  {s.label}
-                </span>
-              </button>
-              {i < STEPS.length - 1 && (
-                <div className={cn(
-                  'flex-1 h-0.5 min-w-3 mt-[-12px]',
-                  s.num < step ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-700'
-                )} />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
+      <TaoWizardStepper currentStep={step} onStepChange={setStep} />
 
 
       {/* Main content area */}
@@ -381,47 +334,12 @@ export default function TaoYearEndWizardPage() {
 
 
         {/* Sidebar — summary */}
-        <div className="lg:col-span-1">
-          <div className="bg-card rounded-xl border border-border p-5 shadow-soft sticky top-6 space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-emerald-600" /> Összesítő
-            </h3>
-            {[
-              { label: 'AEE', value: computed.aee, step: 2 },
-              { label: '7.§ csökkentők', value: -computed.decreasingTotal, step: 3, color: 'text-emerald-500' },
-              { label: '8.§ növelők', value: computed.increasingTotal, step: 4, color: 'text-rose-500' },
-              { label: 'Kamatkorlát korr.', value: computed.interestAdjustment, step: 5, color: 'text-amber-500' },
-              { label: 'Adóalap', value: computed.taxBase, step: 7, bold: true },
-              { label: 'Számított adó (9%)', value: computed.calculatedTax, step: 10 },
-              { label: 'Kedvezmények', value: -computed.creditsTotal, step: 8, color: 'text-blue-500' },
-              { label: 'Felajánlás', value: -computed.effectiveDonations, step: 9, color: 'text-purple-500' },
-              { label: 'Előlegek', value: -data.advance_payments, step: 10, color: 'text-slate-500' },
-            ].map((row, i) => (
-              <button
-                key={i}
-                onClick={() => setStep(row.step)}
-                className={cn(
-                  'flex items-center justify-between w-full py-1.5 px-2 rounded-md text-left transition-colors',
-                  row.step === step ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50',
-                  row.bold && 'border-t border-border pt-3 mt-1'
-                )}
-              >
-                <span className={cn('text-xs', row.bold ? 'font-bold text-slate-900 dark:text-slate-100' : 'text-slate-500')}>
-                  {row.label}
-                </span>
-                <span className={cn('text-xs font-mono font-bold', row.color || 'text-slate-700 dark:text-slate-300')}>
-                  {fmt(row.value)}
-                </span>
-              </button>
-            ))}
-            <div className="border-t-2 border-emerald-400 pt-3 mt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Fizetendő TAO</span>
-                <span className="text-lg font-black text-emerald-600">{fmt(computed.payableTax)} Ft</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TaoWizardSidebar
+          computed={computed}
+          advancePayments={data.advance_payments}
+          currentStep={step}
+          onStepChange={setStep}
+        />
       </div>
     </div>
   );

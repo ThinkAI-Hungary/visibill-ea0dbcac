@@ -21,7 +21,9 @@ import { useToast } from '@/hooks/use-toast';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { InfoSection, InfoRow, EditField, MiniStat } from './employee-details/EmployeeHelpers';
 import { EmployeeOverviewTab, EmployeeEmploymentsTab } from './employee-details/EmployeeTabSections';
-import { DECLARATION_TYPES, NewDeclarationDialog, EditDeclarationDialog } from './employee-details/DeclarationDialogs';
+import { EmployeeDeclarationsTab } from './employee-details/EmployeeDeclarationsTab';
+import { EmployeeLeaveTab } from './employee-details/EmployeeLeaveTab';
+import { EmployeeGarnishmentsTab } from './employee-details/EmployeeGarnishmentsTab';
 import SalaryHistoryTab from './employee-details/SalaryHistoryTab';
 
 // ── Tab definíciók ──
@@ -44,7 +46,6 @@ export default function EmployeeDetailsPage() {
   const [editingDeclaration, setEditingDeclaration] = useState<PayrollDeclaration | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<PayrollEmployee>>({});
-  const revokeDeclaration = useRevokeDeclaration();
   const updateEmployee = useUpdateEmployee();
 
   const { data: employee, isLoading: empLoading, isError: empError, refetch: refetchEmp } = usePayrollEmployee(empId || '');
@@ -206,7 +207,6 @@ export default function EmployeeDetailsPage() {
 
       {/* Tab content */}
       <div key={activeTab} className="bg-card rounded-xl border border-border shadow-soft tab-content-animate">
-        {/* Overview */}
         {activeTab === 'overview' && (
           <EmployeeOverviewTab
             employee={employee}
@@ -217,7 +217,6 @@ export default function EmployeeDetailsPage() {
           />
         )}
 
-        {/* Employments */}
         {activeTab === 'employments' && (
           <EmployeeEmploymentsTab
             employments={employments}
@@ -226,172 +225,29 @@ export default function EmployeeDetailsPage() {
           />
         )}
 
-        {/* Declarations */}
         {activeTab === 'declarations' && (
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Adóelőleg-nyilatkozatok</h3>
-              <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={() => setShowNewDeclaration(true)}>
-                <Plus className="w-3 h-3" /> Új nyilatkozat
-              </Button>
-            </div>
-
-            {/* New Declaration Dialog */}
-            {showNewDeclaration && (
-              <NewDeclarationDialog
-                employeeId={empId || ''}
-                onClose={() => setShowNewDeclaration(false)}
-              />
-            )}
-
-            {/* Edit Declaration Dialog */}
-            {editingDeclaration && (
-              <EditDeclarationDialog
-                declaration={editingDeclaration}
-                employeeId={empId || ''}
-                onClose={() => setEditingDeclaration(null)}
-              />
-            )}
-
-            {declarations.length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-500">Nincs rögzített nyilatkozat</div>
-            ) : (
-              <div className="space-y-2">
-                {declarations.map((d) => (
-                  <div key={d.id} className={cn(
-                    'p-4 rounded-lg border flex items-center justify-between transition-colors',
-                    d.status === 'revoked'
-                      ? 'border-border/50 opacity-60'
-                      : 'border-border hover:border-primary/30'
-                  )}>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                          {DECLARATION_TYPES.find(t => t.value === d.declaration_type)?.label || d.declaration_type.replace(/_/g, ' ')}
-                        </p>
-                        <span className={cn(
-                          'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
-                          d.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
-                          d.status === 'revoked' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' :
-                          'bg-slate-100 text-slate-600 dark:bg-slate-800'
-                        )}>
-                          {d.status === 'active' ? 'Aktív' : d.status === 'revoked' ? 'Visszavont' : d.status === 'expired' ? 'Lejárt' : d.status}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Érvényes: {d.valid_from}{d.valid_until ? ` – ${d.valid_until}` : ' –'}
-                        {d.declaration_type === 'family' && (d.parameters as any)?.children_count && (
-                          <span className="ml-2">· {(d.parameters as any).children_count} eltartott</span>
-                        )}
-                      </p>
-                    </div>
-                    {d.status === 'active' && (
-                      <div className="flex items-center gap-1 ml-3">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-slate-400 hover:text-primary"
-                          title="Szerkesztés"
-                          onClick={() => setEditingDeclaration(d)}
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-slate-400 hover:text-red-500"
-                          title="Visszavonás"
-                          disabled={revokeDeclaration.isPending}
-                          onClick={() => {
-                            if (window.confirm('Biztosan visszavonod ezt a nyilatkozatot?')) {
-                              revokeDeclaration.mutate({ id: d.id, employee_id: empId || '' });
-                            }
-                          }}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <EmployeeDeclarationsTab
+            declarations={declarations}
+            empId={empId || ''}
+            showNewDeclaration={showNewDeclaration}
+            setShowNewDeclaration={setShowNewDeclaration}
+            editingDeclaration={editingDeclaration}
+            setEditingDeclaration={setEditingDeclaration}
+          />
         )}
 
-        {/* Leave */}
         {activeTab === 'leave' && (
-          <div className="p-6">
-            {leaveBalance && (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-                <MiniStat label="Alap-szabadság" value={`${leaveBalance.baseLeave} nap`} />
-                <MiniStat label="Életkori pótlék" value={`+${leaveBalance.ageSupplement} nap`} />
-                <MiniStat label="Gyermek pótlék" value={`+${leaveBalance.childSupplement} nap`} />
-                <MiniStat label="Felhasznált" value={`${leaveBalance.used} nap`} />
-                <MiniStat label="Fennmaradó" value={`${leaveBalance.remaining} nap`} color={leaveBalance.remaining < 5 ? 'red' : 'green'} />
-              </div>
-            )}
-
-            {leaves.length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-500">Nincs rögzített távollét</div>
-            ) : (
-              <div className="space-y-2">
-                {leaves.map((l) => (
-                  <div key={l.id} className="p-3 rounded-lg border border-border flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 capitalize">
-                        {l.leave_type.replace(/_/g, ' ')}
-                      </p>
-                      <p className="text-xs text-slate-500">{l.start_date} – {l.end_date} · {l.days} nap</p>
-                    </div>
-                    <span className={cn(
-                      'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
-                      l.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                    )}>
-                      {l.status === 'approved' ? 'Jóváhagyva' : l.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <EmployeeLeaveTab leaves={leaves} leaveBalance={leaveBalance} />
         )}
 
-        {/* Garnishments */}
         {activeTab === 'garnishments' && (
-          <div className="p-6">
-            {garnishments.length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-500">Nincs aktív letiltás</div>
-            ) : (
-              <div className="space-y-2">
-                {garnishments.map((g) => (
-                  <div key={g.id} className="p-4 rounded-lg border border-border">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 capitalize">
-                        {g.garnishment_type.replace(/_/g, ' ')}
-                      </p>
-                      <span className="text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/40 px-2 py-0.5 rounded-full uppercase">
-                        Max {g.max_deduction_pct}%
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs text-slate-500">
-                      <span>Hitelező: {g.creditor_name || '–'}</span>
-                      <span>Fennmaradó: {g.remaining_amount ? formatAmount(g.remaining_amount) : '–'}</span>
-                      <span>Havi: {g.monthly_deduction ? formatAmount(g.monthly_deduction) : '–'}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <EmployeeGarnishmentsTab garnishments={garnishments} />
         )}
 
-        {/* Salary history */}
         {activeTab === 'salary' && (
           <SalaryHistoryTab employmentId={primaryEmployment?.id || ''} />
         )}
 
-        {/* Documents */}
         {activeTab === 'documents' && (
           <div className="p-6 py-16 text-center text-sm text-slate-500">
             <FileText className="w-10 h-10 mx-auto mb-3 text-slate-300" />

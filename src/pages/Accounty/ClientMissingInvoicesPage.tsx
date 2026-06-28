@@ -1,17 +1,6 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, History, Plus, Search, Mail, MessageSquare,
-  CheckCircle, Send, Eye, XCircle, MoreVertical, Trash2, FileText
-} from 'lucide-react';
-import {
-  Dialog, DialogContent, DialogDescription, DialogHeader,
-  DialogTitle, DialogTrigger, DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, History, Plus } from 'lucide-react';
 import { useAccountyMissingItems, useAccountyMissingCounts, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem, useAccountyCommunicationPrefs, useGeneratePortalToken } from '@/hooks/accounty';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,12 +13,14 @@ import {
   type OutgoingMessage,
   type MissingItemForEmail,
 } from './generateRequestEmail';
-import { getPriorityBadge, getStatusBadge } from './missing-invoices/badges';
 import HistoryView from './missing-invoices/HistoryView';
 import InvoiceDetailModal, { type InvoiceItem } from './missing-invoices/InvoiceDetailModal';
 import { MissingInvoicesTimeline } from './missing-invoices/MissingInvoicesTimeline';
 import { MissingInvoicesBulkBar } from './missing-invoices/MissingInvoicesBulkBar';
 import { AddMissingInvoiceModal } from './missing-invoices/AddMissingInvoiceModal';
+import { MissingInvoicesKpiCards } from './missing-invoices/MissingInvoicesKpiCards';
+import { MissingInvoicesFilterBar } from './missing-invoices/MissingInvoicesFilterBar';
+import { MissingInvoicesTable } from './missing-invoices/MissingInvoicesTable';
 
 
 // InvoiceItem type is imported from ./missing-invoices/InvoiceDetailModal
@@ -99,7 +90,7 @@ export default function ClientMissingInvoicesPage() {
   const generateTokenMutation = useGeneratePortalToken();
 
 
-  // â”€â”€ Handler: send request to approval queue â”€â”€
+  // ── Handler: send request to approval queue ──
   const handleSendToApprovalQueue = async (items: InvoiceItem[]) => {
     if (!companyId || items.length === 0) return;
 
@@ -205,7 +196,6 @@ export default function ClientMissingInvoicesPage() {
 
 
    const clientName = companyData?.name || 'Betöltés...';
-  const tableRef = useRef<HTMLDivElement>(null);
 
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -319,9 +309,6 @@ export default function ClientMissingInvoicesPage() {
   const [historyTab, setHistoryTab] = useState<'timeline' | 'table'>('timeline');
 
 
-  // Badge helpers imported from ./missing-invoices/badges
-
-
   const filteredInvoices = invoices.filter(invoice => {
     const matchesSearch = 
       invoice.vendor.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -353,6 +340,13 @@ export default function ClientMissingInvoicesPage() {
 
 
   const isAllSelected = filteredInvoices.length > 0 && selectedIds.length === filteredInvoices.length;
+
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setSelectedIds([]);
+    setTimeout(() => document.getElementById('accounty-main-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }), 50);
+  };
 
 
   if (showHistoryView) {
@@ -401,210 +395,46 @@ export default function ClientMissingInvoicesPage() {
       </div>
 
 
-      {/* KPI Cards – server-side counts, no need to load all rows */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Összes hiányzó</p>
-          <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{missingCounts?.total?.toLocaleString('hu-HU') ?? '–'}</h3>
-        </div>
-        
-        <div className="bg-red-50/50 dark:bg-red-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-900/50 shadow-soft flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
-          <p className="text-sm font-bold text-red-600 mb-2">Sürgős</p>
-          <h3 className="text-3xl font-black text-red-600">{missingCounts?.urgent?.toLocaleString('hu-HU') ?? '0'}</h3>
-        </div>
-        
-        <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">NAV-ból</p>
-          <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{missingCounts?.nav?.toLocaleString('hu-HU') ?? '–'}</h3>
-        </div>
-        
-        <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Becsült összeg</p>
-          <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">
-            {missingCounts?.totalAmount != null ? new Intl.NumberFormat('hu-HU').format(missingCounts.totalAmount) + ' Ft' : '–'}
-          </h3>
-        </div>
-      </div>
+      {/* KPI Cards */}
+      <MissingInvoicesKpiCards missingCounts={missingCounts} />
 
 
       {/* Filter Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="relative w-full md:w-[400px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Keresés szállító, leírás..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-soft"
-          />
-        </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <select 
-            value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
-            className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer min-w-[140px]"
-          >
-            <option value="Minden forrás">Minden forrás</option>
-            <option value="NAV">NAV</option>
-            <option value="Bank">Bank</option>
-            <option value="Bér">Bér</option>
-            <option value="Kézi">Kézi</option>
-          </select>
-          <select 
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer min-w-[120px]"
-          >
-            <option value="Minden">Minden</option>
-            <option value="Sürgős">Sürgős</option>
-            <option value="Bekérésre vár">Bekérésre vár</option>
-          </select>
-        </div>
-      </div>
+      <MissingInvoicesFilterBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        sourceFilter={sourceFilter}
+        onSourceFilterChange={setSourceFilter}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+      />
 
 
       {/* Table */}
-      <div ref={tableRef} className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border dark:bg-slate-900/50">
-                <th className="py-4 px-4 w-12">
-                  <input 
-                    type="checkbox" 
-                    checked={isAllSelected}
-                    onChange={handleSelectAll}
-                    className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" 
-                  />
-                </th>
-                <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Szállító</th>
-                <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Időszak</th>
-                <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Becsült összeg</th>
-                <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Forrás</th>
-                <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Prioritás</th>
-                <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider min-w-[130px]">Státusz</th>
-                <th className="py-4 px-4 w-12 text-center"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filteredInvoices.length > 0 ? (
-                filteredInvoices.map((invoice) => (
-                  <tr key={invoice.id} className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group ${selectedIds.includes(invoice.id) ? 'bg-slate-50 dark:bg-slate-800/30' : ''}`}>
-                    <td className="py-4 px-4">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedIds.includes(invoice.id)}
-                        onChange={() => handleSelectItem(invoice.id)}
-                        className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" 
-                      />
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{invoice.vendor}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{invoice.subtext}</div>
-                    </td>
-                    <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">{invoice.period}</td>
-                    <td className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{invoice.amount}</td>
-                    <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">{invoice.source}</td>
-                    <td className="py-4 px-4">{getPriorityBadge(invoice.priority)}</td>
-                    <td className="py-4 px-4">{getStatusBadge(invoice.status, invoice.statusVariant)}</td>
-                    <td className="py-4 px-4 text-center" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all outline-none">
-                            <MoreVertical className="w-5 h-5" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 bg-card border-border">
-                          <DropdownMenuItem 
-                            className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
-                            onClick={() => setSelectedInvoiceForDetails(invoice)}
-                          >
-                            <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                            <span className="font-medium text-sm">Részletek</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
-                          {invoice.statusVariant === 'success' ? (
-                            <DropdownMenuItem 
-                              className="gap-2.5 cursor-pointer text-red-500 dark:text-red-400 py-2"
-                              onClick={() => handleUnresolveInvoice(invoice.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span className="font-medium text-sm">Feltöltött file eltávolítása</span>
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem 
-                              className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
-                              onClick={() => handleResolveInvoice(invoice.id)}
-                            >
-                              <CheckCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                              <span className="font-medium text-sm">Megérkezettnek jelöl</span>
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem 
-                            className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
-                            onClick={() => handleDeleteInvoice(invoice.id)}
-                          >
-                            <XCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                            <span className="font-medium text-sm">Téves találatnak jelöl</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="gap-2.5 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 py-2"
-                            onClick={() => handleDeleteInvoice(invoice.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            <span className="font-medium text-sm">Törlés</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-500 dark:text-slate-400">
-                    Nincs a keresésnek megfelelő találat.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      <MissingInvoicesTable
+        filteredInvoices={filteredInvoices}
+        selectedIds={selectedIds}
+        isAllSelected={isAllSelected}
+        onSelectAll={handleSelectAll}
+        onSelectItem={handleSelectItem}
+        onViewDetails={setSelectedInvoiceForDetails}
+        onResolve={handleResolveInvoice}
+        onUnresolve={handleUnresolveInvoice}
+        onDelete={handleDeleteInvoice}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        pageSize={PAGE_SIZE}
+        onPageChange={handlePageChange}
+      />
 
 
-        {/* Pagination controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-border">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {currentPage * PAGE_SIZE + 1}–{Math.min((currentPage + 1) * PAGE_SIZE, totalCount)} / {totalCount.toLocaleString('hu-HU')} tétel
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => { setCurrentPage(p => Math.max(0, p - 1)); setSelectedIds([]); setTimeout(() => document.getElementById('accounty-main-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
-                disabled={currentPage === 0}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-card hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                â† Előző
-              </button>
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 px-2">
-                {currentPage + 1} / {totalPages}
-              </span>
-              <button
-                onClick={() => { setCurrentPage(p => Math.min(totalPages - 1, p + 1)); setSelectedIds([]); setTimeout(() => document.getElementById('accounty-main-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
-                disabled={currentPage >= totalPages - 1}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-card hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Következő â†’
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      <MissingInvoicesTimeline />
 
+      {/* Floating Action Bar */}
+      <MissingInvoicesBulkBar selectedIds={selectedIds} invoices={invoices} onSendToApprovalQueue={handleSendToApprovalQueue} onBulkDelete={handleBulkDelete} onClearSelection={() => setSelectedIds([])} />
 
-      <MissingInvoicesTimeline />\n\n      {/* Floating Action Bar */}      {/* Floating Action Bar */}
-      <MissingInvoicesBulkBar selectedIds={selectedIds} invoices={invoices} onSendToApprovalQueue={handleSendToApprovalQueue} onBulkDelete={handleBulkDelete} onClearSelection={() => setSelectedIds([])} />\n\n      {/* Invoice Details Modal */}      {/* Invoice Details Modal */}
+      {/* Invoice Details Modal */}
       <InvoiceDetailModal
         invoice={selectedInvoiceForDetails}
         onClose={() => setSelectedInvoiceForDetails(null)}
