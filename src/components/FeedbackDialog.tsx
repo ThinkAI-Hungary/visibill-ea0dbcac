@@ -37,6 +37,7 @@ import {
   X,
   Paperclip,
   MonitorSmartphone,
+  HelpCircle,
 } from "lucide-react";
 
 const MAX_ATTACHMENTS = 5;
@@ -56,6 +57,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   const [companyId, setCompanyId] = useState<string>(selectedCompany?.id || "");
   const [service, setService] = useState<string>("");
   const [type, setType] = useState<string>("");
+  const [priority, setPriority] = useState<string>("medium");
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -70,6 +72,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         setCompanyId(selectedCompany?.id || "");
         setService("");
         setType("");
+        setPriority("medium");
         setMessage("");
         setAttachments([]);
         setSubmitted(false);
@@ -173,6 +176,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         company_name: selectedCompanyObj?.name || null,
         type,
         service,
+        priority,
         message: message.trim(),
         user_email: user.email || null,
         user_name: user.user_metadata?.name || null,
@@ -308,6 +312,30 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                       Visszajelzés / Javaslat
                     </span>
                   </SelectItem>
+                  <SelectItem value="question">
+                    <span className="flex items-center gap-2">
+                      <HelpCircle className="h-4 w-4 text-sky-500" />
+                      Kérdés
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Priority selector */}
+            <div className="space-y-2">
+              <Label htmlFor="feedback-priority" className="text-sm font-medium">
+                Prioritás
+              </Label>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger id="feedback-priority">
+                  <SelectValue placeholder="Válasszon prioritást..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Alacsony</SelectItem>
+                  <SelectItem value="medium">Közepes</SelectItem>
+                  <SelectItem value="high">Magas</SelectItem>
+                  <SelectItem value="critical">Kritikus</SelectItem>
                 </SelectContent>
               </Select>
             </div>

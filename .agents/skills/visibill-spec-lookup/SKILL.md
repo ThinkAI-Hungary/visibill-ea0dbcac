@@ -52,6 +52,8 @@ Docs gyökér: d:\ThinkAI\Visibill\eaisybill-prod\docs\
 | RPC, function, SQL | A-016 | `docs/architecture/decisions/` |
 | fuvar, szállítmány, shipment, CMR | HRTSPED docs (lásd lent) | ↓ |
 | Selexped, REST API, pozíciószám | HRTSPED docs (lásd lent) | ↓ |
+| adatbázis, tábla, schema, oszlopok | database-schema.md, database/ | `docs/architecture/database-schema.md`, `docs/architecture/database/` |
+| díjbekérő, előleg, sztornó, proforma | 040-invoice-relations-matching.md | `docs/business/decisions/040-invoice-relations-matching.md` |
 
 ### HRTSPED projekt (fuvarozási integráció)
 ```

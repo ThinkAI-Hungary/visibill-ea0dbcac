@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -16,8 +16,14 @@ import {
   Bot, Coins, ArrowUpDown, ArrowUp, ArrowDown,
   Trophy, Zap, Calendar, X, Crown, Sun, Moon,
   AlertTriangle, Trash2, RefreshCw, RotateCcw, Receipt, Wallet, Landmark, BarChart3,
-  Eye, Download, ExternalLink, ShieldCheck, ToggleLeft, ToggleRight, Save, Check, Loader2, Pencil
+  Eye, Download, ExternalLink, ShieldCheck, ToggleLeft, ToggleRight, Save, Check, Loader2, Pencil,
+  ArrowLeftRight, BookOpen, Briefcase, Upload, AlertCircle, ClipboardList, CalendarClock, HardHat,
+  CreditCard, User,
+  Tags, FolderKanban, Package2, Truck, FileSpreadsheet, Scale, ScrollText, Gavel,
+  TicketCheck,
 } from 'lucide-react';
+import TicketsPage from './TicketsPage';
+import { Switch } from '@/components/ui/switch';
 
 // ─── Types ────────────────────────────────────────────
 interface OverviewData {
@@ -31,6 +37,7 @@ interface OverviewData {
     navInvoiceCount: number;
     transactionCount: number;
     payrollCount: number;
+    hasEaisyBooks: boolean;
   }>;
   users: Array<{ id: string; user_id: string; name: string; email: string; created_at: string; companies: Array<{ id: string; name: string; role: string }> }>;
   llmOverview: {
@@ -94,6 +101,26 @@ interface ErrorsData {
   topErrorCategory: { category: string; label: string; count: number } | null;
   totalRows: number;
   errors: ErrorRow[];
+}
+
+// ─── Superadmin module data types ────────────────────
+type SuperadminModuleKey =
+  // eaisybill
+  | 'invoices' | 'nav_invoices' | 'transactions' | 'gl_journal_entries'
+  | 'salary' | 'petty_cash_entries' | 'uploads' | 'app_error_logs'
+  | 'categories' | 'projects' | 'partners' | 'fixed_assets' | 'shipments' | 'annual_reports'
+  // eaisyBooks
+  | 'accounty_missing_items' | 'accounty_deadlines' | 'accounty_employees' | 'accounty_payroll_cycles'
+  | 'accounty_assignments' | 'accounty_tax_profiles' | 'accounty_filings' | 'accounty_tao_yearly'
+  | 'accounty_audit_log' | 'accounty_documents' | 'accounty_templates' | 'accounty_job_codes' | 'accounty_legal_updates';
+
+interface SuperadminModuleData {
+  module: string;
+  totalCount: number;
+  rows: Record<string, unknown>[];
+  page: number;
+  pageSize: number;
+  error?: string;
 }
 
 // ─── API helpers ──────────────────────────────────────
@@ -475,6 +502,8 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
   const [deleting, setDeleting] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargets, setDeleteTargets] = useState<Array<{ source: string; id: string }>>([]);
+  const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
   const queryClient = useQueryClient();
@@ -845,6 +874,18 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                   </Button>
                 </>
               )}
+              {totalRows > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1 text-[11px] px-2 border-destructive/30 text-destructive hover:bg-destructive/10 ml-auto"
+                  disabled={deleting || deletingAll}
+                  onClick={() => setDeleteAllModalOpen(true)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Összes törlés ({totalRows})
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -1116,6 +1157,53 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
         </div>
       )}
 
+      {/* Delete ALL confirmation modal */}
+      {deleteAllModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
+          <Card className="w-full max-w-sm mx-4 shadow-2xl border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                Összes hiba törlése
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                <span className="font-semibold text-foreground">{totalRows}</span> hiba kerül törlésre / elutasításra az összes forrásból. Ez a művelet nem vonható vissza!
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <Button variant="ghost" size="sm" onClick={() => setDeleteAllModalOpen(false)}>
+                  Mégse
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={deletingAll}
+                  onClick={async () => {
+                    setDeleteAllModalOpen(false);
+                    setDeletingAll(true);
+                    try {
+                      await postManagementData('delete-all-errors', {});
+                      setSelected(new Set());
+                      queryClient.invalidateQueries({ queryKey: ['management-errors'] });
+                      queryClient.invalidateQueries({ queryKey: ['management-overview'] });
+                    } catch (e) {
+                      reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Delete all errors failed:', error: e });
+                    } finally {
+                      setDeletingAll(false);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Összes törlés
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* File Preview Modal */}
       {previewFile && (() => {
         const ext = (previewFile.name.split('.').pop() || '').toLowerCase();
@@ -1240,6 +1328,605 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
   );
 }
 
+// ── DatePickerInput: custom toggle to avoid native indicator double-open bug ──
+function DatePickerInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isOpen = useRef(false);
+
+  const handleButtonMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault(); // Keep focus on input → picker stays open
+  };
+
+  const handleButtonClick = () => {
+    if (isOpen.current) {
+      inputRef.current?.blur(); // Close picker
+      isOpen.current = false;
+    } else {
+      (inputRef.current as HTMLInputElement & { showPicker?: () => void })?.showPicker?.();
+      isOpen.current = true;
+    }
+  };
+
+  return (
+    <div className="relative inline-flex items-center">
+      <input
+        ref={inputRef}
+        type="date"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onBlur={() => { isOpen.current = false; }}
+        className="h-7 text-xs w-28 bg-background border border-input rounded-md px-2 pr-6 text-foreground
+          [&::-webkit-calendar-picker-indicator]:hidden
+          focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        onMouseDown={handleButtonMouseDown}
+        onClick={handleButtonClick}
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Calendar className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── SuperadminPanel ─────────────────────────────────
+// ═══════════════════════════════════════════════════════
+const SUPERADMIN_MODULES: Array<{ key: SuperadminModuleKey; label: string; icon: React.ElementType; platform: 'eaisybill' | 'eaisybooks' }> = [
+  // ── eaisybill ──
+  { key: 'invoices',                 label: 'Számlák',            icon: FileText,       platform: 'eaisybill' },
+  { key: 'nav_invoices',             label: 'NAV számlák',        icon: Landmark,       platform: 'eaisybill' },
+  { key: 'transactions',             label: 'Tranzakciók',        icon: ArrowLeftRight, platform: 'eaisybill' },
+  { key: 'gl_journal_entries',       label: 'Főkönyv',            icon: BookOpen,       platform: 'eaisybill' },
+  { key: 'salary',                   label: 'Bér',                icon: Briefcase,      platform: 'eaisybill' },
+  { key: 'petty_cash_entries',       label: 'Házipénztár',        icon: Wallet,         platform: 'eaisybill' },
+  { key: 'categories',              label: 'Kategóriák',         icon: Tags,           platform: 'eaisybill' },
+  { key: 'projects',                label: 'Projektek',          icon: FolderKanban,   platform: 'eaisybill' },
+  { key: 'partners',                label: 'Partnertörzs',       icon: Users,          platform: 'eaisybill' },
+  { key: 'fixed_assets',            label: 'TENY',               icon: Package2,       platform: 'eaisybill' },
+  { key: 'shipments',               label: 'Fuvarok',            icon: Truck,          platform: 'eaisybill' },
+  { key: 'annual_reports',          label: 'Beszámoló',          icon: FileSpreadsheet, platform: 'eaisybill' },
+  { key: 'uploads',                  label: 'Feldolgozások',      icon: Upload,         platform: 'eaisybill' },
+  { key: 'app_error_logs',           label: 'App hibák',          icon: AlertCircle,    platform: 'eaisybill' },
+  // ── eaisyBooks ──
+  { key: 'accounty_assignments',     label: 'Portfólió',          icon: Briefcase,      platform: 'eaisybooks' },
+  { key: 'accounty_tax_profiles',    label: 'Adó profil',         icon: Scale,          platform: 'eaisybooks' },
+  { key: 'accounty_missing_items',   label: 'Hiányzó dok.',       icon: ClipboardList,  platform: 'eaisybooks' },
+  { key: 'accounty_deadlines',       label: 'Határidők',          icon: CalendarClock,  platform: 'eaisybooks' },
+  { key: 'accounty_employees',       label: 'Alkalmazottak',      icon: HardHat,        platform: 'eaisybooks' },
+  { key: 'accounty_payroll_cycles',  label: 'Bérszámfejtés',      icon: Coins,          platform: 'eaisybooks' },
+  { key: 'accounty_filings',        label: 'Bevallások',         icon: ScrollText,     platform: 'eaisybooks' },
+  { key: 'accounty_tao_yearly',     label: 'TAO',                icon: Landmark,       platform: 'eaisybooks' },
+  { key: 'accounty_audit_log',      label: 'Audit napló',        icon: ShieldCheck,    platform: 'eaisybooks' },
+  { key: 'accounty_documents',      label: 'Dokumentumok',       icon: FileText,       platform: 'eaisybooks' },
+  { key: 'accounty_templates',      label: 'Sablonok',           icon: FileSpreadsheet, platform: 'eaisybooks' },
+  { key: 'accounty_job_codes',      label: 'Jogviszonyok',       icon: BookOpen,       platform: 'eaisybooks' },
+  { key: 'accounty_legal_updates',  label: 'Jogszabályok',       icon: Gavel,          platform: 'eaisybooks' },
+];
+
+const MODULE_COLUMNS: Record<SuperadminModuleKey, string[]> = {
+  // eaisybill
+  invoices:                ['kibocsatas_datuma', 'bizonylatsorszam', 'elado_nev', 'adoalap_osszesen', 'brutto_vegosszeg', 'invoice_type', 'invoice_direction', 'statusz'],
+  nav_invoices:            ['invoice_issue_date', 'invoice_number', 'supplier_name', 'invoice_net_amount', 'invoice_gross_amount'],
+  transactions:            ['transaction_date', 'amount', 'currency', 'description', 'type', 'match_type'],
+  gl_journal_entries:      ['voucher_date', 'voucher_number', 'debit_account', 'credit_account', 'amount', 'partner_name'],
+  salary:                  ['dátum', 'név', 'összeg', 'statusz', 'tipus'],
+  petty_cash_entries:      ['entry_date', 'description', 'amount', 'currency', 'source_type'],
+  categories:              ['name', 'icon', 'color', 'created_at'],
+  projects:                ['name', 'project_code', 'project_type', 'client_name', 'status', 'budget', 'start_date', 'end_date'],
+  partners:                ['name', 'tax_number', 'partner_type', 'email', 'address'],
+  fixed_assets:            ['name', 'inventory_number', 'acquisition_value', 'purchase_date', 'status', 'depreciation_method'],
+  shipments:               ['position_number', 'pickup_date', 'delivery_date', 'carrier_name', 'calculated_amount_huf', 'match_status'],
+  annual_reports:          ['status', 'created_at', 'updated_at'],
+  uploads:                 ['created_at', 'file_name', 'upload_type', 'processing_status', 'error_message'],
+  app_error_logs:          ['created_at', 'component', 'error_type', 'message', 'severity'],
+  // eaisyBooks
+  accounty_assignments:    ['role', 'kanban_status', 'is_primary', 'is_main_accountant', 'assigned_at'],
+  accounty_tax_profiles:   ['vat_frequency', 'contribution_frequency', 'is_kata', 'is_kiva', 'tax_group', 'has_payroll'],
+  accounty_missing_items:  ['created_at', 'category', 'title', 'status', 'amount', 'item_date'],
+  accounty_deadlines:      ['due_date', 'deadline_type', 'title', 'status', 'notes'],
+  accounty_employees:      ['last_name', 'first_name', 'tax_id', 'birth_date', 'status'],
+  accounty_payroll_cycles: ['year', 'month', 'status', 'current_step', 'created_at'],
+  accounty_filings:        ['filing_type', 'period_year', 'period_month', 'status', 'channel', 'submitted_at'],
+  accounty_tao_yearly:     ['tax_year', 'status', 'revenue', 'tax_base', 'calculated_tax', 'payable_tax'],
+  accounty_audit_log:      ['created_at', 'user_name', 'action', 'entity_type', 'details'],
+  accounty_documents:      ['title', 'doc_type', 'status', 'period', 'created_at'],
+  accounty_templates:      ['name', 'category', 'is_active', 'version', 'updated_at'],
+  accounty_job_codes:      ['code', 'name', 'is_insured', 'valid_from', 'is_active'],
+  accounty_legal_updates:  ['title', 'source', 'published_at', 'implementation_status'],
+};
+
+const COL_LABELS: Record<string, string> = {
+  // invoices (Hungarian column names)
+  kibocsatas_datuma: 'Kelt', bizonylatsorszam: 'Bizonylat', elado_nev: 'Eladó',
+  adoalap_osszesen: 'Nettó', brutto_vegosszeg: 'Bruttó', invoice_type: 'Típus',
+  invoice_direction: 'Irány', statusz: 'Státusz', letrehozva: 'Létrehozva',
+  // nav_invoices
+  invoice_issue_date: 'Kiállítva', invoice_number: 'Számlasz.', supplier_name: 'Szállító',
+  invoice_net_amount: 'Nettó', invoice_gross_amount: 'Bruttó', invoice_vat_amount: 'ÁFA',
+  // transactions
+  transaction_date: 'Dátum', amount: 'Összeg', currency: 'Deviza',
+  description: 'Leírás', type: 'Típus', match_type: 'Párosítás',
+  // gl_journal_entries
+  voucher_date: 'Dátum', voucher_number: 'Bizonylat',
+  debit_account: 'Tartozik szla', credit_account: 'Követel szla', partner_name: 'Partner',
+  // salary (Hungarian)
+  'dátum': 'Időszak', 'név': 'Alkalmazott', 'összeg': 'Összeg', tipus: 'Típus',
+  // petty_cash_entries
+  entry_date: 'Dátum', source_type: 'Forrás típusa',
+  // categories / projects / partners
+  name: 'Név', icon: 'Ikon', color: 'Szín',
+  project_code: 'Kód', project_type: 'Típus', client_name: 'Ügyfél', budget: 'Költségkeret',
+  start_date: 'Kezdés', end_date: 'Vég',
+  tax_number: 'Adószám', partner_type: 'Partner típus', email: 'Email', address: 'Cím',
+  // fixed_assets
+  inventory_number: 'Leltári szám', acquisition_value: 'Bekerülési érték',
+  purchase_date: 'Vásárlás', depreciation_method: 'Leírási mód',
+  // shipments
+  position_number: 'Pozíció', pickup_date: 'Felvétel', delivery_date: 'Kiszállítás',
+  carrier_name: 'Fuvarozó', calculated_amount_huf: 'Összeg (HUF)',
+  // uploads / errors
+  created_at: 'Létrehozva', file_name: 'Fájlnév', upload_type: 'Feltöltés típusa',
+  processing_status: 'Státusz', error_message: 'Hiba',
+  updated_at: 'Módosítva',
+  // app_error_logs
+  component: 'Komponens', error_type: 'Hiba típus', message: 'Üzenetek', severity: 'Súlyosság', action: 'Akció',
+  // eaisyBooks common
+  category: 'Kategória', title: 'Megnevezés', status: 'Státusz', resolved_at: 'Megoldva',
+  item_date: 'Dátum',
+  due_date: 'Határidő', deadline_type: 'Típus', notes: 'Megjegyzés',
+  first_name: 'Keresztnév', last_name: 'Vezetéknév', tax_id: 'Adóazonosító', birth_date: 'Születési dátum',
+  year: 'Év', month: 'Hónap', current_step: 'Lépés',
+  // accounty_assignments
+  role: 'Szerep', kanban_status: 'Kanban', is_primary: 'Elsődleges', is_main_accountant: 'Fő könyvelő', assigned_at: 'Hozzárendelve',
+  // accounty_tax_profiles
+  vat_frequency: 'ÁFA gyakoriság', contribution_frequency: 'Járulék gyak.', is_kata: 'KATA', is_kiva: 'KIVA', tax_group: 'Adócsoport', has_payroll: 'Bérszámf.',
+  nav_synced: 'NAV szinkr.',
+  // accounty_filings
+  filing_type: 'Bevallás típus', period_year: 'Év', period_month: 'Hónap', channel: 'Csatorna', submitted_at: 'Beküldve',
+  // accounty_tao
+  tax_year: 'Adóév', revenue: 'Árbevétel', tax_base: 'Adóalap', calculated_tax: 'Számított adó', payable_tax: 'Fizetendő adó', filing_status: 'Beadás státusz',
+  // accounty_audit
+  user_name: 'Felhasználó', entity_type: 'Entitás', details: 'Részletek',
+  // accounty_documents
+  doc_type: 'Dok. típus', period: 'Időszak',
+  // accounty_templates
+  is_active: 'Aktív', version: 'Verzió',
+  // accounty_job_codes
+  code: 'Kód', is_insured: 'Biztosított', valid_from: 'Érvényes',
+  // accounty_legal_updates
+  source: 'Forrás', published_at: 'Közzétéve', implementation_status: 'Implementáció', affected_modules: 'Érintett modulok',
+};
+
+
+const STATUS_KEYS = new Set(['processing_status', 'sync_status', 'matching_status', 'status']);
+
+function fmtCell(key: string, val: unknown): React.ReactNode {
+  if (val == null || val === '') return <span className="text-muted-foreground/40">—</span>;
+  const s = String(val);
+  if (STATUS_KEYS.has(key)) {
+    const isOk = ['done', 'ok', 'matched', 'active', 'completed', 'processed', 'synced'].includes(s.toLowerCase());
+    const isPending = ['pending', 'processing', 'in_progress'].includes(s.toLowerCase());
+    const isErr = ['error', 'failed', 'unmatched'].includes(s.toLowerCase());
+    const cls = isOk
+      ? 'bg-success/15 text-success border-success/25'
+      : isPending
+        ? 'bg-warning/15 text-warning border-warning/25'
+        : isErr
+          ? 'bg-destructive/15 text-destructive border-destructive/25'
+          : 'bg-muted text-muted-foreground border-border';
+    return <Badge className={`${cls} text-[10px] px-1.5 py-0 font-semibold`}>{s}</Badge>;
+  }
+  // Date formatting
+  if (/date|created_at|resolved_at|due_date|item_date/.test(key) && s.includes('T')) {
+    return s.slice(0, 10);
+  }
+  // Amount formatting
+  if (/amount|gross|net|balance|credit|debit|total/.test(key) && !isNaN(Number(val))) {
+    return <span className="tabular-nums">{Number(val).toLocaleString('hu-HU')} Ft</span>;
+  }
+  // Truncate long strings
+  if (s.length > 50) return <span title={s}>{s.slice(0, 48)}…</span>;
+  return s;
+}
+
+function SuperadminPanel({ overview }: { overview: OverviewData | undefined }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ── URL-derived state (shareable / bookmarkable) ─────────────────
+  const mode            = (searchParams.get('sa_mode') as 'company' | 'user') ?? 'company';
+  const selectedCompanyId = searchParams.get('sa_company') || null;
+  const selectedUserId    = searchParams.get('sa_user') || null;
+  const activeModule      = (searchParams.get('sa_tab') as SuperadminModuleKey) ?? 'invoices';
+
+  // ── Helpers: update URL while preserving existing params ─────────
+  const setUrlParam = useCallback((updates: Record<string, string | null>) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      for (const [k, v] of Object.entries(updates)) {
+        if (v == null) next.delete(k);
+        else next.set(k, v);
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const [searchQ, setSearchQ] = useState('');
+  const [page, setPage] = useState(1);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [moduleSearch, setModuleSearch] = useState('');
+
+  // ── Company mode: filter companies by name/tax_number ──
+  const filteredCompanies = useMemo(() => {
+    const q = searchQ.toLowerCase();
+    if (!q) return overview?.companies ?? [];
+    return (overview?.companies ?? []).filter(c =>
+      c.name.toLowerCase().includes(q) || (c.tax_number || '').includes(q)
+    );
+  }, [overview?.companies, searchQ]);
+
+  // ── User mode: filter users by name/email ──
+  const filteredUsers = useMemo(() => {
+    const q = searchQ.toLowerCase();
+    if (!q) return overview?.users ?? [];
+    return (overview?.users ?? []).filter(u =>
+      (u.name || '').toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    );
+  }, [overview?.users, searchQ]);
+
+  // ── User mode: companies belonging to selected user ──
+  const userCompanies = useMemo(() => {
+    if (!selectedUserId) return [];
+    const user = overview?.users.find(u => u.user_id === selectedUserId);
+    if (!user) return [];
+    const ids = new Set(user.companies.map(c => c.id));
+    return (overview?.companies ?? []).filter(c => ids.has(c.id));
+  }, [selectedUserId, overview]);
+
+  const selectedUser = overview?.users.find(u => u.user_id === selectedUserId);
+  const selectedCompany = overview?.companies.find(c => c.id === selectedCompanyId);
+
+  // ── Module data query (params built inside queryFn to avoid stale closure) ──
+  const { data: moduleData, isFetching } = useQuery<SuperadminModuleData>({
+    queryKey: ['superadmin-module', selectedCompanyId, activeModule, page, dateFrom, dateTo, moduleSearch],
+    queryFn: () => {
+      const p: Record<string, string> = {
+        companyId: selectedCompanyId!,
+        module: activeModule,
+        page: String(page),
+        pageSize: '25',
+      };
+      if (dateFrom) p.dateFrom = dateFrom;
+      if (dateTo) p.dateTo = dateTo;
+      if (moduleSearch) p.search = moduleSearch;
+      return fetchManagementData('superadmin-module-data', p);
+    },
+    enabled: !!selectedCompanyId,
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  const totalPages = moduleData ? Math.ceil(moduleData.totalCount / 25) : 0;
+  const cols = MODULE_COLUMNS[activeModule] ?? [];
+  const modDef = SUPERADMIN_MODULES.find(m => m.key === activeModule);
+
+  function handleSelectCompany(id: string) {
+    // In user mode, preserve the selected user so the left panel keeps showing their companies
+    setUrlParam({ sa_company: id, ...(mode === 'user' ? {} : { sa_user: null }) });
+    setPage(1); setDateFrom(''); setDateTo(''); setModuleSearch('');
+  }
+
+  function handleSelectUser(userId: string) {
+    const next = userId === selectedUserId ? null : userId;
+    setUrlParam({ sa_user: next, sa_company: null });
+    setPage(1); setDateFrom(''); setDateTo(''); setModuleSearch('');
+  }
+
+  function handleModuleSwitch(key: SuperadminModuleKey) {
+    setUrlParam({ sa_tab: key });
+    setPage(1); setModuleSearch('');
+  }
+
+  // Left panel: what to render in the list
+  const isUserMode = mode === 'user';
+  // In user mode, if a user is selected show their companies; otherwise show filtered users
+  const showUserList = isUserMode && !selectedUserId;
+  const showUserCompanies = isUserMode && !!selectedUserId;
+
+  return (
+    <div className="flex gap-0 h-full overflow-hidden">
+      {/* ── Left panel: company list ── */}
+      <div className="w-72 shrink-0 border-r border-border flex flex-col bg-muted/20">
+        {/* Search + mode toggle */}
+        <div className="p-3 border-b border-border space-y-2">
+          <div className="flex rounded-lg border border-border overflow-hidden text-xs font-medium">
+            <button
+              onClick={() => { setUrlParam({ sa_mode: 'company', sa_user: null, sa_company: null }); setSearchQ(''); }}
+              className={`flex-1 py-1.5 flex items-center justify-center gap-1.5 transition-colors ${
+                mode === 'company' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'
+              }`}
+            ><Building2 className="h-3.5 w-3.5" /> Cég</button>
+            <button
+              onClick={() => { setUrlParam({ sa_mode: 'user', sa_user: null, sa_company: null }); setSearchQ(''); }}
+              className={`flex-1 py-1.5 flex items-center justify-center gap-1.5 transition-colors ${
+                mode === 'user' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'
+              }`}
+            ><User className="h-3.5 w-3.5" /> Felhasználó</button>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={searchQ}
+              onChange={e => { setSearchQ(e.target.value); }}
+              placeholder={mode === 'company' ? 'Cég neve, adószám…' : 'Email, név…'}
+              className="pl-8 h-8 text-xs bg-background"
+            />
+          </div>
+        </div>
+        {/* List */}
+        <div className="flex-1 overflow-y-auto">
+          {!overview ? (
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+            </div>
+          ) : showUserList ? (
+            // ── User list ──
+            filteredUsers.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-xs">Nincs találat</div>
+            ) : filteredUsers.map(u => (
+              <button
+                key={u.user_id}
+                onClick={() => handleSelectUser(u.user_id)}
+                className="w-full text-left px-3 py-3 border-b border-border/50 transition-colors hover:bg-accent/50"
+              >
+                <div className="text-sm font-semibold truncate">{u.name || 'N/A'}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{u.email}</div>
+                <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-0.5"><Building2 className="h-3 w-3" /> {u.companies.length} cég</span>
+                </div>
+              </button>
+            ))
+          ) : showUserCompanies ? (
+            // ── Selected user's companies ──
+            <>
+              <button
+                onClick={() => handleSelectUser(selectedUserId!)}
+                className="w-full text-left px-3 py-2 flex items-center gap-2 text-xs text-primary hover:bg-primary/10 border-b border-border transition-colors"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Vissza ({selectedUser?.name || selectedUser?.email})
+              </button>
+              {userCompanies.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground text-xs">Ennek a felhasználónak nincs cége</div>
+              ) : userCompanies.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => handleSelectCompany(c.id)}
+                  className={`w-full text-left px-3 py-3 border-b border-border/50 transition-colors hover:bg-accent/50 ${
+                    selectedCompanyId === c.id ? 'bg-primary/10 border-l-2 border-l-primary pl-[10px]' : ''
+                  }`}
+                >
+                  <div className="text-sm font-semibold truncate">{c.name}</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{c.tax_number || '—'}</div>
+                  <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                    <span className="flex items-center gap-0.5"><FileText className="h-3 w-3" /> {c.invoiceCount}</span>
+                    <span className="flex items-center gap-0.5"><CreditCard className="h-3 w-3" /> {c.transactionCount}</span>
+                    <span className="flex items-center gap-0.5"><Landmark className="h-3 w-3" /> {c.navInvoiceCount}</span>
+                  </div>
+                </button>
+              ))}
+            </>
+          ) : (
+            // ── Company list (company mode) ──
+            filteredCompanies.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-xs">Nincs találat</div>
+            ) : filteredCompanies.map(c => (
+              <button
+                key={c.id}
+                onClick={() => handleSelectCompany(c.id)}
+                className={`w-full text-left px-3 py-3 border-b border-border/50 transition-colors hover:bg-accent/50 ${
+                  selectedCompanyId === c.id ? 'bg-primary/10 border-l-2 border-l-primary pl-[10px]' : ''
+                }`}
+              >
+                <div className="text-sm font-semibold truncate">{c.name}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{c.tax_number || '—'}</div>
+                <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-0.5"><FileText className="h-3 w-3" /> {c.invoiceCount}</span>
+                  <span className="flex items-center gap-0.5"><CreditCard className="h-3 w-3" /> {c.transactionCount}</span>
+                  <span className="flex items-center gap-0.5"><Landmark className="h-3 w-3" /> {c.navInvoiceCount}</span>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── Right panel ── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {!selectedCompanyId ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
+            <Building2 className="h-12 w-12 opacity-20" />
+            <p className="text-sm font-medium">Válassz egy céget a bal oldali listából</p>
+          </div>
+        ) : (
+          <>
+            {/* Company header */}
+            <div className="px-5 py-3 border-b border-border bg-muted/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-bold text-base">{selectedCompany?.name ?? '…'}</h2>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    <span className="text-xs text-muted-foreground">{selectedCompany?.tax_number || '—'}</span>
+                    <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20">
+                      {selectedCompany?.members.length ?? 0} tag
+                    </Badge>
+                    <Badge className="text-[10px] px-1.5 py-0 bg-success/10 text-success border-success/20">eaisybill</Badge>
+                    {selectedCompany?.hasEaisyBooks && (
+                      <Badge className="text-[10px] px-1.5 py-0 bg-info/10 text-info border-info/20">eaisyBooks</Badge>
+                    )}
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setUrlParam({ sa_company: null, sa_user: null })}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Module nav — two platform rows */}
+            <div className="border-b border-border">
+              {/* ── eaisybill row ── */}
+              <div className="flex items-center gap-0 border-b border-border/40 overflow-x-auto">
+                <span className="shrink-0 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-success bg-success/5 border-r border-border/40 select-none">
+                  eaisybill
+                </span>
+                <div className="flex min-w-max">
+                  {SUPERADMIN_MODULES.filter(m => m.platform === 'eaisybill').map(m => (
+                    <button
+                      key={m.key}
+                      onClick={() => handleModuleSwitch(m.key)}
+                      className={`flex items-center gap-1 px-2.5 py-2 text-[11px] font-medium whitespace-nowrap transition-all ${
+                        activeModule === m.key
+                          ? 'bg-success/10 text-success border-b-2 border-success'
+                          : 'border-b-2 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                      }`}
+                    >
+                      <m.icon className="h-3 w-3" />
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* ── eaisyBooks row ── */}
+              <div className={`flex items-center gap-0 overflow-x-auto transition-opacity ${
+                selectedCompany?.hasEaisyBooks ? '' : 'opacity-30 pointer-events-none'
+              }`}>
+                <span className="shrink-0 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-info bg-info/5 border-r border-border/40 select-none">
+                  eaisyBooks
+                </span>
+                <div className="flex min-w-max">
+                  {SUPERADMIN_MODULES.filter(m => m.platform === 'eaisybooks').map(m => (
+                    <button
+                      key={m.key}
+                      onClick={() => handleModuleSwitch(m.key)}
+                      className={`flex items-center gap-1 px-2.5 py-2 text-[11px] font-medium whitespace-nowrap transition-all ${
+                        activeModule === m.key
+                          ? 'bg-info/10 text-info border-b-2 border-info'
+                          : 'border-b-2 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                      }`}
+                    >
+                      <m.icon className="h-3 w-3" />
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                {!selectedCompany?.hasEaisyBooks && (
+                  <span className="shrink-0 ml-auto pr-3 text-[10px] text-muted-foreground/60 italic select-none">
+                    Nem elérhető
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-border flex-wrap">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Input
+                  value={moduleSearch}
+                  onChange={e => { setModuleSearch(e.target.value); setPage(1); }}
+                  placeholder="Keresés…"
+                  className="pl-6 h-7 text-xs w-36 bg-background"
+                />
+              </div>
+              <DatePickerInput value={dateFrom} onChange={v => { setDateFrom(v); setPage(1); }} />
+              <span className="text-muted-foreground text-xs">—</span>
+              <DatePickerInput value={dateTo} onChange={v => { setDateTo(v); setPage(1); }} />
+
+
+              {isFetching && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              <span className="ml-auto text-xs text-muted-foreground flex items-center gap-1.5">
+                {modDef && <modDef.icon className="h-3.5 w-3.5" />}
+                <strong className="text-foreground">{moduleData?.totalCount ?? '…'}</strong> rekord
+              </span>
+            </div>
+
+            {/* Table */}
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-xs" role="table">
+                <thead className="sticky top-0 bg-muted/80 backdrop-blur z-10">
+                  <tr className="border-b border-border">
+                    {cols.map(col => (
+                      <th key={col} className="text-left py-2.5 px-3 font-semibold text-muted-foreground text-[10px] uppercase tracking-wide whitespace-nowrap">
+                        {COL_LABELS[col] ?? col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {isFetching ? (
+                    Array.from({ length: 8 }).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        {cols.map(col => (
+                          <td key={col} className="py-2.5 px-3">
+                            <Skeleton className={`h-3.5 ${col.includes('date') || col === 'amount' || col === 'year' || col === 'month' ? 'w-20' : col.includes('name') || col.includes('description') || col === 'message' ? 'w-40' : 'w-full'}`} />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : (moduleData?.rows ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={cols.length} className="py-12 text-center text-muted-foreground">
+                        Nincs adat ehhez a modulhoz
+                      </td>
+                    </tr>
+                  ) : (moduleData?.rows ?? []).map((row, i) => (
+                    <tr key={i} className="hover:bg-accent/40 transition-colors">
+                      {cols.map(col => (
+                        <td key={col} className="py-2 px-3 max-w-[200px] truncate">
+                          {fmtCell(col, row[col])}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-2.5 border-t border-border shrink-0">
+                <span className="text-xs text-muted-foreground">
+                  {(page - 1) * 25 + 1}–{Math.min(page * 25, moduleData?.totalCount ?? 0)} / {moduleData?.totalCount} rekord
+                </span>
+                <div className="flex gap-1">
+                  <Button variant="outline" size="icon" className="h-7 w-7" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </Button>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const p = page <= 3 ? i + 1 : page - 2 + i;
+                    if (p < 1 || p > totalPages) return null;
+                    return (
+                      <Button key={p} variant={p === page ? 'default' : 'outline'} size="icon"
+                        className="h-7 w-7 text-xs" onClick={() => setPage(p)}>{p}</Button>
+                    );
+                  })}
+                  <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════
 // ─── Main Component ──────────────────────────────────
 // ═══════════════════════════════════════════════════════
@@ -1249,11 +1936,11 @@ export default function ManagementDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Derive view state from URL
-  const urlView = searchParams.get('view') as 'company' | 'user' | 'errors' | 'permissions' | null;
+  const urlView = searchParams.get('view') as 'company' | 'user' | 'errors' | 'permissions' | 'superadmin' | 'tickets' | null;
   const urlId = searchParams.get('id');
-  const view: 'overview' | 'company' | 'user' | 'errors' | 'permissions' = 
-    (urlView === 'company' || urlView === 'user' || urlView === 'errors' || urlView === 'permissions') 
-      ? urlView 
+  const view: 'overview' | 'company' | 'user' | 'errors' | 'permissions' | 'superadmin' | 'tickets' =
+    (urlView === 'company' || urlView === 'user' || urlView === 'errors' || urlView === 'permissions' || urlView === 'superadmin' || urlView === 'tickets')
+      ? urlView
       : 'overview';
   const selectedCompanyId = view === 'company' ? urlId : null;
   const selectedUserId = view === 'user' ? urlId : null;
@@ -1311,6 +1998,8 @@ export default function ManagementDashboard() {
   const openCompany = useCallback((id: string) => { setSearchParams({ view: 'company', id }); }, [setSearchParams]);
   const openUser = useCallback((userId: string) => { setSearchParams({ view: 'user', id: userId }); }, [setSearchParams]);
   const openErrors = useCallback(() => { setSearchParams({ view: 'errors' }); }, [setSearchParams]);
+  const openSuperadmin = useCallback(() => { setSearchParams({ view: 'superadmin' }); }, [setSearchParams]);
+  const openTickets = useCallback(() => { setSearchParams({ view: 'tickets' }); }, [setSearchParams]);
   const goBack = useCallback(() => { setSearchParams({}); }, [setSearchParams]);
 
   // Auth guard — MUST be after all hooks to satisfy Rules of Hooks
@@ -1321,17 +2010,23 @@ export default function ManagementDashboard() {
     ? 'Management Dashboard'
     : (view === 'errors' || view === 'permissions')
       ? 'Control Center'
-      : view === 'company'
-        ? (selectedCompanyName || 'Cég részletek')
-        : (selectedUserObj?.name || 'Felhasználó részletek');
+      : view === 'superadmin'
+        ? 'Control Center'
+        : view === 'tickets'
+          ? 'Hibajegykezelés'
+          : view === 'company'
+            ? (selectedCompanyName || 'Cég részletek')
+            : (selectedUserObj?.name || 'Felhasználó részletek');
 
   const subtitle = view === 'overview'
     ? 'eaisybill platform áttekintés'
-    : (view === 'errors' || view === 'permissions')
-      ? 'Hibák és jogosultságkezelés'
-      : view === 'company'
-        ? 'Cég részletes adatai'
-        : (selectedUserObj?.email || '');
+    : (view === 'errors' || view === 'permissions' || view === 'superadmin')
+      ? 'Hibák, jogosultságok és adatnézet'
+      : view === 'tickets'
+        ? 'Beérkezett ügyfél hibajegyek és support csevegés'
+        : view === 'company'
+          ? 'Cég részletes adatai'
+          : (selectedUserObj?.email || '');
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
@@ -1339,7 +2034,7 @@ export default function ManagementDashboard() {
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 relative">
           <div className="flex items-center gap-3">
-            {view !== 'overview' && (
+            {(view === 'company' || view === 'user') && (
               <Button variant="ghost" size="icon" onClick={goBack} aria-label="Vissza"
                 className="text-muted-foreground hover:text-foreground mr-1 transition-colors duration-150">
                 <ArrowLeft className="h-5 w-5" />
@@ -1369,10 +2064,84 @@ export default function ManagementDashboard() {
             </Button>
           </div>
         </div>
+
+        {/* ── Főnavigáció tab bar (áttekintés + control center + tickets) ── */}
+        {(view === 'overview' || view === 'errors' || view === 'permissions' || view === 'superadmin' || view === 'tickets') && (
+          <div className="border-t border-border/40">
+            <nav className="max-w-7xl mx-auto px-6 flex items-center gap-0.5 py-1.5" aria-label="Főnavigáció">
+              <button
+                onClick={goBack}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  view === 'overview'
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+                aria-current={view === 'overview' ? 'page' : undefined}
+              >
+                <BarChart3 className="h-3.5 w-3.5" />
+                Áttekintés
+              </button>
+              <button
+                onClick={openErrors}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  view === 'errors' || view === 'permissions'
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+                aria-current={view === 'errors' || view === 'permissions' ? 'page' : undefined}
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Control Center
+              </button>
+              <button
+                onClick={openSuperadmin}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  view === 'superadmin'
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+                aria-current={view === 'superadmin' ? 'page' : undefined}
+              >
+                <Zap className="h-3.5 w-3.5" />
+                Superadmin
+              </button>
+              <button
+                onClick={openTickets}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  view === 'tickets'
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+                aria-current={view === 'tickets' ? 'page' : undefined}
+              >
+                <TicketCheck className="h-3.5 w-3.5" />
+                Hibajegyek
+              </button>
+            </nav>
+          </div>
+        )}
       </header>
 
+      {/* ═══ SUPERADMIN — full-height, outside the scroll wrapper ═══ */}
+      {view === 'superadmin' && (
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <SuperadminPanel overview={overview} />
+        </div>
+      )}
+
+      {/* ═══ TICKETS — full-height/scrollable support console ═══ */}
+      {view === 'tickets' && (
+        <div className="flex-1 overflow-y-auto">
+          <main className="w-full max-w-7xl mx-auto px-6 py-8">
+            <TicketsPage embeddedInManagement={true} />
+          </main>
+        </div>
+      )}
+
+      {/* ═══ Normal scrollable content (overview / errors / permissions / company / user) ═══ */}
+      {view !== 'superadmin' && view !== 'tickets' && (
       <div className="flex-1 overflow-y-auto">
-      <main className="w-full max-w-7xl mx-auto px-6 py-8 overflow-hidden">
+      <main className="w-full max-w-7xl mx-auto px-6 py-8">
         {/* ═══ OVERVIEW ═══ */}
         {view === 'overview' && (
           <div className="space-y-8 page-animate">
@@ -1789,6 +2558,7 @@ export default function ManagementDashboard() {
         )}
       </main>
       </div>
+      )}
     </div>
   );
 }
@@ -1859,6 +2629,7 @@ interface UserPermissionsData {
   email: string;
   name: string;
   profileRole: string;
+  isSupportAdmin: boolean;
   eaisybill: Array<{
     companyId: string;
     companyName: string;
@@ -1913,12 +2684,14 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   }, [searchParams, setSearchParams]);
 
   const [pendingChanges, setPendingChanges] = useState<Map<string, { canRead: boolean; canWrite: boolean }>>(new Map());
+  const [isSupportAdmin, setIsSupportAdmin] = useState<boolean>(false);
 
   React.useEffect(() => {
     setPendingChanges(new Map());
     setSelectedEbCompany(null);
     setSelectedAbFirm(null);
   }, [selectedUserId]);
+
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [selectedEbCompany, setSelectedEbCompany] = useState<string | null>(null);
@@ -1941,6 +2714,12 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     enabled: !!selectedUserId,
     staleTime: 30_000,
   });
+
+  React.useEffect(() => {
+    if (userPerms) {
+      setIsSupportAdmin(userPerms.isSupportAdmin);
+    }
+  }, [userPerms]);
 
   const handleToggle = (platform: string, companyOrFirmId: string, moduleName: string, field: 'canRead' | 'canWrite', currentValue: boolean) => {
     const nextVal = !currentValue;
@@ -2006,7 +2785,7 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   };
 
   const handleSave = async () => {
-    if (!selectedUserId || !userPerms || pendingChanges.size === 0) return;
+    if (!selectedUserId || !userPerms || (pendingChanges.size === 0 && isSupportAdmin === userPerms.isSupportAdmin)) return;
     setSaving(true);
     setSaveMessage(null);
 
@@ -2055,6 +2834,15 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     }
 
     let totalErrors = 0;
+
+    if (isSupportAdmin !== userPerms.isSupportAdmin) {
+      const result = await postManagementData('update-permissions', {
+        userId: selectedUserId,
+        isSupportAdmin,
+      });
+      if (result.error) totalErrors++;
+    }
+
     for (const [, group] of grouped) {
       const result = await postManagementData('update-permissions', {
         userId: selectedUserId,
@@ -2141,24 +2929,46 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
             {/* User info header */}
             <Card>
               <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="font-semibold">{userPerms.name}</p>
-                  <p className="text-xs text-muted-foreground">{userPerms.email}</p>
-                  <Badge variant="outline" className="mt-1 text-[10px]">{userPerms.profileRole}</Badge>
+                <div className="flex items-center gap-6">
+                  <div>
+                    <p className="font-semibold">{userPerms.name}</p>
+                    <p className="text-xs text-muted-foreground">{userPerms.email}</p>
+                    <Badge variant="outline" className="mt-1 text-[10px]">{userPerms.profileRole}</Badge>
+                  </div>
+                  
+                  {/* Vertical separator */}
+                  <div className="h-8 w-px bg-border/60" />
+
+                  {/* Support admin switch */}
+                  <div className="flex items-center gap-2 bg-accent/20 px-3 py-1.5 rounded-lg border border-border/40">
+                    <Switch
+                      id="support-admin-toggle"
+                      checked={isSupportAdmin}
+                      onCheckedChange={setIsSupportAdmin}
+                    />
+                    <label htmlFor="support-admin-toggle" className="text-xs font-medium cursor-pointer select-none">
+                      Support munkatárs (Globális hozzáférés)
+                    </label>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {saveMessage && (
                     <span className="text-xs font-medium text-primary animate-in fade-in">{saveMessage}</span>
                   )}
-                  <Button
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={pendingChanges.size === 0 || saving}
-                    className="gap-2"
-                  >
-                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                    Mentés {pendingChanges.size > 0 && `(${pendingChanges.size})`}
-                  </Button>
+                  {(() => {
+                    const totalPending = pendingChanges.size + (isSupportAdmin !== userPerms.isSupportAdmin ? 1 : 0);
+                    return (
+                      <Button
+                        size="sm"
+                        onClick={handleSave}
+                        disabled={totalPending === 0 || saving}
+                        className="gap-2"
+                      >
+                        {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        Mentés {totalPending > 0 && `(${totalPending})`}
+                      </Button>
+                    );
+                  })()}
                 </div>
               </CardContent>
             </Card>

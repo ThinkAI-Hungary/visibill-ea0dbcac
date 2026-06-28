@@ -55,6 +55,14 @@ CONFIDENCE: ~X% — hiányzik: [mi nem tiszta még]
 
 > Ha confidence < 70% → kérdezz MIELŐTT spec lookupot indítasz.
 
+### 1.0a Izoláció — Git Worktree Check
+* **Izolált munkakörnyezet:** Ha a feladat nagy volumenű, komplex, vagy külön ágon (branch) fog futni, és szeretnéd megóvni a meglévő munkakönyvtárat / futó dev szervert:
+  * Olvasd be a **`using-git-worktrees`** skillt:
+    ```
+    view_file C:\Users\Morfi\.gemini\config\skills\using-git-worktrees\SKILL.md
+    ```
+  * Kérj megerősítést a felhasználótól egy izolált worktree létrehozásához a fejlesztés megkezdése előtt.
+
 **ASSUMPTIONS I'M MAKING** (rögzítsd mielőtt bármit tervezel):
 ```
 ASSUMPTIONS I'M MAKING:
@@ -135,6 +143,7 @@ Az AI **köteles** a meglévő design pattern-eket betölteni és követni.
 | `docs/design/01-tech-stack.md` | Provider stack, projekt struktúra |
 | `docs/design/05-layout-navigation.md` | Sidebar, scoped routing, app shell |
 | `docs/design/06-state-management.md` | Context-ek, React Query, URL state |
+| `vercel-react-best-practices` | [react-best-practices/SKILL.md](file:///C:/Users/Morfi/.gemini/config/skills/react-best-practices/SKILL.md) — Vercel és React teljesítmény-optimalizálás |
 
 #### Feature típustól függően olvasandó:
 | Ha a feature tartalmaz... | Olvasd el |
@@ -375,6 +384,10 @@ Module 4: UI — RegisterSelector dropdown
 │                                                                     │
 │  Ha ❌ → Új Sub-Agent (lessons learned brief-fel)                  │
 │                                                                     │
+│  *MEGJEGYZÉS:* Ha a futtató környezetben nincs natív kódoló         │
+│  sub-agent eszköz, a Fő Agent maga végzi a kódolást, de szigorúan   │
+│  izoláltan: modulonként haladva, sikertelen tesztnél git rollbackel │
+│  és a brief alapú megközelítést szimulálva.                         │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -440,8 +453,8 @@ A fő agent KÖTELES minden sub-agent-nek részletes brief-et adni. A brief tart
 
 ### eaisyBill login (ha browser verify kell)
 - URL: `http://localhost:5173`
-- Email: `balazs@thinkai.hu`
-- Jelszó: `Nincsapellata1'`
+- **Sima user:** Email: `balazs@thinkai.hu` | Jelszó: `Nincsapellata1'`
+- **Management Dashboard:** Email: `management@thinkai.hu` | Jelszó: `v6Fo#RrG>]gEkGP]EZRB`
 
 ### Visszatérési formátum
 A sub-agent KÖTELES ezzel a struktúrával visszatérni:
@@ -607,8 +620,10 @@ A browser subagent feladata:
 | Mező | Érték |
 |------|-------|
 | URL | `http://localhost:5173` (dev) vagy a staging URL |
-| Email | `balazs@thinkai.hu` |
-| Jelszó | `Nincsapellata1'` |
+| Email (Sima) | `balazs@thinkai.hu` |
+| Jelszó (Sima) | `Nincsapellata1'` |
+| Email (Management) | `management@thinkai.hu` |
+| Jelszó (Management) | `v6Fo#RrG>]gEkGP]EZRB` |
 
 > ⚠️ Mindig fejlesztői szerveren (`npm run dev`) tesztelj, NE production-ön!
 
@@ -637,7 +652,7 @@ npm run build
 
 ### 3.7.2 End-to-End Integration Smoke Test
 
-A teljes feature end-to-end tesztelése browser subagent-tel:
+A teljes feature end-to-end tesztelése browser subagent-tel és Playwright-tal:
 ```
 1. Bejelentkezés → Navigáció a feature oldalára
 2. Fő happy path végrehajtása (create/read/update/delete ha releváns)
@@ -645,6 +660,13 @@ A teljes feature end-to-end tesztelése browser subagent-tel:
 4. Mutáció → oldal frissítés → adat megjelenik
 5. Screenshot a végállapotról
 ```
+
+**Playwright automatizált tesztek futtatása (ha releváns):**
+- Futtasd a meglévő E2E teszteket a regressziók kizárása érdekében:
+  ```bash
+  npm run test:e2e
+  ```
+- Ha az új funkcióhoz írtál E2E tesztet, ellenőrizd annak sikeres lefutását.
 
 ### 3.7.3 Regressziós Gyors-Check
 
@@ -733,6 +755,13 @@ A meglévő funkciók nem törtek el:
 - `docs/architecture/decisions/A-016-postgresql-query-strategy.md` — új RPC hozzáadása
 - `docs/architecture/overview.md` — darabszám frissítés
 - `docs/architecture/decisions/index.md` — leírás frissítés
+
+### 4.6a Adatbázis sémadokumentáció frissítése (CSAK user megerősítés után!)
+- **Kritikus szabály:** Ha a fejlesztés során módosult a DB séma (migrációk lefutottak), a dokumentációt (`database-schema.md` és `database/*.md`) KIZÁRÓLAG azután szabad regenerálni, hogy a felhasználó megerősítette: a megvalósított funkciók működnek.
+- **Folyamat:**
+  1. Töltsd le a friss metaadatokat a Supabase-ből a `.temp-db-metadata/` könyvtárba (columns.json, constraints.json, accurate_fks.json, indexes.json, comments.json, tables.json).
+  2. Futtasd a `npm run gen-db-docs` parancsot a dokumentáció automatikus újragenerálásához.
+  3. Töröld le a `.temp-db-metadata/` könyvtárat.
 
 ### 4.7 Frissítési javaslat formátum
 

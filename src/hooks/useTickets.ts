@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 // ── Types ──────────────────────────────────────────────────────
 export type TicketStatus = "created" | "in_progress" | "resolved";
 export type TicketPriority = "low" | "medium" | "high" | "critical";
-export type TicketType = "bug" | "feedback";
+export type TicketType = "bug" | "feedback" | "question";
 
 export interface Ticket {
   id: string;
@@ -28,6 +28,8 @@ export interface Ticket {
   comment_count: number;
   latest_comment_at: string | null;
   has_unread: boolean;
+  assigned_to?: string | null;
+  assigned_to_name?: string | null;
 }
 
 export interface TicketComment {
@@ -40,6 +42,7 @@ export interface TicketComment {
   message: string;
   attachments: string[] | null;
   created_at: string | null;
+  is_internal?: boolean;
 }
 
 // ── Hook: Check if current user is support admin ──────────────
@@ -71,10 +74,10 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
     queryFn: async () => {
       if (!user) return [];
 
-      // 1. Fetch tickets
+      // 1. Fetch tickets with assigned profile name
       let query = supabase
         .from("feedback")
-        .select("*")
+        .select("*, assigned_to_profile:profiles!feedback_assigned_to_fkey(name)")
         .order("created_at", { ascending: false });
 
       if (statusFilter && statusFilter !== "all") {
@@ -135,7 +138,7 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           type: t.type,
           service: (t as any).service || null,
           message: t.message,
-          status: t.status,
+          status: t.status === "new" ? "created" : t.status,
           priority: t.priority,
           page_url: t.page_url,
           company_name: t.company_name,
@@ -151,6 +154,8 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           has_unread: latestOther
             ? !lastRead || latestOther > lastRead
             : false,
+          assigned_to: t.assigned_to,
+          assigned_to_name: (t as any).assigned_to_profile?.name || null,
         };
       });
     },
@@ -159,7 +164,6 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
 }
 
 // ── Hook: Fetch unread count (for sidebar badge) ──────────────
-// Uses a single efficient query + Realtime subscription.
 export function useUnreadTicketCount() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -251,7 +255,7 @@ export function useUnreadTicketCount() {
 export interface TicketEvent {
   id: string;
   feedback_id: string;
-  event_type: "created" | "status_changed" | "comment_added";
+  event_type: "created" | "status_changed" | "comment_added" | "assignee_changed";
   actor_id: string | null;
   actor_email: string | null;
   actor_name: string | null;
@@ -292,7 +296,7 @@ export function useTicketDetail(feedbackId: string | null) {
 
       const { data: ticket, error } = await supabase
         .from("feedback")
-        .select("*")
+        .select("*, assigned_to_profile:profiles!feedback_assigned_to_fkey(name)")
         .eq("id", feedbackId)
         .single();
 
@@ -305,7 +309,11 @@ export function useTicketDetail(feedbackId: string | null) {
         .order("created_at", { ascending: true });
 
       return {
-        ticket,
+        ticket: {
+          ...ticket,
+          status: ticket.status === "new" ? "created" : ticket.status,
+          assigned_to_name: (ticket as any).assigned_to_profile?.name || null,
+        },
         comments: (comments || []) as TicketComment[],
       };
     },
@@ -313,7 +321,7 @@ export function useTicketDetail(feedbackId: string | null) {
   });
 }
 
-// ── Mutation: Add comment ─────────────────────────────────────
+// ── Mutation: Add comment / internal note ─────────────────────
 export function useAddComment() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -324,10 +332,12 @@ export function useAddComment() {
       feedbackId,
       message,
       attachments,
+      isInternal = false,
     }: {
       feedbackId: string;
       message: string;
       attachments?: string[];
+      isInternal?: boolean;
     }) => {
       if (!user) throw new Error("Not authenticated");
 
@@ -349,6 +359,7 @@ export function useAddComment() {
           user_email: user.email || null,
           is_admin: isAdmin || false,
           message: message,
+          is_internal: isInternal,
           ...(attachments && attachments.length > 0 ? { attachments } : {}),
         })
         .select()
@@ -389,6 +400,78 @@ export function useUpdateTicketStatus() {
       queryClient.invalidateQueries({ queryKey: ["ticket_events", feedbackId] });
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
     },
+  });
+}
+
+// ── Mutation: Update ticket priority ──────────────────────────
+export function useUpdateTicketPriority() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      feedbackId,
+      priority,
+    }: {
+      feedbackId: string;
+      priority: TicketPriority;
+    }) => {
+      const { error } = await supabase
+        .from("feedback")
+        .update({ priority })
+        .eq("id", feedbackId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, { feedbackId }) => {
+      queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket_events", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+  });
+}
+
+// ── Mutation: Update ticket assignee ──────────────────────────
+export function useUpdateTicketAssignee() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      feedbackId,
+      assignedTo,
+    }: {
+      feedbackId: string;
+      assignedTo: string | null;
+    }) => {
+      const { error } = await supabase
+        .from("feedback")
+        .update({ assigned_to: assignedTo })
+        .eq("id", feedbackId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, { feedbackId }) => {
+      queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket_events", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+  });
+}
+
+// ── Hook: Fetch support agents ────────────────────────────────
+export function useSupportAgents() {
+  return useQuery({
+    queryKey: ["support_agents"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, name")
+        .eq("is_support_admin", true)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

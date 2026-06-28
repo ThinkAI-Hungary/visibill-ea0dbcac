@@ -1,9 +1,15 @@
 ---
 name: visibill-dev
-description: Lightweight TDD + spec-driven development workflow for general Visibill/eaisybill tasks — NOT simple 1-2 file tweaks (those the spec-lookup handles) and NOT complex new features (those the feature-planner handles). Use for bug fixes, behavior changes, small enhancements, component improvements, or any 2-5 file modifications where the pattern is known but discipline matters. Triggers on "javítsd", "fix", "csináld meg", "implementáld", "oldj meg", "módosítsd", "változtasd meg", "add hozzá", "vezess be", "fejleszd", "tedd lehetővé", "egészítsd ki", or general feature requests on the Visibill/eaisybill codebase that the agent determines are medium complexity. Also triggers on "tdd", "test-driven", "spec-driven", "teszteld", "verifikálj", "ellenőrizd" in the context of implementing Visibill features. Triggers on project names: "visibill", "eaisybill", "eaisybill-prod", "vsweb".
+description: Primary development workflow skill for coding, implementing features, fixing bugs, and writing tests in Visibill/eaisybill-prod. Use this workflow for general programming, styling, and script tasks of medium complexity (2-5 files). Triggers on "javíts", "fix", "bug", "hiba", "fejleszt", "implementál", "kódol", "módosít", "szépít", "refaktor", "teszt", "tdd", "dev", "visibill-dev" and any request to modify code in eaisybill-prod, vsweb, or worker codebases.
 ---
 
 # Visibill Dev — Spec-First, Test-Driven Development (Lite)
+
+## 📌 Filozófia: Zero Silent Decisions
+> **Az AI asszisztens SOHA nem hoz technikai, logikai vagy vizuális döntéseket egyedül.**
+> Ha a fejlesztés során bármilyen ponton (akár a legkisebb bugfixnél vagy kiegészítésnél is) elágazó logika, nem egyértelmű igény, vagy alternatív megoldási lehetőség merül fel:
+> * **STOP!** Az Agent köteles megállni, felvázolni a döntési pontot, és megvárni a felhasználó kifejezett jóváhagyását.
+> * **Silent decision = Hiba.** Bármilyen csendben meghozott önálló döntés a szabályzat megsértésének minősül.
 
 > **Ez a skill az általános fejlesztési munkamenetet strukturálja.**  
 > Komplexebb esetekre (új modul, architektúra döntés, 5+ fájl) → `visibill-feature-planner`.  
@@ -107,6 +113,14 @@ Ha a user leírja hogyan működik valami → **ellenőrizd a kódban** mielőtt
 > **KÖTELEZŐ beolvasni a `visibill-db-checklist` skillt!**
 > ```
 > view_file C:\Users\Morfi\.gemini\config\skills\visibill-db-checklist\SKILL.md
+> ```
+
+### 1.4b React frontend érintettség → vercel-react-best-practices betöltés
+
+> Ha a feladat bármilyen React kód módosításával jár (komponensek, hookok, állapotkezelés, UI oldalak):  
+> **KÖTELEZŐ beolvasni a `vercel-react-best-practices` skillt!**
+> ```
+> view_file C:\Users\Morfi\.gemini\config\skills\react-best-practices\SKILL.md
 > ```
 
 ### 1.5 Összefoglaló a usernek (jóváhagyás előtt)
@@ -271,7 +285,9 @@ npm run build
 
 ```
 1. Browser subagent indítás
-2. Login: http://localhost:5173 | balazs@thinkai.hu | Nincsapellata1'
+2. Login:
+   - Sima user: http://localhost:5173 | balazs@thinkai.hu | Nincsapellata1'
+   - Management Dashboard: management@thinkai.hu | v6Fo#RrG>]gEkGP]EZRB
 3. Navigáció a releváns oldalra
 4. Screenshot készítés
 5. Konzol ellenőrzés (errors/warnings)

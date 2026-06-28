@@ -212,6 +212,11 @@ serve(async (req) => {
       return json(await retryErrors(admin, body));
     }
 
+    if (action === "delete-all-errors") {
+      if (req.method !== "POST") return json({ error: "POST required" });
+      return json(await deleteAllErrors(admin));
+    }
+
     if (action === "user-detail") {
       const selectedUserId = url.searchParams.get("userId");
       if (!selectedUserId) return json(emptyUserDetail);
@@ -230,6 +235,14 @@ serve(async (req) => {
       return json(await updatePermissions(admin, body));
     }
 
+    if (action === "superadmin-module-data") {
+      const companyId = url.searchParams.get("companyId");
+      if (!companyId || !/^[0-9a-f-]{36}$/.test(companyId)) {
+        return json({ error: "Invalid companyId" }, 400);
+      }
+      return json(await buildSuperadminData(admin, companyId, url));
+    }
+
     return json({ error: "Unknown action", ...emptyOverview });
   } catch (error) {
     console.error("[MANAGEMENT-STATS] Unexpected error", error);
@@ -238,19 +251,487 @@ serve(async (req) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SUPERADMIN: per-module paginated read-only data for a given company
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildSuperadminData(
+  admin: ReturnType<typeof createClient>,
+  companyId: string,
+  url: URL
+) {
+  const module = url.searchParams.get("module") || "invoices";
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+  const pageSize = Math.min(50, Math.max(1, parseInt(url.searchParams.get("pageSize") || "25", 10)));
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const safeDate = (s: string | null) => {
+    if (!s) return null;
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : s;
+  };
+  const dateFrom = safeDate(url.searchParams.get("dateFrom"));
+  const dateTo = safeDate(url.searchParams.get("dateTo"));
+  const search = (url.searchParams.get("search") || "").trim();
+
+  type ModuleResult = { totalCount: number; rows: unknown[] };
+  const empty: ModuleResult = { totalCount: 0, rows: [] };
+
+  try {
+    // ── Eaisybill: Számlák (invoices table has Hungarian column names) ──
+    if (module === "invoices") {
+      let q = admin
+        .from("invoices")
+        .select(
+          "id,kibocsatas_datuma,bizonylatsorszam,elado_nev,adoalap_osszesen,brutto_vegosszeg,invoice_type,invoice_direction,statusz,letrehozva",
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("kibocsatas_datuma", { ascending: false })
+        .range(from, to);
+      if (dateFrom) q = q.gte("kibocsatas_datuma", dateFrom);
+      if (dateTo) q = q.lte("kibocsatas_datuma", dateTo);
+      if (search) q = q.ilike("elado_nev", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── NAV számlák ──
+    if (module === "nav_invoices") {
+      let q = admin
+        .from("nav_invoices")
+        .select(
+          "id,invoice_issue_date,invoice_number,supplier_name,invoice_net_amount,invoice_gross_amount,invoice_vat_amount,created_at",
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("invoice_issue_date", { ascending: false })
+        .range(from, to);
+      if (dateFrom) q = q.gte("invoice_issue_date", dateFrom);
+      if (dateTo) q = q.lte("invoice_issue_date", dateTo);
+      if (search) q = q.ilike("supplier_name", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── Tranzakciók (transactions table uses type/match_type/description) ──
+    if (module === "transactions") {
+      let q = admin
+        .from("transactions")
+        .select(
+          "id,transaction_date,amount,currency,description,type,match_type,created_at",
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("transaction_date", { ascending: false })
+        .range(from, to);
+      if (dateFrom) q = q.gte("transaction_date", dateFrom);
+      if (dateTo) q = q.lte("transaction_date", dateTo);
+      if (search) q = q.ilike("description", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── Főkönyv (gl_journal_entries uses voucher_date, voucher_number, debit_account, credit_account, no created_at) ──
+    if (module === "gl_journal_entries") {
+      let q = admin
+        .from("gl_journal_entries")
+        .select(
+          "id,voucher_date,voucher_number,debit_account,credit_account,amount,description,partner_name",
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("voucher_date", { ascending: false })
+        .range(from, to);
+      if (dateFrom) q = q.gte("voucher_date", dateFrom);
+      if (dateTo) q = q.lte("voucher_date", dateTo);
+      if (search) q = q.ilike("description", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── Bérek (salary table has Hungarian column names: dátum, név, összeg) ──
+    if (module === "salary") {
+      let q = admin
+        .from("salary")
+        .select(
+          'id,"dátum","név","összeg",statusz,tipus,created_at',
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("dátum", { ascending: false })
+        .range(from, to);
+      if (search) q = q.ilike("név", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── Pénztár (petty_cash_entries: entry_date, description, amount, currency, source_type) ──
+    if (module === "petty_cash_entries") {
+      let q = admin
+        .from("petty_cash_entries")
+        .select(
+          "id,entry_date,description,amount,currency,source_type,created_at",
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("entry_date", { ascending: false })
+        .range(from, to);
+      if (dateFrom) q = q.gte("entry_date", dateFrom);
+      if (dateTo) q = q.lte("entry_date", dateTo);
+      if (search) q = q.ilike("description", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── Feltöltések (invoice_uploads + transaction_uploads) ──
+    if (module === "uploads") {
+      const invQ = admin
+        .from("invoice_uploads")
+        .select("id,created_at,file_name,processing_status,error_message,user_id", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      const txQ = admin
+        .from("transaction_uploads")
+        .select("id,created_at,file_name,processing_status,error_message,user_id", { count: "exact" })
+        .eq("company_id", companyId);
+      const [invRes, txRes] = await Promise.all([invQ, txQ]);
+      const invRows = (invRes.data || []).map(r => ({ ...r, upload_type: "Számla" }));
+      const txRows = (txRes.data || []).map(r => ({ ...r, upload_type: "Tranzakció" }));
+      const combined = [...invRows, ...txRows].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      const total = (invRes.count ?? 0) + (txRes.count ?? 0);
+      return { module, totalCount: total, rows: combined.slice(0, pageSize), page, pageSize };
+    }
+
+    // ── App hibák ──
+    if (module === "app_error_logs") {
+      let q = admin
+        .from("app_error_logs")
+        .select(
+          "id,created_at,component,error_type,message,severity,action,user_id",
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (dateFrom) q = q.gte("created_at", dateFrom);
+      if (dateTo) q = q.lte("created_at", dateTo);
+      if (search) q = q.ilike("message", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisyBooks modules ────────────────────────────────────────────────────
+
+    if (module === "accounty_missing_items") {
+      let q = admin
+        .from("accounty_missing_items")
+        .select(
+          "id,created_at,category,title,status,amount,item_date,resolved_at",
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (dateFrom) q = q.gte("created_at", dateFrom);
+      if (dateTo) q = q.lte("created_at", dateTo);
+      if (search) q = q.ilike("title", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    if (module === "accounty_deadlines") {
+      let q = admin
+        .from("accounty_deadlines")
+        .select(
+          "id,due_date,deadline_type,title,status,notes,created_at",
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("due_date", { ascending: true })
+        .range(from, to);
+      if (dateFrom) q = q.gte("due_date", dateFrom);
+      if (dateTo) q = q.lte("due_date", dateTo);
+      if (search) q = q.ilike("title", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    if (module === "accounty_employees") {
+      let q = admin
+        .from("accounty_employees")
+        .select(
+          "id,first_name,last_name,tax_id,birth_date,status,created_at",
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("last_name", { ascending: true })
+        .range(from, to);
+      if (search) q = q.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    if (module === "accounty_payroll_cycles") {
+      let q = admin
+        .from("accounty_payroll_cycles")
+        .select(
+          "id,year,month,status,current_step,created_at",
+          { count: "exact" }
+        )
+        .eq("company_id", companyId)
+        .order("year", { ascending: false })
+        .order("month", { ascending: false })
+        .range(from, to);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisybill: Kategóriák ──
+    if (module === "categories") {
+      let q = admin
+        .from("categories")
+        .select("id,name,icon,color,created_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("name", { ascending: true })
+        .range(from, to);
+      if (search) q = q.ilike("name", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisybill: Projektek ──
+    if (module === "projects") {
+      let q = admin
+        .from("projects")
+        .select("id,name,project_code,project_type,client_name,status,budget,start_date,end_date,created_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (search) q = q.ilike("name", `%${search}%`);
+      if (dateFrom) q = q.gte("start_date", dateFrom);
+      if (dateTo) q = q.lte("start_date", dateTo);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisybill: Partnertörzs ──
+    if (module === "partners") {
+      let q = admin
+        .from("partners")
+        .select("id,name,tax_number,partner_type,email,address,created_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("name", { ascending: true })
+        .range(from, to);
+      if (search) q = q.or(`name.ilike.%${search}%,tax_number.ilike.%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisybill: TENY (Tárgyi eszközök) ──
+    if (module === "fixed_assets") {
+      let q = admin
+        .from("fixed_assets")
+        .select("id,name,inventory_number,acquisition_value,purchase_date,status,depreciation_method,supplier_name,created_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("purchase_date", { ascending: false })
+        .range(from, to);
+      if (search) q = q.ilike("name", `%${search}%`);
+      if (dateFrom) q = q.gte("purchase_date", dateFrom);
+      if (dateTo) q = q.lte("purchase_date", dateTo);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisybill: Fuvarok ──
+    if (module === "shipments") {
+      let q = admin
+        .from("shipments")
+        .select("id,position_number,pickup_date,delivery_date,carrier_name,calculated_amount_huf,match_status,created_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("pickup_date", { ascending: false })
+        .range(from, to);
+      if (search) q = q.ilike("carrier_name", `%${search}%`);
+      if (dateFrom) q = q.gte("pickup_date", dateFrom);
+      if (dateTo) q = q.lte("pickup_date", dateTo);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisybill: Beszámolók ──
+    if (module === "annual_reports") {
+      let q = admin
+        .from("annual_reports")
+        .select("id,company_id,status,created_at,updated_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisyBooks: Portfólió (assignments) ──
+    if (module === "accounty_assignments") {
+      let q = admin
+        .from("accounty_assignments")
+        .select("id,company_id,accountant_user_id,accounting_firm_id,role,kanban_status,is_primary,is_main_accountant,assigned_at,created_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisyBooks: Adó profil ──
+    if (module === "accounty_tax_profiles") {
+      let q = admin
+        .from("accounty_tax_profiles")
+        .select("id,company_id,vat_frequency,contribution_frequency,is_kata,is_kiva,tax_group,has_payroll,nav_synced,created_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisyBooks: Bevallások ──
+    if (module === "accounty_filings") {
+      let q = admin
+        .from("accounty_filings")
+        .select("id,filing_type,period_year,period_month,status,channel,submitted_at,created_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (search) q = q.ilike("filing_type", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisyBooks: TAO ──
+    if (module === "accounty_tao_yearly") {
+      let q = admin
+        .from("accounty_tao_yearly")
+        .select("id,tax_year,status,revenue,tax_base,calculated_tax,payable_tax,filing_status,created_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("tax_year", { ascending: false })
+        .range(from, to);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisyBooks: Audit napló ──
+    if (module === "accounty_audit_log") {
+      let q = admin
+        .from("accounty_audit_log")
+        .select("id,created_at,user_name,action,entity_type,entity_id,details", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (dateFrom) q = q.gte("created_at", dateFrom);
+      if (dateTo) q = q.lte("created_at", dateTo);
+      if (search) q = q.ilike("action", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisyBooks: Dokumentumok ──
+    if (module === "accounty_documents") {
+      let q = admin
+        .from("accounty_documents")
+        .select("id,title,doc_type,status,period,created_at", { count: "exact" })
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (search) q = q.ilike("title", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisyBooks: Sablonok (globális — nincs company_id szűrés) ──
+    if (module === "accounty_templates") {
+      let q = admin
+        .from("accounty_templates")
+        .select("id,name,category,is_active,version,updated_at,created_at", { count: "exact" })
+        .order("category", { ascending: true })
+        .range(from, to);
+      if (search) q = q.ilike("name", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisyBooks: Jogviszonykódok (globális — nincs company_id szűrés) ──
+    if (module === "accounty_job_codes") {
+      let q = admin
+        .from("accounty_job_codes")
+        .select("id,code,name,is_insured,valid_from,is_active,description,created_at", { count: "exact" })
+        .order("code", { ascending: true })
+        .range(from, to);
+      if (search) q = q.or(`name.ilike.%${search}%,code.ilike.%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    // ── eaisyBooks: Jogszabály-frissítések (globális — nincs company_id szűrés) ──
+    if (module === "accounty_legal_updates") {
+      let q = admin
+        .from("accounty_legal_updates")
+        .select("id,title,source,published_at,affected_modules,implementation_status,notes,created_at", { count: "exact" })
+        .order("published_at", { ascending: false })
+        .range(from, to);
+      if (search) q = q.ilike("title", `%${search}%`);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { module, totalCount: count ?? 0, rows: data ?? [], page, pageSize };
+    }
+
+    return { ...empty, module, page, pageSize };
+  } catch (err) {
+    console.error(`[SUPERADMIN] Error fetching module '${module}' for company '${companyId}':`, err);
+    return { ...empty, module, page, pageSize, error: String(err) };
+  }
+}
+
+
 async function buildOverview(admin: ReturnType<typeof createClient>) {
   const monthStart = startOfMonthIso();
 
-  const [companiesRes, membersRes, profilesRes, invoicesRes, navInvoicesRes, txRes, salaryRes, monthlyLlmRes, emailByUserId,
+  const [companiesRes, membersRes, profilesRes, countsRes, monthlyLlmRes, emailByUserId,
     errInvoicesRes, errTxRes, errReportsRes, errGlRes, errNavRes, errBankRes, errAppRes,
+    accountyAssignmentsRes,
   ] = await Promise.all([
     admin.from("companies").select("id, name, tax_number, created_at").order("created_at", { ascending: false }),
     admin.from("company_members").select("company_id, user_id, role, created_at"),
     admin.from("profiles").select("id, user_id, name, role, created_at"),
-    admin.from("invoices").select("id, company_id"),
-    admin.from("nav_invoices").select("id, company_id"),
-    admin.from("transactions").select("id, company_id"),
-    admin.from("salary").select("id, company_id"),
+    // ── Single RPC replaces 4 × select("id,company_id") — avoids the PostgREST 1000-row limit ──
+    admin.rpc("get_company_counts"),
     admin
       .from("llm_koltsegek")
       .select("company_id, input_tokens, output_tokens, total_tokens, estimated_cost_usd, llm_calls, created_at")
@@ -264,16 +745,30 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
     admin.from("nav_sync_logs").select("id", { count: "exact", head: true }).eq("status", "error"),
     admin.from("bank_statement_uploads").select("id", { count: "exact", head: true }).eq("processing_status", "error"),
     admin.from("app_error_logs").select("id", { count: "exact", head: true }),
+    // ── eaisyBooks assignment lookup (distinct company_ids that have accounty access) ──
+    admin.from("accounty_assignments").select("company_id"),
   ]);
 
-  for (const res of [companiesRes, membersRes, profilesRes, invoicesRes, navInvoicesRes, txRes, salaryRes, monthlyLlmRes]) {
+  for (const res of [companiesRes, membersRes, profilesRes, countsRes, monthlyLlmRes, accountyAssignmentsRes]) {
     if (res.error) throw res.error;
   }
+
+  // Build set of company_ids that have eaisyBooks (accounty) assignments
+  const eaisyBooksCompanyIds = new Set(
+    (accountyAssignmentsRes.data || []).map((r: { company_id: string }) => r.company_id)
+  );
 
   const companies = (companiesRes.data || []) as CompanyRow[];
   const members = (membersRes.data || []) as CompanyMemberRow[];
   const profiles = (profilesRes.data || []) as (ProfileRow & { created_at: string })[];
   const monthlyLlm = monthlyLlmRes.data || [];
+
+  // Parse RPC count maps — keyed by company_id string
+  const rawCounts = (countsRes.data as { invoices: Record<string, number>; nav_invoices: Record<string, number>; transactions: Record<string, number>; salary: Record<string, number> }) || { invoices: {}, nav_invoices: {}, transactions: {}, salary: {} };
+  const invoiceCounts   = new Map(Object.entries(rawCounts.invoices   || {}));
+  const navInvoiceCounts = new Map(Object.entries(rawCounts.nav_invoices || {}));
+  const txCounts        = new Map(Object.entries(rawCounts.transactions || {}));
+  const salaryCounts    = new Map(Object.entries(rawCounts.salary || {}));
 
   const profileByUserId = new Map(profiles.map((profile) => [profile.user_id, profile]));
   const membersByCompany = new Map<string, CompanyMemberRow[]>();
@@ -284,19 +779,6 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
     membersByCompany.get(member.company_id)!.push(member);
   }
 
-  const countByCompany = (rows: Array<{ company_id: string | null }>) => {
-    const counts = new Map<string, number>();
-    for (const row of rows) {
-      if (!row.company_id) continue;
-      counts.set(row.company_id, (counts.get(row.company_id) || 0) + 1);
-    }
-    return counts;
-  };
-
-  const invoiceCounts = countByCompany(invoicesRes.data || []);
-  const navInvoiceCounts = countByCompany(navInvoicesRes.data || []);
-  const txCounts = countByCompany(txRes.data || []);
-  const salaryCounts = countByCompany(salaryRes.data || []);
 
   const monthlyCostsByCompany = new Map<string, { cost: number; input: number; output: number }>();
   for (const row of monthlyLlm) {
@@ -332,6 +814,7 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
       navInvoiceCount: navInvoiceCounts.get(company.id) || 0,
       transactionCount: txCounts.get(company.id) || 0,
       payrollCount: salaryCounts.get(company.id) || 0,
+      hasEaisyBooks: eaisyBooksCompanyIds.has(company.id),
     };
   });
 
@@ -878,6 +1361,45 @@ async function deleteErrors(
   };
 }
 
+async function deleteAllErrors(
+  admin: ReturnType<typeof createClient>,
+) {
+  const errors: string[] = [];
+  let totalDeleted = 0;
+
+  // 1. DELETE all app_error_logs
+  const { error: appErr, count: appCount } = await admin
+    .from("app_error_logs")
+    .delete()
+    .neq("id", "00000000-0000-0000-0000-000000000000"); // match all rows
+  if (appErr) errors.push(`app_error_logs: ${appErr.message}`);
+  else totalDeleted += appCount || 0;
+
+  // 2. Dismiss all error-status uploads in each source table
+  const uploadTables = [
+    { table: "invoice_uploads", statusField: "processing_status" },
+    { table: "transaction_uploads", statusField: "processing_status" },
+    { table: "report_uploads", statusField: "processing_status" },
+    { table: "gl_upload_notifications", statusField: "processing_status" },
+    { table: "nav_sync_logs", statusField: "status" },
+    { table: "bank_statement_uploads", statusField: "processing_status" },
+  ];
+
+  for (const { table, statusField } of uploadTables) {
+    const { error, count } = await admin
+      .from(table)
+      .update({ [statusField]: "dismissed", error_message: null } as any)
+      .eq(statusField, "error");
+    if (error) errors.push(`${table}: ${error.message}`);
+    else totalDeleted += count || 0;
+  }
+
+  return {
+    deleted: totalDeleted,
+    error: errors.length > 0 ? errors.join("; ") : null,
+  };
+}
+
 // ─── Retry errors ────────────────────────────────────
 const QUEUE_MAP: Record<string, string> = {
   invoice_uploads: "invoice_jobs",
@@ -1135,7 +1657,7 @@ async function buildUserPermissions(admin: ReturnType<typeof createClient>, user
 
   const { data: profileData } = await admin
     .from("profiles")
-    .select("name, role")
+    .select("name, role, is_support_admin")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -1231,6 +1753,7 @@ async function buildUserPermissions(admin: ReturnType<typeof createClient>, user
     email: userEmail,
     name: profileData?.name || "—",
     profileRole: profileData?.role || "user",
+    isSupportAdmin: profileData?.is_support_admin || false,
     eaisybill,
     accounty,
   };
@@ -1244,61 +1767,77 @@ async function updatePermissions(
     companyId?: string;
     firmId?: string;
     permissions?: Array<{ module: string; canRead: boolean; canWrite: boolean }>;
+    isSupportAdmin?: boolean;
   },
 ) {
-  if (!body.userId || !body.platform || !body.permissions) {
-    return { error: "Missing required fields: userId, platform, permissions" };
+  if (!body.userId) {
+    return { error: "Missing required field: userId" };
   }
 
   const errors: string[] = [];
   let updated = 0;
 
-  if (body.platform === "eaisybill") {
-    if (!body.companyId) return { error: "companyId required for eaisybill" };
+  if (body.isSupportAdmin !== undefined) {
+    const { error } = await admin
+      .from("profiles")
+      .update({ is_support_admin: body.isSupportAdmin })
+      .eq("user_id", body.userId);
 
-    for (const perm of body.permissions) {
-      const { error } = await admin
-        .from("eaisybill_module_permissions")
-        .upsert(
-          {
-            company_id: body.companyId,
-            user_id: body.userId,
-            module_name: perm.module,
-            can_read: perm.canRead,
-            can_write: perm.canWrite,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "company_id,user_id,module_name" },
-        );
-
-      if (error) {
-        errors.push(`${perm.module}: ${error.message}`);
-      } else {
-        updated++;
-      }
+    if (error) {
+      errors.push(`is_support_admin: ${error.message}`);
+    } else {
+      updated++;
     }
-  } else if (body.platform === "accounty") {
-    if (!body.firmId) return { error: "firmId required for accounty" };
+  }
 
-    for (const perm of body.permissions) {
-      const { error } = await admin
-        .from("accounty_module_permissions")
-        .upsert(
-          {
-            accounting_firm_id: body.firmId,
-            user_id: body.userId,
-            module_name: perm.module,
-            can_read: perm.canRead,
-            can_write: perm.canWrite,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "accounting_firm_id,user_id,module_name" },
-        );
+  if (body.platform && body.permissions) {
+    if (body.platform === "eaisybill") {
+      if (!body.companyId) return { error: "companyId required for eaisybill" };
 
-      if (error) {
-        errors.push(`${perm.module}: ${error.message}`);
-      } else {
-        updated++;
+      for (const perm of body.permissions) {
+        const { error } = await admin
+          .from("eaisybill_module_permissions")
+          .upsert(
+            {
+              company_id: body.companyId,
+              user_id: body.userId,
+              module_name: perm.module,
+              can_read: perm.canRead,
+              can_write: perm.canWrite,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "company_id,user_id,module_name" },
+          );
+
+        if (error) {
+          errors.push(`${perm.module}: ${error.message}`);
+        } else {
+          updated++;
+        }
+      }
+    } else if (body.platform === "accounty") {
+      if (!body.firmId) return { error: "firmId required for accounty" };
+
+      for (const perm of body.permissions) {
+        const { error } = await admin
+          .from("accounty_module_permissions")
+          .upsert(
+            {
+              accounting_firm_id: body.firmId,
+              user_id: body.userId,
+              module_name: perm.module,
+              can_read: perm.canRead,
+              can_write: perm.canWrite,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "accounting_firm_id,user_id,module_name" },
+          );
+
+        if (error) {
+          errors.push(`${perm.module}: ${error.message}`);
+        } else {
+          updated++;
+        }
       }
     }
   }

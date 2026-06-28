@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-06-23  
-> **Összesen:** 38 döntés | ✅ Decided: 25 | 🟡 Partially Decided: 4 | ⛔ Superseded: 1 | 🔴 Open: 8
+> **Utoljára frissítve:** 2026-06-28  
+> **Összesen:** 40 döntés | ✅ Decided: 25 | 🟡 Partially Decided: 6 | ⛔ Superseded: 1 | 🔴 Open: 8
 
 ---
 
@@ -118,4 +118,10 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| 037 | Management Dashboard | ✅ Decided | [037-management-dashboard.md](./037-management-dashboard.md) |
+| 037 | Management Dashboard (4 nézet: Áttekintés, Control Center, Superadmin 27 modul, Jogosultságok) | ✅ Decided | [037-management-dashboard.md](./037-management-dashboard.md) |
+
+## 📄 Számlázás & Párosítások
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| 040 | Számla Kapcsolatok és Párosítási Logikák (Matching & Relations) | ✅ Decided | [040-invoice-relations-matching.md](./040-invoice-relations-matching.md) |

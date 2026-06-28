@@ -1,6 +1,6 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-06-24  
+> **Utoljára frissítve:** 2026-06-28  
 > **Összesen:** 21 döntés | ✅ Decided: 20 | ⛔ Superseded: 1
 
 ---
@@ -87,7 +87,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-019 | Management Dashboard architektúra (8 action, 5 rétegű guard, Edge Function + service_role) | ✅ Decided | [A-019](./A-019-management-dashboard.md) |
+| A-019 | Management Dashboard architektúra (11 action, 27 superadmin modul, 5 rétegű guard, Edge Function + service_role) | ✅ Decided | [A-019](./A-019-management-dashboard.md) |
 
 ---
 
@@ -102,3 +102,32 @@ A `docs/architecture/` mappában az ADR-ek mellett részletes frontend referenci
 | [frontend-auth-onboarding.md](../frontend-auth-onboarding.md) | Auth flow, session management, RBAC, onboarding wizard |
 | [frontend-performance.md](../frontend-performance.md) | Code splitting, prefetch, memoizáció, query cache tuning |
 | [error-logging-system.md](../error-logging-system.md) | Centralizált error logging & dashboard (app_error_logs tábla, management-stats EF, Management Dashboard Error panel) |
+
+## 🗄️ Adatbázis Séma Dokumentáció
+
+A teljes adatbázis séma referencia a `docs/architecture/` mappában:
+
+| Dokumentum | Tartalom |
+|-----------|----------|
+| [database-schema.md](../database-schema.md) | **Áttekintés** — ~155 tábla listája csoportonként, sor számok, leírások |
+| [database/01-auth-users.md](../database/01-auth-users.md) | 🔐 Auth & Felhasználók (profiles, subscriptions, credentials) |
+| [database/02-companies.md](../database/02-companies.md) | 🏢 Cégek & Tagság |
+| [database/03-permissions.md](../database/03-permissions.md) | 🔑 Jogosultságok (eaisybill + eaisyBooks modul permissions) |
+| [database/04-invoices.md](../database/04-invoices.md) | 📄 Számlák (invoices, uploads, backup táblák) |
+| [database/05-nav.md](../database/05-nav.md) | 🏛️ NAV Online Számla integráció |
+| [database/06-transactions-bank.md](../database/06-transactions-bank.md) | 💳 Tranzakciók & Bank |
+| [database/07-general-ledger.md](../database/07-general-ledger.md) | 📊 Főkönyv (GL accounts, journal entries, audit) |
+| [database/08-salary-hr.md](../database/08-salary-hr.md) | 💰 Bér & Munkaidő |
+| [database/09-petty-cash.md](../database/09-petty-cash.md) | 🏦 Házipénztár |
+| [database/10-assets.md](../database/10-assets.md) | 📦 Tárgyi Eszközök |
+| [database/11-shipping.md](../database/11-shipping.md) | 🚚 Szállítmányozás (shipments, CMR, transport docs) |
+| [database/12-annual-reports.md](../database/12-annual-reports.md) | 📋 Éves Beszámoló & ÁFA bevallások |
+| [database/13-eaisybooks-core.md](../database/13-eaisybooks-core.md) | 📘 eaisyBooks — Alap (assignments, deadlines, missing items) |
+| [database/14-eaisybooks-payroll.md](../database/14-eaisybooks-payroll.md) | 📘 eaisyBooks — Bérszámfejtés |
+| [database/15-eaisybooks-tax-legal.md](../database/15-eaisybooks-tax-legal.md) | 📘 eaisyBooks — Adó & Jogi |
+| [database/16-eaisybooks-org.md](../database/16-eaisybooks-org.md) | 📘 eaisyBooks — Szervezet |
+| [database/17-eaisybooks-ev.md](../database/17-eaisybooks-ev.md) | 📘 eaisyBooks — EV ⚠️ Planned/Empty |
+| [database/18-eaisybooks-ai.md](../database/18-eaisybooks-ai.md) | 📘 eaisyBooks — AI Chat |
+| [database/19-platform-ops.md](../database/19-platform-ops.md) | 🛠️ Platform & Üzemeltetés (error logs, audit, LLM costs) |
+| [database/20-tickets.md](../database/20-tickets.md) | 🎫 Hibajegy Rendszer |
+| [database/21-master-data.md](../database/21-master-data.md) | 🏷️ Törzsadatok (categories, projects, partners) |

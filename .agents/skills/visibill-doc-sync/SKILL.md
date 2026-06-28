@@ -123,6 +123,42 @@ A feature / módosítás **CSAK AKKOR kész** ha:
 
 ---
 
+## 📂 Projekt Dokumentációs Könyvtárstruktúra
+
+A dokumentumoknak szigorúan az alábbi mappastruktúrába kell kerülniük:
+
+```
+d:\ThinkAI\Visibill\eaisybill-prod\docs\
+├── business\                           # Üzleti & Használati követelmények (BRD)
+│   ├── decisions\                      # Számozott üzleti döntések (pl. 001-*.md, index.md)
+│   ├── overview.md                     # Üzleti áttekintés
+│   ├── brd.md                          # Részletes Business Requirements Document
+│   ├── use-cases.md                    # Üzleti Use-Case-ek katalógusa
+│   └── user-journeys.md                # Felhasználói útvonalak leírása
+│
+├── product\                            # Termékspecifikáció & UI/UX (PRD)
+│   ├── decisions\                      # Számozott termék döntések (pl. P-001-*.md, index.md)
+│   ├── prd.md                          # Részletes Product Requirements Document
+│   └── information-architecture.md     # Oldalstruktúra, menüpontok és route-ok
+│
+├── architecture\                       # Rendszerarchitektúra & Technikai specifikáció (ADR)
+│   ├── decisions\                      # Számozott technikai döntések (pl. A-001-*.md, index.md)
+│   ├── database\                       # Adatbázis sémák és magyarázatok (01-auth.md, 04-invoices.md, stb.)
+│   ├── database-schema.md              # Teljes adatbázis sémaleíró generált index
+│   └── overview.md                     # Technikai architektúra áttekintő és adatfolyamok
+│
+└── design\                             # UI/UX minták és tervezési szabályrendszer
+    ├── 00-overview.md                  # Design rendszer áttekintés
+    ├── 05-layout-navigation.md         # Layout és navigációs minták
+    └── [számozott-design-fájlok].md    # Különböző komponens-szintű design specifikációk
+
+d:\ThinkAI\Visibill\worker\docs\        # A Python háttér-worker saját dokumentációja
+├── ARCHITECTURE.md                     # Worker architektúra, queue listeners
+└── PROMPTS.md                          # LLM prompt specifikációk és verziók
+```
+
+---
+
 ## Dokumentáció Taxonómia — Mi mibe kerül?
 
 ### Rétegek és felelősségek
@@ -329,3 +365,28 @@ BRD:  docs/business/decisions/index.md      → utolsó: ellenőrizd a fájlt
 - ADR: [link]
 - PRD: [link]
 ```
+
+### Új Adatbázis Séma (DB Schema) sablon
+```markdown
+# 📄 [Modul / Funkciócsoport neve]
+
+> [Rövid, egysoros leírás a táblák céljáról.]
+
+**Táblák ebben a csoportban:** [táblák száma]
+
+---
+
+### `[tábla_neve]`
+
+**RLS:** [✅ vagy ❌] | **Sorok:** [sorok becsült száma, pl. ~1000 vagy 'Teszt adatok']
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| [oszlop_neve] | [típus] | [✓ ha nullable, — ha NOT NULL] | [default érték] |
+
+**FK:** `[oszlop_neve]` → `[másik_tábla.id]`
+
+**Indexek:** `[index_neve_1]`, `[index_neve_2]`
+```
+

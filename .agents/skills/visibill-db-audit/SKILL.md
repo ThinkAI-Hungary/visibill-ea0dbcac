@@ -25,6 +25,9 @@ Mielőtt az audit elkezdődne, az AI asszisztensnek **KÖTELEZŐ** beolvasnia az
    - [A-016-postgresql-query-strategy.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-016-postgresql-query-strategy.md) (PostgREST vs RPC, SECURITY DEFINER konvenciók)
    - [A-017-security-architecture.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-017-security-architecture.md) (5 rétegű biztonsági architektúra)
    - [A-020-auth-trigger-chain-incident.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-020-auth-trigger-chain-incident.md) (Trigger chain szabályok — signup incident tanulságai)
+4. **Adatbázis Séma és Táblák**:
+   - [database-schema.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/database-schema.md) — A teljes adatbázis séma áttekintő (155 tábla)
+   - [database/](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/database/) — Részletes csoportosított tábla és mezőleírások (01-21 csoportok)
 
 ---
 

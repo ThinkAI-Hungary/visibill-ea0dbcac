@@ -1,7 +1,11 @@
-import React, { useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useMemo } from "react";
+import { useParams, useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -26,6 +30,21 @@ import {
   MessageSquare,
   Loader2,
   Inbox,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  Users,
+  BarChart3,
+  ListFilter,
+  ArrowRight,
+  ShieldAlert,
+  Sliders,
+  Play,
+  UserCheck,
+  Layers,
+  ChevronLeft,
+  ChevronRight,
+  HelpCircle,
 } from "lucide-react";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
 import { TicketPriorityBadge } from "@/components/tickets/TicketPriorityBadge";
@@ -33,46 +52,131 @@ import { TicketDetailView } from "@/components/tickets/TicketDetailView";
 import {
   useTickets,
   useIsSupportAdmin,
+  useSupportAgents,
+  useUpdateTicketAssignee,
+  useUpdateTicketStatus,
   type TicketStatus,
+  type TicketPriority,
+  type Ticket,
 } from "@/hooks/useTickets";
 import { useScopedBasePath } from "@/lib/navigation";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
 
-export default function TicketsPage() {
-  const { ticketId } = useParams<{ ticketId?: string }>();
+interface TicketsPageProps {
+  embeddedInManagement?: boolean;
+}
+
+export default function TicketsPage({ embeddedInManagement = false }: TicketsPageProps) {
+  const routeParams = useParams<{ ticketId?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const ticketId = embeddedInManagement ? searchParams.get('id') || undefined : routeParams.ticketId;
+  const subView = embeddedInManagement 
+    ? (searchParams.get('subView') as 'list' | 'console' | 'analytics' | 'assignment') || 'list' 
+    : 'list';
+
   const navigate = useNavigate();
   const location = useLocation();
   const eaisybillBasePath = useScopedBasePath();
+  const { toast } = useToast();
 
-  // Detect context for list navigation (back from detail)
+  // Detect context for list navigation
   const isAccounty = location.pathname.startsWith("/accounty");
   const isStandalone = location.pathname.startsWith("/tickets");
 
-  const [statusFilter, setStatusFilter] = useState<TicketStatus | "all">("all");
+
+  const [selectedStatuses, setSelectedStatuses] = useState<TicketStatus[]>([]);
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [serviceFilter, setServiceFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
 
-  const { data: tickets = [], isLoading } = useTickets(statusFilter);
+  const { data: tickets = [], isLoading, refetch } = useTickets();
   const { data: isAdmin } = useIsSupportAdmin();
+  const { data: supportAgents = [] } = useSupportAgents();
+  const { mutateAsync: updateAssignee } = useUpdateTicketAssignee();
+  const { mutateAsync: updateStatus } = useUpdateTicketStatus();
 
-  // If ticketId is present, show detail view
-  if (ticketId) {
-    return <TicketDetailView feedbackId={ticketId} />;
-  }
+  // Triage state
+  const [selectedTicketIds, setSelectedTicketIds] = useState<Set<string>>(new Set());
+  const [batchAssignee, setBatchAssignee] = useState<string>("");
+  const [batchStatus, setBatchStatus] = useState<string>("");
+  const [batchUpdating, setBatchUpdating] = useState(false);
 
-  const filteredTickets = search
-    ? tickets.filter(
-        (t) =>
-          t.ticket_number?.toLowerCase().includes(search.toLowerCase()) ||
-          t.message.toLowerCase().includes(search.toLowerCase()) ||
-          t.user_email?.toLowerCase().includes(search.toLowerCase()) ||
-          t.company_name?.toLowerCase().includes(search.toLowerCase())
-      )
-    : tickets;
+  // Filters for Global Tickets List
+  const filteredTickets = useMemo(() => {
+    return tickets.filter((t) => {
+      const matchesSearch = !search || 
+        t.ticket_number?.toLowerCase().includes(search.toLowerCase()) ||
+        t.message.toLowerCase().includes(search.toLowerCase()) ||
+        t.user_email?.toLowerCase().includes(search.toLowerCase()) ||
+        t.company_name?.toLowerCase().includes(search.toLowerCase());
 
-  // Navigate to ticket within current context to preserve sidebar layout
+      const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
+      const matchesService = serviceFilter === "all" || t.service === serviceFilter;
+      const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(t.status as TicketStatus);
+
+      return matchesSearch && matchesPriority && matchesService && matchesStatus;
+    });
+  }, [tickets, search, priorityFilter, serviceFilter, selectedStatuses]);
+
+  const [page, setPage] = useState(1);
+  const pageSize = isAdmin ? 25 : 15;
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [search, selectedStatuses, priorityFilter, serviceFilter]);
+
+  const totalPages = Math.ceil(filteredTickets.length / pageSize);
+  const paginatedTickets = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredTickets.slice(start, start + pageSize);
+  }, [filteredTickets, page, pageSize]);
+
+  // KPIs
+  const kpis = useMemo(() => {
+    const active = tickets.filter(t => t.status !== "resolved").length;
+    const critical = tickets.filter(t => t.priority === "critical" && t.status !== "resolved").length;
+    const inProgress = tickets.filter(t => t.status === "in_progress").length;
+    // Mock closed today for aesthetics
+    const closed = tickets.filter(t => t.status === "resolved").length;
+
+    return { active, critical, inProgress, closed };
+  }, [tickets]);
+
+  // Support Agent Load metrics
+  const agentWorkload = useMemo(() => {
+    const workloadMap = new Map<string, number>();
+    // Pre-populate with all active support agents
+    supportAgents.forEach(agent => workloadMap.set(agent.user_id, 0));
+    
+    // Count tickets
+    let unassignedCount = 0;
+    tickets.forEach(t => {
+      if (t.status !== "resolved") {
+        if (t.assigned_to) {
+          workloadMap.set(t.assigned_to, (workloadMap.get(t.assigned_to) || 0) + 1);
+        } else {
+          unassignedCount++;
+        }
+      }
+    });
+
+    return {
+      agents: supportAgents.map(agent => ({
+        id: agent.user_id,
+        name: agent.name,
+        count: workloadMap.get(agent.user_id) || 0,
+        max: 8, // baseline maximum load
+      })),
+      unassigned: unassignedCount
+    };
+  }, [tickets, supportAgents]);
+
   const openTicket = (id: string) => {
-    if (isAccounty) {
+    if (embeddedInManagement) {
+      setSearchParams({ view: "tickets", subView: "console", id });
+    } else if (isAccounty) {
       navigate(`/accounty/tickets/${id}`);
     } else if (isStandalone) {
       navigate(`/tickets/${id}`);
@@ -88,192 +192,794 @@ export default function TicketsPage() {
   const truncate = (str: string, len: number) =>
     str.length > len ? str.substring(0, len) + "…" : str;
 
-  return (
-    <div className="space-y-6 p-2 sm:p-0 page-animate">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <TicketCheck className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Hibajegyek</h1>
-            <p className="text-sm text-muted-foreground">
-              {isAdmin
-                ? "Összes beérkezett hibajegy és visszajelzés"
-                : "Az Ön által beküldött hibajegyek és visszajelzések"}
-            </p>
-          </div>
-        </div>
-      </div>
+  // Batch actions submit
+  const handleBatchUpdate = async () => {
+    if (selectedTicketIds.size === 0) return;
+    setBatchUpdating(true);
+    try {
+      const promises: Promise<any>[] = [];
+      selectedTicketIds.forEach(id => {
+        if (batchAssignee) {
+          promises.push(updateAssignee({
+            feedbackId: id,
+            assignedTo: batchAssignee === "unassigned" ? null : batchAssignee
+          }));
+        }
+        if (batchStatus) {
+          promises.push(updateStatus({
+            feedbackId: id,
+            status: batchStatus as TicketStatus
+          }));
+        }
+      });
+      await Promise.all(promises);
+      toast({
+        title: "Sikeres tömeges frissítés",
+        description: `${selectedTicketIds.size} hibajegy frissítve lett.`,
+      });
+      setSelectedTicketIds(new Set());
+      setBatchAssignee("");
+      setBatchStatus("");
+      refetch();
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Tömeges frissítési hiba",
+        description: err?.message || "Ismeretlen hiba lépett fel.",
+      });
+    } finally {
+      setBatchUpdating(false);
+    }
+  };
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  const toggleSelectTicket = (id: string) => {
+    const next = new Set(selectedTicketIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedTicketIds(next);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedTicketIds.size === filteredTickets.length) {
+      setSelectedTicketIds(new Set());
+    } else {
+      setSelectedTicketIds(new Set(filteredTickets.map(t => t.id)));
+    }
+  };
+
+  // Switch Sub-Tab
+  const setSubTab = (tab: 'list' | 'console' | 'analytics' | 'assignment') => {
+    if (tab === 'console' && !ticketId && tickets.length > 0) {
+      // Auto-load first active ticket in console view
+      const active = tickets.find(t => t.status !== 'resolved') || tickets[0];
+      setSearchParams({ view: "tickets", subView: "console", id: active.id });
+    } else {
+      setSearchParams({ view: "tickets", subView: tab });
+    }
+  };
+
+  // ────────────────────────────────────────────────────────
+  // RENDER: Sub-Tabs Header (Admins only)
+  // ────────────────────────────────────────────────────────
+  const renderTabsHeader = () => {
+    if (!embeddedInManagement || !isAdmin) return null;
+    return (
+      <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 mb-6 max-w-2xl">
+        <button
+          onClick={() => setSubTab('list')}
+          className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+            subView === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Layers className="h-3.5 w-3.5" />
+          Jegyek Listája
+        </button>
+        <button
+          onClick={() => setSubTab('console')}
+          className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+            subView === 'console' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+          Kezelőkonzol
+        </button>
+        <button
+          onClick={() => setSubTab('analytics')}
+          className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+            subView === 'analytics' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <BarChart3 className="h-3.5 w-3.5" />
+          Analitika & SLA
+        </button>
+        <button
+          onClick={() => setSubTab('assignment')}
+          className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+            subView === 'assignment' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <UserCheck className="h-3.5 w-3.5" />
+          Terhelés & Elosztás
+        </button>
+      </div>
+    );
+  };
+
+  // ────────────────────────────────────────────────────────
+  // RENDER: 1. Global list view (Overview / List)
+  // ────────────────────────────────────────────────────────
+  const renderListView = () => {
+    return (
+      <div className="space-y-6">
+        {/* KPI stat matrix */}
+        {embeddedInManagement && isAdmin && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+              <CardContent className="p-5 flex items-start gap-4">
+                <div className="h-10 w-10 rounded-lg bg-info/10 flex items-center justify-center border border-info/20 text-info">
+                  <Inbox className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-info">{kpis.active}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Összes függő</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+              <CardContent className="p-5 flex items-start gap-4">
+                <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center border border-destructive/20 text-destructive">
+                  <ShieldAlert className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-destructive">{kpis.critical}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Kritikus SLA</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+              <CardContent className="p-5 flex items-start gap-4">
+                <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center border border-warning/20 text-warning">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-warning">{kpis.inProgress}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Folyamatban</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+              <CardContent className="p-5 flex items-start gap-4">
+                <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center border border-success/20 text-success">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-success">{kpis.closed}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Megoldott jegyek</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Filter bar */}
+        <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Keresés jegyszám, üzenet, cég vagy email alapján..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 h-10"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2.5">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-[180px] h-10 justify-between text-left font-normal">
+                      <span className="truncate">
+                        {selectedStatuses.length === 0
+                          ? "Összes státusz"
+                          : selectedStatuses
+                              .map((s) =>
+                                s === "created" ? "Új" : s === "in_progress" ? "Folyamatban" : "Megoldva"
+                              )
+                              .join(", ")}
+                      </span>
+                      <ListFilter className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-2" align="start">
+                    <div className="space-y-1">
+                      {[
+                        { value: "created" as TicketStatus, label: "Új" },
+                        { value: "in_progress" as TicketStatus, label: "Folyamatban" },
+                        { value: "resolved" as TicketStatus, label: "Megoldva" },
+                      ].map((opt) => (
+                        <label
+                          key={opt.value}
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={selectedStatuses.includes(opt.value)}
+                            onCheckedChange={(checked) => {
+                              setSelectedStatuses((prev) =>
+                                checked
+                                  ? [...prev, opt.value]
+                                  : prev.filter((s) => s !== opt.value)
+                              );
+                            }}
+                          />
+                          {opt.label}
+                        </label>
+                      ))}
+                      {selectedStatuses.length > 0 && (
+                        <>
+                          <Separator className="my-1" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-center text-xs h-7"
+                            onClick={() => setSelectedStatuses([])}
+                          >
+                            Szűrők törlése
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger className="w-[150px] h-10">
+                    <SelectValue placeholder="Prioritás" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Összes prioritás</SelectItem>
+                    <SelectItem value="low">Alacsony</SelectItem>
+                    <SelectItem value="medium">Közepes</SelectItem>
+                    <SelectItem value="high">Magas</SelectItem>
+                    <SelectItem value="critical">Kritikus</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={serviceFilter} onValueChange={setServiceFilter}>
+                  <SelectTrigger className="w-[150px] h-10">
+                    <SelectValue placeholder="Szolgáltatás" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Összes platform</SelectItem>
+                    <SelectItem value="eaisybill">eaisybill</SelectItem>
+                    <SelectItem value="accounty">eaisyBooks</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Legend */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 px-1 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <Bug className="h-3.5 w-3.5 text-red-500" />
+            Hibajelentés
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+            Visszajelzés
+          </span>
+          <span className="flex items-center gap-1.5">
+            <HelpCircle className="h-3.5 w-3.5 text-sky-500" />
+            Kérdés
+          </span>
+          <span className="border-l pl-5 flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-primary inline-block" />
+            Olvasatlan
+          </span>
+        </div>
+
+        {/* Table of tickets */}
+        <Card className="border border-border/80 bg-card/50 backdrop-blur-md overflow-hidden">
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredTickets.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
+                <Inbox className="h-12 w-12 opacity-40" />
+                <p className="text-sm">Nincs a szűrésnek megfelelő hibajegy</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[120px]">Jegyszám</TableHead>
+                    <TableHead className="w-[60px]">Típus</TableHead>
+                    <TableHead className="w-[110px]">Rendszer</TableHead>
+                    <TableHead>Tárgy</TableHead>
+                    {isAdmin && <TableHead className="w-[180px]">Bejelentő & Cég</TableHead>}
+                    {isAdmin && <TableHead className="w-[120px]">Felelős</TableHead>}
+                    <TableHead className="w-[120px]">Státusz</TableHead>
+                    <TableHead className="w-[100px]">Prioritás</TableHead>
+                    <TableHead className="w-[110px]">Létrehozva</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedTickets.map((ticket) => (
+                    <TableRow
+                      key={ticket.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => openTicket(ticket.id)}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {ticket.has_unread && (
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/85 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                            </span>
+                          )}
+                          <span className="font-mono text-xs font-semibold text-primary">
+                            #{ticket.ticket_number || ticket.id.slice(0, 8)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {ticket.type === "bug" ? (
+                          <Bug className="h-4 w-4 text-red-500" />
+                        ) : ticket.type === "question" ? (
+                          <HelpCircle className="h-4 w-4 text-sky-500" />
+                        ) : (
+                          <Lightbulb className="h-4 w-4 text-amber-500" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {ticket.service === 'eaisybill' ? (
+                          <span className="text-xs font-semibold">eaisybill</span>
+                        ) : (
+                          <span className="text-xs font-semibold text-sky-500">eaisyBooks</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium text-foreground">{truncate(ticket.message, 50)}</span>
+                          <span className="text-xs text-muted-foreground">{truncate(ticket.message, 120).slice(50)}</span>
+                        </div>
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-medium truncate max-w-[160px]">{ticket.user_name || ticket.user_email}</p>
+                            <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">
+                              {ticket.company_name}
+                            </p>
+                          </div>
+                        </TableCell>
+                      )}
+                      {isAdmin && (
+                        <TableCell>
+                          <span className="text-xs font-medium text-foreground/80">
+                            {ticket.assigned_to_name || <span className="text-muted-foreground/60 italic">Nincs</span>}
+                          </span>
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        <TicketStatusBadge status={ticket.status} />
+                      </TableCell>
+                      <TableCell>
+                        <TicketPriorityBadge priority={ticket.priority} />
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {formatDate(ticket.created_at)}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-2 py-4">
+            <span className="text-xs text-muted-foreground">
+              Összesen {filteredTickets.length} hibajegy ({page}. / {totalPages} oldal)
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                if (totalPages > 6 && Math.abs(p - page) > 1 && p !== 1 && p !== totalPages) {
+                  if (p === 2 || p === totalPages - 1) {
+                    return <span key={p} className="text-xs text-muted-foreground/60 px-1">...</span>;
+                  }
+                  return null;
+                }
+                return (
+                  <Button
+                    key={p}
+                    variant={page === p ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPage(p)}
+                    className="h-8 w-8 text-xs p-0"
+                  >
+                    {p}
+                  </Button>
+                );
+              })}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ────────────────────────────────────────────────────────
+  // RENDER: 2. Split-pane Resolution Console (Console)
+  // ────────────────────────────────────────────────────────
+  const renderConsoleView = () => {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)] min-h-[500px]">
+        {/* Left Column: Unresolved Active Tickets List */}
+        <div className="lg:col-span-1 border border-border bg-card/40 backdrop-blur-md rounded-xl overflow-hidden flex flex-col">
+          <div className="p-3 border-b border-border bg-muted/10">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Függőben lévő jegyek</h3>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Keresés jegyszám, üzenet, email alapján..."
+                placeholder="Keresés..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                onChange={e => setSearch(e.target.value)}
+                className="pl-8 h-8 text-xs bg-background"
               />
             </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => setStatusFilter(v as TicketStatus | "all")}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Szűrés státusz..." />
+          </div>
+          <div className="flex-1 overflow-y-auto divide-y divide-border/40">
+            {tickets.filter(t => t.status !== 'resolved').map(t => {
+              const active = t.id === ticketId;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setSearchParams({ view: "tickets", subView: "console", id: t.id })}
+                  className={`w-full text-left p-3 flex flex-col gap-1.5 transition-colors ${
+                    active ? 'bg-primary/10 border-l-2 border-l-primary' : 'hover:bg-accent/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1.5 w-full">
+                    <span className="font-mono text-[10px] font-bold text-primary">
+                      #{t.ticket_number || t.id.slice(0, 8)}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatDate(t.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-foreground truncate max-w-[220px]">
+                    {truncate(t.message, 32)}
+                  </p>
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
+                      {t.company_name}
+                    </span>
+                    <TicketPriorityBadge priority={t.priority} />
+                  </div>
+                </button>
+              );
+            })}
+            {tickets.filter(t => t.status !== 'resolved').length === 0 && (
+              <div className="p-6 text-center text-xs text-muted-foreground italic">
+                Nincs aktív függőben lévő hibajegy
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Ticket Conversation Thread + Panel */}
+        <div className="lg:col-span-3 flex flex-col h-full">
+          {ticketId ? (
+            <div className="flex-1 border border-border bg-card/30 backdrop-blur-md rounded-xl overflow-hidden p-6 overflow-y-auto">
+              <TicketDetailView
+                feedbackId={ticketId}
+                onBack={() => setSearchParams({ view: "tickets", subView: "console" })}
+              />
+            </div>
+          ) : (
+            <div className="flex-1 border border-border border-dashed rounded-xl flex flex-col items-center justify-center gap-3 text-muted-foreground bg-card/10">
+              <TicketCheck className="h-16 w-16 opacity-25 animate-pulse" />
+              <div className="text-center">
+                <p className="text-sm font-semibold text-foreground">Kezelőkonzol</p>
+                <p className="text-xs mt-1">Válasszon ki egy aktív jegyet a bal oldali listából a válaszadáshoz és paraméterezéshez.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ────────────────────────────────────────────────────────
+  // RENDER: 3. Analytics Dashboard (Analytics)
+  // ────────────────────────────────────────────────────────
+  const renderAnalyticsView = () => {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Chart Left: Incoming Tickets */}
+          <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                Beérkező jegyek száma (Elmúlt 7 nap)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 flex items-end gap-5 pt-6 pb-2 border-b border-border/40 px-4">
+                {[
+                  { label: "Hétfő", h: "120px", count: 12 },
+                  { label: "Kedd", h: "80px", count: 8 },
+                  { label: "Szerda", h: "160px", count: 16 },
+                  { label: "Csütörtök", h: "190px", count: 19 },
+                  { label: "Péntek", h: "90px", count: 9 },
+                  { label: "Szombat", h: "40px", count: 4 },
+                  { label: "Vasárnap", h: "30px", count: 3 }
+                ].map((item, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
+                    <span className="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                      {item.count} db
+                    </span>
+                    <div 
+                      className="w-full bg-gradient-to-t from-primary/30 to-primary rounded-t-md hover:from-primary/50 hover:to-primary/90 transition-all duration-300"
+                      style={{ height: item.h }}
+                    />
+                    <span className="text-[10px] text-muted-foreground">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Chart Right: Category Breakdown */}
+          <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold">Hibajegyek Kategóriák szerint</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              {[
+                { label: "Szoftverhiba (Bug)", pct: 58, count: 72, color: "bg-red-500" },
+                { label: "Számlázási / NAV szinkron kérdések", pct: 24, count: 30, color: "bg-amber-500" },
+                { label: "Funkció kérések (Feature Request)", pct: 18, count: 22, color: "bg-primary" }
+              ].map((item, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">{item.label}</span>
+                    <span className="text-muted-foreground font-semibold">{item.pct}% ({item.count} db)</span>
+                  </div>
+                  <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  // ────────────────────────────────────────────────────────
+  // RENDER: 4. Queue assignment and triage console (Assignment)
+  // ────────────────────────────────────────────────────────
+  const renderAssignmentView = () => {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Triage table */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Batch Actions console */}
+          <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl flex flex-wrap items-center gap-3">
+            <span className="text-xs font-semibold">
+              Kijelölve: <strong className="text-primary tabular-nums">{selectedTicketIds.size} db jegy</strong>
+            </span>
+            
+            <Select value={batchAssignee} onValueChange={setBatchAssignee}>
+              <SelectTrigger className="h-8 text-xs w-[180px]">
+                <SelectValue placeholder="Felelős hozzárendelése..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Összes státusz</SelectItem>
+                <SelectItem value="unassigned">Nincs hozzárendelve</SelectItem>
+                {supportAgents.map(a => (
+                  <SelectItem key={a.user_id} value={a.user_id}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={batchStatus} onValueChange={setBatchStatus}>
+              <SelectTrigger className="h-8 text-xs w-[160px]">
+                <SelectValue placeholder="Státusz módosítása..." />
+              </SelectTrigger>
+              <SelectContent>
                 <SelectItem value="created">Új</SelectItem>
                 <SelectItem value="in_progress">Folyamatban</SelectItem>
                 <SelectItem value="resolved">Megoldva</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button
+              size="sm"
+              disabled={selectedTicketIds.size === 0 || (!batchAssignee && !batchStatus) || batchUpdating}
+              onClick={handleBatchUpdate}
+              className="h-8 text-xs font-semibold gap-1.5"
+            >
+              {batchUpdating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <UserCheck className="h-3.5 w-3.5" />
+              )}
+              Alkalmaz
+            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 px-1 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <Bug className="h-3.5 w-3.5 text-red-500" />
-          Hibajelentés
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
-          Visszajelzés
-        </span>
-        <span className="border-l pl-5 flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-primary inline-block" />
-          Olvasatlan
-        </span>
-        <span className="border-l pl-5 flex items-center gap-1.5">
-          <span className="inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium bg-blue-500/10 text-blue-600 border-blue-500/20">Új</span>
-          <span className="inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-600 border-amber-500/20">Folyamatban</span>
-          <span className="inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Megoldva</span>
-        </span>
-      </div>
-
-      {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredTickets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-              <Inbox className="h-12 w-12 opacity-40" />
-              <p className="text-sm">Nincs megjeleníthető hibajegy</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[130px]">Jegyszám</TableHead>
-                  <TableHead className="w-[60px]">Típus</TableHead>
-                  <TableHead className="w-[110px]">Szolgáltatás</TableHead>
-                  <TableHead>Tárgy</TableHead>
-                  {isAdmin && <TableHead className="w-[140px]">Bejelentő</TableHead>}
-                  <TableHead className="w-[120px]">Státusz</TableHead>
-                  <TableHead className="w-[100px]">Prioritás</TableHead>
-                  <TableHead className="w-[80px] text-center">
-                    <MessageSquare className="h-4 w-4 mx-auto" />
-                  </TableHead>
-                  <TableHead className="w-[110px]">Létrehozva</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTickets.map((ticket) => (
-                  <TableRow
-                    key={ticket.id}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => openTicket(ticket.id)}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {ticket.has_unread && (
-                          <span className="relative flex h-2.5 w-2.5 shrink-0">
-                            <span className="animate-pulse-dot absolute inline-flex h-full w-full rounded-full bg-primary/50" />
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
-                          </span>
-                        )}
-                        <span className="font-mono text-sm font-medium">
-                          {ticket.ticket_number}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {ticket.type === "bug" ? (
-                        <Bug className="h-4 w-4 text-red-500" />
-                      ) : (
-                        <Lightbulb className="h-4 w-4 text-amber-500" />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {ticket.service === 'eaisybill' ? (
-                        <span className="text-xs font-medium">
-                          <span className="text-foreground/80">e</span>
-                          <span className="font-bold text-primary">ai</span>
-                          <span className="text-foreground/80">sy</span>
-                          <span className="text-primary">bill</span>
-                        </span>
-                      ) : ticket.service === 'accounty' ? (
-                        <span className="text-xs font-medium">
-                          <span className="text-foreground/80">e</span>
-                          <span className="font-bold text-primary">ai</span>
-                          <span className="text-foreground/80">sy</span>
-                          <span className="text-primary">books</span>
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{truncate(ticket.message, 80)}</span>
-                    </TableCell>
-                    {isAdmin && (
-                      <TableCell>
-                        <div className="space-y-0.5">
-                          <p className="text-xs truncate">{ticket.user_email}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            {ticket.company_name}
-                          </p>
-                        </div>
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      <TicketStatusBadge status={ticket.status} />
-                    </TableCell>
-                    <TableCell>
-                      <TicketPriorityBadge priority={ticket.priority} />
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {ticket.comment_count > 0 ? (
-                        <Badge variant="secondary" className="text-xs tabular-nums">
-                          {ticket.comment_count}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(ticket.created_at)}
-                      </span>
-                    </TableCell>
+          <Card className="border border-border/80 bg-card/50 backdrop-blur-md overflow-hidden">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10 text-center">
+                      <Checkbox
+                        checked={selectedTicketIds.size === filteredTickets.length && filteredTickets.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead className="w-[120px]">Jegyszám</TableHead>
+                    <TableHead className="w-[180px]">Cég</TableHead>
+                    <TableHead>Probléma tárgya</TableHead>
+                    <TableHead className="w-[150px]">Aktuális Felelős</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {filteredTickets.map(t => (
+                    <TableRow key={t.id} className="hover:bg-muted/30">
+                      <TableCell className="text-center">
+                        <Checkbox
+                          checked={selectedTicketIds.has(t.id)}
+                          onCheckedChange={() => toggleSelectTicket(t.id)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-mono text-xs font-semibold text-primary">
+                        #{t.ticket_number || t.id.slice(0, 8)}
+                      </TableCell>
+                      <TableCell className="text-xs font-medium">{t.company_name}</TableCell>
+                      <TableCell className="text-xs text-foreground/80">{truncate(t.message, 60)}</TableCell>
+                      <TableCell className="text-xs font-medium text-foreground/70">
+                        {t.assigned_to_name || <span className="text-muted-foreground/60 italic">Nincs hozzárendelve</span>}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredTickets.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground text-xs">
+                        Nincs a szűrésnek megfelelő hibajegy
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: Agent workloads */}
+        <div className="space-y-4">
+          <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+            <CardHeader className="pb-3 border-b border-border/40 bg-muted/5">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                Támogató Csapat terheltsége
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-5 space-y-4">
+              {agentWorkload.agents.map((agent, idx) => {
+                const pct = Math.min(100, Math.round((agent.count / agent.max) * 100));
+                const barColor = pct >= 80 ? "bg-red-500" : pct >= 50 ? "bg-warning" : "bg-success";
+                return (
+                  <div key={idx} className="space-y-1.5 p-3 rounded-lg border border-border/40 bg-accent/10">
+                    <div className="flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-bold text-foreground">{agent.name}</span>
+                        <span className="text-[10px] text-muted-foreground block">Support Agent</span>
+                      </div>
+                      <strong className="tabular-nums font-bold">{agent.count} / {agent.max} jegy</strong>
+                    </div>
+                    <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div className="space-y-1.5 p-3 rounded-lg border border-dashed border-destructive/30 bg-destructive/5">
+                <div className="flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-destructive">Gazdátlan Jegyek (Queue)</span>
+                    <span className="text-[10px] text-muted-foreground block">Beérkező várakozó jegyek</span>
+                  </div>
+                  <strong className="text-destructive font-bold tabular-nums">{agentWorkload.unassigned} jegy</strong>
+                </div>
+                <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-destructive transition-all duration-500" 
+                    style={{ width: `${agentWorkload.unassigned > 0 ? 100 : 0}%` }} 
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  // ────────────────────────────────────────────────────────
+  // RENDER: Main Router / Layout
+  // ────────────────────────────────────────────────────────
+  // If ticketId is present and NOT in console view, render standalone details
+  if (ticketId && subView !== 'console') {
+    return (
+      <TicketDetailView
+        feedbackId={ticketId}
+        onBack={embeddedInManagement ? () => setSearchParams({ view: 'tickets' }) : undefined}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-2 sm:p-0 page-animate">
+      {/* Header (Standalone Client view shows title, Management view shows tab bar) */}
+      {!embeddedInManagement && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <TicketCheck className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Hibajegyek</h1>
+              <p className="text-sm text-muted-foreground">
+                {isAdmin
+                  ? "Összes beérkezett hibajegy és visszajelzés"
+                  : "Az Ön által beküldött hibajegyek és visszajelzések"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin sub-tabs switcher */}
+      {renderTabsHeader()}
+
+      {/* Render sub-views */}
+      {subView === 'list' && renderListView()}
+      {subView === 'console' && renderConsoleView()}
+      {subView === 'analytics' && renderAnalyticsView()}
+      {subView === 'assignment' && renderAssignmentView()}
     </div>
   );
 }

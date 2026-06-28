@@ -110,7 +110,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
-| `management-stats` | ❌ | Management dashboard statisztikák (service_role) |
+| `management-stats` | ❌ | Management dashboard — 11 action (overview, company/user detail, permissions, errors CRUD, superadmin 27 modul). Service_role auth. |
 | `create-management-user` | — | ⛔ **Eltávolítva** — nincs meg a `supabase/functions/` könyvtárban |
 | `export-user-data` | ✅ | GDPR adatexport — felhasználó összes adata ZIP-ben |
 | `get-invoice-image-url` | ❌ | Számla kép signed URL generálása (Storage) |

@@ -18,6 +18,9 @@ Az AI **KÖTELES** első lépésként megnyitni és elolvasni:
    - [A-017](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-017-security-architecture.md) — RLS pattern, multi-tenancy, audit trail
    - [A-003](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-003-multi-tenancy-rls.md) — Multi-tenancy RLS
    - [A-005](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-005-edge-functions.md) — 46 Edge Function katalógus (ha EF érintett)
+4. **Adatbázis Séma és Táblák**:
+   - [database-schema.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/database-schema.md) — A teljes adatbázis séma áttekintő (155 tábla)
+   - [database/](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/database/) — Részletes csoportosított tábla és mezőleírások (01-21 csoportok)
 
 > ⚠️ Ezen referenciák elolvasása nélkül TILOS bármilyen SQL, migration vagy DB kód tervezése!
 
@@ -202,8 +205,19 @@ view_file ~/.gemini/config/skills\visibill-feature-planner\SKILL.md
 → Fázis 3.5 (User Validáció) → Fázis 4 (Docs Frissítés) → Fázis 5 (Graphify)
 
 ### Ha a feladat egyszerű volt (1-2 fájl):
-1. **User validáció:** Kérd a user megerősítését hogy működik
+1. **User validáció:** Kérd a user megerősítését hogy működik a megvalósított kód.
 2. **EF/RPC registry frissítés:**
    - Új Edge Function → frissítsd `A-005-edge-functions.md`
    - Új RPC function → frissítsd `A-016-postgresql-query-strategy.md`
    - Darabszám változás → frissítsd `overview.md` és `index.md`
+3. **Adatbázis sémadokumentáció frissítése (CSAK user megerősítés után!):**
+   - **Kritikus szabály:** Csak miután a felhasználó visszaigazolta, hogy a DB-t érintő módosítás élesben/devben jól működik, csak akkor szabad lefutni a dokumentáció frissítésének!
+   - Töltsd le a friss metaadatokat a Supabase MCP server-ből (`supabase-visibill` / `execute_sql` parancsokkal) az alábbi fájlokba a `.temp-db-metadata/` mappába:
+     * `columns.json` (oszlopok lekérdezése)
+     * `constraints.json` (tábla megszorítások)
+     * `accurate_fks.json` (pontos FK-k `pg_constraint` alapján)
+     * `indexes.json` (indexek listája)
+     * `comments.json` (tábla/oszlop kommentek)
+     * `tables.json` (táblák statisztikái: sorok száma és RLS állapot)
+   - Futtasd a `npm run gen-db-docs` parancsot a dokumentáció automatikus frissítéséhez.
+   - Töröld le a `.temp-db-metadata/` könyvtárat a tiszta állapot megőrzése érdekében.

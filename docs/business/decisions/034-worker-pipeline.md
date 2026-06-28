@@ -22,3 +22,9 @@
 - Competing consumers: több Docker instance természetesen load-balance-ol PGMQ-n
 
 **Rationale:** A queue-alapú feldolgozás biztosítja a megbízhatóságot (üzenet nem vész el), a skálázhatóságot (több worker instance) és az aszinkronitást (felhasználó nem vár). A retroaktív rematch megoldja a race condition-t, amikor számla és tranzakció egyszerre dolgozódik fel.
+
+## Verification & Testing
+A háttérfeldolgozó pipeline-ok helyességét a Python worker teszt suite-ja ellenőrzi:
+- **Fast unit tests:** `python run_tests.py` a gyors, API hívás nélküli ellenőrzésekhez.
+- **Full E2E pipeline tests:** `python run_tests.py --full` a teljes AI kinyerési, OCR és feldolgozási folyamat ellenőrzéséhez.
+- Lásd részletesen: [A-006: Python Worker Architektúra](../../architecture/decisions/A-006-python-worker.md), [Decision 040: Számla Kapcsolatok és Párosítási Logikák (Matching & Relations)](./040-invoice-relations-matching.md) és a [Worker unit_test README.md](../../../worker/test/unit_test/README.md).

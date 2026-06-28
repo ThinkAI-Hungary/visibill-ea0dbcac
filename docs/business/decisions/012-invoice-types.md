@@ -19,3 +19,6 @@
 Minden típusnál rögzített mezők: eladó/vevő adatok, ÁFA bontás, fizetési mód, határidő, bruttó/nettó összegek, fordított adózás flag, pénzforgalmi elszámolás flag.
 
 **Rationale:** Az 5 típus lefedi a magyar számlázási rendszer fő dokumentumtípusait. A rendszer LLM-el automatikusan felismeri a típust a feldolgozás során. A backup táblák (sima_szamla_backup, vegszamla_backup, stb.) az eredeti típus-specifikus struktúrákat őrzik.
+
+---
+Lásd még: [Decision 040: Számla Kapcsolatok és Párosítási Logikák (Matching & Relations)](./040-invoice-relations-matching.md)

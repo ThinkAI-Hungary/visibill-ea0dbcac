@@ -262,6 +262,54 @@ const OrgSimplifiedReportPage = lazy(() => import("./pages/Accounty/Ev/OrgSimpli
 
 import { reportError } from '@/lib/errorReporter';
 
+/** Extract a human-readable message + structured details from any thrown value. */
+function extractErrorInfo(error: unknown): { message: string; details: Record<string, unknown> } {
+  if (error instanceof Error) {
+    // Standard JS Error — may also have Supabase-style extra fields
+    const extra = error as Record<string, unknown>;
+    return {
+      message: error.message,
+      details: {
+        ...(extra['code'] != null && { code: extra['code'] }),
+        ...(extra['details'] != null && { details: extra['details'] }),
+        ...(extra['hint'] != null && { hint: extra['hint'] }),
+        ...(extra['status'] != null && { status: extra['status'] }),
+      },
+    };
+  }
+  if (typeof error === 'object' && error !== null) {
+    // Plain object (e.g. Supabase PostgrestError: { message, code, details, hint })
+    const obj = error as Record<string, unknown>;
+    let msg = '';
+    if (typeof obj['message'] === 'string') {
+      msg = obj['message'];
+    } else if (typeof obj['message'] === 'object' && obj['message'] !== null && typeof (obj['message'] as Record<string, unknown>)['message'] === 'string') {
+      msg = (obj['message'] as Record<string, unknown>)['message'] as string;
+    } else if (typeof obj['error'] === 'string') {
+      msg = obj['error'];
+    } else if (typeof obj['error'] === 'object' && obj['error'] !== null && typeof (obj['error'] as Record<string, unknown>)['message'] === 'string') {
+      msg = (obj['error'] as Record<string, unknown>)['message'] as string;
+    } else {
+      try {
+        msg = JSON.stringify(obj);
+      } catch {
+        msg = String(error);
+      }
+    }
+    return {
+      message: msg,
+      details: {
+        ...(obj['code'] != null && { code: obj['code'] }),
+        ...(obj['details'] != null && { details: obj['details'] }),
+        ...(obj['hint'] != null && { hint: obj['hint'] }),
+        ...(obj['status'] != null && { status: obj['status'] }),
+        raw: obj,
+      },
+    };
+  }
+  return { message: String(error), details: {} };
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -274,26 +322,28 @@ const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
       // Log every final query failure (after retries exhausted)
+      const { message, details } = extractErrorInfo(error);
       reportError({
         type: 'db_query',
         component: String(query.queryKey?.[0] || 'UnknownQuery'),
         action: 'query_error',
-        message: error instanceof Error ? error.message : String(error),
+        message,
         error,
-        context: { queryKey: query.queryKey },
+        context: { queryKey: query.queryKey, ...details },
       });
     },
   }),
   mutationCache: new MutationCache({
     onError: (error, _variables, _context, mutation) => {
       // Log every mutation failure
+      const { message, details } = extractErrorInfo(error);
       reportError({
         type: 'db_query',
         component: String(mutation.options.mutationKey?.[0] || 'UnknownMutation'),
         action: 'mutation_error',
-        message: error instanceof Error ? error.message : String(error),
+        message,
         error,
-        context: { mutationKey: mutation.options.mutationKey },
+        context: { mutationKey: mutation.options.mutationKey, ...details },
       });
     },
   }),

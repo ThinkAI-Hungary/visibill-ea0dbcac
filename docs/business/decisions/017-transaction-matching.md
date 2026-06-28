@@ -13,3 +13,6 @@
 - GL szám hozzárendelés tranzakciókra is
 
 **Rationale:** Az AI-alapú párosítás drasztikusan csökkenti a manuális munkát. A confidence score lehetővé teszi a bizonytalan párosítások felülvizsgálatát.
+
+---
+Lásd még: [Decision 040: Számla Kapcsolatok és Párosítási Logikák (Matching & Relations)](./040-invoice-relations-matching.md)
