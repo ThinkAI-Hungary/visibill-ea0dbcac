@@ -16,6 +16,7 @@ import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { reportError } from '@/lib/errorReporter';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { CategoryDonutChart } from '@/components/CategoryDonutChart';
+import { CategoryAmountSummary } from '@/components/CategoryAmountSummary';
 import { CategoryAccordionItem, formatCurrencyTotals, type CategoryInvoice } from '@/components/CategoryAccordionItem';
 import { IconPicker, ColorPicker, DEFAULT_CATEGORY_COLOR, resolveIcon } from '@/components/IconPicker';
 import { FolderOpen } from 'lucide-react';
@@ -713,7 +714,7 @@ const Onboarding = () => {
 
       {/* Donut chart summary */}
       {categories.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-6 space-y-4">
           <CategoryDonutChart
             stats={donutStats}
             totalInvoices={totalInvoices}
@@ -721,6 +722,7 @@ const Onboarding = () => {
             onSegmentClick={handleDonutClick}
             activeIndex={activeDonutIndex}
           />
+          <CategoryAmountSummary stats={donutStats} />
         </div>
       )}
 
@@ -768,6 +770,7 @@ const Onboarding = () => {
                 invoiceCount={stats?.invoiceCount || 0}
                 totalAmount={stats?.totalAmount || 0}
                 totalAllAmount={totalAmount}
+                totalInvoiceCount={totalInvoices}
                 currencyTotals={stats?.currencyTotals || {}}
                 onToggle={() => toggleCategory(catId)}
                 onEdit={() => openEditDialog(index)}

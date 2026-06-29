@@ -21,9 +21,11 @@ interface CategoryAccordionItemProps {
   color: string;
   iconName: string | null;
   invoiceCount: number;
-  /** HUF-only total — used for progress bar ratio */
+  /** HUF-only total — used for amount display fallback */
   totalAmount: number;
   totalAllAmount: number;
+  /** Total invoice count across all categories — for progress bar ratio */
+  totalInvoiceCount: number;
   /** Per-currency totals, e.g. { HUF: 12000, USD: 45.5 } */
   currencyTotals: Record<string, number>;
   onToggle: () => void;
@@ -58,6 +60,7 @@ export function CategoryAccordionItem({
   invoiceCount,
   totalAmount,
   totalAllAmount,
+  totalInvoiceCount,
   currencyTotals,
   onToggle,
   onEdit,
@@ -66,7 +69,7 @@ export function CategoryAccordionItem({
   const IconComponent = resolveIcon(iconName);
   const tags = description ? description.split(',').map(t => t.trim()).filter(Boolean) : [];
   const isEmpty = invoiceCount === 0;
-  const pct = totalAllAmount > 0 ? Math.round((totalAmount / totalAllAmount) * 100) : 0;
+  const pct = totalInvoiceCount > 0 ? Math.round((invoiceCount / totalInvoiceCount) * 100) : 0;
 
   const amountDisplay = isEmpty ? '0 Ft' : formatCurrencyTotals(currencyTotals);
 

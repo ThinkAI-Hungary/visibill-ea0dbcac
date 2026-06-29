@@ -1,8 +1,9 @@
-# P-041 — Kategóriák: Multi-currency összeg megjelenítés + dual-table keresés
+# P-041 — Kategóriák: Multi-currency összeg + arány konzisztencia + összeg kimutatás
 
 > **Státusz:** ✅ Decided  
 > **Dátum:** 2026-06-26  
-> **Implementálva:** `CategoryAccordionItem.tsx`, `Onboarding.tsx`
+> **Utoljára frissítve:** 2026-06-29  
+> **Implementálva:** `CategoryAccordionItem.tsx`, `CategoryDonutChart.tsx`, `CategoryAmountSummary.tsx`, `Onboarding.tsx`
 
 ---
 
@@ -41,10 +42,43 @@ A találatok merge-elve jelennek meg, forrás badge-gel jelölve (NAV / Bek.).
 Az Onboarding oldalon a Kategóriák szekció leírása frissítve informatívabb szövegre,
 amely elmagyarázza a GL számok és a számla-hozzárendelés kapcsolatát.
 
+### 4. Arány megjelenítés — számla darabszám alapú (2026-06-29)
+
+**Probléma:** Az arány megjelenítés inkonzisztens volt — a donut chart legendán
+HUF-only kategóriáknál %-ot mutatott, multi-currency-nél összegeket, üreseknél
+gondolatjelet. A progress bar a HUF összeg arányára épült, ami multi-currency
+kategóriáknál 0 volt.
+
+**Döntés:** Minden arány megjelenítés **számla darabszám** (`invoiceCount / totalInvoiceCount`)
+alapú:
+
+- **Donut chart legenda:** `%` (invoice count arány) — minden kategóriára egységesen
+- **Accordion progress bar:** invoice count arány — deviza-független
+- **Üres kategóriák:** `–` (gondolatjel)
+
+**Miért:** A donut chart szegmensek eleve invoice count alapúak, így a legenda és
+progress bar is ezt követi. Ez deviza-független és konzisztens megjelenítést ad.
+
+**Elutasított alternatívák:**
+- HUF-ekvivalens (exchange rate alapú) — túl komplex, árfolyamfüggő
+- Vegyes logika (% + összeg) — inkonzisztens UX
+
+### 5. Összeg kimutatás — vízszintes sáv diagram (2026-06-29)
+
+A donut chart (darabszám arány) alatt egy külön kártya jelenik meg:
+**„Összeg kategóriánként"** — vízszintes sávok a kategória színével,
+csökkenő összeg szerinti sorrendben.
+
+- Sávok relatív mérete: HUF összeg arány (a legnagyobb kategóriához viszonyítva)
+- Összeg label: multi-currency formátum (`X Ft | Y EUR`)
+- Üres kategóriák (0 számla) nem jelennek meg
+
 ---
 
 ## Kapcsolódó fájlok
 
-- `src/components/CategoryAccordionItem.tsx`
-- `src/pages/Onboarding.tsx`
+- `src/components/CategoryAccordionItem.tsx` — accordion sor, progress bar
+- `src/components/CategoryDonutChart.tsx` — donut chart + legenda
+- `src/components/CategoryAmountSummary.tsx` — összeg sáv diagram
+- `src/pages/Onboarding.tsx` — Kategóriák oldal
 - Táblák: `nav_invoices`, `invoices`, `categories`

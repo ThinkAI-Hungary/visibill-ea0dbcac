@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { formatCurrencyTotals } from '@/components/CategoryAccordionItem';
 
 interface CategoryStat {
   name: string;
@@ -144,17 +143,9 @@ export function CategoryDonutChart({
                 {stat.name}
               </span>
               <span className="text-muted-foreground tabular-nums text-right shrink-0">
-                {(() => {
-                  const ct = stat.currencyTotals || {};
-                  const hasAny = Object.values(ct).some(v => v > 0);
-                  if (!hasAny) return '–';
-                  // HUF-only: show % of invoice count
-                  if (Object.keys(ct).length === 1 && ct['HUF']) {
-                    return `${Math.round((stat.invoiceCount / totalInvoices) * 100)}%`;
-                  }
-                  // Multi-currency: show formatted amounts
-                  return formatCurrencyTotals(ct);
-                })()}
+                {stat.invoiceCount > 0
+                  ? `${Math.round((stat.invoiceCount / totalInvoices) * 100)}%`
+                  : '–'}
               </span>
             </button>
           ))}
