@@ -74,10 +74,15 @@ Az upgrade idempotens: ha már `both`, nem nyúl hozzá. Ha ugyanaz a típus, ne
 | `worker/partner_upsert.py` | D1 + D2 + D3 implementáció |
 | `supabase/functions/nav-auto-sync/index.ts` | D1 + D3 implementáció |
 | `supabase/functions/nav-query-outbound-invoices/index.ts` | D1 + D3 implementáció + address fill |
-| `src/pages/PartnersPage.tsx` | D2 frontend kezelés (FOREIGN: elrejtése) |
+| `src/pages/PartnersPage.tsx` | D2 frontend kezelés (FOREIGN: elrejtése) + D4 név-alapú matching |
 | `worker/test/unit_test/test_partner_upsert.py` | 17 unit teszt |
+
+## Backfill (2026-06-29)
+
+Egyszeri SQL script hozta létre a hiányzó külföldi partnereket a meglévő számlákból (13 partner, 3 cég). A jövőben a worker automatikusan hozza létre őket.
 
 ## Kapcsolódó
 - [A-012: NAV Online Számla API v3 integráció](./A-012-nav-integration.md) — NAV sync partner caching logika
 - [P-040: Partnertörzs dual-table számlák](../product/decisions/P-040-partners-invoice-panel.md) — Partner UI
-- [P-044: Külföldi partner megjelenítés](../product/decisions/P-044-foreign-partner-display.md) — Frontend FOREIGN: kezelés
+- [P-044: Külföldi partner megjelenítés](../product/decisions/P-044-foreign-partner-display.md) — Frontend FOREIGN: kezelés + név-alapú matching
+
