@@ -196,11 +196,11 @@ export default function PartnersPage() {
               supabase.from('invoices')
                 .select('*', { count: 'exact', head: true })
                 .eq('company_id', selectedCompany.id)
-                .or(`elado_nev.ilike.%${escapedName}%,vevo_nev.ilike.%${escapedName}%`),
+                .or(`elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`),
               supabase.from('nav_invoices')
                 .select('*', { count: 'exact', head: true })
                 .eq('company_id', selectedCompany.id)
-                .or(`supplier_name.ilike.%${escapedName}%,customer_name.ilike.%${escapedName}%`),
+                .or(`supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`),
             ]);
             return { id: fp.id, count: (invCount || 0) + (navCount || 0) };
           })
@@ -246,7 +246,7 @@ export default function PartnersPage() {
           .select('id, invoice_number, invoice_direction, invoice_gross_amount, invoice_net_amount, invoice_issue_date, payment_date, currency, supplier_name, customer_name, payment_method')
           .eq('company_id', selectedCompany.id)
           .or(isForeign
-            ? `supplier_name.ilike.%${escapedName}%,customer_name.ilike.%${escapedName}%`
+            ? `supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
             : `supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number}`
           )
           .order('invoice_issue_date', { ascending: false })
@@ -257,7 +257,7 @@ export default function PartnersPage() {
           .select('id, bizonylatsorszam, invoice_direction, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem, elado_nev, vevo_nev, fizetesi_mod, elado_vat_id, vevo_vat_id')
           .eq('company_id', selectedCompany.id)
           .or(isForeign
-            ? `elado_nev.ilike.%${escapedName}%,vevo_nev.ilike.%${escapedName}%`
+            ? `elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`
             : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%`
           )
           .order('kibocsatas_datuma', { ascending: false })
