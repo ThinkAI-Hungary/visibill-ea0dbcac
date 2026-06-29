@@ -473,8 +473,13 @@ export default function PartnersPage() {
       return;
     }
     setEmailError("");
+    // If editing a foreign partner and tax_number left empty, keep the original FOREIGN: value
+    const finalTaxNumber = isEditingForeign && !formData.tax_number.trim()
+      ? editingPartner.tax_number
+      : formData.tax_number;
     saveMutation.mutate({
       ...formData,
+      tax_number: finalTaxNumber,
       id: editingPartner?.id,
     });
   };
@@ -946,21 +951,14 @@ export default function PartnersPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="tax_number">{editingPartner && isForeignPartner(editingPartner.tax_number) ? 'Adószám' : 'Adószám *'}</Label>
-              {editingPartner && isForeignPartner(editingPartner.tax_number) ? (
-                <Input
-                  id="tax_number"
-                  value="Külföldi partner – nincs adószám"
-                  disabled
-                  className="text-muted-foreground italic"
-                />
-              ) : (
-                <Input
-                  id="tax_number"
-                  value={formData.tax_number}
-                  onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
-                  placeholder="12345678-1-23"
-                />
-              )}
+              <Input
+                id="tax_number"
+                value={formData.tax_number}
+                onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
+                placeholder={editingPartner && isForeignPartner(editingPartner.tax_number)
+                  ? 'Külföldi partner – írd be az adószámot ha ismert'
+                  : '12345678-1-23'}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="address">Cím</Label>
