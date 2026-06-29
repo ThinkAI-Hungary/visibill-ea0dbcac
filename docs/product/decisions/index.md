@@ -115,5 +115,5 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| P-041 | Kategóriák multi-currency összeg + dual-table hozzárendelési keresés | ✅ Decided | [P-041](./P-041-categories-multicurrency-search.md) |
+| P-041 | Kategóriák multi-currency összeg + arány konzisztencia + összeg kimutatás | ✅ Decided | [P-041](./P-041-categories-multicurrency-search.md) |
 | P-042 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [P-042](./P-042-categories-projects-sync.md) |
