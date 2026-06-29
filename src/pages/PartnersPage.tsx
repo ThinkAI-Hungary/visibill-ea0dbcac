@@ -185,7 +185,33 @@ export default function PartnersPage() {
         }
       });
 
+      // Name-based invoice counts for FOREIGN: partners
+      const foreignPartners = (partnerData as Partner[]).filter(p => isForeignPartner(p.tax_number));
+      const foreignCounts: Record<string, number> = {};
+      if (foreignPartners.length > 0) {
+        const foreignResults = await Promise.all(
+          foreignPartners.map(async (fp) => {
+            const escapedName = fp.name.replace(/'/g, "''");
+            const [{ count: invCount }, { count: navCount }] = await Promise.all([
+              supabase.from('invoices')
+                .select('*', { count: 'exact', head: true })
+                .eq('company_id', selectedCompany.id)
+                .or(`elado_nev.ilike.%${escapedName}%,vevo_nev.ilike.%${escapedName}%`),
+              supabase.from('nav_invoices')
+                .select('*', { count: 'exact', head: true })
+                .eq('company_id', selectedCompany.id)
+                .or(`supplier_name.ilike.%${escapedName}%,customer_name.ilike.%${escapedName}%`),
+            ]);
+            return { id: fp.id, count: (invCount || 0) + (navCount || 0) };
+          })
+        );
+        foreignResults.forEach(r => { foreignCounts[r.id] = r.count; });
+      }
+
       return (partnerData as Partner[]).map(partner => {
+        if (isForeignPartner(partner.tax_number)) {
+          return { ...partner, invoice_count: foreignCounts[partner.id] || 0 };
+        }
         const cleanTax = partner.tax_number ? partner.tax_number.replace(/-/g, '').substring(0, 8) : '';
         return {
           ...partner,
@@ -205,10 +231,13 @@ export default function PartnersPage() {
 
   // Fetch selected partner's invoices — both NAV and uploaded
   const { data: partnerInvoices, isLoading: isLoadingInvoices } = useQuery({
-    queryKey: ['partner-all-invoices', selectedPartner?.tax_number, selectedCompany?.id],
+    queryKey: ['partner-all-invoices', selectedPartner?.tax_number, selectedPartner?.name, selectedCompany?.id],
     queryFn: async (): Promise<PartnerInvoice[]> => {
       if (!selectedPartner?.tax_number || !selectedCompany?.id) return [];
+
+      const isForeign = isForeignPartner(selectedPartner.tax_number);
       const cleanTax = selectedPartner.tax_number.replace(/-/g, '').substring(0, 8);
+      const escapedName = selectedPartner.name.replace(/'/g, "''");
 
       const [{ data: navData }, { data: uploadedData }] = await Promise.all([
         // NAV invoices
@@ -216,15 +245,21 @@ export default function PartnersPage() {
           .from('nav_invoices')
           .select('id, invoice_number, invoice_direction, invoice_gross_amount, invoice_net_amount, invoice_issue_date, payment_date, currency, supplier_name, customer_name, payment_method')
           .eq('company_id', selectedCompany.id)
-          .or(`supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number}`)
+          .or(isForeign
+            ? `supplier_name.ilike.%${escapedName}%,customer_name.ilike.%${escapedName}%`
+            : `supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number}`
+          )
           .order('invoice_issue_date', { ascending: false })
           .limit(50),
-        // Uploaded invoices matched by VAT ID prefix
+        // Uploaded invoices
         supabase
           .from('invoices')
           .select('id, bizonylatsorszam, invoice_direction, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem, elado_nev, vevo_nev, fizetesi_mod, elado_vat_id, vevo_vat_id')
           .eq('company_id', selectedCompany.id)
-          .or(`elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%`)
+          .or(isForeign
+            ? `elado_nev.ilike.%${escapedName}%,vevo_nev.ilike.%${escapedName}%`
+            : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%`
+          )
           .order('kibocsatas_datuma', { ascending: false })
           .limit(50),
       ]);
