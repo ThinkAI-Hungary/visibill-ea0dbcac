@@ -1525,8 +1525,8 @@
     "semantic_hash": ""
   },
   "src/pages/PartnersPage.tsx": {
-    "mtime": 1782466051.3511174,
-    "ast_hash": "2ff183e850fd837cbf67e46624214f2c",
+    "mtime": 1782742365.399613,
+    "ast_hash": "fbed566f322ee7ef368b8bbcf70e00f4",
     "semantic_hash": ""
   },
   "src/pages/PettyCashPage.tsx": {
@@ -1705,13 +1705,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
-    "mtime": 1782325973.1705406,
-    "ast_hash": "8ca0ba1fa76eeb3f8cd70b5fe123132b",
+    "mtime": 1782741339.1851566,
+    "ast_hash": "7e3330eb983ee24977eeef1cc2737d49",
     "semantic_hash": ""
   },
   "supabase/functions/nav-query-outbound-invoices/index.ts": {
-    "mtime": 1781082894.2566817,
-    "ast_hash": "6abd696b0f1c7256a1537e63dfcfe9e3",
+    "mtime": 1782741371.1911032,
+    "ast_hash": "9400436a8e3cb9ff30a03de00522f1f9",
     "semantic_hash": ""
   },
   "supabase/functions/nav-sync/index.ts": {
@@ -3115,8 +3115,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-012-nav-integration.md": {
-    "mtime": 1781082894.1965888,
-    "ast_hash": "25b271ba65c23403005de5c8aab18768",
+    "mtime": 1782743039.291936,
+    "ast_hash": "664f07c20f9602e88edc8de30e99b2b7",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-013-scoped-routing.md": {
@@ -3160,8 +3160,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1782651627.2912655,
-    "ast_hash": "888c8ff6122874167a0edda15b4694a5",
+    "mtime": 1782743059.6852436,
+    "ast_hash": "93ce4099f7ceb813cd7d63b81a58a185",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3635,8 +3635,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1782731986.3772793,
-    "ast_hash": "9aa756e0c75bfc45830ebf5cfcf0e5eb",
+    "mtime": 1782743061.69775,
+    "ast_hash": "736014380d964403dfb8072cfd05a21e",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5470,8 +5470,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/21-master-data.md": {
-    "mtime": 1782621606.940395,
-    "ast_hash": "5cc510a8ee27868d88d921f3704be625",
+    "mtime": 1782743121.062325,
+    "ast_hash": "f2f3128e3f2209f0d23920026d027439",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-022-categories-projects-sync.md": {
@@ -5677,6 +5677,16 @@
   "src/assets/og-image.png": {
     "mtime": 1782653030.843738,
     "ast_hash": "19235b5d6436cf4ff9b7d22290b2eee1",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-024-partner-upsert-strategy.md": {
+    "mtime": 1782742990.6142874,
+    "ast_hash": "aef842011129b5fabe408686831a49fe",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-044-foreign-partner-display.md": {
+    "mtime": 1782742992.6306088,
+    "ast_hash": "f78cd3c1085ed599d7b0128a79e28ebd",
     "semantic_hash": ""
   }
 }

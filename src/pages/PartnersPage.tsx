@@ -58,6 +58,14 @@ import {
 
 const DEFAULT_PAGE_SIZE = 15;
 
+/** Returns true if the tax_number is a worker-generated synthetic ID for foreign partners */
+const isForeignPartner = (taxNumber: string | null | undefined): boolean =>
+  !!taxNumber?.startsWith('FOREIGN:');
+
+/** Display-safe tax_number: returns empty string for synthetic FOREIGN: IDs */
+const displayTaxNumber = (taxNumber: string | null | undefined): string =>
+  !taxNumber || isForeignPartner(taxNumber) ? '' : taxNumber;
+
 interface Partner {
   id: string;
   name: string;
@@ -361,7 +369,7 @@ export default function PartnersPage() {
       filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(query) ||
-          p.tax_number.toLowerCase().includes(query) ||
+          (!isForeignPartner(p.tax_number) && p.tax_number.toLowerCase().includes(query)) ||
           (p.address && p.address.toLowerCase().includes(query))
       );
     }
@@ -395,7 +403,7 @@ export default function PartnersPage() {
       setEditingPartner(partner);
       setFormData({
         name: partner.name,
-        tax_number: partner.tax_number,
+        tax_number: displayTaxNumber(partner.tax_number),
         address: partner.address || "",
         email: partner.email || "",
         partner_type: partner.partner_type,
@@ -451,10 +459,11 @@ export default function PartnersPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.tax_number.trim()) {
+    const isEditingForeign = editingPartner && isForeignPartner(editingPartner.tax_number);
+    if (!formData.name.trim() || (!isEditingForeign && !formData.tax_number.trim())) {
       toast({
         title: "Hiányzó adatok",
-        description: "A név és adószám megadása kötelező.",
+        description: isEditingForeign ? "A név megadása kötelező." : "A név és adószám megadása kötelező.",
         variant: "destructive",
       });
       return;
@@ -609,7 +618,13 @@ export default function PartnersPage() {
                               </div>
                             </TableCell>
                             <TableCell className="font-mono text-xs text-muted-foreground py-2">
-                              {partner.tax_number}
+                              {isForeignPartner(partner.tax_number) ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 font-sans">
+                                  Külföldi
+                                </span>
+                              ) : (
+                                partner.tax_number
+                              )}
                             </TableCell>
                             <TableCell className="py-2">
                               {partner.partner_type === 'customer' && (
@@ -725,14 +740,14 @@ export default function PartnersPage() {
                 <div className="grid grid-cols-2 gap-y-3 border border-border/30 rounded-xl p-4 bg-muted/10">
                   <div>
                     <p className="text-[10px] text-muted-foreground font-semibold">Adószám</p>
-                    {selectedPartner.tax_number ? (
+                    {selectedPartner.tax_number && !isForeignPartner(selectedPartner.tax_number) ? (
                       <CopyableCell
                         value={selectedPartner.tax_number}
                         className="font-mono text-xs font-semibold mt-0.5"
                         ariaLabel="Adószám másolása"
                       />
                     ) : (
-                      <span className="text-xs text-muted-foreground/50">—</span>
+                      <span className="text-xs text-muted-foreground/50">{isForeignPartner(selectedPartner.tax_number) ? 'Külföldi partner' : '—'}</span>
                     )}
                   </div>
                   <div className="col-span-2">
@@ -930,13 +945,22 @@ export default function PartnersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tax_number">Adószám *</Label>
-              <Input
-                id="tax_number"
-                value={formData.tax_number}
-                onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
-                placeholder="12345678-1-23"
-              />
+              <Label htmlFor="tax_number">{editingPartner && isForeignPartner(editingPartner.tax_number) ? 'Adószám' : 'Adószám *'}</Label>
+              {editingPartner && isForeignPartner(editingPartner.tax_number) ? (
+                <Input
+                  id="tax_number"
+                  value="Külföldi partner – nincs adószám"
+                  disabled
+                  className="text-muted-foreground italic"
+                />
+              ) : (
+                <Input
+                  id="tax_number"
+                  value={formData.tax_number}
+                  onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
+                  placeholder="12345678-1-23"
+                />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="address">Cím</Label>
