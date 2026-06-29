@@ -2,12 +2,12 @@ import React, { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   FileBarChart, ArrowLeft, ChevronRight, Info, Calculator,
-  CheckCircle2, Clock, Send, Download, Calendar, Loader2
+  CheckCircle2, Clock, AlertTriangle, Send, Download, Calendar, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
-import { formatHuf, DEFAULT_2026_PARAMS } from '@/lib/evCalculations';
-import { useEvTaxReturns, useEvGlobalTaxParams } from '@/hooks/useEvData';
+import { formatHuf, DEFAULT_2026_PARAMS, calculateQuarterlyContributions } from '@/lib/evCalculations';
+import { useEvTaxReturns, useEvGlobalTaxParams, useEvContributions } from '@/hooks/useEvData';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -16,7 +16,10 @@ const STATUS_CFG = {
   accepted: { label: 'Elfogadva', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
   draft: { label: 'Vázlat', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: FileBarChart },
   upcoming: { label: 'Közelgő', color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400', icon: Clock },
+  overdue: { label: 'Lejárt!', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: AlertTriangle },
 };
+
+const QUARTER_LABELS = ['Q1', 'Q2', 'Q3', 'Q4'];
 
 export default function EvContribReturnPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,12 +28,16 @@ export default function EvContribReturnPage() {
   // ─── Real data ────────────────────────────────────────────────────────────
   const { data: allReturns, isLoading } = useEvTaxReturns(id, 2026);
   const { data: globalParams } = useEvGlobalTaxParams(2026);
+  const { data: contributions } = useEvContributions(id, 2026);
 
   const contribReturns = useMemo(() => {
-    return (allReturns || [])
-      .filter((r: any) => r.return_type === '2658' || r.return_type === 'contrib')
+    const dbReturns = (allReturns || [])
+      .filter((r: any) => r.return_type === '2658' || r.return_type === 'contrib' || r.return_type === 'jarulekbevallas')
       .map((r: any) => {
-        const status = r.status === 'submitted' || r.status === 'accepted' ? 'submitted'
+        const now = new Date();
+        const isOverdue = r.status !== 'submitted' && r.status !== 'accepted' && r.deadline && new Date(r.deadline) < now;
+        const status = isOverdue ? 'overdue'
+          : r.status === 'submitted' || r.status === 'accepted' ? 'submitted'
           : r.status === 'draft' ? 'draft' : 'upcoming';
         return {
           id: r.id,
@@ -41,11 +48,47 @@ export default function EvContribReturnPage() {
           szochoAmount: r.data?.szocho_amount || 0,
           totalAmount: r.calculated_tax || 0,
           submittedDate: r.submitted_at,
+          isGenerated: false,
         };
       });
-  }, [allReturns]);
+
+    // If no DB records, generate from contributions data
+    if (dbReturns.length === 0) {
+      const now = new Date();
+      const deadlines = [
+        `2026-04-12`, `2026-07-12`, `2026-10-12`, `2027-01-12`,
+      ];
+
+      return [1, 2, 3, 4].map((q, i) => {
+        const d = new Date(deadlines[i]);
+        const isPast = now > d;
+        const daysUntil = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const status: keyof typeof STATUS_CFG = isPast ? 'overdue' : daysUntil <= 30 ? 'draft' : 'upcoming';
+
+        // Get amounts from contributions data if available
+        const contribRecord = (contributions || []).find((c: any) => c.quarter === q);
+        const tbAmount = contribRecord?.tb_amount ?? 0;
+        const szochoAmount = contribRecord?.szocho_amount ?? 0;
+        const totalAmount = contribRecord?.total_amount ?? 0;
+
+        return {
+          id: `gen-2658-Q${q}`,
+          quarter: `2026 ${QUARTER_LABELS[i]}`,
+          deadline: deadlines[i],
+          status,
+          tbAmount,
+          szochoAmount,
+          totalAmount,
+          submittedDate: null,
+          isGenerated: true,
+        };
+      });
+    }
+    return dbReturns;
+  }, [allReturns, contributions]);
 
   const totalPaid = contribReturns.filter(r => r.status === 'submitted').reduce((s, r) => s + r.totalAmount, 0);
+  const totalExpected = contribReturns.reduce((s, r) => s + r.totalAmount, 0);
   const tbRate = globalParams?.tb_rate || 18.5;
   const szochoRate = globalParams?.szocho_rate || 13;
 
@@ -96,20 +139,22 @@ export default function EvContribReturnPage() {
             <Loader2 className="w-8 h-8 mb-3 animate-spin text-teal-400" />
             <p className="text-sm">Betöltés...</p>
           </div>
-        ) : contribReturns.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-            <FileBarChart className="w-10 h-10 mb-3 opacity-50" />
-            <p className="text-sm font-medium">Még nincs járulékbevallás rögzítve</p>
-          </div>
         ) : (
           contribReturns.map(ret => {
             const cfg = STATUS_CFG[ret.status] || STATUS_CFG.upcoming;
             const Icon = cfg.icon;
             return (
-              <div key={ret.id} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+              <div key={ret.id} className={cn(
+                'bg-card rounded-xl border shadow-soft overflow-hidden',
+                ret.status === 'overdue' ? 'border-red-300 dark:border-red-800' : 'border-border'
+              )}>
                 <div className="flex items-center justify-between px-5 py-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-xs font-bold text-teal-600">58</div>
+                    <div className={cn(
+                      'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold',
+                      ret.status === 'overdue' ? 'bg-red-100 dark:bg-red-900/30 text-red-600'
+                        : 'bg-teal-100 dark:bg-teal-900/30 text-teal-600'
+                    )}>58</div>
                     <div>
                       <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{ret.quarter} – TB/Szocho bevallás</p>
                       <div className="flex items-center gap-3 mt-0.5">
@@ -125,14 +170,14 @@ export default function EvContribReturnPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    {ret.totalAmount > 0 && (
-                      <div className="text-right">
-                        {(ret.tbAmount > 0 || ret.szochoAmount > 0) && (
-                          <p className="text-xs text-slate-400">TB: {formatHuf(ret.tbAmount)} | Szocho: {formatHuf(ret.szochoAmount)}</p>
-                        )}
-                        <p className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">{formatHuf(ret.totalAmount)}</p>
-                      </div>
-                    )}
+                    <div className="text-right">
+                      {(ret.tbAmount > 0 || ret.szochoAmount > 0) && (
+                        <p className="text-xs text-slate-400">TB: {formatHuf(ret.tbAmount)} | Szocho: {formatHuf(ret.szochoAmount)}</p>
+                      )}
+                      <p className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+                        {ret.totalAmount > 0 ? formatHuf(ret.totalAmount) : '–'}
+                      </p>
+                    </div>
                     {ret.status === 'draft' && (
                       <button className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 hover:bg-indigo-100 transition-colors"><Send className="w-4 h-4" /></button>
                     )}

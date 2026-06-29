@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   BarChart3, ArrowLeft, ChevronRight, Plus, Edit3, Trash2,
-  Calculator, Info, Calendar, Tag, Loader2
+  Calculator, Info, Calendar, Tag, Loader2, Download, ExternalLink
 } from 'lucide-react';
+import TenyImportModal from '@/components/ev/TenyImportModal';
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
@@ -15,6 +16,7 @@ export default function EvDepreciationPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
   const [taxYear] = useState(2026);
+  const [importOpen, setImportOpen] = useState(false);
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawAssets, isLoading } = useEvFixedAssets(id, taxYear);
@@ -39,6 +41,7 @@ export default function EvDepreciationPage() {
         cumulativeDepreciation: a.accumulated_depreciation,
         currentYearDepreciation: currentYearDep,
         netBookValue,
+        isLinked: !!a.source_fixed_asset_id,
       };
     });
   }, [rawAssets]);
@@ -74,9 +77,17 @@ export default function EvDepreciationPage() {
             <p className="text-sm text-slate-500">Szja tv. 11. sz. melléklet – tárgyi eszközök amortizációja</p>
           </div>
         </div>
-        <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
-          <Plus className="w-3.5 h-3.5" /> Új eszköz
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setImportOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" /> Importálás TÉNY-ből
+          </button>
+          <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
+            <Plus className="w-3.5 h-3.5" /> Új eszköz
+          </button>
+        </div>
       </div>
 
       {/* Summary */}
@@ -125,9 +136,15 @@ export default function EvDepreciationPage() {
                 </tr>
               ) : assets.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-sm text-slate-400">
+                  <td colSpan={8} className="py-16 text-center">
                     <BarChart3 className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                    Nincs még rögzített tárgyi eszköz
+                    <p className="text-sm text-slate-400 mb-3">Nincs még rögzített tárgyi eszköz</p>
+                    <button
+                      onClick={() => setImportOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Importálás a TÉNY nyilvántartásból
+                    </button>
                   </td>
                 </tr>
               ) : (
@@ -138,7 +155,14 @@ export default function EvDepreciationPage() {
                   return (
                     <tr key={asset.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                       <td className="py-3 px-4">
-                        <p className="font-semibold text-slate-900 dark:text-slate-100">{asset.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-slate-900 dark:text-slate-100">{asset.name}</p>
+                          {asset.isLinked && (
+                            <span className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 border border-emerald-200 dark:border-emerald-800" title="Importálva a TÉNY nyilvántartásból">
+                              TÉNY
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
                           <Tag className="w-3 h-3" /> {asset.category}
                         </p>
@@ -224,6 +248,16 @@ export default function EvDepreciationPage() {
           </div>
         </div>
       </div>
+
+      {/* TÉNY Import Modal */}
+      {id && (
+        <TenyImportModal
+          isOpen={importOpen}
+          onClose={() => setImportOpen(false)}
+          companyId={id}
+          taxYear={taxYear}
+        />
+      )}
     </div>
   );
 }

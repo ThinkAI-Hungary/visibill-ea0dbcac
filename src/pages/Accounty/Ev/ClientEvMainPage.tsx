@@ -32,6 +32,16 @@ const VAT_LABELS: Record<string, string> = {
   penzforgalmi: 'Pénzforgalmi ÁFA',
 };
 
+const ORG_TYPE_LABELS: Record<string, string> = {
+  egyesulet: 'Egyesület',
+  alapitvany: 'Alapítvány',
+  egyhaz: 'Egyházi szervezet',
+  tarsashaz: 'Társasház',
+  lakasszov: 'Lakásszövetkezet',
+  mrp: 'MRP szervezet',
+  egyeb: 'Egyéb szervezet',
+};
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function ClientEvMainPage() {
@@ -185,7 +195,7 @@ export default function ClientEvMainPage() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
               {client?.name || 'Ügyfél'}
             </h1>
-            <div className="flex items-center gap-3 mt-0.5">
+            <div className="flex items-center gap-3 mt-0.5 flex-wrap">
               <span className="text-xs text-slate-400 font-mono">{client?.taxNumber || ''}</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600">
                 {FORM_LABELS[taxpayerForm] || taxpayerForm}
@@ -193,6 +203,19 @@ export default function ClientEvMainPage() {
               <span className="text-xs text-slate-400">{EMPLOYMENT_LABELS[employmentStatus] || employmentStatus}</span>
               <span className="text-xs text-slate-400">•</span>
               <span className="text-xs text-slate-400">{VAT_LABELS[vatStatus] || vatStatus}</span>
+              {evSettings?.org_type && (
+                <>
+                  <span className="text-xs text-slate-400">•</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600">
+                    {ORG_TYPE_LABELS[evSettings.org_type] || evSettings.org_type}
+                  </span>
+                </>
+              )}
+              {evSettings?.bookkeeping_mode && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 dark:bg-sky-900/30 text-sky-600">
+                  {evSettings.bookkeeping_mode === 'egyszeres' ? 'Egyszeres' : 'Kettős'}
+                </span>
+              )}
             </div>
           </div>
         </div>

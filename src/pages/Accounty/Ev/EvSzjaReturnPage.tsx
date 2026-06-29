@@ -8,7 +8,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
-import { useEvTaxReturns, EvTaxReturn } from '@/hooks/useEvData';
+import { useEvTaxReturns, useEvClientSettings, type EvTaxReturn, type EvClientSettings } from '@/hooks/useEvData';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -22,13 +22,126 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 
 const RETURN_TYPE_LABELS: Record<string, { type: string; code: string }> = {
   szja: { type: 'SZJA bevallás', code: '53' },
+  jarulekbevallas: { type: 'TB járulék', code: '58' },
   '2658': { type: 'TB járulék', code: '58' },
   contrib: { type: 'TB járulék', code: '58' },
   hipa: { type: 'HIPA bevallás', code: 'HIPA' },
   kata: { type: 'KATA bevallás', code: 'KATA' },
   afa: { type: 'ÁFA bevallás', code: '65' },
+  cegautado: { type: 'Cégautóadó', code: 'CAR' },
   car: { type: 'Cégautóadó', code: 'CAR' },
 };
+
+// ─── Generate expected returns for a tax year ───────────────────────────────
+
+function generateExpectedReturns(taxYear: number, settings: EvClientSettings | null | undefined) {
+  const now = new Date();
+  const expected: Array<{
+    id: string; type: string; code: string; period: string;
+    deadline: string; status: string; amount: number;
+    submittedDate: string | null; navSubmissionId: string | null;
+    isGenerated: boolean;
+  }> = [];
+
+  const getStatus = (deadline: string) => {
+    const d = new Date(deadline);
+    if (now > d) return 'overdue';
+    const days = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return days <= 30 ? 'draft' : 'upcoming';
+  };
+
+  // Quarterly 2658 (járulékbevallás) — all EV types except kiegészítő
+  const quarterDeadlines = [
+    { q: 'Q1', deadline: `${taxYear}-04-12` },
+    { q: 'Q2', deadline: `${taxYear}-07-12` },
+    { q: 'Q3', deadline: `${taxYear}-10-12` },
+    { q: 'Q4', deadline: `${taxYear + 1}-01-12` },
+  ];
+
+  for (const qd of quarterDeadlines) {
+    expected.push({
+      id: `gen-2658-${qd.q}`,
+      type: 'TB járulék bevallás',
+      code: '2658',
+      period: `${taxYear} ${qd.q}`,
+      deadline: qd.deadline,
+      status: getStatus(qd.deadline),
+      amount: 0,
+      submittedDate: null,
+      navSubmissionId: null,
+      isGenerated: true,
+    });
+  }
+
+  // Annual SZJA — átalány or VSZJA
+  const form = settings?.taxpayer_form;
+  if (form !== 'kata') {
+    expected.push({
+      id: `gen-szja-annual`,
+      type: form === 'atalany' ? 'SZJA bevallás (átalányadó)' : 'SZJA bevallás (VSZJA)',
+      code: form === 'atalany' ? '2553' : '2553',
+      period: `${taxYear} Éves`,
+      deadline: `${taxYear + 1}-05-20`,
+      status: getStatus(`${taxYear + 1}-05-20`),
+      amount: 0,
+      submittedDate: null,
+      navSubmissionId: null,
+      isGenerated: true,
+    });
+  }
+
+  // KATA
+  if (form === 'kata') {
+    expected.push({
+      id: `gen-kata-annual`,
+      type: 'KATA nyilatkozat',
+      code: 'KATA',
+      period: `${taxYear} Éves`,
+      deadline: `${taxYear + 1}-02-25`,
+      status: getStatus(`${taxYear + 1}-02-25`),
+      amount: 0,
+      submittedDate: null,
+      navSubmissionId: null,
+      isGenerated: true,
+    });
+  }
+
+  // HIPA
+  expected.push({
+    id: `gen-hipa-annual`,
+    type: 'HIPA bevallás',
+    code: 'HIPAK',
+    period: `${taxYear} Éves`,
+    deadline: `${taxYear}-05-31`,
+    status: getStatus(`${taxYear}-05-31`),
+    amount: 0,
+    submittedDate: null,
+    navSubmissionId: null,
+    isGenerated: true,
+  });
+
+  // ÁFA — only if not alanyi_mentes
+  const vat = settings?.vat_status;
+  if (vat && vat !== 'alanyi_mentes') {
+    expected.push({
+      id: `gen-afa-annual`,
+      type: 'ÁFA bevallás',
+      code: '2665',
+      period: `${taxYear} Éves`,
+      deadline: `${taxYear + 1}-02-25`,
+      status: getStatus(`${taxYear + 1}-02-25`),
+      amount: 0,
+      submittedDate: null,
+      navSubmissionId: null,
+      isGenerated: true,
+    });
+  }
+
+  // Sort by deadline
+  expected.sort((a, b) => a.deadline.localeCompare(b.deadline));
+
+  return expected;
+}
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -39,9 +152,10 @@ export default function EvSzjaReturnPage() {
 
   // ─── Real data ────────────────────────────────────────────────────────────
   const { data: allReturns, isLoading } = useEvTaxReturns(id, 2026);
+  const { data: evSettings } = useEvClientSettings(id, 2026);
 
   const returns = useMemo(() => {
-    return (allReturns || []).map((r: any) => {
+    const dbReturns = (allReturns || []).map((r: any) => {
       const labels = RETURN_TYPE_LABELS[r.return_type] || { type: r.return_type, code: r.form_code || '?' };
       const now = new Date();
       const isOverdue = r.status !== 'submitted' && r.status !== 'accepted' && r.deadline && new Date(r.deadline) < now;
@@ -58,9 +172,16 @@ export default function EvSzjaReturnPage() {
         amount: r.calculated_tax || 0,
         submittedDate: r.submitted_at,
         navSubmissionId: r.nav_submission_id,
+        isGenerated: false,
       };
     });
-  }, [allReturns]);
+
+    // If no DB records, generate expected returns
+    if (dbReturns.length === 0) {
+      return generateExpectedReturns(2026, evSettings);
+    }
+    return dbReturns;
+  }, [allReturns, evSettings]);
 
   const filtered = useMemo(() => {
     if (tab === 'all') return returns;

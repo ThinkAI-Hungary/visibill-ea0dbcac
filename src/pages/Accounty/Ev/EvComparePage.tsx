@@ -86,18 +86,18 @@ export default function EvComparePage() {
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Éves bevétel (Ft)</label>
-              <Input type="number" value={revenue} onChange={e => setRevenue(Number(e.target.value))} className="bg-card font-mono" />
+              <Input type="number" min={0} value={revenue} onChange={e => setRevenue(Math.max(0, Number(e.target.value)))} className="bg-card font-mono" />
               <input type="range" min={0} max={60_000_000} step={100_000} value={revenue} onChange={e => setRevenue(Number(e.target.value))} className="w-full accent-indigo-600" />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Ténylegesen felmerülő költségek (VSZJA-hoz)</label>
-              <Input type="number" value={costs} onChange={e => setCosts(Number(e.target.value))} className="bg-card font-mono" />
+              <Input type="number" min={0} value={costs} onChange={e => setCosts(Math.max(0, Number(e.target.value)))} className="bg-card font-mono" />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Vállalkozói kivét (VSZJA-hoz)</label>
-              <Input type="number" value={kivet} onChange={e => setKivet(Number(e.target.value))} className="bg-card font-mono" />
+              <Input type="number" min={0} value={kivet} onChange={e => setKivet(Math.max(0, Number(e.target.value)))} className="bg-card font-mono" />
             </div>
 
             <div className="space-y-1.5">

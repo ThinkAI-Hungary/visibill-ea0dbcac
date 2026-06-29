@@ -38,18 +38,22 @@ export default function EvContributionsPage() {
     return [1, 2, 3, 4].map(quarter => {
       const dbRecord = dbData.find((r: any) => r.quarter === quarter) as EvContributionCalc | undefined;
 
-      if (dbRecord) {
-        // Use pre-computed DB values
-        const now = new Date();
-        const deadlineMonth = quarter === 4 ? 0 : quarter * 3 + 1; // Apr, Jul, Oct, Jan
-        const deadlineYear = quarter === 4 ? taxYear + 1 : taxYear;
-        const deadlineDate = new Date(deadlineYear, deadlineMonth, 12);
-        const isPast = now > deadlineDate;
+      // Determine deadline date for this quarter
+      const deadlineMonth = quarter === 4 ? 0 : quarter * 3 + 1; // Apr=3, Jul=6, Oct=9, Jan=0
+      const deadlineYear = quarter === 4 ? taxYear + 1 : taxYear;
+      const deadlineDate = new Date(deadlineYear, deadlineMonth, 12);
+      const now = new Date();
+      const isPast = now > deadlineDate;
+      const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const isDueSoon = !isPast && daysUntilDeadline <= 30;
 
+      const status: 'paid' | 'due' | 'upcoming' = isPast ? 'paid' : isDueSoon ? 'due' : 'upcoming';
+
+      if (dbRecord) {
         return {
           quarter,
           ytdIncome: dbRecord.ytd_income,
-          status: isPast ? ('paid' as const) : ('upcoming' as const),
+          status,
           calc: {
             currentQuarterBase: dbRecord.current_quarter_base,
             tbAmount: dbRecord.tb_amount,
@@ -60,14 +64,13 @@ export default function EvContributionsPage() {
           },
         };
       } else {
-        // No DB record — calculate locally with zero income
         const calc = calculateQuarterlyContributions(
           quarter, 0, 0, 3, employmentStatus, isSkilled, params
         );
         return {
           quarter,
           ytdIncome: 0,
-          status: 'upcoming' as const,
+          status,
           calc,
         };
       }

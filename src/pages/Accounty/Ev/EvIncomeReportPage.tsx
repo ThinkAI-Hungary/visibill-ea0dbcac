@@ -165,36 +165,41 @@ export default function EvIncomeReportPage() {
           {/* Simple bar chart */}
           <div className="bg-card rounded-xl border border-border shadow-soft p-5">
             <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">Havi bevétel alakulás</h2>
-            <div className="flex items-end gap-2 h-48">
-              {monthlyData.map(d => {
-                const heightPct = maxRevenue > 0 ? (d.revenue / maxRevenue) * 100 : 0;
-                const costPct = maxRevenue > 0 ? (d.costs / maxRevenue) * 100 : 0;
+            <div className="flex gap-2 h-48">
+              {MONTHS.map((monthLabel, idx) => {
+                const d = monthlyData.find(m => m.month === monthLabel);
+                const revenue = d?.revenue || 0;
+                const costs = d?.costs || 0;
+                const heightPct = maxRevenue > 0 ? (revenue / maxRevenue) * 100 : 0;
+                const costPct = revenue > 0 ? (costs / revenue) * 100 : 0;
+
                 return (
-                  <div key={d.month} className="flex-1 flex flex-col items-center gap-1">
-                    <span className="text-[10px] font-mono text-slate-500 tabular-nums">{formatHuf(d.revenue).replace(/\s*Ft$/, '')}</span>
-                    <div className="w-full flex flex-col items-center gap-0.5" style={{ height: `${heightPct}%` }}>
-                      <div
-                        className="w-full bg-emerald-500/20 border border-emerald-500/30 rounded-t-md relative overflow-hidden"
-                        style={{ height: '100%' }}
-                      >
+                  <div key={monthLabel} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                    <span className="text-[10px] font-mono text-slate-500 tabular-nums truncate w-full text-center">
+                      {revenue > 0 ? formatHuf(revenue).replace(/\s*Ft$/, '') : '–'}
+                    </span>
+                    <div className="flex-1 w-full flex items-end">
+                      {revenue > 0 ? (
                         <div
-                          className="absolute bottom-0 left-0 right-0 bg-red-400/40 rounded-b-none"
-                          style={{ height: `${costPct / heightPct * 100}%` }}
-                        />
-                      </div>
+                          className="w-full bg-emerald-500/20 border border-emerald-500/30 rounded-t-md relative overflow-hidden transition-all duration-500"
+                          style={{ height: `${heightPct}%` }}
+                        >
+                          <div
+                            className="absolute bottom-0 left-0 right-0 bg-red-400/40"
+                            style={{ height: `${costPct}%` }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-md" />
+                      )}
                     </div>
-                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">{d.month}</span>
+                    <span className={cn(
+                      'text-[10px] font-bold',
+                      revenue > 0 ? 'text-slate-600 dark:text-slate-400' : 'text-slate-300'
+                    )}>{monthLabel}</span>
                   </div>
                 );
               })}
-              {/* Empty months */}
-              {Array.from({ length: 12 - monthlyData.length }, (_, i) => (
-                <div key={`empty-${i}`} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-slate-300">–</span>
-                  <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-md" />
-                  <span className="text-[10px] text-slate-300">{MONTHS[monthlyData.length + i]}</span>
-                </div>
-              ))}
             </div>
             <div className="flex items-center gap-4 mt-3 text-[10px] text-slate-500">
               <span className="flex items-center gap-1"><span className="w-3 h-3 bg-emerald-500/20 border border-emerald-500/30 rounded" /> Bevétel</span>

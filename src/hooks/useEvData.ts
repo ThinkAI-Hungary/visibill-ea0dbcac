@@ -404,6 +404,7 @@ export interface EvFixedAsset {
   is_below_threshold: boolean;
   notes: string | null;
   created_at: string;
+  source_fixed_asset_id: string | null;
 }
 
 export interface EvHipaCalc {
@@ -552,14 +553,69 @@ export function useEvFixedAssets(companyId: string | undefined, taxYear: number)
   return useQuery({
     queryKey: ['ev-fixed-assets', companyId, taxYear],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // 1. Fetch EV fixed asset records
+      const { data: evAssets, error } = await supabase
         .from('accounty_ev_records_fixed_assets')
         .select('*')
         .eq('company_id', companyId!)
         .eq('tax_year', taxYear)
         .order('acquisition_date', { ascending: true });
       if (error) throw error;
-      return (data || []) as EvFixedAsset[];
+      const assets = (evAssets || []) as EvFixedAsset[];
+
+      // 2. Auto-sync linked assets from TÉNY (name + acquisition cost)
+      const linkedIds = assets
+        .filter(a => a.source_fixed_asset_id)
+        .map(a => a.source_fixed_asset_id!);
+
+      if (linkedIds.length > 0) {
+        const { data: tenyAssets } = await supabase
+          .from('fixed_assets')
+          .select('id, name, acquisition_value, status, disposal_date')
+          .in('id', linkedIds);
+
+        if (tenyAssets && tenyAssets.length > 0) {
+          const tenyMap = new Map(tenyAssets.map((t: any) => [t.id, t]));
+          const updates: Promise<any>[] = [];
+
+          for (const asset of assets) {
+            if (!asset.source_fixed_asset_id) continue;
+            const teny = tenyMap.get(asset.source_fixed_asset_id) as any;
+            if (!teny) continue;
+
+            const needsSync =
+              asset.asset_name !== teny.name ||
+              asset.acquisition_cost !== teny.acquisition_value ||
+              (teny.status === 'disposed' && !asset.disposal_date);
+
+            if (needsSync) {
+              const patch: Record<string, any> = {};
+              if (asset.asset_name !== teny.name) patch.asset_name = teny.name;
+              if (asset.acquisition_cost !== teny.acquisition_value) patch.acquisition_cost = teny.acquisition_value;
+              if (teny.status === 'disposed' && !asset.disposal_date) {
+                patch.disposal_date = teny.disposal_date;
+                patch.disposal_type = 'scrapped';
+              }
+
+              // Update in-memory
+              Object.assign(asset, patch);
+
+              // Persist async (fire-and-forget)
+              updates.push(
+                supabase
+                  .from('accounty_ev_records_fixed_assets')
+                  .update(patch)
+                  .eq('id', asset.id)
+              );
+            }
+          }
+
+          // Fire-and-forget background sync
+          if (updates.length > 0) Promise.all(updates).catch(() => {});
+        }
+      }
+
+      return assets;
     },
     enabled: !!companyId,
   });
@@ -1035,3 +1091,296 @@ export function useEvRecordCounts(companyId: string | undefined, taxYear: number
     enabled: !!companyId,
   });
 }
+
+// ─── TÉNY ↔ ÉCS integration hooks ──────────────────────────────────────────
+
+/** TÉNY assets available for import (not yet linked to ÉCS in the given tax year) */
+export function useTenyAssetsForImport(companyId: string | undefined, taxYear: number) {
+  return useQuery({
+    queryKey: ['teny-assets-for-import', companyId, taxYear],
+    queryFn: async () => {
+      // 1. Get all active TÉNY assets for this company
+      const { data: tenyAssets, error: tenyError } = await supabase
+        .from('fixed_assets')
+        .select('id, inventory_number, name, acquisition_value, purchase_date, activation_date, useful_life_months, tao_template_id, status, tao_template:tao_depreciation_templates(tao_rate_percent)')
+        .eq('company_id', companyId!)
+        .in('status', ['active'])
+        .order('activation_date', { ascending: true });
+      if (tenyError) throw tenyError;
+
+      // 2. Get already-imported source IDs for this tax year
+      const { data: imported, error: impError } = await supabase
+        .from('accounty_ev_records_fixed_assets')
+        .select('source_fixed_asset_id')
+        .eq('company_id', companyId!)
+        .eq('tax_year', taxYear)
+        .not('source_fixed_asset_id', 'is', null);
+      if (impError) throw impError;
+
+      const importedIds = new Set((imported || []).map((r: any) => r.source_fixed_asset_id));
+
+      // 3. Filter out already-imported
+      return (tenyAssets || []).filter((a: any) => !importedIds.has(a.id)).map((a: any) => ({
+        id: a.id,
+        inventoryNumber: a.inventory_number,
+        name: a.name,
+        acquisitionValue: a.acquisition_value,
+        purchaseDate: a.purchase_date,
+        activationDate: a.activation_date,
+        usefulLifeMonths: a.useful_life_months,
+        taoRatePercent: a.tao_template?.tao_rate_percent ?? null,
+        status: a.status,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}
+
+export interface TenyImportItem {
+  id: string;
+  inventoryNumber: string;
+  name: string;
+  acquisitionValue: number;
+  purchaseDate: string;
+  activationDate: string;
+  usefulLifeMonths: number;
+  taoRatePercent: number | null;
+  status: string;
+}
+
+/** Bulk import TÉNY assets into ÉCS */
+export function useImportTenyToEcs() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ['import-teny-to-ecs'],
+    mutationFn: async (params: {
+      companyId: string;
+      taxYear: number;
+      items: Array<{
+        sourceId: string;
+        name: string;
+        acquisitionDate: string;
+        acquisitionCost: number;
+        depreciationRate: number;
+        isBelowThreshold: boolean;
+      }>;
+      createdBy?: string;
+    }) => {
+      const rows = params.items.map(item => ({
+        company_id: params.companyId,
+        tax_year: params.taxYear,
+        asset_name: item.name,
+        acquisition_date: item.acquisitionDate,
+        acquisition_cost: Math.round(item.acquisitionCost),
+        depreciation_rate: item.depreciationRate,
+        accumulated_depreciation: 0,
+        net_value: Math.round(item.acquisitionCost),
+        is_below_threshold: item.isBelowThreshold,
+        source_fixed_asset_id: item.sourceId,
+        created_by: params.createdBy ?? null,
+      }));
+
+      const { data, error } = await supabase
+        .from('accounty_ev_records_fixed_assets')
+        .insert(rows)
+        .select();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['ev-fixed-assets', variables.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['teny-assets-for-import', variables.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['ev-record-counts'] });
+    },
+  });
+}
+
+// ─── Társasház (Condominium) Types ──────────────────────────────────────────
+
+export interface CondoUnit {
+  id: string;
+  company_id: string;
+  unit_number: string;
+  unit_type: 'lakas' | 'uzlet' | 'garazs' | 'egyeb';
+  area_sqm: number | null;
+  ownership_share: number | null;
+  owner_name: string;
+  owner_contact: string | null;
+  monthly_common_fee: number;
+  last_payment_date: string | null;
+  arrears_amount: number;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CondoFund {
+  id: string;
+  company_id: string;
+  fund_name: string;
+  fund_type: 'uzemeltetesi' | 'felujitasi' | 'tartalek' | 'egyeb';
+  target_balance: number;
+  current_balance: number;
+  monthly_contribution: number;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CondoMaintenance {
+  id: string;
+  company_id: string;
+  title: string;
+  description: string | null;
+  category: 'altalanos' | 'epuletgepeszet' | 'felujitas' | 'biztonsag' | 'kozterulet';
+  status: 'planned' | 'in_progress' | 'completed' | 'cancelled';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  estimated_cost: number;
+  actual_cost: number;
+  vendor_name: string | null;
+  planned_date: string | null;
+  completed_date: string | null;
+  fund_type: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ─── Társasház Hooks ────────────────────────────────────────────────────────
+
+export function useCondoUnits(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['condo-units', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('accounty_condo_units')
+        .select('*')
+        .eq('company_id', companyId!)
+        .order('unit_number', { ascending: true });
+      if (error) throw error;
+      return (data || []) as CondoUnit[];
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useCondoFunds(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['condo-funds', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('accounty_condo_funds')
+        .select('*')
+        .eq('company_id', companyId!)
+        .order('fund_type', { ascending: true });
+      if (error) throw error;
+      return (data || []) as CondoFund[];
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useCondoMaintenance(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['condo-maintenance', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('accounty_condo_maintenance')
+        .select('*')
+        .eq('company_id', companyId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as CondoMaintenance[];
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useUpsertCondoUnit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (unit: Partial<CondoUnit> & { company_id: string }) => {
+      const { data, error } = await supabase
+        .from('accounty_condo_units')
+        .upsert({ ...unit, updated_at: new Date().toISOString() })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['condo-units', variables.company_id] });
+    },
+  });
+}
+
+export function useDeleteCondoUnit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
+      const { error } = await supabase
+        .from('accounty_condo_units')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['condo-units', variables.companyId] });
+    },
+  });
+}
+
+export function useUpsertCondoFund() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (fund: Partial<CondoFund> & { company_id: string }) => {
+      const { data, error } = await supabase
+        .from('accounty_condo_funds')
+        .upsert({ ...fund, updated_at: new Date().toISOString() })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['condo-funds', variables.company_id] });
+    },
+  });
+}
+
+export function useUpsertCondoMaintenance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (item: Partial<CondoMaintenance> & { company_id: string }) => {
+      const { data, error } = await supabase
+        .from('accounty_condo_maintenance')
+        .upsert({ ...item, updated_at: new Date().toISOString() })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['condo-maintenance', variables.company_id] });
+    },
+  });
+}
+
+export function useDeleteCondoMaintenance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
+      const { error } = await supabase
+        .from('accounty_condo_maintenance')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['condo-maintenance', variables.companyId] });
+    },
+  });
+}
+

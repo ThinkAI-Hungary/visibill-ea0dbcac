@@ -22,7 +22,7 @@ export default function EvEntrepreneurialDividendPage() {
 
   const dividendBase = entrepreneurialIncome - entrepreneurialTaxPaid;
   const dividendSzja = Math.round(dividendBase * DEFAULT_2026_PARAMS.szjaRate);
-  const dividendSzocho = Math.round(Math.min(dividendBase, DEFAULT_2026_PARAMS.sochoMaxBase || Infinity) * DEFAULT_2026_PARAMS.szochoRate);
+  const dividendSzocho = Math.round(dividendBase * DEFAULT_2026_PARAMS.szochoKulcs);
   const totalDividendTax = dividendSzja + dividendSzocho;
   const netDividend = dividendBase - totalDividendTax;
   const totalTaxBurden = entrepreneurialTaxPaid + sochoPaid + totalDividendTax;
@@ -110,7 +110,7 @@ export default function EvEntrepreneurialDividendPage() {
                 <ul className="list-disc list-inside space-y-0.5">
                   <li>Osztalékalap = Váll. jövedelem – megfizetett SZJA</li>
                   <li>SZJA: {formatPercent(DEFAULT_2026_PARAMS.szjaRate)}</li>
-                  <li>Szocho: {formatPercent(DEFAULT_2026_PARAMS.szochoRate)} (éves felső határig)</li>
+                  <li>Szocho: {formatPercent(DEFAULT_2026_PARAMS.szochoKulcs)}</li>
                   <li>A kivét nem csökkenti az osztalékalapot</li>
                 </ul>
               </div>
@@ -151,7 +151,7 @@ export default function EvEntrepreneurialDividendPage() {
               <Row label="(=) Vállalkozói osztalékalap" value={formatHuf(dividendBase)} bold highlight />
               <div className="h-2 bg-slate-50 dark:bg-slate-800/30" />
               <Row label={`SZJA (${formatPercent(DEFAULT_2026_PARAMS.szjaRate)})`} value={formatHuf(dividendSzja)} />
-              <Row label={`Szocho (${formatPercent(DEFAULT_2026_PARAMS.szochoRate)})`} value={formatHuf(dividendSzocho)} />
+              <Row label={`Szocho (${formatPercent(DEFAULT_2026_PARAMS.szochoKulcs)})`} value={formatHuf(dividendSzocho)} />
               <Row label="Osztalék adóteher összesen" value={formatHuf(totalDividendTax)} bold />
               <div className="h-2 bg-slate-50 dark:bg-slate-800/30" />
               <Row label="Nettó osztalék" value={formatHuf(netDividend)} bold highlight />

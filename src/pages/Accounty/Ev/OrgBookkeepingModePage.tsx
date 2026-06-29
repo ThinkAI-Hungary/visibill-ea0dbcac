@@ -222,15 +222,26 @@ export default function OrgBookkeepingModePage() {
               <div className="flex items-center gap-2 pt-2">
                 <button
                   onClick={async () => {
-                    if (!id || !selectedMode) return;
+                    if (!id || !selectedMode || !selectedOrgType) return;
                     setSaving(true);
+                    // Map internal org type IDs to DB enum values
+                    const orgTypeDbMap: Record<string, string> = {
+                      association: 'egyesulet',
+                      foundation: 'alapitvany',
+                      condominium: 'tarsashaz',
+                      cooperative: 'egyeb',
+                      nonprofit: 'egyeb',
+                      church: 'egyhaz',
+                      other: 'egyeb',
+                    };
                     try {
                       await updateSettings.mutateAsync({
                         company_id: id,
                         tax_year: 2026,
                         bookkeeping_mode: selectedMode === 'single' ? 'egyszeres' : 'kettos',
+                        org_type: (orgTypeDbMap[selectedOrgType] || 'egyeb') as any,
                       });
-                      toast({ title: 'Beállítás mentve', description: `Könyvvezetési mód: ${MODES.find(m => m.id === selectedMode)?.name}` });
+                      toast({ title: 'Beállítás mentve', description: `${ORG_TYPES.find(o => o.id === selectedOrgType)?.name} — ${MODES.find(m => m.id === selectedMode)?.name}` });
                     } catch (err: any) {
                       toast({ variant: 'destructive', title: 'Hiba', description: err.message || 'Nem sikerült menteni.' });
                     } finally {

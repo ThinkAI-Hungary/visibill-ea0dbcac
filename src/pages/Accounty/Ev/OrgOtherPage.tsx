@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Building2, FileText, Calendar,
   TrendingUp, CheckCircle2, AlertTriangle, Info, Scale,
-  Download, Users, Landmark, BookOpen, HelpCircle, ArrowRight
+  Download, Users, Landmark, BookOpen, HelpCircle, ArrowRight, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
+import { useUpdateEvSettings, useEvClientSettings } from '@/hooks/useEvData';
+import { useToast } from '@/hooks/use-toast';
 
 // ─── Organization Types ─────────────────────────────────────────────────────
 
@@ -22,7 +24,7 @@ interface OrgTypeInfo {
   color: string;
 }
 
-const ORG_TYPES: OrgTypeInfo[] = [
+const ORG_TYPES: (OrgTypeInfo & { details?: string })[] = [
   {
     id: 'cooperative',
     name: 'Szövetkezet',
@@ -32,6 +34,7 @@ const ORG_TYPES: OrgTypeInfo[] = [
     taxObligations: ['Társasági adó (TAO)', 'Áfa bevallás', 'Éves beszámoló', 'Adóelőleg'],
     icon: Users,
     color: 'from-blue-500 to-indigo-600',
+    details: 'A szövetkezet a 2006. évi X. törvény alapján működő, tagjainak közös gazdasági érdekét szolgáló szervezet. Kettős könyvvitelt vezet, éves beszámolót készít. A szövetkezet tagjai korlátolt felelősséggel tartoznak. A TAO kulcs 9%, az osztalékot 15% SZJA terheli. Az áfa-bevallás gyakoriságát az éves árbevétel határozza meg.',
   },
   {
     id: 'church',
@@ -42,6 +45,7 @@ const ORG_TYPES: OrgTypeInfo[] = [
     taxObligations: ['Beszámoló készítés', 'Adomány igazolás', 'ÁFA (ha alany)'],
     icon: Landmark,
     color: 'from-amber-500 to-orange-600',
+    details: 'Egyházi jogi személyek a 2011. évi CCVI. törvény szerint működnek. Választhatnak egyszeres vagy kettős könyvvitel között. Az egyházi szervezet adómentesen kaphat adományokat, amiről adóigazolást állít ki (a magánszemély adójának 1%-a is ide irányítható). ÁFA-alanyiság csak gazdasági tevékenység esetén merül fel. Közhasznú jogállás esetén kedvezmények illetik meg.',
   },
   {
     id: 'nonprofit_kft',
@@ -52,6 +56,7 @@ const ORG_TYPES: OrgTypeInfo[] = [
     taxObligations: ['Társasági adó', 'Áfa bevallás', 'Éves beszámoló', 'Közhasznúsági melléklet'],
     icon: Building2,
     color: 'from-emerald-500 to-teal-600',
+    details: 'A nonprofit Kft. a Ptk. 3:89. § alapján olyan gazdasági társaság, amely nem oszthat osztalékot — a nyereséget a létesítő okiratban meghatározott cél érdekében kell felhasználni. Kettős könyvvitelt vezet, éves beszámolót készít. TAO kötelezett (9%), de közhasznú jogállás esetén kedvezményes adózás lehetséges. Áfa-alany, ha gazdasági tevékenységet folytat.',
   },
   {
     id: 'political_party',
@@ -62,6 +67,7 @@ const ORG_TYPES: OrgTypeInfo[] = [
     taxObligations: ['Éves pénzügyi beszámoló', 'ÁSZ ellenőrzés', 'Vagyonnyilatkozat'],
     icon: Scale,
     color: 'from-rose-500 to-pink-600',
+    details: 'A pártok az 1989. évi XXXIII. törvény szerint gazdálkodnak. Kettős könyvvitelt vezetnek, éves pénzügyi beszámolót készítenek, amelyet az Állami Számvevőszék ellenőriz. Pártok vállalkozási tevékenységet nem folytathatnak. Az állami költségvetési támogatás és a tagdíjak a fő bevételi források.',
   },
   {
     id: 'water_utility',
@@ -72,6 +78,7 @@ const ORG_TYPES: OrgTypeInfo[] = [
     taxObligations: ['Éves beszámoló', 'ÁFA', 'Társasági adó'],
     icon: Building2,
     color: 'from-cyan-500 to-blue-600',
+    details: 'A vízitársulat a 2009. évi CXLIV. törvény alapján vízgazdálkodási közfeladat (árvízvédelem, belvízelvezetés, öntözés) ellátására alapított szervezet. Kettős könyvvitelt vezet, éves beszámolót készít. TAO és ÁFA kötelezett. A tagok érdekeltségi hozzájárulást fizetnek.',
   },
   {
     id: 'other',
@@ -82,13 +89,19 @@ const ORG_TYPES: OrgTypeInfo[] = [
     taxObligations: ['Mérlegelés szükséges a szervezet típusa alapján'],
     icon: FileText,
     color: 'from-slate-500 to-gray-600',
+    details: 'A számviteli törvény (2000. évi C. tv.) 3. § (1) bekezdése alapján a törvény hatálya alá tartozó egyéb gazdálkodó szervezet. A könyvvezetési mód (egyszeres/kettős) és az adókötelezettségek a szervezet konkrét jogi formájától és tevékenységétől függnek. Egyedi mérlegelés szükséges.',
   },
 ];
 
 export default function OrgOtherPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
+  const { data: settings } = useEvClientSettings(id, 2026);
+  const navigate = useNavigate();
+  const updateSettings = useUpdateEvSettings();
+  const { toast } = useToast();
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
 
   const selectedOrg = ORG_TYPES.find(o => o.id === selectedType);
 
@@ -200,13 +213,74 @@ export default function OrgOtherPage() {
 
           {/* Action */}
           <div className="flex items-center gap-3 pt-2 border-t border-border">
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm">
+            <button
+              disabled={updateSettings.isPending}
+              onClick={() => {
+                if (!selectedOrg || !id) return;
+                const orgTypeMap: Record<string, string> = {
+                  cooperative: 'egyeb', church: 'egyhaz', nonprofit_kft: 'egyeb',
+                  political_party: 'egyeb', water_utility: 'egyeb', other: 'egyeb',
+                };
+                const bookkeepingMode = selectedOrg.bookkeeping === 'single' ? 'egyszeres' : 'kettos';
+                updateSettings.mutate({
+                  company_id: id,
+                  tax_year: 2026,
+                  org_type: (orgTypeMap[selectedOrg.id] || 'egyeb') as any,
+                  bookkeeping_mode: bookkeepingMode as any,
+                }, {
+                  onSuccess: () => {
+                    toast({ title: 'Konfiguráció mentve', description: `${selectedOrg.name} — ${bookkeepingMode === 'egyszeres' ? 'Egyszeres' : 'Kettős'} könyvvitel` });
+                    navigate(`/accounty/client/${id}/ev`);
+                  },
+                  onError: (err: any) => {
+                    toast({ title: 'Hiba', description: err?.message || 'Mentés sikertelen', variant: 'destructive' });
+                  },
+                });
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50"
+            >
+              {updateSettings.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
               Konfiguráció indítása <ArrowRight className="w-3.5 h-3.5" />
             </button>
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 border border-border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-              <HelpCircle className="w-3.5 h-3.5" /> Részletes tájékoztató
+            <button
+              onClick={() => setShowInfo(p => !p)}
+              className={cn(
+                'flex items-center gap-1.5 px-4 py-2 text-sm border rounded-lg transition-colors',
+                showInfo
+                  ? 'text-primary border-primary bg-primary/5'
+                  : 'text-slate-600 border-border hover:bg-slate-50 dark:hover:bg-slate-800'
+              )}
+            >
+              <HelpCircle className="w-3.5 h-3.5" /> {showInfo ? 'Tájékoztató elrejtése' : 'Részletes tájékoztató'}
             </button>
           </div>
+
+          {/* Detailed info panel */}
+          {showInfo && selectedOrg && (
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-5 space-y-3 animate-in slide-in-from-top-2 duration-300">
+              <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                {selectedOrg.name} — Részletes tájékoztató
+              </h3>
+              <p className="text-xs text-indigo-800 dark:text-indigo-300 leading-relaxed">
+                {(selectedOrg as any).details || 'Nincs részletes leírás.'}
+              </p>
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="bg-white/50 dark:bg-slate-800/50 rounded-lg p-3">
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Jogszabályi háttér</p>
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{selectedOrg.legalRef}</p>
+                </div>
+                <div className="bg-white/50 dark:bg-slate-800/50 rounded-lg p-3">
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Könyvvezetés</p>
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {selectedOrg.bookkeeping === 'single' ? 'Egyszeres könyvvitel (kötelező)'
+                      : selectedOrg.bookkeeping === 'double' ? 'Kettős könyvvitel (kötelező)'
+                      : 'Egyszeres vagy kettős (választható)'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
