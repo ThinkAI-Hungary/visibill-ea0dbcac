@@ -1,7 +1,8 @@
 # A-025: Cross-company Invoice Routing
 
 **Status:** Decided  
-**Date:** 2026-07-02
+**Date:** 2026-07-02  
+**Utoljára frissítve:** 2026-07-02
 
 ## Context
 
@@ -14,7 +15,7 @@ a Think AI Kft. alá tölti fel. A worker automatikusan szétszortírozza adósz
 
 ## Decision
 
-**Worker-side routing** az AI extract UTÁN. Új modul: `company_router.py`.
+**Worker-side routing** az AI extract UTÁN. Modul: `company_router.py`.
 
 **Algoritmus:**
 1. User összes cégének lekérdezése (`company_members JOIN companies`)
@@ -23,7 +24,12 @@ a Think AI Kft. alá tölti fel. A worker automatikusan szétszortírozza adósz
 4. Match alapján routing döntés:
    - **Vevő adószám match** → INBOUND (a cég a vevő) — prioritás ha mindkettő match-el
    - **Eladó adószám match** → OUTBOUND (a cég az eladó)
-5. Ha target ≠ current → `company_id` UPDATE (`invoice_uploads` + `invoices`)
+5. Routing alkalmazása:
+   - **Normál eset:** `invoices` UPDATE ELŐSZÖR → `invoice_uploads` UPDATE UTÁNA
+   - **Duplikátum eset:** Ha a target cégnél már létezik azonos bizonylatsorszámú számla:
+     - Meglévő invoice upsert-elődik friss adatokkal
+     - Duplikátum invoice törlése az eredeti cégnél
+     - Upload átmozgatása a target céghez
 6. Audit log INSERT az eredeti cég naplójába (`action = 'átirányítás'`)
 
 **Email routing:** Ha egy email alias az A céghez tartozik, de a csatolt számla a B céghez kellene
@@ -32,12 +38,17 @@ worker-ben történik.
 
 **Tenant definíció:** `company_members.user_id` (NEM `companies.owner_id`).
 
+**Művelet sorrend:** Az `invoices` UPDATE előbb történik mint az `invoice_uploads` UPDATE,
+hogy ha a unique constraint (`company_id, bizonylatsorszam`) ütközik, az upload ne maradjon
+inkonzisztens állapotban.
+
 ## Consequences
 
 **Pozitív:**
 - Multi-company user-ek bármelyik cégük alá tölthetnek — a rendszer szétválogat
 - Email alias-ok is működnek cross-company: beérkezik az alias cégéhez, a worker korrigálja
 - Audit trail biztosított (`átirányítás` action type)
+- Duplikátum számla intelligens merge — upsert a meglévőbe, nem dob hibát
 - Non-critical: hiba esetén a számla az eredeti cégnél marad
 
 **Negatív:**
@@ -52,4 +63,5 @@ worker-ben történik.
 - [A-017: Security Architecture](./A-017-security-architecture.md) (audit trail)
 - [BDR 009: Multi-company Model](../../business/decisions/009-multi-company-model.md)
 - [BDR 034: Worker Pipeline](../../business/decisions/034-worker-pipeline.md)
-- Worker docs: `DECISIONS.md` ADR-027
+- Worker docs: `DECISIONS.md` ADR-027 (routing) + ADR-028 (poison pill)
+
