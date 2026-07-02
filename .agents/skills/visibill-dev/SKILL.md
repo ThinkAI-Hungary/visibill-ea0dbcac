@@ -251,14 +251,33 @@ DEAD CODE IDENTIFIED:
 ```
 Ne töröld kérdés nélkül — lehet van rejtett függőség.
 
-### 4.1 Build verify
+### 4.1 Build verify + Evidence Gate
 
 ```bash
 npm run build
 ```
 
-→ Ha HIBÁS: javítsd az összes hibát → futtasd újra → ismételd amíg SIKERES.  
-→ **Az AI NEM jelzi a usernek "kész"-t amíg a build nem SIKERES.**
+→ Ha HIBÁS: javítsd az összes hibát → futtasd újra → ismételd amíg SIKERES.
+
+> ⚠️ **Az AI NEM mondhatja hogy „kész" amíg nem rendelkezik konkrét bizonyítékkal.**  
+> A build sikerülése szükséges de **NEM ELÉGSÉGES** feltétel.
+
+| Állítás | Szükséges bizonyíték | NEM elég |
+|---------|---------------------|----------|
+| DB migration kész | `execute_sql` → tábla/oszlop/index létezik | Build PASS |
+| Hook működik | Browser konzol: konkrét, nem-üres adat | Build PASS |
+| UI renderelődik | Screenshot: tényleges adat (nem skeleton) | Build PASS |
+| RPC/EF működik | `curl` vagy `supabase invoke` → valid JSON | Build PASS |
+| Bug fix kész | Teszt ami reprodukálta → PASS | Kód módosítva |
+| Feature kész | End-to-end happy path browser-ben | Unit teszt PASS |
+
+**Tiltott befejezési állítások:**
+```
+❌ "A build sikerült, tehát működik"
+❌ "Szerintem helyesen implementáltam" / "Should work now"
+❌ "Úgy tűnik jó" / "Valószínűleg működik"
+✅ [konkrét command output] + [screenshot / SQL result / teszt output]
+```
 
 ### 4.2 Smoke test — típus szerint
 

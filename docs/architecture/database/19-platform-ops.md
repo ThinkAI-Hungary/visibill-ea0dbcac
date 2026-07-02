@@ -51,6 +51,12 @@
 
 **Indexek:** `idx_audit_logs_company_id`, `idx_audit_logs_created_at`, `idx_audit_logs_user_id`
 
+**`audit_action_type` enum értékek:** `feltöltés`, `módosítás`, `törlés`, `párosítás`, `aktiválás`, `létrehozás`, `átirányítás`
+
+> **`átirányítás`** (2026-07-02): A worker `company_router.py` INSERT-eli, amikor egy multi-company user számláját
+> adószám alapján automatikusan átmozgatja egy másik céghez. A `details` JSONB tartalmazza:
+> `routing_reason`, `from_company_id`, `from_company_name`, `to_company_id`, `to_company_name`, `bizonylatsorszam`.
+
 ---
 
 ### `llm_koltsegek`

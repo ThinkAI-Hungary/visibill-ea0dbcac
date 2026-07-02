@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
         supplier_tax_number: inv.supplierTaxNumber,
         customer_tax_number: inv.customerTaxNumber,
         invoice_issue_date: inv.invoiceIssueDate,
-        invoice_delivery_date: null,
+        invoice_delivery_date: inv.invoiceDeliveryDate || inv.invoiceIssueDate,
         invoice_net_amount: parseFloat(inv.invoiceNetAmount || '0'),
         invoice_vat_amount: parseFloat(inv.invoiceVatAmount || '0'),
         invoice_gross_amount: parseFloat(inv.invoiceNetAmount || '0') + parseFloat(inv.invoiceVatAmount || '0'),
@@ -737,6 +737,7 @@ function parseQueryResponse(xml: string): any {
     invoice.invoiceOperation = extractField('invoiceOperation');
     invoice.invoiceCategory = extractField('invoiceCategory');
     invoice.invoiceIssueDate = extractField('invoiceIssueDate');
+    invoice.invoiceDeliveryDate = extractField('invoiceDeliveryDate');
     invoice.supplierTaxNumber = extractField('supplierTaxNumber');
     invoice.supplierName = extractField('supplierName');
     invoice.customerTaxNumber = extractField('customerTaxNumber');

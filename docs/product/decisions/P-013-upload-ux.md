@@ -65,6 +65,8 @@ Cég váltáskor a `notifiedUploads` ref törlődik (`notifiedUploads.current.cl
 **TODO (még nem implementált):**
 - Per-file upload progress bar (nagy fájloknál)
 - Per-file hiba visszajelzés (melyik fájl bukott a batch feltöltésben)
+- **Multi-company routing badge** — ha a számla átirányítva lett, "Átirányítva → [Cég neve]" badge az UploadHistory-ban
+- **Info banner** a ManualUpload-ban multi-company user-eknél: "Bármelyik cég alá feltöltheted, a rendszer automatikusan szétválogatja"
 
 **Rationale:** A feltöltött fájlok kezelése (törlés, újrafeltöltés) visszatérő adminisztrációs igény. Az A/B törlési mód explicit választást ad a usernek: csak a fájlt törli, vagy a teljes feldolgozott adatot is. A 3 rétegű notification architektúra Supabase Realtime megbízhatatlan delivery-jének kompenzálására lett bevezetve (WS reconnect-nél az events nem replay-elődnek), miközben skálázható marad: a session polling csak aktív feltöltők számával arányos, nem az összes userrel.
 
@@ -75,3 +77,4 @@ Cég váltáskor a `notifiedUploads` ref törlődik (`notifiedUploads.current.cl
 - `A-008` — OCR pipeline (feltöltés után indul)
 - `A-011` — Mailgun webhook (email-ből érkező feltöltés)
 - `A-016` — `delete_upload_with_data` RPC (cascade törlés)
+- `A-025` — Cross-company invoice routing (multi-company adószám-alapú átirányítás)

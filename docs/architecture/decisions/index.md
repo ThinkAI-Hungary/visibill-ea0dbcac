@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-06-29  
-> **Összesen:** 23 döntés | ✅ Decided: 22 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-07-02  
+> **Összesen:** 24 döntés | ✅ Decided: 23 | ⛔ Superseded: 1
 
 ---
 
@@ -41,6 +41,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-007 | LLM stratégia (LiteLLM, multi-provider) | ✅ Decided | [A-007](./A-007-llm-strategy.md) |
 | A-008 | OCR pipeline (Vision + MarkItDown) | ✅ Decided | [A-008](./A-008-ocr-pipeline.md) |
 | A-024 | Partner Upsert Strategy (prefix match, foreign partners, both upgrade) | ✅ Decided | [A-024](./A-024-partner-upsert-strategy.md) |
+| A-025 | Cross-company Invoice Routing (multi-company adószám-alapú átirányítás) | ✅ Decided | [A-025](./A-025-cross-company-routing.md) |
 
 ## 🔐 Biztonság & Auth
 

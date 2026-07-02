@@ -138,7 +138,7 @@ A Visibill egyszeri vásárlással érhető el. A felhasználó megvásárolja a
 - ✅ Kintlévőség kezelés és fizetési felszólítás
 - ✅ Futárszolgálat riport feldolgozás (6 szolgáltató)
 - ✅ Bér modul és munkaidő nyilvántartás
-- ✅ Multi-company támogatás
+- ✅ Multi-company támogatás + adószám-alapú cross-company invoice routing (2026-07-02)
 - ✅ Email-alapú automatikus számlafeldolgozás
 - ✅ eaisyBooks modul (könyvelő iroda nézet, korábban "Accounty")
 - ✅ ÁFA bevallás modul
