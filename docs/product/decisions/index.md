@@ -1,7 +1,7 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-06-27  
-> **Összesen:** 36 döntés | ✅ Decided: 33 | ⛔ Superseded: 2 | 🔴 Open: 1
+> **Utoljára frissítve:** 2026-06-29  
+> **Összesen:** 37 döntés | ✅ Decided: 34 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
 
@@ -110,6 +110,7 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-040 | Partnertörzs dual-table számlák + interaktív detail panel | ✅ Decided | [P-040](./P-040-partners-invoice-panel.md) |
+| P-044 | Külföldi partner megjelenítés (FOREIGN: elrejtése, badge) | ✅ Decided | [P-044](./P-044-foreign-partner-display.md) |
 
 ## 🏷️ Kategóriák
 

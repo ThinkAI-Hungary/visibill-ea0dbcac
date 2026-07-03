@@ -182,6 +182,7 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 --   • invoices: statusz → 'feldolgozott'
 --   • salary_files: status → 'completed'
 -- DELETE → 'törlés' audit_log bejegyzés
+-- Worker → 'átirányítás' (multi-company invoice routing, company_router.py INSERT-eli)
 --
 -- A details JSONB mező tartalmazza: source, table, op, upload_source, is_system, processing_type
 ```
@@ -189,6 +190,7 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 **Auditált műveletek:**
 - Számla / dokumentum feltöltés (INSERT trigger)
 - Számla feldolgozás befejezése (`invoice_uploads.processing_status = 'processed'`)
+- **Számla átirányítás** multi-company user-eknél (worker `company_router.py` → `audit_logs` INSERT, action = `'átirányítás'`)
 - Tranzakció match módosítás
 - GL felülbírálás (`override_gl_classification`)
 - NAV credential mentés

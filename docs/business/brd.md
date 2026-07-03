@@ -70,7 +70,7 @@ PGMQ-alapú aszinkron feldolgozás: Upload → Storage → Edge Function trigger
 ## 4. Cégstruktúra & Hozzáférés-kezelés
 
 ### REQ-4.1: Multi-company modell
-Egy felhasználó több céget kezelhet. Minden adat `company_id`-hoz kötött. A `CompanySelector` (eaisyBill) és a `CompanySwitcher` (eaisyBooks) biztosítja a cégváltást. Csatlakozás share_token alapján (eaisyBill).  
+Egy felhasználó több céget kezelhet. Minden adat `company_id`-hoz kötött. A `CompanySelector` (eaisyBill) és a `CompanySwitcher` (eaisyBooks) biztosítja a cégváltást. Csatlakozás share_token alapján (eaisyBill). A worker automatikus cross-company invoice routing-ot végez adószám alapján, ha a user több céghez van rendelve (2026-07-02).  
 **Státusz:** ✅ Decided  
 **Hivatkozás:** [009](./decisions/009-multi-company-model.md) · Journey 1
 
@@ -348,7 +348,7 @@ Minden tábla RLS-engedélyezett mindkét Supabase instance-ban.
 **Hivatkozás:** [006](./decisions/006-tech-stack.md)
 
 ### REQ-12.2: Audit napló
-audit_logs tábla: teljes audit trail (létrehozás, módosítás, törlés, feltöltés, párosítás, aktiválás).  
+audit_logs tábla: teljes audit trail (létrehozás, módosítás, törlés, feltöltés, párosítás, aktiválás, **átirányítás**). Az `átirányítás` action a multi-company invoice routing-hoz tartozik (2026-07-02).  
 **Hivatkozás:** [028](./decisions/028-gdpr-compliance.md)
 
 ### REQ-12.3: Session kezelés

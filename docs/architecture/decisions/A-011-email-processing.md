@@ -88,3 +88,10 @@ if (!mailgunSigningKey) {
 - A webhook sikertelen kézbesítése esetén nincs automatikus retry (Mailgun retry policy)
 - A spam/phishing emailek is bekerülhetnek feldolgozásra
 - ⚠️ **Nincs webhook health monitoring** — ha a signing key eltörik, nincs alert (TODO)
+
+## Cross-company Email Routing (2026-07-02)
+
+Ha egy email alias az A céghez tartozik (`email_aliases.company_id`), de a csatolt számla adószáma
+alapján a B céghez kellene kerülnie (mindkét cég ugyanannak a user-nek a tagja a `company_members` alapján),
+a worker automatikusan átirányítja a számlát a helyes céghez. A webhook továbbra is az alias `company_id`-jával
+dolgozik — a routing a worker AI extract UTÁN történik (`company_router.py`). Nincs "tenant-level" alias (1 alias = 1 cég).

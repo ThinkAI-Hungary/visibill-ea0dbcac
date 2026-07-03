@@ -58,6 +58,14 @@ import {
 
 const DEFAULT_PAGE_SIZE = 15;
 
+/** Returns true if the tax_number is a worker-generated synthetic ID for foreign partners */
+const isForeignPartner = (taxNumber: string | null | undefined): boolean =>
+  !!taxNumber?.startsWith('FOREIGN:');
+
+/** Display-safe tax_number: returns empty string for synthetic FOREIGN: IDs */
+const displayTaxNumber = (taxNumber: string | null | undefined): string =>
+  !taxNumber || isForeignPartner(taxNumber) ? '' : taxNumber;
+
 interface Partner {
   id: string;
   name: string;
@@ -177,7 +185,33 @@ export default function PartnersPage() {
         }
       });
 
+      // Name-based invoice counts for FOREIGN: partners
+      const foreignPartners = (partnerData as Partner[]).filter(p => isForeignPartner(p.tax_number));
+      const foreignCounts: Record<string, number> = {};
+      if (foreignPartners.length > 0) {
+        const foreignResults = await Promise.all(
+          foreignPartners.map(async (fp) => {
+            const escapedName = fp.name.replace(/'/g, "''");
+            const [{ count: invCount }, { count: navCount }] = await Promise.all([
+              supabase.from('invoices')
+                .select('*', { count: 'exact', head: true })
+                .eq('company_id', selectedCompany.id)
+                .or(`elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`),
+              supabase.from('nav_invoices')
+                .select('*', { count: 'exact', head: true })
+                .eq('company_id', selectedCompany.id)
+                .or(`supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`),
+            ]);
+            return { id: fp.id, count: (invCount || 0) + (navCount || 0) };
+          })
+        );
+        foreignResults.forEach(r => { foreignCounts[r.id] = r.count; });
+      }
+
       return (partnerData as Partner[]).map(partner => {
+        if (isForeignPartner(partner.tax_number)) {
+          return { ...partner, invoice_count: foreignCounts[partner.id] || 0 };
+        }
         const cleanTax = partner.tax_number ? partner.tax_number.replace(/-/g, '').substring(0, 8) : '';
         return {
           ...partner,
@@ -197,10 +231,13 @@ export default function PartnersPage() {
 
   // Fetch selected partner's invoices — both NAV and uploaded
   const { data: partnerInvoices, isLoading: isLoadingInvoices } = useQuery({
-    queryKey: ['partner-all-invoices', selectedPartner?.tax_number, selectedCompany?.id],
+    queryKey: ['partner-all-invoices', selectedPartner?.tax_number, selectedPartner?.name, selectedCompany?.id],
     queryFn: async (): Promise<PartnerInvoice[]> => {
       if (!selectedPartner?.tax_number || !selectedCompany?.id) return [];
+
+      const isForeign = isForeignPartner(selectedPartner.tax_number);
       const cleanTax = selectedPartner.tax_number.replace(/-/g, '').substring(0, 8);
+      const escapedName = selectedPartner.name.replace(/'/g, "''");
 
       const [{ data: navData }, { data: uploadedData }] = await Promise.all([
         // NAV invoices
@@ -208,15 +245,21 @@ export default function PartnersPage() {
           .from('nav_invoices')
           .select('id, invoice_number, invoice_direction, invoice_gross_amount, invoice_net_amount, invoice_issue_date, payment_date, currency, supplier_name, customer_name, payment_method')
           .eq('company_id', selectedCompany.id)
-          .or(`supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number}`)
+          .or(isForeign
+            ? `supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
+            : `supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number}`
+          )
           .order('invoice_issue_date', { ascending: false })
           .limit(50),
-        // Uploaded invoices matched by VAT ID prefix
+        // Uploaded invoices
         supabase
           .from('invoices')
           .select('id, bizonylatsorszam, invoice_direction, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem, elado_nev, vevo_nev, fizetesi_mod, elado_vat_id, vevo_vat_id')
           .eq('company_id', selectedCompany.id)
-          .or(`elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%`)
+          .or(isForeign
+            ? `elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`
+            : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%`
+          )
           .order('kibocsatas_datuma', { ascending: false })
           .limit(50),
       ]);
@@ -361,7 +404,7 @@ export default function PartnersPage() {
       filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(query) ||
-          p.tax_number.toLowerCase().includes(query) ||
+          (!isForeignPartner(p.tax_number) && p.tax_number.toLowerCase().includes(query)) ||
           (p.address && p.address.toLowerCase().includes(query))
       );
     }
@@ -395,7 +438,7 @@ export default function PartnersPage() {
       setEditingPartner(partner);
       setFormData({
         name: partner.name,
-        tax_number: partner.tax_number,
+        tax_number: displayTaxNumber(partner.tax_number),
         address: partner.address || "",
         email: partner.email || "",
         partner_type: partner.partner_type,
@@ -451,10 +494,11 @@ export default function PartnersPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.tax_number.trim()) {
+    const isEditingForeign = editingPartner && isForeignPartner(editingPartner.tax_number);
+    if (!formData.name.trim() || (!isEditingForeign && !formData.tax_number.trim())) {
       toast({
         title: "Hiányzó adatok",
-        description: "A név és adószám megadása kötelező.",
+        description: isEditingForeign ? "A név megadása kötelező." : "A név és adószám megadása kötelező.",
         variant: "destructive",
       });
       return;
@@ -464,8 +508,13 @@ export default function PartnersPage() {
       return;
     }
     setEmailError("");
+    // If editing a foreign partner and tax_number left empty, keep the original FOREIGN: value
+    const finalTaxNumber = isEditingForeign && !formData.tax_number.trim()
+      ? editingPartner.tax_number
+      : formData.tax_number;
     saveMutation.mutate({
       ...formData,
+      tax_number: finalTaxNumber,
       id: editingPartner?.id,
     });
   };
@@ -609,7 +658,13 @@ export default function PartnersPage() {
                               </div>
                             </TableCell>
                             <TableCell className="font-mono text-xs text-muted-foreground py-2">
-                              {partner.tax_number}
+                              {isForeignPartner(partner.tax_number) ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 font-sans">
+                                  Külföldi
+                                </span>
+                              ) : (
+                                partner.tax_number
+                              )}
                             </TableCell>
                             <TableCell className="py-2">
                               {partner.partner_type === 'customer' && (
@@ -725,14 +780,14 @@ export default function PartnersPage() {
                 <div className="grid grid-cols-2 gap-y-3 border border-border/30 rounded-xl p-4 bg-muted/10">
                   <div>
                     <p className="text-[10px] text-muted-foreground font-semibold">Adószám</p>
-                    {selectedPartner.tax_number ? (
+                    {selectedPartner.tax_number && !isForeignPartner(selectedPartner.tax_number) ? (
                       <CopyableCell
                         value={selectedPartner.tax_number}
                         className="font-mono text-xs font-semibold mt-0.5"
                         ariaLabel="Adószám másolása"
                       />
                     ) : (
-                      <span className="text-xs text-muted-foreground/50">—</span>
+                      <span className="text-xs text-muted-foreground/50">{isForeignPartner(selectedPartner.tax_number) ? 'Külföldi partner' : '—'}</span>
                     )}
                   </div>
                   <div className="col-span-2">
@@ -930,12 +985,14 @@ export default function PartnersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tax_number">Adószám *</Label>
+              <Label htmlFor="tax_number">{editingPartner && isForeignPartner(editingPartner.tax_number) ? 'Adószám' : 'Adószám *'}</Label>
               <Input
                 id="tax_number"
                 value={formData.tax_number}
                 onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
-                placeholder="12345678-1-23"
+                placeholder={editingPartner && isForeignPartner(editingPartner.tax_number)
+                  ? 'Külföldi partner – írd be az adószámot ha ismert'
+                  : '12345678-1-23'}
               />
             </div>
             <div className="space-y-2">

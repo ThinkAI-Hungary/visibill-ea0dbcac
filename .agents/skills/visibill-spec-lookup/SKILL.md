@@ -205,14 +205,35 @@ npm run build
 → Ha a build HIBÁS: **javítsd először a meglévő hibákat**, ne adj hozzá újakat.
 → Ha a build SIKERES: jegyezd meg mint baseline → implementálj.
 
-**Implementáció után — Build Verify (rekurzív):**
+**Implementáció után — Evidence Gate (build verify ≠ kész):**
+
+> ⚠️ **Az AI NEM mondhatja hogy „kész" amíg nem rendelkezik konkrét bizonyítékkal.**  
+> A build sikerülése szükséges de NEM ELÉGSÉGES feltétel.
+
 ```bash
 npm run build
 ```
-→ Ha HIBÁS: **javítsd az összes hibát** → futtasd újra → ismételd amíg SIKERES.
-→ Ha SIKERES: **csak ezután** kérd a user validációt.
 
-> ⚠️ **Az AI NEM jelzi a usernek hogy "kész" amíg a build nem SIKERES.**
+**Ha HIBÁS:** javítsd az összes hibát → futtasd újra → ismételd amíg SIKERES.  
+**Ha SIKERES:** ez csak az alap. A tényleges evidence az alábbi táblázatból szükséges:
+
+| Állítás | Szükséges bizonyíték | NEM elég |
+|---------|---------------------|----------|
+| DB migration kész | `execute_sql` → tábla/oszlop/index létezik | Build PASS |
+| Hook működik | Browser konzol: konkrét, nem-üres adat | Build PASS |
+| UI renderelődik | Screenshot: tényleges adat (nem skeleton) | Build PASS |
+| RPC/EF működik | `curl` vagy `supabase invoke` → valid JSON | Build PASS |
+| Bug fix kész | Teszt ami reprodukálta → PASS | Kód módosítva |
+| Feature kész | End-to-end happy path browser-ben | Unit teszt PASS |
+
+**Tiltott befejezési állítások evidence nélkül:**
+```
+❌ "A build sikerült, tehát működik"
+❌ "Szerintem helyesen implementáltam"
+❌ "Should work now" / "Looks correct" / "Úgy tűnik jó"
+❌ "Valószínűleg működik" / "Ez elvileg..."
+✅ [konkrét command output] + [screenshot / SQL result / teszt output]
+```
 
 → User validáció után frissítsd a releváns docs-okat:
   - Ha EF/RPC érintett: `A-005` és/vagy `A-016` frissítés

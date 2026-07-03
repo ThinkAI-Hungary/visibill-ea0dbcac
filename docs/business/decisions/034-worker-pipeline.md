@@ -13,6 +13,10 @@
   2. `transaction_jobs` — Banki tranzakció lista feldolgozás (klasszifikáció, matching)
   3. `gl_classification_jobs` — Főkönyvi besorolás LLM-mel
   4. `report_jobs` — Futárszolgálat riport feldolgozás (3-way matching)
+- **Multi-company invoice routing** (2026-07-02):
+  - Ha a feltöltő user több céghez van rendelve (`company_members`), a worker adószám alapján automatikusan átmozgatja a számlát a helyes céghez
+  - Audit log az eredeti cég naplójában (`action = 'átirányítás'`)
+  - Implementáció: `company_router.py`
 - **Matching pipeline** (tranzakció → számla):
   - Heurisztikus matching (szám, összeg, dátum, partner név)
   - AI fallback (LLM-alapú párosítás kontextussal)

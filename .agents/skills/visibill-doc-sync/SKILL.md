@@ -1,6 +1,6 @@
 ---
 name: visibill-doc-sync
-description: Use after completing code changes in the eaisybill-prod or worker workspace to synchronize documentation with the codebase. Triggers on "frissítsd a doksit", "szinkronizáld a dokumentumokat", "docs update", "docs frissítés", "documentation sync", "update docs", "graphify update", or at the end of any development session that modified code files. Also triggers when the user says "kész a fejlesztés", "commitolok", "lezárom a session-t", "push előtt", "dokumentáljuk", "dokumentáld le a változtatásokat", "dokumentáld a döntéseket", "rögzítsd a döntéseket", "írj ADR-t", "write ADR", "dokumentáljuk amit csináltunk", "frissítsd a dokumentációt", "ADR kell", "döntések dokumentálása", "session dokumentáció". Triggers on project names: "visibill", "eaisybill", "eaisybill-prod", "vsweb".
+description: Synchronize Visibill/eaisybill documentation (ADR/BDR/PRD/Design/Worker docs) with code changes. Use when completing features, before commit/push, or when asked to "frissítsd a doksit", "docs update", "docs frissítés", "documentation sync", "update docs", "írj ADR-t", "dokumentáld le", "dokumentáljuk", "session dokumentáció", "push előtt", "kész a fejlesztés". Triggers on "visibill", "eaisybill", "eaisybill-prod", "vsweb", "worker docs".
 ---
 
 # Visibill Doc Sync — Automatikus Dokumentáció Szinkronizáció
@@ -85,6 +85,46 @@ Minden érintett docs-nál elemezd:
 ### Nem szükséges:
 - `01-tech-stack.md` — meglévő tech stack fedi
 ```
+
+### 3.5 lépés: ⭐ Doc Self-Review (javaslat bemutatása ELŐTT — kötelező)
+
+> Mielőtt bármilyen dokumentációs javaslatot a user elé terjesztesz, futtasd le ezt a belső ellenőrzést.  
+> Ez a lépés **NEM látható a usernek** — csak az agent végzi saját maga számára.
+
+```
+ÖNELLENŐRZÉSI LISTA (minden módosítandó / új doc-ra):
+
+1. Placeholder scan
+   ❌ "TBD", "TODO", "FIXME", "...", hiányos szekciók → javítsd fel
+   ❌ Üres táblázat cellák ahol tartalom kellene
+   ✅ Minden szekció tartalmaz tényleges döntést / leírást
+
+2. Kód konzisztencia cross-check
+   → Olvasd be az érintett fájl(ok) jelenlegi tartalmát
+   → Hasonlítsd a doc-ba kerülő leírással
+   ❌ Ha eltérés van: NE dokumentáld a "kívánt" verziót
+   ✅ Ha eltér: jelezd a usernek ("A kód X-et csinál, de a doc Y-t mondana — melyik helyes?")
+
+3. Cross-reference check
+   ❌ Új ADR-t linka kapcsolódó PRD / BRD nélkül hagysz
+   ❌ Új PRD-ből nem mutat link az ADR-re (ha van tech döntés)
+   ✅ Minden új doc be van linkelve az index.md-be
+   ✅ Minden "Kapcsolódó" szekció ki van töltve
+
+4. Számok és verziók
+   ❌ Edge function count, migration szám, context count elavult
+   ✅ Index.md-ben a következő szám helyes (nem becsülted, hanem megnézted)
+   ✅ ADR/PRD/BRD sorszám ütközésmentes
+
+5. ADR minőségi szűrő (ha ADR-t írsz)
+   Mindháromnak teljesülnie kell:
+   □ Hard to reverse? (fájdalmas visszacsinálni?)
+   □ Surprising without context? (egy jövőbeli dev megkérdezné "miért?")
+   □ Real trade-off? (volt értelmes alternatíva?)
+   → Ha bármelyik NEM → nem kell ADR, elég kód komment vagy doc frissítés
+```
+
+> **Miért:** 30 másodperces befektetés ami megelőzi az elavult, inkonzisztens vagy fél-kész dokumentációt.
 
 ### 4. lépés: Végrehajtás (jóváhagyás után)
 
@@ -272,7 +312,7 @@ Ha ugyanazt az architekturális döntést **kétszer kellett elmagyarázni** egy
 ### Aktuális számozás (mindig ellenőrizd az index.md-t!)
 
 ```
-ADR:  docs/architecture/decisions/index.md  → utolsó: A-021 → következő: A-022
+ADR:  docs/architecture/decisions/index.md  → utolsó: A-025 → következő: A-026
 PRD:  docs/product/decisions/index.md       → utolsó: ellenőrizd a fájlt
 BRD:  docs/business/decisions/index.md      → utolsó: ellenőrizd a fájlt
 ```

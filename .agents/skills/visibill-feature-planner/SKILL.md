@@ -478,6 +478,11 @@ A fő agent **NEM bízik vakon** a sub-agent eredményében. Review checklist:
 □ A kód konzisztens az előző modulokkal?
 □ A meglévő pattern-eket követte?
 □ Nincs "gyors hack" ami később problémát okoz?
+□ Git diff review — futtasd: `git diff HEAD` az érintett fájlokon:
+  - Nincs maradék debug output? (console.log, print, logger.debug temp kód)
+  - Nincs unused import vagy unused variable?
+  - Változók/függvények neve értelmes és konzisztens?
+  - Nincs kikommentelt kód ami nem kellene?
 ```
 
 **Ha a review FAIL → NE javítsd saját kezűleg** → spawn új sub-agent a tanulságokkal (ld. 3.2).

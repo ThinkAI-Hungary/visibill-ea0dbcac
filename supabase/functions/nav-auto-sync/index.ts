@@ -1237,27 +1237,67 @@ async function cachePartnersFromInvoices(
       return;
     }
 
-    // Upsert partners to database
-    const partnersToUpsert = Array.from(partnersMap.values()).map(p => ({
-      user_id: userId,
-      company_id: companyId,
-      tax_number: p.taxNumber,
-      name: p.name,
-      partner_type: p.type
-    }));
-
-    const { error: partnerError } = await supabase
+    // Fetch existing partners for prefix-based deduplication
+    const { data: existingPartners } = await supabase
       .from('partners')
-      .upsert(partnersToUpsert, {
-        onConflict: 'company_id,tax_number',
-        ignoreDuplicates: false
-      });
+      .select('id, tax_number, partner_type, address')
+      .eq('company_id', companyId);
 
-    if (partnerError) {
-      console.error('Error caching partners:', partnerError);
-    } else {
-      console.log(`📋 Cached ${partnersMap.size} partners from ${direction} invoices`);
+    // Build prefix map: first 8 digits → existing partner record
+    const prefixMap = new Map<string, { id: string; partner_type: string; address: string | null; tax_number: string }>();
+    for (const p of (existingPartners || [])) {
+      const digits = (p.tax_number || '').replace(/[^0-9]/g, '');
+      if (digits.length >= 8) {
+        prefixMap.set(digits.substring(0, 8), p);
+      }
     }
+
+    const trulyNew: Array<{ user_id: string; company_id: string; tax_number: string; name: string; partner_type: string }> = [];
+    let updatedCount = 0;
+
+    for (const p of partnersMap.values()) {
+      const digits = p.taxNumber.replace(/[^0-9]/g, '');
+      const prefix = digits.length >= 8 ? digits.substring(0, 8) : null;
+      const existing = prefix ? prefixMap.get(prefix) : null;
+
+      if (existing) {
+        // Partner already exists by prefix — update address if null + auto-upgrade partner_type to 'both'
+        const updates: Record<string, any> = {};
+        if (!existing.address) {
+          // No address update here (nav-auto-sync doesn't have address data)
+        }
+        if (existing.partner_type && existing.partner_type !== 'both' && existing.partner_type !== p.type) {
+          updates.partner_type = 'both';
+        }
+        if (Object.keys(updates).length > 0) {
+          await supabase.from('partners').update(updates).eq('id', existing.id);
+          updatedCount++;
+        }
+      } else {
+        // Truly new partner — queue for insert
+        trulyNew.push({
+          user_id: userId,
+          company_id: companyId,
+          tax_number: p.taxNumber,
+          name: p.name,
+          partner_type: p.type
+        });
+        // Register in prefix map to prevent duplicates within the same batch
+        if (prefix) {
+          prefixMap.set(prefix, { id: '', partner_type: p.type, address: null, tax_number: p.taxNumber });
+        }
+      }
+    }
+
+    // Batch insert truly new partners
+    if (trulyNew.length > 0) {
+      const { error: insertError } = await supabase.from('partners').insert(trulyNew);
+      if (insertError) {
+        console.error('Error inserting new partners:', insertError);
+      }
+    }
+
+    console.log(`📋 Partners from ${direction}: ${trulyNew.length} new, ${updatedCount} updated, ${partnersMap.size - trulyNew.length - updatedCount} skipped`);
   } catch (error) {
     // Don't fail the sync if partner caching fails
     console.error('Error in partner caching:', error);

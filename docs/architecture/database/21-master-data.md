@@ -80,6 +80,15 @@
 
 **Indexek:** `idx_partners_company_tax`, `idx_partners_default_project`, `idx_partners_exclude`, `partners_company_id_tax_number_key`, `partners_user_tax_unique`
 
+**⚠️ tax_number konvenciók:**
+- Magyar partnerek: valós adószám (`12345678-2-42`)
+- EU/külföldi VAT-tal rendelkező partnerek: valós VAT ID (`DE328252554`, `EU372041333`)
+- Külföldi partnerek VAT nélkül: szintetikus ID `FOREIGN:<normalized_name>` (pl. `FOREIGN:anthropicpbc`)
+- A normalizálás: kisbetűsítés + nem alfanumerikus karakterek eltávolítása
+- A frontend elrejti a `FOREIGN:` prefixes értékeket — lásd [P-044](../../product/decisions/P-044-foreign-partner-display.md)
+
+**partner_type logika:** Automatikus upgrade `'both'`-ra ha eltérő irányú számlán jelenik meg (worker + NAV sync) — lásd [A-024](../decisions/A-024-partner-upsert-strategy.md)
+
 ---
 
 ### `report_uploads`
