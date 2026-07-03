@@ -139,6 +139,7 @@ const Index = () => {
           convertToSelectedCurrency={convertToSelectedCurrency}
           vatSectionOpen={prefs.vatSectionOpen}
           onVatSectionOpenChange={prefs.setVatSectionOpen}
+          vatRegime={selectedCompany?.vat_regime}
         />
 
         <FxDifferencesSection

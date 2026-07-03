@@ -136,6 +136,55 @@ function VatReturnViewTab() {
   const prevLineMap: Record<string, ReturnLine> = {};
   prevLines.forEach(l => { prevLineMap[l.row_number] = l; });
 
+  // Kintlévőségből származó ÁFA — unpaid outbound invoices' VAT in this period
+  const { data: unpaidVatEft = 0 } = useQuery({
+    queryKey: ['vat_unpaid_outbound', selectedCompany?.id, year, month, frequency],
+    queryFn: async () => {
+      // Calculate date range (same logic as the RPC)
+      let dateFrom: string, dateTo: string;
+      if (frequency === 'H') {
+        dateFrom = `${year}-${String(month).padStart(2, '0')}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        dateTo = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+      } else {
+        const startMonth = (month - 1) * 3 + 1;
+        dateFrom = `${year}-${String(startMonth).padStart(2, '0')}-01`;
+        const endMonth = startMonth + 2;
+        const lastDay = new Date(year, endMonth, 0).getDate();
+        dateTo = `${year}-${String(endMonth).padStart(2, '0')}-${lastDay}`;
+      }
+
+      // Get all OUTBOUND NAV invoices in this period that have no transaction (unpaid)
+      const { data: invoices, error } = await supabase
+        .from('nav_invoices')
+        .select('id')
+        .eq('company_id', selectedCompany!.id)
+        .eq('invoice_direction', 'OUTBOUND')
+        .is('transaction_id', null)
+        .gte('invoice_delivery_date', dateFrom)
+        .lte('invoice_delivery_date', dateTo);
+
+      if (error || !invoices || invoices.length === 0) return 0;
+
+      // Get VAT amounts for those invoice items
+      const invoiceIds = invoices.map(i => i.id);
+      let totalVat = 0;
+      // Batch in chunks of 50 to avoid URI length limits
+      for (let i = 0; i < invoiceIds.length; i += 50) {
+        const chunk = invoiceIds.slice(i, i + 50);
+        const { data: items } = await supabase
+          .from('nav_invoice_items')
+          .select('vat_amount')
+          .in('nav_invoice_id', chunk);
+        if (items) {
+          totalVat += items.reduce((sum, item) => sum + (item.vat_amount || 0), 0);
+        }
+      }
+      return Math.round(totalVat / 1000); // Convert to eFt
+    },
+    enabled: !!selectedCompany?.id && !!vatReturn,
+  });
+
   const calculate = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc('calculate_vat_return', {
@@ -527,13 +576,33 @@ function VatReturnViewTab() {
         </div>
       )}
 
+      {/* Pénzforgalmi ÁFA banner */}
+      {selectedCompany?.vat_regime === 'penzforgalmi' && (
+        <div className="flex items-center gap-2.5 bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 px-4 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span className="text-sm font-medium">
+            Ez a cég pénzforgalmi ÁFA elszámolást alkalmaz (Áfa tv. XIII/A. fejezet) — az ÁFA fizetési kötelezettség és levonási jog csak a tényleges kifizetéskor keletkezik.
+          </span>
+        </div>
+      )}
+
+      {/* Alanyi adómentes banner */}
+      {selectedCompany?.vat_regime === 'alanyi_mentes' && (
+        <div className="flex items-center gap-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-4 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span className="text-sm font-medium">
+            Ez a cég alanyi adómentességet alkalmaz (Áfa tv. XIII. fejezet) — ÁFA felszámítási és bevallási kötelezettség nem áll fenn.
+          </span>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" style={{ animationDelay: '100ms' }}>
         {[
-          { label: 'Fizetendő ÁFA (36.)', value: getVal('36','tax'), prev: getPrevVal('36','tax'), color: 'text-red-500', bg: 'bg-red-500/10', borderColor: 'border-red-500/20' },
-          { label: 'Levonható ÁFA (76.)', value: getVal('76','tax'), prev: getPrevVal('76','tax'), color: 'text-emerald-600', bg: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20' },
-          { label: 'Egyenleg (83.)', value: getVal('83','tax'), prev: getPrevVal('83','tax'), color: getVal('83','tax') > 0 ? 'text-red-500' : 'text-emerald-600', bg: getVal('83','tax') > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10', borderColor: getVal('83','tax') > 0 ? 'border-red-500/20' : 'border-emerald-500/20' },
-          { label: getVal('84','tax') ? 'Befizetendő (84.)' : 'Visszaigénylés (85.)', value: getVal('84','tax') || getVal('85','tax'), prev: getPrevVal('84','tax') || getPrevVal('85','tax'), color: getVal('84','tax') ? 'text-red-500' : 'text-emerald-600', bg: getVal('84','tax') ? 'bg-red-500/10' : 'bg-emerald-500/10', borderColor: getVal('84','tax') ? 'border-red-500/20' : 'border-emerald-500/20' },
+          { label: 'Fizetendő ÁFA (36.)', value: getVal('36','tax'), prev: getPrevVal('36','tax'), color: 'text-red-500', bg: 'bg-red-500/10', borderColor: 'border-red-500/20', unpaidHint: unpaidVatEft > 0 ? `ebből kintlévőség: ${fmtEft(unpaidVatEft)}` : null },
+          { label: 'Levonható ÁFA (76.)', value: getVal('76','tax'), prev: getPrevVal('76','tax'), color: 'text-emerald-600', bg: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20', unpaidHint: null },
+          { label: 'Egyenleg (83.)', value: getVal('83','tax'), prev: getPrevVal('83','tax'), color: getVal('83','tax') > 0 ? 'text-red-500' : 'text-emerald-600', bg: getVal('83','tax') > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10', borderColor: getVal('83','tax') > 0 ? 'border-red-500/20' : 'border-emerald-500/20', unpaidHint: unpaidVatEft > 0 ? `kintlévőség nélkül: ${fmtEft(getVal('83','tax') - unpaidVatEft)}` : null },
+          { label: getVal('84','tax') ? 'Befizetendő (84.)' : 'Visszaigénylés (85.)', value: getVal('84','tax') || getVal('85','tax'), prev: getPrevVal('84','tax') || getPrevVal('85','tax'), color: getVal('84','tax') ? 'text-red-500' : 'text-emerald-600', bg: getVal('84','tax') ? 'bg-red-500/10' : 'bg-emerald-500/10', borderColor: getVal('84','tax') ? 'border-red-500/20' : 'border-emerald-500/20', unpaidHint: null },
         ].map((kpi, idx) => (
           <Card key={kpi.label} className={cn("border transition-all hover:shadow-md animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-both", kpi.borderColor)} style={{ animationDelay: `${(idx * 75 + 50)}ms` }}>
             <CardContent className="p-4 flex items-center gap-3">
@@ -546,6 +615,12 @@ function VatReturnViewTab() {
                   <DeltaBadge current={kpi.value} prev={kpi.prev} />
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{kpi.label}</div>
+                {vatReturn && kpi.unpaidHint && (
+                  <div className="text-[10px] text-amber-500 dark:text-amber-400 mt-0.5 font-medium flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 shrink-0" />
+                    <span>{kpi.unpaidHint}</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

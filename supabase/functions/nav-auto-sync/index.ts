@@ -44,6 +44,7 @@ interface InvoiceDetails {
   paymentDate?: string;
   invoiceGrossAmount?: number;
   lineItems?: InvoiceLineItem[];
+  isCashAccounting?: boolean;
 }
 
 // Rate limiting helper
@@ -624,6 +625,9 @@ async function fetchInvoiceDetails(
           if (details.invoiceGrossAmount && details.invoiceGrossAmount > 0) {
             updateData.invoice_gross_amount = details.invoiceGrossAmount;
           }
+          if (details.isCashAccounting) {
+            updateData.is_cash_accounting = true;
+          }
 
           const { error: updateError } = await supabase
             .from('nav_invoices')
@@ -836,6 +840,26 @@ function parseInvoiceDataFromXML(xml: string): InvoiceDetails | null {
 
     // Extract invoice line items
     details.lineItems = parseInvoiceLines(decodedData);
+
+    // Detect cash accounting (pénzforgalmi elszámolás) — resilient, never fails
+    // 1. Try: NAV API cashAccountingIndicator field
+    try {
+      const cashAccountingIndicator = extractTag(decodedData, 'cashAccountingIndicator');
+      if (cashAccountingIndicator === 'true' || cashAccountingIndicator === 'CASH_ACCOUNTING') {
+        details.isCashAccounting = true;
+      }
+    } catch { /* silent — fallback below */ }
+
+    // 2. Fallback: text-based search in the decoded invoice XML
+    if (!details.isCashAccounting) {
+      try {
+        const upperXml = decodedData.toUpperCase();
+        if (upperXml.includes('PÉNZFORGALMI ELSZÁMOLÁS') ||
+            upperXml.includes('PENZFORGALMI ELSZAMOLAS')) {
+          details.isCashAccounting = true;
+        }
+      } catch { /* silent */ }
+    }
 
     return details;
   } catch (error) {
