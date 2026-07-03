@@ -61,7 +61,20 @@ A szállítmányozási modulban a fuvarok és a hozzájuk kapcsolódó számlák
 
 ---
 
-## 4. NAV Online Számla ↔ Feltöltött Számla Szinkronizáció (Twin Sync)
+## 4. Manuális kifizetések (Máshogyan kiegyenlített tételek)
+
+Azon számlák kezelése, amelyeket nem banki átutalással egyenlítettek ki.
+
+* **Logika:** A felhasználó a számla nézetben rögzítheti a kifizetést (Készpénz, Privát kártya, Tagi hitel).
+* **Technikai megvalósítás:**
+    - A rendszer létrehoz egy virtuális tranzakciót a `transactions` táblában (`is_manual = true`).
+    - A tranzakciót azonnal összekapcsolja a számlával (`matched_invoice_id`).
+    - Ez biztosítja, hogy a pénzforgalmi riportok (pl. ÁFA bevallás) lássák a kifizetés tényét és dátumát.
+* **Adatmodell:** A `transactions` tábla tartalmazza a kifizetés módját (`manual_payment_type`) és opcionális megjegyzést (`manual_payment_note`).
+
+---
+
+## 5. NAV Online Számla ↔ Feltöltött Számla Szinkronizáció (Twin Sync)
 
 A rendszerben a számlák két külön táblában élnek: a feltöltött `invoices` és a NAV Online Számla rendszeréből lekért `nav_invoices`.
 

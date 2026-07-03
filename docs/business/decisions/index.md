@@ -125,3 +125,4 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | 040 | Számla Kapcsolatok és Párosítási Logikák (Matching & Relations) | ✅ Decided | [040-invoice-relations-matching.md](./040-invoice-relations-matching.md) |
+| 041 | Manuális Kifizetés Rögzítése (Máshogyan kiegyenlített tételek) | ✅ Decided | [041-manual-payment-recording.md](./041-manual-payment-recording.md) |

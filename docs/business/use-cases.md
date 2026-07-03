@@ -305,3 +305,30 @@
 - **A2:** Előfizetés lejárt → check-subscription-status → figyelmeztetés
 
 **Utófeltétel:** Előfizetés aktív, számla limit frissítve.
+
+---
+
+## UC-013: Manuális Kifizetés Rögzítése
+
+| Mező | Érték |
+|------|-------|
+| **Aktor** | Cégvezető |
+| **Előfeltétel** | Bejelentkezett, van párosítatlan számla, amit nem a cég bankszámlájáról fizettek ki |
+| **Trigger** | Számla kifizetve privát forrásból / készpénzből |
+
+**Fő folyamat:**
+1. Felhasználó megnyitja a Számlák oldalt
+2. Kiválasztja a kifizetetlen számlát
+3. Kattint a "Fizetés rögzítése" (vagy "Máshogyan kiegyenlített") gombra
+4. Megnyílik a ManualPaymentDialog
+5. Felhasználó megadja:
+    - Kifizetés dátuma
+    - Kifizetés módja (Privát kártya / Készpénz / Tagi hitel)
+    - Opcionális megjegyzés
+6. Rendszer meghívja a `record_manual_invoice_payment` RPC-t
+7. Létrejön a virtuális tranzakció (`is_manual = true`)
+8. Rendszer automatikusan párosítja a számlát a virtuális tranzakcióval
+9. Számla státusza "Párosítva" (vagy "Kifizetve") lesz
+
+**Utófeltétel:** Számla kifizetettként rögzítve, virtuális tranzakció létrejött és párosítva.
+

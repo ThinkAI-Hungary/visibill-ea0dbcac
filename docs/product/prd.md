@@ -86,6 +86,7 @@ Banki tranzakciók importálása, AI-alapú párosítás számlákkal, manuális
 | AI Párosítás Megjelenítés | Confidence score + match type + gl_reasoning DB-ben tárolva. Részletek dialógusban (TransactionDetailsDialog). Lista nézetben vizuális confidence megjelenítés: TODO. | [P-017](./decisions/P-017-matching-display.md) |
 | Manuális Felülírás | Dialógusban keresés + hozzárendelés, is_verified flag, minden felülírás audit logban (`match_transaction_overrides_log` tábla). Deviza-tudatos összeg-összehasonlítás: azonos pénznemű tranzakció↔számla direkt összehasonlítás, eltérő devizánál HUF konverzió. Minimum 10 számla megjelenítés összeg-proximítás szerint. | [P-018](./decisions/P-018-manual-matching.md) |
 | ML tanulás | Felhasználói felülírásokból tanul: `match_transaction_overrides_log` tábla → partner név, összeg, típus pattern-ek rögzítése. A worker pipeline a jövőben ezeket a mintákat használja az AI párosítás pontosságának javítására. | — |
+| Manuális Kifizetés | Virtuális tranzakció rögzítése nem-banki kifizetésekhez (Készpénz, Privát kártya, Tagi hitel). Automatikus párosítás a számlához. | [P-041](../business/decisions/041-manual-payment-recording.md) |
 | Futár Riportok | GLS, MPL, Mixpack CSV import + parsing (3 futár tab) | — |
 
 ---
