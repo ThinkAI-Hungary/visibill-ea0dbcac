@@ -54,6 +54,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     gcTime: 10 * 60 * 1000,
   });
 
+  // Check if this management user has an active impersonation session
+  const { data: hasImpersonation } = useQuery({
+    queryKey: ['active-impersonation-check', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('user_id', user!.id)
+        .eq('role', 'support_admin' as any)
+        .limit(1)
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user && (profileData?.role === 'management' || profileData?.role === 'thinkai'),
+    staleTime: 10_000,
+  });
+
   // ── Early returns (after all hooks) ──
 
   // Block rendering until we know the profile role.
@@ -63,8 +80,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   // Management users → redirect to /management from ANY route
+  // BUT: skip redirect if the user has an active impersonation session
   const profileRole = profileData?.role;
-  if ((profileRole === 'management' || profileRole === 'thinkai') && location.pathname !== '/management') {
+  if ((profileRole === 'management' || profileRole === 'thinkai') && !hasImpersonation && location.pathname !== '/management') {
     return <Navigate to="/management" replace />;
   }
 

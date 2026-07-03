@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useUserRole } from '@/hooks/useUserRole';
 import AccountyWelcomeWizard from '@/components/accounty/AccountyWelcomeWizard';
 import { 
   Plus, 
@@ -19,7 +20,8 @@ import {
   Database,
   X,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Check
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -223,9 +225,12 @@ export default function AccountyApp() {
   const mineCount = clients.filter(c => c.isMainAccountant).length;
   const allCount = clients.length;
 
+  const { role: userRole } = useUserRole();
+  const isSupportAdmin = userRole === 'support_admin';
   const [wizardDismissed, setWizardDismissed] = useState(false);
   const showWizard = !clientsLoading
     && !wizardDismissed
+    && !isSupportAdmin
     && localStorage.getItem('accounty-welcome-done') !== '1'
     && clients.length === 0;
   const [wizardActive, setWizardActive] = useState(false);
@@ -294,7 +299,7 @@ export default function AccountyApp() {
         setCodeStatus('invalid');
       }
     } catch (err) {
-      reportError({ type: 'edge_function', component: 'AccountyApp', action: 'error', message: 'Failed to validate partner code:', error: err });
+      reportError({ type: 'api_call', component: 'AccountyApp', action: 'error', message: 'Failed to validate partner code:', error: err });
       setCodeStatus('invalid');
     }
   };
@@ -320,7 +325,7 @@ export default function AccountyApp() {
       setInviteCode('');
       setCodeStatus(null);
     } catch (err) {
-      reportError({ type: 'edge_function', component: 'AccountyApp', action: 'error', message: 'Failed to join as accountant:', error: err });
+      reportError({ type: 'api_call', component: 'AccountyApp', action: 'error', message: 'Failed to join as accountant:', error: err });
       setCodeStatus('invalid');
     } finally {
       setIsJoiningAsAccountant(false);

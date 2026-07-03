@@ -88,6 +88,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider, useCompany } from "./contexts/CompanyContext";
 import { DateRangeProvider, useDateRange } from "./contexts/DateRangeContext";
 import { ProtectedLayout } from "./components/ProtectedLayout";
+import { SupportModeBanner } from "./components/SupportModeBanner";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ProtectedAccountyRoute } from "./pages/Accounty/ProtectedAccountyRoute";
 import { ScopedLayout } from "./components/ScopedLayout";
@@ -394,11 +395,28 @@ function RootRedirect() {
   // Check if they have eaisybill access
   const { hasAccess: hasEaisybillAccess, isLoading: accessLoading } = useHasEaisybillAccess();
 
+  // Check for active impersonation (support_admin) before management redirect
+  // NOTE: Hook must be before any conditional returns (Rules of Hooks)
+  const { data: hasImpersonation, isPending: impLoading } = useQuery({
+    queryKey: ['has-impersonation-root', user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('company_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user!.id)
+        .eq('role', 'support_admin' as any);
+      return (count ?? 0) > 0;
+    },
+    enabled: !!user && (profileRole === 'management' || profileRole === 'thinkai'),
+    staleTime: 30_000,
+  });
+
   if (roleLoading || accessLoading) return <LoadingSpinner message="" />;
 
-  // ThinkAI / management role → management dashboard (takes priority)
+  // ThinkAI / management role → management dashboard (but NOT when impersonating)
   if (profileRole === 'management' || profileRole === 'thinkai') {
-    return <Navigate to="/management" replace />;
+    if (impLoading) return <LoadingSpinner message="" />;
+    if (!hasImpersonation) return <Navigate to="/management" replace />;
   }
 
   // Still loading companies — render nothing (initial-loader covers this)
@@ -527,6 +545,7 @@ const App = () => (
 
                 <Toaster />
                 <OfflineBanner />
+                <SupportModeBanner />
                 <ErrorBoundary>
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <ScrollToTop />

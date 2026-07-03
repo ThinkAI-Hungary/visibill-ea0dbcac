@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -20,10 +21,30 @@ import {
   ArrowLeftRight, BookOpen, Briefcase, Upload, AlertCircle, ClipboardList, CalendarClock, HardHat,
   CreditCard, User,
   Tags, FolderKanban, Package2, Truck, FileSpreadsheet, Scale, ScrollText, Gavel,
-  TicketCheck,
+  TicketCheck, FolderOpen,
 } from 'lucide-react';
-import TicketsPage from './TicketsPage';
 import { Switch } from '@/components/ui/switch';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import TicketsPage from './TicketsPage';
 
 // ─── Types ────────────────────────────────────────────
 interface OverviewData {
@@ -205,12 +226,15 @@ function StatCard({ icon: Icon, label, value, sub, loading }: {
 }) {
   if (loading) {
     return (
-      <Card>
+      <Card className="border-border/50 bg-card/50">
         <CardContent className="flex items-center gap-4 p-5">
-          <Skeleton className="h-12 w-12 rounded-xl" />
-          <div className="space-y-2 flex-1">
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
+          <div className="space-y-2.5 flex-1 overflow-hidden">
+            <Skeleton className="h-7 w-2/3" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-1/2" />
+              {sub && <Skeleton className="h-2 w-3/4 opacity-50" />}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -388,7 +412,7 @@ function LlmCostTable({ companyId }: { companyId: string }) {
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Bot className="h-4 w-4 text-primary" aria-hidden="true" /> LLM költségek részletezése
           <span className="text-xs font-normal text-muted-foreground ml-auto">
-            {isLoading ? '...' : `${totalRows} rekord`}
+            {isLoading ? <Skeleton className="h-4 w-16" /> : `${totalRows} rekord`}
           </span>
         </CardTitle>
         {/* Filters row */}
@@ -431,7 +455,23 @@ function LlmCostTable({ companyId }: { companyId: string }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {rows.map((d, i) => (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={`skel-${i}`}>
+                    <td className="py-2 px-4"><Skeleton className="h-4 w-16" /></td>
+                    <td className="py-2 px-4"><Skeleton className="h-4 w-24" /></td>
+                    <td className="py-2 px-4"><Skeleton className="h-4 w-32" /></td>
+                    <td className="py-2 px-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                    <td className="py-2 px-4 text-right"><Skeleton className="h-4 w-12 ml-auto" /></td>
+                    <td className="py-2 px-4 text-right"><Skeleton className="h-4 w-12 ml-auto" /></td>
+                    <td className="py-2 px-4 text-right"><Skeleton className="h-4 w-14 ml-auto" /></td>
+                  </tr>
+                ))
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-muted-foreground text-sm">Nincs adat a megadott szűréssel</td>
+                </tr>
+              ) : rows.map((d, i) => (
                 <tr key={`${d.created_at}-${i}`} className="text-foreground/80 hover:bg-accent/30 transition-colors duration-150">
                   <td className="py-2 px-4 tabular-nums">{new Date(d.created_at).toLocaleDateString('hu-HU')}</td>
                   <td className="py-2 px-4 text-foreground/70 truncate max-w-[120px]">{d.user_name || '—'}</td>
@@ -442,7 +482,7 @@ function LlmCostTable({ companyId }: { companyId: string }) {
                   <td className="text-right py-2 px-4 tabular-nums font-medium">${Number(d.estimated_cost_usd).toFixed(4)}</td>
                 </tr>
               ))}
-              {rows.length < PAGE_SIZE && Array.from({ length: PAGE_SIZE - rows.length }).map((_, i) => (
+              {!isLoading && rows.length < PAGE_SIZE && Array.from({ length: PAGE_SIZE - rows.length }).map((_, i) => (
                 <tr key={`empty-${i}`} className="pointer-events-none">
                   <td className="py-2 px-4">&nbsp;</td>
                   <td className="py-2 px-4"></td>
@@ -764,7 +804,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
             <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-accent/30 border border-border shrink-0">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
               <div>
-                <p className="text-lg font-bold leading-none tabular-nums">{isLoading ? '...' : data?.totalErrors ?? 0}</p>
+                <div className="text-lg font-bold leading-none tabular-nums">{isLoading ? <Skeleton className="h-5 w-10 inline-block" /> : data?.totalErrors ?? 0}</div>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Összes hiba</p>
               </div>
             </div>
@@ -773,7 +813,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
             <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-accent/30 border border-border shrink-0">
               <Clock className="h-4 w-4 text-primary" />
               <div>
-                <p className="text-lg font-bold leading-none tabular-nums">{isLoading ? '...' : data?.last24hErrors ?? 0}</p>
+                <div className="text-lg font-bold leading-none tabular-nums">{isLoading ? <Skeleton className="h-5 w-8 inline-block" /> : data?.last24hErrors ?? 0}</div>
                 <p className="text-[10px] text-muted-foreground mt-0.5">24h</p>
               </div>
             </div>
@@ -914,7 +954,22 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
-                {errRows.map(r => {
+                {isLoading ? (
+                  Array.from({ length: 8 }).map((_, i) => (
+                    <tr key={`skel-${i}`}>
+                      <td className="py-1.5 px-2"><Skeleton className="h-4 w-4" /></td>
+                      <td className="py-1.5 px-1"><Skeleton className="h-3 w-3" /></td>
+                      <td className="py-1.5 px-3"><Skeleton className="h-4 w-20" /></td>
+                      <td className="py-1.5 px-3"><Skeleton className="h-4 w-28" /></td>
+                      <td className="py-1.5 px-3"><Skeleton className="h-4 w-24" /></td>
+                      <td className="py-1.5 px-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                      <td className="py-1.5 px-3"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                      <td className="py-1.5 px-3"><Skeleton className="h-4 w-32" /></td>
+                      <td className="py-1.5 px-3"><Skeleton className="h-4 w-40" /></td>
+                      <td className="py-1.5 px-2"><Skeleton className="h-4 w-8" /></td>
+                    </tr>
+                  ))
+                ) : errRows.map(r => {
                   const isExpanded = expandedId === `${r.source}:${r.id}`;
                   const key = `${r.source}:${r.id}`;
                   return (
@@ -1074,7 +1129,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
       </Card>
 
       {/* Retry Pipeline Modal */}
-      {retryModalOpen && (
+      {retryModalOpen && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
           <Card className="w-full max-w-md mx-4 shadow-2xl border-border">
             <CardHeader className="pb-3">
@@ -1127,10 +1182,9 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
             </CardContent>
           </Card>
         </div>
-      )}
-
+      , document.body)}
       {/* Delete Confirmation Modal */}
-      {deleteModalOpen && (
+      {deleteModalOpen && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
           <Card className="w-full max-w-sm mx-4 shadow-2xl border-border">
             <CardHeader className="pb-3">
@@ -1155,10 +1209,9 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
             </CardContent>
           </Card>
         </div>
-      )}
-
+      , document.body)}
       {/* Delete ALL confirmation modal */}
-      {deleteAllModalOpen && (
+      {deleteAllModalOpen && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
           <Card className="w-full max-w-sm mx-4 shadow-2xl border-border">
             <CardHeader className="pb-3">
@@ -1202,10 +1255,9 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
             </CardContent>
           </Card>
         </div>
-      )}
-
+      , document.body)}
       {/* File Preview Modal */}
-      {previewFile && (() => {
+      {previewFile && createPortal((() => {
         const ext = (previewFile.name.split('.').pop() || '').toLowerCase();
         const isPdf = ext === 'pdf';
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext);
@@ -1323,7 +1375,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
             </div>
           </div>
         );
-      })()}
+      })(), document.body)}
     </div>
   );
 }
@@ -1535,6 +1587,21 @@ function fmtCell(key: string, val: unknown): React.ReactNode {
 
 function SuperadminPanel({ overview }: { overview: OverviewData | undefined }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // ── Show toast on return from support mode exit ─────────────────
+  useEffect(() => {
+    if (searchParams.get('exit_toast') === '1') {
+      toast({ title: 'Support mód befejezve', description: 'Sikeresen visszatértél a management nézetbe.' });
+      // Clean up the exit_toast param from URL
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('exit_toast');
+        return next;
+      }, { replace: true });
+    }
+  }, []); // Run once on mount
 
   // ── URL-derived state (shareable / bookmarkable) ─────────────────
   const mode            = (searchParams.get('sa_mode') as 'company' | 'user') ?? 'company';
@@ -1636,6 +1703,70 @@ function SuperadminPanel({ overview }: { overview: OverviewData | undefined }) {
   // In user mode, if a user is selected show their companies; otherwise show filtered users
   const showUserList = isUserMode && !selectedUserId;
   const showUserCompanies = isUserMode && !!selectedUserId;
+
+  // ── Impersonation state ──
+  const [impersonating, setImpersonating] = useState(false);
+
+  // Check for active impersonation sessions
+  const { data: activeImpersonation } = useQuery({
+    queryKey: ['active-impersonation'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('company_members')
+        .select('company_id')
+        .eq('role', 'support_admin' as any)
+        .limit(1)
+        .maybeSingle();
+      return data as { company_id: string } | null;
+    },
+    refetchInterval: 30_000,
+  });
+
+  const handleImpersonate = useCallback(async (companyId: string, companyName: string) => {
+    setImpersonating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('impersonate-company', {
+        body: { action: 'start', companyId },
+      });
+
+      if (error) throw new Error(error.message);
+
+      // Navigate to eaisybill view on the same tab
+      const url = `/${companyId}/this-month/invoices`;
+      window.location.href = url;
+
+      // Refresh the active impersonation query
+      queryClient.invalidateQueries({ queryKey: ['active-impersonation'] });
+
+    } catch (err) {
+      reportError({
+        type: 'api_call',
+        component: 'SuperadminPanel',
+        action: 'impersonation_start',
+        message: `Failed to start impersonation for ${companyName}`,
+        error: err,
+      });
+    } finally {
+      setImpersonating(false);
+    }
+  }, [queryClient]);
+
+  const handleStopImpersonation = useCallback(async (companyId: string) => {
+    try {
+      await supabase.functions.invoke('impersonate-company', {
+        body: { action: 'stop', companyId },
+      });
+      queryClient.invalidateQueries({ queryKey: ['active-impersonation'] });
+    } catch (err) {
+      reportError({
+        type: 'api_call',
+        component: 'SuperadminPanel',
+        action: 'impersonation_stop',
+        message: 'Failed to stop impersonation',
+        error: err,
+      });
+    }
+  }, [queryClient]);
 
   return (
     <div className="flex gap-0 h-full overflow-hidden">
@@ -1770,9 +1901,37 @@ function SuperadminPanel({ overview }: { overview: OverviewData | undefined }) {
                     )}
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setUrlParam({ sa_company: null, sa_user: null })}>
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {/* ★ Impersonate button ★ */}
+                  {activeImpersonation?.company_id === selectedCompanyId ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1.5 border-amber-500/50 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                      onClick={() => handleStopImpersonation(selectedCompanyId!)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Support mód aktív — Leállítás
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm border-0"
+                      onClick={() => selectedCompanyId && selectedCompany && handleImpersonate(selectedCompanyId, selectedCompany.name)}
+                      disabled={impersonating || !!activeImpersonation}
+                    >
+                      {impersonating ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Eye className="h-3.5 w-3.5" />
+                      )}
+                      {impersonating ? 'Csatlakozás...' : 'Megtekintés felhasználóként'}
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setUrlParam({ sa_company: null, sa_user: null })}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -1936,17 +2095,22 @@ export default function ManagementDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Derive view state from URL
-  const urlView = searchParams.get('view') as 'company' | 'user' | 'errors' | 'permissions' | 'superadmin' | 'tickets' | null;
+  const urlView = searchParams.get('view') as 'company' | 'user' | 'errors' | 'permissions' | 'files' | 'superadmin' | 'tickets' | null;
   const urlId = searchParams.get('id');
-  const view: 'overview' | 'company' | 'user' | 'errors' | 'permissions' | 'superadmin' | 'tickets' =
-    (urlView === 'company' || urlView === 'user' || urlView === 'errors' || urlView === 'permissions' || urlView === 'superadmin' || urlView === 'tickets')
-      ? urlView
-      : 'overview';
+  const hasSuperadminParams = !!searchParams.get('sa_company') || !!searchParams.get('sa_mode');
+  const view: 'overview' | 'company' | 'user' | 'errors' | 'permissions' | 'files' | 'superadmin' | 'tickets' =
+    hasSuperadminParams
+      ? 'superadmin'
+      : (urlView === 'company' || urlView === 'user' || urlView === 'errors' || urlView === 'permissions' || urlView === 'files' || urlView === 'superadmin' || urlView === 'tickets')
+        ? urlView
+        : 'overview';
   const selectedCompanyId = view === 'company' ? urlId : null;
   const selectedUserId = view === 'user' ? urlId : null;
 
   const [searchUser, setSearchUser] = useState('');
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [userPage, setUserPage] = useState(0);
+  const USER_PAGE_SIZE = 15;
 
   // ── Queries (auto-refresh: overview 60s, details 30s) ─
   const { data: overview, isLoading: overviewLoading } = useQuery<OverviewData>({
@@ -1991,6 +2155,14 @@ export default function ManagementDashboard() {
     );
   }, [overview?.users, searchUser]);
 
+  // Reset user page when search changes
+  useEffect(() => { setUserPage(0); }, [searchUser]);
+
+  const userTotalPages = Math.ceil(filteredUsers.length / USER_PAGE_SIZE);
+  const paginatedUsers = useMemo(() =>
+    filteredUsers.slice(userPage * USER_PAGE_SIZE, (userPage + 1) * USER_PAGE_SIZE)
+  , [filteredUsers, userPage]);
+
   const selectedCompanyName = overview?.companies.find(c => c.id === selectedCompanyId)?.name;
   const selectedUserObj = overview?.users.find(u => u.user_id === selectedUserId);
 
@@ -2008,7 +2180,7 @@ export default function ManagementDashboard() {
   // ── Title / subtitle derivation ─────────────────────
   const title = view === 'overview'
     ? 'Management Dashboard'
-    : (view === 'errors' || view === 'permissions')
+    : (view === 'errors' || view === 'permissions' || view === 'files')
       ? 'Control Center'
       : view === 'superadmin'
         ? 'Control Center'
@@ -2020,7 +2192,7 @@ export default function ManagementDashboard() {
 
   const subtitle = view === 'overview'
     ? 'eaisybill platform áttekintés'
-    : (view === 'errors' || view === 'permissions' || view === 'superadmin')
+    : (view === 'errors' || view === 'permissions' || view === 'superadmin' || view === 'files')
       ? 'Hibák, jogosultságok és adatnézet'
       : view === 'tickets'
         ? 'Beérkezett ügyfél hibajegyek és support csevegés'
@@ -2066,7 +2238,7 @@ export default function ManagementDashboard() {
         </div>
 
         {/* ── Főnavigáció tab bar (áttekintés + control center + tickets) ── */}
-        {(view === 'overview' || view === 'errors' || view === 'permissions' || view === 'superadmin' || view === 'tickets') && (
+        {(view === 'overview' || view === 'errors' || view === 'permissions' || view === 'files' || view === 'superadmin' || view === 'tickets') && (
           <div className="border-t border-border/40">
             <nav className="max-w-7xl mx-auto px-6 flex items-center gap-0.5 py-1.5" aria-label="Főnavigáció">
               <button
@@ -2074,7 +2246,7 @@ export default function ManagementDashboard() {
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                   view === 'overview'
                     ? 'bg-primary/10 text-primary border border-primary/20'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent'
                 }`}
                 aria-current={view === 'overview' ? 'page' : undefined}
               >
@@ -2084,11 +2256,11 @@ export default function ManagementDashboard() {
               <button
                 onClick={openErrors}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  view === 'errors' || view === 'permissions'
+                  view === 'errors' || view === 'permissions' || view === 'files'
                     ? 'bg-primary/10 text-primary border border-primary/20'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent'
                 }`}
-                aria-current={view === 'errors' || view === 'permissions' ? 'page' : undefined}
+                aria-current={view === 'errors' || view === 'permissions' || view === 'files' ? 'page' : undefined}
               >
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Control Center
@@ -2098,7 +2270,7 @@ export default function ManagementDashboard() {
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                   view === 'superadmin'
                     ? 'bg-primary/10 text-primary border border-primary/20'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent'
                 }`}
                 aria-current={view === 'superadmin' ? 'page' : undefined}
               >
@@ -2110,7 +2282,7 @@ export default function ManagementDashboard() {
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                   view === 'tickets'
                     ? 'bg-primary/10 text-primary border border-primary/20'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent'
                 }`}
                 aria-current={view === 'tickets' ? 'page' : undefined}
               >
@@ -2124,7 +2296,7 @@ export default function ManagementDashboard() {
 
       {/* ═══ SUPERADMIN — full-height, outside the scroll wrapper ═══ */}
       {view === 'superadmin' && (
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 animate-in fade-in duration-300">
           <SuperadminPanel overview={overview} />
         </div>
       )}
@@ -2138,9 +2310,9 @@ export default function ManagementDashboard() {
         </div>
       )}
 
-      {/* ═══ Normal scrollable content (overview / errors / permissions / company / user) ═══ */}
+      {/* ═══ Normal scrollable content (overview / errors / permissions / files / company / user) ═══ */}
       {view !== 'superadmin' && view !== 'tickets' && (
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
       <main className="w-full max-w-7xl mx-auto px-6 py-8">
         {/* ═══ OVERVIEW ═══ */}
         {view === 'overview' && (
@@ -2156,7 +2328,7 @@ export default function ManagementDashboard() {
                 loading={overviewLoading}
                 sub={overview ? `In: ${(overview.llmOverview.totalMonthlyInputTokens / 1000).toFixed(1)}k · Out: ${(overview.llmOverview.totalMonthlyOutputTokens / 1000).toFixed(1)}k token` : undefined} />
               {overviewLoading ? (
-                <StatCard icon={Trophy} label="Legdrágább cég" value="..." loading />
+                <StatCard icon={Trophy} label="Legdrágább cég" value="..." loading sub="..." />
               ) : overview?.llmOverview.mostExpensiveCompany ? (
                 <Card
                   className="cursor-pointer hover:bg-accent/30 transition-colors duration-150"
@@ -2180,24 +2352,29 @@ export default function ManagementDashboard() {
               ) : (
                 <StatCard icon={Trophy} label="Legdrágább cég" value="—" sub="Nincs LLM költség" />
               )}
-              <Card
-                className="cursor-pointer hover:bg-accent/30 transition-colors duration-150 border-destructive/20"
-                onClick={openErrors}
-                role="button" tabIndex={0}
-                onKeyDown={e => { if (e.key === 'Enter') openErrors(); }}
-              >
-                <CardContent className="flex items-center gap-4 p-5">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-destructive/10 border border-destructive/20 shrink-0">
-                    <AlertTriangle className="h-6 w-6 text-destructive" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-bold text-foreground tabular-nums tracking-tight">
-                      {overviewLoading ? '...' : (overview as any)?.totalErrors ?? '—'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Feldolgozási hibák</p>
-                  </div>
-                </CardContent>
-              </Card>
+
+              {overviewLoading ? (
+                <StatCard icon={AlertTriangle} label="Feldolgozási hibák" value="..." loading />
+              ) : (
+                <Card
+                  className="cursor-pointer hover:bg-accent/30 transition-colors duration-150 border-destructive/20"
+                  onClick={openErrors}
+                  role="button" tabIndex={0}
+                  onKeyDown={e => { if (e.key === 'Enter') openErrors(); }}
+                >
+                  <CardContent className="flex items-center gap-4 p-5">
+                    <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-destructive/10 border border-destructive/20 shrink-0">
+                      <AlertTriangle className="h-6 w-6 text-destructive" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-2xl font-bold text-foreground tabular-nums tracking-tight">
+                        {(overview as any)?.totalErrors ?? '—'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Feldolgozási hibák</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             <Card>
@@ -2217,12 +2394,12 @@ export default function ManagementDashboard() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm" role="table">
+                  <table className="w-full text-sm" role="table" style={{ tableLayout: 'fixed' }}>
                     <thead>
                       <tr className="border-b border-border text-muted-foreground text-xs bg-muted/30">
-                        <th className="text-left py-3 px-5 font-medium w-8"></th>
+                        <th className="text-left py-3 px-5 font-medium" style={{ width: 40 }}></th>
                         <th className="text-left py-3 px-2 font-medium">Név</th>
-                        <th className="text-center py-3 px-4 font-medium">Cégek</th>
+                        <th className="text-center py-3 px-4 font-medium" style={{ width: 80 }}>Cégek</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -2234,18 +2411,18 @@ export default function ManagementDashboard() {
                             <td className="py-3 px-4 text-center"><Skeleton className="h-5 w-8 mx-auto rounded-full" /></td>
                           </tr>
                         ))
-                      ) : filteredUsers.length === 0 ? (
+                      ) : paginatedUsers.length === 0 ? (
                         <tr>
                           <td colSpan={3} className="text-center py-8 text-muted-foreground text-sm">Nincs találat</td>
                         </tr>
-                      ) : filteredUsers.map(u => {
+                      ) : paginatedUsers.map(u => {
                         const isExpanded = expandedUserId === u.user_id;
                         return (
                           <React.Fragment key={u.user_id}>
                             <tr
                               onClick={() => setExpandedUserId(isExpanded ? null : u.user_id)}
                               className="cursor-pointer hover:bg-accent/50 active:bg-accent/70
-                                         transition-colors duration-150 group"
+                                         transition-colors duration-150 group h-[52px]"
                               role="button"
                               tabIndex={0}
                               aria-expanded={isExpanded}
@@ -2255,12 +2432,12 @@ export default function ManagementDashboard() {
                               <td className="py-3 px-5 w-8">
                                 <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                               </td>
-                              <td className="py-3 px-2">
+                              <td className="py-3 px-2 overflow-hidden">
                                 <div>
-                                  <span className="font-medium text-foreground group-hover:text-primary transition-colors duration-150">
+                                  <span className="font-medium text-foreground group-hover:text-primary transition-colors duration-150 block truncate">
                                     {u.name || 'N/A'}
                                   </span>
-                                  <p className="text-xs text-muted-foreground">{u.email}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                                 </div>
                               </td>
                               <td className="py-3 px-4 text-center">
@@ -2329,9 +2506,41 @@ export default function ManagementDashboard() {
                           </React.Fragment>
                         );
                       })}
+                      {!overviewLoading && paginatedUsers.length > 0 && paginatedUsers.length < USER_PAGE_SIZE &&
+                        Array.from({ length: USER_PAGE_SIZE - paginatedUsers.length }).map((_, i) => (
+                          <tr key={`empty-${i}`} className="pointer-events-none">
+                            <td className="py-3 px-5">&nbsp;</td>
+                            <td className="py-3 px-2 overflow-hidden">
+                              <div>
+                                <span className="block text-sm invisible">&nbsp;</span>
+                                <p className="text-xs invisible">&nbsp;</p>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4"></td>
+                          </tr>
+                        ))
+                      }
                     </tbody>
                   </table>
                 </div>
+                {!overviewLoading && userTotalPages > 1 && (
+                  <div className="flex items-center justify-between px-5 py-2.5 border-t border-border">
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {filteredUsers.length === 0 ? '0' : `${userPage * USER_PAGE_SIZE + 1}–${Math.min((userPage + 1) * USER_PAGE_SIZE, filteredUsers.length)} / ${filteredUsers.length}`}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={userPage === 0}
+                        onClick={() => setUserPage(p => p - 1)} aria-label="Előző oldal">
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground tabular-nums px-2">{userPage + 1}/{userTotalPages}</span>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={userPage >= userTotalPages - 1}
+                        onClick={() => setUserPage(p => p + 1)} aria-label="Következő oldal">
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -2553,8 +2762,8 @@ export default function ManagementDashboard() {
         })()}
 
         {/* ═══ CONTROL CENTER ═══ */}
-        {(view === 'errors' || view === 'permissions') && (
-          <ControlCenter initialTab={view} onOpenCompany={openCompany} allUsers={overview?.users || []} />
+        {(view === 'errors' || view === 'permissions' || view === 'files') && (
+          <ControlCenter initialTab={view as 'errors' | 'permissions' | 'files'} onOpenCompany={openCompany} allUsers={overview?.users || []} />
         )}
       </main>
       </div>
@@ -2566,7 +2775,7 @@ export default function ManagementDashboard() {
 // ═══════════════════════════════════════════════════════
 // ─── Control Center (tabs: Hibák / Jogosultságok) ────
 // ═══════════════════════════════════════════════════════
-type ControlCenterTab = 'errors' | 'permissions';
+type ControlCenterTab = 'errors' | 'permissions' | 'files';
 
 interface ControlCenterUser {
   user_id: string;
@@ -2574,11 +2783,11 @@ interface ControlCenterUser {
   email: string;
 }
 
-function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: 'errors' | 'permissions'; onOpenCompany: (id: string) => void; allUsers: ControlCenterUser[] }) {
+function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: ControlCenterTab; onOpenCompany: (id: string) => void; allUsers: ControlCenterUser[] }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = initialTab;
 
-  const setTab = (newTab: 'errors' | 'permissions') => {
+  const setTab = (newTab: ControlCenterTab) => {
     setSearchParams({ view: newTab });
   };
 
@@ -2588,35 +2797,757 @@ function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: 'e
       <div className="flex gap-1 p-1 bg-muted/40 rounded-xl w-fit border border-border/50">
         <button
           onClick={() => setTab('errors')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border
+          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border
             ${tab === 'errors'
               ? 'bg-background text-foreground shadow-sm border-border/60'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
             }`}
+          style={{ minWidth: 110 }}
         >
           <AlertTriangle className="h-4 w-4" />
           Hibák
         </button>
         <button
           onClick={() => setTab('permissions')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border
+          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border
             ${tab === 'permissions'
               ? 'bg-background text-foreground shadow-sm border-border/60'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
             }`}
+          style={{ minWidth: 155 }}
         >
           <ShieldCheck className="h-4 w-4" />
           Jogosultságok
         </button>
+        <button
+          onClick={() => setTab('files')}
+          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border
+            ${tab === 'files'
+              ? 'bg-background text-foreground shadow-sm border-border/60'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
+            }`}
+          style={{ minWidth: 110 }}
+        >
+          <FolderOpen className="h-4 w-4" />
+          Fájlok
+        </button>
       </div>
 
-      {/* Tab content — ensures both tabs fill the same width and have identical minimum width to prevent layout shift */}
-      <div className="w-full overflow-x-auto">
-        <div style={{ minWidth: 900 }}>
+      {/* Tab content — ensures all tabs fill the same width to prevent layout shift */}
+      <div className="w-full overflow-hidden">
+        <div className="w-full" style={{ minWidth: 900 }}>
           {tab === 'errors' && <ErrorControlPanel onOpenCompany={onOpenCompany} />}
           {tab === 'permissions' && <PermissionsPanel allUsers={allUsers} />}
+          {tab === 'files' && <FilesPanel allUsers={allUsers} />}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── Files Panel ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+interface FileRow {
+  id: string;
+  source_table: string;
+  file_type_label: string;
+  company_id: string | null;
+  company_name: string | null;
+  user_id: string;
+  user_name: string | null;
+  user_email: string | null;
+  file_name: string;
+  file_size: number | null;
+  file_type: string | null;
+  file_url: string | null;
+  upload_status: string | null;
+  processing_status: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+interface FilesData {
+  totalRows: number;
+  files: FileRow[];
+  stats: {
+    totalCount: number;
+    successCount: number;
+    errorCount: number;
+    pendingCount: number;
+  };
+}
+
+type FileSortCol = 'created_at' | 'file_name' | 'file_size' | 'company_name' | 'user_name' | 'processing_status';
+
+function formatFileSize(bytes: number | null): string {
+  if (!bytes) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function fileExtBadge(fileName: string) {
+  const ext = (fileName.split('.').pop() || '').toUpperCase();
+  const colors: Record<string, string> = {
+    PDF: 'bg-destructive/10 text-destructive border-destructive/25',
+    XML: 'bg-warning/10 text-warning border-warning/25',
+    CSV: 'bg-success/10 text-success border-success/25',
+    XLSX: 'bg-info/10 text-info border-info/25',
+  };
+  const cls = colors[ext] || 'bg-muted text-muted-foreground border-border';
+  return <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-bold font-mono ${cls}`}>{ext || '?'}</span>;
+}
+
+function processingStatusBadge(status: string | null) {
+  if (!status) return <Badge variant="outline" className="text-[10px] text-muted-foreground">—</Badge>;
+  const map: Record<string, string> = {
+    done: 'bg-success/10 text-success border-success/25',
+    completed: 'bg-success/10 text-success border-success/25',
+    error: 'bg-destructive/10 text-destructive border-destructive/25',
+    failed: 'bg-destructive/10 text-destructive border-destructive/25',
+    processing: 'bg-warning/10 text-warning border-warning/25',
+    pending: 'bg-muted text-muted-foreground border-border',
+  };
+  const labels: Record<string, string> = {
+    done: 'kész', 
+    completed: 'kész',
+    error: 'hiba', 
+    failed: 'hiba',
+    processing: 'folyamat', 
+    pending: 'várakozik',
+    ignored: 'kihagyva',
+    processed: 'feldolgozva'
+  };
+  const cls = map[status] || 'bg-muted text-muted-foreground border-border';
+  return <Badge className={`text-[10px] border ${cls} w-20 justify-center`}>{labels[status] || status}</Badge>;
+}
+
+function fileTypeBadge(label: string, sourceTable: string) {
+  const colors: Record<string, string> = {
+    invoice: 'bg-primary/10 text-primary border-primary/25',
+    transaction: 'bg-info/10 text-info border-info/25',
+    bank: 'bg-purple-500/10 text-purple-400 border-purple-500/25',
+    report: 'bg-warning/10 text-warning border-warning/25',
+  };
+  const cls = colors[sourceTable] || 'bg-muted text-muted-foreground border-border';
+  return <Badge className={`text-[10px] border ${cls} w-20 justify-center`}>{label}</Badge>;
+}
+
+function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
+  const PAGE_SIZE = 25;
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sortCol, setSortCol] = useState<FileSortCol>('created_at');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [page, setPage] = useState(1);
+  const [filterCompanyId, setFilterCompanyId] = useState('');
+  const [filterUserId, setFilterUserId] = useState('');
+  const [filterFileType, setFilterFileType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<{ url: string, name: string } | null>(null);
+  const [companySearchOpen, setCompanySearchOpen] = useState(false);
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
+
+  // Debounce search
+  const searchTimerRef = useCallback((val: string) => {
+    const t = setTimeout(() => setDebouncedSearch(val), 300);
+    return () => clearTimeout(t);
+  }, []);
+  useMemo(() => searchTimerRef(search), [search, searchTimerRef]);
+
+  const toggleSort = useCallback((col: FileSortCol) => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('desc'); }
+    setPage(1);
+  }, [sortCol]);
+
+  const { data, isLoading, isFetching } = useQuery<FilesData>({
+    queryKey: ['management-files', page, PAGE_SIZE, sortCol, sortDir, debouncedSearch, filterCompanyId, filterUserId, filterFileType, filterStatus, dateFrom, dateTo],
+    queryFn: () => fetchManagementData('files', {
+      page: String(page), pageSize: String(PAGE_SIZE),
+      sortBy: sortCol, sortDir,
+      search: debouncedSearch,
+      companyId: filterCompanyId,
+      userId: filterUserId,
+      fileType: filterFileType,
+      status: filterStatus,
+      dateFrom, dateTo,
+    }),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
+  });
+
+  const fileRows = data?.files || [];
+  const totalRows = data?.totalRows || 0;
+  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+  const stats = data?.stats;
+
+  const SortIcon = ({ col }: { col: FileSortCol }) => {
+    if (sortCol !== col) return <ArrowUpDown className="h-3 w-3 opacity-40 ml-1 inline" />;
+    return sortDir === 'asc'
+      ? <ArrowUp className="h-3 w-3 text-primary ml-1 inline" />
+      : <ArrowDown className="h-3 w-3 text-primary ml-1 inline" />;
+  };
+
+  // Build company options from allUsers (deduped companies)
+  const companyOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const u of allUsers) {
+      for (const c of (u as any).companies || []) {
+        if (c.id && !seen.has(c.id)) seen.set(c.id, c.name);
+      }
+    }
+    return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [allUsers]);
+
+  // User options filtered by company
+  const userOptions = useMemo(() => {
+    if (!filterCompanyId) return allUsers;
+    return allUsers.filter((u: any) => u.companies?.some((c: any) => c.id === filterCompanyId));
+  }, [allUsers, filterCompanyId]);
+
+  const resetFilters = () => {
+    setSearch(''); setDebouncedSearch('');
+    setFilterCompanyId(''); setFilterUserId('');
+    setFilterFileType(''); setFilterStatus('');
+    setDateFrom(''); setDateTo('');
+    setPage(1);
+  };
+
+  const hasActiveFilters = search || filterCompanyId || filterUserId || filterFileType || filterStatus || dateFrom || dateTo;
+
+  return (
+    <div className="space-y-5">
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
+              <FolderOpen className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div className="h-7 min-w-[40px]">
+                {isFetching ? <Skeleton className="h-7 w-12" /> : <p className="text-xl font-bold tabular-nums">{(stats?.totalCount ?? totalRows)}</p>}
+              </div>
+              <p className="text-xs text-muted-foreground">Összes fájl</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-success/10 border border-success/20 shrink-0">
+              <Check className="h-5 w-5 text-success" />
+            </div>
+            <div>
+              <div className="h-7 min-w-[40px]">
+                {isFetching ? <Skeleton className="h-7 w-12" /> : <p className="text-xl font-bold tabular-nums text-success">{(stats?.successCount ?? 0)}</p>}
+              </div>
+              <p className="text-xs text-muted-foreground">Sikeresen feldolgozva</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-destructive/10 border border-destructive/20 shrink-0">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+            </div>
+            <div>
+              <div className="h-7 min-w-[40px]">
+                {isFetching ? <Skeleton className="h-7 w-12" /> : <p className="text-xl font-bold tabular-nums text-destructive">{(stats?.errorCount ?? 0)}</p>}
+              </div>
+              <p className="text-xs text-muted-foreground">Feldolgozási hiba</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-warning/10 border border-warning/20 shrink-0">
+              <Clock className="h-5 w-5 text-warning" />
+            </div>
+            <div>
+              <div className="h-7 min-w-[40px]">
+                {isFetching ? <Skeleton className="h-7 w-12" /> : <p className="text-xl font-bold tabular-nums text-warning">{(stats?.pendingCount ?? 0)}</p>}
+              </div>
+              <p className="text-xs text-muted-foreground">Folyamatban</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filter toolbar */}
+      <Card>
+        <CardContent className="p-3">
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                placeholder="Fájlnév keresése…"
+                className="pl-8 h-8 text-xs w-52 bg-background"
+                id="files-search"
+              />
+            </div>
+
+            {/* Company Search Combobox */}
+            <Popover open={companySearchOpen} onOpenChange={setCompanySearchOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={companySearchOpen}
+                  className="h-8 text-xs justify-between min-w-[180px] font-normal"
+                >
+                  <span className="truncate">
+                    {filterCompanyId
+                      ? companyOptions.find((c) => c[0] === filterCompanyId)?.[1]
+                      : "Minden cég"}
+                  </span>
+                  <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[250px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Cég keresése..." className="h-8" />
+                  <CommandList>
+                    <CommandEmpty>Nincs találat.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value=""
+                        onSelect={() => {
+                          setFilterCompanyId("");
+                          setFilterUserId("");
+                          setPage(1);
+                          setCompanySearchOpen(false);
+                        }}
+                        className="text-xs"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-3 w-3",
+                            filterCompanyId === "" ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Minden cég
+                      </CommandItem>
+                      {companyOptions.map(([id, name]) => (
+                        <CommandItem
+                          key={id}
+                          value={name}
+                          onSelect={() => {
+                            setFilterCompanyId(id);
+                            setFilterUserId("");
+                            setPage(1);
+                            setCompanySearchOpen(false);
+                          }}
+                          className="text-xs"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-3 w-3",
+                              filterCompanyId === id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* User Search Combobox */}
+            <Popover open={userSearchOpen} onOpenChange={setUserSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={userSearchOpen}
+                  className="h-8 text-xs justify-between min-w-[180px] font-normal"
+                >
+                  <span className="truncate">
+                    {filterUserId
+                      ? userOptions.find((u) => u.user_id === filterUserId)?.name || 
+                        userOptions.find((u) => u.user_id === filterUserId)?.email
+                      : "Minden felhasználó"}
+                  </span>
+                  <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[250px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Felhasználó keresése..." className="h-8" />
+                  <CommandList>
+                    <CommandEmpty>Nincs találat.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value=""
+                        onSelect={() => {
+                          setFilterUserId("");
+                          setPage(1);
+                          setUserSearchOpen(false);
+                        }}
+                        className="text-xs"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-3 w-3",
+                            filterUserId === "" ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Minden felhasználó
+                      </CommandItem>
+                      {userOptions.map((u) => (
+                        <CommandItem
+                          key={u.user_id}
+                          value={u.name || u.email || ""}
+                          onSelect={() => {
+                            setFilterUserId(u.user_id);
+                            setPage(1);
+                            setUserSearchOpen(false);
+                          }}
+                          className="text-xs"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-3 w-3",
+                              filterUserId === u.user_id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {u.name || u.email}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* File type filter */}
+            <select
+              value={filterFileType}
+              onChange={e => { setFilterFileType(e.target.value); setPage(1); }}
+              className="h-8 text-xs bg-background border border-input rounded-md px-2 text-foreground"
+              id="files-type-filter"
+            >
+              <option value="">Minden típus</option>
+              <option value="invoice">📄 Számla</option>
+              <option value="transaction">💳 Tranzakció</option>
+              <option value="bank">🏦 Bankkivonat</option>
+              <option value="report">📊 Riport</option>
+            </select>
+
+            {/* Status filter */}
+            <select
+              value={filterStatus}
+              onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+              className="h-8 text-xs bg-background border border-input rounded-md px-2 text-foreground"
+              id="files-status-filter"
+            >
+              <option value="">Minden állapot</option>
+              <option value="done">✓ Kész</option>
+              <option value="error">✗ Hiba</option>
+              <option value="processing">⏳ Folyamat</option>
+              <option value="pending">⏳ Várakozik</option>
+            </select>
+
+            {/* Date range */}
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+              className="h-8 text-xs bg-background w-36"
+              id="files-date-from"
+            />
+            <span className="text-xs text-muted-foreground">–</span>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={e => { setDateTo(e.target.value); setPage(1); }}
+              className="h-8 text-xs bg-background w-36"
+              id="files-date-to"
+            />
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground">
+                <X className="h-3 w-3" />
+                Szűrők törlése
+              </Button>
+            )}
+
+            <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+              {isLoading ? <Skeleton className="h-4 w-16 inline-block" /> : `${totalRows} rekord`}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data table */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm" role="table">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground text-xs bg-muted/30">
+                  <th className="text-left py-2.5 px-4 font-medium w-10"></th>
+                  <th className="text-left py-2.5 px-2 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort('file_name')}>
+                    Fájlnév <SortIcon col="file_name" />
+                  </th>
+                  <th className="text-left py-2.5 px-3 font-medium">Típus</th>
+                  <th className="text-left py-2.5 px-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort('company_name')}>
+                    Cég <SortIcon col="company_name" />
+                  </th>
+                  <th className="text-left py-2.5 px-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort('user_name')}>
+                    User <SortIcon col="user_name" />
+                  </th>
+                  <th className="text-left py-2.5 px-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort('created_at')}>
+                    Feltöltve <SortIcon col="created_at" />
+                  </th>
+                  <th className="text-right py-2.5 px-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort('file_size')}>
+                    Méret <SortIcon col="file_size" />
+                  </th>
+                  <th className="text-left py-2.5 px-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort('processing_status')}>
+                    Állapot <SortIcon col="processing_status" />
+                  </th>
+                  <th className="text-right py-2.5 px-4 font-medium">Műveletek</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {isLoading ? (
+                  Array.from({ length: 8 }).map((_, i) => (
+                    <tr key={i}>
+                      <td className="py-3 px-4"><Skeleton className="h-5 w-8" /></td>
+                      <td className="py-3 px-2"><Skeleton className="h-4 w-48" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-4 w-28" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-4 w-32" /></td>
+                      <td className="py-3 px-3 text-right"><Skeleton className="h-4 w-14 ml-auto" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                      <td className="py-3 px-4"></td>
+                    </tr>
+                  ))
+                ) : fileRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">
+                      <FolderOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      Nincs találat
+                    </td>
+                  </tr>
+                ) : fileRows.map(row => {
+                  const isExpanded = expandedId === row.id;
+                  return (
+                    <React.Fragment key={`${row.source_table}-${row.id}`}>
+                      <tr
+                        className={`hover:bg-accent/40 transition-colors duration-150 cursor-pointer ${isExpanded ? 'bg-accent/20' : ''}`}
+                        onClick={() => setExpandedId(isExpanded ? null : row.id)}
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={isExpanded}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedId(isExpanded ? null : row.id); } }}
+                      >
+                        <td className="py-2.5 px-4">
+                          <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                        </td>
+                        <td className="py-2.5 px-2 max-w-[220px]">
+                          <div className="flex items-center gap-2">
+                            {fileExtBadge(row.file_name)}
+                            <span className="text-xs font-medium truncate" title={row.file_name}>{row.file_name}</span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {fileTypeBadge(row.file_type_label, row.source_table)}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="text-xs text-foreground">{row.company_name || '—'}</span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {row.user_name ? (
+                            <button 
+                              className="text-foreground hover:text-primary transition-colors text-left truncate max-w-[120px] block text-[11px] font-bold"
+                              onClick={e => { e.stopPropagation(); if (row.user_id) { setFilterUserId(row.user_id); setPage(0); } }}
+                              title={`Szűrés: ${row.user_name}`}
+                            >
+                              {row.user_name}
+                            </button>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 tabular-nums text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(row.created_at).toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="py-2.5 px-3 text-right tabular-nums text-xs text-muted-foreground">
+                          {formatFileSize(row.file_size)}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {processingStatusBadge(row.processing_status)}
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <div className="flex justify-end gap-1">
+                            {row.file_url && (
+                              <>
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                  title="Megtekintés"
+                                  onClick={e => { e.stopPropagation(); setPreviewFile({ url: row.file_url!, name: row.file_name }); }}
+                                  aria-label="Megtekintés"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                  title="Letöltés"
+                                  onClick={async (e) => { 
+                                    e.stopPropagation(); 
+                                    try {
+                                      const response = await fetch(row.file_url!);
+                                      const blob = await response.blob();
+                                      const url = window.URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = row.file_name;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      window.URL.revokeObjectURL(url);
+                                      document.body.removeChild(a);
+                                    } catch (err) {
+                                      window.open(row.file_url!, '_blank');
+                                    }
+                                  }}
+                                  aria-label="Letöltés"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      {/* Expanded row: error message + details */}
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={9} className="p-0">
+                            <div className="bg-muted/20 border-t border-border/50 px-10 py-3 animate-in slide-in-from-top-1 duration-200">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-1 text-xs">
+                                <div><span className="text-muted-foreground">Forrástábla: </span><span className="font-mono">{row.source_table}_uploads</span></div>
+                                <div><span className="text-muted-foreground">Upload státusz: </span><span>{row.upload_status || '—'}</span></div>
+                                <div><span className="text-muted-foreground">MIME típus: </span><span className="font-mono">{row.file_type || '—'}</span></div>
+                                <div><span className="text-muted-foreground">Frissítve: </span><span>{row.updated_at ? new Date(row.updated_at).toLocaleString('hu-HU') : '—'}</span></div>
+                              </div>
+                              {row.error_message && (
+                                <div className="mt-2 flex items-start gap-2 rounded-md bg-destructive/8 border border-destructive/20 px-3 py-2">
+                                  <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+                                  <span className="text-xs text-destructive">{row.error_message}</span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalRows)} / {totalRows} rekord
+              </span>
+              <div className="flex gap-1">
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(1)} disabled={page === 1} aria-label="Első">
+                  <ChevronLeft className="h-3.5 w-3.5" /><ChevronLeft className="h-3.5 w-3.5 -ml-2" />
+                </Button>
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} aria-label="Előző">
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </Button>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pNum = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
+                  return pNum <= totalPages ? (
+                    <Button
+                      key={pNum}
+                      variant={pNum === page ? 'default' : 'outline'}
+                      size="icon"
+                      className="h-7 w-7 text-xs"
+                      onClick={() => setPage(pNum)}
+                      aria-label={`${pNum}. oldal`}
+                      aria-current={pNum === page ? 'page' : undefined}
+                    >
+                      {pNum}
+                    </Button>
+                  ) : null;
+                })}
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} aria-label="Következő">
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(totalPages)} disabled={page === totalPages} aria-label="Utolsó">
+                  <ChevronRight className="h-3.5 w-3.5" /><ChevronRight className="h-3.5 w-3.5 -ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* File Preview Dialog */}
+      <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
+        <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-4 border-b shrink-0">
+            <DialogTitle className="text-sm font-medium flex items-center justify-between pr-8">
+              <span className="truncate">{previewFile?.name}</span>
+              <div className="flex gap-2 shrink-0 ml-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 gap-1.5"
+                  onClick={() => window.open(previewFile?.url, '_blank')}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Megnyitás új lapon
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 bg-muted/20 relative">
+            {previewFile && (
+              previewFile.url.toLowerCase().includes('.pdf') || previewFile.name.toLowerCase().endsWith('.pdf') ? (
+                <iframe 
+                  src={`${previewFile.url}#toolbar=1`} 
+                  className="w-full h-full border-0"
+                  title="PDF Preview"
+                />
+              ) : (previewFile.name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/) ? (
+                <div className="w-full h-full flex items-center justify-center p-4">
+                  <img 
+                    src={previewFile.url} 
+                    alt={previewFile.name} 
+                    className="max-w-full max-h-full object-contain shadow-lg rounded-sm"
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-muted-foreground">
+                  <FileText className="h-12 w-12 opacity-20" />
+                  <p className="text-sm text-center px-8">Ez a fájltípus nem tekinthető meg előnézetben.<br/>Kérjük, töltsd le vagy nyisd meg új lapon.</p>
+                  <Button onClick={() => window.open(previewFile.url, '_blank')}>Megnyitás új lapon</Button>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -2918,8 +3849,20 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
 
         {selectedUserId && permsLoading && (
           <Card>
-            <CardContent className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-5 w-48" />
+              </div>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between py-2">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-48" />
+                  </div>
+                  <Skeleton className="h-5 w-10 rounded-full" />
+                </div>
+              ))}
             </CardContent>
           </Card>
         )}

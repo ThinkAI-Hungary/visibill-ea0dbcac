@@ -55,10 +55,22 @@ const emptyErrors = {
   errors: [],
 };
 
+const emptyFiles = {
+  totalRows: 0,
+  files: [],
+  stats: {
+    totalCount: 0,
+    successCount: 0,
+    errorCount: 0,
+    pendingCount: 0,
+  },
+};
+
 function emptyForAction(action: string) {
   if (action === "company-detail") return emptyCompanyDetail;
   if (action === "user-detail") return emptyUserDetail;
   if (action === "errors") return emptyErrors;
+  if (action === "files") return emptyFiles;
   return emptyOverview;
 }
 
@@ -243,6 +255,10 @@ serve(async (req) => {
       return json(await buildSuperadminData(admin, companyId, url));
     }
 
+    if (action === "files") {
+      return json(await buildFiles(admin, url));
+    }
+
     return json({ error: "Unknown action", ...emptyOverview });
   } catch (error) {
     console.error("[MANAGEMENT-STATS] Unexpected error", error);
@@ -403,8 +419,8 @@ async function buildSuperadminData(
         .select("id,created_at,file_name,processing_status,error_message,user_id", { count: "exact" })
         .eq("company_id", companyId);
       const [invRes, txRes] = await Promise.all([invQ, txQ]);
-      const invRows = (invRes.data || []).map(r => ({ ...r, upload_type: "Számla" }));
-      const txRows = (txRes.data || []).map(r => ({ ...r, upload_type: "Tranzakció" }));
+      const invRows = (invRes.data || []).map((r: any) => ({ ...r, upload_type: "Számla" }));
+      const txRows = (txRes.data || []).map((r: any) => ({ ...r, upload_type: "Tranzakció" }));
       const combined = [...invRows, ...txRows].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
@@ -744,7 +760,7 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
     admin.from("gl_upload_notifications").select("id", { count: "exact", head: true }).eq("processing_status", "error"),
     admin.from("nav_sync_logs").select("id", { count: "exact", head: true }).eq("status", "error"),
     admin.from("bank_statement_uploads").select("id", { count: "exact", head: true }).eq("processing_status", "error"),
-    admin.from("app_error_logs").select("id", { count: "exact", head: true }),
+    admin.from("app_error_logs").select("id", { count: "exact", head: true }).order("created_at", { ascending: false }).limit(500),
     // ── eaisyBooks assignment lookup (distinct company_ids that have accounty access) ──
     admin.from("accounty_assignments").select("company_id"),
   ]);
@@ -826,9 +842,8 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
     null,
   );
 
-  // Total error count across all upload tables
   const totalErrors = (errInvoicesRes.count || 0) + (errTxRes.count || 0) + (errReportsRes.count || 0)
-    + (errGlRes.count || 0) + (errNavRes.count || 0) + (errBankRes.count || 0) + (errAppRes.count || 0);
+    + (errGlRes.count || 0) + (errNavRes.count || 0) + (errBankRes.count || 0) + Math.min(errAppRes.count || 0, 500);
 
   return {
     usersCount: profiles.filter((profile) => profile.role !== "management" && profile.role !== "thinkai").length,
@@ -1003,7 +1018,7 @@ async function buildUserDetail(admin: ReturnType<typeof createClient>, userId: s
   if (membersRes.error) throw membersRes.error;
   if (companiesRes.error) throw companiesRes.error;
 
-  const companyById = new Map((companiesRes.data || []).map((company) => [company.id, company]));
+  const companyById = new Map<string, { id: string; name: string }>((companiesRes.data || []).map((company: any) => [company.id, company]));
   const companies = ((membersRes.data || []) as CompanyMemberRow[])
     .map((member) => {
       const company = companyById.get(member.company_id);
@@ -1187,9 +1202,9 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
         file_name: isAppLog ? (row.component || null) : (row.file_name || null),
         file_url: isAppLog ? null : (row.file_url || null),
         company_id: row.company_id || null,
-        company_name: row.company_id ? (companyById.get(row.company_id) || null) : null,
+        company_name: row.company_id ? (companyById.get(row.company_id) as string || null) : null,
         user_id: row.user_id || null,
-        user_name: row.user_id ? (profileByUserId.get(row.user_id) || null) : null,
+        user_name: row.user_id ? (profileByUserId.get(row.user_id) as string || null) : null,
         context: isAppLog ? (row.context || null) : null,
       });
     }
@@ -1845,5 +1860,111 @@ async function updatePermissions(
   return {
     updated,
     error: errors.length > 0 ? errors.join("; ") : null,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FILES: Unified view across all 4 upload tables with server-side pagination
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// FILES: Unified view across all 4 upload tables with server-side pagination
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+  const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") || "25", 10)));
+  const offset = (page - 1) * pageSize;
+
+  const companyId = url.searchParams.get("companyId") || "";
+  const userId = url.searchParams.get("userId") || "";
+  const fileType = url.searchParams.get("fileType") || ""; 
+  const status = url.searchParams.get("status") || ""; 
+  const search = url.searchParams.get("search") || "";
+  const dateFrom = url.searchParams.get("dateFrom") || "";
+  const dateTo = url.searchParams.get("dateTo") || "";
+  const sortBy = url.searchParams.get("sortBy") || "created_at";
+  const sortDir = url.searchParams.get("sortDir") === "asc" ? "ASC" : "DESC";
+
+  const fetchTable = async (tableName: string, typeKey: string, typeLabel: string) => {
+    if (fileType && fileType !== typeKey) return [];
+    
+    let q = admin.from(tableName).select("*");
+    if (companyId) q = q.eq("company_id", companyId);
+    if (userId) q = q.eq("user_id", userId);
+    if (status) q = q.eq("processing_status", status);
+    if (search) q = q.ilike("file_name", `%${search}%`);
+    if (dateFrom) q = q.gte("created_at", dateFrom);
+    if (dateTo) q = q.lte("created_at", `${dateTo}T23:59:59`);
+    
+    q = q.order("created_at", { ascending: sortDir === "ASC" }).limit(500);
+    const { data, error } = await q;
+    if (error || !data) return [];
+    return data.map((r: any) => ({ ...r, source_table: typeKey, file_type_label: typeLabel }));
+  };
+
+  const [invoiceRows, transactionRows, bankRows, reportRows] = await Promise.all([
+    fetchTable("invoice_uploads", "invoice", "Számla"),
+    fetchTable("transaction_uploads", "transaction", "Tranzakció"),
+    fetchTable("bank_statement_uploads", "bank", "Bankkivonat"),
+    fetchTable("report_uploads", "report", "Riport"),
+  ]);
+
+  let allRows = [...invoiceRows, ...transactionRows, ...bankRows, ...reportRows];
+
+  // Resolve Names manually since FKs might be missing or broken for PostgREST joins
+  const [companiesRes, profilesRes] = await Promise.all([
+    admin.from("companies").select("id, name"),
+    admin.from("profiles").select("user_id, name")
+  ]);
+
+  const companyMap = new Map((companiesRes.data || []).map((c: any) => [c.id, c.name]));
+  const profileMap = new Map((profilesRes.data || []).map((p: any) => [p.user_id, p.name]));
+
+  const mappedRows = allRows.map(row => ({
+    id: row.id,
+    source_table: row.source_table,
+    file_type_label: row.file_type_label,
+    company_id: row.company_id,
+    company_name: companyMap.get(row.company_id) || null,
+    user_id: row.user_id,
+    user_name: row.metadata?.source === 'email_alias' 
+      ? 'Mailgun'
+      : (row.user_id ? (profileMap.get(row.user_id) || null) : 'Mailgun'),
+    user_email: row.metadata?.sender || null,
+    file_name: row.file_name,
+    file_size: row.file_size,
+    file_type: row.file_type,
+    file_url: row.file_url,
+    upload_status: row.upload_status,
+    processing_status: row.processing_status,
+    error_message: row.error_message,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  }));
+
+  const safeSort = (['created_at', 'file_name', 'file_size', 'company_name', 'user_name', 'processing_status'].includes(sortBy) ? sortBy : 'created_at') as keyof typeof mappedRows[0];
+  
+  mappedRows.sort((a, b) => {
+    const va = a[safeSort] ?? "";
+    const vb = b[safeSort] ?? "";
+    if (sortDir === "ASC") return va < vb ? -1 : va > vb ? 1 : 0;
+    return va > vb ? -1 : va < vb ? 1 : 0;
+  });
+
+  const stats = {
+    totalCount: mappedRows.length,
+    successCount: mappedRows.filter(r => 
+      r.processing_status === "done" || 
+      r.processing_status === "completed" || 
+      r.processing_status === "ignored" ||
+      (r.source_table === "invoice" && r.processing_status === "processed")
+    ).length,
+    errorCount: mappedRows.filter(r => r.processing_status === "error" || r.processing_status === "failed").length,
+    pendingCount: mappedRows.filter(r => r.processing_status === "processing" || r.processing_status === "pending" || !r.processing_status).length,
+  };
+
+  return {
+    totalRows: mappedRows.length,
+    files: mappedRows.slice(offset, offset + pageSize),
+    stats,
   };
 }

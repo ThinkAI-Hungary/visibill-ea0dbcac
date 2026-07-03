@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
 import EmptyStateDashboard from '@/components/dashboard/EmptyStateDashboard';
@@ -58,6 +59,7 @@ function RecentInvoicesWithDialog({ invoices }: { invoices: Invoice[] }) {
 const Index = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { role } = useUserRole();
 
   const {
     selectedCompany, companies, companyLoading,
@@ -75,14 +77,14 @@ const Index = () => {
 
   const prefs = useDashboardPreferences();
 
-  // Tour state
+  // Tour state — skip for support_admin (impersonation sessions)
   const [showTour, setShowTour] = useState(false);
   useEffect(() => {
-    if (tourCompleted === false) {
+    if (tourCompleted === false && role !== 'support_admin') {
       const timer = setTimeout(() => setShowTour(true), 500);
       return () => clearTimeout(timer);
     }
-  }, [tourCompleted]);
+  }, [tourCompleted, role]);
 
   // Invoice image dialog state is now isolated in RecentInvoicesWithDialog (P0-3)
 

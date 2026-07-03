@@ -624,7 +624,7 @@ export function LiveNotificationProvider() {
         )
 
         .subscribe((status, err) => {
-          if (status !== 'SUBSCRIBED' && status !== 'CLOSED') {
+          if (status !== 'SUBSCRIBED' && status !== 'CLOSED' && status !== 'CHANNEL_ERROR') {
             reportError({ type: 'realtime', component: 'LiveNotificationProvider', action: 'warn', message: `[RealtimeSync] Channel: ${status}`, error: err || undefined });
           }
         });

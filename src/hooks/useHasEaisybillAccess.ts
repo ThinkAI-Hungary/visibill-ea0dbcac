@@ -58,11 +58,40 @@ export function useHasAccountyAccess() {
   const { data: hasAccess, isPending } = useQuery({
     queryKey: ['has-accounty-access', user?.id],
     queryFn: async () => {
+      // Standard check: user has an accounty_assignment
       const { count } = await supabase
         .from('accounty_assignments')
         .select('id', { count: 'exact', head: true })
         .eq('accountant_user_id', user!.id);
-      return (count ?? 0) > 0;
+      if ((count ?? 0) > 0) return true;
+
+      // Fallback for support_admin: check if the impersonated company
+      // actually has eaisybooks (accounty_assignments exist for that company)
+      const { data: supportMembership } = await supabase
+        .from('company_members')
+        .select('company_id')
+        .eq('user_id', user!.id)
+        .eq('role', 'support_admin' as any)
+        .limit(1)
+        .maybeSingle();
+
+      if (supportMembership) {
+        // Only show switcher if the impersonated company has accounty_assignments
+        const { count: accountyCount } = await supabase
+          .from('accounty_assignments')
+          .select('id', { count: 'exact', head: true })
+          .eq('company_id', supportMembership.company_id);
+        if ((accountyCount ?? 0) > 0) return true;
+
+        // Also check if this company IS an accounting firm
+        const { count: firmCount } = await supabase
+          .from('accounty_assignments')
+          .select('id', { count: 'exact', head: true })
+          .eq('accounting_firm_id', supportMembership.company_id);
+        if ((firmCount ?? 0) > 0) return true;
+      }
+
+      return false;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,

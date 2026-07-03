@@ -194,8 +194,25 @@ function AccountyLayoutInner() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  if (profileRole === 'management' || profileRole === 'thinkai') {
-    return <Navigate to="/management" replace />;
+  // Check for active impersonation (support_admin role in company_members)
+  const { data: hasImpersonation, isPending: impersonationLoading } = useQuery({
+    queryKey: ['has-impersonation-accounty', user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('company_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user!.id)
+        .eq('role', 'support_admin' as any);
+      return (count ?? 0) > 0;
+    },
+    enabled: !!user && (profileRole === 'management' || profileRole === 'thinkai'),
+    staleTime: 30_000,
+  });
+
+  // Wait for impersonation check to finish before redirecting
+  if ((profileRole === 'management' || profileRole === 'thinkai')) {
+    if (impersonationLoading) return null; // wait for query
+    if (!hasImpersonation) return <Navigate to="/management" replace />;
   }
 
   const cmdPages = [

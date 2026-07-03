@@ -10,7 +10,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — 46 deployed function + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — 47 deployed function + `_shared/` közös kód.
 
 **Közös kód:** `_shared/` mappa — CORS headers, Supabase client, utility-k.
 
@@ -110,7 +110,8 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
-| `management-stats` | ❌ | Management dashboard — 11 action (overview, company/user detail, permissions, errors CRUD, superadmin 27 modul). Service_role auth. |
+| `management-stats` | ❌ | Management dashboard — 12 action (overview, company/user detail, permissions, files, errors CRUD, superadmin 27 modul). Service_role auth. |
+| `impersonate-company` | ✅ | Support Admin impersonation flow (start/stop). Kezeli az ideiglenes `accounty_assignments` sorok beillesztését és törlését az ügyfelekhez. (Lásd: A-026) |
 | `create-management-user` | — | ⛔ **Eltávolítva** — nincs meg a `supabase/functions/` könyvtárban |
 | `export-user-data` | ✅ | GDPR adatexport — felhasználó összes adata ZIP-ben |
 | `get-invoice-image-url` | ❌ | Számla kép signed URL generálása (Storage) |

@@ -14,7 +14,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ───────────────────────────────────────────────────
-export type ErrorType = 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'unhandled';
+export type ErrorType = 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'realtime' | 'unhandled';
 export type Severity = 'error' | 'warning' | 'info';
 
 export interface ReportErrorOptions {
@@ -178,7 +178,7 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
       action: opts.action,
       message: finalMessage.slice(0, 2000),
       stack_trace: stackTrace,
-      context: sanitizedContext,
+      context: sanitizedContext as unknown as Record<string, string>,
       url: window.location.pathname,
       user_agent: navigator.userAgent.slice(0, 500),
     });
