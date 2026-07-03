@@ -40,6 +40,8 @@ npm run dev
 
 - Navigate to the desired file(s).
 - Click the "Edit" button (pencil icon) at the top right of the file view.
+- *Utolsó frissítés: 2026. július 03.*  
+- *Verzió: 1.1 (Binx & Cash VAT Support)*
 - Make your changes and commit the changes.
 
 **Use GitHub Codespaces**
@@ -54,11 +56,14 @@ npm run dev
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Vite, TypeScript, React
+- shadcn-ui, Tailwind CSS
+- **Supabase** (Database, Auth, Edge Functions)
+- **VisiBill Worker** (AI Invoice & Bank Statement Processing)
+
+### Key Recent Features
+- **Binx e-pénz PDF Support**: Native parsing for Binx bank statements.
+- **Cash Accounting VAT (Pénzforgalmi ÁFA)**: Automatic VAT calculation based on payment status.
 
 ## How can I deploy this project?
 
