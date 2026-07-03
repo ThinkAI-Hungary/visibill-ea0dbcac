@@ -2,7 +2,7 @@ import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useState } from 'react';
-import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet } from 'lucide-react';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet, CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
 import { INVOICE_TYPE_LABELS } from '@/types/invoices';
 import { useTransactionMatcher } from '@/hooks/useTransactionMatcher';
+import { ManualPaymentDialog } from './invoices/ManualPaymentDialog';
 
 interface MatchedSubmittedInvoice {
   id: string;
@@ -203,6 +204,7 @@ const ExpandedInvoiceRow = ({
   categories,
   projects,
 }: ExpandedInvoiceRowProps) => {
+  const [showManualPayment, setShowManualPayment] = useState(false);
   // Invoice-side matching is enabled when all required props are provided
   const matchingEnabled = !!(invoiceId && companyId && invoiceDate && !hideStandaloneTransactions);
 
@@ -295,15 +297,26 @@ const ExpandedInvoiceRow = ({
               <div className="flex items-center gap-2">
                 {/* "Tranzakció hozzárendelése" small button when there ARE existing matches */}
                 {matchingEnabled && hasAny && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => { e.stopPropagation(); matcher.openSearch(); }}
-                    className="h-7 text-[11px] gap-1.5 px-2.5"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Tranzakció
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); matcher.openSearch(); }}
+                      className="h-7 text-[11px] gap-1.5 px-2.5"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Tranzakció
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); setShowManualPayment(true); }}
+                      className="h-7 text-[11px] gap-1.5 px-2.5 border-dashed"
+                    >
+                      <CreditCard className="h-3 w-3" />
+                      Kézi fizetés
+                    </Button>
+                  </div>
                 )}
                 {onToggleExclude && (
                   <button
@@ -337,15 +350,26 @@ const ExpandedInvoiceRow = ({
                 <CardContent className="p-4 flex flex-col items-center justify-center gap-3">
                   <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a számlához.</p>
                   {matchingEnabled && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => { e.stopPropagation(); matcher.openSearch(); }}
-                      className="h-8 text-xs gap-1.5"
-                    >
-                      <ArrowRightLeft className="h-3.5 w-3.5" />
-                      Tranzakció hozzárendelése
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); matcher.openSearch(); }}
+                        className="h-8 text-xs gap-1.5"
+                      >
+                        <ArrowRightLeft className="h-3.5 w-3.5" />
+                        Tranzakció hozzárendelése
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); setShowManualPayment(true); }}
+                        className="h-8 text-xs gap-1.5 border-dashed"
+                      >
+                        <CreditCard className="h-3.5 w-3.5" />
+                        Kézi fizetés
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -889,6 +913,17 @@ const ExpandedInvoiceRow = ({
                 </CardContent>
               </Card>
             ))}
+            {/* Manual Payment Dialog */}
+            {matchingEnabled && (
+              <ManualPaymentDialog
+                open={showManualPayment}
+                onOpenChange={setShowManualPayment}
+                invoiceId={invoiceId || ''}
+                invoiceAmount={invoiceAmount || 0}
+                invoiceCurrency={invoiceCurrency || 'HUF'}
+                onSuccess={onMatchUpdate}
+              />
+            )}
           </div>
               </div>
             </div>
