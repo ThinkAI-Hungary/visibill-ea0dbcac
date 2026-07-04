@@ -2,6 +2,7 @@
 
 > **Státusz:** ✅ Decided  
 > **Dátum:** 2026-06-26  
+> **Utoljára frissítve:** 2026-07-04  
 > **Implementálva:** `PartnersPage.tsx`, `PartnerInvoiceDetailDialog.tsx`
 
 ---
@@ -21,16 +22,25 @@ statikus listaként. A user nem látott beküldött számlákat, nem tudott katt
 A partner számlái mindkét forrásból lekérdezve adószám alapján:
 - **NAV:** `nav_invoices` — `supplier_tax_number` / `customer_tax_number` egyezés
 - **Beküldött:** `invoices` — `elado_vat_id` / `vevo_vat_id` prefix egyezés (első 8 karakter)
+  - A `.or()` filter tartalmazza a HU-prefixes mintákat is: `elado_vat_id.ilike.HU${cleanTax}%`
 
 A két lista merge-elve, dátum szerint csökkenő sorrendben jelenik meg.
 
+**VAT normalizáció** (2026-07-04 fix): Az `invoices` tábla `elado_vat_id` / `vevo_vat_id` mezői
+tartalmazhatnak `HU` prefixet és kötőjeleket (pl. `HU22626547`, `22626547-2-41`).
+A normalizáció lépései: `replace(/-/g, '')` → `replace(/^HU/i, '')` → `substring(0, 8)`.
+
 **Kapcsolat típusa:** loose coupling — nincs `partner_id` idegen kulcs az `invoices`-ban,
-az egyeztetés adószám-prefix alapú (`tax_number.replace(/-/g,'').substring(0,8)`).
+az egyeztetés adószám-prefix alapú (`tax_number.replace(/-/g,'').replace(/^HU/i,'').substring(0,8)`).
 
 ### 2. Master lista számlaszám aggregáció
 
 A partnerek listájában az „X db" oszlop most mindkét táblából számítja az összes számlát.
 A logika kliensoldali (`Promise.all` párhuzamos lekérdezéssel), nincs RPC/migráció.
+
+**⚠️ 2026-07-04 fix:** A korábbi `if/else if` struktúra csak az eladó VAGY vevő adószámot
+nézte — OUTBOUND számláknál az eladó a saját cég, így a partner (vevő) oldal nem számolódott.
+Javítás: mindkét oldalt (`elado_vat_id` ÉS `vevo_vat_id`) **egymástól függetlenül** vizsgáljuk.
 
 ### 3. Tab-alapú szétválasztás a jobb panelen
 
@@ -79,4 +89,8 @@ nem volt valós adatból számítva, félrevezető volt. Helyette a header-ben f
 
 - `src/pages/PartnersPage.tsx`
 - `src/components/partners/PartnerInvoiceDetailDialog.tsx`
+- `src/components/partners/PartnerRankingCard.tsx`
 - Táblák: `partners`, `nav_invoices`, `nav_invoice_items`, `invoices`, `invoice_items`
+
+## Kapcsolódó
+- [A-027: Partner Ranking & Treemap](../../architecture/decisions/A-027-partner-ranking-treemap.md)

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
@@ -42,12 +42,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, Info } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { PartnerRankingCard, type RankedPartner } from "@/components/partners/PartnerRankingCard";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CopyableCell } from "@/components/ui/copyable-cell";
 import { UnifiedPagination } from "@/components/ui/unified-pagination";
 import { PartnerTypeFilter, PartnerTypeFilterValue } from "@/components/ui/partner-type-filter";
+import { ColorPicker, COLOR_PALETTE } from "@/components/IconPicker";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { TableEmptyState } from "@/components/ui/table-empty-state";
 import { TablePlaceholderRows } from "@/components/ui/table-placeholder-rows";
@@ -78,6 +81,9 @@ interface Partner {
   created_at: string;
   updated_at: string;
   exclude_from_accounting?: boolean;
+  custom_monogram?: string | null;
+  custom_color?: string | null;
+  custom_bg_color?: string | null;
 }
 
 // Import shared helpers
@@ -108,6 +114,9 @@ export default function PartnersPage() {
     address: "",
     email: "",
     partner_type: "both",
+    custom_monogram: "",
+    custom_color: "",
+    custom_bg_color: "",
   });
   const [emailError, setEmailError] = useState("");
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
@@ -118,6 +127,15 @@ export default function PartnersPage() {
   // Invoice tab state in right panel
   const [invoiceTab, setInvoiceTab] = useState<'nav' | 'uploaded'>('nav');
   const [invoiceSearch, setInvoiceSearch] = useState('');
+  // Ranking section collapsible state (default open, persisted)
+  const [rankingOpen, setRankingOpen] = useState(() => {
+    const saved = localStorage.getItem('partners-ranking-open');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const handleRankingToggle = (open: boolean) => {
+    setRankingOpen(open);
+    localStorage.setItem('partners-ranking-open', String(open));
+  };
 
   const openInvoiceDetail = (inv: PartnerInvoice) => {
     setSelectedInvoiceForDetail(inv);
@@ -148,7 +166,7 @@ export default function PartnersPage() {
       const [{ data: partnerData, error: partnerError }, { data: supplierCounts }, { data: customerCounts }, { data: uploadedCounts }] = await Promise.all([
         supabase
           .from("partners")
-          .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting")
+          .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting, custom_monogram, custom_color, custom_bg_color")
           .eq("company_id", selectedCompany.id)
           .order("name", { ascending: true }),
         supabase.from("nav_invoices").select("supplier_tax_number").eq("company_id", selectedCompany.id),
@@ -174,13 +192,14 @@ export default function PartnersPage() {
           countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
         }
       });
-      // Uploaded invoices — elado_vat_id and vevo_vat_id
+      // Uploaded invoices — count BOTH elado and vevo sides independently
       (uploadedCounts || []).forEach((inv: any) => {
         if (inv.elado_vat_id) {
-          const cleanTax = inv.elado_vat_id.replace(/-/g, '').substring(0, 8);
+          const cleanTax = inv.elado_vat_id.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
           countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
-        } else if (inv.vevo_vat_id) {
-          const cleanTax = inv.vevo_vat_id.replace(/-/g, '').substring(0, 8);
+        }
+        if (inv.vevo_vat_id) {
+          const cleanTax = inv.vevo_vat_id.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
           countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
         }
       });
@@ -223,6 +242,101 @@ export default function PartnersPage() {
     placeholderData: keepPreviousData,
   });
 
+  // ── Fetch partner ranking data ──
+  const { data: rankingRaw, isLoading: isRankingLoading } = useQuery({
+    queryKey: ['partner-ranking', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase.rpc('get_partner_ranking', {
+        p_company_id: selectedCompany.id,
+      });
+      if (error) throw error;
+      return data as Array<{
+        partner_tax_number: string;
+        partner_name: string;
+        direction: string;
+        invoice_count: number;
+        total_gross: number;
+      }>;
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 5 * 60 * 1000, // 5 min cache
+  });
+
+  // ── Aggregate ranking: merge HU-prefixed duplicates, split supplier/customer, take top 10 ──
+  const { topSuppliers, topCustomers, totalSupplier, totalCustomer } = useMemo(() => {
+    if (!rankingRaw) return { topSuppliers: [], topCustomers: [], totalSupplier: 0, totalCustomer: 0 };
+
+    // Normalize tax_number: strip HU prefix, take first 8 digits for grouping
+    // HU275532 → 275532, 27553202 → 27553202 — use min 6 chars for matching
+    const normalize = (tax: string) => {
+      const stripped = tax.replace(/^HU/i, '');
+      // Use first 8 chars, but for matching purposes use first 6 as the key
+      // because HU-prefixed versions often have fewer digits
+      return stripped.substring(0, 8);
+    };
+    // Build a secondary lookup: first 6 chars → canonical key (for merging HU duplicates)
+    const canonicalKeys = new Map<string, string>();
+
+    // Find partner custom avatar data from partners list
+    const partnersByTax = new Map<string, { custom_monogram?: string | null; custom_color?: string | null; custom_bg_color?: string | null }>();
+    if (partners) {
+      (partners as Partner[]).forEach(p => {
+        if (p.tax_number) {
+          const clean = p.tax_number.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+          partnersByTax.set(clean, { custom_monogram: p.custom_monogram, custom_color: p.custom_color, custom_bg_color: p.custom_bg_color });
+        }
+      });
+    }
+
+    // Aggregate by normalized tax + direction
+    // Phase 1: collect all entries and build canonical key mapping
+    const agg = new Map<string, { tax: string; name: string; dir: string; count: number; gross: number }>();
+    rankingRaw.forEach(r => {
+      const normTax = normalize(r.partner_tax_number);
+      // Use first 6 chars as merge key to handle HU-prefix variants
+      // e.g., "27553202" and "275532" both have prefix "275532"
+      const mergeKey = normTax.substring(0, 6);
+      const fullKey = `${mergeKey}__${r.direction}`;
+
+      const existing = agg.get(fullKey);
+      if (existing) {
+        existing.count += Number(r.invoice_count);
+        existing.gross += Number(r.total_gross);
+        // Keep the longer tax and name (more complete)
+        if (normTax.length > existing.tax.length) existing.tax = normTax;
+        if (r.partner_name.length > existing.name.length) existing.name = r.partner_name;
+      } else {
+        agg.set(fullKey, { tax: normTax, name: r.partner_name, dir: r.direction, count: Number(r.invoice_count), gross: Number(r.total_gross) });
+      }
+    });
+
+    const all = Array.from(agg.values());
+    const suppliers = all.filter(a => a.dir === 'supplier').sort((a, b) => b.gross - a.gross);
+    const customers = all.filter(a => a.dir === 'customer').sort((a, b) => b.gross - a.gross);
+
+    const toRanked = (items: typeof suppliers): RankedPartner[] =>
+      items.slice(0, 10).map(item => {
+        const avatar = partnersByTax.get(item.tax);
+        return {
+          tax_number: item.tax,
+          name: decodeHtmlEntities(item.name),
+          invoice_count: item.count,
+          total_gross: item.gross,
+          custom_monogram: avatar?.custom_monogram,
+          custom_color: avatar?.custom_color,
+          custom_bg_color: avatar?.custom_bg_color,
+        };
+      });
+
+    return {
+      topSuppliers: toRanked(suppliers),
+      topCustomers: toRanked(customers),
+      totalSupplier: suppliers.reduce((s, a) => s + a.gross, 0),
+      totalCustomer: customers.reduce((s, a) => s + a.gross, 0),
+    };
+  }, [rankingRaw, partners]);
+
   // Selected partner object
   const selectedPartner = useMemo(() => {
     if (!partners || !selectedPartnerId) return null;
@@ -258,7 +372,7 @@ export default function PartnersPage() {
           .eq('company_id', selectedCompany.id)
           .or(isForeign
             ? `elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`
-            : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%`
+            : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%,elado_vat_id.ilike.HU${cleanTax}%,vevo_vat_id.ilike.HU${cleanTax}%`
           )
           .order('kibocsatas_datuma', { ascending: false })
           .limit(50),
@@ -319,6 +433,9 @@ export default function PartnersPage() {
         address: data.address || null,
         email: data.email?.trim() || null,
         partner_type: data.partner_type,
+        custom_monogram: data.custom_monogram?.trim() || null,
+        custom_color: data.custom_color || null,
+        custom_bg_color: data.custom_bg_color || null,
         user_id: user.id,
         company_id: selectedCompany?.id || null,
       };
@@ -442,6 +559,9 @@ export default function PartnersPage() {
         address: partner.address || "",
         email: partner.email || "",
         partner_type: partner.partner_type,
+        custom_monogram: partner.custom_monogram || "",
+        custom_color: partner.custom_color || "",
+        custom_bg_color: partner.custom_bg_color || "",
       });
     } else {
       setEditingPartner(null);
@@ -451,6 +571,9 @@ export default function PartnersPage() {
         address: "",
         email: "",
         partner_type: "both",
+        custom_monogram: "",
+        custom_color: "",
+        custom_bg_color: "",
       });
     }
     setEmailError("");
@@ -467,6 +590,9 @@ export default function PartnersPage() {
       address: "",
       email: "",
       partner_type: "both",
+      custom_monogram: "",
+      custom_color: "",
+      custom_bg_color: "",
     });
   };
 
@@ -569,6 +695,60 @@ export default function PartnersPage() {
         </Button>
       </div>
 
+      {/* ── Ranking & Analytics Section (collapsible) ── */}
+      <Collapsible open={rankingOpen} onOpenChange={handleRankingToggle} className="shrink-0">
+        <CollapsibleTrigger asChild>
+          <button className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full group py-1">
+            <BarChart3 className="h-3.5 w-3.5" />
+            <span>Rangsor & Kimutatás</span>
+            <ChevronDown className={cn(
+              "h-3.5 w-3.5 transition-transform duration-200",
+              rankingOpen && "rotate-180"
+            )} />
+            <div className="flex-1 h-px bg-border/30 group-hover:bg-border/50 transition-colors" />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
+            <PartnerRankingCard
+              title="Top 10 beszállító"
+              type="supplier"
+              data={topSuppliers}
+              totalAll={totalSupplier}
+              isLoading={isRankingLoading}
+              onPartnerClick={(taxNumber) => {
+                // Find partner by tax_number and select it
+                const match = (partners as Partner[] | undefined)?.find(p => {
+                  const clean = p.tax_number?.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+                  return clean === taxNumber;
+                });
+                if (match) {
+                  setSelectedPartnerId(match.id);
+                  setPartnerParam(match.id);
+                }
+              }}
+            />
+            <PartnerRankingCard
+              title="Top 10 vevő"
+              type="customer"
+              data={topCustomers}
+              totalAll={totalCustomer}
+              isLoading={isRankingLoading}
+              onPartnerClick={(taxNumber) => {
+                const match = (partners as Partner[] | undefined)?.find(p => {
+                  const clean = p.tax_number?.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+                  return clean === taxNumber;
+                });
+                if (match) {
+                  setSelectedPartnerId(match.id);
+                  setPartnerParam(match.id);
+                }
+              }}
+            />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
       {/* Main Splitscreen Container */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 h-full min-h-[930px] overflow-hidden">
         {/* Left Pane: Master List & Toolbar */}
@@ -641,9 +821,21 @@ export default function PartnersPage() {
                             <TableCell className="py-2">
                               <div className="flex items-center gap-2 max-w-full overflow-hidden">
                                 <Avatar className="h-7 w-7 shrink-0">
-                                  <AvatarFallback className={`text-xs font-medium ${getAvatarColor(partner.name)}`}>
-                                    {getInitials(partner.name)}
-                                  </AvatarFallback>
+                                  {(partner.custom_color || partner.custom_bg_color) ? (
+                                    <AvatarFallback
+                                      className="text-xs font-medium"
+                                      style={{
+                                        backgroundColor: partner.custom_bg_color || (partner.custom_color ? partner.custom_color + '20' : undefined),
+                                        color: partner.custom_color || '#fff',
+                                      }}
+                                    >
+                                      {partner.custom_monogram || getInitials(partner.name)}
+                                    </AvatarFallback>
+                                  ) : (
+                                    <AvatarFallback className={`text-xs font-medium ${getAvatarColor(partner.name)}`}>
+                                      {partner.custom_monogram || getInitials(partner.name)}
+                                    </AvatarFallback>
+                                  )}
                                 </Avatar>
                                 <div className="min-w-0">
                                   <p className="font-semibold text-sm truncate text-foreground leading-tight">
@@ -719,9 +911,21 @@ export default function PartnersPage() {
               <div className="flex items-start justify-between border-b border-border/40 pb-4">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12 border border-border/50 shadow-sm">
-                    <AvatarFallback className={`text-sm font-semibold ${getAvatarColor(selectedPartner.name)}`}>
-                      {getInitials(selectedPartner.name)}
-                    </AvatarFallback>
+                    {(selectedPartner.custom_color || selectedPartner.custom_bg_color) ? (
+                      <AvatarFallback
+                        className="text-sm font-semibold"
+                        style={{
+                          backgroundColor: selectedPartner.custom_bg_color || (selectedPartner.custom_color ? selectedPartner.custom_color + '20' : undefined),
+                          color: selectedPartner.custom_color || '#fff',
+                        }}
+                      >
+                        {selectedPartner.custom_monogram || getInitials(selectedPartner.name)}
+                      </AvatarFallback>
+                    ) : (
+                      <AvatarFallback className={`text-sm font-semibold ${getAvatarColor(selectedPartner.name)}`}>
+                        {selectedPartner.custom_monogram || getInitials(selectedPartner.name)}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   <div>
                     <h2 className="text-lg font-bold text-foreground leading-tight">
@@ -1036,6 +1240,105 @@ export default function PartnersPage() {
                   <SelectItem value="supplier">Szállító</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* ── Avatar customization ── */}
+            <div className="space-y-3 pt-2 border-t border-border/40">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Megjelenés testreszabása</Label>
+                {(formData.custom_monogram || formData.custom_color || formData.custom_bg_color) && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, custom_monogram: '', custom_color: '', custom_bg_color: '' })}
+                    className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Visszaállítás
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-4">
+                {/* Live preview */}
+                {(() => {
+                  const previewMonogram = formData.custom_monogram || (formData.name ? getInitials(formData.name) : '?');
+                  const previewColor = formData.custom_color;
+                  const previewBg = formData.custom_bg_color;
+                  const hasCustom = previewColor || previewBg;
+                  return (
+                    <div
+                      className={cn("h-12 w-12 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 border border-border/50 transition-colors", !hasCustom && getAvatarColor(formData.name || '?'))}
+                      style={hasCustom ? {
+                        backgroundColor: previewBg || (previewColor ? previewColor + '20' : undefined),
+                        color: previewColor || '#fff',
+                      } : undefined}
+                    >
+                      {previewMonogram}
+                    </div>
+                  );
+                })()}
+                <div className="flex-1 space-y-2">
+                  {/* Monogram input */}
+                  <div className="space-y-1">
+                    <Label htmlFor="custom_monogram" className="text-xs">Monogram</Label>
+                    <Input
+                      id="custom_monogram"
+                      value={formData.custom_monogram}
+                      onChange={(e) => setFormData({ ...formData, custom_monogram: e.target.value.slice(0, 3) })}
+                      placeholder={formData.name ? getInitials(formData.name) : 'Auto'}
+                      className="h-8 text-xs font-mono uppercase"
+                      maxLength={3}
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Text color palette */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Betűszín</Label>
+                <div className="grid grid-cols-10 gap-1.5">
+                  {COLOR_PALETTE.map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      className={cn(
+                        "w-7 h-7 rounded-md transition-transform hover:scale-110 outline-none",
+                        formData.custom_color === c.value && "scale-110"
+                      )}
+                      style={{
+                        backgroundColor: c.value,
+                        boxShadow: formData.custom_color === c.value
+                          ? `0 0 0 2px var(--background, #fff), 0 0 0 4px ${c.value}`
+                          : undefined,
+                      }}
+                      onClick={() => setFormData({ ...formData, custom_color: formData.custom_color === c.value ? '' : c.value })}
+                      title={c.label}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Background color palette */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Háttérszín</Label>
+                <div className="grid grid-cols-10 gap-1.5">
+                  {COLOR_PALETTE.map((c) => (
+                    <button
+                      key={`bg-${c.value}`}
+                      type="button"
+                      className={cn(
+                        "w-7 h-7 rounded-md transition-transform hover:scale-110 outline-none",
+                        formData.custom_bg_color === c.value && "scale-110"
+                      )}
+                      style={{
+                        backgroundColor: c.value,
+                        boxShadow: formData.custom_bg_color === c.value
+                          ? `0 0 0 2px var(--background, #fff), 0 0 0 4px ${c.value}`
+                          : undefined,
+                      }}
+                      onClick={() => setFormData({ ...formData, custom_bg_color: formData.custom_bg_color === c.value ? '' : c.value })}
+                      title={c.label}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
