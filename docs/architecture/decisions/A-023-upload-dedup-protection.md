@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-06-28  
-**Utoljára frissítve:** 2026-06-28  
+**Utoljára frissítve:** 2026-07-04  
 **Trigger:** Thinkerman incidens — jún 26-27, duplikált API költségek
 
 ## Context
@@ -58,6 +58,21 @@ User kattint → P0 Mutex (useRef) → BLOCK (99.9% itt megáll)
 - **1 perces dedup ablak**: ha a felhasználó szándékosan akarja újra feltölteni ugyanazt a fájlt, 1 percet kell várnia
 - A `checkDuplicateFile` most `pending` státuszú fájlokra is figyelmeztet → ha szándékos újrafeldolgozás kell, a dialog-on megerősítheti
 
+## Bugfix History
+
+### 2026-07-04: AFTER INSERT → BEFORE INSERT trigger fix
+
+**Incidens:** Victoria Music Kft. 3 JPEG fájlt töltött fel duplikáltan (~1 mp-en belül). A dedup logika kihagyta a `pgmq.send()`-et (helyes), de a rekordok `pending` státuszban ragadtak (bug) → a dashboardon "Várakozik"-ként jelentek meg.
+
+**Root cause:** A trigger `AFTER INSERT` típusú volt, de a dedup ág `NEW.processing_status := 'ignored'` módosítást használt. PostgreSQL-ben az `AFTER INSERT` trigger nem tudja módosítani a már beírt sort — a `NEW` módosítása hatástalan.
+
+**Fix:** `DROP TRIGGER` + `CREATE TRIGGER trg_enqueue_invoice BEFORE INSERT` — a `BEFORE INSERT` trigger módosíthatja `NEW`-t, így a dedup ág sikeresen `'ignored'`-ra állítja a rekordot az INSERT pillanatában.
+
+**Migration:** `20260704_fix_invoice_dedup_trigger_before_insert.sql`
+
+**Tesztelés:** Tranzakcióban 2× INSERT ugyanazzal a fájlnévvel → 1. rekord `pending` + PGMQ message, 2. rekord `ignored` + nincs PGMQ message ✅
+
 ## Kapcsolódó
 - [A-004: PGMQ Queue](./A-004-pgmq-queue.md) — a dedup guard a `pgmq.send()` előtt fut
 - [A-007: LLM Strategy](./A-007-llm-strategy.md) — a felesleges hívások költségvonzata
+- [A-016: PostgreSQL Query Strategy](./A-016-postgresql-query-strategy.md) — trigger típusok dokumentáció

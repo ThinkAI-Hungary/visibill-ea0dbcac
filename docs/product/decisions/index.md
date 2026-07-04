@@ -1,7 +1,7 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-06-29  
-> **Összesen:** 37 döntés | ✅ Decided: 34 | ⛔ Superseded: 2 | 🔴 Open: 1
+> **Utoljára frissítve:** 2026-07-04  
+> **Összesen:** 38 döntés | ✅ Decided: 35 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
 

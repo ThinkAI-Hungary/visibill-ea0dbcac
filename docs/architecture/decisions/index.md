@@ -1,7 +1,7 @@
-﻿# Visibill â€” Architecture Decision Records (ADR)
+# Visibill — Architecture Decision Records (ADR)
 
-> **UtoljĂˇra frissĂ­tve:** 2026-07-02  
-> **Ă–sszesen:** 24 dĂ¶ntĂ©s | âś… Decided: 23 | â›” Superseded: 1
+> **Utoljára frissítve:** 2026-07-04  
+> **Összesen:** 26 döntés | ✅ Decided: 25 | ⛔ Superseded: 1
 
 ---
 
@@ -134,5 +134,6 @@ A teljes adatbĂˇzis sĂ©ma referencia a `docs/architecture/` mappĂˇban:
 | [database/19-platform-ops.md](../database/19-platform-ops.md) | đź› ď¸Ź Platform & ĂśzemeltetĂ©s (error logs, audit, LLM costs) |
 | [database/20-tickets.md](../database/20-tickets.md) | đźŽ« Hibajegy Rendszer |
 | [database/21-master-data.md](../database/21-master-data.md) | đźŹ·ď¸Ź TĂ¶rzsadatok (categories, projects, partners) |
-| A-026 | Support Admin Ideiglenes Hozzáférés (Impersonation & RLS Bypass) | ? Decided | [A-026](./A-026-support-impersonation-access.md) |
+| A-026 | Support Admin Ideiglenes Hozzáférés (Impersonation & RLS Bypass) | ✅ Decided | [A-026](./A-026-support-impersonation-access.md) |
+| A-027 | Partner Ranking & Treemap — NAV-only + külföldi partner logika | ✅ Decided | [A-027](./A-027-partner-ranking-treemap.md) |
 

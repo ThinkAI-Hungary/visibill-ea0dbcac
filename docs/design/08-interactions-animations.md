@@ -313,3 +313,59 @@ Ez a beállítás az **OS-szintű** accessibility preference-t tiszteletben tart
 | `animate-rotate-in/out` | Sun/Moon ikon |
 | `grid-template-rows 200ms` | Sidebar collapsible nav csoportok |
 | `animation-play-state: paused` | Témaváltás alatti animáció freeze |
+
+---
+
+## ⚠️ Kijelölési Ring — Tailwind `ring` vs Inline `box-shadow`
+
+> **Kontextus:** Szín paletta, kategória badge, és bármely elem ahol React state-ből vezérelt "kijelölt" állapot van, és a kijelölést vizuális ring/keret jelzi.
+
+### Probléma: Tailwind `ring-2` + `:focus-visible` specificitási ütközés
+
+Tailwind `ring-*` utility-k CSS `box-shadow`-ot generálnak CSS custom property-ken keresztül (`--tw-ring-*`). Ha egy gomb **React state alapján** kap `ring-2` osztályt (pl. kijelölt szín), ÉS a böngésző `:focus-visible` állapota is aktív, a két szabály ütközik:
+
+```
+❌ TILTOTT minta:
+className={cn(
+  "ring-0",                          // alap: nincs ring
+  isSelected && "ring-2 ring-offset-2"  // state-ből: van ring
+)}
+```
+
+**Mi történik:**
+1. Kattintás → state `ring-2` + böngésző `:focus-visible` egyszerre aktív → vizuálisan egy ring
+2. Elkattintás máshova → `:focus-visible` eltűnik → a `ring-2` "felvillan" mert eddig a focus stílus maszkolta
+3. Ha `focus-visible:ring-0`-t adsz hozzá → az **felülírja** a state-alapú `ring-2`-t is (magasabb specificitás: `0,2,0 > 0,1,0`) → kattintáskor NINCS ring, elkattintáskor MEGJELENIK → villanás
+
+### Megoldás: Inline `box-shadow` state-alapú kijelöléshez
+
+```tsx
+✅ HELYES minta:
+<button
+  className="w-7 h-7 rounded-md outline-none"
+  style={{
+    backgroundColor: color.value,
+    boxShadow: isSelected
+      ? `0 0 0 2px var(--background, #fff), 0 0 0 4px ${color.value}`
+      : undefined,
+  }}
+/>
+```
+
+**Miért működik:**
+- Az inline `box-shadow` CSS specificitása mindig nyer a Tailwind utility-k felett
+- Nem ütközik a `:focus-visible` pseudo-class-szal
+- A `var(--background)` biztosítja hogy a gap szín követi a témát (light/dark)
+- A `0 0 0 2px` + `0 0 0 4px` kettős shadow pontosan reprodukálja a `ring-2 ring-offset-2` vizuális hatást
+
+### Összefoglaló szabály
+
+| Kijelölés típusa | Technika | Miért |
+|------------------|----------|-------|
+| **Hover** ring | Tailwind `hover:ring-1` | `:hover` nem ütközik `:focus-visible`-lel |
+| **State-alapú** kijelölés ring | Inline `box-shadow` | Elkerüli a Tailwind ring vs focus-visible specificitási bugot |
+| **Focus** ring | Tailwind `focus-visible:ring-2` | A böngésző natív focus jelzéséhez |
+
+### Érintett fájlok (referencia)
+- `src/pages/PartnersPage.tsx` — szín paletta a partner szerkesztőben
+- `src/components/IconPicker.tsx` — szín paletta a kategória szerkesztőben (itt Popover zárja a gombot → nincs ütközés)

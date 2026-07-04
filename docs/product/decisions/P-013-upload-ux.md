@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Category:** Számla Kezelés  
-**Utoljára frissítve:** 2026-06-24
+**Utoljára frissítve:** 2026-07-04
 
 **Question:** Hogyan működik a dokumentum feltöltés és az utólagos fájlkezelés?
 
@@ -14,6 +14,23 @@
 - Támogatott formátumok: PDF, JPG, PNG, WebP (számlák); PDF, CSV, XLS/XLSX (tranzakciók, riportok)
 - `UploadHistory` komponens: korábbi feltöltések státusza; **3 másodperces polling** (aktív amíg van folyamatban lévő feltöltés, vagy az utolsó feltöltés 90 másodpercnél frissebb)
 - `UploadedFilesModal` — feltöltött fájlok kezelése a tab-ra szűrve
+
+**UploadHistory státusz badge leképezés (2026-07-04):**
+
+| `processing_status` | Badge label | Variant | Szín | Megjegyzés |
+|---|---|---|---|---|
+| `pending`, `uploaded` | „Feltöltve" | `secondary` | Szürke | Várakozik feldolgozásra |
+| `processing`, `webhook_sent` | „Feldolgozás alatt" | `outline` | Outline | Worker dolgozik rajta |
+| `processed`, `completed` | „Feldolgozva" | `default` | Zöld | Sikeresen kész |
+| `error`, `webhook_failed` | **„Feldolgozási hiba"** | `destructive` | Piros | A feltöltés sikerült, de a feldolgozás hibára futott |
+| `failed` | „A feltöltés sikertelen" | `destructive` | Piros | A fájl nem jutott el a storage-ba |
+| `ignored` | „Nem beazonosítható" | `secondary` | Szürke | A dokumentum nem felismerhető számlaként |
+| `dismissed` | „Elutasítva" | `secondary` | Szürke | Manuálisan elutasítva (management dashboard) |
+| `cmr_attached` | „Dokumentum párosítva" | `default` | Zöld | Szállítólevél sikeresen párosítva |
+| `cmr_orphaned` | „Vár a számlára" | `secondary` | Szürke | Szállítólevél, számla még nem érkezett |
+| `cmr_escalated` | „⚠️ Eszkaláció" | `outline` | Outline | Kattintható → eszkalációs dialog |
+
+**Error message megjelenítés:** Extraction error-nál rövidített szöveg: „Extraction hiba" (a teljes hibaüzenet tooltip-ben látható). Egyéb hibáknál az eredeti `error_message` szövege jelenik meg, `max-w-[150px] truncate`-tel.
 
 **Fájlkezelő Modal (UploadedFilesModal) — 2026-06-24:**
 - Keresés fájlnév alapján (debounced filter)

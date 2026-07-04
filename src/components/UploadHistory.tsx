@@ -45,7 +45,10 @@ interface UploadHistoryProps {
   activeTab: string;
 }
 
-const errorStatuses = new Set(['webhook_failed', 'failed', 'error']);
+// Feldolgozási hibák — a feltöltés sikerült, de a worker nem tudta feldolgozni
+const processingErrorStatuses = new Set(['webhook_failed', 'error']);
+// Tényleges feltöltési hiba — a fájl nem jutott el a storage-ba
+const uploadErrorStatuses = new Set(['failed']);
 const processingStatuses = new Set(['processing', 'webhook_sent']);
 const pendingStatuses = new Set(['pending', 'uploaded']);
 const activeStatuses = new Set([...processingStatuses, ...pendingStatuses]);
@@ -63,9 +66,12 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
   const processed = meta?.invoice_count_processed || 0;
   const errors = meta?.invoice_count_errors || 0;
 
-  if (errorStatuses.has(record.processing_status)) {
+  if (uploadErrorStatuses.has(record.processing_status)) {
+    return { label: 'A feltöltés sikertelen', variant: 'destructive' };
+  }
+  if (processingErrorStatuses.has(record.processing_status)) {
     const multiInfo = isMulti ? `${processed}/${total} feldolgozva, ${errors} hiba` : undefined;
-    return { label: 'A feltöltés sikertelen', variant: 'destructive', multiProgress: multiInfo };
+    return { label: 'Feldolgozási hiba', variant: 'destructive', multiProgress: multiInfo };
   }
   // Check processing_status FIRST — worker sets this to 'processing' while
   // actively working on the file (extraction, categorization, matching).
@@ -88,6 +94,9 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
   // Ignored documents — classified as unidentifiable
   if (record.processing_status === 'ignored') {
     return { label: 'Nem beazonosítható', variant: 'secondary' };
+  }
+  if (record.processing_status === 'dismissed') {
+    return { label: 'Elutasítva', variant: 'secondary' };
   }
   if (doneStatuses.has(record.processing_status) || processedIds.has(record.id)) {
     const multiInfo = isMulti ? `${total} számla` : undefined;
@@ -151,7 +160,6 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           .eq('document_category', 'payroll')
           .gte('created_at', uploadDateFrom)
           .lte('created_at', uploadDateTo + 'T23:59:59')
-          .neq('processing_status', 'ignored')
           .order('created_at', { ascending: false })
           .order('id', { ascending: false })
           .limit(50);
@@ -166,7 +174,6 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message, metadata')
           .gte('created_at', uploadDateFrom)
           .lte('created_at', uploadDateTo + 'T23:59:59')
-          .neq('processing_status', 'ignored')
           .order('created_at', { ascending: false })
           .order('id', { ascending: false })
           .limit(50);
@@ -434,9 +441,9 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                               />
                             </div>
                           )}
-                          {record.error_message && errorStatuses.has(record.processing_status) && (
-                            <p className="text-xs text-destructive max-w-[150px] truncate" title={record.error_message}>
-                              {record.error_message}
+                          {record.error_message && (processingErrorStatuses.has(record.processing_status) || uploadErrorStatuses.has(record.processing_status) || record.processing_status === 'ignored') && (
+                            <p className={`text-xs max-w-[150px] truncate ${(processingErrorStatuses.has(record.processing_status) || uploadErrorStatuses.has(record.processing_status)) ? 'text-destructive' : 'text-muted-foreground'}`} title={record.error_message}>
+                              {record.error_message.startsWith('Extraction error') ? 'Extraction hiba' : record.error_message}
                             </p>
                           )}
                         </div>
@@ -465,8 +472,16 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                 <span className="text-xs text-muted-foreground">— Sikeresen feldolgozva és rögzítve</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Badge variant="destructive" className="text-xs">A feltöltés sikertelen</Badge>
-                <span className="text-xs text-muted-foreground">— Hiba történt a feldolgozás során</span>
+                <Badge variant="destructive" className="text-xs">Feldolgozási hiba</Badge>
+                <span className="text-xs text-muted-foreground">— A feltöltés sikerült, de a feldolgozás hibára futott</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Badge variant="secondary" className="text-xs">Nem beazonosítható</Badge>
+                <span className="text-xs text-muted-foreground">— A dokumentum nem volt felismerhető számlaként</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Badge variant="secondary" className="text-xs">Elutasítva</Badge>
+                <span className="text-xs text-muted-foreground">— A dokumentum manuálisan el lett utasítva</span>
               </div>
             </div>
           </div>

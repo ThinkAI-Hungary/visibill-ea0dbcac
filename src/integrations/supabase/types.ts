@@ -5297,6 +5297,9 @@ export type Database = {
           address: string | null
           company_id: string | null
           created_at: string
+          custom_color: string | null
+          custom_bg_color: string | null
+          custom_monogram: string | null
           default_project_id: string | null
           email: string | null
           exclude_from_accounting: boolean
@@ -5311,6 +5314,9 @@ export type Database = {
           address?: string | null
           company_id?: string | null
           created_at?: string
+          custom_color?: string | null
+          custom_bg_color?: string | null
+          custom_monogram?: string | null
           default_project_id?: string | null
           email?: string | null
           exclude_from_accounting?: boolean
@@ -5325,6 +5331,9 @@ export type Database = {
           address?: string | null
           company_id?: string | null
           created_at?: string
+          custom_color?: string | null
+          custom_bg_color?: string | null
+          custom_monogram?: string | null
           default_project_id?: string | null
           email?: string | null
           exclude_from_accounting?: boolean

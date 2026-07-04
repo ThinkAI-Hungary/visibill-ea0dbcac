@@ -45,7 +45,7 @@ await supabase.from('invoices').update({ status: 'verified' }).eq('id', invoiceI
 
 ### 2. Teljes RPC Function Katalógus
 
-**Összesen: 79 function** a `public` sémában.
+**Összesen: 80 function** a `public` sémában.
 
 ---
 
@@ -130,6 +130,12 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `get_accounty_company_names(p_company_ids[])` | DEFINER | eaisyBooks dashboard | Cégnevek batch lekérdezés |
 | `get_user_emails_for_management(user_ids[])` | DEFINER | management-stats EF | Management email lekérdezés |
 
+#### 🏷️ 2.7 Partner & Ranking RPC-k
+
+| RPC Function | Security | Hívó | Cél |
+|---|---|---|---|
+| `get_partner_ranking(p_company_id)` | DEFINER | PartnersPage.tsx | Top 10 beszállító/vevő rangsor — NAV-only + külföldi beküldött. Lásd: [A-027](./A-027-partner-ranking-treemap.md) |
+
 ---
 
 ### 3. DB Trigger Function-ök (25 db)
@@ -157,7 +163,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 
 | Trigger Function | Tábla | Queue | Cél |
 |---|---|---|---|
-| `trigger_enqueue_invoice_job()` | invoice_uploads | `invoice_jobs` | Új upload → PGMQ invoice queue |
+| `trigger_enqueue_invoice_job()` | invoice_uploads (BEFORE INSERT) | `invoice_jobs` | Új upload → PGMQ invoice queue (dedup guard: 1 min ablak) |
 | `trigger_enqueue_transaction_job()` | transaction_uploads | `transaction_jobs` | Új upload → PGMQ transaction queue |
 | `trigger_enqueue_gl_job()` | invoices/transactions | `gl_jobs` | Feldolgozott tétel → PGMQ GL queue |
 | `enqueue_report_job()` | report_requests | `report_jobs` | Report kérés → PGMQ report queue |
