@@ -2,7 +2,7 @@
 
 > **Státusz:** ✅ Decided  
 > **Dátum:** 2026-06-26  
-> **Utoljára frissítve:** 2026-07-04  
+> **Utoljára frissítve:** 2026-07-05  
 > **Implementálva:** `PartnersPage.tsx`, `PartnerInvoiceDetailDialog.tsx`
 
 ---
@@ -69,6 +69,19 @@ Tételek forrása:
 
 Főkönyvi szám: `gl_classifications` JSONB első elérhető értékének `gl_number` mezője.
 
+#### 5.1 Számlakép előnézet (2026-07-05)
+
+Beküldött számláknál a fejlécben megjelenik egy **„Számlakép megtekintése"** gomb (`FileImage` ikon).
+Kattintásra egy **második, stacked Dialog** nyílik meg a detail dialog felett:
+- **PDF**: iframe + „Megnyitás új ablakban" gomb
+- **Kép** (JPG/PNG/WebP): `<img>` renderelés
+- **Egyéb fájltípus**: „Megnyitás új ablakban" fallback
+- Loading spinner + error handling
+
+Adatlánc: `invoices.invoice_uploads_id` → `invoice_uploads.file_url`
+
+NAV számláknál a gomb NEM jelenik meg (nincs feltöltött fájl).
+
 ### 6. NAV státusz eltávolítása
 
 A cégadatok grid-ből eltávolítva a statikus „NAV státusz: Kapcsolódva" mező — értéke
@@ -90,7 +103,7 @@ nem volt valós adatból számítva, félrevezető volt. Helyette a header-ben f
 - `src/pages/PartnersPage.tsx`
 - `src/components/partners/PartnerInvoiceDetailDialog.tsx`
 - `src/components/partners/PartnerRankingCard.tsx`
-- Táblák: `partners`, `nav_invoices`, `nav_invoice_items`, `invoices`, `invoice_items`
+- Táblák: `partners`, `nav_invoices`, `nav_invoice_items`, `invoices`, `invoice_items`, `invoice_uploads`
 
 ## Kapcsolódó
 - [A-027: Partner Ranking & Treemap](../../architecture/decisions/A-027-partner-ranking-treemap.md)
