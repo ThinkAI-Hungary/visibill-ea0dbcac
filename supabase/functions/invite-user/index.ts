@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     }
 
     // ── 2. Parse & validate body ──
-    const { email, name, password, company_id, role } = await req.json();
+    const { email, name, password, company_id, accounting_firm_id, role } = await req.json();
 
     if (!email || typeof email !== "string" || !email.includes("@")) {
       return new Response(JSON.stringify({ success: false, error: "valid_email_required" }), {
@@ -77,10 +77,11 @@ Deno.serve(async (req) => {
 
       if (isAccountantRole) {
         // Verify caller has role 'iroda_admin' or 'senior_könyvelő' in this firm
+        const firmIdForAuth = accounting_firm_id || company_id;
         const { data: callerAssignment } = await adminClient
           .from("accounty_assignments")
           .select("role")
-          .eq("accounting_firm_id", company_id)
+          .eq("accounting_firm_id", firmIdForAuth)
           .eq("accountant_user_id", callingUser.id)
           .in("role", ["iroda_admin", "senior_könyvelő"])
           .limit(1);
@@ -135,12 +136,13 @@ Deno.serve(async (req) => {
         const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
         if (isAccountantRole) {
           // UPSERT: if already assigned to this company, update role/firm; otherwise insert
+          const firmId = accounting_firm_id || company_id;
           const { error: upsertError } = await adminClient
             .from("accounty_assignments")
             .upsert({
               accountant_user_id: existingUser.id,
               company_id: company_id,
-              accounting_firm_id: company_id,
+              accounting_firm_id: firmId,
               role: role,
               is_primary: true,
               kanban_status: "aktiv",
@@ -274,12 +276,13 @@ Deno.serve(async (req) => {
       const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
       if (isAccountantRole) {
         // Add accountant assignment
+        const firmIdNew = accounting_firm_id || company_id;
         const { error: assignError } = await adminClient
           .from("accounty_assignments")
           .insert({
             accountant_user_id: newUserId,
             company_id: company_id,
-            accounting_firm_id: company_id,
+            accounting_firm_id: firmIdNew,
             role: role,
             is_primary: true,
             kanban_status: "aktiv",

@@ -262,6 +262,7 @@ export function InviteUserDialog({
               name: foundUserName || email.trim(),
               password: 'DummyPassword1!',
               company_id: cId,
+              accounting_firm_id: isAccounty ? companyId : undefined,
               role: cId ? role : null,
             },
           });
@@ -311,6 +312,7 @@ export function InviteUserDialog({
             name: name.trim(),
             password,
             company_id: firstCompanyId,
+            accounting_firm_id: isAccounty ? companyId : undefined,
             role: firstCompanyId ? role : null,
           },
         });
@@ -345,6 +347,7 @@ export function InviteUserDialog({
               name: name.trim(),
               password: 'DummyPassword1!',
               company_id: cId,
+              accounting_firm_id: isAccounty ? companyId : undefined,
               role,
             },
           });

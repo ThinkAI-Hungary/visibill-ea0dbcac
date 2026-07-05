@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -7,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
+import { reportError } from '@/lib/errorReporter';
+import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import {
   Mail,
   Bell,
@@ -97,7 +101,12 @@ function NotifToggle({
 // ── Main Component ──
 
 export function AccountyNotificationPreferences() {
-  // Email prefs
+  const { user } = useAuth();
+
+  // DB column name mapping
+  type DbColumnKey = 'missing_invoice_alert' | 'deadline_reminder' | 'client_status_change' | 'approval_request' | 'weekly_report' | 'monthly_report';
+
+  // Email prefs — loaded from DB
   const [emailPrefs, setEmailPrefs] = useState<EmailNotifPrefs>({
     missingInvoiceAlert: true,
     deadlineReminder: true,
@@ -107,7 +116,84 @@ export function AccountyNotificationPreferences() {
     monthlyReport: false,
   });
 
-  // Push prefs
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Map frontend key → DB column
+  const keyToColumn: Record<keyof EmailNotifPrefs, DbColumnKey> = {
+    missingInvoiceAlert: 'missing_invoice_alert',
+    deadlineReminder: 'deadline_reminder',
+    clientStatusChange: 'client_status_change',
+    approvalRequest: 'approval_request',
+    weeklyReport: 'weekly_report',
+    monthlyReport: 'monthly_report',
+  };
+
+  // Load from DB
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('accounty_email_preferences' as any)
+          .select('missing_invoice_alert, deadline_reminder, client_status_change, approval_request, weekly_report, monthly_report')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error && error.code !== 'PGRST116') throw error;
+
+        if (data) {
+          const d = data as any;
+          setEmailPrefs({
+            missingInvoiceAlert: d.missing_invoice_alert ?? true,
+            deadlineReminder: d.deadline_reminder ?? true,
+            clientStatusChange: d.client_status_change ?? false,
+            approvalRequest: d.approval_request ?? true,
+            weeklyReport: d.weekly_report ?? true,
+            monthlyReport: d.monthly_report ?? false,
+          });
+        }
+      } catch (err) {
+        reportError({ type: 'db_query', component: 'AccountyNotificationPreferences', action: 'load', message: 'Error loading prefs', error: err });
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [user]);
+
+  // Save to DB
+  const updateEmail = async (key: keyof EmailNotifPrefs, value: boolean) => {
+    if (!user) return;
+    const newPrefs = { ...emailPrefs, [key]: value };
+    setEmailPrefs(newPrefs);
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('accounty_email_preferences' as any)
+        .upsert(
+          {
+            user_id: user.id,
+            [keyToColumn[key]]: value,
+          } as any,
+          { onConflict: 'user_id' }
+        );
+
+      if (error) throw error;
+      toast({ title: 'Beállítás frissítve' });
+    } catch (err) {
+      // Revert on error
+      setEmailPrefs(emailPrefs);
+      reportError({ type: 'db_query', component: 'AccountyNotificationPreferences', action: 'update', message: 'Error updating pref', error: err });
+      toast({ title: 'Nem sikerült menteni a beállítást', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Push prefs (UI only — not persisted yet)
   const [pushPrefs, setPushPrefs] = useState<PushNotifPrefs>({
     enabled: false,
     missingInvoiceAlert: true,
@@ -122,7 +208,7 @@ export function AccountyNotificationPreferences() {
     return 'default';
   });
 
-  // Digest prefs
+  // Digest prefs (UI only — not persisted yet)
   const [digestPrefs, setDigestPrefs] = useState<DigestPrefs>({
     enabled: true,
     frequency: 'daily',
@@ -133,13 +219,6 @@ export function AccountyNotificationPreferences() {
     includeClientSummary: true,
     includeAuditLog: false,
   });
-
-  const [saving, setSaving] = useState(false);
-
-  const updateEmail = (key: keyof EmailNotifPrefs, value: boolean) => {
-    setEmailPrefs(prev => ({ ...prev, [key]: value }));
-    toast({ title: 'Beállítás frissítve' });
-  };
 
   const updatePush = (key: keyof PushNotifPrefs, value: boolean) => {
     setPushPrefs(prev => ({ ...prev, [key]: value }));
@@ -168,6 +247,10 @@ export function AccountyNotificationPreferences() {
 
   const emailNotifCount = Object.values(emailPrefs).filter(Boolean).length;
   const pushNotifCount = pushPrefs.enabled ? Object.entries(pushPrefs).filter(([k, v]) => k !== 'enabled' && v).length : 0;
+
+  if (loading) {
+    return <ContentSkeleton lines={8} />;
+  }
 
   return (
     <div className="space-y-6">
