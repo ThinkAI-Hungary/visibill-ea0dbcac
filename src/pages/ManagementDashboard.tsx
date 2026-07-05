@@ -561,7 +561,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
     setPage(0);
   }, [sortCol]);
 
-  const { data, isLoading } = useQuery<ErrorsData>({
+  const { data, isLoading, isFetching } = useQuery<ErrorsData>({
     queryKey: ['management-errors', page, PAGE_SIZE, sortCol, sortDir, debouncedSearch, filterCompanyId, filterSource, filterCategory, filterUserId, dateFrom, dateTo],
     queryFn: () => fetchManagementData('errors', {
       page: String(page), pageSize: String(PAGE_SIZE),
@@ -793,75 +793,152 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
   };
 
   return (
-    <div className="space-y-0 animate-in fade-in duration-300" style={{ maxWidth: '100%' }}>
-      {/* ── Compact header: inline KPIs + distribution bar + filters ── */}
-      <Card className="rounded-b-none border-b-0">
-        <CardContent className="p-4">
-          <div className="space-y-3">
-            {/* Row 1: KPI cards */}
-            <div className="flex items-center gap-3">
-            {/* KPI: Total errors */}
-            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-accent/30 border border-border shrink-0">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
-              <div>
-                <div className="text-lg font-bold leading-none tabular-nums">{isLoading ? <Skeleton className="h-5 w-10 inline-block" /> : data?.totalErrors ?? 0}</div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Összes hiba</p>
-              </div>
-            </div>
-
-            {/* KPI: 24h */}
-            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-accent/30 border border-border shrink-0">
-              <Clock className="h-4 w-4 text-primary" />
-              <div>
-                <div className="text-lg font-bold leading-none tabular-nums">{isLoading ? <Skeleton className="h-5 w-8 inline-block" /> : data?.last24hErrors ?? 0}</div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">24h</p>
-              </div>
-            </div>
-
-            {/* KPI: Most affected company */}
-            {data?.mostAffectedCompany && (
-              <button
-                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg border shrink-0 hover:bg-accent/50 transition-colors text-left ${
-                  filterCompanyId === data.mostAffectedCompany.id ? 'bg-primary/10 border-primary/30' : 'bg-accent/30 border-border'
-                }`}
-                onClick={() => {
-                  const id = data.mostAffectedCompany!.id;
-                  setFilterCompanyId(prev => prev === id ? '' : id);
-                  setPage(0);
-                }}
-                title="Kattints a szűréshez"
-              >
-                <Building2 className="h-4 w-4 text-destructive" />
-                <div>
-                  <p className="text-xs font-semibold leading-tight">{data.mostAffectedCompany.name}</p>
-                  <p className="text-[10px] text-muted-foreground">Legtöbb ({data.mostAffectedCompany.errorCount})</p>
+    <div className="space-y-5 animate-in fade-in duration-300" style={{ maxWidth: '100%' }}>
+      {/* ── KPI Cards ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {isFetching ? (
+          <>
+            {[0,1,2,3].map(i => (
+              <Card key={i}>
+                <CardContent className="flex items-center gap-3 p-4">
+                  <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-6 w-14" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : (
+          <>
+        {/* Total errors */}
+        {(() => {
+          const hasAnyFilter = !!(search || filterCompanyId || filterUserId || filterSource || filterCategory || dateFrom || dateTo);
+          return (
+            <Card
+              className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30",
+                !hasAnyFilter ? "border-destructive/50 bg-destructive/5" : ""
+              )}
+              onClick={() => {
+                setSearch(''); setFilterCompanyId(''); setFilterUserId('');
+                setFilterSource(''); setFilterCategory('');
+                setDateFrom(''); setDateTo('');
+                setPage(0);
+              }}
+              role="button" tabIndex={0}
+            >
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-destructive/10 border border-destructive/20 shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
                 </div>
-              </button>
-            )}
-
-            {/* KPI: Most affected user */}
-            {data?.mostAffectedUser && (
-              <button
-                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg border shrink-0 hover:bg-accent/50 transition-colors text-left ${
-                  filterUserId === data.mostAffectedUser.id ? 'bg-primary/10 border-primary/30' : 'bg-accent/30 border-border'
-                }`}
-                onClick={() => {
-                  const id = data.mostAffectedUser!.id;
-                  setFilterUserId(prev => prev === id ? '' : id);
-                  setPage(0);
-                }}
-                title="Kattints a szűréshez"
-              >
-                <Users className="h-4 w-4 text-orange-500" />
                 <div>
-                  <p className="text-xs font-semibold leading-tight">{data.mostAffectedUser.name}</p>
-                  <p className="text-[10px] text-muted-foreground">Legtöbb ({data.mostAffectedUser.errorCount})</p>
+                  <p className="text-xl font-bold tabular-nums text-destructive">{data?.totalErrors ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">Összes hiba</p>
                 </div>
-              </button>
-            )}
-            </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
-            {/* Row 2: Filters */}
+        {/* 24h errors */}
+        {(() => {
+          const today = new Date().toISOString().slice(0, 10);
+          const is24hActive = dateFrom === today && !dateTo;
+          return (
+            <Card
+              className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30",
+                is24hActive ? "border-warning/50 bg-warning/5" : ""
+              )}
+              onClick={() => {
+                if (is24hActive) {
+                  setDateFrom(''); setDateTo('');
+                } else {
+                  setDateFrom(today); setDateTo('');
+                }
+                setPage(0);
+              }}
+              role="button" tabIndex={0}
+            >
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-warning/10 border border-warning/20 shrink-0">
+                  <Clock className="h-5 w-5 text-warning" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold tabular-nums text-warning">{data?.last24hErrors ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">Utolsó 24h</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
+        {/* Most affected company */}
+        <Card
+          className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30",
+            data?.mostAffectedCompany && filterCompanyId === data.mostAffectedCompany.id ? "border-primary/50 bg-primary/5" : ""
+          )}
+          onClick={() => {
+            if (data?.mostAffectedCompany) {
+              const id = data.mostAffectedCompany.id;
+              setFilterCompanyId(prev => prev === id ? '' : id);
+              setPage(0);
+            }
+          }}
+          role="button" tabIndex={0}
+        >
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold truncate">{data?.mostAffectedCompany?.name ?? '—'}</p>
+              <p className="text-xs text-muted-foreground">Legtöbb ({data?.mostAffectedCompany?.errorCount ?? 0})</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Most affected user */}
+        <Card
+          className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30",
+            data?.mostAffectedUser && filterUserId === data.mostAffectedUser.id ? "border-primary/50 bg-primary/5" : ""
+          )}
+          onClick={() => {
+            if (data?.mostAffectedUser) {
+              const id = data.mostAffectedUser.id;
+              setFilterUserId(prev => prev === id ? '' : id);
+              setPage(0);
+            }
+          }}
+          role="button" tabIndex={0}
+        >
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-orange-500/10 border border-orange-500/20 shrink-0">
+              <Users className="h-5 w-5 text-orange-500" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold truncate">{data?.mostAffectedUser?.name ?? '—'}</p>
+              <p className="text-xs text-muted-foreground">Legtöbb ({data?.mostAffectedUser?.errorCount ?? 0})</p>
+            </div>
+          </CardContent>
+        </Card>
+          </>
+        )}
+      </div>
+
+      {/* ── Filter toolbar ── */}
+      <Card>
+        <CardContent className="p-3">
+          {isFetching ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <Skeleton className="h-7 w-[160px] rounded-md" />
+              <Skeleton className="h-7 w-[90px] rounded-md" />
+              <Skeleton className="h-7 w-[90px] rounded-md" />
+              <Skeleton className="h-7 w-[90px] rounded-md" />
+              <Skeleton className="h-7 w-[90px] rounded-md" />
+              <Skeleton className="ml-auto h-7 w-[120px] rounded-md" />
+            </div>
+          ) : (
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
@@ -907,7 +984,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                     <Trash2 className="h-3 w-3" />
                     {selected.size}
                   </Button>
-                  <Button variant="outline" size="sm" className="h-7 gap-1 text-[11px] px-2 border-primary/30 text-primary hover:bg-primary/10" disabled={retrying}
+                  <Button variant="outline" size="sm" className="h-7 gap-1 text-[11px] px-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary" disabled={retrying}
                     onClick={handleBulkRetry}>
                     <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />
                     Újra
@@ -918,7 +995,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 gap-1 text-[11px] px-2 border-destructive/30 text-destructive hover:bg-destructive/10 ml-auto"
+                  className="h-7 gap-1 text-[11px] px-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive ml-auto"
                   disabled={deleting || deletingAll}
                   onClick={() => setDeleteAllModalOpen(true)}
                 >
@@ -927,12 +1004,12 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                 </Button>
               )}
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
       {/* ── Table with severity strip ── */}
-      <Card className="rounded-t-none overflow-hidden">
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           <div className="w-full overflow-x-auto">
             <table className="w-full text-[11px]" style={{ tableLayout: 'fixed', minWidth: 900 }} role="table">
@@ -954,7 +1031,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
-                {isLoading ? (
+                {isFetching ? (
                   Array.from({ length: 8 }).map((_, i) => (
                     <tr key={`skel-${i}`}>
                       <td className="py-1.5 px-2"><Skeleton className="h-4 w-4" /></td>
@@ -1101,13 +1178,20 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                     </React.Fragment>
                   );
                 })}
-                {errRows.length === 0 && !isLoading && (
+                {errRows.length === 0 && !isFetching && (
                   <tr><td colSpan={10} className="text-center py-8 text-muted-foreground">Nincs hiba találat</td></tr>
                 )}
               </tbody>
             </table>
           </div>
-          {totalPages > 1 && (
+          {isFetching ? (
+            <div className="flex items-center justify-between px-4 py-2.5 border-t border-border">
+              <Skeleton className="h-4 w-28" />
+              <div className="flex items-center gap-1">
+                {[0,1,2].map(i => <Skeleton key={i} className="h-6 w-6 rounded-md" />)}
+              </div>
+            </div>
+          ) : totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-2.5 border-t border-border">
               <span className="text-[11px] text-muted-foreground tabular-nums">
                 {totalRows === 0 ? '0' : `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalRows)} / ${totalRows}`}
@@ -2900,28 +2984,37 @@ function fileExtBadge(fileName: string) {
   return <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-bold font-mono ${cls}`}>{ext || '?'}</span>;
 }
 
-function processingStatusBadge(status: string | null) {
-  if (!status) return <Badge variant="outline" className="text-[10px] text-muted-foreground">—</Badge>;
-  const map: Record<string, string> = {
-    done: 'bg-success/10 text-success border-success/25',
-    completed: 'bg-success/10 text-success border-success/25',
-    error: 'bg-destructive/10 text-destructive border-destructive/25',
-    failed: 'bg-destructive/10 text-destructive border-destructive/25',
-    processing: 'bg-warning/10 text-warning border-warning/25',
-    pending: 'bg-muted text-muted-foreground border-border',
-  };
-  const labels: Record<string, string> = {
-    done: 'kész', 
-    completed: 'kész',
-    error: 'hiba', 
-    failed: 'hiba',
-    processing: 'folyamat', 
-    pending: 'várakozik',
-    ignored: 'kihagyva',
-    processed: 'feldolgozva'
-  };
-  const cls = map[status] || 'bg-muted text-muted-foreground border-border';
-  return <Badge className={`text-[10px] border ${cls} w-20 justify-center`}>{labels[status] || status}</Badge>;
+/** Normalize raw processing_status to one of 3 display categories */
+type StatusCategory = 'success' | 'pending' | 'error';
+
+function normalizeStatus(status: string | null, errorMessage?: string | null): StatusCategory {
+  // If there's an error_message, it's an error regardless of processing_status
+  if (errorMessage) return 'error';
+  if (!status) return 'pending';
+  switch (status) {
+    case 'done': case 'completed': case 'processed': return 'success';
+    case 'error': case 'failed': case 'ignored': case 'dismissed': case 'webhook_failed': return 'error';
+    default: return 'pending';
+  }
+}
+
+const STATUS_DISPLAY: Record<StatusCategory, { label: string; cls: string }> = {
+  success: { label: 'Feldolgozva', cls: 'bg-success/10 text-success border-success/25' },
+  pending:  { label: 'Folyamatban', cls: 'bg-warning/10 text-warning border-warning/25' },
+  error:   { label: 'Hiba',        cls: 'bg-destructive/10 text-destructive border-destructive/25' },
+};
+
+/** Comma-separated DB values for each filter category (sent to EF) */
+const STATUS_FILTER_VALUES: Record<string, string> = {
+  success: 'done,completed,processed',
+  pending: 'processing,pending',
+  error:   'error,failed,ignored,dismissed,webhook_failed',
+};
+
+function processingStatusBadge(status: string | null, errorMessage?: string | null) {
+  const cat = normalizeStatus(status, errorMessage);
+  const { label, cls } = STATUS_DISPLAY[cat];
+  return <Badge className={`text-[10px] border ${cls} w-20 justify-center`}>{label}</Badge>;
 }
 
 function fileTypeBadge(label: string, sourceTable: string) {
@@ -2936,6 +3029,8 @@ function fileTypeBadge(label: string, sourceTable: string) {
 }
 
 function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const PAGE_SIZE = 25;
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -2952,6 +3047,19 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   const [previewFile, setPreviewFile] = useState<{ url: string, name: string } | null>(null);
   const [companySearchOpen, setCompanySearchOpen] = useState(false);
   const [userSearchOpen, setUserSearchOpen] = useState(false);
+
+  // Selection state for bulk operations
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+
+  const toggleFileSelection = useCallback((fileKey: string) => {
+    setSelectedFiles(prev => {
+      const next = new Set(prev);
+      if (next.has(fileKey)) next.delete(fileKey);
+      else next.add(fileKey);
+      return next;
+    });
+  }, []);
 
   // Debounce search
   const searchTimerRef = useCallback((val: string) => {
@@ -2975,7 +3083,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
       companyId: filterCompanyId,
       userId: filterUserId,
       fileType: filterFileType,
-      status: filterStatus,
+      status: STATUS_FILTER_VALUES[filterStatus] || filterStatus,
       dateFrom, dateTo,
     }),
     staleTime: 30_000,
@@ -2986,6 +3094,47 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   const totalRows = data?.totalRows || 0;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
   const stats = data?.stats;
+
+  const selectAllOnPage = useCallback(() => {
+    const allKeys = fileRows.map((r: any) => `${r.source_table}:${r.id}`);
+    const allSelected = allKeys.every((k: string) => selectedFiles.has(k));
+    if (allSelected) {
+      setSelectedFiles(prev => {
+        const next = new Set(prev);
+        allKeys.forEach((k: string) => next.delete(k));
+        return next;
+      });
+    } else {
+      setSelectedFiles(prev => {
+        const next = new Set(prev);
+        allKeys.forEach((k: string) => next.add(k));
+        return next;
+      });
+    }
+  }, [fileRows, selectedFiles]);
+
+  const handleBulkStatusUpdate = useCallback(async (targetStatus: string) => {
+    if (selectedFiles.size === 0) return;
+    setBulkUpdating(true);
+    try {
+      const files = Array.from(selectedFiles).map(key => {
+        const [source_table, id] = key.split(':');
+        return { id, source_table };
+      });
+      const result = await postManagementData('update-file-status', { files, targetStatus });
+      if (result.success || result.updated > 0) {
+        toast({ title: `${result.updated} fájl állapota frissítve`, description: `Új állapot: ${targetStatus}` });
+        setSelectedFiles(new Set());
+        queryClient.invalidateQueries({ queryKey: ['management-files'] });
+      } else {
+        toast({ title: 'Hiba történt', description: result.error || 'Ismeretlen hiba', variant: 'destructive' });
+      }
+    } catch (e: any) {
+      toast({ title: 'Hiba', description: e.message, variant: 'destructive' });
+    } finally {
+      setBulkUpdating(false);
+    }
+  }, [selectedFiles, toast, queryClient]);
 
   const SortIcon = ({ col }: { col: FileSortCol }) => {
     if (sortCol !== col) return <ArrowUpDown className="h-3 w-3 opacity-40 ml-1 inline" />;
@@ -3025,63 +3174,114 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     <div className="space-y-5">
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card>
+        {isFetching ? (
+          <>
+            {[0,1,2,3].map(i => (
+              <Card key={i}>
+                <CardContent className="flex items-center gap-3 p-4">
+                  <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-6 w-14" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : (
+          <>
+        <Card
+          className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30", filterStatus === '' ? "border-primary/50 bg-primary/5" : "")}
+          onClick={() => { setFilterStatus(''); setPage(1); }}
+          role="button" tabIndex={0}
+          onKeyDown={e => { if (e.key === 'Enter') { setFilterStatus(''); setPage(1); } }}
+        >
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
               <FolderOpen className="h-5 w-5 text-primary" />
             </div>
             <div>
               <div className="h-7 min-w-[40px]">
-                {isFetching ? <Skeleton className="h-7 w-12" /> : <p className="text-xl font-bold tabular-nums">{(stats?.totalCount ?? totalRows)}</p>}
+                <p className="text-xl font-bold tabular-nums">{(stats?.totalCount ?? totalRows)}</p>
               </div>
               <p className="text-xs text-muted-foreground">Összes fájl</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30", filterStatus === 'success' ? "border-success/50 bg-success/5" : "")}
+          onClick={() => { setFilterStatus(filterStatus === 'success' ? '' : 'success'); setPage(1); }}
+          role="button" tabIndex={0}
+          onKeyDown={e => { if (e.key === 'Enter') { setFilterStatus(filterStatus === 'success' ? '' : 'success'); setPage(1); } }}
+        >
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-success/10 border border-success/20 shrink-0">
               <Check className="h-5 w-5 text-success" />
             </div>
             <div>
               <div className="h-7 min-w-[40px]">
-                {isFetching ? <Skeleton className="h-7 w-12" /> : <p className="text-xl font-bold tabular-nums text-success">{(stats?.successCount ?? 0)}</p>}
+                <p className="text-xl font-bold tabular-nums text-success">{(stats?.successCount ?? 0)}</p>
               </div>
-              <p className="text-xs text-muted-foreground">Sikeresen feldolgozva</p>
+              <p className="text-xs text-muted-foreground">Feldolgozva</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30", filterStatus === 'error' ? "border-destructive/50 bg-destructive/5" : "")}
+          onClick={() => { setFilterStatus(filterStatus === 'error' ? '' : 'error'); setPage(1); }}
+          role="button" tabIndex={0}
+          onKeyDown={e => { if (e.key === 'Enter') { setFilterStatus(filterStatus === 'error' ? '' : 'error'); setPage(1); } }}
+        >
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-destructive/10 border border-destructive/20 shrink-0">
               <AlertCircle className="h-5 w-5 text-destructive" />
             </div>
             <div>
               <div className="h-7 min-w-[40px]">
-                {isFetching ? <Skeleton className="h-7 w-12" /> : <p className="text-xl font-bold tabular-nums text-destructive">{(stats?.errorCount ?? 0)}</p>}
+                <p className="text-xl font-bold tabular-nums text-destructive">{(stats?.errorCount ?? 0)}</p>
               </div>
-              <p className="text-xs text-muted-foreground">Feldolgozási hiba</p>
+              <p className="text-xs text-muted-foreground">Hiba</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30", filterStatus === 'pending' ? "border-warning/50 bg-warning/5" : "")}
+          onClick={() => { setFilterStatus(filterStatus === 'pending' ? '' : 'pending'); setPage(1); }}
+          role="button" tabIndex={0}
+          onKeyDown={e => { if (e.key === 'Enter') { setFilterStatus(filterStatus === 'pending' ? '' : 'pending'); setPage(1); } }}
+        >
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-warning/10 border border-warning/20 shrink-0">
               <Clock className="h-5 w-5 text-warning" />
             </div>
             <div>
               <div className="h-7 min-w-[40px]">
-                {isFetching ? <Skeleton className="h-7 w-12" /> : <p className="text-xl font-bold tabular-nums text-warning">{(stats?.pendingCount ?? 0)}</p>}
+                <p className="text-xl font-bold tabular-nums text-warning">{(stats?.pendingCount ?? 0)}</p>
               </div>
               <p className="text-xs text-muted-foreground">Folyamatban</p>
             </div>
           </CardContent>
         </Card>
+          </>
+        )}
       </div>
 
       {/* Filter toolbar */}
       <Card>
         <CardContent className="p-3">
+          {isFetching ? (
+            <div className="flex flex-wrap gap-2 items-center">
+              <Skeleton className="h-8 w-52 rounded-md" />
+              <Skeleton className="h-8 w-[180px] rounded-md" />
+              <Skeleton className="h-8 w-[180px] rounded-md" />
+              <Skeleton className="h-8 w-[140px] rounded-md" />
+              <Skeleton className="h-8 w-[140px] rounded-md" />
+              <Skeleton className="h-8 w-36 rounded-md" />
+              <Skeleton className="h-3 w-2" />
+              <Skeleton className="h-8 w-36 rounded-md" />
+              <Skeleton className="ml-auto h-4 w-16" />
+            </div>
+          ) : (
           <div className="flex flex-wrap gap-2 items-center">
             {/* Search */}
             <div className="relative">
@@ -3230,33 +3430,98 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
               </PopoverContent>
             </Popover>
 
-            {/* File type filter */}
-            <select
-              value={filterFileType}
-              onChange={e => { setFilterFileType(e.target.value); setPage(1); }}
-              className="h-8 text-xs bg-background border border-input rounded-md px-2 text-foreground"
-              id="files-type-filter"
-            >
-              <option value="">Minden típus</option>
-              <option value="invoice">📄 Számla</option>
-              <option value="transaction">💳 Tranzakció</option>
-              <option value="bank">🏦 Bankkivonat</option>
-              <option value="report">📊 Riport</option>
-            </select>
+            {/* File type filter (Popover + Lucide icons) */}
+            {(() => {
+              const fileTypeOptions: Array<{ value: string; label: string; icon: React.ElementType }> = [
+                { value: '', label: 'Minden típus', icon: FolderOpen },
+                { value: 'invoice', label: 'Számla', icon: FileText },
+                { value: 'transaction', label: 'Tranzakció', icon: CreditCard },
+                { value: 'bank', label: 'Bankkivonat', icon: Landmark },
+                { value: 'report', label: 'Riport', icon: BarChart3 },
+              ];
+              const active = fileTypeOptions.find(o => o.value === filterFileType) || fileTypeOptions[0];
+              const ActiveIcon = active.icon;
+              return (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="h-8 text-xs justify-between min-w-[140px] font-normal gap-2">
+                      <span className="flex items-center gap-1.5 truncate">
+                        <ActiveIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        {active.label}
+                      </span>
+                      <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[180px] p-1" align="start">
+                    {fileTypeOptions.map(opt => {
+                      const Icon = opt.icon;
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => { setFilterFileType(opt.value); setPage(1); }}
+                          className={cn(
+                            "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
+                            filterFileType === opt.value
+                              ? "bg-accent text-accent-foreground font-medium"
+                              : "text-foreground hover:bg-accent/50"
+                          )}
+                        >
+                          <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          {opt.label}
+                          {filterFileType === opt.value && <Check className="h-3 w-3 ml-auto text-primary" />}
+                        </button>
+                      );
+                    })}
+                  </PopoverContent>
+                </Popover>
+              );
+            })()}
 
-            {/* Status filter */}
-            <select
-              value={filterStatus}
-              onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
-              className="h-8 text-xs bg-background border border-input rounded-md px-2 text-foreground"
-              id="files-status-filter"
-            >
-              <option value="">Minden állapot</option>
-              <option value="done">✓ Kész</option>
-              <option value="error">✗ Hiba</option>
-              <option value="processing">⏳ Folyamat</option>
-              <option value="pending">⏳ Várakozik</option>
-            </select>
+            {/* Status filter — 3 unified categories (Popover + Lucide icons) */}
+            {(() => {
+              const statusOptions: Array<{ value: string; label: string; icon: React.ElementType; cls?: string }> = [
+                { value: '', label: 'Minden állapot', icon: FolderOpen },
+                { value: 'success', label: 'Feldolgozva', icon: Check, cls: 'text-success' },
+                { value: 'pending', label: 'Folyamatban', icon: Clock, cls: 'text-warning' },
+                { value: 'error', label: 'Hiba', icon: AlertCircle, cls: 'text-destructive' },
+              ];
+              const active = statusOptions.find(o => o.value === filterStatus) || statusOptions[0];
+              const ActiveIcon = active.icon;
+              return (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="h-8 text-xs justify-between min-w-[140px] font-normal gap-2">
+                      <span className="flex items-center gap-1.5 truncate">
+                        <ActiveIcon className={cn("h-3.5 w-3.5 shrink-0", active.cls || "text-muted-foreground")} />
+                        {active.label}
+                      </span>
+                      <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[180px] p-1" align="start">
+                    {statusOptions.map(opt => {
+                      const Icon = opt.icon;
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => { setFilterStatus(opt.value); setPage(1); }}
+                          className={cn(
+                            "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
+                            filterStatus === opt.value
+                              ? "bg-accent text-accent-foreground font-medium"
+                              : "text-foreground hover:bg-accent/50"
+                          )}
+                        >
+                          <Icon className={cn("h-3.5 w-3.5 shrink-0", opt.cls || "text-muted-foreground")} />
+                          {opt.label}
+                          {filterStatus === opt.value && <Check className="h-3 w-3 ml-auto text-primary" />}
+                        </button>
+                      );
+                    })}
+                  </PopoverContent>
+                </Popover>
+              );
+            })()}
 
             {/* Date range */}
             <Input
@@ -3283,20 +3548,94 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
             )}
 
             <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-              {isLoading ? <Skeleton className="h-4 w-16 inline-block" /> : `${totalRows} rekord`}
+              {`${totalRows} rekord`}
             </span>
           </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Bulk action bar */}
+      {selectedFiles.size > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm font-medium">
+                {selectedFiles.size} fájl kijelölve
+              </span>
+              <div className="h-4 w-px bg-border" />
+              <span className="text-xs text-muted-foreground">Állapot módosítása:</span>
+              <Button
+                size="sm" variant="outline"
+                className="h-7 text-xs gap-1.5 border-success/30 hover:bg-success/10"
+                onClick={() => handleBulkStatusUpdate('done')}
+                disabled={bulkUpdating}
+              >
+                <Check className="h-3 w-3 text-success" />
+                Feldolgozva
+              </Button>
+              <Button
+                size="sm" variant="outline"
+                className="h-7 text-xs gap-1.5 border-warning/30 hover:bg-warning/10"
+                onClick={() => handleBulkStatusUpdate('pending')}
+                disabled={bulkUpdating}
+              >
+                <Clock className="h-3 w-3 text-warning" />
+                Folyamatban
+              </Button>
+              <Button
+                size="sm" variant="outline"
+                className="h-7 text-xs gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => handleBulkStatusUpdate('error')}
+                disabled={bulkUpdating}
+              >
+                <AlertCircle className="h-3 w-3 text-destructive" />
+                Hiba
+              </Button>
+              <div className="h-4 w-px bg-border" />
+              <Button
+                size="sm" variant="ghost"
+                className="h-7 text-xs gap-1 text-muted-foreground"
+                onClick={() => setSelectedFiles(new Set())}
+                disabled={bulkUpdating}
+              >
+                <X className="h-3 w-3" />
+                Kijelölés törlése
+              </Button>
+              {bulkUpdating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Data table */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm" role="table">
+            <table className="w-full text-sm" role="table" style={{ tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: 36 }} />
+                <col style={{ width: 40 }} />
+                <col style={{ width: '18%' }} />
+                <col style={{ width: 90 }} />
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '11%' }} />
+                <col style={{ width: 140 }} />
+                <col style={{ width: 80 }} />
+                <col style={{ width: 90 }} />
+                <col style={{ width: 90 }} />
+              </colgroup>
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-xs bg-muted/30">
-                  <th className="text-left py-2.5 px-4 font-medium w-10"></th>
+                  <th className="py-2.5 px-2 font-medium w-9">
+                    <input
+                      type="checkbox"
+                      className="h-3.5 w-3.5 rounded border-input accent-primary cursor-pointer"
+                      checked={fileRows.length > 0 && fileRows.every((r: any) => selectedFiles.has(`${r.source_table}:${r.id}`))}
+                      onChange={selectAllOnPage}
+                    />
+                  </th>
+                  <th className="text-left py-2.5 px-4 font-medium"></th>
                   <th className="text-left py-2.5 px-2 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort('file_name')}>
                     Fájlnév <SortIcon col="file_name" />
                   </th>
@@ -3320,9 +3659,10 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {isLoading ? (
+                {isFetching ? (
                   Array.from({ length: 8 }).map((_, i) => (
                     <tr key={i}>
+                      <td className="py-3 px-2"><Skeleton className="h-4 w-4" /></td>
                       <td className="py-3 px-4"><Skeleton className="h-5 w-8" /></td>
                       <td className="py-3 px-2"><Skeleton className="h-4 w-48" /></td>
                       <td className="py-3 px-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
@@ -3336,7 +3676,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                   ))
                 ) : fileRows.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">
+                    <td colSpan={10} className="text-center py-12 text-muted-foreground text-sm">
                       <FolderOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
                       Nincs találat
                     </td>
@@ -3353,6 +3693,14 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                         aria-expanded={isExpanded}
                         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedId(isExpanded ? null : row.id); } }}
                       >
+                        <td className="py-2.5 px-2" onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="h-3.5 w-3.5 rounded border-input accent-primary cursor-pointer"
+                            checked={selectedFiles.has(`${row.source_table}:${row.id}`)}
+                            onChange={() => toggleFileSelection(`${row.source_table}:${row.id}`)}
+                          />
+                        </td>
                         <td className="py-2.5 px-4">
                           <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                         </td>
@@ -3388,7 +3736,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                           {formatFileSize(row.file_size)}
                         </td>
                         <td className="py-2.5 px-3">
-                          {processingStatusBadge(row.processing_status)}
+                          {processingStatusBadge(row.processing_status, row.error_message)}
                         </td>
                         <td className="py-2.5 px-4">
                           <div className="flex justify-end gap-1">
@@ -3436,18 +3784,18 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                       {/* Expanded row: error message + details */}
                       {isExpanded && (
                         <tr>
-                          <td colSpan={9} className="p-0">
-                            <div className="bg-muted/20 border-t border-border/50 px-10 py-3 animate-in slide-in-from-top-1 duration-200">
+                          <td colSpan={10} className="p-0">
+                            <div className="bg-muted/20 border-t border-border/50 px-10 py-3 animate-in slide-in-from-top-1 duration-200 overflow-hidden">
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-1 text-xs">
                                 <div><span className="text-muted-foreground">Forrástábla: </span><span className="font-mono">{row.source_table}_uploads</span></div>
                                 <div><span className="text-muted-foreground">Upload státusz: </span><span>{row.upload_status || '—'}</span></div>
-                                <div><span className="text-muted-foreground">MIME típus: </span><span className="font-mono">{row.file_type || '—'}</span></div>
+                                <div><span className="text-muted-foreground">MIME típus: </span><span className="font-mono truncate">{row.file_type || '—'}</span></div>
                                 <div><span className="text-muted-foreground">Frissítve: </span><span>{row.updated_at ? new Date(row.updated_at).toLocaleString('hu-HU') : '—'}</span></div>
                               </div>
                               {row.error_message && (
-                                <div className="mt-2 flex items-start gap-2 rounded-md bg-destructive/8 border border-destructive/20 px-3 py-2">
+                                <div className="mt-2 flex items-start gap-2 rounded-md bg-destructive/8 border border-destructive/20 px-3 py-2 overflow-hidden">
                                   <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
-                                  <span className="text-xs text-destructive">{row.error_message}</span>
+                                  <span className="text-xs text-destructive break-words min-w-0">{row.error_message}</span>
                                 </div>
                               )}
                             </div>
@@ -3462,7 +3810,14 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {isFetching ? (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+              <Skeleton className="h-4 w-32" />
+              <div className="flex gap-1">
+                {[0,1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-7 w-7 rounded-md" />)}
+              </div>
+            </div>
+          ) : totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-border">
               <span className="text-xs text-muted-foreground tabular-nums">
                 {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalRows)} / {totalRows} rekord

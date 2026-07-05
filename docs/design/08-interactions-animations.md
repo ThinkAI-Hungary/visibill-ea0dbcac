@@ -16,30 +16,85 @@ A eaisybill tudatosan **flat design**-t követ:
 
 ## Hover Patternek
 
+### ⚠️ Alapszabály: Hover = Interaktív
+
+> **Csak interaktív (kattintható) elemek kaphatnak hover effektet.** Ha egy elem nem reagál kattintásra, a hover effekt UX anti-pattern — a felhasználót félrevezeti.
+
+### Badge — SOHA nincs hover
+
+A `Badge` komponens (`ui/badge.tsx`) **informatív címke**, nem gomb. Nincs rajta `hover:bg-*`, nincs `transition-colors`.
+
+```tsx
+// ✅ HELYES — Badge statikus, nincs hover
+<Badge variant="destructive">Hiba</Badge>
+<Badge className="bg-amber-500/15 text-amber-700">Figyelmeztetés</Badge>
+
+// ❌ TILOS — Badge-re hover effekt
+<Badge className="hover:bg-primary/80">Kattints</Badge>  // NEM! → Button kell
+```
+
+**Ha kattintható elem kell badge-szerű megjelenéssel** → használj `<button>` elemet saját stílussal (ld. `RoleBadge` minta a `PermissionMatrixPage.tsx`-ben).
+
 ### Gombok (Button)
 
+**Variant hover szabályok (`ui/button.tsx`):**
+
 ```css
-/* Default button */
-hover:bg-primary/90                          /* Sötétebb teal */
+/* Default — light: sötétebb teal, dark: finom háttér */
+hover:bg-primary/90
+dark:hover:bg-primary/20
 
-/* Outline button */
-hover:bg-primary/10 hover:text-primary hover:border-primary/30
+/* Destructive — light: sötétebb piros, dark: finom háttér */
+hover:bg-destructive/90
+dark:bg-destructive/15 dark:hover:bg-destructive/25
 
-/* Ghost button */
+/* Outline — semleges accent hover (nem primary!) */
+hover:bg-accent/50 hover:text-accent-foreground
+
+/* Ghost — semleges accent hover */
 hover:bg-accent/50 hover:text-accent-foreground
 
 /* Sidebar action gombok */
 hover:bg-primary/10 hover:text-primary hover:border-primary/30
 ```
 
-### Sidebar Menüelemek
+### ⚠️ Inline szín override szabály
 
-```css
-/* Aktív elem */
-[data-active="true"] → SidebarMenuButton isActive styling
+Ha egy `outline` Button-on felülírod a szöveget/border-t (pl. destructive styled outline gomb), **MINDIG add hozzá a `hover:text-*`-t is**, különben a base variant `hover:text-accent-foreground` felülírja a szín intent-et.
 
-/* Disabled (nincs company) */
-grayscale opacity-50 cursor-not-allowed
+```tsx
+// ✅ HELYES — explicit hover:text-destructive megtartja a piros szín intent-et
+<Button variant="outline"
+  className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
+  Törlés
+</Button>
+
+// ❌ ROSSZ — hover-kor a text accent szürke/fehérre vált, nem marad piros
+<Button variant="outline"
+  className="border-destructive/30 text-destructive hover:bg-destructive/10">
+  Törlés
+</Button>
+```
+
+**Ugyanez primary-ra:**
+```tsx
+// ✅ HELYES
+<Button variant="outline"
+  className="border-primary/30 text-primary hover:bg-primary/10 hover:text-primary">
+  Újra
+</Button>
+```
+
+### Inline ikonok hover (nem Button komponens)
+
+Sor-szintű akció ikonok (pl. táblázat sorvégi gombok) `<button>` elemet használnak, nem `Button` komponenst:
+
+```tsx
+// Retry ikon — primary tónusú
+<button className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors">
+
+// Delete ikon — destructive tónusú
+<button className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
 ```
 
 ### Interactive Class

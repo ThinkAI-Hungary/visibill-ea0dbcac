@@ -1,7 +1,7 @@
 # A-019: Management Dashboard Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12 (last updated 2026-06-28)
+**Date:** 2025-12 (last updated 2026-07-05)
 
 ## Context
 
@@ -46,7 +46,7 @@ if (requesterProfile?.role !== "management" && requesterProfile?.role !== "think
 
 ### API Design: Action-based Query Params
 
-Egyetlen Edge Function, 11 action:
+Egyetlen Edge Function, 13 action:
 
 | Action | Params | Visszatérés |
 |---|---|---|
@@ -59,6 +59,8 @@ Egyetlen Edge Function, 11 action:
 | `delete-errors` | POST body: `{ ids }` | Hibák törlése (app_error_logs: DELETE, upload táblák: dismissed) |
 | `delete-all-errors` | POST (no body) | Összes hiba törlése: app_error_logs DELETE + upload táblák error→dismissed |
 | `retry-errors` | POST body: `{ ids, targetQueue?, targetCategory? }` | Hibák újraküldése PGMQ queue-ba (pipeline override) |
+| `files` | `page`, `pageSize`, `sortBy`, `sortDir`, `search`, `companyId`, `status`, `source_table`, `dateFrom`, `dateTo` | KPI: total/processing/error/done, topCompany. Fájlok lapozott listája 4 upload táblából (invoice/transaction/bank_statement/report_uploads) |
+| `update-file-status` | POST body: `{ files: [{id, source_table}], targetStatus }` | Bulk fájl státusz módosítás. `done` → automatikus mapping: `processed` (invoice_uploads) / `completed` (többi). Max 200 fájl/batch. Nem triggerel PGMQ worker-t (kozmetikai változás). |
 | `superadmin-module-data` | `companyId`, `module`, `page`, `pageSize`, `dateFrom`, `dateTo`, `search` | Cégenként 27 modul bármelyikének lapozott adatai (rows[], totalCount) |
 
 ### Adatforrások
@@ -154,10 +156,45 @@ Az Edge Function **mindig érvényes JSON-t ad vissza** — hiba esetén üres a
 - A frontend **soha nem kapja meg** a service_role kulcsot
 - 3 rétegű auth (frontend guard + JWT validation + role check)
 
+### Fájl Státusz Normalizáció (Files Panel)
+
+A 4 upload tábla (`invoice_uploads`, `transaction_uploads`, `bank_statement_uploads`, `report_uploads`) sokféle `processing_status` értéket tartalmaz. A management dashboard ezeket **3 kategóriába** normalizálja:
+
+| Kategória | DB státuszok | Badge szín |
+|-----------|-------------|------------|
+| **Feldolgozva** (success) | `done`, `completed`, `processed` | 🟢 zöld |
+| **Hiba** (error) | `error`, `failed`, `ignored`, `dismissed`, `webhook_failed` | 🔴 piros |
+| **Folyamatban** (pending) | **minden más** (pl. `webhook_sent`, `processing`, `pending`, `null`) | 🟡 sárga |
+
+#### Exklúziós logika
+
+> **`pendingCount = total - successCount - errorCount`**
+
+A pending számolás **nem explicit listával** történik, hanem exklúzióval. Ez biztosítja, hogy bármilyen jövőbeli új státusz (pl. `ocr_processing`, `ai_classifying`) automatikusan a "Folyamatban" kategóriába essen anélkül, hogy az EF kódot frissíteni kellene.
+
+#### Error message elsőbbség
+
+> **Ha egy fájlnak van `error_message` mezője → automatikusan "Hiba" kategóriába kerül**, függetlenül a `processing_status` értékétől.
+
+Ez azért szükséges, mert bizonyos webhook hibáknál a `processing_status` `webhook_sent` marad, de az `error_message` már tartalmazza a hiba leírását (pl. `"Webhook failed: 404 Not Found"`).
+
+```typescript
+// EF (management-stats/index.ts)
+const isError = (r) => ERROR_STATUSES.has(r.processing_status) || !!r.error_message;
+const isSuccess = (r) => !r.error_message && SUCCESS_STATUSES.has(r.processing_status);
+
+// FE (ManagementDashboard.tsx)
+function normalizeStatus(status, errorMessage?) {
+  if (errorMessage) return 'error';     // error_message wins
+  if (!status) return 'pending';
+  switch (status) { /* ... */ }
+}
+```
+
 ## Consequences
 
 **Pozitív:**
-- Egyetlen Edge Function, 11 action → egyszerű deployment
+- Egyetlen Edge Function, 13 action → egyszerű deployment
 - Service_role az Edge Function-ben → biztonságos cross-tenant hozzáférés
 - Server-side pagination → LLM tábla és superadmin modulok akárhány rekordra skálázódnak
 - `keepPreviousData` → lapozás közben nincs villogás

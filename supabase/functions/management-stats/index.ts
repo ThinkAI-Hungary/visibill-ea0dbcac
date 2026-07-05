@@ -259,6 +259,12 @@ serve(async (req) => {
       return json(await buildFiles(admin, url));
     }
 
+    if (action === "update-file-status") {
+      if (req.method !== "POST") return json({ error: "POST required" });
+      const body = await req.json().catch(() => ({}));
+      return json(await updateFileStatus(admin, body));
+    }
+
     return json({ error: "Unknown action", ...emptyOverview });
   } catch (error) {
     console.error("[MANAGEMENT-STATS] Unexpected error", error);
@@ -1890,7 +1896,7 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
     let q = admin.from(tableName).select("*");
     if (companyId) q = q.eq("company_id", companyId);
     if (userId) q = q.eq("user_id", userId);
-    if (status) q = q.eq("processing_status", status);
+    // NOTE: status filter is applied in-memory AFTER stats are computed
     if (search) q = q.ilike("file_name", `%${search}%`);
     if (dateFrom) q = q.gte("created_at", dateFrom);
     if (dateTo) q = q.lte("created_at", `${dateTo}T23:59:59`);
@@ -1941,30 +1947,133 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
     updated_at: row.updated_at,
   }));
 
+  // Stats are computed from ALL rows (before status filter) so KPI cards always show global counts
+  const SUCCESS_STATUSES = new Set(["done", "completed", "processed"]);
+  const ERROR_STATUSES = new Set(["error", "failed", "ignored", "dismissed", "webhook_failed"]);
+
+  // Helper: a row is an error if its status is in ERROR_STATUSES OR it has an error_message
+  const isError = (r: typeof mappedRows[0]) => ERROR_STATUSES.has(r.processing_status || "") || !!r.error_message;
+  const isSuccess = (r: typeof mappedRows[0]) => !r.error_message && SUCCESS_STATUSES.has(r.processing_status || "");
+
+  const stats = {
+    totalCount: mappedRows.length,
+    successCount: mappedRows.filter(isSuccess).length,
+    errorCount: mappedRows.filter(isError).length,
+    pendingCount: 0, // computed below
+  };
+  stats.pendingCount = stats.totalCount - stats.successCount - stats.errorCount;
+
+  // Apply status filter in-memory AFTER stats
+  let filteredRows = mappedRows;
+  if (status) {
+    const vals = status.split(",");
+    const wantPending = vals.includes("pending");
+    const wantError = vals.some(v => ERROR_STATUSES.has(v)) || vals.includes("pending") === false;
+    filteredRows = mappedRows.filter(r => {
+      const s = r.processing_status || "";
+      // Explicit status match
+      if (vals.includes(s)) return true;
+      // Error category: also match rows with error_message regardless of processing_status
+      if (isError(r) && !isSuccess(r)) {
+        // Check if any error-related value is requested
+        if (vals.some(v => ERROR_STATUSES.has(v))) return true;
+      }
+      // Pending category: anything not success and not error
+      if (wantPending && !isSuccess(r) && !isError(r)) return true;
+      return false;
+    });
+  }
+
   const safeSort = (['created_at', 'file_name', 'file_size', 'company_name', 'user_name', 'processing_status'].includes(sortBy) ? sortBy : 'created_at') as keyof typeof mappedRows[0];
   
-  mappedRows.sort((a, b) => {
+  filteredRows.sort((a, b) => {
     const va = a[safeSort] ?? "";
     const vb = b[safeSort] ?? "";
     if (sortDir === "ASC") return va < vb ? -1 : va > vb ? 1 : 0;
     return va > vb ? -1 : va < vb ? 1 : 0;
   });
 
-  const stats = {
-    totalCount: mappedRows.length,
-    successCount: mappedRows.filter(r => 
-      r.processing_status === "done" || 
-      r.processing_status === "completed" || 
-      r.processing_status === "ignored" ||
-      (r.source_table === "invoice" && r.processing_status === "processed")
-    ).length,
-    errorCount: mappedRows.filter(r => r.processing_status === "error" || r.processing_status === "failed").length,
-    pendingCount: mappedRows.filter(r => r.processing_status === "processing" || r.processing_status === "pending" || !r.processing_status).length,
+  return {
+    totalRows: filteredRows.length,
+    files: filteredRows.slice(offset, offset + pageSize),
+    stats,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UPDATE FILE STATUS: batch update processing_status for selected files
+// ─────────────────────────────────────────────────────────────────────────────
+const VALID_TABLES: Record<string, string> = {
+  invoice: "invoice_uploads",
+  transaction: "transaction_uploads",
+  bank: "bank_statement_uploads",
+  report: "report_uploads",
+};
+const VALID_STATUSES = ["done", "pending", "error", "ignored", "processing"];
+
+async function updateFileStatus(
+  admin: ReturnType<typeof createClient>,
+  body: { files?: Array<{ id: string; source_table: string }>; targetStatus?: string }
+) {
+  const { files, targetStatus } = body;
+
+  if (!files || !Array.isArray(files) || files.length === 0) {
+    return { error: "files array required", updated: 0 };
+  }
+  if (!targetStatus || !VALID_STATUSES.includes(targetStatus)) {
+    return { error: `Invalid targetStatus. Valid: ${VALID_STATUSES.join(", ")}`, updated: 0 };
+  }
+  if (files.length > 200) {
+    return { error: "Max 200 files per batch", updated: 0 };
+  }
+
+  // Map generic "done" to table-specific done status
+  // invoice_uploads worker uses "processed", others use "completed"
+  const DONE_STATUS_MAP: Record<string, string> = {
+    invoice_uploads: "processed",
+    transaction_uploads: "completed",
+    bank_statement_uploads: "completed",
+    report_uploads: "completed",
   };
 
+  // Group files by source_table for batch updates
+  const grouped = new Map<string, string[]>();
+  for (const f of files) {
+    const tableName = VALID_TABLES[f.source_table];
+    if (!tableName) continue;
+    const ids = grouped.get(tableName) || [];
+    ids.push(f.id);
+    grouped.set(tableName, ids);
+  }
+
+  let totalUpdated = 0;
+  const errors: string[] = [];
+
+  await Promise.all(
+    Array.from(grouped.entries()).map(async ([tableName, ids]) => {
+      // Resolve the actual status value for this table
+      const resolvedStatus = targetStatus === "done"
+        ? (DONE_STATUS_MAP[tableName] || "completed")
+        : targetStatus;
+
+      const { data, error } = await admin
+        .from(tableName)
+        .update({ processing_status: resolvedStatus, updated_at: new Date().toISOString() })
+        .in("id", ids)
+        .select("id");
+
+      if (error) {
+        errors.push(`${tableName}: ${error.message}`);
+      } else {
+        totalUpdated += data?.length ?? 0;
+      }
+    })
+  );
+
   return {
-    totalRows: mappedRows.length,
-    files: mappedRows.slice(offset, offset + pageSize),
-    stats,
+    success: errors.length === 0,
+    updated: totalUpdated,
+    requested: files.length,
+    ...(errors.length > 0 ? { errors } : {}),
   };
 }
