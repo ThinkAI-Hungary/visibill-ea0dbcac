@@ -46,6 +46,7 @@ import {
   ChevronRight,
   HelpCircle,
 } from "lucide-react";
+import { UnifiedPagination } from "@/components/ui/unified-pagination";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
 import { TicketPriorityBadge } from "@/components/tickets/TicketPriorityBadge";
 import { TicketDetailView } from "@/components/tickets/TicketDetailView";
@@ -97,6 +98,21 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   const { mutateAsync: updateAssignee } = useUpdateTicketAssignee();
   const { mutateAsync: updateStatus } = useUpdateTicketStatus();
 
+  // Helper: update search params without overwriting parent dashboard params
+  const updateParams = (updates: Record<string, string | null>) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      for (const [k, v] of Object.entries(updates)) {
+        if (v === null) {
+          next.delete(k);
+        } else {
+          next.set(k, v);
+        }
+      }
+      return next;
+    });
+  };
+
   // Triage state
   const [selectedTicketIds, setSelectedTicketIds] = useState<Set<string>>(new Set());
   const [batchAssignee, setBatchAssignee] = useState<string>("");
@@ -121,7 +137,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   }, [tickets, search, priorityFilter, serviceFilter, selectedStatuses]);
 
   const [page, setPage] = useState(1);
-  const pageSize = isAdmin ? 25 : 15;
+  const pageSize = embeddedInManagement && isAdmin ? 25 : 15;
 
   React.useEffect(() => {
     setPage(1);
@@ -132,6 +148,20 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
     const start = (page - 1) * pageSize;
     return filteredTickets.slice(start, start + pageSize);
   }, [filteredTickets, page, pageSize]);
+
+  // Assignment view pagination (10/page)
+  const [assignmentPage, setAssignmentPage] = useState(1);
+  const assignmentPageSize = 10;
+
+  React.useEffect(() => {
+    setAssignmentPage(1);
+  }, [search, selectedStatuses, priorityFilter, serviceFilter]);
+
+  const assignmentTotalPages = Math.ceil(filteredTickets.length / assignmentPageSize);
+  const paginatedAssignmentTickets = useMemo(() => {
+    const start = (assignmentPage - 1) * assignmentPageSize;
+    return filteredTickets.slice(start, start + assignmentPageSize);
+  }, [filteredTickets, assignmentPage, assignmentPageSize]);
 
   // KPIs
   const kpis = useMemo(() => {
@@ -175,7 +205,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
 
   const openTicket = (id: string) => {
     if (embeddedInManagement) {
-      setSearchParams({ view: "tickets", subView: "console", id });
+      updateParams({ subView: "console", id });
     } else if (isAccounty) {
       navigate(`/accounty/tickets/${id}`);
     } else if (isStandalone) {
@@ -202,7 +232,8 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
         if (batchAssignee) {
           promises.push(updateAssignee({
             feedbackId: id,
-            assignedTo: batchAssignee === "unassigned" ? null : batchAssignee
+            assignedTo: batchAssignee === "unassigned" ? null : batchAssignee,
+            force: true, // batch triage is intentional admin reassignment
           }));
         }
         if (batchStatus) {
@@ -222,10 +253,13 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
       setBatchStatus("");
       refetch();
     } catch (err: any) {
+      const msg = err?.message === "ALREADY_ASSIGNED"
+        ? "Egy vagy több jegy már ki van osztva egy másik support munkatárshoz."
+        : (err?.message || "Ismeretlen hiba lépett fel.");
       toast({
         variant: "destructive",
         title: "Tömeges frissítési hiba",
-        description: err?.message || "Ismeretlen hiba lépett fel.",
+        description: msg,
       });
     } finally {
       setBatchUpdating(false);
@@ -252,9 +286,9 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
     if (tab === 'console' && !ticketId && tickets.length > 0) {
       // Auto-load first active ticket in console view
       const active = tickets.find(t => t.status !== 'resolved') || tickets[0];
-      setSearchParams({ view: "tickets", subView: "console", id: active.id });
+      updateParams({ subView: "console", id: active.id });
     } else {
-      setSearchParams({ view: "tickets", subView: tab });
+      updateParams({ subView: tab, id: null });
     }
   };
 
@@ -264,10 +298,10 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   const renderTabsHeader = () => {
     if (!embeddedInManagement || !isAdmin) return null;
     return (
-      <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 mb-6 max-w-2xl">
+      <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 mb-6 w-fit gap-1">
         <button
           onClick={() => setSubTab('list')}
-          className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
             subView === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -276,7 +310,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
         </button>
         <button
           onClick={() => setSubTab('console')}
-          className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
             subView === 'console' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -285,7 +319,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
         </button>
         <button
           onClick={() => setSubTab('analytics')}
-          className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
             subView === 'analytics' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -294,7 +328,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
         </button>
         <button
           onClick={() => setSubTab('assignment')}
-          className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
             subView === 'assignment' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -310,11 +344,17 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   // ────────────────────────────────────────────────────────
   const renderListView = () => {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 content-animate">
         {/* KPI stat matrix */}
         {embeddedInManagement && isAdmin && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+            {/* Összes függő */}
+            <Card
+              className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
+                selectedStatuses.length === 0 && priorityFilter === 'all' ? '' : 'opacity-60 hover:opacity-100'
+              }`}
+              onClick={() => { setSelectedStatuses([]); setPriorityFilter('all'); }}
+            >
               <CardContent className="p-5 flex items-start gap-4">
                 <div className="h-10 w-10 rounded-lg bg-info/10 flex items-center justify-center border border-info/20 text-info">
                   <Inbox className="h-5 w-5" />
@@ -325,7 +365,13 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                 </div>
               </CardContent>
             </Card>
-            <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+            {/* Kritikus SLA */}
+            <Card
+              className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
+                priorityFilter === 'critical' ? 'ring-1 ring-destructive/50' : ''
+              }`}
+              onClick={() => { setSelectedStatuses([]); setPriorityFilter(priorityFilter === 'critical' ? 'all' : 'critical'); }}
+            >
               <CardContent className="p-5 flex items-start gap-4">
                 <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center border border-destructive/20 text-destructive">
                   <ShieldAlert className="h-5 w-5" />
@@ -336,7 +382,17 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                 </div>
               </CardContent>
             </Card>
-            <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+            {/* Folyamatban */}
+            <Card
+              className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
+                selectedStatuses.length === 1 && selectedStatuses[0] === 'in_progress' ? 'ring-1 ring-warning/50' : ''
+              }`}
+              onClick={() => {
+                const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === 'in_progress';
+                setSelectedStatuses(isActive ? [] : ['in_progress']);
+                setPriorityFilter('all');
+              }}
+            >
               <CardContent className="p-5 flex items-start gap-4">
                 <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center border border-warning/20 text-warning">
                   <Clock className="h-5 w-5" />
@@ -347,7 +403,17 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                 </div>
               </CardContent>
             </Card>
-            <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
+            {/* Megoldott jegyek */}
+            <Card
+              className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
+                selectedStatuses.length === 1 && selectedStatuses[0] === 'resolved' ? 'ring-1 ring-success/50' : ''
+              }`}
+              onClick={() => {
+                const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === 'resolved';
+                setSelectedStatuses(isActive ? [] : ['resolved']);
+                setPriorityFilter('all');
+              }}
+            >
               <CardContent className="p-5 flex items-start gap-4">
                 <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center border border-success/20 text-success">
                   <CheckCircle2 className="h-5 w-5" />
@@ -586,50 +652,15 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
 
         {/* Pagination controls */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-2 py-4">
-            <span className="text-xs text-muted-foreground">
-              Összesen {filteredTickets.length} hibajegy ({page}. / {totalPages} oldal)
-            </span>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="h-8 w-8 p-0"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
-                if (totalPages > 6 && Math.abs(p - page) > 1 && p !== 1 && p !== totalPages) {
-                  if (p === 2 || p === totalPages - 1) {
-                    return <span key={p} className="text-xs text-muted-foreground/60 px-1">...</span>;
-                  }
-                  return null;
-                }
-                return (
-                  <Button
-                    key={p}
-                    variant={page === p ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setPage(p)}
-                    className="h-8 w-8 text-xs p-0"
-                  >
-                    {p}
-                  </Button>
-                );
-              })}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="h-8 w-8 p-0"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <UnifiedPagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={filteredTickets.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={() => {}}
+            pageSizeOptions={[15]}
+          />
         )}
       </div>
     );
@@ -640,9 +671,9 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   // ────────────────────────────────────────────────────────
   const renderConsoleView = () => {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)] min-h-[500px]">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)] min-h-[500px] overflow-hidden content-animate">
         {/* Left Column: Unresolved Active Tickets List */}
-        <div className="lg:col-span-1 border border-border bg-card/40 backdrop-blur-md rounded-xl overflow-hidden flex flex-col">
+        <div className="lg:col-span-1 min-h-0 border border-border bg-card/40 backdrop-blur-md rounded-xl overflow-hidden flex flex-col">
           <div className="p-3 border-b border-border bg-muted/10">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Függőben lévő jegyek</h3>
             <div className="relative">
@@ -655,15 +686,15 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
               />
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto divide-y divide-border/40">
+          <div className="flex-1 overflow-y-auto">
             {tickets.filter(t => t.status !== 'resolved').map(t => {
               const active = t.id === ticketId;
               return (
                 <button
                   key={t.id}
-                  onClick={() => setSearchParams({ view: "tickets", subView: "console", id: t.id })}
-                  className={`w-full text-left p-3 flex flex-col gap-1.5 transition-colors ${
-                    active ? 'bg-primary/10 border-l-2 border-l-primary' : 'hover:bg-accent/40'
+                  onClick={() => updateParams({ subView: "console", id: t.id })}
+                  className={`w-full text-left p-3 flex flex-col gap-1.5 transition-colors border-l-2 border-t border-border/40 first:border-t-0 ${
+                    active ? 'bg-primary/10 border-l-primary' : 'border-l-transparent hover:bg-accent/40'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-1.5 w-full">
@@ -695,12 +726,16 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
         </div>
 
         {/* Right Column: Ticket Conversation Thread + Panel */}
-        <div className="lg:col-span-3 flex flex-col h-full">
+        <div className="lg:col-span-3 min-h-0 flex flex-col">
           {ticketId ? (
             <div className="flex-1 border border-border bg-card/30 backdrop-blur-md rounded-xl overflow-hidden p-6 overflow-y-auto">
               <TicketDetailView
                 feedbackId={ticketId}
-                onBack={() => setSearchParams({ view: "tickets", subView: "console" })}
+                onBack={() => updateParams({ id: null })}
+                onDeleted={() => {
+                  refetch();
+                  updateParams({ id: null });
+                }}
               />
             </div>
           ) : (
@@ -722,7 +757,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   // ────────────────────────────────────────────────────────
   const renderAnalyticsView = () => {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 content-animate">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Chart Left: Incoming Tickets */}
           <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
@@ -791,7 +826,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   // ────────────────────────────────────────────────────────
   const renderAssignmentView = () => {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 content-animate">
         {/* Left: Triage table */}
         <div className="lg:col-span-2 space-y-4">
           {/* Batch Actions console */}
@@ -845,8 +880,16 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                   <TableRow>
                     <TableHead className="w-10 text-center">
                       <Checkbox
-                        checked={selectedTicketIds.size === filteredTickets.length && filteredTickets.length > 0}
-                        onCheckedChange={toggleSelectAll}
+                        checked={paginatedAssignmentTickets.length > 0 && paginatedAssignmentTickets.every(t => selectedTicketIds.has(t.id))}
+                        onCheckedChange={(checked) => {
+                          setSelectedTicketIds(prev => {
+                            const next = new Set(prev);
+                            paginatedAssignmentTickets.forEach(t => {
+                              if (checked) next.add(t.id); else next.delete(t.id);
+                            });
+                            return next;
+                          });
+                        }}
                       />
                     </TableHead>
                     <TableHead className="w-[120px]">Jegyszám</TableHead>
@@ -856,7 +899,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTickets.map(t => (
+                  {paginatedAssignmentTickets.map(t => (
                     <TableRow key={t.id} className="hover:bg-muted/30">
                       <TableCell className="text-center">
                         <Checkbox
@@ -874,17 +917,42 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredTickets.length === 0 && (
+                  {paginatedAssignmentTickets.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground text-xs">
                         Nincs a szűrésnek megfelelő hibajegy
                       </TableCell>
                     </TableRow>
                   )}
+                  {/* Placeholder rows to maintain consistent table height */}
+                  {paginatedAssignmentTickets.length > 0 && paginatedAssignmentTickets.length < assignmentPageSize &&
+                    Array.from({ length: assignmentPageSize - paginatedAssignmentTickets.length }).map((_, i) => (
+                      <TableRow key={`placeholder-${i}`} className="pointer-events-none h-[56px]">
+                        <TableCell />
+                        <TableCell />
+                        <TableCell />
+                        <TableCell />
+                        <TableCell />
+                      </TableRow>
+                    ))
+                  }
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
+
+          {/* Pagination controls */}
+          {assignmentTotalPages > 1 && (
+            <UnifiedPagination
+              currentPage={assignmentPage}
+              totalPages={assignmentTotalPages}
+              totalItems={filteredTickets.length}
+              pageSize={assignmentPageSize}
+              onPageChange={setAssignmentPage}
+              onPageSizeChange={() => {}}
+              pageSizeOptions={[10]}
+            />
+          )}
         </div>
 
         {/* Right: Agent workloads */}
@@ -946,7 +1014,13 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
     return (
       <TicketDetailView
         feedbackId={ticketId}
-        onBack={embeddedInManagement ? () => setSearchParams({ view: 'tickets' }) : undefined}
+        onBack={embeddedInManagement ? () => updateParams({ id: null, subView: null }) : undefined}
+        onDeleted={() => {
+          refetch();
+          if (embeddedInManagement) {
+            updateParams({ id: null, subView: null });
+          }
+        }}
       />
     );
   }
@@ -975,11 +1049,11 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
       {/* Admin sub-tabs switcher */}
       {renderTabsHeader()}
 
-      {/* Render sub-views */}
-      {subView === 'list' && renderListView()}
-      {subView === 'console' && renderConsoleView()}
-      {subView === 'analytics' && renderAnalyticsView()}
-      {subView === 'assignment' && renderAssignmentView()}
+      {/* Render sub-views — key forces remount for smooth animation */}
+      {subView === 'list' && <div key="list">{renderListView()}</div>}
+      {subView === 'console' && <div key="console">{renderConsoleView()}</div>}
+      {subView === 'analytics' && <div key="analytics">{renderAnalyticsView()}</div>}
+      {subView === 'assignment' && <div key="assignment">{renderAssignmentView()}</div>}
     </div>
   );
 }

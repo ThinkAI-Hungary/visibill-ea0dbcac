@@ -127,6 +127,8 @@ export default function PartnersPage() {
   // Invoice tab state in right panel
   const [invoiceTab, setInvoiceTab] = useState<'nav' | 'uploaded'>('nav');
   const [invoiceSearch, setInvoiceSearch] = useState('');
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoicePageSize, setInvoicePageSize] = useState(50);
   // Ranking section collapsible state (default open, persisted)
   const [rankingOpen, setRankingOpen] = useState(() => {
     const saved = localStorage.getItem('partners-ranking-open');
@@ -171,7 +173,7 @@ export default function PartnersPage() {
           .order("name", { ascending: true }),
         supabase.from("nav_invoices").select("supplier_tax_number").eq("company_id", selectedCompany.id),
         supabase.from("nav_invoices").select("customer_tax_number").eq("company_id", selectedCompany.id),
-        supabase.from("invoices").select("elado_vat_id, vevo_vat_id").eq("company_id", selectedCompany.id),
+        supabase.from("invoices").select("elado_vat_id, vevo_vat_id, elado_nev, vevo_nev").eq("company_id", selectedCompany.id),
       ]);
 
       if (partnerError) throw partnerError;
@@ -193,6 +195,8 @@ export default function PartnersPage() {
         }
       });
       // Uploaded invoices — count BOTH elado and vevo sides independently
+      // Build both tax-based AND name-based count maps
+      const nameCountsMap: Record<string, number> = {}; // key: lowercase partner name
       (uploadedCounts || []).forEach((inv: any) => {
         if (inv.elado_vat_id) {
           const cleanTax = inv.elado_vat_id.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
@@ -202,9 +206,18 @@ export default function PartnersPage() {
           const cleanTax = inv.vevo_vat_id.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
           countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
         }
+        // Name-based counts for invoices where tax ID is missing
+        if (inv.elado_nev && !inv.elado_vat_id) {
+          const key = inv.elado_nev.toLowerCase().trim();
+          nameCountsMap[key] = (nameCountsMap[key] || 0) + 1;
+        }
+        if (inv.vevo_nev && !inv.vevo_vat_id) {
+          const key = inv.vevo_nev.toLowerCase().trim();
+          nameCountsMap[key] = (nameCountsMap[key] || 0) + 1;
+        }
       });
 
-      // Name-based invoice counts for FOREIGN: partners
+      // Name-based invoice counts for FOREIGN: partners (NAV + uploaded by name)
       const foreignPartners = (partnerData as Partner[]).filter(p => isForeignPartner(p.tax_number));
       const foreignCounts: Record<string, number> = {};
       if (foreignPartners.length > 0) {
@@ -232,9 +245,13 @@ export default function PartnersPage() {
           return { ...partner, invoice_count: foreignCounts[partner.id] || 0 };
         }
         const cleanTax = partner.tax_number ? partner.tax_number.replace(/-/g, '').substring(0, 8) : '';
+        const taxCount = countsMap[cleanTax] || 0;
+        // Also add name-based count for invoices without tax IDs
+        const nameKey = partner.name.toLowerCase().trim();
+        const nameCount = nameCountsMap[nameKey] || 0;
         return {
           ...partner,
-          invoice_count: countsMap[cleanTax] || 0
+          invoice_count: taxCount + nameCount
         };
       });
     },
@@ -361,21 +378,21 @@ export default function PartnersPage() {
           .eq('company_id', selectedCompany.id)
           .or(isForeign
             ? `supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
-            : `supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number}`
+            : `supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number},supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
           )
           .order('invoice_issue_date', { ascending: false })
-          .limit(50),
-        // Uploaded invoices
+          .limit(1000),
+        // Uploaded invoices — combine tax + name search for completeness
         supabase
           .from('invoices')
           .select('id, bizonylatsorszam, invoice_direction, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem, elado_nev, vevo_nev, fizetesi_mod, elado_vat_id, vevo_vat_id')
           .eq('company_id', selectedCompany.id)
           .or(isForeign
             ? `elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`
-            : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%,elado_vat_id.ilike.HU${cleanTax}%,vevo_vat_id.ilike.HU${cleanTax}%`
+            : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%,elado_vat_id.ilike.HU${cleanTax}%,vevo_vat_id.ilike.HU${cleanTax}%,elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`
           )
           .order('kibocsatas_datuma', { ascending: false })
-          .limit(50),
+          .limit(1000),
       ]);
 
       const fromNav: PartnerInvoice[] = (navData || []).map((inv: any) => {
@@ -611,6 +628,7 @@ export default function PartnersPage() {
     setSelectedPartnerId(id);
     setPartnerParam(id);
     setInvoiceSearch(''); // reset search on partner switch
+    setInvoicePage(1); // reset pagination on partner switch
   };
 
   const validateEmail = (email: string): boolean => {
@@ -898,6 +916,7 @@ export default function PartnersPage() {
                 onPageChange={setCurrentPage}
                 onPageSizeChange={handlePageSizeChange}
                 pageSizeOptions={[15, 50, 100]}
+                disableScrollToTop
               />
             </div>
           </CardContent>
@@ -1049,7 +1068,7 @@ export default function PartnersPage() {
                         <button
                           key={tab}
                           type="button"
-                          onClick={() => setInvoiceTab(tab)}
+                          onClick={() => { setInvoiceTab(tab); setInvoicePage(1); }}
                           className={cn(
                             "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all",
                             invoiceTab === tab
@@ -1080,14 +1099,14 @@ export default function PartnersPage() {
                   <Input
                     placeholder="Számlaszám keresése..."
                     value={invoiceSearch}
-                    onChange={(e) => setInvoiceSearch(e.target.value)}
+                    onChange={(e) => { setInvoiceSearch(e.target.value); setInvoicePage(1); }}
                     className="pl-8 h-8 text-xs bg-background/50"
                   />
                 </div>
 
                 {/* Invoice list */}
-                <div className="h-[350px] border border-border/30 rounded-xl bg-muted/5 overflow-hidden flex flex-col">
-                  <div className="overflow-y-auto flex-1 p-2 space-y-2">
+                <div className="border border-border/30 rounded-xl bg-muted/5 overflow-hidden flex flex-col" style={{ minHeight: '200px' }}>
+                  <div className="overflow-y-auto flex-1 p-2 space-y-2" style={{ maxHeight: '350px' }}>
                     {isLoadingInvoices ? (
                       <div className="flex items-center justify-center h-32">
                         <LoadingSpinner className="h-6 w-6 text-muted-foreground" />
@@ -1104,7 +1123,10 @@ export default function PartnersPage() {
                           </div>
                         );
                       }
-                      return filtered.map((invoice) => {
+                      const totalPages = Math.ceil(filtered.length / invoicePageSize);
+                      const safePage = Math.min(invoicePage, totalPages);
+                      const paged = filtered.slice((safePage - 1) * invoicePageSize, safePage * invoicePageSize);
+                      return paged.map((invoice) => {
                         const isOutbound = invoice.invoice_direction === 'OUTBOUND';
                         const cur = invoice.currency || 'HUF';
                         return (
@@ -1145,6 +1167,30 @@ export default function PartnersPage() {
                       });
                     })()}
                   </div>
+                  {/* UnifiedPagination — only when multiple pages */}
+                  {(() => {
+                    const q = invoiceSearch.trim().toLowerCase();
+                    const totalFiltered = (partnerInvoices || [])
+                      .filter(inv => inv.source === invoiceTab)
+                      .filter(inv => !q || (inv.invoice_number || '').toLowerCase().includes(q)).length;
+                    const totalPages = Math.ceil(totalFiltered / invoicePageSize);
+                    if (totalPages <= 1) return null;
+                    return (
+                      <div className="border-t border-border/30 px-2 py-1 shrink-0">
+                        <UnifiedPagination
+                          currentPage={Math.min(invoicePage, totalPages)}
+                          totalPages={totalPages}
+                          totalItems={totalFiltered}
+                          pageSize={invoicePageSize}
+                          onPageChange={setInvoicePage}
+                          onPageSizeChange={(size) => { setInvoicePageSize(size); setInvoicePage(1); }}
+                          pageSizeOptions={[50, 100]}
+                          disableScrollToTop
+                          className="text-xs [&_button]:h-6 [&_button]:w-6 [&_button]:text-[10px] [&_.text-sm]:text-[10px] [&_select]:h-6 [&_select]:text-[10px]"
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 

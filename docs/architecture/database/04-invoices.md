@@ -2,7 +2,7 @@
 
 > Számlafeldolgozás, feltöltések, tételmutató, backup táblák.
 
-**Táblák ebben a csoportban:** 7
+**Táblák ebben a csoportban:** 9
 
 ---
 
@@ -243,4 +243,40 @@
 | project_id | uuid | ✓ |  |
 
 ---
+
+### `pdf_export_jobs`
+
+**RLS:** ✅ | **Sorok:** Aktív jobok (24h cleanup, 7d delete)
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| user_id | uuid | — | |
+| status | text | — | `'queued'` |
+| date_from | date | — | |
+| date_to | date | — | |
+| invoice_direction | text | ✓ | |
+| total_invoices | integer | — | `0` |
+| processed_invoices | integer | — | `0` |
+| invoice_list | jsonb | ✓ | |
+| base_name | text | ✓ | |
+| result_urls | text[] | ✓ | |
+| result_sizes | bigint[] | ✓ | |
+| error_message | text | ✓ | |
+| created_at | timestamptz | — | `now()` |
+| updated_at | timestamptz | — | `now()` |
+| completed_at | timestamptz | ✓ | |
+
+**Státuszok:** `queued`, `pending`, `processing`, `completed`, `error`, `cancelled`, `downloaded`, `expired`
+
+**FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`
+
+**CHECK:** `status IN ('queued','pending','processing','completed','error','cancelled','downloaded','expired')`
+
+**RLS policies:**
+- SELECT: `user_id = auth.uid()` — user csak saját jobját látja
+- UPDATE: `user_id = auth.uid()` — user csak saját jobját módosíthatja
+
+**Indexek:** `idx_pdf_export_jobs_company_created`
 

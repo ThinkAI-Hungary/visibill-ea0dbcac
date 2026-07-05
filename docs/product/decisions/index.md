@@ -1,7 +1,7 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-07-04  
-> **Összesen:** 38 döntés | ✅ Decided: 35 | ⛔ Superseded: 2 | 🔴 Open: 1
+> **Utoljára frissítve:** 2026-07-05  
+> **Összesen:** 39 döntés | ✅ Decided: 36 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
 
@@ -36,6 +36,7 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | P-012 | Számla szerkesztés (3 szintű dialógus) | ✅ Decided | [P-012](./P-012-invoice-editing.md) |
 | P-013 | Feltöltés UX (multi-file batch upload) | ✅ Decided | [P-013](./P-013-upload-ux.md) |
 | P-015 | Tömeges műveletek (checkbox bulk actions) | ✅ Decided | [P-015](./P-015-bulk-actions.md) |
+| P-045 | PDF Export UX & Banner viselkedés (auto-download, fallback, toast) | ✅ Decided | [P-045](./P-045-pdf-export-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 

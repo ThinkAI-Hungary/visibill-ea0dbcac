@@ -623,6 +623,34 @@ export function LiveNotificationProvider() {
           }
         )
 
+        // ── PDF Export Jobs: toast when export completes ──
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'pdf_export_jobs' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            const row = payload.new as any;
+
+            // Toast once per completed job (dedup via notifiedUploads set)
+            if (row.status === 'completed') {
+              const toastKey = `pdf_export_done_${row.id}`;
+              if (!notifiedUploads.current.has(toastKey)) {
+                notifiedUploads.current.add(toastKey);
+                toast({
+                  title: 'PDF export kész!',
+                  description: `${row.total_invoices || ''} számla exportálva. Navigálj a Számlák oldalra a letöltéshez.`,
+                  variant: 'default',
+                  duration: 8000,
+                  icon: FileText,
+                });
+
+                // Also invalidate the pdf-export-job query in case the user is on InvoicesPage
+                queryClientRef.current.invalidateQueries({ queryKey: ['pdf-export-job'] });
+              }
+            }
+          }
+        )
+
         .subscribe((status, err) => {
           if (status !== 'SUBSCRIBED' && status !== 'CLOSED' && status !== 'CHANNEL_ERROR') {
             reportError({ type: 'realtime', component: 'LiveNotificationProvider', action: 'warn', message: `[RealtimeSync] Channel: ${status}`, error: err || undefined });

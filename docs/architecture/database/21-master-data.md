@@ -78,7 +78,7 @@
 
 **FK:** `company_id` → `companies.id`, `default_project_id` → `projects.id`
 
-**Indexek:** `idx_partners_company_tax`, `idx_partners_default_project`, `idx_partners_exclude`, `partners_company_id_tax_number_key`, `partners_user_tax_unique`
+**Indexek:** `idx_partners_company_tax`, `idx_partners_default_project`, `idx_partners_exclude`, `partners_company_id_tax_number_key`
 
 **⚠️ tax_number konvenciók:**
 - Magyar partnerek: valós adószám (`12345678-2-42`)

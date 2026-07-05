@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-07-04  
-> **Összesen:** 26 döntés | ✅ Decided: 25 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-07-05  
+> **Összesen:** 29 döntés | ✅ Decided: 28 | ⛔ Superseded: 1
 
 ---
 
@@ -42,8 +42,9 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | A-008 | OCR pipeline (Vision + MarkItDown) | âś… Decided | [A-008](./A-008-ocr-pipeline.md) |
 | A-024 | Partner Upsert Strategy (prefix match, foreign partners, both upgrade) | âś… Decided | [A-024](./A-024-partner-upsert-strategy.md) |
 | A-025 | Cross-company Invoice Routing (multi-company adĂłszĂˇm-alapĂş ĂˇtirĂˇnyĂ­tĂˇs) | âś… Decided | [A-025](./A-025-cross-company-routing.md) |
+| A-028 | PDF Export Workflow & Lifecycle (PGMQ, Realtime, 24h cleanup) | ✅ Decided | [A-028](./A-028-pdf-export-lifecycle.md) |
 
-## đź” BiztonsĂˇg & Auth
+## đź”  BiztonsĂˇg & Auth
 
 | # | DĂ¶ntĂ©s | StĂˇtusz | FĂˇjl |
 |---|--------|---------|------|
@@ -73,6 +74,7 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 |---|--------|---------|------|
 | A-013 | Scoped URL routing + invoice filter query params | âś… Decided | [A-013](./A-013-scoped-routing.md) |
 | A-014 | React Query cache stratĂ©gia | âś… Decided | [A-014](./A-014-react-query-cache.md) |
+| A-029 | Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció (ref lock + delay) | ✅ Decided | [A-029](./A-029-syncing-url-dialog-state.md) |
 
 ## đź’ł FizetĂ©s
 

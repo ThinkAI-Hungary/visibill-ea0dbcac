@@ -3777,6 +3777,7 @@ export type Database = {
       feedback: {
         Row: {
           attachments: string[] | null
+          assigned_to: string | null
           company_id: string | null
           company_name: string | null
           created_at: string
@@ -3797,6 +3798,7 @@ export type Database = {
         }
         Insert: {
           attachments?: string[] | null
+          assigned_to?: string | null
           company_id?: string | null
           company_name?: string | null
           created_at?: string
@@ -3817,6 +3819,7 @@ export type Database = {
         }
         Update: {
           attachments?: string[] | null
+          assigned_to?: string | null
           company_id?: string | null
           company_name?: string | null
           created_at?: string

@@ -11,10 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon, ChevronsUpDown, ChevronsDownUp, Link2, Link2Off, Lightbulb } from 'lucide-react';
+import { Search, Download, ArrowUpDown, FileText, FileDown, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon, ChevronsUpDown, ChevronsDownUp, Link2, Link2Off, Lightbulb } from 'lucide-react';
+import { usePdfExport } from '@/hooks/usePdfExport';
+import { PdfExportDialog } from '@/components/invoices/PdfExportDialog';
+import { PdfExportBanner } from '@/components/invoices/PdfExportBanner';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -236,6 +239,9 @@ const InvoicesPage = () => {
     isSubmittedTab,
   });
 
+  // ── PDF Export hook ──
+  const pdfExport = usePdfExport();
+
   // ── Toggle "Nem kerül könyvelésre" flag ──
   const handleToggleExclude = useCallback(async (invoiceId: string, table: 'nav_invoices' | 'invoices', currentValue: boolean) => {
     const newValue = !currentValue;
@@ -349,8 +355,10 @@ const InvoicesPage = () => {
 
   // ── Files dialog URL handling ──
   useEffect(() => {
+    // Skip if we are in the middle of closing (prevents jumping back to open state)
+    if (dialogClosingRef.current) return;
     if (actionFromUrl === 'files' && !filesDialogOpen) setFilesDialogOpen(true);
-  }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [actionFromUrl, filesDialogOpen]);
 
   const handleOpenFiles = useCallback(() => {
     setFilesDialogOpen(true);
@@ -364,11 +372,18 @@ const InvoicesPage = () => {
   const handleCloseFiles = useCallback((open: boolean) => {
     setFilesDialogOpen(open);
     if (!open) {
-      setSearchParams(prev => {
-        const next = new URLSearchParams(prev);
-        next.delete('action');
-        return next;
-      }, { replace: true });
+      dialogClosingRef.current = true;
+      setTimeout(() => {
+        setSearchParams(prev => {
+          const next = new URLSearchParams(prev);
+          next.delete('action');
+          return next;
+        }, { replace: true });
+        // Set to false AFTER search params update is flushed
+        setTimeout(() => {
+          dialogClosingRef.current = false;
+        }, 50);
+      }, 300); // Increased from 200ms to 300ms to be safe (Radix is 200ms)
     }
   }, [setSearchParams]);
 
@@ -948,7 +963,8 @@ const InvoicesPage = () => {
                   </TooltipProvider>
               </div>
               </div>
-              <div className="flex gap-2">
+              <div className="relative">
+                <div className="flex gap-2 justify-end">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -1000,6 +1016,15 @@ const InvoicesPage = () => {
                               <FileText className="h-4 w-4 mr-2" />
                               Export XLSX
                             </DropdownMenuItem>
+                            {isSubmittedTab && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={pdfExport.openDialog}>
+                                  <FileDown className="h-4 w-4 mr-2" />
+                                  Export PDF (számlaképek)
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -1009,9 +1034,33 @@ const InvoicesPage = () => {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                </div>
               </div>
             </div>
           </CardHeader>
+
+          {/* PDF Export Banner — between header and content */}
+          {pdfExport.showBanner && pdfExport.activeJob && (
+            <div className="px-6 pb-2">
+              <PdfExportBanner
+                job={pdfExport.activeJob}
+                progress={pdfExport.progress}
+                onCancel={pdfExport.cancelExport}
+                onDismiss={pdfExport.dismissBanner}
+                onRetryDownload={pdfExport.retryDownload}
+              />
+            </div>
+          )}
+
+          {/* PDF Export Dialog */}
+          <PdfExportDialog
+            open={pdfExport.dialogOpen}
+            onClose={pdfExport.closeDialog}
+            onExport={pdfExport.startExport}
+            isExporting={pdfExport.isExporting}
+            isStarting={pdfExport.isStarting}
+            initialDirection={activeTab === 'SUBMITTED_INBOUND' ? 'INBOUND' : 'OUTBOUND'}
+          />
 
           <CardContent className="space-y-6">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as InvoiceTab)}>

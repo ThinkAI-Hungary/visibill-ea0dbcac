@@ -427,6 +427,21 @@ export function useDashboardData() {
     return Object.values(months).sort((a, b) => a.month.localeCompare(b.month));
   }, [fxDifferences]);
 
+  // ── FX GL Settings (főkönyvi szám hozzárendelés) ──
+  const { data: fxGlSettings } = useQuery<{ fx_gain_gl_number: string | null; fx_loss_gl_number: string | null } | null>({
+    queryKey: ['fx-gl-settings', companyId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('company_fx_settings')
+        .select('fx_gain_gl_number, fx_loss_gl_number')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      return data as { fx_gain_gl_number: string | null; fx_loss_gl_number: string | null } | null;
+    },
+    enabled: !!user && !!companyId,
+    placeholderData: keepPreviousData,
+  });
+
   // ── Analytics raw data (always full current year) ──
   const { data: analyticsRaw, isLoading: analyticsLoading } = useQuery({
     queryKey: queryKeys.analyticsRaw(companyId, chartYearFromStr, chartYearToStr),
@@ -820,6 +835,7 @@ export function useDashboardData() {
     pettyCashBalances,
     fxDifferences,
     fxMonthlySummary,
+    fxGlSettings,
     invoices,
     analyticsLoading,
     vatBreakdown,
