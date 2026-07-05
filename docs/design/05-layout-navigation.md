@@ -247,3 +247,122 @@ A sidebar, TopBar és FAB `print:hidden` class-szal el van rejtve nyomtatáskor.
 | TopBar | `px-6 py-2` |
 
 > **Döntés (2026-06-08):** Sub menü elemek behúzása `pl-2` → `pl-6`-ra növelve, hogy vizuálisan egyértelműen elkülönüljenek a csoport fejlécektől. A `CollapsibleContent`-re `forceMount` attribútum került, hogy a nyitás/csukás CSS animáció simán lefusson.
+
+---
+
+## Layout Shift Prevention (Anti-CLS szabályok)
+
+> **Döntés (2026-07-05):** Több layout shift bugot dokumentáltunk a Management Dashboard hibajegy (tickets) modulban. Az alábbi szabályok KÖTELEZŐEK minden új view/panel/tab implementálásakor.
+
+### 1. Scrollbar Gutter — `scrollbar-gutter: stable`
+
+**Probléma:** Ha egy scroll container `overflow-y: auto`, a scrollbar megjelenik/eltűnik a tartalom magasságától függően → a content szélessége shift-el.
+
+**Szabály:** Minden `overflow-y-auto` scroll container-re kötelező a `scrollbar-gutter: stable`:
+
+```tsx
+// ✅ HELYES — scrollbar mindig foglal helyet
+<div className="flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
+
+// ❌ TILOS — scrollbar megjelenésekor shiftel
+<div className="flex-1 overflow-y-auto">
+```
+
+**Érintett helyek:**
+- `ManagementDashboard.tsx` — tickets scroll container
+- `ManagementDashboard.tsx` — többi view scroll container
+- Bármely panel/sidebar ahol a tartalom változhat tab váltáskor
+
+### 2. CSS Grid gyerekek — `min-h-0` kötelező
+
+**Probléma:** CSS grid gyerekek alapértelmezett `min-height: auto` → a tartalom kitolhatja a grid containert a fix magasságán túl.
+
+**Szabály:** Fix magasságú grid-ben MINDEN oszlop gyereknek kell `min-h-0`:
+
+```tsx
+// ✅ HELYES — grid container fix, gyerekek nem nőhetnek túl
+<div className="grid grid-cols-4 h-[calc(100vh-200px)] overflow-hidden">
+  <div className="col-span-1 min-h-0 overflow-hidden flex flex-col">
+    <div className="flex-1 overflow-y-auto">...</div>
+  </div>
+  <div className="col-span-3 min-h-0 flex flex-col">
+    <div className="flex-1 overflow-y-auto">...</div>
+  </div>
+</div>
+
+// ❌ TILOS — jobb oszlop tartalom megnöveli a bal oszlopot is
+<div className="grid grid-cols-4 h-[calc(100vh-200px)]">
+  <div className="col-span-1">...</div>
+  <div className="col-span-3">...</div>
+</div>
+```
+
+### 3. `divide-y` és `border-l-*` NEM kombinálható
+
+**Probléma:** A Tailwind `divide-y divide-border/40` shorthand `border-color`-t alkalmaz a 2.+ gyerekekre, ami felülírja a specifikus `border-l-primary` oldal-szín utilityt. Az első elem rendben működik, a többi nem.
+
+**Szabály:** Ha az elemeknek saját border-szín logikájuk van (pl. aktív jelölés), NE használj `divide-y`-t a szülőn — helyette explicit `border-t` az elemeken:
+
+```tsx
+// ✅ HELYES — border-t az elemeken, border-l szabadon használható
+<div className="flex-1 overflow-y-auto">
+  {items.map(item => (
+    <button className={`border-l-2 border-t border-border/40 first:border-t-0 ${
+      active ? 'border-l-primary' : 'border-l-transparent'
+    }`}>
+  ))}
+</div>
+
+// ❌ TILOS — divide-y felülírja a border-l-primary-t a 2.+ elemeken
+<div className="flex-1 overflow-y-auto divide-y divide-border/40">
+  {items.map(item => (
+    <button className={`border-l-2 ${active ? 'border-l-primary' : 'border-l-transparent'}`}>
+  ))}
+</div>
+```
+
+### 4. Aktív állapot border — mindig foglalj helyet
+
+**Probléma:** Ha egy lista elem CSAK aktív állapotban kap `border-l-2`-t, a 2px megjelenésekor shiftel a tartalom.
+
+**Szabály:** Mindig adj `border-l-2`-t MINDEN elemnek — az inaktív legyen `border-l-transparent`:
+
+```tsx
+// ✅ HELYES — 2px mindig lefoglalt, csak a szín változik
+<button className={`border-l-2 ${active ? 'border-l-primary bg-primary/10' : 'border-l-transparent'}`}>
+
+// ❌ TILOS — border csak aktívnál → shift
+<button className={`${active ? 'border-l-2 border-l-primary bg-primary/10' : ''}`}>
+```
+
+### 5. Tab / Sub-tab gombok — fix méret
+
+**Probléma:** `flex-1` gomboknál az aktív állapot (shadow, bg) más vizuális méretet ad → a szomszédos gombok is elmozdulnak.
+
+**Szabály:** Tab-szerű gombok NE legyenek `flex-1`, hanem `w-fit` + `whitespace-nowrap`:
+
+```tsx
+// ✅ HELYES — fix méret, nem stretch-elődik
+<div className="flex w-fit gap-1 p-1">
+  <button className={`py-2 px-4 whitespace-nowrap ${active ? 'bg-primary shadow-sm' : ''}`}>
+    Tab neve
+  </button>
+</div>
+
+// ❌ TILOS — flex-1 stretch + aktív shadow → shift
+<div className="flex max-w-2xl">
+  <button className={`flex-1 ${active ? 'bg-primary shadow-sm' : ''}`}>
+    Tab neve
+  </button>
+</div>
+```
+
+### Összefoglaló ellenőrzőlista (új view létrehozásakor)
+
+| # | Ellenőrzés | Hol |
+|---|---|---|
+| 1 | Scroll container kap `scrollbar-gutter: stable`-t? | Minden `overflow-y-auto` div |
+| 2 | Grid gyerekek kapnak `min-h-0`-t? | Fix magasságú grid layout-ok |
+| 3 | `divide-y` nincs kombinálva egyedi `border-l-*`-gal? | Lista elemek saját border logikával |
+| 4 | Aktív border mindig foglal helyet (transparent)? | Kiválasztható lista elemek |
+| 5 | Tab gombok fix szélességűek (`w-fit` + `whitespace-nowrap`)? | Tab / sub-tab switcher-ek |

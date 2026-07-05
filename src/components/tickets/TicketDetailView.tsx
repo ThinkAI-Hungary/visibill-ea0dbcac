@@ -33,6 +33,7 @@ import {
   FileText,
   Headset,
   HelpCircle,
+  Trash2,
 } from "lucide-react";
 import { uploadTicketImage } from "@/lib/upload-ticket-image";
 import { TicketStatusBadge } from "./TicketStatusBadge";
@@ -43,13 +44,25 @@ import {
   useUpdateTicketStatus,
   useMarkTicketRead,
   useIsSupportAdmin,
+  useIsManagementRole,
   useTicketEvents,
   type TicketStatus,
   type TicketPriority,
   useUpdateTicketPriority,
   useUpdateTicketAssignee,
   useSupportAgents,
+  useDeleteTicket,
 } from "@/hooks/useTickets";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useScopedBasePath } from "@/lib/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -58,9 +71,10 @@ import { hu } from "date-fns/locale";
 interface TicketDetailViewProps {
   feedbackId: string;
   onBack?: () => void;
+  onDeleted?: () => void;
 }
 
-export function TicketDetailView({ feedbackId, onBack }: TicketDetailViewProps) {
+export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetailViewProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const eaisybillBasePath = useScopedBasePath();
@@ -82,6 +96,9 @@ export function TicketDetailView({ feedbackId, onBack }: TicketDetailViewProps) 
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { data: isManagement } = useIsManagementRole();
+  const { mutateAsync: deleteTicket, isPending: isDeleting } = useDeleteTicket();
 
   const openGallery = (images: string[], index: number) => {
     setGalleryImages(images);
@@ -106,10 +123,14 @@ export function TicketDetailView({ feedbackId, onBack }: TicketDetailViewProps) 
     if (feedbackId) markRead(feedbackId);
   }, [feedbackId, markRead]);
 
-  // Auto-scroll to bottom when new comments arrive
+  // Track whether to auto-scroll (only after user sends a comment)
+  const shouldScrollRef = useRef(false);
+
+  // Auto-scroll to bottom only when user sends a new comment
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    if (shouldScrollRef.current && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      shouldScrollRef.current = false;
     }
   }, [data?.comments?.length]);
 
@@ -132,6 +153,7 @@ export function TicketDetailView({ feedbackId, onBack }: TicketDetailViewProps) 
             setCommentFiles([]);
             setIsInternal(false);
             markRead(feedbackId);
+            shouldScrollRef.current = true;
           },
         }
       );
@@ -463,7 +485,65 @@ export function TicketDetailView({ feedbackId, onBack }: TicketDetailViewProps) 
           <TicketPriorityBadge priority={ticket.priority} />
           <TicketStatusBadge status={ticket.status} />
         </div>
+        {/* Delete button — management only */}
+        {isAdmin && isManagement && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={isDeleting}
+          >
+            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+            Jegy törlése
+          </Button>
+        )}
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hibajegy végleges törlése</AlertDialogTitle>
+            <AlertDialogDescription>
+              Biztosan törölni szeretnéd a <strong>{ticket.ticket_number}</strong> hibajegyet?
+              Ez a művelet nem visszavonható — az összes hozzászólás, csatolmány és előzmény is törlődik.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+              onClick={async (e) => {
+                e.preventDefault();
+                try {
+                  await deleteTicket(feedbackId);
+                  toast({
+                    title: "Hibajegy törölve",
+                    description: `${ticket.ticket_number} sikeresen törölve.`,
+                  });
+                  setShowDeleteConfirm(false);
+                  if (onDeleted) {
+                    onDeleted();
+                  } else {
+                    goBack();
+                  }
+                } catch (err: any) {
+                  toast({
+                    variant: "destructive",
+                    title: "Törlési hiba",
+                    description: err?.message || "Nem sikerült törölni a hibajegyet.",
+                  });
+                }
+              }}
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+              Véglegesen törlöm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column: message + comments */}
@@ -823,13 +903,28 @@ export function TicketDetailView({ feedbackId, onBack }: TicketDetailViewProps) 
                 <p className="text-xs text-muted-foreground font-medium">Felelős</p>
                 {isAdmin ? (
                   <Select
-                    value={ticket.assigned_to || "unassigned"}
-                    onValueChange={(val) =>
-                      updateAssignee({
-                        feedbackId: ticket.id,
-                        assignedTo: val === "unassigned" ? null : val,
-                      })
-                    }
+                    value={(ticket as any).assigned_to || "unassigned"}
+                    onValueChange={(val) => {
+                      const newAssignee = val === "unassigned" ? null : val;
+                      updateAssignee(
+                        {
+                          feedbackId: ticket.id,
+                          assignedTo: newAssignee,
+                          force: !newAssignee, // allow unassign without lock check
+                        },
+                        {
+                          onError: (err: any) => {
+                            if (err?.message === "ALREADY_ASSIGNED") {
+                              toast({
+                                title: "Jegy már kiosztva",
+                                description: "Ezt a hibajegyet egy másik support munkatárs már magához rendelte.",
+                                variant: "destructive",
+                              });
+                            }
+                          },
+                        }
+                      );
+                    }}
                   >
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="Nincs hozzárendelve" />

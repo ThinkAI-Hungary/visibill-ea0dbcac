@@ -65,12 +65,34 @@ export function useIsSupportAdmin() {
   });
 }
 
+// ── Hook: Check if current user is management (sees ALL tickets) ──
+export function useIsManagementRole() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["is_management_role", user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+      if (error) return false;
+      return data?.role === 'management' || data?.role === 'thinkai';
+    },
+    enabled: !!user,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
 // ── Hook: Fetch tickets list ──────────────────────────────────
 export function useTickets(statusFilter?: TicketStatus | "all") {
   const { user } = useAuth();
+  const { data: isSupportAdmin } = useIsSupportAdmin();
+  const { data: isManagement } = useIsManagementRole();
 
   return useQuery({
-    queryKey: ["tickets", user?.id, statusFilter],
+    queryKey: ["tickets", user?.id, statusFilter, isSupportAdmin, isManagement],
     queryFn: async () => {
       if (!user) return [];
 
@@ -82,6 +104,12 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
 
       if (statusFilter && statusFilter !== "all") {
         query = query.eq("status", statusFilter);
+      }
+
+      // Support admins only see: unassigned + their own assigned tickets
+      // Management role (thinkai) bypasses this — sees ALL tickets
+      if (isSupportAdmin && !isManagement) {
+        query = query.or(`assigned_to.is.null,assigned_to.eq.${user.id}`);
       }
 
       const { data: tickets, error } = await query;
@@ -192,15 +220,22 @@ export function useUnreadTicketCount() {
     };
   }, [user, queryClient]);
 
+  const { data: isSupportAdmin } = useIsSupportAdmin();
+  const { data: isManagement } = useIsManagementRole();
+
   return useQuery({
-    queryKey: ["unread_ticket_count", user?.id],
+    queryKey: ["unread_ticket_count", user?.id, isSupportAdmin, isManagement],
     queryFn: async () => {
       if (!user) return 0;
 
       // 1. Get all tickets visible to this user (feedback ids)
-      const { data: tickets } = await supabase
-        .from("feedback")
-        .select("id");
+      // Support admins only see unassigned + own assigned tickets
+      // Management role bypasses this — sees ALL tickets
+      let ticketQuery = supabase.from("feedback").select("id");
+      if (isSupportAdmin && !isManagement) {
+        ticketQuery = ticketQuery.or(`assigned_to.is.null,assigned_to.eq.${user.id}`);
+      }
+      const { data: tickets } = await ticketQuery;
 
       if (!tickets || tickets.length === 0) return 0;
       const ticketIds = tickets.map((t) => t.id);
@@ -438,10 +473,28 @@ export function useUpdateTicketAssignee() {
     mutationFn: async ({
       feedbackId,
       assignedTo,
+      force = false,
     }: {
       feedbackId: string;
       assignedTo: string | null;
+      force?: boolean;
     }) => {
+      // Race condition prevention: check current state before assigning
+      if (assignedTo && !force) {
+        const { data: current, error: checkError } = await supabase
+          .from("feedback")
+          .select("assigned_to")
+          .eq("id", feedbackId)
+          .single();
+
+        if (checkError) throw checkError;
+
+        // If already assigned to someone else, reject
+        if (current?.assigned_to && current.assigned_to !== assignedTo) {
+          throw new Error("ALREADY_ASSIGNED");
+        }
+      }
+
       const { error } = await supabase
         .from("feedback")
         .update({ assigned_to: assignedTo })
@@ -500,6 +553,40 @@ export function useMarkTicketRead() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
       queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+    },
+  });
+}
+
+// ── Mutation: Delete ticket (management only) ─────────────────
+export function useDeleteTicket() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (feedbackId: string) => {
+      // Cascade delete handles ticket_comments, ticket_events, ticket_reads
+      const { error } = await supabase
+        .from("feedback")
+        .delete()
+        .eq("id", feedbackId);
+
+      if (error) throw error;
+
+      // Supabase silently returns success even when RLS blocks the delete (0 rows affected).
+      // Verify the row is actually gone:
+      const { data: still } = await supabase
+        .from("feedback")
+        .select("id")
+        .eq("id", feedbackId)
+        .maybeSingle();
+
+      if (still) {
+        throw new Error("Nincs jogosultságod a hibajegy törléséhez.");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+      queryClient.invalidateQueries({ queryKey: ["ticket_detail"] });
     },
   });
 }
