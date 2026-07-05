@@ -12,7 +12,7 @@ export interface PdfExportJob {
   id: string;
   company_id: string;
   user_id: string;
-  status: 'pending' | 'processing' | 'completed' | 'error' | 'cancelled' | 'downloaded' | 'expired';
+  status: 'queued' | 'processing' | 'completed' | 'error' | 'cancelled' | 'downloaded' | 'expired';
   date_from: string;
   date_to: string;
   invoice_direction: string | null;
@@ -109,7 +109,7 @@ export function usePdfExport(): PdfExportState {
         .from('pdf_export_jobs' as any)
         .select('*')
         .eq('company_id', companyId)
-        .in('status', ['pending', 'processing'])
+        .in('status', ['queued', 'processing'])
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -145,7 +145,14 @@ export function usePdfExport(): PdfExportState {
     enabled: !!companyId,
     staleTime: 0, // Always refetch on mount — critical for navigation back
     refetchOnMount: 'always',
-    refetchInterval: false, // We use Realtime, not polling
+    refetchInterval: (query) => {
+      const job = query.state.data as PdfExportJob | null | undefined;
+      // Poll every 3s while worker is processing
+      if (job && (job.status === 'queued' || job.status === 'processing')) {
+        return 3000;
+      }
+      return false;
+    },
   });
 
   // Show banner when there's an active job
@@ -159,25 +166,45 @@ export function usePdfExport(): PdfExportState {
 
   useEffect(() => {
     if (!companyId) return;
+    let cancelled = false;
+    let activeChannel: ReturnType<typeof supabase.channel> | null = null;
 
-    const channel = supabase
-      .channel(`pdf-export-${companyId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'pdf_export_jobs',
-          filter: `company_id=eq.${companyId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['pdf-export-job', companyId] });
-        }
-      )
-      .subscribe();
+    const initChannel = async () => {
+      // Ensure Realtime uses the authenticated JWT (same pattern as LiveNotificationProvider)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || cancelled) return;
+      supabase.realtime.setAuth(session.access_token);
+
+      const channel = supabase
+        .channel(`pdf-export-${companyId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'pdf_export_jobs',
+            filter: `company_id=eq.${companyId}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['pdf-export-job', companyId] });
+          }
+        )
+        .subscribe();
+
+      if (!cancelled) {
+        activeChannel = channel;
+      } else {
+        supabase.removeChannel(channel);
+      }
+    };
+
+    initChannel();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (activeChannel) {
+        supabase.removeChannel(activeChannel);
+      }
     };
   }, [companyId, queryClient]);
 
@@ -216,16 +243,15 @@ export function usePdfExport(): PdfExportState {
   }, []);
 
   // ── Track if user started an export in this component lifecycle ──
-  // Only set when user clicks Start in the dialog — NOT from stale cache data
   const startedExportInSessionRef = useRef(false);
 
-  // ── Auto-download when completed (only if user was on page during processing) ──
+  // ── Auto-download when completed ──
 
   useEffect(() => {
     if (!activeJob || activeJob.status !== 'completed' || !activeJob.result_urls?.length) return;
 
     // Only auto-download if user started the export in this session
-    if (!startedExportInSessionRef.current) return; // Show fallback banner instead
+    if (!startedExportInSessionRef.current) return;
 
     // If already auto-downloaded in this browser session, skip
     if (getAutoDownloadedJobIds().has(activeJob.id)) return;
@@ -289,7 +315,7 @@ export function usePdfExport(): PdfExportState {
       : 0
     : 0;
 
-  const isExporting = activeJob?.status === 'pending' || activeJob?.status === 'processing';
+  const isExporting = activeJob?.status === 'queued' || activeJob?.status === 'processing';
 
   // ── Actions ───────────────────────────────────────────────
 
@@ -311,7 +337,9 @@ export function usePdfExport(): PdfExportState {
       }
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/generate-pdf-export`, {
+
+      // Single EF call — creates job + enqueues PGMQ message for worker
+      const resp = await fetch(`${supabaseUrl}/functions/v1/generate-pdf-export`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -326,17 +354,24 @@ export function usePdfExport(): PdfExportState {
         }),
       });
 
-      const result = await response.json();
+      const result = await resp.json();
 
-      if (!response.ok || result.error) {
-        throw new Error(result.error || 'Export failed');
+      if (result.error) {
+        throw new Error(result.error);
       }
 
+      // Close the dialog, show banner, mark session
       setDialogOpen(false);
       setShowBanner(true);
-      startedExportInSessionRef.current = true; // Enable auto-download for this session
-      toast({ title: 'PDF export elindult', description: 'A feldolgozás folyamatban...' });
+      startedExportInSessionRef.current = true;
+
+      // Invalidate to pick up the new job
       queryClient.invalidateQueries({ queryKey: ['pdf-export-job', companyId] });
+
+      toast({
+        title: 'PDF export elindítva',
+        description: `${result.totalInvoices} számla feldolgozása folyamatban...`,
+      });
 
     } catch (error: any) {
       toast({

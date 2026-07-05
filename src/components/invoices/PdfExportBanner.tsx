@@ -16,7 +16,7 @@ function formatBytes(bytes: number): string {
 }
 
 export function PdfExportBanner({ job, progress, onCancel, onDismiss, onRetryDownload }: PdfExportBannerProps) {
-  const isProcessing = job.status === 'pending' || job.status === 'processing';
+  const isProcessing = job.status === 'queued' || job.status === 'processing';
   const isCompleted = job.status === 'completed';
   const isError = job.status === 'error';
 
