@@ -171,7 +171,7 @@ export default function PartnersPage() {
           .order("name", { ascending: true }),
         supabase.from("nav_invoices").select("supplier_tax_number").eq("company_id", selectedCompany.id),
         supabase.from("nav_invoices").select("customer_tax_number").eq("company_id", selectedCompany.id),
-        supabase.from("invoices").select("elado_vat_id, vevo_vat_id").eq("company_id", selectedCompany.id),
+        supabase.from("invoices").select("elado_vat_id, vevo_vat_id, elado_nev, vevo_nev").eq("company_id", selectedCompany.id),
       ]);
 
       if (partnerError) throw partnerError;
@@ -193,6 +193,8 @@ export default function PartnersPage() {
         }
       });
       // Uploaded invoices — count BOTH elado and vevo sides independently
+      // Build both tax-based AND name-based count maps
+      const nameCountsMap: Record<string, number> = {}; // key: lowercase partner name
       (uploadedCounts || []).forEach((inv: any) => {
         if (inv.elado_vat_id) {
           const cleanTax = inv.elado_vat_id.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
@@ -202,9 +204,18 @@ export default function PartnersPage() {
           const cleanTax = inv.vevo_vat_id.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
           countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
         }
+        // Name-based counts for invoices where tax ID is missing
+        if (inv.elado_nev && !inv.elado_vat_id) {
+          const key = inv.elado_nev.toLowerCase().trim();
+          nameCountsMap[key] = (nameCountsMap[key] || 0) + 1;
+        }
+        if (inv.vevo_nev && !inv.vevo_vat_id) {
+          const key = inv.vevo_nev.toLowerCase().trim();
+          nameCountsMap[key] = (nameCountsMap[key] || 0) + 1;
+        }
       });
 
-      // Name-based invoice counts for FOREIGN: partners
+      // Name-based invoice counts for FOREIGN: partners (NAV + uploaded by name)
       const foreignPartners = (partnerData as Partner[]).filter(p => isForeignPartner(p.tax_number));
       const foreignCounts: Record<string, number> = {};
       if (foreignPartners.length > 0) {
@@ -232,9 +243,13 @@ export default function PartnersPage() {
           return { ...partner, invoice_count: foreignCounts[partner.id] || 0 };
         }
         const cleanTax = partner.tax_number ? partner.tax_number.replace(/-/g, '').substring(0, 8) : '';
+        const taxCount = countsMap[cleanTax] || 0;
+        // Also add name-based count for invoices without tax IDs
+        const nameKey = partner.name.toLowerCase().trim();
+        const nameCount = nameCountsMap[nameKey] || 0;
         return {
           ...partner,
-          invoice_count: countsMap[cleanTax] || 0
+          invoice_count: taxCount + nameCount
         };
       });
     },
@@ -361,18 +376,18 @@ export default function PartnersPage() {
           .eq('company_id', selectedCompany.id)
           .or(isForeign
             ? `supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
-            : `supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number}`
+            : `supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number},supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
           )
           .order('invoice_issue_date', { ascending: false })
           .limit(50),
-        // Uploaded invoices
+        // Uploaded invoices — combine tax + name search for completeness
         supabase
           .from('invoices')
           .select('id, bizonylatsorszam, invoice_direction, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem, elado_nev, vevo_nev, fizetesi_mod, elado_vat_id, vevo_vat_id')
           .eq('company_id', selectedCompany.id)
           .or(isForeign
             ? `elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`
-            : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%,elado_vat_id.ilike.HU${cleanTax}%,vevo_vat_id.ilike.HU${cleanTax}%`
+            : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%,elado_vat_id.ilike.HU${cleanTax}%,vevo_vat_id.ilike.HU${cleanTax}%,elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`
           )
           .order('kibocsatas_datuma', { ascending: false })
           .limit(50),
