@@ -155,12 +155,29 @@ export function usePdfExport(): PdfExportState {
     },
   });
 
-  // Show banner when there's an active job
+  // Show banner when there's an active job + notify on completion/error
   useEffect(() => {
     if (activeJob) {
       setShowBanner(true);
+
+      // Toast for completed exports the user didn't start in this session (came back to page)
+      if (activeJob.status === 'completed' && !startedExportInSessionRef.current && !getAutoDownloadedJobIds().has(activeJob.id)) {
+        toast({
+          title: '📄 PDF export elkészült!',
+          description: 'Kattints a letöltés gombra a bannerben.',
+        });
+      }
+
+      // Toast for errors
+      if (activeJob.status === 'error') {
+        toast({
+          title: 'Export hiba',
+          description: activeJob.error_message || 'A feldolgozás közben hiba történt',
+          variant: 'destructive',
+        });
+      }
     }
-  }, [activeJob?.id, activeJob?.status]);
+  }, [activeJob?.id, activeJob?.status, toast]);
 
   // ── Realtime subscription ─────────────────────────────────
 
@@ -271,6 +288,18 @@ export function usePdfExport(): PdfExportState {
       }
 
       setCompletedDownloaded(activeJob.id);
+
+      // Show success toast
+      const sizeKb = activeJob.result_sizes?.[0];
+      const sizeText = sizeKb
+        ? sizeKb > 1024 * 1024
+          ? `${(sizeKb / 1024 / 1024).toFixed(1)} MB`
+          : `${Math.round(sizeKb / 1024)} KB`
+        : '';
+      toast({
+        title: '✅ PDF export kész!',
+        description: `${activeJob.total_invoices} számla exportálva${sizeText ? ` (${sizeText})` : ''}. A letöltés elindult.`,
+      });
 
       // Auto-dismiss banner after 10 seconds
       autoDismissRef.current = setTimeout(() => {
