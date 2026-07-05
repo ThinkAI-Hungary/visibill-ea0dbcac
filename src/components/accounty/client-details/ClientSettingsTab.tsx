@@ -156,7 +156,7 @@ export default function ClientSettingsTab({
               </select>
             </div>
             <div>
-              <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Értesítési frekvencia</label>
+              <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Értesítés gyakorisága</label>
               <select
                 value={notifPrefs.frequency}
                 onChange={(e) => setNotifPrefs(prev => ({ ...prev, frequency: e.target.value }))}
