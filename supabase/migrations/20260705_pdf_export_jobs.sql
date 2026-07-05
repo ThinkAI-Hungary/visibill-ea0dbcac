@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS pdf_export_jobs (
   company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   user_id UUID NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending','processing','completed','error','cancelled')),
+    CHECK (status IN ('pending','processing','completed','error','cancelled','downloaded','expired')),
   date_from DATE NOT NULL,
   date_to DATE NOT NULL,
   invoice_direction TEXT CHECK (invoice_direction IN ('INBOUND', 'OUTBOUND') OR invoice_direction IS NULL),

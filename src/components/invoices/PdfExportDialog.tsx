@@ -276,11 +276,12 @@ export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarti
             </div>
           )}
 
-          {/* Size warning */}
+
+          {/* Large export info */}
           {willSplit && (
-            <div className="flex items-center gap-2 p-2.5 rounded-md bg-warning/5 border border-warning/15 text-xs text-warning">
+            <div className="flex items-center gap-2 p-2.5 rounded-md bg-blue-500/5 border border-blue-500/15 text-xs text-blue-600 dark:text-blue-400">
               <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-              A becsült méret meghaladja a 25 MB-ot — a PDF automatikusan több fájlba lesz darabolva.
+              Nagy méretű export — a feldolgozás a háttérben történik, akár el is navigálhatsz az oldalról.
             </div>
           )}
         </div>

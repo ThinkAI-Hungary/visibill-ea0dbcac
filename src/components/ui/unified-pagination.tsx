@@ -19,6 +19,8 @@ interface UnifiedPaginationProps {
   onPageSizeChange: (size: number) => void;
   pageSizeOptions?: number[];
   className?: string;
+  /** When true, skip the auto-scroll-to-top on page change (useful for inline/embedded paginators) */
+  disableScrollToTop?: boolean;
 }
 
 export function UnifiedPagination({
@@ -30,9 +32,11 @@ export function UnifiedPagination({
   onPageSizeChange,
   pageSizeOptions = [50, 100],
   className,
+  disableScrollToTop = false,
 }: UnifiedPaginationProps) {
   // Reset scroll of layout containers when current page changes
   useEffect(() => {
+    if (disableScrollToTop) return;
     // Small timeout to let React state update before scrolling
     const timer = setTimeout(() => {
       // Target Accounty layout scroll container by ID

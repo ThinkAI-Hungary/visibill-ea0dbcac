@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import { Suspense, memo, useEffect } from "react";
 import { GlobalDatePicker } from "@/components/GlobalDatePicker";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePdfExportNotifications } from "@/hooks/usePdfExportNotifications";
 
 interface AppLayoutProps {
   children?: React.ReactNode;
@@ -87,6 +88,7 @@ function useIdleRoutePrefetch() {
  */
 export function AppLayout({ children }: AppLayoutProps) {
   useIdleRoutePrefetch();
+  usePdfExportNotifications();
 
   return (
     <SidebarProvider className="h-screen w-full overflow-hidden flex !min-h-0 print:h-auto print:overflow-visible">

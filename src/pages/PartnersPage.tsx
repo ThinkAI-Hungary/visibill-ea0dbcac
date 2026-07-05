@@ -127,6 +127,8 @@ export default function PartnersPage() {
   // Invoice tab state in right panel
   const [invoiceTab, setInvoiceTab] = useState<'nav' | 'uploaded'>('nav');
   const [invoiceSearch, setInvoiceSearch] = useState('');
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoicePageSize, setInvoicePageSize] = useState(50);
   // Ranking section collapsible state (default open, persisted)
   const [rankingOpen, setRankingOpen] = useState(() => {
     const saved = localStorage.getItem('partners-ranking-open');
@@ -379,7 +381,7 @@ export default function PartnersPage() {
             : `supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number},supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
           )
           .order('invoice_issue_date', { ascending: false })
-          .limit(50),
+          .limit(1000),
         // Uploaded invoices — combine tax + name search for completeness
         supabase
           .from('invoices')
@@ -390,7 +392,7 @@ export default function PartnersPage() {
             : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%,elado_vat_id.ilike.HU${cleanTax}%,vevo_vat_id.ilike.HU${cleanTax}%,elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`
           )
           .order('kibocsatas_datuma', { ascending: false })
-          .limit(50),
+          .limit(1000),
       ]);
 
       const fromNav: PartnerInvoice[] = (navData || []).map((inv: any) => {
@@ -626,6 +628,7 @@ export default function PartnersPage() {
     setSelectedPartnerId(id);
     setPartnerParam(id);
     setInvoiceSearch(''); // reset search on partner switch
+    setInvoicePage(1); // reset pagination on partner switch
   };
 
   const validateEmail = (email: string): boolean => {
@@ -913,6 +916,7 @@ export default function PartnersPage() {
                 onPageChange={setCurrentPage}
                 onPageSizeChange={handlePageSizeChange}
                 pageSizeOptions={[15, 50, 100]}
+                disableScrollToTop
               />
             </div>
           </CardContent>
@@ -1064,7 +1068,7 @@ export default function PartnersPage() {
                         <button
                           key={tab}
                           type="button"
-                          onClick={() => setInvoiceTab(tab)}
+                          onClick={() => { setInvoiceTab(tab); setInvoicePage(1); }}
                           className={cn(
                             "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all",
                             invoiceTab === tab
@@ -1095,14 +1099,14 @@ export default function PartnersPage() {
                   <Input
                     placeholder="Számlaszám keresése..."
                     value={invoiceSearch}
-                    onChange={(e) => setInvoiceSearch(e.target.value)}
+                    onChange={(e) => { setInvoiceSearch(e.target.value); setInvoicePage(1); }}
                     className="pl-8 h-8 text-xs bg-background/50"
                   />
                 </div>
 
                 {/* Invoice list */}
-                <div className="h-[350px] border border-border/30 rounded-xl bg-muted/5 overflow-hidden flex flex-col">
-                  <div className="overflow-y-auto flex-1 p-2 space-y-2">
+                <div className="border border-border/30 rounded-xl bg-muted/5 overflow-hidden flex flex-col" style={{ minHeight: '200px' }}>
+                  <div className="overflow-y-auto flex-1 p-2 space-y-2" style={{ maxHeight: '350px' }}>
                     {isLoadingInvoices ? (
                       <div className="flex items-center justify-center h-32">
                         <LoadingSpinner className="h-6 w-6 text-muted-foreground" />
@@ -1119,7 +1123,10 @@ export default function PartnersPage() {
                           </div>
                         );
                       }
-                      return filtered.map((invoice) => {
+                      const totalPages = Math.ceil(filtered.length / invoicePageSize);
+                      const safePage = Math.min(invoicePage, totalPages);
+                      const paged = filtered.slice((safePage - 1) * invoicePageSize, safePage * invoicePageSize);
+                      return paged.map((invoice) => {
                         const isOutbound = invoice.invoice_direction === 'OUTBOUND';
                         const cur = invoice.currency || 'HUF';
                         return (
@@ -1160,6 +1167,30 @@ export default function PartnersPage() {
                       });
                     })()}
                   </div>
+                  {/* UnifiedPagination — only when multiple pages */}
+                  {(() => {
+                    const q = invoiceSearch.trim().toLowerCase();
+                    const totalFiltered = (partnerInvoices || [])
+                      .filter(inv => inv.source === invoiceTab)
+                      .filter(inv => !q || (inv.invoice_number || '').toLowerCase().includes(q)).length;
+                    const totalPages = Math.ceil(totalFiltered / invoicePageSize);
+                    if (totalPages <= 1) return null;
+                    return (
+                      <div className="border-t border-border/30 px-2 py-1 shrink-0">
+                        <UnifiedPagination
+                          currentPage={Math.min(invoicePage, totalPages)}
+                          totalPages={totalPages}
+                          totalItems={totalFiltered}
+                          pageSize={invoicePageSize}
+                          onPageChange={setInvoicePage}
+                          onPageSizeChange={(size) => { setInvoicePageSize(size); setInvoicePage(1); }}
+                          pageSizeOptions={[50, 100]}
+                          disableScrollToTop
+                          className="text-xs [&_button]:h-6 [&_button]:w-6 [&_button]:text-[10px] [&_.text-sm]:text-[10px] [&_select]:h-6 [&_select]:text-[10px]"
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 

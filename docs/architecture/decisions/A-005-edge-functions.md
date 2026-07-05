@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-06-24
+**Utoljára frissítve:** 2026-07-05
 
 ## Context
 
@@ -10,7 +10,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — 47 deployed function + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — 48 deployed function + `_shared/` közös kód.
 
 **Közös kód:** `_shared/` mappa — CORS headers, Supabase client, utility-k.
 
@@ -51,7 +51,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `create-email-alias` | ✅ | Email alias létrehozása (cegnev@inbox.visibill.hu) |
 | `delete-email-alias` | ✅ | Email alias törlése |
 
-#### ⚡ Trigger / Queue (5 db)
+#### ⚡ Trigger / Queue (6 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
@@ -60,6 +60,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `trigger-bank-statement-processing` | ✅ | Bankkivonat feldolgozás indítása → PGMQ enqueue |
 | `trigger-salary-processing` | ❌ | Béradat feldolgozás indítása → PGMQ enqueue |
 | `trigger-nav-categorization` | ✅ | NAV számla GL kategorizálás indítása → PGMQ enqueue |
+| `generate-pdf-export` | ✅ | PDF export v13 — Auth + invoice query + job INSERT + PGMQ enqueue. Feldolgozás a Python Workerben (`pdf_export_processor.py`). |
 
 #### 🔐 Auth & User Management (4 db)
 

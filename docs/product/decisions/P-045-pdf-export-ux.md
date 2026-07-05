@@ -5,23 +5,29 @@
 **Question:** Hogyan értesítsük a felhasználót az aszinkron export állapotáról anélkül, hogy zavarnánk a munkáját?
 
 **Decision:**
-Egy dinamikus bannert használunk a Számlák oldal tetején, amely követi az export állapotát:
+Két rétegű értesítési rendszer:
 
-1.  **Layout Integráció**: A banner nem `absolute` pozícionált, hanem a `CardHeader` és `CardContent` közé ékelődik be, így elkerülhető a layout shift és a KPI kártyák kitakarása.
-2.  **Státusz megjelenítés**:
-    *   **Folyamatban**: Progress bar mutatja a százalékos állást és az aktuálisan feldolgozott számlát.
-    *   **Kész (Auto-download)**: Ha a user az oldalon maradt, a letöltés automatikusan elindul, a banner pedig 10 másodperc után magától eltűnik.
-    *   **Kész (Manual fallback)**: Ha a user elnavigált és visszajött, egy "Kattints ide a letöltéshez" gomb jelenik meg. A banner manuális bezárásig vagy a letöltés utáni 5 mp-ig látható.
-3.  **Globális értesítés**: Ha a felhasználó egy másik menüpontban tartózkodik, a `LiveNotificationProvider` egy globális toast üzenetet küld: "PDF export kész! X számla exportálva. Navigálj a Számlák oldalra a letöltéshez."
+1. **Banner (InvoicesPage)**: Dinamikus banner a Számlák oldal tetején, az export állapotát mutatja.
+   - **queued/processing**: Spinner + progress bar
+   - **completed (auto-download)**: Ha a user az oldalon maradt, automatikus letöltés + 10s auto-dismiss
+   - **completed (manual)**: Ha a user visszajött, "Letöltés" gomb
+   - **error**: Hibaüzenet + retry lehetőség
+
+2. **Globális toast notification (AppLayout)**: `usePdfExportNotifications` hook az AppLayout-ban.
+   - Csak **státusz-átmenetre** reagál (processing → completed), nem állapotra
+   - Nem használ localStorage/sessionStorage — a `useRef` prevStatus-szal figyeli az átmenetet
+   - Polling: 3s aktív job mellett, 15s idle
+   - User-scoped: `.eq('user_id', userId)` — más cég-tagok nem kapják
 
 **Current Implementation:**
-*   `PdfExportBanner.tsx`: UI komponens.
-*   `usePdfExport.ts`: Állapotkezelés és auto-dismiss logika.
-*   `LiveNotificationProvider.tsx`: Globális Realtime figyelő.
+- `PdfExportBanner.tsx`: Banner UI komponens
+- `usePdfExport.ts`: Számlák oldal hook (start, poll, download, banner)
+- `usePdfExportNotifications.ts`: Globális notification hook (AppLayout-ban mountolt)
 
 **Rationale:**
-A cél a "set it and forget it" élmény: a user elindítja az exportot, mehet máshova dolgozni, és értesítést kap, ha kész. A manuális letöltési lehetőség (fallback) kritikus azokra az esetekre, amikor a böngésző blokkolja az auto-downloadot vagy a user megszakítja a session-t.
+"Set it and forget it" élmény: user indít exportot, elnavigálhat, toast jelzi ha kész.
+A transition-based approach megelőzi a beragadt/ismétlődő toast-okat client storage nélkül.
 
 ## Kapcsolódó
-*   [A-028: PDF Export Workflow](../../architecture/decisions/A-028-pdf-export-lifecycle.md)
-*   [P-021: Export formátumok](./P-021-export-formats.md)
+- [A-028: PDF Export Workflow](../../architecture/decisions/A-028-pdf-export-lifecycle.md)
+- [P-021: Export formátumok](./P-021-export-formats.md)

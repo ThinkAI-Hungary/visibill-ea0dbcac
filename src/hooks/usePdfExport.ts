@@ -5,6 +5,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { reportError } from '@/lib/errorReporter';
+import { FileCheck2, CircleCheckBig } from 'lucide-react';
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -156,20 +157,30 @@ export function usePdfExport(): PdfExportState {
   });
 
   // Show banner when there's an active job + notify on completion/error
+  const toastShownRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     if (activeJob) {
       setShowBanner(true);
 
+      const toastKey = `${activeJob.id}:${activeJob.status}`;
+
+      // Skip if we already showed a toast for this job+status combo
+      if (toastShownRef.current.has(toastKey)) return;
+
       // Toast for completed exports the user didn't start in this session (came back to page)
       if (activeJob.status === 'completed' && !startedExportInSessionRef.current && !getAutoDownloadedJobIds().has(activeJob.id)) {
+        toastShownRef.current.add(toastKey);
         toast({
-          title: '📄 PDF export elkészült!',
+          title: 'PDF export elkészült!',
           description: 'Kattints a letöltés gombra a bannerben.',
+          icon: FileCheck2,
         });
       }
 
       // Toast for errors
       if (activeJob.status === 'error') {
+        toastShownRef.current.add(toastKey);
         toast({
           title: 'Export hiba',
           description: activeJob.error_message || 'A feldolgozás közben hiba történt',
@@ -297,8 +308,9 @@ export function usePdfExport(): PdfExportState {
           : `${Math.round(sizeKb / 1024)} KB`
         : '';
       toast({
-        title: '✅ PDF export kész!',
+        title: 'PDF export kész!',
         description: `${activeJob.total_invoices} számla exportálva${sizeText ? ` (${sizeText})` : ''}. A letöltés elindult.`,
+        icon: CircleCheckBig,
       });
 
       // Auto-dismiss banner after 10 seconds

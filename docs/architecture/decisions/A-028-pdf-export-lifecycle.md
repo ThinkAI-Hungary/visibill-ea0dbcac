@@ -1,32 +1,80 @@
-# A-028: PDF Export Workflow & Lifecycle
+# A-028: PDF Export Workflow & Lifecycle (v2 — Worker Pipeline)
 
 **Status:** Decided
 **Date:** 2026-07-05
 **Utoljára frissítve:** 2026-07-05
+**Supersedes:** A-028 v1 (EF-based processing)
 
 ## Context
-A felhasználóknak szükségük van a kiválasztott számlák PDF alapú exportálására. A nagy mennyiségű adat (számlaképek összefűzése) miatt ez a folyamat időigényes, aszinkron feldolgozást igényel, és biztosítani kell, hogy a letöltés akkor is elérhető maradjon, ha a felhasználó elnavigál az oldalról.
+A felhasználóknak szükségük van a kiválasztott számlák PDF alapú exportálására.
+Több ezer számla is lehet egy exportban. Az eredeti EF-alapú megoldás timeout-okba
+ütközött (Deno 400s limit), a böngésző-alapú pdf-lib merge pedig elveszett ha a user elnavigált.
+
+### Elvetett megoldások
+1. **Edge Function feldolgozás** (v12) — 400s timeout limit, nem skálázható
+2. **Böngésző-alapú pdf-lib merge** (v13) — User elnavigáláskor elveszett, memóriaigényes
 
 ## Decision
-Bevezetünk egy aszinkron PDF export pipeline-t az alábbi technikai döntésekkel:
+A PDF export feldolgozás a **Python Worker**-be került, PGMQ-n keresztül:
 
-1.  **PGMQ alapú sorbaállítás**: Az export kérések a `pdf_export_jobs` táblába kerülnek, amit egy Edge Function dolgoz fel aszinkron módon.
-2.  **Realtime állapotkövetés**: A frontend a Supabase Realtime-on keresztül figyeli a job státuszát (`pending` → `processing` → `completed`).
-3.  **Lifecycle Management & Cleanup**:
-    *   **24 órás ablak**: A generált fájlok és a job bejegyzések 24 óráig érvényesek. Ezt követően egy cron job `expired`-re állítja a státuszt és törli a Storage-ból a fájlokat.
-    *   **Auto-download lock**: Csak akkor indul el az automatikus letöltés, ha a felhasználó ugyanabban a böngésző session-ben tartózkodik, ahol az exportot indította (`startedExportInSessionRef`).
-4.  **Stale Cache védelem**: A `usePdfExport` hook `staleTime: 0` beállítást kapott, hogy navigációkor ne a cache-elt (esetleg beragadt) `processing` állapotot mutassa, hanem azonnal frissítsen a DB-ből.
+### Architektúra
+```
+Frontend → EF (auth + query + PGMQ enqueue) → Worker felveszi <1s
+                                                     ↓
+                                               Download images (httpx async)
+                                               PyMuPDF + Pillow merge
+                                               Upload → Storage
+                                               Job → completed
+                                                     ↓
+                              Frontend ← Poll/Realtime ← DB update
+                                   ↓
+                             Auto-download / Toast notification
+```
+
+### Komponensek
+
+| Komponens | Fájl | Felelősség |
+|---|---|---|
+| **Edge Function** (v13) | `generate-pdf-export/index.ts` | Auth, invoice query, job insert, PGMQ enqueue |
+| **Worker** | `pdf_export_processor.py` | Download, merge, upload, DB update |
+| **Frontend hook** | `usePdfExport.ts` | Start, poll, auto-download, banner |
+| **Global notification** | `usePdfExportNotifications.ts` | Toast bármely oldalon (transition-based) |
+| **Banner** | `PdfExportBanner.tsx` | Vizuális állapotjelző |
+
+### Job lifecycle
+```
+queued → processing → completed → downloaded → [cleanup cron 24h]
+                   ↘ error
+```
+
+### Cleanup
+- **pg_cron** `cleanup-pdf-exports`: hajnali 3:00 UTC
+  - Storage fájlok: 24h+ törlés (pg_net HTTP DELETE → Storage API)
+  - Job rekordok: 7d+ `downloaded`/`expired`/`error` törlés
+
+### RLS
+- SELECT: `user_id = auth.uid()` — user csak saját jobját látja
+- UPDATE: `user_id = auth.uid()` — user csak saját jobját módosíthatja (downloaded státusz)
+- INSERT/DELETE: service_role only (EF + cron)
+
+### PGMQ
+- Queue: `pdf_export_jobs`
+- VT: 1800s (30 perc) — nagy exportokhoz
+- Worker listener: `pdf_export_listener` az `asyncio.gather()`-ben
 
 ## Consequences
 **Pozitív:**
-*   Nem blokkolja a felhasználói felületet a hosszan tartó generálás.
-*   Megbízható letöltés elnavigálás vagy frissítés után is (24 órán belül).
-*   Automatikus tárhely-felszabadítás (cleanup).
+- Nincs timeout limit (worker nincs korlátozva)
+- User elnavigálhat — a feldolgozás a háttérben megy
+- Párhuzamos exportok (asyncio I/O concurrency)
+- Globális toast notification bármely oldalon
 
 **Negatív:**
-*   A Realtime kapcsolat megszakadása esetén manuális refetch-re vagy navigációra van szükség (amit a `refetchOnMount: 'always'` kezel).
+- Worker dependency (ha a worker leáll, az export is)
+- Polling overhead (3-15s interval a global hook-ban)
 
 ## Kapcsolódó
-*   [A-004: PGMQ mint aszinkron queue](./A-004-pgmq-queue.md)
-*   [A-005: Edge Functions](./A-005-edge-functions.md)
-*   [P-045: PDF Export UX](../product/decisions/P-045-pdf-export-ux.md)
+- [A-004: PGMQ](./A-004-pgmq-queue.md)
+- [A-005: Edge Functions](./A-005-edge-functions.md)
+- [A-006: Python Worker](./A-006-python-worker.md)
+- [P-045: PDF Export UX](../product/decisions/P-045-pdf-export-ux.md)
