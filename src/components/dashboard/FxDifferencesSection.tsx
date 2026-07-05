@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { TrendingUp, TrendingDown, ArrowUpDown, ChevronDown, ChevronRight, CandlestickChart, Info } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TrendingUp, TrendingDown, ArrowUpDown, ChevronDown, ChevronRight, CandlestickChart, Info, BookOpen, Pencil, Check, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 
@@ -34,11 +35,25 @@ interface FxDifferenceRow {
   settlement_month: string;
 }
 
+interface GlAccount {
+  id: string;
+  gl_number: string;
+  short_name: string;
+}
+
+interface FxGlSettings {
+  fx_gain_gl_number: string | null;
+  fx_loss_gl_number: string | null;
+}
+
 interface FxDifferencesSectionProps {
   fxDifferences: FxDifferenceRow[];
   fxMonthlySummary: FxMonthlySummary[];
   isOpen: boolean;
   onOpenChange: (v: boolean) => void;
+  fxGlSettings?: FxGlSettings | null;
+  glAccounts?: GlAccount[];
+  onSaveFxGl?: (gainGl: string, lossGl: string) => void;
 }
 
 const monthLabels: Record<string, string> = {
@@ -85,8 +100,11 @@ const CustomTooltip = ({ active, payload }: any) => {
   );
 };
 
-function MonthDetail({ month, rows }: { month: string; rows: FxDifferenceRow[] }) {
+function MonthDetail({ month, rows, fxGlSettings, onEditGl }: { month: string; rows: FxDifferenceRow[]; fxGlSettings?: FxGlSettings | null; onEditGl?: () => void }) {
   const [open, setOpen] = useState(false);
+
+  const gainGl = fxGlSettings?.fx_gain_gl_number || '976';
+  const lossGl = fxGlSettings?.fx_loss_gl_number || '876';
 
   return (
     <>
@@ -109,10 +127,14 @@ function MonthDetail({ month, rows }: { month: string; rows: FxDifferenceRow[] }
         <TableCell className={`text-right font-bold tabular-nums ${rows.reduce((s, r) => s + r.fx_difference, 0) >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
           {fmtHuf(rows.reduce((s, r) => s + r.fx_difference, 0))}
         </TableCell>
+        <TableCell />
         <TableCell className="text-right text-muted-foreground tabular-nums">{rows.length}</TableCell>
       </TableRow>
       
-      {open && rows.map(row => (
+      {open && rows.map(row => {
+        const isGain = row.fx_difference >= 0;
+        const glNum = isGain ? gainGl : lossGl;
+        return (
         <TableRow key={`${row.invoice_source}-${row.invoice_id}`} className="bg-muted/20 text-xs animate-in fade-in duration-200">
           <TableCell className="pl-8">
             <div className="flex items-center gap-2">
@@ -129,17 +151,200 @@ function MonthDetail({ month, rows }: { month: string; rows: FxDifferenceRow[] }
             <div className="tabular-nums">{Math.round(row.delivery_huf).toLocaleString('hu-HU')} Ft</div>
             <div className="text-muted-foreground text-[10px]">{row.settlement_date} · {fmtRate(row.settlement_rate)}</div>
           </TableCell>
-          <TableCell className={`text-right font-medium tabular-nums ${row.fx_difference >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
+          <TableCell className={`text-right font-medium tabular-nums ${isGain ? 'text-emerald-500' : 'text-destructive'}`}>
             {fmtHuf(row.fx_difference)}
           </TableCell>
+          <TableCell className="text-center">
+            <button
+              onClick={(e) => { e.stopPropagation(); onEditGl?.(); }}
+              className="inline-flex items-center gap-1 rounded-md border border-border/50 bg-muted/40 px-1.5 py-0.5 text-[9px] font-mono tabular-nums hover:bg-muted/80 transition-colors cursor-pointer group"
+              title={`Főkönyvi szám szerkesztése (${glNum})`}
+            >
+              <BookOpen className="w-2.5 h-2.5 text-muted-foreground group-hover:text-foreground" />
+              {glNum}
+              <Pencil className="w-2 h-2 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          </TableCell>
           <TableCell className="text-right">
-            <Badge variant={row.fx_difference >= 0 ? 'default' : 'destructive'} className="text-[9px]">
-              {row.fx_difference >= 0 ? 'Nyereség' : 'Veszteség'}
+            <Badge variant={isGain ? 'default' : 'destructive'} className="text-[9px]">
+              {isGain ? 'Nyereség' : 'Veszteség'}
             </Badge>
           </TableCell>
         </TableRow>
-      ))}
+        );
+      })}
     </>
+  );
+}
+
+
+function FxGlMappingBlock({
+  fxGlSettings,
+  glAccounts,
+  onSaveFxGl,
+}: {
+  fxGlSettings?: FxGlSettings | null;
+  glAccounts?: GlAccount[];
+  onSaveFxGl?: (gainGl: string, lossGl: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [gainGl, setGainGl] = useState('');
+  const [lossGl, setLossGl] = useState('');
+
+  const currentGain = fxGlSettings?.fx_gain_gl_number || '';
+  const currentLoss = fxGlSettings?.fx_loss_gl_number || '';
+  const defaultGain = '976';
+  const defaultLoss = '876';
+
+  const startEdit = useCallback(() => {
+    setGainGl(currentGain || defaultGain);
+    setLossGl(currentLoss || defaultLoss);
+    setEditing(true);
+  }, [currentGain, currentLoss]);
+
+  const handleSave = useCallback(() => {
+    onSaveFxGl?.(gainGl, lossGl);
+    setEditing(false);
+  }, [gainGl, lossGl, onSaveFxGl]);
+
+  const handleCancel = useCallback(() => {
+    setEditing(false);
+  }, []);
+
+  // Find matching GL account for display
+  const findGlLabel = (glNumber: string) => {
+    if (!glAccounts?.length || !glNumber) return null;
+    const match = glAccounts.find(g => {
+      const cleanNum = g.gl_number.split('-')[0].replace(/\./g, '');
+      return cleanNum.startsWith(glNumber) || glNumber.startsWith(cleanNum);
+    });
+    return match ? `${match.gl_number} — ${match.short_name}` : null;
+  };
+
+  // Sort GL accounts for the dropdown, prioritizing 8xx and 9xx
+  const sortedAccounts = useMemo(() => {
+    if (!glAccounts?.length) return [];
+    return [...glAccounts].sort((a, b) => a.gl_number.localeCompare(b.gl_number));
+  }, [glAccounts]);
+
+  return (
+    <div className="rounded-lg border border-border/50 bg-muted/10 p-4" data-fx-gl-mapping>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-muted-foreground" />
+          <h4 className="text-sm font-medium">Főkönyvi besorolás</h4>
+        </div>
+        {!editing && onSaveFxGl && (
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={startEdit}>
+            <Pencil className="w-3 h-3" />
+            Szerkesztés
+          </Button>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block">
+                Árfolyamnyereség GL szám
+              </label>
+              {sortedAccounts.length > 0 ? (
+                <Select value={gainGl} onValueChange={setGainGl}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Válassz GL számot..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {sortedAccounts.map(g => (
+                      <SelectItem key={g.id} value={g.gl_number.split('-')[0].replace(/\./g, '')} className="text-xs">
+                        {g.gl_number} — {g.short_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <input
+                  type="text"
+                  value={gainGl}
+                  onChange={e => setGainGl(e.target.value)}
+                  placeholder="pl. 976"
+                  className="w-full h-8 rounded-md border border-border bg-background px-2 text-xs"
+                />
+              )}
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block">
+                Árfolyamveszteség GL szám
+              </label>
+              {sortedAccounts.length > 0 ? (
+                <Select value={lossGl} onValueChange={setLossGl}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Válassz GL számot..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {sortedAccounts.map(g => (
+                      <SelectItem key={g.id} value={g.gl_number.split('-')[0].replace(/\./g, '')} className="text-xs">
+                        {g.gl_number} — {g.short_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <input
+                  type="text"
+                  value={lossGl}
+                  onChange={e => setLossGl(e.target.value)}
+                  placeholder="pl. 876"
+                  className="w-full h-8 rounded-md border border-border bg-background px-2 text-xs"
+                />
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 justify-end">
+            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={handleCancel}>
+              <X className="w-3 h-3" />
+              Mégse
+            </Button>
+            <Button size="sm" className="h-7 text-xs gap-1" onClick={handleSave}>
+              <Check className="w-3 h-3" />
+              Mentés
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="rounded-md bg-muted/30 px-3 py-2">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Nyereség</div>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-sm font-medium tabular-nums">
+                {currentGain || <span className="text-muted-foreground italic">{defaultGain} (alap)</span>}
+              </span>
+            </div>
+            {findGlLabel(currentGain || defaultGain) && (
+              <div className="text-[10px] text-muted-foreground mt-0.5">{findGlLabel(currentGain || defaultGain)}</div>
+            )}
+          </div>
+          <div className="rounded-md bg-muted/30 px-3 py-2">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Veszteség</div>
+            <div className="flex items-center gap-2">
+              <TrendingDown className="w-3.5 h-3.5 text-destructive" />
+              <span className="text-sm font-medium tabular-nums">
+                {currentLoss || <span className="text-muted-foreground italic">{defaultLoss} (alap)</span>}
+              </span>
+            </div>
+            {findGlLabel(currentLoss || defaultLoss) && (
+              <div className="text-[10px] text-muted-foreground mt-0.5">{findGlLabel(currentLoss || defaultLoss)}</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+        <Info className="w-3 h-3 shrink-0" />
+        Az árfolyamkülönbözetek a főkönyvben ezen számlák alatt jelennek meg.
+      </p>
+    </div>
   );
 }
 
@@ -149,6 +354,9 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
   fxMonthlySummary,
   isOpen,
   onOpenChange,
+  fxGlSettings,
+  glAccounts = [],
+  onSaveFxGl,
 }: FxDifferencesSectionProps) {
   // Total annual summary
   const annualNet = useMemo(() => fxMonthlySummary.reduce((s, m) => s + m.net, 0), [fxMonthlySummary]);
@@ -256,6 +464,13 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
               </div>
             </div>
 
+            {/* GL account mapping */}
+            <FxGlMappingBlock
+              fxGlSettings={fxGlSettings}
+              glAccounts={glAccounts}
+              onSaveFxGl={onSaveFxGl}
+            />
+
             {/* Bar chart */}
             {chartData.length > 0 && (
               <div className="h-[220px] w-full">
@@ -292,6 +507,7 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
                     <TableHead className="text-right">Nyereség</TableHead>
                     <TableHead className="text-right">Veszteség</TableHead>
                     <TableHead className="text-right">Nettó</TableHead>
+                    <TableHead className="text-center w-16">FK szám</TableHead>
                     <TableHead className="text-right w-20">Tételek</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -301,6 +517,19 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
                       key={m.month}
                       month={m.month}
                       rows={rowsByMonth[m.month] || []}
+                      fxGlSettings={fxGlSettings}
+                      onEditGl={() => {
+                        // Scroll to the GL mapping block and trigger edit
+                        const glBlock = document.querySelector('[data-fx-gl-mapping]');
+                        if (glBlock) {
+                          glBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          // Trigger the edit button click after scroll
+                          setTimeout(() => {
+                            const editBtn = glBlock.querySelector('button');
+                            if (editBtn) editBtn.click();
+                          }, 400);
+                        }
+                      }}
                     />
                   ))}
                   {/* Footer totals */}
@@ -309,6 +538,7 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
                     <TableCell className="text-right text-emerald-500 tabular-nums">{fmtHuf(annualGain)}</TableCell>
                     <TableCell className="text-right text-destructive tabular-nums">{fmtHuf(annualLoss)}</TableCell>
                     <TableCell className={`text-right tabular-nums ${annualNet >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>{fmtHuf(annualNet)}</TableCell>
+                    <TableCell />
                     <TableCell className="text-right tabular-nums">{totalCount}</TableCell>
                   </TableRow>
                 </TableBody>
