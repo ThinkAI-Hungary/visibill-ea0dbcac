@@ -244,3 +244,26 @@
 
 ---
 
+### `pdf_export_jobs`
+
+**RLS:** ✅ | **Sorok:** ~50 (törlődik 24h után)
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| user_id | uuid | — | |
+| status | text | — | `'pending'` |
+| total_invoices | integer | — | `0` |
+| processed_invoices | integer | — | `0` |
+| result_urls | text[] | ✓ | |
+| error_message | text | ✓ | |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+| completed_at | timestamp with time zone | ✓ | |
+
+**Státuszok:** `pending`, `processing`, `completed`, `error`, `cancelled`, `downloaded`, `expired`
+
+**FK:** `company_id` → `companies.id`
+
+**Indexek:** `idx_pdf_export_jobs_company_created`

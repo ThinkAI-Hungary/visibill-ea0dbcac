@@ -42,8 +42,9 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | A-008 | OCR pipeline (Vision + MarkItDown) | âś… Decided | [A-008](./A-008-ocr-pipeline.md) |
 | A-024 | Partner Upsert Strategy (prefix match, foreign partners, both upgrade) | âś… Decided | [A-024](./A-024-partner-upsert-strategy.md) |
 | A-025 | Cross-company Invoice Routing (multi-company adĂłszĂˇm-alapĂş ĂˇtirĂˇnyĂ­tĂˇs) | âś… Decided | [A-025](./A-025-cross-company-routing.md) |
+| A-028 | PDF Export Workflow & Lifecycle (PGMQ, Realtime, 24h cleanup) | ✅ Decided | [A-028](./A-028-pdf-export-lifecycle.md) |
 
-## đź” BiztonsĂˇg & Auth
+## đź”  BiztonsĂˇg & Auth
 
 | # | DĂ¶ntĂ©s | StĂˇtusz | FĂˇjl |
 |---|--------|---------|------|

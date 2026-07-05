@@ -123,6 +123,32 @@ Ha a user leírja hogyan működik valami → **ellenőrizd a kódban** mielőtt
 > view_file C:\Users\Morfi\.gemini\config\skills\react-best-practices\SKILL.md
 > ```
 
+### 1.4c KÖTELEZŐ: Design Pattern Kontextus Betöltése
+
+> **Új UI elem létrehozásakor vagy módosításakor az Agent KÖTELES a meglévő Visibill design dokumentációt betölteni és követni.**
+> Ad-hoc megoldás TILOS ha a design docs-ban van létező minta.
+
+**Releváns design docs (`docs/design/`):**
+
+| Témakör | Dokumentum |
+|---------|-----------|
+| Színek, spacing, border-radius | `02-design-tokens.md` |
+| Betűtípusok, ikonok | `03-typography-icons.md` |
+| Komponens variánsok (Button/Badge/Dialog stb.) | `04-component-library.md` |
+| Layout, sidebar, navbar | `05-layout-navigation.md` |
+| Loading, skeleton | `07-loading-patterns.md` |
+| Hover, animáció, transition | `08-interactions-animations.md` |
+| Error, toast, feedback | `09-error-handling-feedback.md` |
+| A11y, UX minták | `10-accessibility-ux.md` |
+| Táblázatok, rendezés | `11-data-display-tables.md` |
+| Dialogok, modalok | `12-dialogs-modals.md` |
+
+**Kritikus szabályok:**
+- **Badge:** Informatív címke, SOHA nincs `hover:bg-*` vagy `transition-colors`.
+- **Button outline hover:** `hover:bg-accent/50` (semleges). Szín override-nál MINDIG kell explicit `hover:text-*`.
+- **Dark mode:** Minden új elem KELL hogy működjön dark mode-ban.
+- **Design tokenek:** CSS változókat használj (`text-primary`, `bg-destructive/10`), ne hard-coded értékeket.
+
 ### 1.5 Összefoglaló a usernek (jóváhagyás előtt)
 
 ```markdown
