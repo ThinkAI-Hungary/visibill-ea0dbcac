@@ -1,6 +1,6 @@
 # Visibill — Architecture Overview
 
-> **Verzió:** 1.4 | **Dátum:** 2026-06-22  
+> **Verzió:** 1.5 | **Dátum:** 2026-07-05  
 > **Kapcsolódó:** [Business Overview](../business/overview.md) · [PRD](../product/prd.md) · [Design System](../design/00-overview.md)
 
 ---

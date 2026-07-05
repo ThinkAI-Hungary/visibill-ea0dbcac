@@ -355,8 +355,10 @@ const InvoicesPage = () => {
 
   // ── Files dialog URL handling ──
   useEffect(() => {
+    // Skip if we are in the middle of closing (prevents jumping back to open state)
+    if (dialogClosingRef.current) return;
     if (actionFromUrl === 'files' && !filesDialogOpen) setFilesDialogOpen(true);
-  }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [actionFromUrl, filesDialogOpen]);
 
   const handleOpenFiles = useCallback(() => {
     setFilesDialogOpen(true);
@@ -370,11 +372,18 @@ const InvoicesPage = () => {
   const handleCloseFiles = useCallback((open: boolean) => {
     setFilesDialogOpen(open);
     if (!open) {
-      setSearchParams(prev => {
-        const next = new URLSearchParams(prev);
-        next.delete('action');
-        return next;
-      }, { replace: true });
+      dialogClosingRef.current = true;
+      setTimeout(() => {
+        setSearchParams(prev => {
+          const next = new URLSearchParams(prev);
+          next.delete('action');
+          return next;
+        }, { replace: true });
+        // Set to false AFTER search params update is flushed
+        setTimeout(() => {
+          dialogClosingRef.current = false;
+        }, 50);
+      }, 300); // Increased from 200ms to 300ms to be safe (Radix is 200ms)
     }
   }, [setSearchParams]);
 

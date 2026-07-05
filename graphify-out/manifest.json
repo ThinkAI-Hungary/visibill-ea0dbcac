@@ -390,8 +390,8 @@
     "semantic_hash": ""
   },
   "src/components/invoices/InvoiceFilesDialog.tsx": {
-    "mtime": 1782259334.987509,
-    "ast_hash": "12d1e50ce10b647fac1981d12fd12d8f",
+    "mtime": 1783231781.5102828,
+    "ast_hash": "98468418daf6f0034466f5a5ede00f93",
     "semantic_hash": ""
   },
   "src/components/kintlevo/DunningDialog.tsx": {
@@ -1495,8 +1495,8 @@
     "semantic_hash": "ab5d01484c96bf451bc3c1e4066ebd05"
   },
   "src/pages/InvoicesPage.tsx": {
-    "mtime": 1783231301.4945164,
-    "ast_hash": "0393802aa57c31085f04eb0421d1fc81",
+    "mtime": 1783232715.952507,
+    "ast_hash": "0ffac0d97382005c455df8d267bcedb8",
     "semantic_hash": ""
   },
   "src/pages/KintlevoPage.tsx": {
@@ -3160,8 +3160,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1783231582.9294574,
-    "ast_hash": "a0f51ee409892e8a99792cc0ccfb0a58",
+    "mtime": 1783232691.1040714,
+    "ast_hash": "967718a93769c9264edf595f882c467b",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3185,8 +3185,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/overview.md": {
-    "mtime": 1782233915.5652409,
-    "ast_hash": "07af70a29dd7394250a50d992026645c",
+    "mtime": 1783232705.1142,
+    "ast_hash": "632db22f66fed1370127269cd6ef28cb",
     "semantic_hash": ""
   },
   "docs/business/brd.md": {
@@ -3635,8 +3635,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1783231596.355067,
-    "ast_hash": "b941749f1c09a2d2942241fe376e20f4",
+    "mtime": 1783232696.014881,
+    "ast_hash": "be427626afa5421c63189a03951d31d7",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5385,8 +5385,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/04-invoices.md": {
-    "mtime": 1783231602.2121668,
-    "ast_hash": "aaad13bff4d7f803f90a1a99109a1336",
+    "mtime": 1783232700.5319588,
+    "ast_hash": "7ea40228dc93bdf21cded79babeb2ace",
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {

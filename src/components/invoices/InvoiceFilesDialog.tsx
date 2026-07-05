@@ -306,15 +306,18 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => {
-        setIsOpen(open);
-        if (!open) {
-          // Reset all ephemeral state so AlertDialogs don't flash during close animation
-          setDeleteTarget(null);
-          setBatchDeleteOpen(false);
-          setSelectedIds(new Set());
-        }
-      }}>
+      <Dialog 
+        open={isOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            // Reset all ephemeral state so AlertDialogs don't flash during close animation
+            setDeleteTarget(null);
+            setBatchDeleteOpen(false);
+            setSelectedIds(new Set());
+          }
+          setIsOpen(open);
+        }}
+      >
         {externalOpen === undefined && (
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">

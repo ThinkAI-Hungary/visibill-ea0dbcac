@@ -2,7 +2,7 @@
 
 > Számlafeldolgozás, feltöltések, tételmutató, backup táblák.
 
-**Táblák ebben a csoportban:** 7
+**Táblák ebben a csoportban:** 8
 
 ---
 
