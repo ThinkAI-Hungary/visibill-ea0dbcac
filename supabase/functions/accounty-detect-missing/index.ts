@@ -20,8 +20,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // ── Auth: require CRON_SECRET or valid user token ──
-    const cronSecret = Deno.env.get('CRON_SECRET')
+    // ── Auth: require CRON_SECRET_ACCOUNTY or valid user token ──
+    const cronSecret = Deno.env.get('CRON_SECRET_ACCOUNTY')
     const authHeader = req.headers.get('Authorization')
     let authorized = false
 
@@ -31,16 +31,20 @@ Deno.serve(async (req: Request) => {
       if (secretHeader === cronSecret) authorized = true
     }
 
-    // Check user JWT as fallback (for manual trigger from admin UI)
+    // Check user JWT or service role key as fallback
     if (!authorized && authHeader) {
-      const tempClient = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-      )
-      const { data: { user } } = await tempClient.auth.getUser(
-        authHeader.replace('Bearer ', '')
-      )
-      if (user) authorized = true
+      const token = authHeader.replace('Bearer ', '')
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+      if (serviceRoleKey && token === serviceRoleKey) {
+        authorized = true
+      } else {
+        const tempClient = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        )
+        const { data: { user } } = await tempClient.auth.getUser(token)
+        if (user) authorized = true
+      }
     }
 
     if (!authorized) {
@@ -84,6 +88,8 @@ Deno.serve(async (req: Request) => {
       ? managedCompanyIds.filter(id => id === targetCompanyId)
       : managedCompanyIds
 
+    // Collect new missing items per company for batched notification
+    const newItemsByCompany: Record<string, { companyName: string; items: any[] }> = {}
     let totalInserted = 0
     let totalSkipped = 0
 
@@ -163,7 +169,15 @@ Deno.serve(async (req: Request) => {
         }
         totalInserted += newItems.length
 
-        // ── Notify assigned accountants about new missing items ──
+        // Get company name for notification
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('name')
+          .eq('id', companyId)
+          .single()
+        const companyName = (companyData as any)?.name || 'Ismeretlen cég'
+
+        // ── Notify assigned accountants about NEW missing items only ──
         try {
           const { data: assignedUsers } = await supabase
             .from('accounty_assignments')
@@ -171,15 +185,7 @@ Deno.serve(async (req: Request) => {
             .eq('company_id', companyId)
 
           if (assignedUsers && assignedUsers.length > 0) {
-            // Get company name
-            const { data: companyData } = await supabase
-              .from('companies')
-              .select('name')
-              .eq('id', companyId)
-              .single()
-            const companyName = (companyData as any)?.name || 'Ismeretlen cég'
-
-            // Build items summary
+            // Build items summary (show max 5 items)
             const itemsSummary = newItems.slice(0, 5).map((item: any) =>
               `<tr><td style="padding:6px 12px;border-top:1px solid #e5e7eb;font-size:13px">${item.title}</td><td style="padding:6px 12px;border-top:1px solid #e5e7eb;font-size:13px;color:#6b7280">${item.subtitle}</td></tr>`
             ).join('')
@@ -222,7 +228,7 @@ Deno.serve(async (req: Request) => {
                 console.error(`[accounty-detect-missing] Notification failed for user ${userId}:`, notifErr)
               }
             }
-            console.log(`[accounty-detect-missing] Notified ${uniqueUserIds.length} accountants about ${newItems.length} missing items for ${companyName}`)
+            console.log(`[accounty-detect-missing] Notified ${uniqueUserIds.length} accountants about ${newItems.length} NEW missing items for ${companyName}`)
           }
         } catch (notifErr) {
           console.error(`[accounty-detect-missing] Notification error for ${companyId}:`, notifErr)
@@ -274,12 +280,124 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // ── 8. Client Status Change Detection ──
+    // Compute current status for each company, compare with last_computed_status,
+    // and notify if it changed (especially if it worsened).
+    let totalStatusChanges = 0
+
+    for (const companyId of companyIdsToCheck) {
+      try {
+        // Count open missing items for this company
+        const { count: missingCount } = await supabase
+          .from('accounty_missing_items')
+          .select('*', { count: 'exact', head: true })
+          .eq('company_id', companyId)
+          .in('status', ['open', 'notified'])
+
+        const missing = missingCount || 0
+
+        // computeStatus logic (mirrors frontend useAccountyHelpers.ts)
+        let currentStatus: string
+        if (missing > 3) currentStatus = 'Kritikus'
+        else if (missing > 0) currentStatus = 'Feldolgozandó'
+        else currentStatus = 'Rendben'
+
+        // Get all assignments for this company to check last_computed_status
+        const { data: assigns } = await supabase
+          .from('accounty_assignments')
+          .select('id, accountant_user_id, last_computed_status')
+          .eq('company_id', companyId)
+
+        if (!assigns || assigns.length === 0) continue
+
+        // Check if status changed (use first assignment's last_computed_status as reference)
+        const previousStatus = (assigns[0] as any).last_computed_status || 'Rendben'
+
+        if (currentStatus !== previousStatus) {
+          // Get company name
+          const { data: companyData } = await supabase
+            .from('companies')
+            .select('name')
+            .eq('id', companyId)
+            .single()
+          const companyName = (companyData as any)?.name || 'Ismeretlen cég'
+
+          const statusColors: Record<string, string> = {
+            'Rendben': '#059669',
+            'Feldolgozandó': '#d97706',
+            'Kritikus': '#dc2626',
+          }
+
+          const worsened = (
+            (previousStatus === 'Rendben' && currentStatus !== 'Rendben') ||
+            (previousStatus === 'Feldolgozandó' && currentStatus === 'Kritikus')
+          )
+
+          const bodyHtml = `
+            <p><strong>${companyName}</strong> ügyfél státusza megváltozott:</p>
+            <div style="display:flex;align-items:center;gap:12px;margin:16px 0;padding:16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+              <div style="text-align:center">
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:4px">Előző</div>
+                <span style="padding:4px 12px;border-radius:6px;font-size:13px;font-weight:600;color:${statusColors[previousStatus] || '#6b7280'};background:${previousStatus === 'Kritikus' ? '#fef2f2' : previousStatus === 'Feldolgozandó' ? '#fffbeb' : '#f0fdf4'}">${previousStatus}</span>
+              </div>
+              <div style="font-size:20px;color:#9ca3af">→</div>
+              <div style="text-align:center">
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:4px">Jelenlegi</div>
+                <span style="padding:4px 12px;border-radius:6px;font-size:13px;font-weight:600;color:${statusColors[currentStatus] || '#6b7280'};background:${currentStatus === 'Kritikus' ? '#fef2f2' : currentStatus === 'Feldolgozandó' ? '#fffbeb' : '#f0fdf4'}">${currentStatus}</span>
+              </div>
+            </div>
+            <p style="font-size:13px;color:#6b7280">Nyitott hiányzó tételek: <strong>${missing}</strong></p>
+            ${worsened ? '<p style="font-size:13px;color:#dc2626;font-weight:600">Az ügyfél státusza romlott — azonnali intézkedés szükséges lehet.</p>' : '<p style="font-size:13px;color:#059669">Az ügyfél státusza javult.</p>'}
+            <p style="margin-top:16px">
+              <a href="https://app.visibill.hu/accounty/client/${companyId}"
+                 style="display:inline-block;padding:10px 24px;background:#0f766e;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px">
+                Ügyfél megtekintése
+              </a>
+            </p>
+          `
+
+          // Notify each assigned accountant
+          const uniqueUserIds = [...new Set(assigns.map((a: any) => a.accountant_user_id))]
+          for (const userId of uniqueUserIds) {
+            try {
+              await supabase.functions.invoke('send-accounty-notification', {
+                body: {
+                  user_id: userId,
+                  type: 'accounty_client_status',
+                  title: `Ügyfél státusz változás – ${companyName}`,
+                  body_html: bodyHtml,
+                  subject: `${companyName}: ${previousStatus} → ${currentStatus}`,
+                  company_name: companyName,
+                  company_id: companyId,
+                },
+              })
+            } catch (notifErr) {
+              console.error(`[accounty-detect-missing] Status notification failed for user ${userId}:`, notifErr)
+            }
+          }
+
+          totalStatusChanges++
+          console.log(`[accounty-detect-missing] Status change for ${companyName}: ${previousStatus} → ${currentStatus}`)
+        }
+
+        // Update last_computed_status on all assignments for this company
+        await supabase
+          .from('accounty_assignments')
+          .update({ last_computed_status: currentStatus })
+          .eq('company_id', companyId)
+
+      } catch (statusErr) {
+        console.error(`[accounty-detect-missing] Status check error for ${companyId}:`, statusErr)
+      }
+    }
+
     const summary = {
       success: true,
       companiesChecked: companyIdsToCheck.length,
       newMissingItems: totalInserted,
       alreadyTracked: totalSkipped,
       autoResolved: totalResolved,
+      statusChangesDetected: totalStatusChanges,
     }
 
     console.log(`[accounty-detect-missing] Done.`, JSON.stringify(summary))

@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-07-05
+**Utoljára frissítve:** 2026-07-06
 
 ## Context
 
@@ -10,7 +10,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — 48 deployed function + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — 49 deployed function + `_shared/` közös kód.
 
 **Közös kód:** `_shared/` mappa — CORS headers, Supabase client, utility-k.
 
@@ -78,16 +78,17 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `save-credentials` | ❌ | NAV API credentials titkosított mentése (AES-256-GCM → `save_nav_credentials` RPC) |
 | `delete-nav-credentials` | ✅ | NAV API credentials törlése |
 
-#### 📱 Accounty Modul (8 db)
+#### 📱 Accounty Modul (9 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
 | `accounty-seed` | ❌ | Accounty adatok inicializálása céghez |
-| `accounty-detect-missing` | ❌ | Hiányzó dokumentumok detektálása (cron) |
+| `accounty-detect-missing` | ❌ | Hiányzó dokumentumok detektálása (cron). Talált hiányokról email értesítést küld a hozzárendelt könyvelőknek (`send-accounty-notification`). |
 | `accounty-detect-bank` | ❌ | Hiányzó bankkivonatok detektálása (cron) |
 | `accounty-generate-deadlines` | ❌ | Kötelezettségek határidő generálás (cron) |
 | `accounty-ai-phone` | ❌ | AI-alapú telefonos asszisztens (hívás fogadás) |
 | `accounty-ai-chat` | ❌ | AI chat asszisztens az eaisyBooks modulhoz |
+| `send-accounty-notification` | ❌ | eaisyBooks email értesítés — `accounty_email_preferences` tábla check → Resend API (`info@mail.visibill.hu`). Log: `outgoing_emails`. (A-030) |
 | `validate-partner-code` | ❌ | Meghívó kód (share_token) read-only validáció — cég adatok visszaadása |
 | `join-company-as-accountant` | ❌ | Meghívó kód → `accounty_assignments` INSERT (könyvelő hozzárendelés) |
 
@@ -146,7 +147,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | JWT beállítás | Darabszám | Mikor |
 |---|---|---|
 | `verify_jwt: true` | 17 | Frontend-ből közvetlenül hívott function-ök |
-| `verify_jwt: false` | 32 | Webhook-ok, cron jobok, más EF-ek által hívottak, service_role auth, API key auth |
+| `verify_jwt: false` | 33 | Webhook-ok, cron jobok, más EF-ek által hívottak, service_role auth, API key auth |
 
 **Megjegyzés:** `verify_jwt: false` nem jelent védtelenséget — ezek a function-ök saját auth-ot implementálnak:
 - Webhook-ok: HMAC signature verification (Mailgun)
@@ -169,7 +170,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 - Deno runtime — npm csomagok korlátozott támogatása (`esm.sh` wrapper szükséges)
 - 60s timeout (hosszú NAV API hívások közel a limithez)
 - Nincs lokális hibakeresés (Supabase CLI `serve` korlátozottan működik)
-- 48 function karbantartása nehézkes — a legacy Stripe EF-ek konszolidálhatók
+- 49 function karbantartása nehézkes — a legacy Stripe EF-ek konszolidálhatók
 
 ## Kapcsolódó
 - [A-011: Mailgun Email Processing](./A-011-email-processing.md)
@@ -178,3 +179,4 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 - [A-015: Stripe Removal](./A-015-stripe-removal.md) (legacy EF-ek)
 - [A-019: Management Dashboard](./A-019-management-dashboard.md)
 - [A-021: Email Auth Flow Redesign](./A-021-email-auth-flow-redesign.md) (send-email hook, verify-email, signup single email)
+- [A-030: Accounty Email Notification Architecture](./A-030-accounty-email-notifications.md)

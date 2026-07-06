@@ -2,7 +2,7 @@
 
 > Könyvelő-ügyfél hozzárendelések, adóprofil, határidők, hiányzó dokumentumok, portál tokenek, kommunikáció.
 
-**Táblák ebben a csoportban:** 13
+**Táblák ebben a csoportban:** 14
 
 ---
 
@@ -343,3 +343,29 @@
 
 ---
 
+### `accounty_email_preferences`
+
+> Felhasználónkénti email értesítési preferenciák az eaisyBooks modulhoz. 1:1 user_id. Upsert alapú mentés a frontendről.
+
+**RLS:** ✅ | **Sorok:** ~5
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| user_id | uuid | — |  |
+| missing_invoice_alert | boolean | — | `true` |
+| deadline_reminder | boolean | — | `true` |
+| client_status_change | boolean | — | `false` |
+| approval_request | boolean | — | `true` |
+| weekly_report | boolean | — | `true` |
+| monthly_report | boolean | — | `false` |
+| created_at | timestamptz | — | `now()` |
+| updated_at | timestamptz | — | `now()` |
+
+**FK:** `user_id` → `auth.users.id` ON DELETE CASCADE
+
+**Indexek:** `accounty_email_preferences_pkey`, `accounty_email_preferences_user_id_key` (UNIQUE)
+
+**Trigger:** `set_accounty_email_prefs_updated_at` → `extensions.moddatetime(updated_at)`
+
+---

@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-07-05  
-> **Összesen:** 29 döntés | ✅ Decided: 28 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-07-06  
+> **Összesen:** 30 döntés | ✅ Decided: 29 | ⛔ Superseded: 1
 
 ---
 
@@ -58,8 +58,9 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 
 | # | DĂ¶ntĂ©s | StĂˇtusz | FĂˇjl |
 |---|--------|---------|------|
-| A-011 | Mailgun email processing pipeline | âś… Decided | [A-011](./A-011-email-processing.md) |
-| A-012 | NAV Online SzĂˇmla API v3 integrĂˇciĂł | âś… Decided | [A-012](./A-012-nav-integration.md) |
+| A-011 | Mailgun email processing pipeline | ✅ Decided | [A-011](./A-011-email-processing.md) |
+| A-012 | NAV Online Számla API v3 integráció | ✅ Decided | [A-012](./A-012-nav-integration.md) |
+| A-030 | Accounty Email Notification Architecture (preference-gated, dual-sender, event-driven) | ✅ Decided | [A-030](./A-030-accounty-email-notifications.md) |
 
 ## đź—„ď¸Ź AdatbĂˇzis
 

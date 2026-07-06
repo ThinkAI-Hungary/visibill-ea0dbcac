@@ -108,11 +108,11 @@ export function AccountyNotificationPreferences() {
 
   // Email prefs — loaded from DB
   const [emailPrefs, setEmailPrefs] = useState<EmailNotifPrefs>({
-    missingInvoiceAlert: true,
-    deadlineReminder: true,
+    missingInvoiceAlert: false,
+    deadlineReminder: false,
     clientStatusChange: false,
-    approvalRequest: true,
-    weeklyReport: true,
+    approvalRequest: false,
+    weeklyReport: false,
     monthlyReport: false,
   });
 
@@ -146,11 +146,11 @@ export function AccountyNotificationPreferences() {
         if (data) {
           const d = data as any;
           setEmailPrefs({
-            missingInvoiceAlert: d.missing_invoice_alert ?? true,
-            deadlineReminder: d.deadline_reminder ?? true,
+            missingInvoiceAlert: d.missing_invoice_alert ?? false,
+            deadlineReminder: d.deadline_reminder ?? false,
             clientStatusChange: d.client_status_change ?? false,
-            approvalRequest: d.approval_request ?? true,
-            weeklyReport: d.weekly_report ?? true,
+            approvalRequest: d.approval_request ?? false,
+            weeklyReport: d.weekly_report ?? false,
             monthlyReport: d.monthly_report ?? false,
           });
         }
