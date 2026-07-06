@@ -7915,6 +7915,7 @@ export type Database = {
           p_amount_min?: number
           p_category_id?: string
           p_company_id: string
+          p_continuous?: string
           p_currency?: string
           p_date_from: string
           p_date_to: string
@@ -7925,6 +7926,7 @@ export type Database = {
           p_page_size?: number
           p_paid?: string
           p_payment_method?: string
+          p_preset_id?: string
           p_project_id?: string
           p_search?: string
           p_sort_dir?: string
@@ -7932,6 +7934,7 @@ export type Database = {
           p_submitted?: string
         }
         Returns: {
+          calculated_ti: string
           category_id: string
           company_id: string
           created_at: string
@@ -7942,6 +7945,7 @@ export type Database = {
           details_fetched: boolean
           exclude_from_accounting: boolean
           fetched_at: string
+          gl_numbers: string
           id: string
           invoice_delivery_date: string
           invoice_direction: string
@@ -7951,14 +7955,19 @@ export type Database = {
           invoice_number: string
           invoice_operation: string
           invoice_vat_amount: number
+          is_continuous: boolean
           paid: boolean
           payment_date: string
           payment_method: string
           project_id: string
+          service_period_end: string
+          service_period_start: string
           submitted: boolean
           supplier_address: string
           supplier_name: string
           supplier_tax_number: string
+          ti_calculation_method: string
+          ti_override: string
           total_count: number
           transaction_id: string
           user_id: string

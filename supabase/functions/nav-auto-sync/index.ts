@@ -34,6 +34,8 @@ interface InvoiceLineItem {
   vatAmount?: number;
   grossAmount?: number;
   productCode?: string;
+  lineDeliveryPeriodFrom?: string;
+  lineDeliveryPeriodTo?: string;
 }
 
 interface InvoiceDetails {
@@ -657,7 +659,9 @@ async function fetchInvoiceDetails(
                 vat_rate: item.vatRate,
                 vat_amount: item.vatAmount,
                 gross_amount: item.grossAmount,
-                product_code: item.productCode
+                product_code: item.productCode,
+                line_delivery_period_from: item.lineDeliveryPeriodFrom || null,
+                line_delivery_period_to: item.lineDeliveryPeriodTo || null
               }));
 
               const { error: itemsError } = await supabase
@@ -928,6 +932,12 @@ function parseInvoiceLines(xml: string): InvoiceLineItem[] {
     // Extract product code
     const productCode = extractTag(lineXml, 'productCodeValue') || extractTag(lineXml, 'productCodeOwnValue');
     if (productCode) item.productCode = productCode;
+
+    // Extract line delivery period (NAV v3.0: lineDeliveryDate or lineDeliveryPeriod)
+    const periodFrom = extractTag(lineXml, 'lineDeliveryPeriodFrom') || extractTag(lineXml, 'deliveryPeriodFrom');
+    const periodTo = extractTag(lineXml, 'lineDeliveryPeriodTo') || extractTag(lineXml, 'deliveryPeriodTo');
+    if (periodFrom) item.lineDeliveryPeriodFrom = periodFrom;
+    if (periodTo) item.lineDeliveryPeriodTo = periodTo;
 
     lineItems.push(item);
   });
