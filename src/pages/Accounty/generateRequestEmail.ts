@@ -164,6 +164,46 @@ export function addToApprovalQueue(message: OutgoingMessage): void {
   const queue = getApprovalQueue();
   queue.unshift(message);
   saveApprovalQueue(queue);
+
+  // ── Fire email notification to firm admins/seniors ──
+  fireApprovalNotification(message).catch((err) =>
+    console.error('[approval-queue] Notification fire failed:', err)
+  );
+}
+
+async function fireApprovalNotification(message: OutgoingMessage): Promise<void> {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token || !session?.user?.id) return;
+
+    await supabase.functions.invoke('send-accounty-notification', {
+      body: {
+        user_id: session.user.id,
+        type: 'accounty_approval',
+        title: 'Új jóváhagyásra váró üzenet',
+        body_html: `
+          <p><strong>${message.companyName}</strong> céghez tartozó dokumentum-bekérő üzenet jóváhagyásra vár.</p>
+          <div style="background:#f3f4f6;padding:12px 16px;border-radius:6px;margin:12px 0">
+            <p style="margin:0;font-size:13px;color:#6b7280">Tárgy:</p>
+            <p style="margin:4px 0 0;font-weight:600">${message.subject}</p>
+          </div>
+          <p style="font-size:13px;color:#6b7280">Címzett: ${message.contactEmail}</p>
+          <p style="margin-top:16px">
+            <a href="https://app.visibill.hu/accounty/approval-queue" 
+               style="display:inline-block;padding:10px 24px;background:#0f766e;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px">
+              Jóváhagyás megtekintése
+            </a>
+          </p>
+        `,
+        subject: `Jóváhagyásra vár: ${message.companyName} – dokumentum bekérés`,
+        company_name: message.companyName,
+        company_id: message.companyId,
+      },
+    });
+  } catch {
+    // Best-effort — don't break the queue flow
+  }
 }
 
 export function updateMessageStatus(

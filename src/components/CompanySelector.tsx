@@ -1,4 +1,4 @@
-﻿import { useCompany, Company } from '@/contexts/CompanyContext';
+import { useCompany, Company, VatRegime } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Plus, Pencil, Trash2 } from 'lucide-react';
@@ -28,6 +28,7 @@ const CompanySelector = () => {
   const [newCompanyName, setNewCompanyName] = useState('');
   const [newCompanyTaxNumber, setNewCompanyTaxNumber] = useState('');
   const [newCompanyAddress, setNewCompanyAddress] = useState('');
+  const [newCompanyVatRegime, setNewCompanyVatRegime] = useState<VatRegime>('normal');
   const [isCreating, setIsCreating] = useState(false);
 
   // Join state
@@ -80,6 +81,8 @@ const CompanySelector = () => {
           tax_number: newCompanyTaxNumber.trim() || null,
           address: newCompanyAddress.trim() || null,
           owner_id: user.id,
+          vat_regime: newCompanyVatRegime,
+          vat_regime_effective_from: `${new Date().getFullYear()}-01-01`,
         });
 
       if (error) throw error;
@@ -88,6 +91,7 @@ const CompanySelector = () => {
       setNewCompanyName('');
       setNewCompanyTaxNumber('');
       setNewCompanyAddress('');
+      setNewCompanyVatRegime('normal');
       setIsCreateDialogOpen(false);
       toast({ title: 'Cég sikeresen létrehozva!' });
     } catch (error: any) {
@@ -334,6 +338,20 @@ const CompanySelector = () => {
               <div className="space-y-2">
                 <Label htmlFor="newAddress">Székhely</Label>
                 <Input id="newAddress" value={newCompanyAddress} onChange={(e) => setNewCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newVatRegime">ÁFA rendszer *</Label>
+                <Select value={newCompanyVatRegime} onValueChange={(v) => setNewCompanyVatRegime(v as VatRegime)}>
+                  <SelectTrigger id="newVatRegime">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">Általános ÁFA</SelectItem>
+                    <SelectItem value="penzforgalmi">Pénzforgalmi elszámolás</SelectItem>
+                    <SelectItem value="alanyi_mentes">Alanyi adómentesség</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Ez az adóévre érvényes beállítás. Később a cég beállításaiban módosítható.</p>
               </div>
               <Button onClick={handleCreateCompany} disabled={!newCompanyName.trim() || !newCompanyTaxNumber.trim() || isCreating} className="w-full">
                 {isCreating ? 'Létrehozás...' : 'Cég létrehozása'}

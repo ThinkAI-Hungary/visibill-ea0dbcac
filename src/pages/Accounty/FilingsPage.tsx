@@ -12,12 +12,13 @@ import {
   usePayrollFilings, usePayrollCycles, usePayrollCalculations,
   usePayrollEmployees, type PayrollFiling
 } from '@/hooks/usePayrollData';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
 import { generateFiling08Xml, downloadXml, type Filing08Data, type Filing08EmployeeLine } from '@/lib/payroll/filingGenerator';
 import { exportPdf } from '@/lib/exportPdf';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 const FILING_TYPES: Record<string, { label: string; color: string; desc: string }> = {
   '08': { label: '08-as bevallás', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400', desc: 'Havi foglalkoztatói bevallás' },
@@ -50,7 +51,7 @@ export default function FilingsPage() {
   const [genMonth, setGenMonth] = useState(new Date().getMonth() + 1);
   const [showGenPanel, setShowGenPanel] = useState(false);
 
-  const { data: filings = [], isLoading } = usePayrollFilings(companyId || '');
+  const { data: filings = [], isLoading, isError: filingsError, refetch: refetchFilings } = usePayrollFilings(companyId || '');
   const { data: cycles = [] } = usePayrollCycles(companyId || '');
   const { data: employees = [] } = usePayrollEmployees(companyId || '');
   const { data: clients } = useAccountyClients();
@@ -203,6 +204,10 @@ export default function FilingsPage() {
       setGenerating(false);
     }
   };
+
+  if (filingsError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a bevallásokat." onRetry={() => refetchFilings()} />;
+  }
 
   if (isLoading) {
     return (

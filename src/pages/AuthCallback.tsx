@@ -1,26 +1,116 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { reportAuthError } from '@/lib/errorReporter';
+import { CheckCircle2, Mail, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { STORAGE_KEYS } from '@/lib/constants';
+
+const PENDING_KEY = 'visibill_pending_callback_type';
+const SESSION_KEY = 'visibill_email_change_confirmed';
 
 /**
- * AuthCallback — handles the OAuth redirect from Google (and other providers).
- * Supabase returns a `code` in the URL which needs to be exchanged for a session.
- * After successful exchange, redirects the user to the dashboard.
+ * AuthCallback — handles the OAuth redirect from Google (and other providers),
+ * and also handles Supabase email_change confirmation links.
  */
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+  const [emailChanged, setEmailChanged] = useState(false);
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Get the URL params — Supabase OAuth returns `code` for PKCE flow
+        // Read the pending type from sessionStorage — the IIFE saves it synchronously
+        // before Supabase's async init clears the URL hash. Only the type is stored
+        // (never the access_token), so there is no sensitive data in sessionStorage.
+        const pendingType = sessionStorage.getItem(PENDING_KEY);
+        sessionStorage.removeItem(PENDING_KEY);
+
+        // ── Email change: expired/already-used token ──────────────────────────
+        if (pendingType === 'otp_expired') {
+          if (sessionStorage.getItem(SESSION_KEY)) {
+            sessionStorage.removeItem(SESSION_KEY);
+            setEmailChanged(true);
+          } else {
+            setError('Ez a megerősítő link már lejárt vagy fel lett használva. Ha az email váltás még nem sikerült, kérj új linket.');
+          }
+          window.history.replaceState(null, '', window.location.pathname);
+          return;
+        }
+
+        // ── Email change: successful confirmation ─────────────────────────────
+        if (pendingType === 'email_change') {
+          // DO NOT call replaceState here — the Supabase SDK reads window.location.hash
+          // inside getSession() to process the email change token. Clearing the URL
+          // before getSession() would prevent the SDK from seeing the token.
+
+          // Give the SDK a tick to initialize its internal hash detection before
+          // we call getSession() (which triggers hash processing).
+          await new Promise(r => setTimeout(r, 50));
+
+          // getSession() triggers the SDK to read & process the hash → establishes
+          // the new email-change session and fires SIGNED_IN/USER_UPDATED.
+          const { data: { session: existingSession } } = await supabase.auth.getSession();
+
+          if (!existingSession) {
+            // Session not yet ready — wait for SDK to fire the auth event
+            await new Promise<void>((resolve) => {
+              let timeoutId: ReturnType<typeof setTimeout>;
+              const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+                if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+                  clearTimeout(timeoutId);
+                  subscription.unsubscribe();
+                  resolve();
+                }
+              });
+              // 6-second fallback — if SDK never fires, proceed anyway
+              timeoutId = setTimeout(() => {
+                subscription.unsubscribe();
+                resolve();
+              }, 6000);
+            });
+          }
+
+          // URL cleaned AFTER the SDK has read the hash
+          window.history.replaceState(null, '', window.location.pathname);
+
+          // Sign out so user re-authenticates with the new email address.
+          await supabase.auth.signOut();
+
+          // Clear TanStack Query cache — without this, the companies/access queries
+          // may be in a cancelled/indeterminate state and the first re-login shows
+          // the onboarding page instead of the dashboard (same as AuthContext.signOut).
+          queryClient.clear();
+
+          // Also clear LAST_ACTIVE so the 4h gate doesn't block immediate re-login.
+          try { localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVE); } catch {}
+
+          sessionStorage.setItem(SESSION_KEY, '1');
+          setEmailChanged(true);
+          return;
+        }
+
+        // ── Fallback: check hash directly (for non-email_change OAuth flows) ─
+        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+        const accessToken = hashParams.get('access_token');
+        const hashError = hashParams.get('error');
+        const errorDescription = hashParams.get('error_description');
+
+        // Implicit flow access_token (e.g. magic link — not email_change)
+        if (accessToken && !hashError) {
+          await new Promise(r => setTimeout(r, 500));
+          navigate('/', { replace: true });
+          return;
+        }
+
+        // ── OAuth PKCE flow (code exchange) ───────────────────────────────────
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
         const errorParam = params.get('error');
-        const errorDescription = params.get('error_description');
 
         if (errorParam) {
           reportAuthError('AuthCallback', 'oauth_error', errorDescription || errorParam, undefined, { errorParam, errorDescription });
@@ -29,7 +119,6 @@ export default function AuthCallback() {
         }
 
         if (code) {
-          // Exchange the authorization code for a session
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
             reportAuthError('AuthCallback', 'session_exchange', exchangeError.message, exchangeError);
@@ -38,16 +127,8 @@ export default function AuthCallback() {
           }
         }
 
-        // Also handle hash-based tokens (implicit flow fallback)
-        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
-        const accessToken = hashParams.get('access_token');
-        if (accessToken) {
-          // The supabase client auto-detects hash tokens, just wait for session
-          await new Promise(r => setTimeout(r, 500));
-        }
-
-        // Success — redirect to dashboard
         navigate('/', { replace: true });
+
       } catch (err: any) {
         reportAuthError('AuthCallback', 'callback', err.message || 'Auth callback error', err);
         setError(err.message || 'Ismeretlen hiba történt');
@@ -57,23 +138,52 @@ export default function AuthCallback() {
     handleCallback();
   }, [navigate]);
 
+  // ── Email change confirmation screen ───────────────────────────────────────
+  if (emailChanged) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md px-6">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+          </div>
+          <h1 className="text-xl font-bold text-foreground mb-2">
+            Email cím sikeresen megváltoztatva
+          </h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Az új email cím megerősítve. Kérjük, jelentkezz be az új email címeddel a folytatáshoz.
+          </p>
+          <div className="flex items-center justify-center gap-2 mb-6 px-4 py-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+            <Mail className="h-4 w-4 text-emerald-600" />
+            <span className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">Új email cím aktív</span>
+          </div>
+          <Button
+            className="w-full"
+            onClick={() => navigate('/auth', { replace: true })}
+          >
+            Bejelentkezés
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error screen ───────────────────────────────────────────────────────────
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md px-6">
           <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <svg className="h-8 w-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
+            <AlertCircle className="h-8 w-8 text-destructive" />
           </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">Bejelentkezés sikertelen</h1>
+          <h1 className="text-xl font-bold text-foreground mb-2">Hiba történt</h1>
           <p className="text-sm text-muted-foreground mb-6">{error}</p>
-          <button
+          <Button
+            variant="outline"
             onClick={() => navigate('/auth', { replace: true })}
-            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="w-full"
           >
             Vissza a bejelentkezéshez
-          </button>
+          </Button>
         </div>
       </div>
     );

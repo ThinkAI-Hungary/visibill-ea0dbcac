@@ -14,6 +14,7 @@ import { formatTajNumber } from '@/lib/payroll/validators';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 export default function EmployeesPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -41,7 +42,7 @@ export default function EmployeesPage() {
     }
   };
 
-  const { data: employees = [], isLoading } = usePayrollEmployees(companyId || '');
+  const { data: employees = [], isLoading, isError, refetch } = usePayrollEmployees(companyId || '');
 
   const filtered = useMemo(() => {
     let result = employees;
@@ -84,6 +85,10 @@ export default function EmployeesPage() {
     terminated: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
     suspended: 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
   };
+
+  if (isError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a foglalkoztatottak listáját." onRetry={() => refetch()} />;
+  }
 
   if (isLoading) {
     return (

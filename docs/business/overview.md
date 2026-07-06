@@ -120,7 +120,7 @@ A Visibill egyszeri vásárlással érhető el. A felhasználó megvásárolja a
 
 ### Bevételi driverek
 - Egyszeri licencdíj (one-time purchase)
-- Accounty modul (könyvelő irodák számára, együtt vásárolható)
+- eaisyBooks modul (könyvelő irodák számára, együtt vásárolható)
 - Jövőbeli prémium funkciók (potential add-on)
 
 ---
@@ -138,9 +138,9 @@ A Visibill egyszeri vásárlással érhető el. A felhasználó megvásárolja a
 - ✅ Kintlévőség kezelés és fizetési felszólítás
 - ✅ Futárszolgálat riport feldolgozás (6 szolgáltató)
 - ✅ Bér modul és munkaidő nyilvántartás
-- ✅ Multi-company támogatás
+- ✅ Multi-company támogatás + adószám-alapú cross-company invoice routing (2026-07-02)
 - ✅ Email-alapú automatikus számlafeldolgozás
-- ✅ Accounty modul (könyvelő iroda nézet)
+- ✅ eaisyBooks modul (könyvelő iroda nézet, korábban "Accounty")
 - ✅ ÁFA bevallás modul
 - ✅ Payroll (bérszámfejtés) modul
 - ✅ Házipénztár multi-regiszter támogatás (több pénztár, több deviza, szabályok)
@@ -156,7 +156,7 @@ A Visibill egyszeri vásárlással érhető el. A felhasználó megvásárolja a
 ### Amit tervezünk
 - 📋 Banki API integráció (Open Banking / PSD2)
 - 📋 Mobil alkalmazás (PWA)
-- 📋 Könyvelő iroda nézet
+- 📋 eaisyBooks iroda nézet bővítés
 - 📋 Számla kiállítás vagy számlázó integráció
 
 ---

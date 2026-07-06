@@ -101,7 +101,7 @@ export function InviteUserDialog({
 
   // Company assignment
   const [assignToCompany, setAssignToCompany] = useState(true);
-  const [selectedCompanyId, setSelectedCompanyId] = useState(companyId);
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([companyId]);
   const [companySearch, setCompanySearch] = useState('');
 
   // Companies from context
@@ -114,10 +114,28 @@ export function InviteUserDialog({
     return companies.filter(c => c.name.toLowerCase().includes(q));
   }, [companies, companySearch]);
 
-  // Selected company object
-  const selectedCompanyObj = useMemo(
-    () => companies.find(c => c.id === selectedCompanyId) || null,
-    [companies, selectedCompanyId]
+  // Toggle company selection
+  const toggleCompany = (id: string) => {
+    setSelectedCompanyIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  // Select / deselect all filtered companies
+  const selectAllFiltered = () => {
+    const filteredIds = filteredCompanies.map(c => c.id);
+    const allSelected = filteredIds.every(id => selectedCompanyIds.includes(id));
+    if (allSelected) {
+      setSelectedCompanyIds(prev => prev.filter(id => !filteredIds.includes(id)));
+    } else {
+      setSelectedCompanyIds(prev => [...new Set([...prev, ...filteredIds])]);
+    }
+  };
+
+  // Selected company objects
+  const selectedCompanyObjs = useMemo(
+    () => companies.filter(c => selectedCompanyIds.includes(c.id)),
+    [companies, selectedCompanyIds]
   );
 
   // Password strength
@@ -183,7 +201,7 @@ export function InviteUserDialog({
     setShowPassword(false);
     setShowConfirmPassword(false);
     setAssignToCompany(true);
-    setSelectedCompanyId(companyId);
+    setSelectedCompanyIds([companyId]);
     setCompanySearch('');
     setRole(isAccounty ? 'könyvelő' : 'member');
     setLookupStatus('idle');
@@ -232,48 +250,70 @@ export function InviteUserDialog({
       if (!session?.access_token) throw new Error('Nincs aktív munkamenet.');
 
       if (mode === 'existing') {
-        // ── Existing user: add to company directly ──
-        const response = await supabase.functions.invoke('invite-user', {
-          body: {
-            email: email.trim(),
-            name: foundUserName || email.trim(),
-            password: 'DummyPassword1!', // Not used for existing users, but backend requires it
-            company_id: assignToCompany ? selectedCompanyId : null,
-            role: assignToCompany ? role : null,
-          },
-        });
+        // ── Existing user: add to company/companies directly ──
+        const companyIdsToAssign = assignToCompany ? selectedCompanyIds : [];
+        const errors: string[] = [];
+        let successCount = 0;
 
-        if (response.error) throw new Error(response.error.message || 'Ismeretlen hiba');
+        for (const cId of companyIdsToAssign.length > 0 ? companyIdsToAssign : [null]) {
+          const response = await supabase.functions.invoke('invite-user', {
+            body: {
+              email: email.trim(),
+              name: foundUserName || email.trim(),
+              password: 'DummyPassword1!',
+              company_id: cId,
+              accounting_firm_id: isAccounty ? companyId : undefined,
+              role: cId ? role : null,
+            },
+          });
 
-        const result = response.data;
+          if (response.error) {
+            errors.push(response.error.message || 'Ismeretlen hiba');
+            continue;
+          }
 
-        if (!result?.success) {
-          const errorMessages: Record<string, string> = {
-            valid_email_required: 'Érvényes email cím szükséges.',
-            name_required: 'A név megadása kötelező.',
-            not_admin: 'Nincs jogosultságod felhasználót hozzáadni ehhez a céghez.',
-            already_member: 'Ez a felhasználó már tagja a cégnek.',
-            member_insert_failed: 'Nem sikerült hozzárendelni a felhasználót a céghez.',
-          };
-          const msg = errorMessages[result?.error] || result?.error || 'Ismeretlen hiba történt.';
-          toast({ title: 'Hiba', description: msg, variant: 'destructive' });
+          const result = response.data;
+
+          if (!result?.success) {
+            const errorMessages: Record<string, string> = {
+              valid_email_required: 'Érvényes email cím szükséges.',
+              name_required: 'A név megadása kötelező.',
+              not_admin: 'Nincs jogosultságod felhasználót hozzáadni ehhez a céghez.',
+              already_member: 'Ez a felhasználó már tagja a cégnek.',
+              member_insert_failed: 'Nem sikerült hozzárendelni a felhasználót a céghez.',
+            };
+            const msg = errorMessages[result?.error] || result?.error || 'Ismeretlen hiba történt.';
+            const cName = companies.find(c => c.id === cId)?.name || '';
+            errors.push(cName ? `${cName}: ${msg}` : msg);
+          } else {
+            successCount++;
+          }
+        }
+
+        if (errors.length > 0 && successCount === 0) {
+          toast({ title: 'Hiba', description: errors.join('\n'), variant: 'destructive' });
           setLoading(false);
           return;
         }
 
+        const companyCountText = successCount > 1 ? `${successCount} céghez` : 'a céghez';
         toast({
           title: 'Felhasználó hozzáadva',
-          description: `${foundUserName || email.trim()} sikeresen hozzáadva a céghez.`,
+          description: `${foundUserName || email.trim()} sikeresen hozzáadva ${companyCountText}.${errors.length > 0 ? ` (${errors.length} hiba)` : ''}`,
         });
       } else {
-        // ── New user: create + add to company ──
+        // ── New user: create + add to first company, then add remaining ──
+        const newUserCompanyIds = assignToCompany ? selectedCompanyIds : [];
+        const firstCompanyId = newUserCompanyIds[0] || null;
+
         const response = await supabase.functions.invoke('invite-user', {
           body: {
             email: email.trim(),
             name: name.trim(),
             password,
-            company_id: assignToCompany ? selectedCompanyId : null,
-            role: assignToCompany ? role : null,
+            company_id: firstCompanyId,
+            accounting_firm_id: isAccounty ? companyId : undefined,
+            role: firstCompanyId ? role : null,
           },
         });
 
@@ -298,15 +338,34 @@ export function InviteUserDialog({
           return;
         }
 
+        // Add to remaining companies (if multi-select)
+        let extraSuccess = 0;
+        for (const cId of newUserCompanyIds.slice(1)) {
+          const extraResp = await supabase.functions.invoke('invite-user', {
+            body: {
+              email: email.trim(),
+              name: name.trim(),
+              password: 'DummyPassword1!',
+              company_id: cId,
+              accounting_firm_id: isAccounty ? companyId : undefined,
+              role,
+            },
+          });
+          if (!extraResp.error && extraResp.data?.success) extraSuccess++;
+        }
+
+        const totalAssigned = 1 + extraSuccess;
+        const companyText = totalAssigned > 1 ? `${totalAssigned} céghez` : 'a céghez';
+
         if (result.existing_user) {
           toast({
             title: 'Felhasználó hozzáadva',
-            description: `${name.trim()} már regisztrált felhasználó — hozzáadva a céghez.`,
+            description: `${name.trim()} már regisztrált felhasználó — hozzáadva ${companyText}.`,
           });
         } else {
           toast({
             title: 'Felhasználó meghívva',
-            description: `${name.trim()} (${email.trim()}) sikeresen létrehozva.`,
+            description: `${name.trim()} (${email.trim()}) sikeresen létrehozva és hozzáadva ${companyText}.`,
           });
         }
       }
@@ -576,10 +635,22 @@ export function InviteUserDialog({
 
             {assignToCompany && (
               <div className="space-y-3 pl-6">
-                {/* Company selector with search (only if >1 company) */}
+                {/* Company multi-selector with search */}
                 {companies.length > 1 ? (
                   <div className="space-y-2">
-                    <Label>Cég kiválasztása</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Cégek kiválasztása</Label>
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline font-medium"
+                        onClick={selectAllFiltered}
+                      >
+                        {filteredCompanies.every(c => selectedCompanyIds.includes(c.id))
+                          ? 'Mind törlése'
+                          : 'Mind kijelölése'}
+                      </button>
+                    </div>
+
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                       <Input
@@ -589,7 +660,7 @@ export function InviteUserDialog({
                         className="pl-9 h-9"
                       />
                     </div>
-                    <div className="max-h-[120px] overflow-y-auto rounded-md border border-border">
+                    <div className="max-h-[160px] overflow-y-auto rounded-md border border-border">
                       {filteredCompanies.length === 0 ? (
                         <div className="p-2 text-xs text-muted-foreground text-center">Nincs találat</div>
                       ) : (
@@ -599,21 +670,24 @@ export function InviteUserDialog({
                             type="button"
                             className={cn(
                               'w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors',
-                              c.id === selectedCompanyId
+                              selectedCompanyIds.includes(c.id)
                                 ? 'bg-primary/10 text-primary font-medium'
                                 : 'hover:bg-muted/50'
                             )}
-                            onClick={() => { setSelectedCompanyId(c.id); setCompanySearch(''); }}
+                            onClick={() => toggleCompany(c.id)}
                           >
                             <span className="truncate">{c.name}</span>
-                            {c.id === selectedCompanyId && <Check className="h-3.5 w-3.5 shrink-0" />}
+                            {selectedCompanyIds.includes(c.id) && <Check className="h-3.5 w-3.5 shrink-0" />}
                           </button>
                         ))
                       )}
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedCompanyIds.length} cég kiválasztva
+                    </p>
                   </div>
                 ) : (
-                  <p className="text-sm font-medium">{selectedCompanyObj?.name || companyName}</p>
+                  <p className="text-sm font-medium">{selectedCompanyObjs[0]?.name || companyName}</p>
                 )}
 
                 {/* Role */}

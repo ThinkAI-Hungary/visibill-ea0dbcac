@@ -2,7 +2,7 @@ import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useState } from 'react';
-import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink } from 'lucide-react';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet, CreditCard, Scale, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,8 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
 import { INVOICE_TYPE_LABELS } from '@/types/invoices';
 import { useTransactionMatcher } from '@/hooks/useTransactionMatcher';
+import { ManualPaymentDialog } from './invoices/ManualPaymentDialog';
+import type { NettingGroup } from '@/hooks/useNettingDetection';
 
 interface MatchedSubmittedInvoice {
   id: string;
@@ -27,6 +29,8 @@ interface MatchedSubmittedInvoice {
   image_url: string | null;
   melleklet_url: string | null;
   invoice_type?: string | null;
+  category_id?: string | null;
+  project_id?: string | null;
 }
 
 // Human-readable invoice_type labels (uses central map)
@@ -116,6 +120,21 @@ interface ExpandedInvoiceRowProps {
   companyId?: string;
   /** Called after successful match/unmatch/verify operations */
   onMatchUpdate?: () => void;
+  glNumbers?: string | null;
+  hasSubmittedMatch?: boolean;
+  /** Categories list for badge lookup */
+  categories?: Array<{ id: string; name: string; color?: string | null }>;
+  /** Projects list for badge lookup */
+  projects?: Array<{ id: string; name: string; color?: string | null }>;
+  /** Netting group data if this invoice is part of a netting (kompenzálás) group */
+  nettingGroup?: NettingGroup | null;
+  /** Continuous service data */
+  isContinuous?: boolean;
+  servicePeriodStart?: string | null;
+  servicePeriodEnd?: string | null;
+  calculatedTi?: string | null;
+  tiOverride?: string | null;
+  tiCalculationMethod?: string | null;
 }
 
 // Compact collapsible transaction list inside invoice cards
@@ -190,7 +209,19 @@ const ExpandedInvoiceRow = ({
   invoiceDate,
   companyId,
   onMatchUpdate,
+  glNumbers,
+  hasSubmittedMatch = false,
+  categories,
+  projects,
+  nettingGroup,
+  isContinuous,
+  servicePeriodStart,
+  servicePeriodEnd,
+  calculatedTi,
+  tiOverride,
+  tiCalculationMethod,
 }: ExpandedInvoiceRowProps) => {
+  const [showManualPayment, setShowManualPayment] = useState(false);
   // Invoice-side matching is enabled when all required props are provided
   const matchingEnabled = !!(invoiceId && companyId && invoiceDate && !hideStandaloneTransactions);
 
@@ -249,6 +280,154 @@ const ExpandedInvoiceRow = ({
           <div className="accordion-grid-animate">
             <div className="accordion-overflow">
               <div className="py-6 px-8 space-y-4 max-w-3xl ml-4">
+            {/* General Ledger numbers */}
+            {glNumbers && (
+              <div className="mb-4 expand-animate bg-card border border-border/40 p-3 rounded-lg flex flex-col gap-2 max-w-lg">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
+                  Hozzárendelt főkönyvi számok
+                </div>
+                <div className="flex flex-wrap gap-1.5 font-mono">
+                  {glNumbers.split(', ').map(num => (
+                    <span
+                      key={num}
+                      className={cn(
+                        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border",
+                        hasSubmittedMatch
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
+                          : "bg-orange-500/10 text-orange-500 border-orange-500/20 dark:text-orange-400"
+                      )}
+                    >
+                      {num} ({hasSubmittedMatch ? 'Végleges' : 'Ideiglenes'})
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Netting (kompenzálás) card */}
+            {nettingGroup && (
+              <Card className="bg-orange-500/[0.06] border-orange-400/40 expand-animate">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs font-medium flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Scale className="h-3.5 w-3.5 text-orange-500" />
+                      Kompenzálási javaslat
+                    </span>
+                    <Badge className="text-[10px] h-5 bg-orange-500/15 text-orange-600 border-orange-400/40 hover:bg-orange-500/20">
+                      <Scale className="h-2.5 w-2.5 mr-0.5" />
+                      {nettingGroup.deliveryMonth}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0 space-y-2">
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Partner:</span>
+                    <span className="ml-1 font-medium">{nettingGroup.partnerName}</span>
+                    <span className="ml-1.5 text-[10px] text-muted-foreground font-mono">({nettingGroup.partnerTaxNumber})</span>
+                  </div>
+
+                  {/* Opposing invoices */}
+                  <div className="space-y-1.5">
+                    {nettingGroup.inboundInvoices.length > 0 && (
+                      <div>
+                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Bejövő számlák ({nettingGroup.inboundInvoices.length})</div>
+                        {nettingGroup.inboundInvoices.map(inv => (
+                          <div key={inv.id} className="flex items-center justify-between text-xs py-0.5 pl-2 border-l-2 border-l-destructive/30">
+                            <span className="font-mono text-[11px]">{inv.invoice_number}</span>
+                            <span className="font-mono text-destructive">{formatCurrency(Math.abs(inv.invoice_gross_amount || 0), inv.currency || 'HUF')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {nettingGroup.outboundInvoices.length > 0 && (
+                      <div>
+                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Kimenő számlák ({nettingGroup.outboundInvoices.length})</div>
+                        {nettingGroup.outboundInvoices.map(inv => (
+                          <div key={inv.id} className="flex items-center justify-between text-xs py-0.5 pl-2 border-l-2 border-l-success/30">
+                            <span className="font-mono text-[11px]">{inv.invoice_number}</span>
+                            <span className="font-mono text-success">{formatCurrency(Math.abs(inv.invoice_gross_amount || 0), inv.currency || 'HUF')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Summary */}
+                  <div className="border-t border-orange-400/20 pt-2 grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Bejövő összesen:</span>
+                      <div className="font-mono font-medium text-destructive">{formatCurrency(nettingGroup.inboundTotal, nettingGroup.currency)}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Kimenő összesen:</span>
+                      <div className="font-mono font-medium text-success">{formatCurrency(nettingGroup.outboundTotal, nettingGroup.currency)}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Nettó különbözet:</span>
+                      <div className={cn("font-mono font-bold", nettingGroup.netDifference >= 0 ? "text-success" : "text-destructive")}>
+                        {formatCurrency(Math.abs(nettingGroup.netDifference), nettingGroup.currency)}
+                        <span className="text-[10px] font-normal text-muted-foreground ml-1">
+                          ({nettingGroup.netDifference >= 0 ? 'követelés' : 'tartozás'})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Continuous service (Folyamatos szolgáltatás) card */}
+            {isContinuous && (
+              <Card className="bg-blue-500/[0.06] border-blue-400/40 expand-animate">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs font-medium flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <RefreshCw className="h-3.5 w-3.5 text-blue-500" />
+                      Folyamatos szolgáltatás
+                    </span>
+                    <Badge className="text-[10px] h-5 bg-blue-500/15 text-blue-600 border-blue-400/40 hover:bg-blue-500/20">
+                      <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                      Áfa tv. 58.§
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0 space-y-2">
+                  {servicePeriodStart && servicePeriodEnd && (
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Szolg. időszak kezdete:</span>
+                        <div className="font-mono font-medium">{format(new Date(servicePeriodStart), 'yyyy. MM. dd.', { locale: hu })}</div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Szolg. időszak vége:</span>
+                        <div className="font-mono font-medium">{format(new Date(servicePeriodEnd), 'yyyy. MM. dd.', { locale: hu })}</div>
+                      </div>
+                    </div>
+                  )}
+                  {(calculatedTi || tiOverride) && (
+                    <div className="border-t border-blue-400/20 pt-2 grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Teljesítési időpont (TI):</span>
+                        <div className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                          {format(new Date(tiOverride || calculatedTi!), 'yyyy. MM. dd.', { locale: hu })}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Meghatározás módja:</span>
+                        <div className="font-medium">
+                          {tiCalculationMethod === 'manual' ? '✏️ Kézi felülírás'
+                            : tiCalculationMethod === 'nav_period_end' ? '📋 NAV szolg. időszak vége'
+                            : tiCalculationMethod === 'payment_due' ? '💰 Fizetési határidő'
+                            : '📅 Teljesítési dátum'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between mb-4 expand-animate">
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -258,15 +437,26 @@ const ExpandedInvoiceRow = ({
               <div className="flex items-center gap-2">
                 {/* "Tranzakció hozzárendelése" small button when there ARE existing matches */}
                 {matchingEnabled && hasAny && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => { e.stopPropagation(); matcher.openSearch(); }}
-                    className="h-7 text-[11px] gap-1.5 px-2.5"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Tranzakció
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); matcher.openSearch(); }}
+                      className="h-7 text-[11px] gap-1.5 px-2.5"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Tranzakció
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); setShowManualPayment(true); }}
+                      className="h-7 text-[11px] gap-1.5 px-2.5 border-dashed"
+                    >
+                      <CreditCard className="h-3 w-3" />
+                      Kézi fizetés
+                    </Button>
+                  </div>
                 )}
                 {onToggleExclude && (
                   <button
@@ -300,15 +490,26 @@ const ExpandedInvoiceRow = ({
                 <CardContent className="p-4 flex flex-col items-center justify-center gap-3">
                   <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a számlához.</p>
                   {matchingEnabled && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => { e.stopPropagation(); matcher.openSearch(); }}
-                      className="h-8 text-xs gap-1.5"
-                    >
-                      <ArrowRightLeft className="h-3.5 w-3.5" />
-                      Tranzakció hozzárendelése
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); matcher.openSearch(); }}
+                        className="h-8 text-xs gap-1.5"
+                      >
+                        <ArrowRightLeft className="h-3.5 w-3.5" />
+                        Tranzakció hozzárendelése
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); setShowManualPayment(true); }}
+                        className="h-8 text-xs gap-1.5 border-dashed"
+                      >
+                        <CreditCard className="h-3.5 w-3.5" />
+                        Kézi fizetés
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -440,14 +641,33 @@ const ExpandedInvoiceRow = ({
               >
                 <CardHeader className="py-2 px-3">
                   <CardTitle className="text-xs font-medium flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <FileText className="h-3 w-3 text-muted-foreground" />
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                      <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                       Párosított beküldött számla
                       {inv.invoice_type && (
                         <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-primary/10 text-primary border-primary/20">
                           {getInvoiceTypeLabel(inv.invoice_type)}
                         </Badge>
                       )}
+                      {inv.category_id && categories && (() => {
+                        const cat = categories.find(c => c.id === inv.category_id);
+                        return cat ? (
+                          <Badge variant="outline" className="text-[9px] h-4 px-1.5 gap-0.5" style={{ backgroundColor: (cat.color || '#6366f1') + '20', color: cat.color || '#6366f1', borderColor: (cat.color || '#6366f1') + '40' }}>
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || '#6366f1' }} />
+                            {cat.name}
+                          </Badge>
+                        ) : null;
+                      })()}
+                      {inv.project_id && projects && (() => {
+                        const proj = projects.find(p => p.id === inv.project_id);
+                        const projColor = proj?.color || '#7c3aed';
+                        return proj ? (
+                          <Badge variant="outline" className="text-[9px] h-4 px-1.5 gap-0.5" style={{ backgroundColor: projColor + '20', color: projColor, borderColor: projColor + '40' }}>
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: projColor }} />
+                            {proj.name}
+                          </Badge>
+                        ) : null;
+                      })()}
                     </span>
                     <div className="flex items-center gap-2">
                       <Badge variant="success" className="gap-1 text-[10px] h-5">
@@ -833,6 +1053,17 @@ const ExpandedInvoiceRow = ({
                 </CardContent>
               </Card>
             ))}
+            {/* Manual Payment Dialog */}
+            {matchingEnabled && (
+              <ManualPaymentDialog
+                open={showManualPayment}
+                onOpenChange={setShowManualPayment}
+                invoiceId={invoiceId || ''}
+                invoiceAmount={invoiceAmount || 0}
+                invoiceCurrency={invoiceCurrency || 'HUF'}
+                onSuccess={onMatchUpdate}
+              />
+            )}
           </div>
               </div>
             </div>

@@ -3,16 +3,19 @@ import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-quer
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useCompany } from "@/contexts/CompanyContext";
+import { useCompany, VatRegime } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ContentSkeleton } from "@/components/ui/content-skeleton";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
+import { ChangeEmailDialog } from "@/components/ChangeEmailDialog";
 import { EmailPreferences } from "@/components/EmailPreferences";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { UnsavedChangesDialog } from "@/components/UnsavedChangesDialog";
-import { Building2, Bell, User, Palette, Shield, Info, Users, Copy, RefreshCw, X, UserPlus } from "lucide-react";
+import { Building2, Bell, User, Palette, Shield, Info, Users, Copy, RefreshCw, X, UserPlus, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProfileSection } from '@/components/settings/ProfileSection';
 import { BusinessSection } from '@/components/settings/BusinessSection';
@@ -84,7 +87,7 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
     let token = '';
     for (let i = 0; i < 6; i++) token += chars[bytes[i] % chars.length];
     const now = new Date().toISOString();
-    const { error } = await supabase.from('companies').update({ share_token: token, share_token_created_at: now } as any).eq('id', companyId);
+    const { error } = await supabase.from('companies').update({ share_token: token, share_token_created_at: now }).eq('id', companyId);
     if (error) { reportError({ type: 'db_query', component: 'Settings', action: 'generateToken', message: 'Share token generation failed', error }); toast({ title: "Hiba", description: "Nem sikerült a kód generálása.", variant: "destructive" }); }
     else { setShareToken(token); setTokenCreatedAt(now); toast({ title: "Siker", description: "Meghívó kód generálva! 10 percig érvényes." }); }
     setGenerating(false);
@@ -166,7 +169,7 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
     setUpdatingRole(memberId);
     const { data, error, count } = await supabase
       .from('company_members')
-      .update({ role: newRole } as any)
+      .update({ role: newRole })
       .eq('id', memberId)
       .select();
     if (error) {
@@ -299,7 +302,7 @@ function FxSettingsCard({ companyId, toast }: { companyId: string; toast: any })
     queryKey: queryKeys.fxSettings(companyId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('company_fx_settings' as any)
+        .from('company_fx_settings')
         .select('*')
         .eq('company_id', companyId)
         .maybeSingle();
@@ -319,14 +322,14 @@ function FxSettingsCard({ companyId, toast }: { companyId: string; toast: any })
     try {
       if (fxSettings) {
         const { error } = await supabase
-          .from('company_fx_settings' as any)
-          .update({ rate_source: rateSource, updated_at: new Date().toISOString() } as any)
+          .from('company_fx_settings')
+          .update({ rate_source: rateSource, updated_at: new Date().toISOString() })
           .eq('company_id', companyId);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('company_fx_settings' as any)
-          .insert({ company_id: companyId, rate_source: rateSource } as any);
+          .from('company_fx_settings')
+          .insert({ company_id: companyId, rate_source: rateSource });
         if (error) throw error;
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.fxSettings(companyId) });
@@ -374,6 +377,130 @@ function FxSettingsCard({ companyId, toast }: { companyId: string; toast: any })
   );
 }
 
+const VAT_REGIME_LABELS: Record<VatRegime, string> = {
+  normal: 'Általános ÁFA',
+  penzforgalmi: 'Pénzforgalmi elszámolás',
+  alanyi_mentes: 'Alanyi adómentesség',
+};
+
+const VAT_REGIME_COLORS: Record<VatRegime, string> = {
+  normal: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  penzforgalmi: 'bg-violet-500/10 text-violet-600 border-violet-500/20',
+  alanyi_mentes: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+};
+
+function VatRegimeCard({ companyId, currentRegime, toast, onSaved }: {
+  companyId: string;
+  currentRegime: VatRegime;
+  toast: any;
+  onSaved: () => void;
+}) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingRegime, setPendingRegime] = useState<VatRegime | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const nextYear = new Date().getFullYear() + 1;
+
+  const handleRegimeChange = (value: string) => {
+    const newRegime = value as VatRegime;
+    if (newRegime === currentRegime) return;
+    setPendingRegime(newRegime);
+    setConfirmOpen(true);
+  };
+
+  const confirmChange = async () => {
+    if (!pendingRegime) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .update({
+          vat_regime: pendingRegime,
+          vat_regime_effective_from: `${nextYear}-01-01`,
+        })
+        .eq('id', companyId);
+      if (error) throw error;
+      toast({ title: 'ÁFA rendszer módosítva', description: `A változás ${nextYear}.01.01-től érvényes.` });
+      onSaved();
+    } catch (err: any) {
+      toast({ title: 'Hiba', description: err.message || 'Nem sikerült menteni.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+      setConfirmOpen(false);
+      setPendingRegime(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Building2 className="h-5 w-5" />
+          ÁFA rendszer
+        </CardTitle>
+        <CardDescription>
+          A cég ÁFA elszámolási módja. Módosítás esetén a változás a következő adóévtől lép érvénybe.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">Jelenlegi:</span>
+          <Badge variant="outline" className={VAT_REGIME_COLORS[currentRegime]}>
+            {VAT_REGIME_LABELS[currentRegime]}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-3">
+          <Select value={currentRegime} onValueChange={handleRegimeChange}>
+            <SelectTrigger className="max-w-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="normal">Általános ÁFA</SelectItem>
+              <SelectItem value="penzforgalmi">Pénzforgalmi elszámolás</SelectItem>
+              <SelectItem value="alanyi_mentes">Alanyi adómentesség</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Az ÁFA rendszer módosítása bejelentési kötelezettséggel jár a NAV felé.
+          Kérjük, egyeztesd könyvelőddel, mielőtt megváltoztatod.
+        </p>
+      </CardContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              ÁFA rendszer módosítása
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Az ÁFA rendszer módosítása bejelentési kötelezettséggel jár a NAV felé.
+                  A változás a <strong>következő adóév első napjától ({nextYear}.01.01.)</strong> lép érvénybe.
+                </p>
+                <p>
+                  Új rendszer: <strong>{pendingRegime ? VAT_REGIME_LABELS[pendingRegime] : ''}</strong>
+                </p>
+                <p className="text-amber-600">
+                  Kérjük, győződj meg róla, hogy a NAV bejelentés megtörtént, és könyvelőddel egyeztetted!
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Mégse</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmChange} disabled={saving}>
+              {saving ? 'Mentés...' : 'Megerősítem, a bejelentés megtörtént'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+}
+
 // ── Types ──
 
 interface Profile { name: string; company: string; position: string; avatar_url: string; }
@@ -390,6 +517,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   // Sync settings tab to URL
@@ -459,7 +587,7 @@ export default function Settings() {
     queryFn: async () => {
       if (!user) return null;
       const { data: assignments, error } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('accounting_firm_id, role')
         .eq('accountant_user_id', user.id);
       
@@ -530,7 +658,12 @@ export default function Settings() {
     setLoading(true);
     const { error } = await supabase.from('profiles').upsert({ user_id: user.id, name: profile.name, company: profile.company, position: profile.position, avatar_url: profile.avatar_url }, { onConflict: 'user_id' });
     if (error) { reportError({ type: 'db_query', component: 'Settings', action: 'updateProfile', message: 'Profile upsert failed', error }); toast({ title: 'Hiba történt', description: 'A profil mentése sikertelen.', variant: 'destructive' }); }
-    else { setInitialProfile({ ...profile }); toast({ title: 'Siker', description: 'A profil sikeresen mentve.' }); }
+    else {
+      // Sync name into auth user_metadata so the sidebar re-renders immediately
+      await supabase.auth.updateUser({ data: { name: profile.name } });
+      setInitialProfile({ ...profile });
+      toast({ title: 'Siker', description: 'A profil sikeresen mentve.' });
+    }
     setLoading(false);
   };
 
@@ -649,6 +782,14 @@ export default function Settings() {
               <EaisybillPermissionPanel companyId={selectedCompany.id} toast={toast} />
             )}
             {selectedCompany && (
+              <VatRegimeCard
+                companyId={selectedCompany.id}
+                currentRegime={selectedCompany.vat_regime || 'normal'}
+                toast={toast}
+                onSaved={refreshCompanies}
+              />
+            )}
+            {selectedCompany && (
               <FxSettingsCard companyId={selectedCompany.id} toast={toast} />
             )}
           </BusinessSection>
@@ -670,6 +811,7 @@ export default function Settings() {
         <TabsContent value="security">
           <SecuritySection
             onChangePassword={() => setPasswordDialogOpen(true)}
+            onChangeEmail={() => setEmailDialogOpen(true)}
             onExportData={handleExportData}
             exportLoading={exportLoading}
           />
@@ -677,6 +819,7 @@ export default function Settings() {
       </Tabs>
 
       <ChangePasswordDialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen} />
+      <ChangeEmailDialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen} />
       <UnsavedChangesDialog open={showDialog} onConfirm={confirmNavigation} onCancel={cancelNavigation} />
     </div>
   );

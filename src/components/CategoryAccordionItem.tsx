@@ -3,17 +3,53 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import { resolveIcon } from '@/components/IconPicker';
 
+export interface CategoryInvoice {
+  id: string;
+  invoice_number: string | null;
+  invoice_direction: string | null;
+  supplier_name: string | null;
+  invoice_issue_date: string | null;
+  invoice_gross_amount: number | null;
+  penznem: string | null;
+  /** Which DB table this invoice lives in */
+  source: 'invoices' | 'nav_invoices';
+}
+
 interface CategoryAccordionItemProps {
   name: string;
   description: string;
   color: string;
   iconName: string | null;
   invoiceCount: number;
+  /** HUF-only total — used for amount display fallback */
   totalAmount: number;
   totalAllAmount: number;
+  /** Total invoice count across all categories — for progress bar ratio */
+  totalInvoiceCount: number;
+  /** Per-currency totals, e.g. { HUF: 12000, USD: 45.5 } */
+  currencyTotals: Record<string, number>;
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+}
+
+/** Format a single currency amount. HUF → "12 000 Ft", others → "45,50 USD" */
+function formatCurrencyAmount(amount: number, currency: string): string {
+  const formatted = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 }).format(amount);
+  return currency === 'HUF' ? `${formatted} Ft` : `${formatted} ${currency}`;
+}
+
+/** Build "X Ft | Y USD | Z EUR" display string from currencyTotals map */
+export function formatCurrencyTotals(currencyTotals: Record<string, number>): string {
+  const parts = Object.entries(currencyTotals)
+    .filter(([, amt]) => amt !== 0)
+    .sort(([a], [b]) => {
+      if (a === 'HUF') return -1;
+      if (b === 'HUF') return 1;
+      return a.localeCompare(b);
+    })
+    .map(([currency, amount]) => formatCurrencyAmount(amount, currency));
+  return parts.length > 0 ? parts.join(' | ') : '0 Ft';
 }
 
 export function CategoryAccordionItem({
@@ -24,6 +60,8 @@ export function CategoryAccordionItem({
   invoiceCount,
   totalAmount,
   totalAllAmount,
+  totalInvoiceCount,
+  currencyTotals,
   onToggle,
   onEdit,
   onDelete,
@@ -31,12 +69,10 @@ export function CategoryAccordionItem({
   const IconComponent = resolveIcon(iconName);
   const tags = description ? description.split(',').map(t => t.trim()).filter(Boolean) : [];
   const isEmpty = invoiceCount === 0;
-  const pct = totalAllAmount > 0 ? Math.round((totalAmount / totalAllAmount) * 100) : 0;
+  const pct = totalInvoiceCount > 0 ? Math.round((invoiceCount / totalInvoiceCount) * 100) : 0;
 
-  const formatAmount = (amount: number | null) => {
-    if (amount === null || amount === undefined) return '0 Ft';
-    return new Intl.NumberFormat('hu-HU').format(amount) + ' Ft';
-  };
+  const amountDisplay = isEmpty ? '0 Ft' : formatCurrencyTotals(currencyTotals);
+
 
   return (
     <div className="border-b border-border last:border-b-0">
@@ -69,19 +105,20 @@ export function CategoryAccordionItem({
             {name}
           </span>
           {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {tags.slice(0, 4).map((tag, i) => (
+            <div className="flex items-center gap-1 mt-1 flex-nowrap overflow-hidden">
+              {tags.slice(0, 3).map((tag, i) => (
                 <Badge
                   key={i}
                   variant="secondary"
-                  className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-0"
+                  className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-0 max-w-[120px] truncate flex-shrink-0"
+                  title={tag}
                 >
                   {tag}
                 </Badge>
               ))}
-              {tags.length > 4 && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                  +{tags.length - 4}
+              {tags.length > 3 && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
+                  +{tags.length - 3}
                 </Badge>
               )}
             </div>
@@ -89,9 +126,9 @@ export function CategoryAccordionItem({
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0 w-[420px]">
           {/* Progress bar */}
-          <div className="w-14 h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="w-14 h-1.5 bg-muted rounded-full overflow-hidden flex-shrink-0">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{ width: `${Math.max(pct, isEmpty ? 0 : 1)}%`, backgroundColor: color }}
@@ -99,17 +136,20 @@ export function CategoryAccordionItem({
           </div>
 
           {/* Invoice count */}
-          <div className="text-right w-12">
+          <div className="text-right w-10 flex-shrink-0">
             <div className={`text-sm font-bold tabular-nums ${isEmpty ? 'text-muted-foreground' : ''}`}>
               {invoiceCount}
             </div>
           </div>
 
-          {/* Amount */}
-          <div className="text-right w-28">
-            <div className={`text-sm font-bold tabular-nums ${isEmpty ? 'text-muted-foreground' : ''}`}
-                 style={!isEmpty ? { color } : undefined}>
-              {formatAmount(totalAmount)}
+          {/* Amount — single line, wider container handles long strings */}
+          <div className="text-right flex-1 min-w-0">
+            <div
+              className={`text-sm font-bold tabular-nums truncate ${isEmpty ? 'text-muted-foreground' : ''}`}
+              style={!isEmpty ? { color } : undefined}
+              title={amountDisplay}
+            >
+              {amountDisplay}
             </div>
           </div>
         </div>

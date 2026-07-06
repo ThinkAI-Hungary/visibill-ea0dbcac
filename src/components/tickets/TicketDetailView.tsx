@@ -32,6 +32,8 @@ import {
   Plus,
   FileText,
   Headset,
+  HelpCircle,
+  Trash2,
 } from "lucide-react";
 import { uploadTicketImage } from "@/lib/upload-ticket-image";
 import { TicketStatusBadge } from "./TicketStatusBadge";
@@ -42,9 +44,25 @@ import {
   useUpdateTicketStatus,
   useMarkTicketRead,
   useIsSupportAdmin,
+  useIsManagementRole,
   useTicketEvents,
   type TicketStatus,
+  type TicketPriority,
+  useUpdateTicketPriority,
+  useUpdateTicketAssignee,
+  useSupportAgents,
+  useDeleteTicket,
 } from "@/hooks/useTickets";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useScopedBasePath } from "@/lib/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -52,9 +70,11 @@ import { hu } from "date-fns/locale";
 
 interface TicketDetailViewProps {
   feedbackId: string;
+  onBack?: () => void;
+  onDeleted?: () => void;
 }
 
-export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
+export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetailViewProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const eaisybillBasePath = useScopedBasePath();
@@ -66,18 +86,31 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateTicketStatus();
   const { mutate: markRead } = useMarkTicketRead();
   const { data: isAdmin, isLoading: isAdminLoading } = useIsSupportAdmin();
+  const { mutate: updatePriority } = useUpdateTicketPriority();
+  const { mutate: updateAssignee } = useUpdateTicketAssignee();
+  const { data: supportAgents = [] } = useSupportAgents();
   const [comment, setComment] = useState("");
+  const [isInternal, setIsInternal] = useState(false);
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { data: isManagement } = useIsManagementRole();
+  const { mutateAsync: deleteTicket, isPending: isDeleting } = useDeleteTicket();
 
   const openGallery = (images: string[], index: number) => {
     setGalleryImages(images);
     setGalleryIndex(index);
     setGalleryOpen(true);
   };
+
+  const openPreviewGallery = (index: number) => {
+    const urls = commentFiles.map(file => URL.createObjectURL(file));
+    openGallery(urls, index);
+  };
+
   const commentFileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -90,10 +123,14 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
     if (feedbackId) markRead(feedbackId);
   }, [feedbackId, markRead]);
 
-  // Auto-scroll to bottom when new comments arrive
+  // Track whether to auto-scroll (only after user sends a comment)
+  const shouldScrollRef = useRef(false);
+
+  // Auto-scroll to bottom only when user sends a new comment
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    if (shouldScrollRef.current && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      shouldScrollRef.current = false;
     }
   }, [data?.comments?.length]);
 
@@ -109,12 +146,14 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
       }
 
       addComment(
-        { feedbackId, message: comment, attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined },
+        { feedbackId, message: comment, attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined, isInternal },
         {
           onSuccess: () => {
             setComment("");
             setCommentFiles([]);
+            setIsInternal(false);
             markRead(feedbackId);
+            shouldScrollRef.current = true;
           },
         }
       );
@@ -122,7 +161,6 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
       toast({ variant: "destructive", title: "Kép feltöltési hiba", description: err?.message || "Ismeretlen hiba" });
     }
   };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
@@ -130,11 +168,36 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const files: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          const namedFile = new File([file], `clipboard-image-${Date.now()}-${i}.png`, { type: file.type });
+          files.push(namedFile);
+        }
+      }
+    }
+
+    if (files.length > 0) {
+      e.preventDefault();
+      addCommentFiles(files);
+    }
+  };
+
   const addCommentFiles = (files: FileList | File[]) => {
     const MAX = 5;
     const ALLOWED = [
-      "image/jpeg", "image/png", "image/gif", "image/webp",
-      "application/pdf", "text/csv",
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "application/pdf",
+      "text/csv",
       "application/vnd.ms-excel",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ];
@@ -149,7 +212,9 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
 
   // Navigate back: use browser history if available, otherwise go to /tickets
   const goBack = () => {
-    if (window.history.length > 1) {
+    if (onBack) {
+      onBack();
+    } else if (window.history.length > 1) {
       navigate(-1);
     } else {
       navigate("/tickets");
@@ -420,7 +485,65 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
           <TicketPriorityBadge priority={ticket.priority} />
           <TicketStatusBadge status={ticket.status} />
         </div>
+        {/* Delete button — management only */}
+        {isAdmin && isManagement && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={isDeleting}
+          >
+            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+            Jegy törlése
+          </Button>
+        )}
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hibajegy végleges törlése</AlertDialogTitle>
+            <AlertDialogDescription>
+              Biztosan törölni szeretnéd a <strong>{ticket.ticket_number}</strong> hibajegyet?
+              Ez a művelet nem visszavonható — az összes hozzászólás, csatolmány és előzmény is törlődik.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+              onClick={async (e) => {
+                e.preventDefault();
+                try {
+                  await deleteTicket(feedbackId);
+                  toast({
+                    title: "Hibajegy törölve",
+                    description: `${ticket.ticket_number} sikeresen törölve.`,
+                  });
+                  setShowDeleteConfirm(false);
+                  if (onDeleted) {
+                    onDeleted();
+                  } else {
+                    goBack();
+                  }
+                } catch (err: any) {
+                  toast({
+                    variant: "destructive",
+                    title: "Törlési hiba",
+                    description: err?.message || "Nem sikerült törölni a hibajegyet.",
+                  });
+                }
+              }}
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+              Véglegesen törlöm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column: message + comments */}
@@ -485,7 +608,9 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
                 <Card
                   key={c.id}
                   className={
-                    c.is_admin
+                    c.is_internal
+                      ? "border-amber-500/30 bg-amber-500/[0.03]"
+                      : c.is_admin
                       ? "border-primary/20 bg-primary/[0.02]"
                       : ""
                   }
@@ -494,7 +619,9 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
                     <div className="flex items-center gap-3 mb-2">
                       <div
                         className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                          c.is_admin
+                          c.is_internal
+                            ? "bg-amber-500/15 text-amber-500"
+                            : c.is_admin
                             ? "bg-primary/15 text-primary"
                             : "bg-muted text-muted-foreground"
                         }`}
@@ -506,11 +633,15 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
                           <p className="text-sm font-medium truncate">
                             {c.user_name || c.user_email}
                           </p>
-                          {c.is_admin && (
+                          {c.is_internal ? (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-medium">
+                              Belső feljegyzés (kliens elől rejtve)
+                            </span>
+                          ) : c.is_admin ? (
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                               Support
                             </span>
-                          )}
+                          ) : null}
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {formatDate(c.created_at)}
@@ -593,6 +724,7 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
                       onKeyDown={handleKeyDown}
+                      onPaste={handlePaste}
                       className="min-h-[80px] max-h-[200px] resize-none"
                       rows={3}
                     />
@@ -605,11 +737,18 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
                         return (
                           <div key={i} className="relative group">
                             {isImage ? (
-                              <img
-                                src={URL.createObjectURL(file)}
-                                alt={file.name}
-                                className="h-16 w-16 object-cover rounded-md border border-border"
-                              />
+                              <button
+                                type="button"
+                                onClick={() => openPreviewGallery(i)}
+                                className="h-16 w-16 rounded-md overflow-hidden border border-border hover:border-primary/40 transition-colors cursor-zoom-in"
+                                title="Kép megtekintése"
+                              >
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={file.name}
+                                  className="h-full w-full object-cover group-hover:opacity-85 transition-opacity"
+                                />
+                              </button>
                             ) : (
                               <div className="h-16 w-16 rounded-md border border-border bg-muted flex flex-col items-center justify-center gap-0.5 px-1">
                                 <FileText className="h-5 w-5 text-muted-foreground" />
@@ -652,6 +791,17 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
                       </Button>
                       {commentFiles.length > 0 && (
                         <span className="text-[11px] text-muted-foreground">{commentFiles.length}/5</span>
+                      )}
+                      {isAdmin && (
+                        <label className="flex items-center gap-1.5 ml-2 text-xs text-amber-500 font-medium cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={isInternal}
+                            onChange={(e) => setIsInternal(e.target.checked)}
+                            className="rounded border-amber-500/30 accent-amber-500"
+                          />
+                          Belső feljegyzés
+                        </label>
                       )}
                     </div>
                     <Button
@@ -732,6 +882,11 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
                       <Bug className="h-4 w-4 text-red-500" />
                       <span className="text-sm">Hibajelentés</span>
                     </>
+                  ) : ticket.type === "question" ? (
+                    <>
+                      <HelpCircle className="h-4 w-4 text-sky-500" />
+                      <span className="text-sm">Kérdés</span>
+                    </>
                   ) : (
                     <>
                       <Lightbulb className="h-4 w-4 text-amber-500" />
@@ -746,28 +901,95 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
               {/* Assigned support agent */}
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground font-medium">Felelős</p>
-                {(ticket as any).assigned_to_name ? (
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Headset className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{(ticket as any).assigned_to_name}</p>
-                      <p className="text-[11px] text-muted-foreground">ThinkAI Support</p>
-                    </div>
-                  </div>
+                {isAdmin ? (
+                  <Select
+                    value={(ticket as any).assigned_to || "unassigned"}
+                    onValueChange={(val) => {
+                      const newAssignee = val === "unassigned" ? null : val;
+                      updateAssignee(
+                        {
+                          feedbackId: ticket.id,
+                          assignedTo: newAssignee,
+                          force: !newAssignee, // allow unassign without lock check
+                        },
+                        {
+                          onError: (err: any) => {
+                            if (err?.message === "ALREADY_ASSIGNED") {
+                              toast({
+                                title: "Jegy már kiosztva",
+                                description: "Ezt a hibajegyet egy másik support munkatárs már magához rendelte.",
+                                variant: "destructive",
+                              });
+                            }
+                          },
+                        }
+                      );
+                    }}
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Nincs hozzárendelve" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Nincs hozzárendelve</SelectItem>
+                      {supportAgents.map((agent: any) => (
+                        <SelectItem key={agent.user_id} value={agent.user_id}>
+                          {agent.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
-                      <Headset className="h-3.5 w-3.5 text-muted-foreground" />
+                  ticket.assigned_to_name ? (
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Headset className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{ticket.assigned_to_name}</p>
+                        <p className="text-[11px] text-muted-foreground">ThinkAI Support</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Nincs hozzárendelve</p>
-                      <p className="text-[11px] text-muted-foreground">ThinkAI Support</p>
+                  ) : (
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
+                        <Headset className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nincs hozzárendelve</p>
+                        <p className="text-[11px] text-muted-foreground">ThinkAI Support</p>
+                      </div>
                     </div>
-                  </div>
+                  )
                 )}
               </div>
+
+              {isAdmin && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground font-medium">Prioritás módosítása</p>
+                    <Select
+                      value={ticket.priority || "medium"}
+                      onValueChange={(val) =>
+                        updatePriority({
+                          feedbackId: ticket.id,
+                          priority: val as TicketPriority,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Alacsony</SelectItem>
+                        <SelectItem value="medium">Közepes</SelectItem>
+                        <SelectItem value="high">Magas</SelectItem>
+                        <SelectItem value="critical">Kritikus</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
 
               {/* Admin status changer */}
               {isAdmin && (

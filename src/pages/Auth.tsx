@@ -404,6 +404,19 @@ const Auth = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationSuccess, setVerificationSuccess] = useState(false);
 
+  // Auto-open forgot password panel when redirected from expired reset link (?forgot=1)
+  useEffect(() => {
+    if (authSearchParams.get('forgot') === '1') {
+      setShowForgotPassword(true);
+      setAuthSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('forgot');
+        return next;
+      }, { replace: true });
+    }
+  }, []);
+
+
   // Handle ?verify_token=XXX — user clicked verification link in email
   // The frontend calls the verify-email edge function so the email URL stays clean (app.visibill.hu)
   useEffect(() => {
@@ -578,6 +591,9 @@ const Auth = () => {
     if (signUpSuccess) return;
     // Don't auto-navigate when email is not verified — user is locked
     if (isUnverified) return;
+    // Don't auto-navigate when user explicitly came to request a password reset link.
+    // ?forgot=1 is set by ResetPassword.tsx when the link is expired/invalid.
+    if (authSearchParams.get('forgot') === '1') return;
     if (user && hasEaisybillAccess !== undefined) {
       // Respect the eaisybooks toggle for routing
       const target = returnTo && returnTo !== '/'
@@ -585,7 +601,7 @@ const Auth = () => {
         : isEaisybooks ? '/accounty' : '/';
       navigate(target);
     }
-  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess]);
+  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess, authSearchParams]);
 
   // Non-passive wheel listener — adds to scroll velocity for smooth momentum
   useEffect(() => {

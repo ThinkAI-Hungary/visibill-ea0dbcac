@@ -49,6 +49,13 @@ export interface NavInvoice {
   category_id: string | null;
   transaction_id: string | null;
   exclude_from_accounting?: boolean;
+  gl_numbers?: string | null;
+  is_continuous?: boolean;
+  service_period_start?: string | null;
+  service_period_end?: string | null;
+  calculated_ti?: string | null;
+  ti_override?: string | null;
+  ti_calculation_method?: string | null;
 }
 
 export interface SubmittedInvoice {
@@ -81,11 +88,13 @@ export interface Partner {
 export interface Category {
   id: string;
   name: string;
+  color?: string | null;
 }
 
 export interface Project {
   id: string;
   name: string;
+  color?: string | null;
 }
 
 export interface CourierReportRecord {
@@ -172,7 +181,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
-        .select('id, name')
+        .select('id, name, color')
         .eq('company_id', companyId);
       if (error) throw error;
       return (data || []) as Category[];
@@ -185,7 +194,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
-        .select('id, name')
+        .select('id, name, color')
         .eq('company_id', companyId);
       if (error) throw error;
       return (data || []) as Project[];
@@ -250,7 +259,7 @@ export function useInvoiceData(
         const to = from + PAGE_SIZE - 1;
         const { data, error } = await supabase
           .from('nav_invoices')
-          .select('id, invoice_number, invoice_direction, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, transaction_id, submitted')
+          .select('id, invoice_number, invoice_direction, invoice_issue_date, invoice_delivery_date, supplier_name, supplier_tax_number, customer_name, customer_tax_number, invoice_net_amount, invoice_gross_amount, currency, transaction_id, submitted')
           .eq('company_id', companyId)
           .range(from, to)
           .order('invoice_issue_date', { ascending: false })

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { useAccountyClients, AccountyClient } from '@/hooks/useAccountyData';
+import { useAccountyClients, AccountyClient } from '@/hooks/accounty';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Building2, ChevronDown, Check, Search } from 'lucide-react';
 

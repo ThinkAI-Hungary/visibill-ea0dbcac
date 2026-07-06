@@ -6,8 +6,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useNavRepresentations, useAddNavRepresentation, useRevokeNavRepresentation, type NavRepresentation } from '@/hooks/useAccountyData';
+import { useNavRepresentations, useAddNavRepresentation, useRevokeNavRepresentation, type NavRepresentation } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 // Wizard steps
 const WIZARD_STEPS = [
@@ -38,7 +39,7 @@ const SCOPE_OPTIONS = [
 export default function RepresentationPage() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
-  const { data: reps, isLoading } = useNavRepresentations(id || '');
+  const { data: reps, isLoading, isError: repsError, refetch: refetchReps } = useNavRepresentations(id || '');
   const addMutation = useAddNavRepresentation();
   const revokeMutation = useRevokeNavRepresentation();
   
@@ -369,6 +370,10 @@ export default function RepresentationPage() {
       </div>
     </div>
   );
+
+  if (repsError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a meghatalmazásokat." onRetry={() => refetchReps()} />;
+  }
 
   if (isLoading) {
     return (

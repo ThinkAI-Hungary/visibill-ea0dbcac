@@ -5,6 +5,7 @@ import {
   MessageSquare,
   Clock,
   Loader2,
+  Headset,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTicketEvents, type TicketEvent } from "@/hooks/useTickets";
@@ -12,12 +13,14 @@ import { format } from "date-fns";
 import { hu } from "date-fns/locale";
 
 const STATUS_LABELS: Record<string, string> = {
+  new: "Új",
   created: "Új",
   in_progress: "Folyamatban",
   resolved: "Megoldva",
 };
 
 const STATUS_COLORS: Record<string, string> = {
+  new: "text-blue-500",
   created: "text-blue-500",
   in_progress: "text-amber-500",
   resolved: "text-emerald-500",
@@ -41,6 +44,12 @@ function EventIcon({ type }: { type: TicketEvent["event_type"] }) {
       return (
         <div className="h-8 w-8 rounded-full bg-blue-500/15 flex items-center justify-center ring-4 ring-background">
           <MessageSquare className="h-4 w-4 text-blue-500" />
+        </div>
+      );
+    case "assignee_changed":
+      return (
+        <div className="h-8 w-8 rounded-full bg-blue-500/15 flex items-center justify-center ring-4 ring-background">
+          <Headset className="h-4 w-4 text-blue-500" />
         </div>
       );
   }
@@ -97,6 +106,25 @@ function EventContent({ event }: { event: TicketEvent }) {
             )}{" "}
             <span className="text-muted-foreground">hozzászólást írt</span>
           </p>
+        </div>
+      );
+
+    case "assignee_changed":
+      return (
+        <div>
+          <p className="text-sm">
+            <span className="font-medium">{actorName}</span>{" "}
+            <span className="text-muted-foreground">módosította a felelőst</span>
+          </p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="text-xs text-muted-foreground font-medium">
+              {event.old_value || "Nincs felelős"}
+            </span>
+            <ArrowRight className="h-3 w-3 text-muted-foreground" />
+            <span className="text-xs text-primary font-medium">
+              {event.new_value || "Nincs felelős"}
+            </span>
+          </div>
         </div>
       );
   }

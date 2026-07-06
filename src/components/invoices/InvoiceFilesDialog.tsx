@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -46,8 +47,16 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
   const setIsOpen = externalOnOpenChange || setInternalOpen;
+
+  // Single delete
   const [deleteTarget, setDeleteTarget] = useState<UploadWithInvoices | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Batch delete
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [uploaderFilter, setUploaderFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,7 +78,6 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
   const { data: uploads = [], isLoading } = useQuery({
     queryKey: ['invoice_uploads_with_invoices', companyId],
     queryFn: async () => {
-      // Get uploads
       const { data: uploadData, error: uploadError } = await supabase
         .from('invoice_uploads')
         .select('id, file_name, created_at, user_id')
@@ -79,7 +87,6 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
       if (uploadError) throw uploadError;
       if (!uploadData || uploadData.length === 0) return [];
 
-      // Get invoices linked to these uploads
       const { data: invoiceData, error: invoiceError } = await supabase
         .from('invoices')
         .select('invoice_uploads_id, bizonylatsorszam')
@@ -87,7 +94,6 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
         .not('invoice_uploads_id', 'is', null);
       if (invoiceError) throw invoiceError;
 
-      // Group invoice numbers by upload id
       const invoicesByUpload = new Map<string, string[]>();
       (invoiceData || []).forEach((inv: any) => {
         if (!inv.invoice_uploads_id) return;
@@ -167,38 +173,76 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
     return { paginatedUploads: paginated, totalPages };
   }, [filteredUploads, currentPage, pageSize]);
 
-  // Option A: Delete ONLY the uploaded file (keep invoice data)
+  // ── Selection helpers ──────────────────────────────────────────────────────
+  const visibleIds = paginatedUploads.map(u => u.id);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+  const someVisibleSelected = visibleIds.some(id => selectedIds.has(id));
+
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        visibleIds.forEach(id => next.delete(id));
+      } else {
+        visibleIds.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedCount = selectedIds.size;
+  const selectedUploads = uploads.filter(u => selectedIds.has(u.id));
+
+  // ── Single delete helpers ──────────────────────────────────────────────────
+  const deleteUploadFileOnly = async (upload: UploadWithInvoices) => {
+    const { data: uploadData } = await supabase
+      .from('invoice_uploads')
+      .select('file_url')
+      .eq('id', upload.id)
+      .single();
+
+    await supabase.from('invoices').update({ invoice_uploads_id: null }).eq('invoice_uploads_id', upload.id);
+    const { error } = await supabase.from('invoice_uploads').delete().eq('id', upload.id);
+    if (error) throw error;
+
+    if (uploadData?.file_url) {
+      const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
+      if (storagePath) await supabase.storage.from('invoice-uploads').remove([storagePath]);
+    }
+  };
+
+  const deleteUploadWithInvoices = async (upload: UploadWithInvoices) => {
+    const { data: uploadData } = await supabase
+      .from('invoice_uploads')
+      .select('file_url')
+      .eq('id', upload.id)
+      .single();
+
+    const { error: invoiceError } = await supabase.from('invoices').delete().eq('invoice_uploads_id', upload.id);
+    if (invoiceError) throw invoiceError;
+
+    const { error } = await supabase.from('invoice_uploads').delete().eq('id', upload.id);
+    if (error) throw error;
+
+    if (uploadData?.file_url) {
+      const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
+      if (storagePath) await supabase.storage.from('invoice-uploads').remove([storagePath]);
+    }
+  };
+
+  // ── Single delete handlers ─────────────────────────────────────────────────
   const handleDeleteFileOnly = async (upload: UploadWithInvoices) => {
     setDeleting(true);
     try {
-      // Fetch file URL for storage cleanup
-      const { data: uploadData } = await supabase
-        .from('invoice_uploads')
-        .select('file_url')
-        .eq('id', upload.id)
-        .single();
-
-      // Unlink invoices from this upload (set invoice_uploads_id to null)
-      await supabase
-        .from('invoices')
-        .update({ invoice_uploads_id: null })
-        .eq('invoice_uploads_id', upload.id);
-
-      // Delete the upload record
-      const { error } = await supabase
-        .from('invoice_uploads')
-        .delete()
-        .eq('id', upload.id);
-      if (error) throw error;
-
-      // Remove file from Storage
-      if (uploadData?.file_url) {
-        const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
-        if (storagePath) {
-          await supabase.storage.from('invoice-uploads').remove([storagePath]);
-        }
-      }
-
+      await deleteUploadFileOnly(upload);
       toast({ title: 'Sikeres törlés', description: 'A fájl törölve lett. A számla adatok megmaradtak.', duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
@@ -210,39 +254,10 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
     }
   };
 
-  // Option B: Delete file AND associated invoice data
   const handleDeleteFileAndInvoice = async (upload: UploadWithInvoices) => {
     setDeleting(true);
     try {
-      // Fetch file URL for storage cleanup
-      const { data: uploadData } = await supabase
-        .from('invoice_uploads')
-        .select('file_url')
-        .eq('id', upload.id)
-        .single();
-
-      // 1. Delete linked invoices first (invoice_items cascade automatically)
-      const { error: invoiceError } = await supabase
-        .from('invoices')
-        .delete()
-        .eq('invoice_uploads_id', upload.id);
-      if (invoiceError) throw invoiceError;
-
-      // 2. Delete the upload record
-      const { error } = await supabase
-        .from('invoice_uploads')
-        .delete()
-        .eq('id', upload.id);
-      if (error) throw error;
-
-      // 3. Remove file from Storage
-      if (uploadData?.file_url) {
-        const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
-        if (storagePath) {
-          await supabase.storage.from('invoice-uploads').remove([storagePath]);
-        }
-      }
-
+      await deleteUploadWithInvoices(upload);
       toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó számlák törölve lettek.', duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
@@ -257,9 +272,52 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
     }
   };
 
+  // ── Batch delete handler ───────────────────────────────────────────────────
+  const handleBatchDelete = async (withInvoices: boolean) => {
+    setBatchDeleting(true);
+    const fn = withInvoices ? deleteUploadWithInvoices : deleteUploadFileOnly;
+    const results = await Promise.allSettled(selectedUploads.map(fn));
+    const failed = results.filter(r => r.status === 'rejected').length;
+    const succeeded = results.length - failed;
+
+    if (failed === 0) {
+      toast({
+        title: `${succeeded} dokumentum törölve`,
+        description: withInvoices ? 'A fájlok és a kapcsolódó számlák törölve lettek.' : 'A fájlok törölve, a számla adatok megmaradtak.',
+        duration: 3000,
+      });
+    } else {
+      toast({
+        title: `${succeeded}/${results.length} sikeres törlés`,
+        description: `${failed} dokumentum törlése sikertelen volt.`,
+        variant: 'destructive',
+      });
+    }
+
+    setSelectedIds(new Set());
+    setBatchDeleting(false);
+    setBatchDeleteOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+    queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+    queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+  };
+
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog 
+        open={isOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            // Reset all ephemeral state so AlertDialogs don't flash during close animation
+            setDeleteTarget(null);
+            setBatchDeleteOpen(false);
+            setSelectedIds(new Set());
+          }
+          setIsOpen(open);
+        }}
+      >
         {externalOpen === undefined && (
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
@@ -277,7 +335,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
             </DialogDescription>
           </DialogHeader>
 
-          {/* Filters */}
+          {/* Filters + Batch delete button */}
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-muted-foreground" />
@@ -289,7 +347,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
               />
             </div>
             <Select value={uploaderFilter} onValueChange={handleUploaderChange}>
-              <SelectTrigger className="h-9 w-[220px] bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+              <SelectTrigger className="h-9 w-[200px] bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
                 <User className="h-3.5 w-3.5 mr-1.5 text-slate-500 dark:text-muted-foreground" />
                 <SelectValue placeholder="Feltöltő" />
               </SelectTrigger>
@@ -302,6 +360,19 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Batch delete trigger — visible only when items are selected */}
+            {selectedCount > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-9 gap-1.5 shrink-0"
+                onClick={() => setBatchDeleteOpen(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {selectedCount} törlése
+              </Button>
+            )}
           </div>
 
           {isLoading ? (
@@ -318,17 +389,38 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                 <Table className="compact-table">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[30%]">Fájl neve</TableHead>
-                      <TableHead className="w-[25%]">Bizonylatszám</TableHead>
-                      <TableHead className="w-[18%]">Feltöltés dátuma</TableHead>
-                      <TableHead className="w-[15%]">Feltöltötte</TableHead>
-                      <TableHead className="w-[12%] text-right">Művelet</TableHead>
+                      {/* Select-all checkbox */}
+                      <TableHead className="w-[40px] pr-0">
+                        <Checkbox
+                          checked={allVisibleSelected}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Összes kijelölése az oldalon"
+                          className="data-[state=indeterminate]:opacity-70"
+                          {...(someVisibleSelected && !allVisibleSelected ? { 'data-state': 'indeterminate' } : {})}
+                        />
+                      </TableHead>
+                      <TableHead className="w-[28%]">Fájl neve</TableHead>
+                      <TableHead className="w-[24%]">Bizonylatszám</TableHead>
+                      <TableHead className="w-[17%]">Feltöltés dátuma</TableHead>
+                      <TableHead className="w-[14%]">Feltöltötte</TableHead>
+                      <TableHead className="w-[10%] text-right">Művelet</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedUploads.map((upload) => (
-                      <TableRow key={upload.id}>
-                        <TableCell className="font-medium text-sm truncate max-w-[250px]">
+                      <TableRow
+                        key={upload.id}
+                        data-row-hover
+                        className={selectedIds.has(upload.id) ? 'bg-primary/5 dark:bg-primary/10' : ''}
+                      >
+                        <TableCell className="pr-0">
+                          <Checkbox
+                            checked={selectedIds.has(upload.id)}
+                            onCheckedChange={() => toggleSelect(upload.id)}
+                            aria-label={`Kijelölés: ${upload.file_name}`}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium text-sm truncate max-w-[220px]">
                           {upload.file_name}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -348,7 +440,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={() => setDeleteTarget(upload)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -376,7 +468,8 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+      {/* ── Single delete dialog — only mount while dialog is open to avoid portal flash ── */}
+      <AlertDialog open={isOpen && !!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Dokumentum törlése</AlertDialogTitle>
@@ -389,7 +482,6 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
           </AlertDialogHeader>
 
           <div className="space-y-2 py-1">
-            {/* Option A: File only */}
             <button
               disabled={deleting}
               onClick={() => { if (deleteTarget) handleDeleteFileOnly(deleteTarget); }}
@@ -400,9 +492,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">
-                    Csak a fájl törlése
-                  </p>
+                  <p className="text-sm font-medium text-foreground">Csak a fájl törlése</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     A <span className="font-medium text-foreground">{deleteTarget?.file_name}</span> fájl törlődik, de a feldolgozott számla adatok megmaradnak.
                   </p>
@@ -410,7 +500,6 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
               </div>
             </button>
 
-            {/* Option B: File + Invoice data */}
             <button
               disabled={deleting}
               onClick={() => { if (deleteTarget) handleDeleteFileAndInvoice(deleteTarget); }}
@@ -421,9 +510,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                   <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                    Fájl és számla adatok törlése
-                  </p>
+                  <p className="text-sm font-medium text-destructive">Fájl és számla adatok törlése</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     A <span className="font-medium text-foreground">{deleteTarget?.file_name}</span> fájl és a hozzátartozó{' '}
                     <span className="font-medium text-foreground">
@@ -445,6 +532,87 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
 
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Mégsem</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Batch delete dialog — only mount while dialog is open to avoid portal flash ── */}
+      <AlertDialog open={isOpen && batchDeleteOpen} onOpenChange={(open) => { if (!open && !batchDeleting) setBatchDeleteOpen(false); }}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {selectedCount} dokumentum törlése
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Válaszd ki a törlés módját az összes kijelölt elemre:</p>
+                {/* Selected files preview */}
+                <div className="max-h-28 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-2 space-y-1">
+                  {selectedUploads.map(u => (
+                    <div key={u.id} className="text-xs text-muted-foreground truncate">
+                      • {u.file_name}
+                      {u.invoiceNumbers.length > 0 && (
+                        <span className="text-foreground/60 ml-1">
+                          ({u.invoiceNumbers.length} számla)
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-2 py-1">
+            {/* Option A: files only */}
+            <button
+              disabled={batchDeleting}
+              onClick={() => handleBatchDelete(false)}
+              className="w-full text-left p-3 rounded-lg border border-border/60 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Csak a fájlok törlése</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {selectedCount} fájl törlődik, a feldolgozott számla adatok megmaradnak.
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* Option B: files + invoice data */}
+            <button
+              disabled={batchDeleting}
+              onClick={() => handleBatchDelete(true)}
+              className="w-full text-left p-3 rounded-lg border border-red-200 dark:border-red-900/40 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-destructive">Fájlok és számla adatok törlése</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {selectedCount} fájl és az összes hozzájuk tartozó számla véglegesen törlődik.
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          {batchDeleting && (
+            <div className="flex items-center justify-center py-2 gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Törlés folyamatban... ({selectedCount} elem)</span>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={batchDeleting}>Mégsem</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -13,7 +13,7 @@ import { exportPdf } from '@/lib/exportPdf';
 import {
   useYearEndTasks, useUpdateYearEndTask, useSeedYearEndTasks,
   type YearEndTask,
-} from '@/hooks/useAccountyData';
+} from '@/hooks/accounty';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   FileText, Calendar, Calculator, Users, Gift, Briefcase, Shield, TrendingUp, Star,
@@ -54,8 +54,9 @@ export default function YearEndDashboardPage() {
         checklist: newChecklist,
         status: allDone ? 'done' : anyDone ? 'in_progress' : 'pending',
       });
-    } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Ismeretlen hiba';
+      toast({ variant: 'destructive', title: 'Hiba', description: errMsg });
     }
   };
 
@@ -64,8 +65,9 @@ export default function YearEndDashboardPage() {
     try {
       await seedMut.mutateAsync({ companyId: id, year: currentYear });
       toast({ title: 'Alapértelmezett feladatok létrehozva' });
-    } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Ismeretlen hiba';
+      toast({ variant: 'destructive', title: 'Hiba', description: errMsg });
     }
   };
 

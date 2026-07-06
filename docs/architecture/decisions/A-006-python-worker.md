@@ -36,5 +36,16 @@ A dokumentumfeldolgozás (OCR, LLM, matching) CPU-intenzív és Python-specifiku
 ## Kapcsolódó
 - **BRD:** [034-worker-pipeline.md](../../business/decisions/034-worker-pipeline.md) — üzleti scope
 - **BRD:** [008-document-pipeline.md](../../business/decisions/008-document-pipeline.md) — pipeline típusok
-- **Worker docs:** [ARCHITECTURE.md](../../../worker/docs/ARCHITECTURE.md) — részletes technikai doc (821 sor)
+- **ADR:** [A-025-cross-company-routing.md](./A-025-cross-company-routing.md) — multi-company invoice routing
+- **Worker docs:** [ARCHITECTURE.md](../../../worker/docs/ARCHITECTURE.md) — részletes technikai doc (1100+ sor)
+
+## Verification & Testing
+
+A Python Worker kódjának helyességét egy **56 tesztből álló automatizált teszt pipeline** biztosítja, ami a `worker/test/unit_test/` könyvtárban található.
+
+A tesztek futtatása a worker gyökeréből indítható a `run_tests.py` script segítségével:
+- **Gyors tesztek (Fast tests):** `python run_tests.py` (API hívások nélkül, ~10mp). Főleg karakterfelismerést, vágást és pozíciópárosítást tesztel.
+- **Teljes csővezeték tesztek (Full pipeline):** `python run_tests.py --full` (GPT-4o Vision és AI extraction, ~3p).
+
+A tesztelési részleteket és szabályokat a [Worker unit_test README.md](../../../worker/test/unit_test/README.md) dokumentálja. A gyors tesztek lefutása kötelező minden push előtt.
 

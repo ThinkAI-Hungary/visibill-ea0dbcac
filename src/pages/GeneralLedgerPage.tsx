@@ -6,18 +6,20 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2 } from 'lucide-react';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2 } from 'lucide-react';
 import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
 import GeneralLedgerTable, { GeneralLedgerTableRef } from '@/components/general-ledger/GeneralLedgerTable';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
+import JournalView from '@/components/general-ledger/JournalView'; // F7
 import { Settings2 } from 'lucide-react';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -39,11 +41,12 @@ export default function GeneralLedgerPage() {
   const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+  const [activeViewTab, setActiveViewTab] = useState<'extract' | 'journal'>('extract'); // F7
   const [glStats, setGlStats] = useState<{ accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number } | null>(null);
   const tableRef = useRef<GeneralLedgerTableRef>(null);
   const handleStatsChange = useCallback((stats: typeof glStats) => setGlStats(stats), []);
 
-  // ── Audit imports: auto-detect completed import ──
+  // ── P4: Audit imports — conditional polling ──
   const { data: auditImports } = useQuery({
     queryKey: ['auditImports', selectedCompany?.id],
     queryFn: async () => {
@@ -57,7 +60,11 @@ export default function GeneralLedgerPage() {
       return data || [];
     },
     enabled: !!selectedCompany?.id,
-    refetchInterval: 10000,
+    // P4: Only poll when there's a processing import, otherwise stop
+    refetchInterval: (query) => {
+      const data = query.state.data as typeof auditImports;
+      return data?.some(i => i.processing_status === 'processing') ? 5000 : false;
+    },
   });
 
   // Auto-use the latest completed import (no toggle needed)
@@ -104,6 +111,7 @@ export default function GeneralLedgerPage() {
         setIsAIRunning(false);
         queryClient.invalidateQueries({ queryKey: ['glBalances'] });
         queryClient.invalidateQueries({ queryKey: ['glItems'] });
+        queryClient.invalidateQueries({ queryKey: ['glJournalItems'] });
         
         if (row.processing_status === 'error') {
           toast({ title: 'Hiba történt', description: row.message || 'Az AI feldolgozás sikertelen.', variant: 'destructive' });
@@ -180,7 +188,7 @@ export default function GeneralLedgerPage() {
           target_preset_id: activePresetId,
           processing_status: 'pending',
           message: 'AI besorolás indítva a felhasználó által'
-        } as any);
+        });
 
       if (error) throw new Error(error.message);
       toast({ title: 'Sikeres indítás', description: 'Az AI besorolás elindult a paramétereknek megfelelően.' });
@@ -193,6 +201,10 @@ export default function GeneralLedgerPage() {
   useKeyboardShortcuts([
     { combo: { key: 'p', ctrl: true }, handler: handlePrint, description: 'Nyomtatás' },
   ]);
+
+  // U6: Detect "first use" (no presets)
+  const hasPresets = presets && presets.length > 0;
+  const showOnboarding = !hasPresets;
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
@@ -214,6 +226,57 @@ export default function GeneralLedgerPage() {
         description="Hierarchikus főkönyvi kivonat és kategóriák"
       />
 
+      {/* U6: Onboarding empty state */}
+      {showOnboarding ? (
+        <Card className="border-dashed border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent print:hidden">
+          <CardContent className="py-12 flex flex-col items-center text-center gap-6">
+            <div className="bg-primary/10 text-primary p-4 rounded-2xl">
+              <Database className="w-10 h-10" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Üdvözlünk a Főkönyvben!</h2>
+              <p className="text-muted-foreground mt-1 max-w-md">
+                Az induláshoz kövesd az alábbi lépéseket:
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl mt-2">
+              {/* Step 1 */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-xl border bg-card hover:shadow-md transition-shadow">
+                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">1</div>
+                <h3 className="font-semibold text-sm">Számlatükör feltöltése</h3>
+                <p className="text-xs text-muted-foreground">Válassz egy beépített sablont, vagy töltsd fel a sajátodat</p>
+                <Button size="sm" onClick={handleOpenUpload} className="mt-auto gap-1.5">
+                  <UploadCloud className="w-4 h-4" /> Feltöltés
+                </Button>
+              </div>
+              {/* Step 2 */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-xl border bg-card hover:shadow-md transition-shadow">
+                <div className="w-8 h-8 rounded-full bg-primary/70 text-primary-foreground flex items-center justify-center text-sm font-bold">2</div>
+                <h3 className="font-semibold text-sm">Adat importálás</h3>
+                <p className="text-xs text-muted-foreground">XML auditfájl vagy számlák/tranzakciók importálása</p>
+                <Button size="sm" variant="outline" onClick={() => setAuditXmlModalOpen(true)} className="mt-auto gap-1.5">
+                  <FileUp className="w-4 h-4" /> XML Import
+                </Button>
+              </div>
+              {/* Step 3 */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-xl border bg-card hover:shadow-md transition-shadow">
+                <div className="w-8 h-8 rounded-full bg-primary/40 text-primary-foreground flex items-center justify-center text-sm font-bold">3</div>
+                <h3 className="font-semibold text-sm">AI besorolás</h3>
+                <p className="text-xs text-muted-foreground">Az AI automatikusan kategorizálja a tételeket a számlatükör alapján</p>
+                <Button size="sm" variant="secondary" disabled className="mt-auto gap-1.5">
+                  <Bot className="w-4 h-4" /> Később elérhető
+                </Button>
+              </div>
+            </div>
+            {hasPresets && (
+              <p className="text-xs text-muted-foreground mt-4">
+                Vagy válassz egy meglévő számlatükröt a fenti sávban a kezdéshez.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
       <div className="flex flex-col gap-3 print:hidden">
 
           {/* Preset Selector & Action */}
@@ -287,9 +350,15 @@ export default function GeneralLedgerPage() {
                         Ctrl+P
                       </kbd>
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => tableRef.current?.exportExcel(selectedCompany?.name)}>
                       <Download className="h-4 w-4 mr-2" />
-                      Export Excel
+                      Kivonat (Excel)
+                    </DropdownMenuItem>
+                    {/* F6: Analytical export */}
+                    <DropdownMenuItem onClick={() => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name)}>
+                      <Table2 className="h-4 w-4 mr-2" />
+                      Analitikus kivonat (Excel)
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -340,6 +409,20 @@ export default function GeneralLedgerPage() {
         );
       })()}
 
+      {/* F7: View tabs — Kivonat vs Naplófőkönyv */}
+      <Tabs value={activeViewTab} onValueChange={v => setActiveViewTab(v as any)} className="print:hidden">
+        <TabsList className="mb-0">
+          <TabsTrigger value="extract" className="gap-1.5">
+            <Database className="w-4 h-4" /> Kivonat
+          </TabsTrigger>
+          <TabsTrigger value="journal" className="gap-1.5">
+            <BookOpen className="w-4 h-4" /> Naplófőkönyv
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {/* Extract (default) view */}
+      {activeViewTab === 'extract' && (
       <Card className="border-border/60 shadow-md print:border-none print:shadow-none print:bg-transparent content-animate">
         <CardHeader className="py-4 border-b border-border/40 bg-muted/30 relative overflow-hidden print:hidden">
           <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary/40 via-primary/20 to-transparent"></div>
@@ -394,10 +477,39 @@ export default function GeneralLedgerPage() {
             dateFrom={dateFrom}
             dateTo={dateTo}
             globalSearch={globalSearch}
+            isPolling={isAIRunning}
             onStatsChange={handleStatsChange}
           />
         </CardContent>
       </Card>
+      )}
+
+      {/* F7: Journal view */}
+      {activeViewTab === 'journal' && (
+        <Card className="border-border/60 shadow-md content-animate">
+          <CardHeader className="py-4 border-b border-border/40 bg-muted/30">
+            <CardTitle className="text-xl font-bold flex items-center gap-3">
+              <div className="bg-primary/10 text-primary p-2 rounded-lg">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              Naplófőkönyv
+              <span className="ml-auto text-xs font-semibold text-muted-foreground bg-background px-3 py-1.5 rounded-full border border-border flex items-center gap-2 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                {dateFrom.replace(/-/g, '.')} - {dateTo.replace(/-/g, '.')}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <JournalView
+              presetId={activePresetId}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+            />
+          </CardContent>
+        </Card>
+      )}
+      </>
+      )}
 
       <UploadChartOfAccountsModal 
         open={uploadModalOpen} 

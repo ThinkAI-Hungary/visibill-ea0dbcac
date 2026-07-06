@@ -70,6 +70,20 @@ Deno.serve(async (req) => {
 
     console.log("[VERIFY-EMAIL] Successfully verified user:", profile.user_id);
 
+    // Also confirm the user in Supabase auth (sets email_confirmed_at).
+    // This satisfies the "Confirm email" setting in the Supabase dashboard,
+    // so the user can log in even when email confirmation is required.
+    const { error: authConfirmError } = await supabase.auth.admin.updateUserById(
+      profile.user_id,
+      { email_confirm: true }
+    );
+    if (authConfirmError) {
+      // Non-fatal — profiles.email_verified is already set, log and continue
+      console.warn("[VERIFY-EMAIL] Auth confirm warning:", authConfirmError.message);
+    } else {
+      console.log("[VERIFY-EMAIL] Auth email_confirmed_at set for user:", profile.user_id);
+    }
+
     return new Response(
       JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -5,6 +5,9 @@ import { useAuth } from './AuthContext';
 import { STORAGE_KEYS } from '@/lib/constants';
 import { queryKeys } from '@/lib/queryKeys';
 import { safeStorage } from '@/lib/storage';
+import { reportError } from '@/lib/errorReporter';
+
+export type VatRegime = 'normal' | 'penzforgalmi' | 'alanyi_mentes';
 
 export interface Company {
   id: string;
@@ -13,6 +16,8 @@ export interface Company {
   address: string | null;
   owner_id: string;
   share_token?: string | null;
+  vat_regime?: VatRegime;
+  vat_regime_effective_from?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -78,7 +83,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
 
       if (assignmentError && assignmentError.code !== 'PGRST116') {
         // Ignore "table not found" — it might not exist in all setups
-        console.warn('accounty_assignments query error:', assignmentError.message);
+        reportError({ type: 'db_query', component: 'CompanyContext', action: 'warn', message: 'accounty_assignments query error', error: assignmentError });
       }
 
       // 4. Merge & deduplicate company IDs
@@ -88,12 +93,30 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
 
       if (allCompanyIds.length === 0) return [] as Company[];
 
-      // 5. Fetch company details
-      const { data, error } = await supabase
+      // 5. Fetch company details — try with vat_regime columns first,
+      //    fall back to base columns if migration hasn't been deployed yet
+      let data: any[] | null = null;
+      let error: any = null;
+
+      const result = await supabase
         .from('companies')
-        .select('id, name, tax_number, address, owner_id, share_token, created_at, updated_at')
+        .select('id, name, tax_number, address, owner_id, share_token, vat_regime, vat_regime_effective_from, created_at, updated_at')
         .in('id', allCompanyIds)
         .order('created_at', { ascending: true });
+
+      data = result.data;
+      error = result.error;
+
+      // Fallback: if vat_regime columns don't exist yet, retry without them
+      if (error && (error.message?.includes('vat_regime') || error.code === '42703' || error.code === 'PGRST204')) {
+        const fallback = await supabase
+          .from('companies')
+          .select('id, name, tax_number, address, owner_id, share_token, created_at, updated_at')
+          .in('id', allCompanyIds)
+          .order('created_at', { ascending: true });
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (error) throw error;
       return (data || []) as Company[];
@@ -116,9 +139,9 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
 
     // If we already have a selectedCompany that still exists, keep it
     if (selectedCompany && companies.some(c => c.id === selectedCompany.id)) {
-      // Update to the latest version of the company object (name/tax changes)
+      // Update to the latest version of the company object (name/tax/vat_regime changes)
       const updated = companies.find(c => c.id === selectedCompany.id);
-      if (updated && (updated.name !== selectedCompany.name || updated.tax_number !== selectedCompany.tax_number)) {
+      if (updated && (updated.name !== selectedCompany.name || updated.tax_number !== selectedCompany.tax_number || updated.vat_regime !== selectedCompany.vat_regime)) {
         setSelectedCompanyState(updated);
       }
       return;

@@ -19,6 +19,8 @@ interface UnifiedPaginationProps {
   onPageSizeChange: (size: number) => void;
   pageSizeOptions?: number[];
   className?: string;
+  /** When true, skip the auto-scroll-to-top on page change (useful for inline/embedded paginators) */
+  disableScrollToTop?: boolean;
 }
 
 export function UnifiedPagination({
@@ -30,20 +32,33 @@ export function UnifiedPagination({
   onPageSizeChange,
   pageSizeOptions = [50, 100],
   className,
+  disableScrollToTop = false,
 }: UnifiedPaginationProps) {
   // Reset scroll of layout containers when current page changes
   useEffect(() => {
-    const scrollContainers = document.querySelectorAll("main, .overflow-y-auto, .overflow-auto");
-    scrollContainers.forEach((el) => {
-      if (
-        el.tagName === 'MAIN' ||
-        el.classList.contains('p-6') ||
-        el.classList.contains('p-8') ||
-        el.classList.contains('flex-1')
-      ) {
-        el.scrollTop = 0;
+    if (disableScrollToTop) return;
+    // Small timeout to let React state update before scrolling
+    const timer = setTimeout(() => {
+      // Target Accounty layout scroll container by ID
+      const accountyScroll = document.getElementById('accounty-main-scroll');
+      if (accountyScroll) {
+        accountyScroll.scrollTo({ top: 0, behavior: 'smooth' });
       }
-    });
+
+      // Target generic layout containers (eaisybill side)
+      const scrollContainers = document.querySelectorAll("main, .overflow-y-auto, .overflow-auto");
+      scrollContainers.forEach((el) => {
+        if (
+          el.tagName === 'MAIN' ||
+          el.classList.contains('p-6') ||
+          el.classList.contains('p-8') ||
+          el.classList.contains('flex-1')
+        ) {
+          el.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+    }, 50);
+    return () => clearTimeout(timer);
   }, [currentPage]);
 
   const isFirstPage = currentPage === 1;

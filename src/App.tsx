@@ -1,5 +1,83 @@
 import { Suspense, lazy, useEffect } from "react";
 
+// ─── Synchronous email_change hash redirect ───────────────────────────────────
+// Must run before React renders anything. If Supabase lands us on the root URL
+// with type=email_change in the hash (from an email confirmation link), we
+// immediately hard-redirect to /auth/callback so the user sees the confirmation
+// screen — even if they already have an active session.
+;(function handleEmailChangeHash() {
+  const hash = window.location.hash;
+  const PENDING_KEY = 'visibill_pending_callback_type';
+
+  // ── /reset-password: capture hash synchronously BEFORE Supabase clears it ──
+  // Supabase SDK calls history.replaceState() during init, wiping the hash before
+  // React renders. ResetPassword.tsx must read from sessionStorage instead.
+  if (window.location.pathname === '/reset-password') {
+    if (hash) {
+      const params = new URLSearchParams(hash.replace('#', ''));
+      const type = params.get('type');
+      const errCode = params.get('error_code');
+      const errVal = params.get('error');
+      if (type === 'recovery') {
+        // Valid recovery token — mark so ResetPassword knows to show the form
+        sessionStorage.setItem('visibill_reset_pw_state', 'recovery');
+      } else if (errCode === 'otp_expired' || (errVal === 'access_denied' && errCode)) {
+        // Expired or already-used reset link
+        sessionStorage.setItem('visibill_reset_pw_state', 'expired');
+      }
+    }
+    return; // Never redirect away from /reset-password
+  }
+
+  // If already at /auth/callback: capture the TYPE synchronously into sessionStorage
+  // BEFORE Supabase's async init clears the URL. Two formats to handle:
+  //   1. Hash fragment:  /auth/callback#type=email_change&access_token=...  (implicit flow)
+  //   2. Query params:   /auth/callback?type=email_change&token_hash=...    (newer Supabase format)
+  if (window.location.pathname === '/auth/callback') {
+    if (!sessionStorage.getItem(PENDING_KEY)) {
+      // First check query params (token_hash format)
+      const qp = new URLSearchParams(window.location.search);
+      const qpType = qp.get('type');
+      const qpErrCode = qp.get('error_code');
+      if (qpType === 'email_change') {
+        sessionStorage.setItem(PENDING_KEY, 'email_change');
+      } else if (qpErrCode === 'otp_expired' || qp.get('error') === 'access_denied') {
+        sessionStorage.setItem(PENDING_KEY, 'otp_expired');
+      } else if (hash) {
+        // Fallback: hash fragment format
+        const hp = new URLSearchParams(hash.replace('#', ''));
+        const hpType = hp.get('type');
+        const hpErrCode = hp.get('error_code');
+        if (hpType === 'email_change') {
+          sessionStorage.setItem(PENDING_KEY, 'email_change');
+        } else if (hpErrCode === 'otp_expired') {
+          sessionStorage.setItem(PENDING_KEY, 'otp_expired');
+        }
+      }
+    }
+    return;
+  }
+
+  if (!hash) return;
+  const params = new URLSearchParams(hash.replace('#', ''));
+
+  // Successful email change confirmation
+  if (params.get('type') === 'email_change') {
+    sessionStorage.setItem(PENDING_KEY, 'email_change');
+    window.location.replace('/auth/callback' + hash);
+    return;
+  }
+
+  // Already-used token: otp_expired error on root URL = email_change
+  // (password reset otp_expired lands on /reset-password, not here)
+  if (params.get('error') === 'access_denied' && params.get('error_code') === 'otp_expired') {
+    sessionStorage.setItem(PENDING_KEY, 'otp_expired');
+    window.location.replace('/auth/callback' + hash);
+    return;
+  }
+})();
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache, useQuery } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
@@ -10,14 +88,17 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider, useCompany } from "./contexts/CompanyContext";
 import { DateRangeProvider, useDateRange } from "./contexts/DateRangeContext";
 import { ProtectedLayout } from "./components/ProtectedLayout";
+import { SupportModeBanner } from "./components/SupportModeBanner";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ProtectedAccountyRoute } from "./pages/Accounty/ProtectedAccountyRoute";
 import { ScopedLayout } from "./components/ScopedLayout";
 import { generateScopedPath, extractPageSegment } from "./lib/navigation";
 
 import { LoadingSpinner } from "./components/ui/loading-spinner";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { IdleWarningModal } from "./components/IdleWarningModal";
 import { Toaster } from "./components/ui/toaster";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { supabase } from "./integrations/supabase/client";
 
 // Route-level code splitting – each page loads as a separate chunk
@@ -141,7 +222,94 @@ const TaoYearEndWizardPage = lazy(() => import("./pages/Accounty/Tao/TaoYearEndW
 const KivaCalculatorPage = lazy(() => import("./pages/Accounty/Tao/KivaCalculatorPage"));
 const TaoKivaComparePage = lazy(() => import("./pages/Accounty/Tao/TaoKivaComparePage"));
 
+// EV / Egyszeres könyvvitel module
+const EvPortfolioDashboard = lazy(() => import("./pages/Accounty/Ev/EvPortfolioDashboard"));
+const EvCalendarPage = lazy(() => import("./pages/Accounty/Ev/EvCalendarPage"));
+const EvFormsOverviewPage = lazy(() => import("./pages/Accounty/Ev/EvFormsOverviewPage"));
+const EvThresholdMonitorPage = lazy(() => import("./pages/Accounty/Ev/EvThresholdMonitorPage"));
+const ClientEvMainPage = lazy(() => import("./pages/Accounty/Ev/ClientEvMainPage"));
+const EvSetupWizardPage = lazy(() => import("./pages/Accounty/Ev/EvSetupWizardPage"));
+const EvMasterDataPage = lazy(() => import("./pages/Accounty/Ev/EvMasterDataPage"));
+const EvLifecyclePage = lazy(() => import("./pages/Accounty/Ev/EvLifecyclePage"));
+const EvFlatRatePage = lazy(() => import("./pages/Accounty/Ev/EvFlatRatePage"));
+const EvEntrepreneurialBasePage = lazy(() => import("./pages/Accounty/Ev/EvEntrepreneurialBasePage"));
+const EvEntrepreneurialDividendPage = lazy(() => import("./pages/Accounty/Ev/EvEntrepreneurialDividendPage"));
+const EvDepreciationPage = lazy(() => import("./pages/Accounty/Ev/EvDepreciationPage"));
+const EvKataPage = lazy(() => import("./pages/Accounty/Ev/EvKataPage"));
+const EvComparePage = lazy(() => import("./pages/Accounty/Ev/EvComparePage"));
+const CashbookMainPage = lazy(() => import("./pages/Accounty/Ev/CashbookMainPage"));
+const CashbookLedgerView = lazy(() => import("./pages/Accounty/Ev/CashbookLedgerView"));
+const CashbookCloseWizard = lazy(() => import("./pages/Accounty/Ev/CashbookCloseWizard"));
+const EvContributionsPage = lazy(() => import("./pages/Accounty/Ev/EvContributionsPage"));
+const EvHipaPage = lazy(() => import("./pages/Accounty/Ev/EvHipaPage"));
+const EvVatPage = lazy(() => import("./pages/Accounty/Ev/EvVatPage"));
+const EvChamberPage = lazy(() => import("./pages/Accounty/Ev/EvChamberPage"));
+const EvCompanyCarTaxPage = lazy(() => import("./pages/Accounty/Ev/EvCompanyCarTaxPage"));
+const EvInnovationLevyPage = lazy(() => import("./pages/Accounty/Ev/EvInnovationLevyPage"));
+const EvSzjaReturnPage = lazy(() => import("./pages/Accounty/Ev/EvSzjaReturnPage"));
+const EvContribReturnPage = lazy(() => import("./pages/Accounty/Ev/EvContribReturnPage"));
+const EvKataReturnPage = lazy(() => import("./pages/Accounty/Ev/EvKataReturnPage"));
+const EvHipaReturnPage = lazy(() => import("./pages/Accounty/Ev/EvHipaReturnPage"));
+const EvVatCarReturnPage = lazy(() => import("./pages/Accounty/Ev/EvVatCarReturnPage"));
+const EvRecordsOverviewPage = lazy(() => import("./pages/Accounty/Ev/EvRecordsOverviewPage"));
+const EvRecordDetailPage = lazy(() => import("./pages/Accounty/Ev/EvRecordDetailPage"));
+const EvIncomeReportPage = lazy(() => import("./pages/Accounty/Ev/EvIncomeReportPage"));
+const EvOptimizationPage = lazy(() => import("./pages/Accounty/Ev/EvOptimizationPage"));
+const OrgBookkeepingModePage = lazy(() => import("./pages/Accounty/Ev/OrgBookkeepingModePage"));
+const OrgCivilPage = lazy(() => import("./pages/Accounty/Ev/OrgCivilPage"));
+const OrgCondominiumPage = lazy(() => import("./pages/Accounty/Ev/OrgCondominiumPage"));
+const OrgOtherPage = lazy(() => import("./pages/Accounty/Ev/OrgOtherPage"));
+const OrgSimplifiedReportPage = lazy(() => import("./pages/Accounty/Ev/OrgSimplifiedReportPage"));
+
 import { reportError } from '@/lib/errorReporter';
+
+/** Extract a human-readable message + structured details from any thrown value. */
+function extractErrorInfo(error: unknown): { message: string; details: Record<string, unknown> } {
+  if (error instanceof Error) {
+    // Standard JS Error — may also have Supabase-style extra fields
+    const extra = error as Record<string, unknown>;
+    return {
+      message: error.message,
+      details: {
+        ...(extra['code'] != null && { code: extra['code'] }),
+        ...(extra['details'] != null && { details: extra['details'] }),
+        ...(extra['hint'] != null && { hint: extra['hint'] }),
+        ...(extra['status'] != null && { status: extra['status'] }),
+      },
+    };
+  }
+  if (typeof error === 'object' && error !== null) {
+    // Plain object (e.g. Supabase PostgrestError: { message, code, details, hint })
+    const obj = error as Record<string, unknown>;
+    let msg = '';
+    if (typeof obj['message'] === 'string') {
+      msg = obj['message'];
+    } else if (typeof obj['message'] === 'object' && obj['message'] !== null && typeof (obj['message'] as Record<string, unknown>)['message'] === 'string') {
+      msg = (obj['message'] as Record<string, unknown>)['message'] as string;
+    } else if (typeof obj['error'] === 'string') {
+      msg = obj['error'];
+    } else if (typeof obj['error'] === 'object' && obj['error'] !== null && typeof (obj['error'] as Record<string, unknown>)['message'] === 'string') {
+      msg = (obj['error'] as Record<string, unknown>)['message'] as string;
+    } else {
+      try {
+        msg = JSON.stringify(obj);
+      } catch {
+        msg = String(error);
+      }
+    }
+    return {
+      message: msg,
+      details: {
+        ...(obj['code'] != null && { code: obj['code'] }),
+        ...(obj['details'] != null && { details: obj['details'] }),
+        ...(obj['hint'] != null && { hint: obj['hint'] }),
+        ...(obj['status'] != null && { status: obj['status'] }),
+        raw: obj,
+      },
+    };
+  }
+  return { message: String(error), details: {} };
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -155,26 +323,28 @@ const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
       // Log every final query failure (after retries exhausted)
+      const { message, details } = extractErrorInfo(error);
       reportError({
         type: 'db_query',
         component: String(query.queryKey?.[0] || 'UnknownQuery'),
         action: 'query_error',
-        message: error instanceof Error ? error.message : String(error),
+        message,
         error,
-        context: { queryKey: query.queryKey },
+        context: { queryKey: query.queryKey, ...details },
       });
     },
   }),
   mutationCache: new MutationCache({
     onError: (error, _variables, _context, mutation) => {
       // Log every mutation failure
+      const { message, details } = extractErrorInfo(error);
       reportError({
         type: 'db_query',
         component: String(mutation.options.mutationKey?.[0] || 'UnknownMutation'),
         action: 'mutation_error',
-        message: error instanceof Error ? error.message : String(error),
+        message,
         error,
-        context: { mutationKey: mutation.options.mutationKey },
+        context: { mutationKey: mutation.options.mutationKey, ...details },
       });
     },
   }),
@@ -195,6 +365,8 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
     </ProtectedRoute>
   );
 }
+
+
 
 /**
  * RootRedirect — sends `/` to `/:companyId/:dateRange/` (scoped dashboard).
@@ -223,11 +395,28 @@ function RootRedirect() {
   // Check if they have eaisybill access
   const { hasAccess: hasEaisybillAccess, isLoading: accessLoading } = useHasEaisybillAccess();
 
-  if (roleLoading || accessLoading) return null;
+  // Check for active impersonation (support_admin) before management redirect
+  // NOTE: Hook must be before any conditional returns (Rules of Hooks)
+  const { data: hasImpersonation, isPending: impLoading } = useQuery({
+    queryKey: ['has-impersonation-root', user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('company_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user!.id)
+        .eq('role', 'support_admin' as any);
+      return (count ?? 0) > 0;
+    },
+    enabled: !!user && (profileRole === 'management' || profileRole === 'thinkai'),
+    staleTime: 30_000,
+  });
 
-  // ThinkAI / management role → management dashboard (takes priority)
+  if (roleLoading || accessLoading) return <LoadingSpinner message="" />;
+
+  // ThinkAI / management role → management dashboard (but NOT when impersonating)
   if (profileRole === 'management' || profileRole === 'thinkai') {
-    return <Navigate to="/management" replace />;
+    if (impLoading) return <LoadingSpinner message="" />;
+    if (!hasImpersonation) return <Navigate to="/management" replace />;
   }
 
   // Still loading companies — render nothing (initial-loader covers this)
@@ -318,16 +507,26 @@ function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Reset scroll positions of main layout content containers
+    // Reset scroll of main content containers ONLY — NOT the sidebar nav.
+    // AppSidebar's scrollable SidebarGroup has [data-sidebar-nav] which is excluded here.
+    // Without this, the sidebar would jump to top every time the user clicks a menu item
+    // that was scrolled into view on small-resolution screens.
     const scrollContainers = document.querySelectorAll("main, .overflow-y-auto, .overflow-auto");
     scrollContainers.forEach((el) => {
+      // Skip sidebar navigation containers (marked with data-sidebar-nav)
+      if (
+        el.hasAttribute('data-sidebar-nav') ||
+        el.closest('[data-sidebar-nav]')
+      ) {
+        return;
+      }
       if (
         el.tagName === 'MAIN' ||
         el.classList.contains('p-6') ||
         el.classList.contains('p-8') ||
         el.classList.contains('flex-1')
       ) {
-        el.scrollTop = 0;
+        (el as HTMLElement).scrollTop = 0;
       }
     });
   }, [pathname]);
@@ -345,6 +544,9 @@ const App = () => (
               <TooltipProvider>
 
                 <Toaster />
+                <OfflineBanner />
+                <SupportModeBanner />
+                <ErrorBoundary>
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <ScrollToTop />
                     <PasswordRecoveryRedirect />
@@ -381,13 +583,13 @@ const App = () => (
                     {/* Accounty frontend – standalone layout */}
                     <Route path="/accounty" element={
                       <ProtectedPage>
-                        <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
                           <RemoveInitialLoader />
-                          <AccountyLayout />
-                        </Suspense>
+                          <Suspense fallback={<LoadingSpinner message="eaisybooks betöltése..." />}>
+                            <AccountyLayout />
+                          </Suspense>
                       </ProtectedPage>
                     }>
-                      <Route index element={<AccountyApp />} />
+                      <Route index element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyApp /></Suspense>} />
                       <Route path="client/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientDetailsPage /></Suspense>} />
                       <Route path="missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesPage /></Suspense>} />
                       <Route path="missing-invoices/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientMissingInvoicesPage /></Suspense>} />
@@ -484,6 +686,51 @@ const App = () => (
                       <Route path="client/:id/tao/year-end/:year" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoYearEndWizardPage /></Suspense>} />
                       <Route path="client/:id/tao/kiva" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><KivaCalculatorPage /></Suspense>} />
                       <Route path="client/:id/tao/compare" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoKivaComparePage /></Suspense>} />
+                      {/* EV / Egyszeres könyvvitel module — portfolio */}
+                      <Route path="ev" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvPortfolioDashboard /></Suspense>} />
+                      <Route path="ev/calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvCalendarPage /></Suspense>} />
+                      <Route path="ev/forms" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvFormsOverviewPage /></Suspense>} />
+                      <Route path="ev/thresholds" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvThresholdMonitorPage /></Suspense>} />
+                      {/* EV — client-level */}
+                      <Route path="client/:id/ev" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientEvMainPage /></Suspense>} />
+                      <Route path="client/:id/ev/setup" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvSetupWizardPage /></Suspense>} />
+                      <Route path="client/:id/ev/master-data" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvMasterDataPage /></Suspense>} />
+                      <Route path="client/:id/ev/lifecycle" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvLifecyclePage /></Suspense>} />
+                      {/* EV — tax form calculators */}
+                      <Route path="client/:id/ev/flat-rate" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvFlatRatePage /></Suspense>} />
+                      <Route path="client/:id/ev/entrepreneurial/base" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvEntrepreneurialBasePage /></Suspense>} />
+                      <Route path="client/:id/ev/entrepreneurial/dividend" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvEntrepreneurialDividendPage /></Suspense>} />
+                      <Route path="client/:id/ev/depreciation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvDepreciationPage /></Suspense>} />
+                      <Route path="client/:id/ev/kata" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvKataPage /></Suspense>} />
+                      <Route path="client/:id/ev/compare" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvComparePage /></Suspense>} />
+                      {/* EV — cashbook */}
+                      <Route path="client/:id/ev/cashbook" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CashbookMainPage /></Suspense>} />
+                      <Route path="client/:id/ev/cashbook/ledger" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CashbookLedgerView /></Suspense>} />
+                      <Route path="client/:id/ev/cashbook/close" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CashbookCloseWizard /></Suspense>} />
+                      {/* EV — contributions & taxes */}
+                      <Route path="client/:id/ev/contributions" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvContributionsPage /></Suspense>} />
+                      <Route path="client/:id/ev/hipa" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvHipaPage /></Suspense>} />
+                      <Route path="client/:id/ev/vat" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvVatPage /></Suspense>} />
+                      <Route path="client/:id/ev/chamber" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvChamberPage /></Suspense>} />
+                      <Route path="client/:id/ev/car-tax" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvCompanyCarTaxPage /></Suspense>} />
+                      <Route path="client/:id/ev/innovation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvInnovationLevyPage /></Suspense>} />
+                      {/* EV — tax returns */}
+                      <Route path="client/:id/ev/returns" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvSzjaReturnPage /></Suspense>} />
+                      <Route path="client/:id/ev/returns/contrib" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvContribReturnPage /></Suspense>} />
+                      <Route path="client/:id/ev/returns/kata" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvKataReturnPage /></Suspense>} />
+                      <Route path="client/:id/ev/returns/hipa" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvHipaReturnPage /></Suspense>} />
+                      <Route path="client/:id/ev/returns/vat-car" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvVatCarReturnPage /></Suspense>} />
+                      {/* EV — records & reports */}
+                      <Route path="client/:id/ev/records" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvRecordsOverviewPage /></Suspense>} />
+                      <Route path="client/:id/ev/records/:recordType" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvRecordDetailPage /></Suspense>} />
+                      <Route path="client/:id/ev/income-report" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvIncomeReportPage /></Suspense>} />
+                      <Route path="client/:id/ev/optimization" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvOptimizationPage /></Suspense>} />
+                      {/* EV — organization screens (4.x) */}
+                      <Route path="client/:id/ev/org/bookkeeping" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgBookkeepingModePage /></Suspense>} />
+                      <Route path="client/:id/ev/org/civil" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgCivilPage /></Suspense>} />
+                      <Route path="client/:id/ev/org/condominium" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgCondominiumPage /></Suspense>} />
+                      <Route path="client/:id/ev/org/other" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgOtherPage /></Suspense>} />
+                      <Route path="client/:id/ev/org/simplified-report" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgSimplifiedReportPage /></Suspense>} />
                     </Route>
 
                     {/* Protected routes with persistent sidebar */}
@@ -561,6 +808,7 @@ const App = () => (
                     <Route path="*" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NotFound /></Suspense>} />
                   </Routes>
                 </BrowserRouter>
+                </ErrorBoundary>
               </TooltipProvider>
 
           </DateRangeProvider>

@@ -5,7 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { supabase } from '@/integrations/supabase/client';
-import { startOfYear, endOfYear, parseISO } from 'date-fns';
+import { startOfYear, endOfYear, parseISO, format } from 'date-fns';
+import { reportError } from '@/lib/errorReporter';
 
 // Paginated fetch helper for tables that may exceed the Supabase default 1000 row limit.
 // Keep the query type intentionally loose: Supabase's generated table union can become
@@ -262,7 +263,7 @@ export function useDashboardData() {
         supabase.rpc('get_nav_invoice_aggregates', {
           p_company_id: companyId,
           p_date_from: '2000-01-01',
-          p_date_to: dateToFormatted
+          p_date_to: format(new Date(), 'yyyy-MM-dd')  // always today — kintlévőség is cumulative regardless of date filter
         })
       ]);
 
@@ -324,21 +325,16 @@ export function useDashboardData() {
   const { data: pettyCashBalances = [] } = useQuery<{ currency: string; balance: number }[]>({
     queryKey: queryKeys.dashboardPettyCash(companyId),
     queryFn: async () => {
-      console.log('[Dashboard] Computing petty cash from raw tables for company:', companyId);
 
       const [regRes, obRes, entRes] = await Promise.all([
-        supabase.from('petty_cash_registers' as any).select('id').eq('company_id', companyId),
-        supabase.from('petty_cash_opening_balances' as any).select('register_id, currency, amount'),
-        supabase.from('petty_cash_entries' as any).select('register_id, currency, amount').eq('company_id', companyId),
+        supabase.from('petty_cash_registers').select('id').eq('company_id', companyId),
+        supabase.from('petty_cash_opening_balances').select('register_id, currency, amount'),
+        supabase.from('petty_cash_entries').select('register_id, currency, amount').eq('company_id', companyId),
       ]);
 
-      console.log('[Dashboard] Registers:', regRes.data?.length, 'error:', regRes.error?.message);
-      console.log('[Dashboard] Opening balances:', obRes.data?.length, 'error:', obRes.error?.message);
-      console.log('[Dashboard] Entries:', entRes.data?.length, 'error:', entRes.error?.message);
 
       const regIds = new Set((regRes.data || []).map((r: any) => r.id));
       if (regIds.size === 0) {
-        console.warn('[Dashboard] No registers found — petty cash will be empty');
         return [];
       }
 
@@ -364,7 +360,6 @@ export function useDashboardData() {
       const result = Object.entries(byCurrency)
         .map(([currency, balance]) => ({ currency, balance }))
         .sort((a, b) => a.currency === 'HUF' ? -1 : b.currency === 'HUF' ? 1 : a.currency.localeCompare(b.currency));
-      console.log('[Dashboard] Petty cash result:', result);
       return result;
     },
     enabled: !!user && !!companyId,
@@ -380,14 +375,13 @@ export function useDashboardData() {
     queryFn: async () => {
       // 1. Check if daily_exchange_rates has any data
       const { count } = await supabase
-        .from('daily_exchange_rates' as any)
+        .from('daily_exchange_rates')
         .select('id', { count: 'exact', head: true })
         .limit(1);
 
       // 2. If no rates exist and we haven't tried fetching yet, auto-fetch from MNB
       if ((count === null || count === 0) && !fxRatesFetchedRef.current) {
         fxRatesFetchedRef.current = true;
-        console.log('[FX] No MNB rates found, auto-fetching...');
         try {
           const { data: session } = await supabase.auth.getSession();
           const token = session?.session?.access_token;
@@ -399,10 +393,9 @@ export function useDashboardData() {
                 date_to: new Date().toISOString().split('T')[0],
               },
             });
-            console.log('[FX] MNB rates fetched successfully');
           }
         } catch (e) {
-          console.warn('[FX] Failed to auto-fetch MNB rates:', e);
+          reportError({ type: 'api_call', component: 'useDashboardData', action: 'warning', message: 'Failed to auto-fetch MNB rates', error: e });
         }
       }
 
@@ -433,6 +426,21 @@ export function useDashboardData() {
     });
     return Object.values(months).sort((a, b) => a.month.localeCompare(b.month));
   }, [fxDifferences]);
+
+  // ── FX GL Settings (főkönyvi szám hozzárendelés) ──
+  const { data: fxGlSettings } = useQuery<{ fx_gain_gl_number: string | null; fx_loss_gl_number: string | null } | null>({
+    queryKey: ['fx-gl-settings', companyId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('company_fx_settings')
+        .select('fx_gain_gl_number, fx_loss_gl_number')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      return data as { fx_gain_gl_number: string | null; fx_loss_gl_number: string | null } | null;
+    },
+    enabled: !!user && !!companyId,
+    placeholderData: keepPreviousData,
+  });
 
   // ── Analytics raw data (always full current year) ──
   const { data: analyticsRaw, isLoading: analyticsLoading } = useQuery({
@@ -827,6 +835,7 @@ export function useDashboardData() {
     pettyCashBalances,
     fxDifferences,
     fxMonthlySummary,
+    fxGlSettings,
     invoices,
     analyticsLoading,
     vatBreakdown,

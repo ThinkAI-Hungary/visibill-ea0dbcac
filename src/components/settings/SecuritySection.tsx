@@ -6,12 +6,13 @@ import { Shield, FileText, Download, PenTool, Upload, CheckCircle2, AlertTriangl
 
 interface Props {
   onChangePassword: () => void;
+  onChangeEmail: () => void;
   onExportData: () => void;
   exportLoading: boolean;
   showAvdh?: boolean;
 }
 
-export function SecuritySection({ onChangePassword, onExportData, exportLoading, showAvdh = false }: Props) {
+export function SecuritySection({ onChangePassword, onChangeEmail, onExportData, exportLoading, showAvdh = false }: Props) {
   const [avdhStatus, setAvdhStatus] = useState<'none' | 'active' | 'expiring' | 'expired'>('none');
   const [avdhName, setAvdhName] = useState<string | null>(null);
   const [avdhExpiry, setAvdhExpiry] = useState<string | null>(null);
@@ -51,6 +52,9 @@ export function SecuritySection({ onChangePassword, onExportData, exportLoading,
           <div className="space-y-4">
             <Button variant="outline" className="w-full justify-start" onClick={onChangePassword}>
               Jelszó megváltoztatása
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={onChangeEmail}>
+              Email cím megváltoztatása
             </Button>
             <Button variant="outline" className="w-full justify-start opacity-50" disabled>
               Kétfaktoros hitelesítés beállítása (hamarosan)

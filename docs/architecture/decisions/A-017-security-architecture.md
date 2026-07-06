@@ -9,7 +9,7 @@ A rendszer pénzügyi adatokat kezel (számlák, banki tranzakciók, NAV credent
 
 ## Decision
 
-**5 rétegű biztonsági modell:**
+**8 rétegű biztonsági modell:**
 
 ---
 
@@ -71,7 +71,12 @@ auth.users (1) ──→ company_members (N) ──→ companies (N)
 | `owner` | Teljes hozzáférés, cég törlés, tagok kezelése |
 | `admin` | Teljes hozzáférés, tagok kezelése |
 | `member` | Olvasás + írás, nincs tag kezelés |
-| `viewer` | Csak olvasás |
+| `assistant` | Számlák, tranzakciók, kintlévőségek, projektek R/W |
+| `viewer` | Csak olvasás — pénzügyi modulok |
+| `employee` | Csak Munkaidő modul (token-based, nincs email regisztráció) |
+| `management` / `thinkai` | Cross-tenant vezetői dashboard (`/management`) |
+
+> Lásd részletesen: [A-009: Auth és RBAC](./A-009-auth-rbac.md)
 
 **Frontend ellenőrzés:**
 ```typescript
@@ -109,7 +114,39 @@ const corsHeaders = {
 
 ---
 
-### 4. réteg: Credential Titkosítás (AES-256-GCM)
+### 4. réteg: API Key Autentikáció (Külső Integrációk)
+
+Az `openclaw-api` Edge Function saját API key authentikációt implementál:
+
+| Elem | Megoldás |
+|---|---|
+| Key formátum | `vb_` prefix + 40 hex karakter (20 random byte) |
+| Tárolás | SHA-256 hash az `api_keys` táblában (nyers kulcs **soha** nem tárolódik) |
+| Auth header | `Authorization: Bearer vb_xxxxxxxx...` |
+| Scope | Company-scoped (company_id) vagy projekt-széles (company_id = NULL) |
+| Rate limiting | In-memory, 100 req/perc/kulcs (konfigurálható per API key) |
+| Lejárat | Konfigurálható `expires_at` mező |
+| Visszavonás | `revoke_api_key()` RPC — `is_active = false` |
+| Audit | `last_used_at` automatikus frissítés minden hívásnál |
+
+#### API Key lifecycle:
+```
+Admin (Frontend/SQL) → generate_api_key() RPC → nyers kulcs (CSAK EGYSZER látható)
+                                                       ↓
+OpenClaw → Bearer vb_xxx... → openclaw-api EF → SHA-256(key) → api_keys tábla lookup
+                                                       ↓
+                                              company_id scope → tábla lekérdezés
+```
+
+#### Biztonsági korlátok:
+- **Table allowlist:** 120+ tábla engedélyezve, 6 szenzitív tábla blokkolva (NAV credentials, subscriptions, api_keys, error logs, OAuth tokens, emails)
+- **Read-only:** Kizárólag SELECT műveletek
+- **JWT disabled:** `verify_jwt: false` — saját API key auth helyettesíti
+- **Service role:** RLS bypass + manuális company_id szűrés
+
+---
+
+### 5. réteg: Credential Titkosítás (AES-256-GCM)
 
 Részletek: [A-010: Credential Titkosítás](./A-010-credential-encryption.md)
 
@@ -131,7 +168,7 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 
 ---
 
-### 5. réteg: Audit Trail
+### 6. réteg: Audit Trail
 
 #### Global audit log:
 ```sql
@@ -145,6 +182,7 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 --   • invoices: statusz → 'feldolgozott'
 --   • salary_files: status → 'completed'
 -- DELETE → 'törlés' audit_log bejegyzés
+-- Worker → 'átirányítás' (multi-company invoice routing, company_router.py INSERT-eli)
 --
 -- A details JSONB mező tartalmazza: source, table, op, upload_source, is_system, processing_type
 ```
@@ -152,6 +190,7 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 **Auditált műveletek:**
 - Számla / dokumentum feltöltés (INSERT trigger)
 - Számla feldolgozás befejezése (`invoice_uploads.processing_status = 'processed'`)
+- **Számla átirányítás** multi-company user-eknél (worker `company_router.py` → `audit_logs` INSERT, action = `'átirányítás'`)
 - Tranzakció match módosítás
 - GL felülbírálás (`override_gl_classification`)
 - NAV credential mentés
@@ -159,7 +198,7 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 
 ---
 
-### 6. réteg: Worker Biztonság
+### 7. réteg: Worker Biztonság
 
 | Elem | Megoldás |
 |---|---|
@@ -176,7 +215,7 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 
 ---
 
-### 7. Frontend Biztonság
+### 8. réteg: Frontend Biztonság
 
 | Elem | Megoldás |
 |---|---|
@@ -197,7 +236,7 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 ## Consequences
 
 **Pozitív:**
-- 5 réteg → defense in depth
+- 8 réteg → defense in depth
 - RLS → adatszivárgás kockázat minimális, DB-szintű védelemmel
 - AES-256-GCM → credentials biztonságos tárolás
 - Audit trail → visszakereshető minden módosítás
@@ -205,7 +244,7 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 **Negatív:**
 - CORS: jelenleg `*` → production-ben szűkítendő
 - Nincs MFA → jövőbeli feature
-- Nincs rate limiting a frontend API hívásokon
+- Nincs rate limiting a frontend API hívásokon (az `openclaw-api` EF-en van)
 - Key rotation nincs implementálva (ENCRYPTION_KEY)
 - `service_role_key` kompromittálása = teljes hozzáférés
 

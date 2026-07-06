@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { usePayrollEmployments } from '@/hooks/usePayrollData';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 const REASONS = [
   'Közös megegyezés', 'Munkavállaló felmondása', 'Munkáltatói felmondás',
@@ -33,7 +34,7 @@ export default function EmployeeExitWizardPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: employments = [], isLoading } = usePayrollEmployments(empId || '');
+  const { data: employments = [], isLoading, isError: empError, refetch: refetchEmp } = usePayrollEmployments(empId || '');
   const [saving, setSaving] = useState(false);
 
   // Find active employment, or fall back to any non-terminated, or the first one
@@ -113,6 +114,7 @@ export default function EmployeeExitWizardPage() {
     }
   };
 
+  if (empError) return <AccountyErrorState message="Nem sikerült betölteni a jogviszony adatokat." onRetry={() => refetchEmp()} />;
   if (isLoading) return <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>;
 
   if (!activeJob) {

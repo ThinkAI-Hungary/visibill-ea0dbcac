@@ -1,8 +1,8 @@
-# P-034: [Accounty] Jóváhagyási Sor (Approval Queue)
+# P-034: [eaisyBooks] Jóváhagyási Sor (Approval Queue)
 
 **Status:** Decided  
-**Category:** Accounty  
-**BRD Reference:** Decision 031 (Accounty modul scope)
+**Category:** eaisyBooks  
+**BRD Reference:** Decision 031 (eaisyBooks modul scope)
 
 **Question:** Hogyan néz ki a jóváhagyásra váró tételek kezelésének felülete?
 

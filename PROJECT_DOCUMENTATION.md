@@ -403,7 +403,13 @@ NAV (Nemzeti Adó- és Vámhivatal) is the Hungarian National Tax and Customs Ad
 ### Bank Integration
 - **`bank_statements`**: Bank statement files
 - **`bank_statement_uploads`**: Upload tracking
-- **`bank_transactions`**: Individual transaction records
+- **`bank_transactions`**: Individual transaction records (Supports XLSX, CIB, OTP, and **Binx e-pénz PDF** via native parser)
+
+### VAT & Tax Management
+- **`tax`**: Tax payment records
+- **Cash Accounting VAT (Pénzforgalmi ÁFA)**: 
+  - Automated calculation of payable and deductible VAT based on payment status (matched transactions).
+  - **`calculate_cash_accounting_vat` RPC**: Complex database function that aggregates VAT amounts from paid invoices within a period, handling rounding and summaries for tax declaration.
 
 ### Email System
 - **`email_aliases`**: Custom email aliases for invoice forwarding
@@ -702,6 +708,8 @@ npm run preview      # Preview production build
 
 ### Planned Features
 - [ ] Stripe webhook handler for subscription events
+- [x] Bank account reconciliation (Supported via transaction matching)
+- [x] Binx e-pénz bank statement support
 - [ ] Automated monthly usage reset (cron)
 - [ ] Advanced invoice search and filtering
 - [ ] Bulk invoice export (Excel/CSV)
@@ -754,5 +762,5 @@ npm run preview      # Preview production build
 
 ---
 
-**Last Updated:** 2025-01-24  
+**Last Updated:** 2026-07-03  
 **Maintained By:** VisiBill Development Team

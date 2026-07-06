@@ -6,12 +6,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useEmployeeJobs } from '@/hooks/useAccountyData';
+import { useEmployeeJobs } from '@/hooks/accounty';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { usePayrollEmployee, usePayrollEmployments, usePayrollCalculations, usePayrollCycles, usePayrollLeaves } from '@/hooks/usePayrollData';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -58,7 +59,7 @@ const STATUS_BADGE: Record<string, { label: string; color: string; icon: React.E
 
 export default function ExitDocumentsPage() {
   const { id, empId } = useParams<{ id: string; empId: string }>();
-  const { data: jobs, isLoading } = useEmployeeJobs(id || '', empId || '');
+  const { data: jobs, isLoading, isError: jobsError, refetch: refetchJobs } = useEmployeeJobs(id || '', empId || '');
   const { data: employee } = usePayrollEmployee(empId || '');
   const { data: employments = [] } = usePayrollEmployments(empId || '');
   const { data: cycles = [] } = usePayrollCycles(id || '');
@@ -381,6 +382,7 @@ export default function ExitDocumentsPage() {
     a.click();
   };
 
+  if (jobsError) return <AccountyErrorState message="Nem sikerült betölteni a kilépő dokumentumok adatait." onRetry={() => refetchJobs()} />;
   if (isLoading) return <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>;
 
   return (

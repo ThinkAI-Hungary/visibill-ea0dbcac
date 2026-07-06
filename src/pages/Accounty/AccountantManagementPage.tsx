@@ -208,11 +208,45 @@ function useToggleEaisybillAccess() {
 
   return useMutation({
     mutationFn: async ({ userId, access }: { userId: string; access: boolean }) => {
+      // 1. Update the profile flag
       const { error } = await supabase
         .from('profiles')
         .update({ eaisybill_access: access })
         .eq('user_id', userId);
       if (error) throw error;
+
+      if (access) {
+        // 2a. When enabling: create company_members for each assigned company
+        const { data: assignments } = await supabase
+          .from('accounty_assignments')
+          .select('company_id')
+          .eq('accountant_user_id', userId);
+
+        if (assignments && assignments.length > 0) {
+          const uniqueCompanyIds = [...new Set(assignments.map(a => a.company_id))];
+          for (const companyId of uniqueCompanyIds) {
+            // Check if already a member (avoid duplicates)
+            const { data: existing } = await supabase
+              .from('company_members')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('company_id', companyId)
+              .maybeSingle();
+
+            if (!existing) {
+              await supabase
+                .from('company_members')
+                .insert({ user_id: userId, company_id: companyId, role: 'member' });
+            }
+          }
+        }
+      } else {
+        // 2b. When disabling: remove company_members for this user
+        await supabase
+          .from('company_members')
+          .delete()
+          .eq('user_id', userId);
+      }
     },
     onMutate: async (vars) => {
       // Cancel outgoing refetches
@@ -230,6 +264,7 @@ function useToggleEaisybillAccess() {
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['has-eaisybill-access'] });
+      queryClient.invalidateQueries({ queryKey: ['company-members'] });
       toast({
         title: vars.access ? 'eaisybill engedélyezve' : 'eaisybill letiltva',
         description: vars.access

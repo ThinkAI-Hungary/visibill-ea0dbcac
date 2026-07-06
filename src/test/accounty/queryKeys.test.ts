@@ -168,6 +168,60 @@ describe('Accounty Query Keys', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// New Accounty Settings/Profile query keys
+// ═══════════════════════════════════════════════════════════════
+
+describe('Accounty Settings/Profile Query Keys', () => {
+  describe('accountyFirmData', () => {
+    it('includes user ID', () => {
+      expect(queryKeys.accountyFirmData('user-1')).toEqual(['accounty-firm-data', 'user-1']);
+    });
+  });
+
+  describe('accountyFirmMembers', () => {
+    it('includes company ID', () => {
+      expect(queryKeys.accountyFirmMembers('comp-1')).toEqual(['accounty-firm-members', 'comp-1']);
+    });
+  });
+
+  describe('accountyTeamMembers', () => {
+    it('includes optional firm ID', () => {
+      expect(queryKeys.accountyTeamMembers('firm-1')).toEqual(['accounty-team-members', 'firm-1']);
+    });
+    it('works with undefined firm ID', () => {
+      expect(queryKeys.accountyTeamMembers(undefined)).toEqual(['accounty-team-members', undefined]);
+    });
+  });
+
+  describe('accountyMessages', () => {
+    it('includes company ID', () => {
+      expect(queryKeys.accountyMessages('comp-abc')).toEqual(['accounty-messages', 'comp-abc']);
+    });
+  });
+
+  describe('accountyRole', () => {
+    it('includes user ID', () => {
+      expect(queryKeys.accountyRole('user-xyz')).toEqual(['accounty-role', 'user-xyz']);
+    });
+  });
+
+  describe('accountyModulePermissions', () => {
+    it('returns static key', () => {
+      expect(queryKeys.accountyModulePermissions()).toEqual(['accounty-module-permissions']);
+    });
+  });
+
+  describe('accountyDocuments', () => {
+    it('includes company and doc type', () => {
+      expect(queryKeys.accountyDocuments('comp-1', 'payslip')).toEqual(['accounty-documents', 'comp-1', 'payslip']);
+    });
+    it('works without doc type', () => {
+      expect(queryKeys.accountyDocuments('comp-1')).toEqual(['accounty-documents', 'comp-1', undefined]);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
 // Query key uniqueness tests
 // ═══════════════════════════════════════════════════════════════
 
@@ -189,6 +243,14 @@ describe('Accounty Query Key Uniqueness', () => {
       queryKeys.accountyJobCodes()[0],
       queryKeys.accountyGlobalTaxParams(2024)[0],
       queryKeys.accountyLegalUpdates()[0],
+      queryKeys.accountyFirmData('x')[0],
+      queryKeys.accountyFirmMembers('x')[0],
+      queryKeys.accountyTeamMembers('x')[0],
+      queryKeys.accountyMessages('x')[0],
+      queryKeys.accountyRole('x')[0],
+      queryKeys.accountyModulePermissions()[0],
+      queryKeys.accountyDocuments('x')[0],
+      queryKeys.accountyMissingCounts('x')[0],
     ];
 
     const uniquePrefixes = new Set(prefixes);
@@ -212,6 +274,14 @@ describe('Accounty Query Key Uniqueness', () => {
       queryKeys.accountyJobCodes()[0],
       queryKeys.accountyGlobalTaxParams(2024)[0],
       queryKeys.accountyLegalUpdates()[0],
+      queryKeys.accountyFirmData('x')[0],
+      queryKeys.accountyFirmMembers('x')[0],
+      queryKeys.accountyTeamMembers('x')[0],
+      queryKeys.accountyMessages('x')[0],
+      queryKeys.accountyRole('x')[0],
+      queryKeys.accountyModulePermissions()[0],
+      queryKeys.accountyDocuments('x')[0],
+      queryKeys.accountyMissingCounts('x')[0],
     ];
 
     for (const key of keys) {
@@ -219,3 +289,4 @@ describe('Accounty Query Key Uniqueness', () => {
     }
   });
 });
+

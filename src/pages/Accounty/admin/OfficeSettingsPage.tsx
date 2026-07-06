@@ -7,7 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useOfficeSettings, useUpsertOfficeSettings } from '@/hooks/useAccountyData';
+import { useOfficeSettings, useUpsertOfficeSettings } from '@/hooks/accounty';
 
 interface OfficeSettings {
   officeName: string;

@@ -355,7 +355,8 @@ export const AppSidebar = React.memo(function AppSidebar() {
         )}
 
         {/* Navigation — Collapsible Groups — scrollable */}
-        <SidebarGroup className="flex-1 overflow-y-auto min-h-0">
+        {/* data-sidebar-nav: signals ScrollToTop to skip scroll-reset on this container */}
+        <SidebarGroup className="flex-1 overflow-y-auto min-h-0" data-sidebar-nav>
           <SidebarGroupContent>
             {isCollapsed ? (
               /* ── Collapsed mode: Category menu groups with side-flyout dropdowns ── */

@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronUp } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import type { NavVatData, VatCategoryData } from '@/hooks/useDashboardData';
+import type { VatRegime } from '@/contexts/CompanyContext';
 
 interface VatSectionProps {
   navVatData: NavVatData | undefined;
@@ -19,6 +21,7 @@ interface VatSectionProps {
   convertToSelectedCurrency: (amount: number, fromCurrency: string, selectedCurrency: string) => number;
   vatSectionOpen: boolean;
   onVatSectionOpenChange: (open: boolean) => void;
+  vatRegime?: VatRegime;
 }
 
 const VatSection = React.memo(function VatSection({
@@ -29,6 +32,7 @@ const VatSection = React.memo(function VatSection({
   convertToSelectedCurrency,
   vatSectionOpen,
   onVatSectionOpenChange,
+  vatRegime,
 }: VatSectionProps) {
   const outboundVatCategories = vatBreakdown?.outboundVatCategories || [];
   const inboundVatCategories = vatBreakdown?.inboundVatCategories || [];
@@ -68,6 +72,16 @@ const VatSection = React.memo(function VatSection({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-lg font-medium">ÁFA kimutatás</span>
+              {vatRegime === 'penzforgalmi' && (
+                <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/20 text-xs">
+                  Pénzforgalmi
+                </Badge>
+              )}
+              {vatRegime === 'alanyi_mentes' && (
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs">
+                  Alanyi adómentes
+                </Badge>
+              )}
             </div>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm">

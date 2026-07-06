@@ -6,7 +6,7 @@ import type {
   AccountyKpis,
   AccountyTaxProfile,
   AccountyCompanySummary,
-} from '@/hooks/useAccountyData';
+} from '@/hooks/accounty';
 
 /**
  * Tests for Accounty data model type contracts.

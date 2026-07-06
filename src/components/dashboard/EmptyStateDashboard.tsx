@@ -353,7 +353,6 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
             const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
             const dateChunks = splitDateRange(startDate, endDate);
             
-            console.log('[Onboarding] NAV sync: splitting 90 days into', dateChunks.length, 'chunks');
 
             // Process all chunks sequentially in background
             (async () => {
@@ -362,7 +361,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                 // Refresh session before each chunk to prevent JWT expiration
                 const { data: { session: freshSession } } = await supabase.auth.getSession();
                 if (!freshSession) {
-                  console.warn('[Onboarding] Session expired during background sync, aborting remaining chunks');
+                  reportError({ type: 'auth', component: 'EmptyStateDashboard', action: 'warn', message: 'Session expired during background sync, aborting remaining chunks' });
                   break;
                 }
                 const currentToken = freshSession.access_token;
@@ -428,7 +427,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
       // Rollback: delete the company if it was created but sub-steps failed
       if (rollbackNeeded && createdCompanyId) {
-        console.warn('[Onboarding] Rolling back company:', createdCompanyId);
+        reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'warn', message: 'Rolling back company:', error: createdCompanyId });
         await supabase.from('companies').delete().eq('id', createdCompanyId);
       }
     } finally {
@@ -1015,6 +1014,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
             onClick={() => signOut()}
             className="absolute left-4 top-4 z-10 p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors group"
             aria-label="Kijelentkezés"
+            tabIndex={-1}
           >
             <LogOut className="h-4 w-4" />
             <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-popover border border-border text-xs font-medium text-popover-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-md">
@@ -1040,6 +1040,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                     onClick={() => setIsOnboarding(true)} 
                     className="w-full" 
                     size="lg"
+                    autoFocus
                   >
                     Első lépések
                     <ArrowRight className="h-5 w-5 ml-2" />

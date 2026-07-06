@@ -241,7 +241,10 @@ BEGIN
     wr.inv_settlement_date,
     COALESCE(wr.set_rate, 0),
     COALESCE(wr.set_rate, 0) * ABS(wr.inv_amount),
-    (COALESCE(wr.set_rate, 0) - COALESCE(wr.del_rate, 0)) * ABS(wr.inv_amount),
+    CASE 
+      WHEN wr.inv_direction = 'OUTBOUND' THEN (COALESCE(wr.set_rate, 0) - COALESCE(wr.del_rate, 0)) * ABS(wr.inv_amount)
+      ELSE (COALESCE(wr.del_rate, 0) - COALESCE(wr.set_rate, 0)) * ABS(wr.inv_amount)
+    END,
     TO_CHAR(wr.inv_settlement_date, 'YYYY-MM')
   FROM with_rates wr
   WHERE (p_date_from IS NULL OR wr.inv_settlement_date >= p_date_from)

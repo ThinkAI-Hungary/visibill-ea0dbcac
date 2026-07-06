@@ -20,9 +20,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useAccountyRole } from './AccountyRoleContext';
-import { useAccountyDeadlines, useAccountyKpis, useCompleteDeadline } from '@/hooks/useAccountyData';
+import { useAccountyDeadlines, useAccountyKpis, useCompleteDeadline } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { reportError } from '@/lib/errorReporter';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import {
   addToApprovalQueue,
   type OutgoingMessage,
@@ -81,11 +83,17 @@ export default function TaxCalendarPage() {
   const [viewScope, setViewScope] = useState<'mine' | 'all'>('mine');
   const [selectedDeadline, setSelectedDeadline] = useState<DeadlineGroup | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>('all');
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [calendarView, setCalendarView] = useState<'month' | 'week' | 'list'>('month');
 
   // Supabase data
-  const { data: deadlinesData } = useAccountyDeadlines();
+  const { data: deadlinesData, isError: deadlinesError, refetch: refetchDeadlines } = useAccountyDeadlines();
   const { data: kpisData } = useAccountyKpis();
   const completeDeadlineMutation = useCompleteDeadline();
+
+  if (deadlinesError) {
+    return <AccountyErrorState message="Nem sikerült betölteni az adónaptár adatait." onRetry={() => refetchDeadlines()} />;
+  }
 
   // ── Handler: send deadline notification to approval queue ──
   const handleNotify = async (client: ClientDeadline) => {
@@ -183,7 +191,7 @@ ThinkAI`;
         description: `${deadlineTitle} – ${client.clientName}`,
       });
     } catch (err) {
-      console.error('Notify error:', err);
+      reportError({ type: 'db_query', component: 'TaxCalendarPage', action: 'notify', message: 'Notify error', error: err as Error });
       toast({
         variant: 'destructive',
         title: 'Hiba',
@@ -203,10 +211,18 @@ ThinkAI`;
   const { deadlineGroups, clientDeadlines } = useMemo(() => {
     if (!deadlinesData || deadlinesData.length === 0) return { deadlineGroups: [] as DeadlineGroup[], clientDeadlines: [] as ClientDeadline[] };
 
+    // Filter to only the currently displayed month
+    const displayYear = currentDate.getFullYear();
+    const displayMonth = currentDate.getMonth(); // 0-indexed
+    const filteredByMonth = deadlinesData.filter(d => {
+      const [y, m] = d.dueDate.split('-').map(Number);
+      return y === displayYear && m === displayMonth + 1;
+    });
+
     // Group by "day-type" key
     const groupMap: Record<string, { deadlines: typeof deadlinesData }> = {};
-    deadlinesData.forEach(d => {
-      const dayOfMonth = new Date(d.dueDate).getDate();
+    filteredByMonth.forEach(d => {
+      const dayOfMonth = parseInt(d.dueDate.split('-')[2], 10);
       const key = `${dayOfMonth}-${d.deadlineType}`;
       if (!groupMap[key]) groupMap[key] = { deadlines: [] };
       groupMap[key].deadlines.push(d);
@@ -256,7 +272,7 @@ ThinkAI`;
     });
 
     return { deadlineGroups: groups, clientDeadlines: clients };
-  }, [deadlinesData]);
+  }, [deadlinesData, currentDate]);
 
   const uniqueClients = useMemo(() => {
     const clients = clientDeadlines
@@ -264,9 +280,6 @@ ThinkAI`;
       .map(c => c.clientName);
     return Array.from(new Set(clients)).sort();
   }, [viewScope, clientDeadlines]);
-  
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [calendarView, setCalendarView] = useState<'month' | 'week' | 'list'>('month');
 
   const handlePrev = () => {
     const newDate = new Date(currentDate);

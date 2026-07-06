@@ -101,7 +101,7 @@ function useDbModulePermissions() {
     queryKey: ['accounty-module-permissions', user?.id],
     queryFn: async (): Promise<Map<string, DbModulePermission>> => {
       const { data, error } = await supabase
-        .from('accounty_module_permissions' as any)
+        .from('accounty_module_permissions')
         .select('module_name, can_read, can_write')
         .eq('user_id', user!.id);
 

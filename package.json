@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:staging": "vite --mode staging",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:staging": "vite build --mode staging",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "gen-db-docs": "node scripts/gen-db-docs.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils';
 import { usePayrollEmployees, usePayrollCycles, usePayrollFilings, useTaxParameters } from '@/hooks/usePayrollData';
 import { formatAmount } from '@/lib/payroll/validators';
 import { Breadcrumb } from '@/components/accounty/SharedComponents';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 // ── Animated number component ──
 function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
@@ -115,14 +116,15 @@ export default function PayrollDashboardPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: employees = [], isLoading: empLoading } = usePayrollEmployees(companyId || '');
-  const { data: cycles = [], isLoading: cyclesLoading } = usePayrollCycles(companyId || '');
-  const { data: filings = [], isLoading: filingsLoading } = usePayrollFilings(companyId || '');
+  const { data: employees = [], isLoading: empLoading, isError: empError } = usePayrollEmployees(companyId || '');
+  const { data: cycles = [], isLoading: cyclesLoading, isError: cyclesError } = usePayrollCycles(companyId || '');
+  const { data: filings = [], isLoading: filingsLoading, isError: filingsError } = usePayrollFilings(companyId || '');
   const { data: taxParams } = useTaxParameters(2026);
   const { data: allClients } = useAccountyClients();
   const currentClientName = allClients?.find(c => c.companyId === companyId)?.name || 'Cég';
 
   const isLoading = empLoading || cyclesLoading || filingsLoading;
+  const isError = empError || cyclesError || filingsError;
 
   // ── KPIs ──
   const kpis = useMemo(() => {
@@ -149,6 +151,10 @@ export default function PayrollDashboardPage() {
       (e.tax_id && e.tax_id.includes(q))
     ).slice(0, 10);
   }, [employees, searchQuery]);
+
+  if (isError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a bérszámfejtési adatokat." onRetry={() => window.location.reload()} />;
+  }
 
   if (isLoading) {
     return (

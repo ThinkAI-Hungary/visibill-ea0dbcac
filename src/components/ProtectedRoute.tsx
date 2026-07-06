@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
 }
 
 /**
- * ProtectedRoute — Synchronous per-route guard.
+ * ProtectedRoute — Per-route permission guard.
  *
  * By the time this renders, useAppReady() has already gated:
  *   - auth resolved
@@ -21,17 +21,21 @@ interface ProtectedRouteProps {
  *   - role resolved
  *   - profile resolved
  *
- * So this component only does ONE job: synchronously block forbidden
- * routes based on the user's permissions (role + DB overrides).
- * Returns <Navigate/> BEFORE the lazy chunk is even requested → zero flash, zero leak.
+ * This component blocks forbidden routes based on the user's permissions
+ * (role + DB overrides from eaisybill_module_permissions).
+ *
+ * RULES OF HOOKS: ALL hooks must be called at the top level,
+ * before any conditional early returns.
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
   const { user } = useAuth();
   const { isEmployee } = useUserRole();
-  const { canAccess } = useEaisybillPermissions();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
+
+  // ALL hooks at top-level — no hook may appear after a conditional early return
+  const { canAccess, isLoading: permissionsLoading } = useEaisybillPermissions();
 
   // Management/ThinkAI role check — reuses the same cached query as useAppReady
   const { data: profileData, isPending: profilePending } = useQuery({
@@ -50,23 +54,49 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     gcTime: 10 * 60 * 1000,
   });
 
-  // Block rendering until we know the role — prevents sidebar flash for management users.
-  // If the query is cached (e.g., from useAppReady), isPending is false instantly.
+  // Check if this management user has an active impersonation session
+  const { data: hasImpersonation } = useQuery({
+    queryKey: ['active-impersonation-check', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('user_id', user!.id)
+        .eq('role', 'support_admin' as any)
+        .limit(1)
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user && (profileData?.role === 'management' || profileData?.role === 'thinkai'),
+    staleTime: 10_000,
+  });
+
+  // ── Early returns (after all hooks) ──
+
+  // Block rendering until we know the profile role.
+  // If the query is cached (e.g. from useAppReady), isPending is false instantly.
   if (user && profilePending) {
     return null;
   }
 
-  // Management users → redirect to /management from ANY route (prevents accounty sidebar flash)
+  // Management users → redirect to /management from ANY route
+  // BUT: skip redirect if the user has an active impersonation session
   const profileRole = profileData?.role;
-  if ((profileRole === 'management' || profileRole === 'thinkai') && location.pathname !== '/management') {
+  if ((profileRole === 'management' || profileRole === 'thinkai') && !hasImpersonation && location.pathname !== '/management') {
     return <Navigate to="/management" replace />;
   }
 
   const currentPage = extractPageSegment(location.pathname);
   const pageModule = URL_TO_MODULE[currentPage];
 
-  // If the page has a mapped module and the user can't access it → redirect
-  if (pageModule && !canAccess(pageModule) && selectedCompany) {
+  // Module permission guard.
+  // IMPORTANT: wait for permissionsLoading=false before redirecting.
+  // DB overrides (e.g. shipment_matching) are fetched async. On page refresh:
+  //   - selectedCompany may be restored from localStorage immediately
+  //   - BUT the DB query for module permissions hasn't run yet
+  //   - canAccess() returns false by default for shipment modules
+  //   → without this check, the user would be kicked to dashboard on every refresh.
+  if (!permissionsLoading && pageModule && !canAccess(pageModule) && selectedCompany) {
     const fallbackPage = isEmployee ? 'working-time' : '';
     const target = generateScopedPath(
       selectedCompany.id,

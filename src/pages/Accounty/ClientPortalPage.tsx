@@ -8,11 +8,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePayrollCycles, usePayrollEmployees } from '@/hooks/usePayrollData';
-import { useAccountyClients, useAccountyMissingItems } from '@/hooks/useAccountyData';
+import { useAccountyClients, useAccountyMissingItems } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { reportError } from '@/lib/errorReporter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 
 const MONTHS = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
 
@@ -69,12 +71,12 @@ export default function ClientPortalPage() {
     queryKey: ['portal-token-resolve', params.token],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('accounty_portal_tokens' as any)
+        .from('accounty_portal_tokens')
         .select('company_id, token, expires_at, is_active, requested_item_ids')
         .eq('token', params.token)
         .single();
       if (error) throw error;
-      return data as any;
+      return data;
     },
     enabled: isMagicLink && !!params.token,
     staleTime: 60_000,
@@ -85,31 +87,32 @@ export default function ClientPortalPage() {
   const { data: clients } = useAccountyClients();
   const { data: cycles = [] } = usePayrollCycles(companyId || '');
   const { data: employees = [] } = usePayrollEmployees(companyId || '');
-  const { data: missingItems = [] } = useAccountyMissingItems(companyId || '');
+  const { data: missingData } = useAccountyMissingItems(companyId || '');
+  const missingItems = missingData?.items ?? [];
 
   // ── Fetch active portal tokens ──
   const { data: portalTokens = [] } = useQuery({
     queryKey: ['portal-tokens', companyId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('accounty_portal_tokens' as any)
+        .from('accounty_portal_tokens')
         .select('*')
         .eq('company_id', companyId)
         .eq('is_active', true)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as any[];
+      return (data || []);
     },
     enabled: !!companyId,
   });
 
   // ── Fetch chat messages (real, not mock) ──
   const { data: messages = [] } = useQuery({
-    queryKey: ['accounty-messages', companyId],
+    queryKey: queryKeys.accountyMessages(companyId),
     queryFn: async (): Promise<ChatMessage[]> => {
       const { data, error } = await supabase
-        .from('accounty_messages' as any)
+        .from('accounty_messages')
         .select('*')
         .eq('company_id', companyId)
         .order('created_at', { ascending: true })
@@ -126,18 +129,18 @@ export default function ClientPortalPage() {
     mutationFn: async (text: string) => {
       const senderName = user?.user_metadata?.name || user?.email || 'Könyvelő';
       const { error } = await supabase
-        .from('accounty_messages' as any)
+        .from('accounty_messages')
         .insert({
           company_id: companyId,
           sender_user_id: user?.id,
           sender_name: senderName,
           message: text,
           is_from_client: false,
-        } as any);
+        });
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounty-messages', companyId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.accountyMessages(companyId) });
       setChatInput('');
     },
     onError: (err: Error) => {
@@ -181,14 +184,14 @@ export default function ClientPortalPage() {
       expiresAt.setDate(expiresAt.getDate() + 30);
 
       const { error } = await supabase
-        .from('accounty_portal_tokens' as any)
+        .from('accounty_portal_tokens')
         .insert({
           company_id: companyId,
           token,
           created_by: user.id,
           expires_at: expiresAt.toISOString(),
           is_active: true,
-        } as any);
+        });
 
       if (error) throw error;
 
@@ -198,7 +201,7 @@ export default function ClientPortalPage() {
 
       toast({ title: 'Portál link generálva ', description: 'A link a vágólapra másolva. Érvényes: 30 nap.' });
     } catch (err) {
-      console.error('Portal token error:', err);
+      reportError({ type: 'db_query', component: 'ClientPortalPage', action: 'portalToken', message: 'Portal token error', error: err as Error });
       toast({ variant: 'destructive', title: 'Hiba', description: 'Nem sikerült a link generálás.' });
     } finally {
       setGeneratingLink(false);
@@ -246,7 +249,7 @@ export default function ClientPortalPage() {
 
         // 1. Create audit log entry (pending)
         const { data: logEntry, error: logErr } = await supabase
-          .from('accounty_uploads' as any)
+          .from('accounty_uploads')
           .insert({
             company_id: companyId,
             missing_item_id: missingItemId || null,
@@ -258,14 +261,14 @@ export default function ClientPortalPage() {
             status: 'uploading',
             uploaded_by: user?.id || null,
             portal_token: portalToken,
-          } as any)
+          })
           .select('id')
           .single();
 
         if (logErr) {
-          console.error('[Portal] Upload log insert error:', logErr.message);
+          reportError({ type: 'db_query', component: 'ClientPortalPage', action: 'uploadLogInsert', message: logErr.message, error: logErr });
         }
-        const logId = (logEntry as any)?.id;
+        const logId = logEntry?.id;
 
         // 2. Upload to storage
         const { error: uploadErr } = await supabase.storage
@@ -273,20 +276,19 @@ export default function ClientPortalPage() {
           .upload(filePath, file, { upsert: false });
 
         if (uploadErr) {
-          console.error('[Portal] Storage upload error:', uploadErr.message);
+          reportError({ type: 'upload', component: 'ClientPortalPage', action: 'storageUpload', message: uploadErr.message, error: uploadErr });
           // Update log → error
           if (logId) {
-            await supabase.from('accounty_uploads' as any)
-              .update({ status: 'error', error_message: uploadErr.message, completed_at: new Date().toISOString() } as any)
+            await supabase.from('accounty_uploads')
+              .update({ status: 'error', error_message: uploadErr.message, completed_at: new Date().toISOString() })
               .eq('id', logId);
           }
         } else {
           uploadedPaths.push(filePath);
-          console.log('[Portal] File uploaded to storage:', filePath);
           // Update log → success
           if (logId) {
-            await supabase.from('accounty_uploads' as any)
-              .update({ status: 'success', completed_at: new Date().toISOString() } as any)
+            await supabase.from('accounty_uploads')
+              .update({ status: 'success', completed_at: new Date().toISOString() })
               .eq('id', logId);
           }
         }
@@ -295,7 +297,7 @@ export default function ClientPortalPage() {
       // 3. Only resolve if at least one file was actually uploaded
       if (missingItemId && uploadedPaths.length > 0) {
         const { data: existing } = await supabase
-          .from('accounty_missing_items' as any)
+          .from('accounty_missing_items')
           .select('uploaded_files')
           .eq('id', missingItemId)
           .single();
@@ -303,22 +305,22 @@ export default function ClientPortalPage() {
         const existingFiles: string[] = (existing as any)?.uploaded_files || [];
 
         const { data: updateResult, error: resolveErr } = await supabase
-          .from('accounty_missing_items' as any)
+          .from('accounty_missing_items')
           .update({
             status: 'resolved',
             resolved_at: new Date().toISOString(),
             resolved_by: user?.id || null,
             uploaded_files: [...existingFiles, ...uploadedPaths],
-          } as any)
+          })
           .eq('id', missingItemId)
           .select();
 
         if (resolveErr) {
-          console.error('[Portal] DB resolve error:', resolveErr.message);
+          reportError({ type: 'db_query', component: 'ClientPortalPage', action: 'dbResolve', message: resolveErr.message, error: resolveErr });
           toast({ variant: 'destructive', title: 'Hiba', description: `Státusz frissítés sikertelen: ${resolveErr.message}` });
           return;
         }
-        console.log('[Portal] DB update result:', updateResult);
+
         queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
 
         toast({
@@ -329,7 +331,7 @@ export default function ClientPortalPage() {
         toast({ variant: 'destructive', title: 'Feltöltés sikertelen', description: 'A fájl nem töltődött fel. Kérjük próbálja újra.' });
       }
     } catch (err: any) {
-      console.error('[Portal] Upload error:', err);
+      reportError({ type: 'upload', component: 'ClientPortalPage', action: 'upload', message: 'Upload error', error: err as Error });
       toast({ variant: 'destructive', title: 'Feltöltési hiba', description: err?.message || 'A fájl feltöltés sikertelen.' });
     }
   };
@@ -418,7 +420,7 @@ export default function ClientPortalPage() {
     const totalStagedCount = Object.values(stagedFiles).reduce((sum, f) => sum + f.length, 0);
 
     return (
-      <div className="min-h-screen bg-background">
+      <div className="h-screen overflow-y-auto w-full bg-background">
         {/* Top header bar */}
         <div className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">

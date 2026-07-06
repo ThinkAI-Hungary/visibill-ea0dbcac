@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useCegkapuSettings, useUpsertCegkapuSettings, type CegkapuSettings } from '@/hooks/useAccountyData';
+import { useCegkapuSettings, useUpsertCegkapuSettings, type CegkapuSettings } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 
 type TarhelyType = 'cegkapu' | 'kuny';

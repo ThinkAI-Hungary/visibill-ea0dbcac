@@ -217,8 +217,10 @@ export function useTransactionData() {
       toast({ title: 'Tranzakciók frissítve!' });
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'useTransactionData', action: 'error', message: 'Sync error:', error: error });
-      toast({ title: 'Frissítés sikertelen', description: error.message || 'Hiba történt a frissítés során'
-      , variant: 'destructive' });
+      toast({
+        title: 'Frissítés sikertelen', description: error.message || 'Hiba történt a frissítés során'
+        , variant: 'destructive'
+      });
     } finally {
       setSyncing(false);
     }
@@ -231,10 +233,10 @@ export function useTransactionData() {
       const matchStatus = computeMatchStatus(transaction);
       const statusText = matchStatus === 'matched' ? 'Párosított'
         : matchStatus === 'suggested' ? 'Javasolt'
-        : matchStatus === 'auto_settled' ? 'Rendezett'
-        : matchStatus === 'no_invoice' ? 'Nincs hozzá számla'
-        : matchStatus === 'invoice_missing' ? 'Számla nincs feltöltve'
-        : 'Párosítatlan';
+          : matchStatus === 'auto_settled' ? 'Rendezett'
+            : matchStatus === 'no_invoice' ? 'Nincs hozzá számla'
+              : matchStatus === 'invoice_missing' ? 'Számla nincs feltöltve'
+                : 'Párosítatlan';
       return [
         transaction.transaction_date || '',
         transaction.description || '',
@@ -253,6 +255,86 @@ export function useTransactionData() {
     setPageSize(size);
     setCurrentPage(1);
   }, []);
+
+  // F1: Bulk status change
+  const handleBulkStatusChange = useCallback(async (ids: string[], matchType: string) => {
+    if (!selectedCompany?.id || ids.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ match_type: matchType, is_verified: matchType === 'no_match_category' ? true : null })
+        .in('id', ids)
+        .eq('company_id', selectedCompany.id);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['transactions', selectedCompany.id] });
+      await queryClient.invalidateQueries({ queryKey: ['tx-kpis', selectedCompany.id] });
+      await queryClient.invalidateQueries({ queryKey: ['tx-duplicates', selectedCompany.id] });
+      const label = matchType === 'no_match_category' ? 'Rendezettnek jelölve' : 'Nincs számla jelölés';
+      toast({ title: `${ids.length} tranzakció frissítve`, description: label });
+    } catch (error: any) {
+      reportError({ type: 'db_query', component: 'useTransactionData', action: 'error', message: 'Bulk status change error:', error });
+      toast({ title: 'Hiba', description: error.message || 'Csoportos módosítás sikertelen', variant: 'destructive' });
+    }
+  }, [selectedCompany?.id, queryClient]);
+
+  // F1: Bulk export (fetches full data for selected IDs)
+  const handleBulkExport = useCallback(async (ids: string[], exportFormat: 'csv' | 'xlsx') => {
+    if (ids.length === 0) return;
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .in('id', ids);
+      if (error) throw error;
+      const txList = (data || []) as Transaction[];
+      const headers = ['Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Típus', 'Státusz', 'Pontszám', 'Indoklás'];
+      const exportData = txList.map(transaction => {
+        const matchStatus = computeMatchStatus(transaction);
+        const statusText = matchStatus === 'matched' ? 'Párosított'
+          : matchStatus === 'suggested' ? 'Javasolt'
+            : matchStatus === 'auto_settled' ? 'Rendezett'
+              : matchStatus === 'no_invoice' ? 'Nincs hozzá számla'
+                : matchStatus === 'invoice_missing' ? 'Számla nincs feltöltve'
+                  : 'Párosítatlan';
+        return [
+          transaction.transaction_date || '',
+          transaction.description || '',
+          transaction.amount?.toString() || '0',
+          transaction.currency || 'HUF',
+          transaction.type || '',
+          statusText,
+          transaction.confidence_score ? Math.round(transaction.confidence_score * 100).toString() + '%' : '',
+          transaction.reason || ''
+        ];
+      });
+      await exportToFile(headers, exportData, exportFormat, `tranzakciok_${ids.length}db`);
+      toast({ title: `${ids.length} tranzakció exportálva` });
+    } catch (error: any) {
+      reportError({ type: 'db_query', component: 'useTransactionData', action: 'error', message: 'Bulk export error:', error });
+      toast({ title: 'Hiba', description: error.message || 'Export sikertelen', variant: 'destructive' });
+    }
+  }, []);
+
+  // Bulk delete
+  const handleBulkDelete = useCallback(async (ids: string[]) => {
+    if (!selectedCompany?.id || ids.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .in('id', ids)
+        .eq('company_id', selectedCompany.id);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['transactions', selectedCompany.id] });
+      await queryClient.invalidateQueries({ queryKey: ['tx-kpis', selectedCompany.id] });
+      await queryClient.invalidateQueries({ queryKey: ['tx-duplicates', selectedCompany.id] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.transactionFilterOptions(selectedCompany.id) });
+      toast({ title: `${ids.length} tranzakció törölve`, className: 'bg-red-50 text-red-900 border-red-200' });
+    } catch (error: any) {
+      reportError({ type: 'db_query', component: 'useTransactionData', action: 'error', message: 'Bulk delete error:', error });
+      toast({ title: 'Hiba', description: error.message || 'Törlés sikertelen', variant: 'destructive' });
+    }
+  }, [selectedCompany?.id, queryClient]);
 
   return {
     // Auth & Company
@@ -282,6 +364,10 @@ export function useTransactionData() {
     syncing,
     handleSync,
     handleExport,
+    // F1: Bulk actions
+    handleBulkStatusChange,
+    handleBulkExport,
+    handleBulkDelete,
     // Query client for invalidation
     queryClient,
   };

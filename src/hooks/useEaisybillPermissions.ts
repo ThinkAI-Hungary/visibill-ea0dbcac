@@ -194,7 +194,7 @@ function useDbModulePermissions() {
     queryKey: ['eaisybill-module-permissions', user?.id, companyId],
     queryFn: async (): Promise<Map<string, DbModulePermission>> => {
       const { data, error } = await supabase
-        .from('eaisybill_module_permissions' as any)
+        .from('eaisybill_module_permissions')
         .select('module_name, can_read, can_write')
         .eq('company_id', companyId!)
         .eq('user_id', user!.id);

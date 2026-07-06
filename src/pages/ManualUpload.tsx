@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { registerPendingUpload } from '@/components/LiveNotificationProvider';
 import { formatFileSize, extractStoragePath, cn } from '@/lib/utils';
 import { handleRateLimitError } from '@/lib/supabaseErrors';
 import { useQueryClient } from '@tanstack/react-query';
@@ -37,6 +38,10 @@ const ManualUpload = () => {
   const [selectedReportFiles, setSelectedReportFiles] = useState<{file: File; reportType: 'gls' | 'mpl' | 'mixpack'}[]>([]);
   const [reportType, setReportType] = useState<'gls' | 'mpl' | 'mixpack'>('gls');
   const [uploading, setUploading] = useState(false);
+  // Synchronous mutex to prevent parallel upload calls from rapid multi-clicks.
+  // React's async setState batching means setUploading(true) doesn't block
+  // the next call immediately — this ref provides instant protection.
+  const uploadMutexRef = useRef(false);
   const [activeTab, setActiveTab] = useState('invoices');
   const [dragOver, setDragOver] = useState<string | null>(null);
   const { toast } = useToast();
@@ -269,14 +274,19 @@ const ManualUpload = () => {
   const checkDuplicateFile = async (fileName: string, table: 'invoice_uploads' | 'transaction_uploads'): Promise<boolean> => {
     if (!selectedCompany?.id) return false;
 
-    const doneStatus = table === 'invoice_uploads' ? 'processed' : 'completed';
+    // Check ALL relevant statuses — not just 'processed'.
+    // Previously only 'processed' was checked, so 'ignored'/'pending' duplicates
+    // slipped through undetected (Thinkerman incident, Jun 26-27 2026).
     const { data } = await supabase
       .from(table)
       .select('id, file_name')
       .eq('company_id', selectedCompany.id)
       .eq('file_name', fileName)
       .eq('upload_status', 'uploaded')
-      .eq('processing_status', doneStatus)
+      .in('processing_status', [
+        'processed', 'pending', 'processing', 'ignored',
+        ...(table === 'transaction_uploads' ? ['completed'] : [])
+      ])
       .limit(1);
 
     return (data && data.length > 0);
@@ -314,6 +324,8 @@ const ManualUpload = () => {
   };
 
   const proceedWithInvoiceUpload = async () => {
+    if (uploadMutexRef.current) return;
+    uploadMutexRef.current = true;
     setUploading(true);
 
     try {
@@ -362,7 +374,7 @@ const ManualUpload = () => {
 
       // Phase 3: Update cache for all records
       // PGMQ: DB triggers automatically enqueue each inserted row
-      console.log(`[PGMQ] ${uploadRecords!.length} invoice uploads enqueued via DB trigger`);
+      // PGMQ: invoice uploads enqueued via DB trigger
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
@@ -370,6 +382,8 @@ const ManualUpload = () => {
           upload_status: 'uploaded', processing_status: 'pending',
           created_at: new Date().toISOString(), error_message: null,
         });
+        // Register with session-scoped polling so toasts fire on any page
+        registerPendingUpload(rec.id);
       }
 
       toast({ title: "Feltöltés sikeres!", description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.", duration: 3000 });
@@ -382,6 +396,7 @@ const ManualUpload = () => {
         description: error instanceof Error ? error.message : "Hiba történt a fájlok feltöltése során. Kérlek próbáld újra."
       });
     } finally {
+      uploadMutexRef.current = false;
       setUploading(false);
     }
   };
@@ -405,6 +420,8 @@ const ManualUpload = () => {
       return;
     }
 
+    if (uploadMutexRef.current) return;
+    uploadMutexRef.current = true;
     setUploading(true);
 
     try {
@@ -440,7 +457,7 @@ const ManualUpload = () => {
         throw batchError;
       }
 
-      console.log(`[PGMQ] ${uploadRecords!.length} bank statement uploads enqueued via DB trigger`);
+
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
@@ -457,6 +474,7 @@ const ManualUpload = () => {
       reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Bank statement upload error:', error: error });
       toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a bankkivonatok feltöltése során. Kérlek próbáld újra." });
     } finally {
+      uploadMutexRef.current = false;
       setUploading(false);
     }
   };
@@ -480,6 +498,8 @@ const ManualUpload = () => {
       return;
     }
 
+    if (uploadMutexRef.current) return;
+    uploadMutexRef.current = true;
     setUploading(true);
 
     try {
@@ -526,7 +546,7 @@ const ManualUpload = () => {
         throw new Error(`Adatbázis hiba: ${batchError.message}`);
       }
 
-      console.log(`[PGMQ] ${uploadRecords!.length} salary uploads enqueued via DB trigger`);
+
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
@@ -534,6 +554,8 @@ const ManualUpload = () => {
           upload_status: 'uploaded', processing_status: 'pending',
           created_at: new Date().toISOString(), error_message: null,
         });
+        // Register with session-scoped polling so toasts fire on any page
+        registerPendingUpload(rec.id);
       }
 
       toast({ title: "Feltöltés sikeres!", description: "A bér/járulék fájlok feldolgozása automatikusan elindul.", duration: 3000 });
@@ -543,6 +565,7 @@ const ManualUpload = () => {
       reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Salary upload error:', error: error });
       toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a bérek/járulékok feltöltése során. Kérlek próbáld újra." });
     } finally {
+      uploadMutexRef.current = false;
       setUploading(false);
     }
   };
@@ -597,6 +620,8 @@ const ManualUpload = () => {
   };
 
   const proceedWithTransactionUpload = async () => {
+    if (uploadMutexRef.current) return;
+    uploadMutexRef.current = true;
     setUploading(true);
     const processingToast = toast({ title: "Feldolgozás...", description: "Tranzakciók feltöltése folyamatban..." });
 
@@ -635,7 +660,6 @@ const ManualUpload = () => {
       }
 
       // Phase 3: Update cache
-      console.log(`[PGMQ] ${uploadRecords!.length} transaction uploads enqueued via DB trigger`);
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
@@ -655,6 +679,7 @@ const ManualUpload = () => {
       processingToast.dismiss();
       toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a tranzakciók feltöltése során. Kérlek próbáld újra." });
     } finally {
+      uploadMutexRef.current = false;
       setUploading(false);
       const inputElement = document.getElementById('transaction-file-input') as HTMLInputElement;
       if (inputElement) inputElement.value = '';
@@ -664,6 +689,7 @@ const ManualUpload = () => {
   // formatFileSize is now imported from @/lib/utils
 
   const handleReportUpload = async () => {
+    if (uploadMutexRef.current) return;
     if (selectedReportFiles.length === 0) {
       toast({ variant: "destructive", title: "Nincs kiv\u00e1lasztott f\u00e1jl", description: "K\u00e9rlek v\u00e1lassz ki legal\u00e1bb egy riport f\u00e1jlt." });
       return;
@@ -676,6 +702,7 @@ const ManualUpload = () => {
       toast({ variant: "destructive", title: "Nincs kiv\u00e1lasztott c\u00e9g", description: "A felt\u00f6lt\u00e9shez v\u00e1lassz ki egy c\u00e9get." });
       return;
     }
+    uploadMutexRef.current = true;
     setUploading(true);
     try {
       // Phase 0: Check for duplicate files already in the system
@@ -748,6 +775,7 @@ const ManualUpload = () => {
       reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Report upload error:', error: error });
       toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a riport feltöltése során." });
     } finally {
+      uploadMutexRef.current = false;
       setUploading(false);
     }
   };
@@ -1129,6 +1157,18 @@ const ManualUpload = () => {
                           <span className="flex items-center gap-2.5">
                             <span className="w-5 h-5 rounded-full bg-stone-500 flex items-center justify-center text-[9px] font-black text-white">G</span>
                             <span>Gránit Bank</span>
+                          </span>
+                        </SelectItem>
+
+                        <div className="px-2 py-1.5 mt-1 border-t border-border/40">
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Kártya</span>
+                        </div>
+
+                        <SelectItem value="szep">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-teal-500 flex items-center justify-center text-[8px] font-black text-white leading-none">SZ</span>
+                            <span>SZÉP Kártya</span>
+                            <span className="text-[10px] text-muted-foreground ml-0.5">(elfogadóhelyi)</span>
                           </span>
                         </SelectItem>
 

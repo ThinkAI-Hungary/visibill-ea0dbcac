@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-06-08  
-> **Összesen:** 38 döntés | ✅ Decided: 25 | 🟡 Partially Decided: 4 | ⛔ Superseded: 1 | 🔴 Open: 8
+> **Utoljára frissítve:** 2026-06-28  
+> **Összesen:** 40 döntés | ✅ Decided: 25 | 🟡 Partially Decided: 6 | ⛔ Superseded: 1 | 🔴 Open: 8
 
 ---
 
@@ -50,6 +50,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 012 | Számla típusok | ✅ Decided | [012-invoice-types.md](./012-invoice-types.md) |
 | 013 | Számla beviteli csatornák | ✅ Decided | [013-invoice-channels.md](./013-invoice-channels.md) |
 | 014 | Számla kiállítás képesség | 🔴 Open | [014-invoice-creation.md](./014-invoice-creation.md) |
+| 039 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [039-categories-projects-sync.md](./039-categories-projects-sync.md) |
 
 ## 🏛️ NAV Integráció
 
@@ -95,17 +96,17 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | 029 | Mobil stratégia | 🔴 Open | [029-mobile-strategy.md](./029-mobile-strategy.md) |
-| 030 | API & third-party hozzáférés | 🔴 Open | [030-api-access.md](./030-api-access.md) |
+| 030 | API & third-party hozzáférés | ✅ Decided | [030-api-access.md](./030-api-access.md) |
 
-## 💼 Accounty & Integrált Modulok
+## 💼 eaisyBooks & Intégrált Modulok
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| 031 | Accounty modul scope | ✅ Decided | [031-accounty-module.md](./031-accounty-module.md) |
+| 031 | eaisyBooks modul scope | ✅ Decided | [031-accounty-module.md](./031-accounty-module.md) |
 | 032 | Payroll (bérszámfejtés) modul | ✅ Decided | [032-payroll-module.md](./032-payroll-module.md) |
 | 033 | ÁFA bevallás modul | ✅ Decided | [033-vat-return-module.md](./033-vat-return-module.md) |
 | 034 | Worker pipeline (háttérfeldolgozás) | ✅ Decided | [034-worker-pipeline.md](./034-worker-pipeline.md) |
-| 035 | Accounty ügyfélportál | ✅ Decided | [035-accounty-client-portal.md](./035-accounty-client-portal.md) |
+| 035 | eaisyBooks ügyfélportál | ✅ Decided | [035-accounty-client-portal.md](./035-accounty-client-portal.md) |
 
 ## 🎫 Ügyfélszolgálat & Support
 
@@ -117,4 +118,11 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| 037 | Management Dashboard | ✅ Decided | [037-management-dashboard.md](./037-management-dashboard.md) |
+| 037 | Management Dashboard (4 nézet: Áttekintés, Control Center, Superadmin 27 modul, Jogosultságok) | ✅ Decided | [037-management-dashboard.md](./037-management-dashboard.md) |
+
+## 📄 Számlázás & Párosítások
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| 040 | Számla Kapcsolatok és Párosítási Logikák (Matching & Relations) | ✅ Decided | [040-invoice-relations-matching.md](./040-invoice-relations-matching.md) |
+| 041 | Manuális Kifizetés Rögzítése (Máshogyan kiegyenlített tételek) | ✅ Decided | [041-manual-payment-recording.md](./041-manual-payment-recording.md) |

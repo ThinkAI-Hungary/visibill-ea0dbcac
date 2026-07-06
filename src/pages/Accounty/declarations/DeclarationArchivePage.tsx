@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useDeclarations, type Declaration } from '@/hooks/useAccountyData';
+import { useDeclarations, type Declaration } from '@/hooks/accounty';
 
 const TYPE_LABELS: Record<string, string> = {
   family: 'Családi kedvezmény', netak: 'NÉTAK', mothers: '30 év alatti anyák',

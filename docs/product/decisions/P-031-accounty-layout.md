@@ -1,10 +1,10 @@
-# P-031: [Accounty] Layout & Navigáció
+# P-031: [eaisyBooks] Layout & Navigáció (korábban: Accounty)
 
 **Status:** Decided  
-**Category:** Accounty  
-**BRD Reference:** Decision 031 (Accounty modul scope)
+**Category:** eaisyBooks  
+**BRD Reference:** Decision 031 (eaisyBooks modul scope)
 
-**Question:** Hogyan épül fel az Accounty önálló layout-ja és navigációs struktúrája?
+**Question:** Hogyan épül fel az eaisyBooks önálló layout-ja és navigációs struktúrája?
 
 **Decision:** Saját `AccountyLayout` wrapper, saját sidebar, teljesen független a fő app layout-tól.
 
@@ -23,9 +23,9 @@
   - Segítség (`/accounty/help`) — ikon: HelpCircle
 - Command palette: Ctrl+K — gyors navigáció oldalak és ügyfelek között
 - Sidebar collapse: ikon módra összecsukható, állapot localStorage-ben persisted
-- Branding: eaisybill | Accounty — piros gradiens
+- Branding: eaisyBill | eaisyBooks — piros gradiens
 - Vissza a fő app-ba: eaisybill logo kattintás → `/`
 - Dark/light téma: saját toggle a header-ben
 - FeedbackFab: gyors visszajelzés gomb
 
-**Rationale:** Az önálló layout biztosítja, hogy az Accounty saját navigációs logikát és branding-et használhasson. A fő app sidebar nem releváns egy könyvelőnek, aki ügyfélportfóliót kezel — az Accounty sidebar az ő workflow-jára van optimalizálva.
+**Rationale:** Az önálló layout biztosítja, hogy az eaisyBooks saját navigációs logikát és branding-et használhasson. A fő app sidebar nem releváns egy könyvelőnek, aki ügyfélportfóliót kezel — az eaisyBooks sidebar az ő workflow-jára van optimalizálva.

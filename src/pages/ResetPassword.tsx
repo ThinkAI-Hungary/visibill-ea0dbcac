@@ -7,30 +7,65 @@ import { Label } from '@/components/ui/label';
 import { Lock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { reportAuthError } from '@/lib/errorReporter';
+import { useAuth } from '@/contexts/AuthContext';
+
+// Read + clear the synchronously-captured hash state set by the App.tsx IIFE.
+// The IIFE runs before Supabase SDK init wipes window.location.hash via replaceState,
+// so this is the only reliable source of the original hash type.
+const RESET_PW_STATE_KEY = 'visibill_reset_pw_state';
+function consumeResetPwState(): 'recovery' | 'expired' | null {
+  try {
+    const val = sessionStorage.getItem(RESET_PW_STATE_KEY);
+    if (val === 'recovery' || val === 'expired') {
+      sessionStorage.removeItem(RESET_PW_STATE_KEY);
+      return val;
+    }
+  } catch {}
+  return null;
+}
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isRecovery, setIsRecovery] = useState(false);
   const navigate = useNavigate();
+  const { isPasswordRecovery } = useAuth();
+
+  // consumeResetPwState() MUST run only once (on mount), via lazy useState initializer.
+  // If called on every render, it returns null after the first render (sessionStorage
+  // already cleared), causing the component to switch to the "invalid link" screen
+  // the moment the user starts typing.
+  const [storedState] = useState<'recovery' | 'expired' | null>(() => consumeResetPwState());
+
+  // isExpired is derived once from storedState (stable) + hash fallback (also stable at mount)
+  const [isExpired] = useState(() => {
+    if (storedState === 'expired') return true;
+    const p = new URLSearchParams(window.location.hash.replace('#', ''));
+    return p.get('error_code') === 'otp_expired'
+      || (p.get('error') === 'access_denied' && !!p.get('error_code'));
+  });
+
+  // isValidRecovery latches to true and stays true for the lifetime of this component.
+  // isPasswordRecovery from context gets cleared by PasswordRecoveryRedirect as soon as
+  // we're on /reset-password — so we must not rely on it staying true across re-renders.
+  const [isValidRecovery, setIsValidRecovery] = useState(
+    () => storedState === 'recovery' || isPasswordRecovery || window.location.hash.includes('type=recovery')
+  );
+
+  // Wait for the SDK to fire PASSWORD_RECOVERY if we don't have storage confirmation yet.
+  const [checking, setChecking] = useState(!isValidRecovery && !isExpired);
 
   useEffect(() => {
-    // Check for recovery token in URL hash
-    const hash = window.location.hash;
-    if (hash && hash.includes('type=recovery')) {
-      setIsRecovery(true);
+    if (isValidRecovery) return; // already confirmed, nothing to do
+    if (isPasswordRecovery) {
+      setIsValidRecovery(true);
+      setChecking(false);
+      return;
     }
-
-    // Listen for PASSWORD_RECOVERY event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsRecovery(true);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (!checking) return;
+    const timer = setTimeout(() => setChecking(false), 800);
+    return () => clearTimeout(timer);
+  }, [isPasswordRecovery, isValidRecovery, checking]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,16 +96,53 @@ const ResetPassword = () => {
     }
   };
 
-  if (!isRecovery) {
+  // Navigate to forgot-password form, signing out first so an active session
+  // cannot auto-redirect the user to the dashboard instead of showing the form.
+  const handleNewLinkRequest = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {}
+    navigate('/auth?forgot=1');
+  };
+
+  if (isExpired) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm text-center space-y-4">
+          <h1 className="text-2xl font-bold text-foreground">A link lejárt</h1>
+          <p className="text-muted-foreground">
+            Ez a jelszó-visszaállító link már nem érvényes (lejárt vagy már felhasználták).
+            Kérj egy új linket az email címedre.
+          </p>
+          <Button className="w-full" onClick={handleNewLinkRequest}>
+            Új link kérése
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (checking && !isValidRecovery) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm text-center space-y-2">
+          <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Ellenőrzés...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isValidRecovery) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm text-center space-y-4">
           <h1 className="text-2xl font-bold text-foreground">Jelszó visszaállítás</h1>
           <p className="text-muted-foreground">
-            Érvénytelen vagy lejárt visszaállítási link. Kérj új linket az email címedre.
+            Érvénytelen visszaállítási link. Kérj új linket az email címedre.
           </p>
-          <Button onClick={() => navigate('/auth')} className="w-full">
-            Vissza a bejelentkezéshez
+          <Button onClick={handleNewLinkRequest} className="w-full">
+            Új link kérése
           </Button>
         </div>
       </div>

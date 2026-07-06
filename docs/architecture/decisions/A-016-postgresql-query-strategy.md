@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-Q3 (implementálva) → Folyamatosan bővül  
-**Utoljára frissítve:** 2026-06-14
+**Utoljára frissítve:** 2026-06-24
 
 ## Context
 
@@ -45,7 +45,7 @@ await supabase.from('invoices').update({ status: 'verified' }).eq('id', invoiceI
 
 ### 2. Teljes RPC Function Katalógus
 
-**Összesen: 77 function** a `public` schemában.
+**Összesen: 80 function** a `public` sémában.
 
 ---
 
@@ -84,6 +84,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `override_gl_classifications_batch(p_items, p_new_gl_account_id, ...)` | DEFINER | GeneralLedgerTable.tsx | Batch GL felülbírálás |
 | `seed_default_vat_codes(p_company_id)` | INVOKER | VatReturnPage.tsx | ÁFA kódok inicializálás |
 | `assign_supplier_default_projects(p_company_id)` | DEFINER | ProjectsPage.tsx | Szállítók alapértelmezett projektjének beállítása |
+| `delete_upload_with_data(p_upload_id, p_upload_type)` | DEFINER | InvoiceFilesDialog, UploadedFilesModal | Feltöltés cascade törlés (B mód) — töröl: invoices/transactions/transport_docs/shipment_matches/costs. `p_upload_type`: `'invoice'\|'transaction'\|'report'`. Returns: `{deleted_invoices, deleted_transactions, deleted_transport_docs}` |
 
 #### 🔑 2.3 Auth & Credential RPC-k
 
@@ -99,6 +100,8 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `check_request()` | DEFINER | PostgREST pre-request hook | Globális request validáció (rate limiting, auth check) |
 | `increment_invoice_usage(user_uuid)` | DEFINER | Trigger / EF | Havi számlafeldolgozási kvóta növelése |
 | `calculate_hourly_cost(p_base_salary, p_monthly_hours?)` | INVOKER | Frontend | Óradíj kalkuláció alapbérből |
+| `generate_api_key(p_company_id?, p_name?)` | DEFINER | Frontend / SQL | API kulcs generálás külső integrációkhoz (SHA-256 hash, nyers kulcs csak egyszer jelenik meg) |
+| `revoke_api_key(p_key_id)` | DEFINER | Frontend / SQL | API kulcs deaktiválása (is_active = false) |
 
 #### 📬 2.4 PGMQ Wrapper RPC-k (Worker által hívott)
 
@@ -119,13 +122,19 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `auto_approve_high_confidence()` | DEFINER | Worker | Magas confidence-ű tételek auto-jóváhagyása |
 | `auto_match_salary_transaction()` | DEFINER | Worker trigger | Bér-tranzakció automatikus párosítás |
 
-#### 🏗️ 2.6 Accounty / Management RPC-k
+#### 🏗️ 2.6 eaisyBooks / Management RPC-k
 
 | RPC Function | Security | Hívó | Cél |
 |---|---|---|---|
-| `get_accounty_company_summary(p_user_id)` | DEFINER | Accounty dashboard | Könyvelői cég összefoglaló |
-| `get_accounty_company_names(p_company_ids[])` | DEFINER | Accounty dashboard | Cégnevek batch lekérdezés |
+| `get_accounty_company_summary(p_user_id)` | DEFINER | eaisyBooks dashboard | Könyvelői cég összefoglaló |
+| `get_accounty_company_names(p_company_ids[])` | DEFINER | eaisyBooks dashboard | Cégnevek batch lekérdezés |
 | `get_user_emails_for_management(user_ids[])` | DEFINER | management-stats EF | Management email lekérdezés |
+
+#### 🏷️ 2.7 Partner & Ranking RPC-k
+
+| RPC Function | Security | Hívó | Cél |
+|---|---|---|---|
+| `get_partner_ranking(p_company_id)` | DEFINER | PartnersPage.tsx | Top 10 beszállító/vevő rangsor — NAV-only + külföldi beküldött. Lásd: [A-027](./A-027-partner-ranking-treemap.md) |
 
 ---
 
@@ -154,7 +163,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 
 | Trigger Function | Tábla | Queue | Cél |
 |---|---|---|---|
-| `trigger_enqueue_invoice_job()` | invoice_uploads | `invoice_jobs` | Új upload → PGMQ invoice queue |
+| `trigger_enqueue_invoice_job()` | invoice_uploads (BEFORE INSERT) | `invoice_jobs` | Új upload → PGMQ invoice queue (dedup guard: 1 min ablak) |
 | `trigger_enqueue_transaction_job()` | transaction_uploads | `transaction_jobs` | Új upload → PGMQ transaction queue |
 | `trigger_enqueue_gl_job()` | invoices/transactions | `gl_jobs` | Feldolgozott tétel → PGMQ GL queue |
 | `enqueue_report_job()` | report_requests | `report_jobs` | Report kérés → PGMQ report queue |
@@ -190,7 +199,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `update_vat_updated_at()` | vat_returns |
 | `update_annual_reports_updated_at()` | annual_reports |
 | `update_user_subscriptions_updated_at()` | user_subscriptions |
-| `accounty_set_updated_at()` | accounty_* táblák |
+| `accounty_set_updated_at()` | accounty_* táblák (eaisyBooks modul) |
 
 #### 🛡️ 3.6 Rendszer Utility Function-ök
 

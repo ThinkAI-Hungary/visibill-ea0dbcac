@@ -11,10 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon, ChevronsUpDown, ChevronsDownUp, Link2, Link2Off, Lightbulb } from 'lucide-react';
+import { Search, Download, ArrowUpDown, FileText, FileDown, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon, ChevronsUpDown, ChevronsDownUp, Link2, Link2Off, Lightbulb, Scale } from 'lucide-react';
+import { usePdfExport } from '@/hooks/usePdfExport';
+import { PdfExportDialog } from '@/components/invoices/PdfExportDialog';
+import { PdfExportBanner } from '@/components/invoices/PdfExportBanner';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -43,6 +46,8 @@ import type { InvoiceTab } from '@/hooks/useInvoiceFilters';
 import { useInvoiceMutations } from '@/hooks/useInvoiceMutations';
 import { useUrlTab } from '@/lib/navigation';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
+import { useNettingDetection } from '@/hooks/useNettingDetection';
+import type { NettingGroup } from '@/hooks/useNettingDetection';
 
 // ── Tab slug ↔ InvoiceTab mapping ──
 const TAB_SLUGS = ['outbound_nav', 'inbound_nav', 'submitted_inbound', 'submitted_outbound'] as const;
@@ -143,6 +148,9 @@ const InvoicesPage = () => {
     loading: dataLoading, credentialsExist, invalidateInvoiceData,
   } = useInvoiceData(companyId, enabled, dateFromFormatted, dateToFormatted, selectedCompany?.id);
 
+  // ── Netting detection (kompenzálás heurisztika) ──
+  const { nettingInvoiceIds, getNettingGroup } = useNettingDetection(navInvoicesLookup);
+
   // ── Filters hook (server-side, unified across all tabs) ──
   const {
     filters, setFilters, clearFilters,
@@ -165,7 +173,8 @@ const InvoicesPage = () => {
     return filters.search !== '' || filters.issueDateFrom !== '' || filters.issueDateTo !== '' ||
       filters.amountMin !== '' || filters.amountMax !== '' ||
       filters.currency !== 'all' || filters.paid !== 'all' || filters.submitted !== 'all' ||
-      filters.project !== 'all' || filters.category !== 'all' || filters.paymentMethod !== 'all';
+      filters.project !== 'all' || filters.category !== 'all' || filters.paymentMethod !== 'all' ||
+      filters.continuous !== 'all';
   }, [filters]);
   const hasAnyActiveFilter = hasStandardFilters || kpiFilter !== 'all';
 
@@ -235,6 +244,9 @@ const InvoicesPage = () => {
     getProjectName,
     isSubmittedTab,
   });
+
+  // ── PDF Export hook ──
+  const pdfExport = usePdfExport();
 
   // ── Toggle "Nem kerül könyvelésre" flag ──
   const handleToggleExclude = useCallback(async (invoiceId: string, table: 'nav_invoices' | 'invoices', currentValue: boolean) => {
@@ -349,8 +361,10 @@ const InvoicesPage = () => {
 
   // ── Files dialog URL handling ──
   useEffect(() => {
+    // Skip if we are in the middle of closing (prevents jumping back to open state)
+    if (dialogClosingRef.current) return;
     if (actionFromUrl === 'files' && !filesDialogOpen) setFilesDialogOpen(true);
-  }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [actionFromUrl, filesDialogOpen]);
 
   const handleOpenFiles = useCallback(() => {
     setFilesDialogOpen(true);
@@ -364,11 +378,18 @@ const InvoicesPage = () => {
   const handleCloseFiles = useCallback((open: boolean) => {
     setFilesDialogOpen(open);
     if (!open) {
-      setSearchParams(prev => {
-        const next = new URLSearchParams(prev);
-        next.delete('action');
-        return next;
-      }, { replace: true });
+      dialogClosingRef.current = true;
+      setTimeout(() => {
+        setSearchParams(prev => {
+          const next = new URLSearchParams(prev);
+          next.delete('action');
+          return next;
+        }, { replace: true });
+        // Set to false AFTER search params update is flushed
+        setTimeout(() => {
+          dialogClosingRef.current = false;
+        }, 50);
+      }, 300); // Increased from 200ms to 300ms to be safe (Radix is 200ms)
     }
   }, [setSearchParams]);
 
@@ -681,11 +702,20 @@ const InvoicesPage = () => {
       // Amount range (gross)
       if (filters.amountMin && Math.abs(inv.invoice_gross_amount || 0) < parseFloat(filters.amountMin)) return false;
       if (filters.amountMax && Math.abs(inv.invoice_gross_amount || 0) > parseFloat(filters.amountMax)) return false;
-      // Search (partner name, invoice number)
+      // Search (partner names, tax numbers, invoice number, amounts)
       if (filters.search) {
         const q = filters.search.toLowerCase();
-        const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.customer_name : inv.supplier_name) || '';
-        if (!partnerName.toLowerCase().includes(q) && !inv.invoice_number.toLowerCase().includes(q)) return false;
+        const grossStr = (inv.invoice_gross_amount || 0).toString();
+        const netStr = (inv.invoice_net_amount || 0).toString();
+        if (
+          !(inv.supplier_name || '').toLowerCase().includes(q) &&
+          !(inv.customer_name || '').toLowerCase().includes(q) &&
+          !(inv.supplier_tax_number || '').toLowerCase().includes(q) &&
+          !(inv.customer_tax_number || '').toLowerCase().includes(q) &&
+          !inv.invoice_number.toLowerCase().includes(q) &&
+          !grossStr.includes(q) &&
+          !netStr.includes(q)
+        ) return false;
       }
       return true;
     };
@@ -713,7 +743,14 @@ const InvoicesPage = () => {
       if (filters.search) {
         const q = filters.search.toLowerCase();
         const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.vevo_nev : inv.elado_nev) || '';
-        if (!partnerName.toLowerCase().includes(q) && !(inv.bizonylatsorszam || '').toLowerCase().includes(q)) return false;
+        const grossStr = (inv.brutto_vegosszeg || 0).toString();
+        const netStr = (inv.adoalap_osszesen || 0).toString();
+        if (
+          !partnerName.toLowerCase().includes(q) && 
+          !(inv.bizonylatsorszam || '').toLowerCase().includes(q) &&
+          !grossStr.includes(q) &&
+          !netStr.includes(q)
+        ) return false;
       }
       return true;
     };
@@ -804,8 +841,17 @@ const InvoicesPage = () => {
         if (filters.amountMax && Math.abs(inv.invoice_gross_amount || 0) > parseFloat(filters.amountMax)) return false;
         if (filters.search) {
           const q = filters.search.toLowerCase();
-          const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.customer_name : inv.supplier_name) || '';
-          if (!partnerName.toLowerCase().includes(q) && !inv.invoice_number.toLowerCase().includes(q)) return false;
+          const grossStr = (inv.invoice_gross_amount || 0).toString();
+          const netStr = (inv.invoice_net_amount || 0).toString();
+          if (
+            !(inv.supplier_name || '').toLowerCase().includes(q) &&
+            !(inv.customer_name || '').toLowerCase().includes(q) &&
+            !(inv.supplier_tax_number || '').toLowerCase().includes(q) &&
+            !(inv.customer_tax_number || '').toLowerCase().includes(q) &&
+            !inv.invoice_number.toLowerCase().includes(q) &&
+            !grossStr.includes(q) &&
+            !netStr.includes(q)
+          ) return false;
         }
         return true;
       })
@@ -848,7 +894,14 @@ const InvoicesPage = () => {
         if (filters.search) {
           const q = filters.search.toLowerCase();
           const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.vevo_nev : inv.elado_nev) || '';
-          if (!partnerName.toLowerCase().includes(q) && !(inv.bizonylatsorszam || '').toLowerCase().includes(q)) return false;
+          const grossStr = (inv.brutto_vegosszeg || 0).toString();
+          const netStr = (inv.adoalap_osszesen || 0).toString();
+          if (
+            !partnerName.toLowerCase().includes(q) && 
+            !(inv.bizonylatsorszam || '').toLowerCase().includes(q) &&
+            !grossStr.includes(q) &&
+            !netStr.includes(q)
+          ) return false;
         }
         return true;
       })
@@ -916,7 +969,8 @@ const InvoicesPage = () => {
                   </TooltipProvider>
               </div>
               </div>
-              <div className="flex gap-2">
+              <div className="relative">
+                <div className="flex gap-2 justify-end">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -968,6 +1022,15 @@ const InvoicesPage = () => {
                               <FileText className="h-4 w-4 mr-2" />
                               Export XLSX
                             </DropdownMenuItem>
+                            {isSubmittedTab && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={pdfExport.openDialog}>
+                                  <FileDown className="h-4 w-4 mr-2" />
+                                  Export PDF (számlaképek)
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -977,9 +1040,33 @@ const InvoicesPage = () => {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                </div>
               </div>
             </div>
           </CardHeader>
+
+          {/* PDF Export Banner — between header and content */}
+          {pdfExport.showBanner && pdfExport.activeJob && (
+            <div className="px-6 pb-2">
+              <PdfExportBanner
+                job={pdfExport.activeJob}
+                progress={pdfExport.progress}
+                onCancel={pdfExport.cancelExport}
+                onDismiss={pdfExport.dismissBanner}
+                onRetryDownload={pdfExport.retryDownload}
+              />
+            </div>
+          )}
+
+          {/* PDF Export Dialog */}
+          <PdfExportDialog
+            open={pdfExport.dialogOpen}
+            onClose={pdfExport.closeDialog}
+            onExport={pdfExport.startExport}
+            isExporting={pdfExport.isExporting}
+            isStarting={pdfExport.isStarting}
+            initialDirection={activeTab === 'SUBMITTED_INBOUND' ? 'INBOUND' : 'OUTBOUND'}
+          />
 
           <CardContent className="space-y-6">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as InvoiceTab)}>
@@ -1199,6 +1286,17 @@ const InvoicesPage = () => {
                       </SelectContent>
                     </Select>
 
+                    <Select value={filters.continuous} onValueChange={(value) => setFilters(prev => ({ ...prev, continuous: value }))}>
+                      <SelectTrigger className="h-9 w-[160px]">
+                        <span className="truncate">{filters.continuous === 'all' ? 'Foly. szolg.' : filters.continuous === 'yes' ? '🔄 Igen' : 'Nem'}</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Foly. szolg. (mind)</SelectItem>
+                        <SelectItem value="yes">🔄 Folyamatos</SelectItem>
+                        <SelectItem value="no">Nem folyamatos</SelectItem>
+                      </SelectContent>
+                    </Select>
+
                     {hasAnyActiveFilter && (
                     <Button variant="ghost" size="sm" onClick={clearAllFilters}>
                       <X className="h-4 w-4 mr-1" />
@@ -1230,6 +1328,10 @@ const InvoicesPage = () => {
                     <div className="flex items-center gap-1.5">
                       <div className="w-3 h-3 rounded-sm bg-destructive/10 border-l-2 border-l-destructive" />
                       <span>Nem kifizetve</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-orange-500/10 border-l-2 border-l-orange-400" />
+                      <span>Kompenzálandó</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-3 h-3 rounded-sm bg-background border border-border/50" />
@@ -1311,6 +1413,7 @@ const InvoicesPage = () => {
                               return linked.some(l => submittedIdToTransactionsMap.has(l.id));
                             });
                             const isPaid = invoice.paid === true || !!invoice.transaction_id || directlyMatched || indirectlyMatched || linkedChainMatched;
+                            const isNettingCandidate = nettingInvoiceIds.has(invoice.id);
                             return (
                               <React.Fragment key={invoice.id}>
                                 <TableRow data-row-hover className={cn(
@@ -1318,7 +1421,8 @@ const InvoicesPage = () => {
                                   selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
                                   !selectedInvoiceIds.has(invoice.id) && isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-matched-bg)]",
                                   !selectedInvoiceIds.has(invoice.id) && suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-suggested-bg)]",
-                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-unmatched-bg)]",
+                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && !suggestedOnlyIds.has(invoice.id) && !isNettingCandidate && "bg-[var(--row-unmatched-bg)]",
+                                  !selectedInvoiceIds.has(invoice.id) && isNettingCandidate && !isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-orange-500/[0.06] border-l-2 border-l-orange-400",
                                   expandedRowIds.has(invoice.id) && "border-b-0"
                                 )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                   <TableCell className="pl-4">
@@ -1344,8 +1448,8 @@ const InvoicesPage = () => {
                                     {invoice.invoice_delivery_date ? format(new Date(invoice.invoice_delivery_date), 'yyyy. MM. dd.', { locale: hu }) : '-'}
                                   </TableCell>
                                   <TableCell className="font-medium font-mono whitespace-nowrap">
-                                    <CopyableCell value={invoice.invoice_number || '-'} ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`} />
-                                  </TableCell>
+                                     <CopyableCell value={invoice.invoice_number || '-'} ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`} />
+                                   </TableCell>
                                   <TableCell className={cn("text-right font-mono tabular-nums", !invoice.invoice_net_amount ? "text-muted-foreground" : activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
                                     {formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')}
                                   </TableCell>
@@ -1360,10 +1464,63 @@ const InvoicesPage = () => {
                                       <span className={`inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-black/10 dark:border-white/10 ${isPaid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                                         {isPaid ? 'Kifizetve' : 'Nyitott'}
                                       </span>
+                                      {isNettingCandidate && (
+                                        <TooltipProvider delayDuration={200}>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-400/40 whitespace-nowrap cursor-help">
+                                                <Scale className="h-3 w-3" />
+                                                Kompenzálandó
+                                              </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="left" className="max-w-[280px]">
+                                              {(() => {
+                                                const ng = getNettingGroup(invoice.id);
+                                                if (!ng) return null;
+                                                return (
+                                                  <div className="text-xs space-y-1">
+                                                    <p className="font-semibold">{ng.partnerName}</p>
+                                                    <p className="text-muted-foreground">Teljesítési hónap: {ng.deliveryMonth}</p>
+                                                    <p>Bejövő: <span className="font-mono text-destructive">{formatCurrency(ng.inboundTotal, ng.currency)}</span></p>
+                                                    <p>Kimenő: <span className="font-mono text-success">{formatCurrency(ng.outboundTotal, ng.currency)}</span></p>
+                                                    <p className="font-medium pt-0.5 border-t border-border/30">Különbözet: <span className="font-mono">{formatCurrency(Math.abs(ng.netDifference), ng.currency)}</span></p>
+                                                  </div>
+                                                );
+                                              })()}
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
                                       {invoice.exclude_from_accounting && (
                                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-300/40 whitespace-nowrap">
                                           Nem könyvelt
                                         </span>
+                                      )}
+                                      {invoice.is_continuous && (
+                                        <TooltipProvider delayDuration={200}>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-400/40 whitespace-nowrap cursor-help">
+                                                🔄 Foly.
+                                              </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="left" className="max-w-[280px]">
+                                              <div className="text-xs space-y-1">
+                                                <p className="font-semibold">Folyamatos szolgáltatás</p>
+                                                {invoice.service_period_start && invoice.service_period_end && (
+                                                  <p className="text-muted-foreground">
+                                                    Szolg. időszak: {format(new Date(invoice.service_period_start), 'yyyy.MM.dd', { locale: hu })} – {format(new Date(invoice.service_period_end), 'yyyy.MM.dd', { locale: hu })}
+                                                  </p>
+                                                )}
+                                                {(invoice.calculated_ti || invoice.ti_override) && (
+                                                  <p>TI: <span className="font-mono">{format(new Date(invoice.ti_override || invoice.calculated_ti!), 'yyyy.MM.dd', { locale: hu })}</span>
+                                                    <span className="text-muted-foreground/70 ml-1">({invoice.ti_calculation_method === 'manual' ? 'kézi' : invoice.ti_calculation_method === 'nav_period_end' ? 'NAV' : invoice.ti_calculation_method === 'payment_due' ? 'fiz. hat.' : 'telj. dátum'})</span>
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
                                       )}
                                     </div>
                                   </TableCell>
@@ -1372,25 +1529,35 @@ const InvoicesPage = () => {
                                       <Checkbox checked={invoice.submitted === true || (navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number))?.length ?? 0) > 0} disabled className="cursor-default opacity-70" />
                                     </TableCell>
                                   )}
-                                  {activeTab === 'INBOUND' && (
-                                    <TableCell className="text-center">
-                                      <Select value={invoice.category_id || 'none'} onValueChange={(value) => handleCategoryChange(invoice.id, value)}>
-                                        <SelectTrigger className="w-[120px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0"><SelectValue placeholder="Válassz..." /></SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="none">-</SelectItem>
-                                          {categories.map((category) => (<SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>))}
-                                        </SelectContent>
-                                      </Select>
-                                    </TableCell>
-                                  )}
+                                  {activeTab === 'INBOUND' && (() => {
+                                    const submittedMatches = navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number)) || [];
+                                    const effectiveCategoryId = invoice.category_id || submittedMatches[0]?.category_id || null;
+                                    return (
+                                      <TableCell className="text-center">
+                                        <Select value={effectiveCategoryId || 'none'} onValueChange={(value) => handleCategoryChange(invoice.id, value, invoice.invoice_number)}>
+                                          <SelectTrigger className="w-[120px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0"><SelectValue placeholder="Válassz..." /></SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="none">-</SelectItem>
+                                            {categories.map((category) => (<SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>))}
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                    );
+                                  })()}
                                   <TableCell className="text-center">
-                                    <Select value={invoice.project_id || 'none'} onValueChange={(value) => handleProjectChange(invoice.id, value)}>
-                                      <SelectTrigger className="w-[120px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0"><SelectValue placeholder="Válassz..." /></SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="none">-</SelectItem>
-                                        {projects.map((project) => (<SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>))}
-                                      </SelectContent>
-                                    </Select>
+                                    {(() => {
+                                      const submittedMatches = navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number)) || [];
+                                      const effectiveProjectId = invoice.project_id || submittedMatches[0]?.project_id || null;
+                                      return (
+                                        <Select value={effectiveProjectId || 'none'} onValueChange={(value) => handleProjectChange(invoice.id, value, invoice.invoice_number)}>
+                                          <SelectTrigger className="w-[120px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0"><SelectValue placeholder="Válassz..." /></SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="none">-</SelectItem>
+                                            {projects.map((project) => (<SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>))}
+                                          </SelectContent>
+                                        </Select>
+                                      );
+                                    })()}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground border border-black/10 dark:border-white/10">{getPaymentMethodLabel(invoice.payment_method)}</span>
@@ -1446,6 +1613,17 @@ const InvoicesPage = () => {
                                       invoiceDate={invoice.invoice_issue_date || ''}
                                       companyId={companyId}
                                       onMatchUpdate={invalidateInvoiceData}
+                                      glNumbers={invoice.gl_numbers}
+                                      hasSubmittedMatch={submittedMatches.length > 0}
+                                      categories={categories}
+                                      projects={projects}
+                                      nettingGroup={getNettingGroup(invoice.id)}
+                                      isContinuous={!!invoice.is_continuous}
+                                      servicePeriodStart={invoice.service_period_start}
+                                      servicePeriodEnd={invoice.service_period_end}
+                                      calculatedTi={invoice.calculated_ti}
+                                      tiOverride={invoice.ti_override}
+                                      tiCalculationMethod={invoice.ti_calculation_method}
                                     />
                                   );
                                 })()}
@@ -1794,6 +1972,8 @@ const InvoicesPage = () => {
                                     invoiceDate={invoice.kibocsatas_datuma || ''}
                                     companyId={companyId}
                                     onMatchUpdate={invalidateInvoiceData}
+                                    categories={categories}
+                                    projects={projects}
                                   />
                                 );
                               })()}

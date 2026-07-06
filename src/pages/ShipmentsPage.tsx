@@ -60,7 +60,7 @@ export default function ShipmentsPage() {
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
-        .from('shipments' as any)
+        .from('shipments')
         .select('*')
         .eq('company_id', selectedCompany.id)
         .order('created_at', { ascending: false });
@@ -94,7 +94,7 @@ export default function ShipmentsPage() {
     queryFn: async () => {
       if (!selectedShipment?.id) return [];
       const { data, error } = await supabase
-        .from('transport_documents' as any)
+        .from('transport_documents')
         .select('*')
         .eq('linked_shipment_id', selectedShipment.id);
 
@@ -347,7 +347,7 @@ export default function ShipmentsPage() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setCurrentPage(1)}
+                onClick={() => { setCurrentPage(1); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
                 disabled={currentPage === 1}
               >
                 <ChevronsLeft className="h-4 w-4" />
@@ -356,7 +356,7 @@ export default function ShipmentsPage() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
                 disabled={currentPage === 1}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -368,7 +368,7 @@ export default function ShipmentsPage() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
                 disabled={currentPage === totalPages}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -377,7 +377,7 @@ export default function ShipmentsPage() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setCurrentPage(totalPages)}
+                onClick={() => { setCurrentPage(totalPages); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
                 disabled={currentPage === totalPages}
               >
                 <ChevronsRight className="h-4 w-4" />

@@ -105,7 +105,7 @@ export default function KintlevoPage() {
           companyGroups={companyGroups}
           allInvoices={allInvoices}
           showBrutto={showBrutto}
-          onToggleBrutto={() => setShowBrutto(v => !v)}
+          onShowBruttoChange={setShowBrutto}
         />
 
         {/* Aging chart (korfa) */}

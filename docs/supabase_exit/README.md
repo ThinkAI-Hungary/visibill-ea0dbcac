@@ -17,6 +17,7 @@ Ez a mappa az eaisybill **teljes** Supabase vendor lock-in auditját és migrác
 | 02 | [edge-functions-catalog](./02-edge-functions-catalog.md) | Mind a 42 Deno Edge Function katalógusa migrációs nehézségi szintekkel |
 | 03 | [migration-plan](./03-migration-plan.md) | 4 fázisú migrációs terv, Auth/EdgeFunction interface tervezetek, konverziós minták |
 | 04 | [storage-realtime-postgrest-audit](./04-storage-realtime-postgrest-audit.md) | Storage (9 bucket, 22+ hívás), Realtime (3 csatorna, 15 tábla), PostgREST (20+ fájl, 21 RPC), RLS auth.uid() (365+ sor), pg_cron (4 job), hardcoded URL-ek |
+| 05 | [extensions-queue-migration](./05-extensions-queue-migration.md) | Postgres kiterjesztések (pgmq, pg_cron) migrációs opciók, adatbázis sync downtime nélkül, és docker-compose alapú helyi tesztkörnyezet szimuláció |
 | wiki | [wiki](./wiki.md) | Technikai fogalomtár — 25+ fogalom (GoTrue, JWT, RLS, PGMQ, PostgREST, Deno, stb.) magyarázattal |
 
 ---

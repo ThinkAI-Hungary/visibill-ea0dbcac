@@ -38,3 +38,10 @@ USING (company_id IN (
 - Komplex JOIN-os RLS policy-k lassíthatják a lekérdezéseket
 - Debugolás nehéz (RLS "csendesen" szűr, nem dob hibát)
 - A `company_members` tábla RLS policy-ja kritikus pont — ha hibás, minden adat sérülékeny
+
+## Cross-company Invoice Routing (2026-07-02)
+
+Ha egy user több céghez is tagként hozzá van rendelve (`company_members`), a worker automatikusan
+route-olja a számlákat a helyes céghez az adószám alapján. Ez a `company_id` UPDATE a worker
+`service_role`-lal hajtja végre (RLS bypass). A routing CSAK a user `company_members` tagságai
+között történik — más tenant adataihoz nem férhet hozzá. Lásd: worker `company_router.py`, ADR-027.

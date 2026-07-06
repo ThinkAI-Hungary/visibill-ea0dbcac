@@ -13,5 +13,11 @@
 - Saját layout: nincs fő app sidebar, nincs Accounty sidebar
 - Hozzáférés: `profiles.role === 'management'` — automatikus redirect `/management`-re bejelentkezéskor
 - Monitoring: felhasználók, cégek, feldolgozási pipeline állapot
+- **Fájlok Tab (`FilesPanel`)**: Összesített nézet a platform összes feltöltött fájljáról (`invoice`, `transaction`, `bank_statement`, `report`), azok aktuális feldolgozási állapotáról, metaadataival (méret, feltöltő stb).
+- **Support Admin Impersonation**: A cég adatlapján lehetőség van "Belépés a cégbe" funkcióra. Ilyenkor a user átkerül az adott cég nézetébe egy narancssárga/teal figyelmeztető sávval a képernyő tetején. Kilépéskor egy full-page fehér loading overlay jelenik meg, amíg a háttérben az ideiglenes jogosultságok törlődnek, így elkerülve az előző cég adatainak felvillanását ("layout shift").
 
-**Rationale:** A platform üzemeltető igényei annyira különböznek a normál felhasználóétól, hogy saját dashboard szükséges. Az automatikus redirect biztosítja, hogy a management user ne a normál dashboardon landoljon.
+**Rationale:** A platform üzemeltető igényei annyira különböznek a normál felhasználóétól, hogy saját dashboard szükséges. Az automatikus redirect biztosítja, hogy a management user ne a normál dashboardon landoljon. A Support Impersonation funkció és a globális fájl áttekintő kulcsfontosságú a debugoláshoz és ügyfélszolgálati esetek kivizsgálásához.
+
+## Kapcsolódó
+- [A-019: Management Dashboard](../../architecture/decisions/A-019-management-dashboard.md)
+- [A-026: Support Admin Ideiglenes Hozzáférés](../../architecture/decisions/A-026-support-impersonation-access.md)

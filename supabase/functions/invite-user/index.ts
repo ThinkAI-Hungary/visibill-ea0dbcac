@@ -38,25 +38,25 @@ Deno.serve(async (req) => {
     }
 
     // ── 2. Parse & validate body ──
-    const { email, name, password, company_id, role } = await req.json();
+    const { email, name, password, company_id, accounting_firm_id, role } = await req.json();
 
     if (!email || typeof email !== "string" || !email.includes("@")) {
-      return new Response(JSON.stringify({ error: "valid_email_required" }), {
-        status: 400,
+      return new Response(JSON.stringify({ success: false, error: "valid_email_required" }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return new Response(JSON.stringify({ error: "name_required" }), {
-        status: 400,
+      return new Response(JSON.stringify({ success: false, error: "name_required" }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (!password || typeof password !== "string" || password.length < 6) {
-      return new Response(JSON.stringify({ error: "password_min_6" }), {
-        status: 400,
+      return new Response(JSON.stringify({ success: false, error: "password_min_6" }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -77,10 +77,11 @@ Deno.serve(async (req) => {
 
       if (isAccountantRole) {
         // Verify caller has role 'iroda_admin' or 'senior_könyvelő' in this firm
+        const firmIdForAuth = accounting_firm_id || company_id;
         const { data: callerAssignment } = await adminClient
           .from("accounty_assignments")
           .select("role")
-          .eq("accounting_firm_id", company_id)
+          .eq("accounting_firm_id", firmIdForAuth)
           .eq("accountant_user_id", callingUser.id)
           .in("role", ["iroda_admin", "senior_könyvelő"])
           .limit(1);
@@ -110,8 +111,8 @@ Deno.serve(async (req) => {
             .single();
 
           if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
-            return new Response(JSON.stringify({ error: "not_admin" }), {
-              status: 403,
+            return new Response(JSON.stringify({ success: false, error: "not_admin" }), {
+              status: 200,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
@@ -134,38 +135,26 @@ Deno.serve(async (req) => {
       // User already exists — just add to company if requested
         const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
         if (isAccountantRole) {
-          // Check if already assigned
-          const { data: existingAssignment } = await adminClient
+          // UPSERT: if already assigned to this company, update role/firm; otherwise insert
+          const firmId = accounting_firm_id || company_id;
+          const { error: upsertError } = await adminClient
             .from("accounty_assignments")
-            .select("id")
-            .eq("accountant_user_id", existingUser.id)
-            .eq("accounting_firm_id", company_id)
-            .maybeSingle();
-
-          if (existingAssignment) {
-            return new Response(JSON.stringify({ error: "already_member" }), {
-              status: 409,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-
-          // Add accountant assignment
-          const { error: assignError } = await adminClient
-            .from("accounty_assignments")
-            .insert({
+            .upsert({
               accountant_user_id: existingUser.id,
               company_id: company_id,
-              accounting_firm_id: company_id,
+              accounting_firm_id: firmId,
               role: role,
               is_primary: true,
               kanban_status: "aktiv",
               source: "manual"
+            }, {
+              onConflict: "accountant_user_id,company_id"
             });
 
-          if (assignError) {
-            console.error("[INVITE-USER] Accountant assignment insert error for existing user:", assignError);
-            return new Response(JSON.stringify({ error: "member_insert_failed" }), {
-              status: 500,
+          if (upsertError) {
+            console.error("[INVITE-USER] Accountant assignment upsert error for existing user:", upsertError);
+            return new Response(JSON.stringify({ success: false, error: "member_insert_failed", details: upsertError.message }), {
+              status: 200,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
@@ -174,7 +163,7 @@ Deno.serve(async (req) => {
             success: true,
             existing_user: true,
             user_id: existingUser.id,
-            message: "Existing user added to firm assignments",
+            message: "Existing user added/updated in firm assignments",
           }), {
             status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -190,8 +179,8 @@ Deno.serve(async (req) => {
           .single();
 
         if (existingMember) {
-          return new Response(JSON.stringify({ error: "already_member" }), {
-            status: 409,
+          return new Response(JSON.stringify({ success: false, error: "already_member" }), {
+            status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
@@ -203,8 +192,8 @@ Deno.serve(async (req) => {
 
         if (memberError) {
           console.error("[INVITE-USER] Member insert error:", memberError);
-          return new Response(JSON.stringify({ error: "member_insert_failed" }), {
-            status: 500,
+          return new Response(JSON.stringify({ success: false, error: "member_insert_failed", details: memberError.message }), {
+            status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
@@ -219,8 +208,8 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
-      return new Response(JSON.stringify({ error: "email_exists" }), {
-        status: 409,
+      return new Response(JSON.stringify({ success: false, error: "email_exists" }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -238,16 +227,16 @@ Deno.serve(async (req) => {
 
     if (createError) {
       console.error("[INVITE-USER] Create user error:", createError);
-      return new Response(JSON.stringify({ error: "user_create_failed", details: createError.message }), {
-        status: 500,
+      return new Response(JSON.stringify({ success: false, error: "user_create_failed", details: createError.message }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const newUserId = newAuthData.user?.id;
     if (!newUserId) {
-      return new Response(JSON.stringify({ error: "user_create_failed", details: "No user ID returned" }), {
-        status: 500,
+      return new Response(JSON.stringify({ success: false, error: "user_create_failed", details: "No user ID returned" }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -287,12 +276,13 @@ Deno.serve(async (req) => {
       const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
       if (isAccountantRole) {
         // Add accountant assignment
+        const firmIdNew = accounting_firm_id || company_id;
         const { error: assignError } = await adminClient
           .from("accounty_assignments")
           .insert({
             accountant_user_id: newUserId,
             company_id: company_id,
-            accounting_firm_id: company_id,
+            accounting_firm_id: firmIdNew,
             role: role,
             is_primary: true,
             kanban_status: "aktiv",

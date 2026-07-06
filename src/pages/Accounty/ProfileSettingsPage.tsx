@@ -82,7 +82,7 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
     let token = '';
     for (let i = 0; i < 6; i++) token += chars[bytes[i] % chars.length];
     const now = new Date().toISOString();
-    const { error } = await supabase.from('companies').update({ share_token: token, share_token_created_at: now } as any).eq('id', companyId);
+    const { error } = await supabase.from('companies').update({ share_token: token, share_token_created_at: now }).eq('id', companyId);
     if (error) toast({ title: "Hiba", description: "Nem sikerült a kód generálása.", variant: "destructive" });
     else { setShareToken(token); setTokenCreatedAt(now); toast({ title: "Siker", description: "Meghívó kód generálva! 10 percig érvényes." }); }
     setGenerating(false);
@@ -133,17 +133,27 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; userId: string; name: string } | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const { data: members = [], isLoading: loading } = useQuery({
-    queryKey: ['accounty-firm-members', companyId],
+    queryKey: queryKeys.accountyFirmMembers(companyId),
     queryFn: async () => {
       const { data } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('id, accountant_user_id, role, created_at')
         .eq('accounting_firm_id', companyId);
       if (data && data.length > 0) {
-        const userIds = (data as any[]).map((m: any) => m.accountant_user_id);
+        // Deduplicate by user — each user should appear only once
+        const ROLE_PRIORITY: Record<string, number> = { iroda_admin: 0, senior_könyvelő: 1, könyvelő: 2, asszisztens: 3 };
+        const userMap = new Map<string, any>();
+        for (const m of data as any[]) {
+          const existing = userMap.get(m.accountant_user_id);
+          if (!existing || (ROLE_PRIORITY[m.role] ?? 99) < (ROLE_PRIORITY[existing.role] ?? 99)) {
+            userMap.set(m.accountant_user_id, m);
+          }
+        }
+        const uniqueAssignments = [...userMap.values()];
+        const userIds = uniqueAssignments.map((m: any) => m.accountant_user_id);
         const { data: profiles } = await supabase.from('profiles').select('user_id, name').in('user_id', userIds);
         const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
-        return (data as any[]).map((m: any) => ({
+        return uniqueAssignments.map((m: any) => ({
           id: m.id,
           user_id: m.accountant_user_id,
           role: m.role,
@@ -171,8 +181,8 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
   const updateMemberRole = async (memberId: string, newRole: string) => {
     setUpdatingRole(memberId);
     const { data, error } = await supabase
-      .from('accounty_assignments' as any)
-      .update({ role: newRole } as any)
+      .from('accounty_assignments')
+      .update({ role: newRole })
       .eq('id', memberId)
       .select();
     if (error) {
@@ -181,14 +191,14 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
       toast({ title: "Hiba", description: "Nincs jogosultságod a szerepkör módosításához.", variant: "destructive" });
     } else {
       toast({ title: "Siker", description: "Szerepkör frissítve." });
-      queryClient.invalidateQueries({ queryKey: ['accounty-firm-members', companyId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.accountyFirmMembers(companyId) });
     }
     setUpdatingRole(null);
   };
 
   const removeMember = async (memberId: string, userId: string) => {
     if (userId === user?.id) return; // Can't remove yourself
-    const { error } = await supabase.from('accounty_assignments' as any).delete().eq('id', memberId);
+    const { error } = await supabase.from('accounty_assignments').delete().eq('id', memberId);
     if (error) toast({ title: "Hiba", description: "Nem sikerült a tag eltávolítása.", variant: "destructive" });
     else { toast({ title: "Siker", description: "Tag eltávolítva." }); queryClient.invalidateQueries({ queryKey: ['accounty-firm-members', companyId] }); }
   };
@@ -261,7 +271,7 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
         onOpenChange={setInviteOpen}
         companyId={companyId}
         companyName={companyName}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['accounty-firm-members', companyId] })}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: queryKeys.accountyFirmMembers(companyId) })}
         toast={toast}
         isAccounty
       />
@@ -311,26 +321,29 @@ export default function ProfileSettingsPage() {
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading: companiesLoading } = useCompany();
 
   // Fetch the accounting firm name for the current user
-  const { data: firmName } = useQuery({
-    queryKey: ['accounty-firm-name', user?.id],
+  const { data: firmData } = useQuery({
+    queryKey: queryKeys.accountyFirmData(user?.id || ''),
     queryFn: async () => {
       const { data } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('accounting_firm_id')
         .eq('accountant_user_id', user!.id)
         .limit(1);
       if (!data || data.length === 0) return null;
       const firmId = (data[0] as any).accounting_firm_id;
+      if (!firmId) return null;
       const { data: company } = await supabase
         .from('companies')
-        .select('name')
+        .select('id, name')
         .eq('id', firmId)
         .single();
-      return company?.name || null;
+      return company ? { id: company.id, name: company.name } : null;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
+  const firmName = firmData?.name || null;
+  const firmId = firmData?.id || null;
 
   const ACCOUNTY_ROLE_LABELS: Record<string, string> = {
     iroda_admin: 'Iroda Admin',
@@ -419,7 +432,12 @@ export default function ProfileSettingsPage() {
     setLoading(true);
     const { error } = await supabase.from('profiles').upsert({ user_id: user.id, name: profile.name, company: profile.company, position: profile.position, avatar_url: profile.avatar_url }, { onConflict: 'user_id' });
     if (error) toast({ title: 'Hiba történt', description: 'A profil mentése sikertelen.', variant: 'destructive' });
-    else { setInitialProfile({ ...profile }); toast({ title: 'Siker', description: 'A profil sikeresen mentve.' }); }
+    else {
+      // Sync name into auth user_metadata so the sidebar re-renders immediately
+      await supabase.auth.updateUser({ data: { name: profile.name } });
+      setInitialProfile({ ...profile });
+      toast({ title: 'Siker', description: 'A profil sikeresen mentve.' });
+    }
     setLoading(false);
   };
 
@@ -528,8 +546,8 @@ export default function ProfileSettingsPage() {
             {selectedCompany && selectedCompany.owner_id === user?.id && (
               <CompanyAccessCard companyId={selectedCompany.id} toast={toast} />
             )}
-            {selectedCompany && (
-              <FirmMembersCard companyId={selectedCompany.id} companyName={selectedCompany.name} isOwnerOrAdmin={isAdmin} toast={toast} />
+            {firmId && (
+              <FirmMembersCard companyId={firmId} companyName={firmName || ''} isOwnerOrAdmin={isAdmin} toast={toast} />
             )}
           </BusinessSection>
         </TabsContent>

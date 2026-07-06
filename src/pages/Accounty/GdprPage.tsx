@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useGdprRequests, useCreateGdprRequest, useUpdateGdprRequest } from '@/hooks/useAdminData';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 const TYPE_LABELS: Record<string, string> = {
   access: 'Hozzáférés',
@@ -21,7 +22,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 };
 
 export default function GdprPage() {
-  const { data: requests = [], isLoading } = useGdprRequests();
+  const { data: requests = [], isLoading, isError: reqError, refetch: refetchReqs } = useGdprRequests();
   const { data: clients = [] } = useAccountyClients();
   const createRequest = useCreateGdprRequest();
   const updateRequest = useUpdateGdprRequest();
@@ -52,6 +53,10 @@ export default function GdprPage() {
     in_progress: requests.filter((r: any) => r.status === 'in_progress').length,
     completed: requests.filter((r: any) => r.status === 'completed').length,
   };
+
+  if (reqError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a GDPR kérelmeket." onRetry={() => refetchReqs()} />;
+  }
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">

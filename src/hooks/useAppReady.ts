@@ -43,6 +43,23 @@ export function useAppReady() {
     gcTime: 10 * 60 * 1000,
   });
 
+  // Check if this management user has an active impersonation session
+  const { data: hasImpersonation } = useQuery({
+    queryKey: ['active-impersonation-check', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('user_id', user!.id)
+        .eq('role', 'support_admin' as any)
+        .limit(1)
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user && (profileData?.role === 'management' || profileData?.role === 'thinkai'),
+    staleTime: 10_000,
+  });
+
   const profileStatus = profileData?.status;
   const profileRole = profileData?.role;
 
@@ -62,7 +79,8 @@ export function useAppReady() {
   }
 
   // Management/ThinkAI role → redirect to /management immediately, before any layout renders.
-  if (profileRole === 'management' || profileRole === 'thinkai') {
+  // BUT: skip redirect if the user has an active impersonation session (support_admin role)
+  if ((profileRole === 'management' || profileRole === 'thinkai') && !hasImpersonation) {
     return { isReady: true, user, redirectTarget: 'management' as RedirectTarget };
   }
 

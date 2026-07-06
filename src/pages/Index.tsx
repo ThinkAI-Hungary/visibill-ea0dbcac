@@ -1,8 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
+import { useActivePreset } from '@/hooks/useActivePreset';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import EmptyStateDashboard from '@/components/dashboard/EmptyStateDashboard';
 import { ProductTour } from '@/components/ProductTour';
 import DashboardPageSkeleton from '@/components/dashboard/DashboardPageSkeleton';
@@ -58,6 +62,7 @@ function RecentInvoicesWithDialog({ invoices }: { invoices: Invoice[] }) {
 const Index = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { role } = useUserRole();
 
   const {
     selectedCompany, companies, companyLoading,
@@ -65,7 +70,7 @@ const Index = () => {
     profile, tourCompleted,
     metrics, metricsLoading,
     navVatData, pettyCashBalances,
-    fxDifferences, fxMonthlySummary,
+    fxDifferences, fxMonthlySummary, fxGlSettings,
     invoices, analyticsLoading,
     vatBreakdown, exchangeRates,
     categoryBreakdownData,
@@ -74,15 +79,56 @@ const Index = () => {
   } = useDashboardData();
 
   const prefs = useDashboardPreferences();
+  const queryClient = useQueryClient();
 
-  // Tour state
+  // GL accounts for FX mapping
+  const { activePresetId } = useActivePreset(selectedCompany?.id);
+  const { data: glAccounts = [] } = useQuery<{ id: string; gl_number: string; short_name: string }[]>({
+    queryKey: ['fx-gl-accounts', activePresetId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('gl_accounts')
+        .select('id, gl_number, short_name')
+        .eq('preset_id', activePresetId!)
+        .order('gl_number');
+      return (data || []) as { id: string; gl_number: string; short_name: string }[];
+    },
+    enabled: !!activePresetId,
+  });
+
+  // FX GL settings mutation
+  const updateFxGlMutation = useMutation({
+    mutationFn: async ({ gainGl, lossGl }: { gainGl: string; lossGl: string }) => {
+      const { error } = await supabase
+        .from('company_fx_settings')
+        .upsert({
+          company_id: selectedCompany!.id,
+          fx_gain_gl_number: gainGl,
+          fx_loss_gl_number: lossGl,
+        } as any, { onConflict: 'company_id' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fx-gl-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems_bs'] });
+      queryClient.invalidateQueries({ queryKey: ['bs_report'] });
+      queryClient.invalidateQueries({ queryKey: ['pnl_report'] });
+    },
+  });
+
+  const handleSaveFxGl = useCallback((gainGl: string, lossGl: string) => {
+    updateFxGlMutation.mutate({ gainGl, lossGl });
+  }, [updateFxGlMutation]);
+
+  // Tour state — skip for support_admin (impersonation sessions)
   const [showTour, setShowTour] = useState(false);
   useEffect(() => {
-    if (tourCompleted === false) {
+    if (tourCompleted === false && role !== 'support_admin') {
       const timer = setTimeout(() => setShowTour(true), 500);
       return () => clearTimeout(timer);
     }
-  }, [tourCompleted]);
+  }, [tourCompleted, role]);
 
   // Invoice image dialog state is now isolated in RecentInvoicesWithDialog (P0-3)
 
@@ -139,6 +185,7 @@ const Index = () => {
           convertToSelectedCurrency={convertToSelectedCurrency}
           vatSectionOpen={prefs.vatSectionOpen}
           onVatSectionOpenChange={prefs.setVatSectionOpen}
+          vatRegime={selectedCompany?.vat_regime}
         />
 
         <FxDifferencesSection
@@ -146,6 +193,9 @@ const Index = () => {
           fxMonthlySummary={fxMonthlySummary}
           isOpen={prefs.fxSectionOpen}
           onOpenChange={prefs.setFxSectionOpen}
+          fxGlSettings={fxGlSettings}
+          glAccounts={glAccounts}
+          onSaveFxGl={handleSaveFxGl}
         />
 
         <UnmatchedSection />

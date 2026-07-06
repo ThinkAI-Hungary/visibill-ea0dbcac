@@ -20,6 +20,35 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // ── Auth: require CRON_SECRET or valid user token ──
+    const cronSecret = Deno.env.get('CRON_SECRET')
+    const authHeader = req.headers.get('Authorization')
+    let authorized = false
+
+    // Check cron secret (from header or body)
+    if (cronSecret) {
+      const secretHeader = req.headers.get('x-cron-secret')
+      if (secretHeader === cronSecret) authorized = true
+    }
+
+    // Check user JWT as fallback (for manual trigger from admin UI)
+    if (!authorized && authHeader) {
+      const tempClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      )
+      const { data: { user } } = await tempClient.auth.getUser(
+        authHeader.replace('Bearer ', '')
+      )
+      if (user) authorized = true
+    }
+
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     console.log('[accounty-detect-missing] Starting NAV missing invoice detection...')
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -133,6 +162,71 @@ Deno.serve(async (req: Request) => {
           continue
         }
         totalInserted += newItems.length
+
+        // ── Notify assigned accountants about new missing items ──
+        try {
+          const { data: assignedUsers } = await supabase
+            .from('accounty_assignments')
+            .select('accountant_user_id')
+            .eq('company_id', companyId)
+
+          if (assignedUsers && assignedUsers.length > 0) {
+            // Get company name
+            const { data: companyData } = await supabase
+              .from('companies')
+              .select('name')
+              .eq('id', companyId)
+              .single()
+            const companyName = (companyData as any)?.name || 'Ismeretlen cég'
+
+            // Build items summary
+            const itemsSummary = newItems.slice(0, 5).map((item: any) =>
+              `<tr><td style="padding:6px 12px;border-top:1px solid #e5e7eb;font-size:13px">${item.title}</td><td style="padding:6px 12px;border-top:1px solid #e5e7eb;font-size:13px;color:#6b7280">${item.subtitle}</td></tr>`
+            ).join('')
+            const moreText = newItems.length > 5 ? `<p style="font-size:13px;color:#6b7280;margin-top:8px">...és további ${newItems.length - 5} tétel</p>` : ''
+
+            const bodyHtml = `
+              <p><strong>${companyName}</strong> cégnél <strong>${newItems.length}</strong> új hiányzó bejövő számlát azonosítottunk a NAV adatok alapján.</p>
+              <table style="width:100%;border-collapse:collapse;margin:12px 0;border:1px solid #e5e7eb;border-radius:6px">
+                <thead><tr style="background:#f3f4f6">
+                  <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase">Szállító</th>
+                  <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase">Számla</th>
+                </tr></thead>
+                <tbody>${itemsSummary}</tbody>
+              </table>
+              ${moreText}
+              <p style="margin-top:16px">
+                <a href="https://app.visibill.hu/accounty/missing-invoices" 
+                   style="display:inline-block;padding:10px 24px;background:#0f766e;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px">
+                  Hiányzó számlák megtekintése
+                </a>
+              </p>
+            `
+
+            // Send to each assigned accountant
+            const uniqueUserIds = [...new Set(assignedUsers.map((a: any) => a.accountant_user_id))]
+            for (const userId of uniqueUserIds) {
+              try {
+                await supabase.functions.invoke('send-accounty-notification', {
+                  body: {
+                    user_id: userId,
+                    type: 'accounty_missing_invoice',
+                    title: `${newItems.length} új hiányzó számla – ${companyName}`,
+                    body_html: bodyHtml,
+                    subject: `Hiányzó számlák: ${companyName} (${newItems.length} db)`,
+                    company_name: companyName,
+                    company_id: companyId,
+                  },
+                })
+              } catch (notifErr) {
+                console.error(`[accounty-detect-missing] Notification failed for user ${userId}:`, notifErr)
+              }
+            }
+            console.log(`[accounty-detect-missing] Notified ${uniqueUserIds.length} accountants about ${newItems.length} missing items for ${companyName}`)
+          }
+        } catch (notifErr) {
+          console.error(`[accounty-detect-missing] Notification error for ${companyId}:`, notifErr)
+        }
       }
       totalSkipped += existingSet.size
 

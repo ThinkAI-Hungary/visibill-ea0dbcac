@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy, Wand2 } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy, Wand2, RefreshCw, Columns } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { exportBsExcel } from '@/lib/bsExport';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 // ── Default BS mapping rules based on Hungarian Sztv. "A" variant ──
 // Maps GL account prefixes (class 1-4) to bs_structure arabic/roman leaf rows
@@ -117,11 +118,9 @@ const DEFAULT_BS_RULES: Array<{ prefix: string; bsId: string; label: string }> =
   { prefix: '422', bsId: '00000000-0000-0000-0001-000000001202', label: 'E/2. Céltartalék jövőbeni' },
   { prefix: '429', bsId: '00000000-0000-0000-0001-000000001203', label: 'E/3. Egyéb céltartalék' },
   // F. Kötelezettségek
-  // F/I. Hátrasorolt
   { prefix: '431', bsId: '00000000-0000-0000-0001-000000001311', label: 'F/I/1. Hátrasorolt kapcsolt' },
   { prefix: '432', bsId: '00000000-0000-0000-0001-000000001312', label: 'F/I/2. Hátrasorolt egyéb r.' },
   { prefix: '433', bsId: '00000000-0000-0000-0001-000000001313', label: 'F/I/3. Hátrasorolt egyéb g.' },
-  // F/II. Hosszú lejáratú
   { prefix: '441', bsId: '00000000-0000-0000-0001-000000001321', label: 'F/II/1. Hosszú kölcsönök' },
   { prefix: '442', bsId: '00000000-0000-0000-0001-000000001322', label: 'F/II/2. Átváltoz. kötvény' },
   { prefix: '443', bsId: '00000000-0000-0000-0001-000000001323', label: 'F/II/3. Kötvénykibocsátás' },
@@ -131,7 +130,6 @@ const DEFAULT_BS_RULES: Array<{ prefix: string; bsId: string; label: string }> =
   { prefix: '447', bsId: '00000000-0000-0000-0001-000000001327', label: 'F/II/7. Tartós egyéb r. köt.' },
   { prefix: '448', bsId: '00000000-0000-0000-0001-000000001328', label: 'F/II/8. Egyéb hosszú köt.' },
   { prefix: '449', bsId: '00000000-0000-0000-0001-000000001328', label: 'F/II/8. Egyéb hosszú köt.' },
-  // F/III. Rövid lejáratú
   { prefix: '451', bsId: '00000000-0000-0000-0001-000000001331', label: 'F/III/1. Rövid kölcsönök' },
   { prefix: '452', bsId: '00000000-0000-0000-0001-000000001332', label: 'F/III/2. Rövid hitelek' },
   { prefix: '453', bsId: '00000000-0000-0000-0001-000000001333', label: 'F/III/3. Vevői előlegek' },
@@ -150,7 +148,10 @@ const DEFAULT_BS_RULES: Array<{ prefix: string; bsId: string; label: string }> =
   // 49. Záró számlák — nem kell mérlegbe (belső technikai)
 ];
 
-// ─── Mapping Tab ───
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  BsMappingTab (P8: FinancialPageSkeleton)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGenericPreset?: boolean }) {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
@@ -159,7 +160,7 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
   const [hasChanges, setHasChanges] = useState(false);
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
 
-  const { data: bsStructure } = useQuery({
+  const { data: bsStructure, isLoading: isLoadingStructure } = useQuery({
     queryKey: ['bs_structure'],
     queryFn: async () => {
       const { data, error } = await supabase.from('bs_structure').select('*').order('order_num');
@@ -168,7 +169,7 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
     }
   });
 
-  const { data: glAccounts } = useQuery({
+  const { data: glAccounts, isLoading: isLoadingGlAccounts } = useQuery({
     queryKey: ['gl_accounts_bs', presetId],
     queryFn: async () => {
       if (!presetId) return [];
@@ -180,7 +181,7 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
     enabled: !!presetId
   });
 
-  const { data: existingMappings } = useQuery({
+  const { data: existingMappings, isLoading: isLoadingMappings } = useQuery({
     queryKey: ['bs_mapping', selectedCompany?.id, presetId],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
@@ -233,14 +234,12 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
 
     glAccounts.forEach(gl => {
       const clean = gl.gl_number.split('-')[0].replace(/\./g, '');
-      // Only map leaf accounts (no children)
       const hasChildren = glAccounts.some(other => {
         const otherClean = cleanGl(other.gl_number);
         return otherClean.startsWith(cleanGl(gl.gl_number)) && otherClean !== cleanGl(gl.gl_number);
       });
       if (hasChildren) return;
 
-      // Find matching rule (longest prefix match)
       let bestRule: typeof DEFAULT_BS_RULES[0] | null = null;
       for (const rule of DEFAULT_BS_RULES) {
         if (clean.startsWith(rule.prefix)) {
@@ -293,13 +292,12 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
     });
   }, [glAccounts, expandedRowIds]);
 
-  // Build grouped dropdown items: letter sections as headers, only leaf rows selectable
+  // Build grouped dropdown items
   const dropdownGroups = React.useMemo(() => {
     if (!bsStructure) return { assets: [] as any[], liabilities: [] as any[] };
     const letterRows = bsStructure.filter(r => r.type === 'letter');
     const buildGroup = (section: string) => {
       return letterRows.filter(l => l.section === section).map(letter => {
-        // Find leaf rows under this letter (arabic, or roman without children)
         const romanRows = bsStructure.filter(r => r.parent_id === letter.id && r.type === 'roman');
         const leafRows: any[] = [];
         romanRows.forEach(roman => {
@@ -310,7 +308,6 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
             leafRows.push({ ...roman, label: `${roman.row_code} ${roman.name}` });
           }
         });
-        // Direct arabic children of letter (e.g., C. → 1., 2., 3.)
         const directArabic = bsStructure.filter(r => r.parent_id === letter.id && r.type === 'arabic');
         directArabic.forEach(a => leafRows.push({ ...a, label: `${a.row_code} ${a.name}` }));
         return { letter, leafRows };
@@ -318,6 +315,11 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
     };
     return { assets: buildGroup('assets'), liabilities: buildGroup('liabilities') };
   }, [bsStructure]);
+
+  // P8: FinancialPageSkeleton instead of blank page
+  if (isLoadingStructure || isLoadingGlAccounts || isLoadingMappings) {
+    return <FinancialPageSkeleton title="Hozzárendelések betöltése..." />;
+  }
 
   return (
     <div className="space-y-4">
@@ -406,13 +408,18 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
   );
 }
 
-// ─── View Tab ───
-function BsViewTab({ presetId }: { presetId?: string }) {
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  BsViewTab (U9, U10, F11, F12, P7: onBalanceComputed callback)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalanceComputed?: (isBalanced: boolean) => void }) {
   const { selectedCompany } = useCompany();
   const { dateToFormatted: dateTo } = useDateRange();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [inThousands, setInThousands] = useState(true);
   const [hideZeroRows, setHideZeroRows] = useState(false);
+  const [sideBySide, setSideBySide] = useState(false); // F11
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
   const { data: exchangeRates } = useExchangeRates();
@@ -420,7 +427,8 @@ function BsViewTab({ presetId }: { presetId?: string }) {
   // Derive fiscal year from the global date picker
   const fiscalYear = dateTo ? new Date(dateTo).getFullYear() : new Date().getFullYear();
 
-  const { data: bsData, isLoading, isError, error: queryError } = useQuery({
+  // U10: retry: 1 instead of false, gcTime: 5000 instead of 0
+  const { data: bsData, isLoading, isError, error: queryError, refetch } = useQuery({
     queryKey: ['bs_report', selectedCompany?.id, presetId, dateTo, exchangeRates],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
@@ -438,9 +446,10 @@ function BsViewTab({ presetId }: { presetId?: string }) {
       return data;
     },
     enabled: !!selectedCompany?.id && !!presetId,
-    retry: false,
-    gcTime: 0,          // don't cache — prevents stale data flash on date switch
+    retry: 1,
+    gcTime: 5_000,
   });
+
 
   // 2nd-level drill-down: transaction items per GL account
   const { data: dbItems } = useQuery({
@@ -478,7 +487,6 @@ function BsViewTab({ presetId }: { presetId?: string }) {
 
   const expandAllView = () => {
     if (!bsData) return;
-    // Expand all: letters, romans with children, and arabics with GL
     const allExpandable = bsData.filter(r =>
       r.type === 'letter' ||
       (r.type === 'roman' && bsData.some(c => c.parent_id === r.bs_structure_id)) ||
@@ -494,36 +502,28 @@ function BsViewTab({ presetId }: { presetId?: string }) {
     if (!bsData) return { assets: [] as any[], liabilities: [] as any[], totalAssets: 0, totalLiabilities: 0 };
     const balanceMap: Record<string, number> = {};
 
-    // First pass: leaf balances
-    // Liabilities section: negate because GL credit balances are negative,
-    // but the balance sheet displays both sides as positive values
     bsData.forEach(row => {
       if (row.type === 'arabic' || (row.type === 'roman' && !bsData.some(r => r.parent_id === row.bs_structure_id))) {
         const raw = Number(row.current_balance) || 0;
-        balanceMap[row.bs_structure_id] = row.section === 'liabilities' ? -raw : raw;
+        balanceMap[row.bs_structure_id] = raw;
       }
     });
 
-    // Aggregate up: roman = sum of arabic children
     bsData.filter(r => r.type === 'roman').forEach(roman => {
       const children = bsData.filter(r => r.parent_id === roman.bs_structure_id);
       if (children.length > 0) {
         balanceMap[roman.bs_structure_id] = children.reduce((s, c) => s + (balanceMap[c.bs_structure_id] || 0), 0);
       }
-      // Leaf romans already handled in first pass — do NOT overwrite
     });
 
-    // Letter = sum of roman children
     bsData.filter(r => r.type === 'letter').forEach(letter => {
       const children = bsData.filter(r => r.parent_id === letter.bs_structure_id);
       balanceMap[letter.bs_structure_id] = children.reduce((s, c) => s + (balanceMap[c.bs_structure_id] || 0), 0);
     });
 
-    // Totals
     const totalAssets = bsData.filter(r => r.type === 'letter' && r.section === 'assets').reduce((s, r) => s + (balanceMap[r.bs_structure_id] || 0), 0);
     const totalLiabilities = bsData.filter(r => r.type === 'letter' && r.section === 'liabilities').reduce((s, r) => s + (balanceMap[r.bs_structure_id] || 0), 0);
 
-    // Total rows
     bsData.filter(r => r.type === 'total').forEach(t => {
       balanceMap[t.bs_structure_id] = t.section === 'assets' ? totalAssets : totalLiabilities;
     });
@@ -536,6 +536,15 @@ function BsViewTab({ presetId }: { presetId?: string }) {
       totalLiabilities,
     };
   }, [bsData]);
+
+  // P7: Notify parent about balance status
+  const { totalAssets, totalLiabilities, assets, liabilities } = processedData;
+  const isBalanced = Math.abs(totalAssets - totalLiabilities) < 0.01;
+  const difference = totalAssets - totalLiabilities;
+
+  React.useEffect(() => {
+    onBalanceComputed?.(isBalanced);
+  }, [isBalanced, onBalanceComputed]);
 
   // Determine which rows have expandable children
   const hasChildrenMap = React.useMemo(() => {
@@ -554,22 +563,27 @@ function BsViewTab({ presetId }: { presetId?: string }) {
   }, [bsData]);
 
   if (isLoading) return <FinancialPageSkeleton title="Mérleg betöltése..." />;
+
+  // U10: Error state with retry button
   if (isError) return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-3 p-4 rounded-xl border-2 bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-400">
         <AlertTriangle className="w-5 h-5 shrink-0" />
-        <div>
+        <div className="flex-1">
           <p className="font-bold">Hiba a mérleg betöltésekor</p>
           <p className="text-sm mt-1 opacity-80">{(queryError as any)?.message || 'Ismeretlen hiba. Ellenőrizd, hogy a get_bs_report RPC funkció le van-e futtatva a Supabase-ben.'}</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 gap-1.5 border-red-500/30 hover:bg-red-500/10"
+          onClick={() => refetch()}
+        >
+          <RefreshCw className="w-3.5 h-3.5" /> Újrapróbálás
+        </Button>
       </div>
     </div>
   );
-
-  const { assets, liabilities, totalAssets, totalLiabilities } = processedData;
-  const isBalanced = Math.abs(totalAssets - totalLiabilities) < 0.01;
-  const difference = totalAssets - totalLiabilities;
-
 
   const renderSection = (rows: any[]) => {
     return rows.map(row => {
@@ -603,7 +617,6 @@ function BsViewTab({ presetId }: { presetId?: string }) {
       if (isArabic) {
         const parentRoman = rows.find(r => r.bs_structure_id === row.parent_id);
         if (parentRoman) {
-          // Check roman is visible (its parent letter must be expanded)
           const grandparentLetter = rows.find(r => r.bs_structure_id === parentRoman.parent_id);
           if (grandparentLetter && !expandedRows.has(grandparentLetter.bs_structure_id)) {
             return <React.Fragment key={row.bs_structure_id}>
@@ -612,7 +625,6 @@ function BsViewTab({ presetId }: { presetId?: string }) {
               </div>
             </React.Fragment>;
           }
-          // Check roman itself is expanded
           if (!expandedRows.has(parentRoman.bs_structure_id)) {
             return <React.Fragment key={row.bs_structure_id}>
               <div className="hidden print:block">
@@ -632,6 +644,11 @@ function BsViewTab({ presetId }: { presetId?: string }) {
   const renderRowContent = (row: any, isLetter: boolean, isRoman: boolean, isArabic: boolean, isTotal: boolean, glAccounts: any[], hasGl: boolean, isExpanded: boolean, isClickable: boolean) => {
     const indent = isRoman ? 'pl-6' : isArabic ? 'pl-12' : '';
 
+    // F12: Highlight rows with >50% year-over-year change
+    const prevYearBal = Number(row.prior_year_balance) || 0;
+    const currBal = row.computedBalance || 0;
+    const hasSignificantChange = (isRoman || isArabic) && prevYearBal !== 0 && Math.abs((currBal - prevYearBal) / Math.abs(prevYearBal)) > 0.5;
+
     return (
       <>
         <div
@@ -640,7 +657,9 @@ function BsViewTab({ presetId }: { presetId?: string }) {
             isTotal ? "bg-primary/10 font-bold border-t-2 border-b-2 border-border/80 text-base" : "",
             isLetter ? "bg-primary/5 font-bold border-t border-border/60" : "",
             isRoman ? "font-semibold" : "",
-            isClickable ? "cursor-pointer" : ""
+            isClickable ? "cursor-pointer" : "",
+            // F12: significant change highlight
+            hasSignificantChange ? "bg-amber-500/5 border-l-2 border-l-amber-500/40" : ""
           )}
           onClick={() => isClickable && toggleRow(row.bs_structure_id)}
         >
@@ -657,9 +676,20 @@ function BsViewTab({ presetId }: { presetId?: string }) {
               {row.name}
             </span>
             {row.is_pnl_bridge && <span title="Automatikusan az Eredménykimutatásból"><Lock className="w-3.5 h-3.5 text-amber-500 ml-1" /></span>}
+            {/* F12: tooltip for significant change */}
+            {hasSignificantChange && (
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>Előző évhez képest &gt;50% változás</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
           <div className="col-span-2 text-right tabular-nums text-muted-foreground/50">
-            {formatValue(Number(row.prior_year_balance) || 0)}
+            {formatValue(prevYearBal)}
           </div>
           <div className="col-span-2 text-right tabular-nums text-muted-foreground/50">
             {formatValue(Number(row.prior_year_adjustment) || 0)}
@@ -667,7 +697,7 @@ function BsViewTab({ presetId }: { presetId?: string }) {
           <div className={cn("col-span-2 text-right tabular-nums", isTotal ? "text-primary text-base" : "", isLetter ? "font-bold" : "")}>
             {formatValue(row.computedBalance)}
             {(() => {
-              const prev = Number(row.prior_year_balance) || 0;
+              const prev = prevYearBal;
               const curr = row.computedBalance || 0;
               if (prev === 0 || curr === prev) return null;
               const pctChange = Math.round(((curr - prev) / Math.abs(prev)) * 100);
@@ -746,28 +776,24 @@ function BsViewTab({ presetId }: { presetId?: string }) {
     );
   };
 
+  // F11: Side-by-side table header (used in both single and side-by-side)
+  const tableHeader = (
+    <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 border-b text-sm font-bold uppercase text-muted-foreground select-none sticky top-0 z-10 backdrop-blur-sm">
+      <div className="col-span-1 text-center">Sor</div>
+      <div className="col-span-5">Megnevezés</div>
+      <div className="col-span-2 text-right">Előző év</div>
+      <div className="col-span-2 text-right">Módosítások</div>
+      <div className="col-span-2 text-right text-foreground">Tárgyév</div>
+    </div>
+  );
+
   return (
     <div className="space-y-4 content-animate">
-      {/* Balance Validator — hidden while refetching */}
-      {(
-      <div className={cn(
-        "flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
-        isBalanced
-          ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
-          : "bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-400"
-      )}>
-        {isBalanced ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-        <span className="font-bold">
-          {isBalanced ? '✓ A mérleg egyezik' : `✗ Eltérés: ${formatValue(difference)} ${inThousands ? 'E Ft' : 'Ft'}`}
-        </span>
-      </div>
-      )}
-
-      {/* M1: Balance Equality Indicator — below eltérés, above controls */}
+      {/* U9: Single balance equality indicator (removed duplicate banner) */}
       {totalAssets !== undefined && totalLiabilities !== undefined && (
         <div className={cn(
           "flex items-center justify-center gap-4 p-3 rounded-xl border-2 text-sm",
-          totalAssets === totalLiabilities
+          isBalanced
             ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
             : "bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-400"
         )}>
@@ -776,21 +802,20 @@ function BsViewTab({ presetId }: { presetId?: string }) {
             <div className="font-bold tabular-nums">{new Intl.NumberFormat('hu-HU').format(Math.round(totalAssets))}</div>
           </div>
           <div className="text-lg font-bold">
-            {totalAssets === totalLiabilities ? '⚖️ =' : '⚖️ ≠'}
+            {isBalanced ? '⚖️ =' : '⚖️ ≠'}
           </div>
           <div className="text-left">
             <div className="text-[10px] uppercase tracking-wider opacity-80">Források</div>
             <div className="font-bold tabular-nums">{new Intl.NumberFormat('hu-HU').format(Math.round(totalLiabilities))}</div>
           </div>
-          {totalAssets === totalLiabilities && (
-            <CheckCircle2 className="w-4 h-4 ml-2" />
-          )}
-          {totalAssets !== totalLiabilities && (
-            <AlertTriangle className="w-4 h-4 ml-2" />
+          {isBalanced ? <CheckCircle2 className="w-4 h-4 ml-2" /> : <AlertTriangle className="w-4 h-4 ml-2" />}
+          {!isBalanced && (
+            <span className="text-xs font-semibold ml-2">
+              Eltérés: {formatValue(difference)} {inThousands ? 'E Ft' : 'Ft'}
+            </span>
           )}
         </div>
       )}
-
 
       {/* Controls */}
       <div className="flex justify-between items-center bg-muted/30 p-4 rounded-xl border border-border/50 print:hidden">
@@ -802,6 +827,13 @@ function BsViewTab({ presetId }: { presetId?: string }) {
           <div className="flex items-center space-x-2">
             <Switch id="bs-hide-zero" checked={hideZeroRows} onCheckedChange={setHideZeroRows} />
             <Label htmlFor="bs-hide-zero" className="font-medium cursor-pointer">Nullás sorok elrejtése</Label>
+          </div>
+          {/* F11: Side-by-side toggle */}
+          <div className="flex items-center space-x-2">
+            <Switch id="bs-side-by-side" checked={sideBySide} onCheckedChange={setSideBySide} />
+            <Label htmlFor="bs-side-by-side" className="font-medium cursor-pointer flex items-center gap-1">
+              <Columns className="w-3.5 h-3.5" /> Hagyományos nézet
+            </Label>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -834,40 +866,79 @@ function BsViewTab({ presetId }: { presetId?: string }) {
         </div>
       </div>
 
-      {/* Table */}
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-      <div className="border rounded-md shadow-sm overflow-auto max-h-[70vh] bg-card">
-        <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 border-b text-sm font-bold uppercase text-muted-foreground select-none sticky top-0 z-10 backdrop-blur-sm">
-          <div className="col-span-1 text-center">Sor</div>
-          <div className="col-span-5">Megnevezés</div>
-          <div className="col-span-2 text-right">Előző év</div>
-          <div className="col-span-2 text-right">Módosítások</div>
-          <div className="col-span-2 text-right text-foreground">Tárgyév</div>
+      {/* F11: Side-by-side vs stacked layout */}
+      {sideBySide ? (
+        // Side-by-side (traditional balance sheet layout)
+        <div className="grid grid-cols-2 gap-4 print:grid-cols-2">
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
+              <div className="border rounded-md shadow-sm overflow-auto max-h-[70vh] bg-card">
+                <div className="p-3 bg-emerald-500/10 border-b font-bold text-sm uppercase tracking-wide text-emerald-700 dark:text-emerald-400 text-center sticky top-0 z-10">
+                  Eszközök (Aktívák)
+                </div>
+                {tableHeader}
+                <div className="divide-y divide-border/40">
+                  {renderSection(assets)}
+                </div>
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
+              <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
+
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
+              <div className="border rounded-md shadow-sm overflow-auto max-h-[70vh] bg-card">
+                <div className="p-3 bg-blue-500/10 border-b font-bold text-sm uppercase tracking-wide text-blue-700 dark:text-blue-400 text-center sticky top-0 z-10">
+                  Források (Passzívák)
+                </div>
+                {tableHeader}
+                <div className="divide-y divide-border/40">
+                  {renderSection(liabilities)}
+                </div>
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
+              <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         </div>
-        <div className="divide-y divide-border/40">
-          {renderSection(assets)}
-          <div className="h-4 bg-muted/30" /> {/* Separator */}
-          {renderSection(liabilities)}
-        </div>
-      </div>
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
-          <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuItem className="gap-2" onClick={() => {
-            const rows = [...assets, ...liabilities];
-            const csv = 'Sor;Megnevezés;Tárgyév\n' + rows.map(r => `${r.row_code};${r.name};${r.current_year_balance || 0}`).join('\n');
-            navigator.clipboard.writeText(csv);
-          }}><ClipboardCopy className="w-4 h-4" /> Másolás CSV-ként</ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
+      ) : (
+        // Stacked (default layout)
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <div className="border rounded-md shadow-sm overflow-auto max-h-[70vh] bg-card">
+              {tableHeader}
+              <div className="divide-y divide-border/40">
+                {renderSection(assets)}
+                <div className="h-4 bg-muted/30" /> {/* Separator */}
+                {renderSection(liabilities)}
+              </div>
+            </div>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
+            <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem className="gap-2" onClick={() => {
+              const rows = [...assets, ...liabilities];
+              const csv = 'Sor;Megnevezés;Tárgyév\n' + rows.map(r => `${r.row_code};${r.name};${r.current_year_balance || 0}`).join('\n');
+              navigator.clipboard.writeText(csv);
+            }}><ClipboardCopy className="w-4 h-4" /> Másolás CSV-ként</ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      )}
     </div>
   );
 }
 
-// ─── Main Page ───
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Main BalanceSheet (P7: no duplicate bsData query)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 export default function BalanceSheet() {
   const { selectedCompany } = useCompany();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -875,11 +946,13 @@ export default function BalanceSheet() {
   const setActiveTab = (val: string) => { setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('tab', val); return next; }, { replace: true }); };
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
 
-  const { data: exchangeRates } = useExchangeRates();
-  const { dateToFormatted: dateTo } = useDateRange();
-  const fiscalYear = dateTo ? new Date(dateTo).getFullYear() : new Date().getFullYear();
+  // P7: isBalanced comes from BsViewTab callback instead of a duplicate query
+  const [isBalanced, setIsBalanced] = useState(true);
+  const handleBalanceComputed = useCallback((balanced: boolean) => {
+    setIsBalanced(balanced);
+  }, []);
 
-  // Queries to compute validation warning
+  // GL accounts query for unassigned count
   const { data: glAccounts } = useQuery({
     queryKey: ['gl_accounts_bs', activePresetId],
     queryFn: async () => {
@@ -902,27 +975,8 @@ export default function BalanceSheet() {
     enabled: !!selectedCompany?.id && !!activePresetId
   });
 
-  const { data: bsData } = useQuery({
-    queryKey: ['bs_report', selectedCompany?.id, activePresetId, dateTo, exchangeRates],
-    queryFn: async () => {
-      if (!selectedCompany?.id || !activePresetId) return [];
-      const { data, error } = await supabase.rpc('get_bs_report', {
-        p_company_id: selectedCompany.id,
-        p_preset_id: activePresetId,
-        p_date_to: dateTo || null,
-        p_fiscal_year: fiscalYear,
-        p_exchange_rates: exchangeRates || {}
-      });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedCompany?.id && !!activePresetId,
-  });
-
   const unassignedCount = React.useMemo(() => {
     if (!glAccounts) return 0;
-    
-    // Find leaf nodes
     const cleanId = (id: string) => id ? String(id).replace(/\./g, '') : '';
     const rawData = glAccounts.map(dbItem => {
       const cid = cleanId(dbItem.gl_number);
@@ -937,35 +991,6 @@ export default function BalanceSheet() {
     const mappedIds = new Set(existingMappings?.map(m => m.gl_account_id) || []);
     return leafAccounts.filter(a => !mappedIds.has(a.id)).length;
   }, [glAccounts, existingMappings]);
-
-  const isBalanced = React.useMemo(() => {
-    if (!bsData) return true;
-    const balanceMap: Record<string, number> = {};
-
-    bsData.forEach(row => {
-      if (row.type === 'arabic' || (row.type === 'roman' && !bsData.some(r => r.parent_id === row.bs_structure_id))) {
-        const raw = Number(row.current_balance) || 0;
-        balanceMap[row.bs_structure_id] = row.section === 'liabilities' ? -raw : raw;
-      }
-    });
-
-    bsData.filter(r => r.type === 'roman').forEach(roman => {
-      const children = bsData.filter(r => r.parent_id === roman.bs_structure_id);
-      if (children.length > 0) {
-        balanceMap[roman.bs_structure_id] = children.reduce((s, c) => s + (balanceMap[c.bs_structure_id] || 0), 0);
-      }
-    });
-
-    bsData.filter(r => r.type === 'letter').forEach(letter => {
-      const children = bsData.filter(r => r.parent_id === letter.bs_structure_id);
-      balanceMap[letter.bs_structure_id] = children.reduce((s, c) => s + (balanceMap[c.bs_structure_id] || 0), 0);
-    });
-
-    const totalAssets = bsData.filter(r => r.type === 'letter' && r.section === 'assets').reduce((s, r) => s + (balanceMap[r.bs_structure_id] || 0), 0);
-    const totalLiabilities = bsData.filter(r => r.type === 'letter' && r.section === 'liabilities').reduce((s, r) => s + (balanceMap[r.bs_structure_id] || 0), 0);
-
-    return Math.abs(totalAssets - totalLiabilities) < 0.01;
-  }, [bsData]);
 
   useKeyboardShortcuts([
     { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: 'Nyomtatás' },
@@ -1037,7 +1062,10 @@ export default function BalanceSheet() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="pt-6"><BsViewTab presetId={activePresetId} /></CardContent>
+            <CardContent className="pt-6">
+              {/* P7: onBalanceComputed callback eliminates duplicate query */}
+              <BsViewTab presetId={activePresetId} onBalanceComputed={handleBalanceComputed} />
+            </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="mapping" className="mt-0 outline-none">

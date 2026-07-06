@@ -2,6 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-10
+**Utoljára frissítve:** 2026-06-29
 
 ## Context
 
@@ -31,14 +32,30 @@ A magyar adórendszer megköveteli a NAV Online Számla rendszer használatát. 
 - NAV-ból kapott számlák → `nav_invoices` tábla (+ `nav_invoice_items`)
 - A számlák automatikusan GL kategorizálást kapnak (PGMQ → Worker)
 
+**Partner caching (2026-06-29):**
+
+A `nav-auto-sync` és `nav-query-outbound-invoices` EF-ek a NAV számlákból automatikusan partner rekordokat hoznak létre/frissítenek a `partners` táblában. A logika:
+
+1. **Prefix-based dedup:** Az adószám első 8 számjegye (törzsszám) alapján keres meglévő partnert — így `11223344-2-41` és `11223344-1-03` nem hoz létre duplikátumot
+2. **Szelektív frissítés:** Meglévő partner esetén csak `address` (ha NULL) és `partner_type → 'both'` (ha eltérő irány) frissül — soha nem ír felül meglévő adatot
+3. **Batch insert:** Csak tényleg új partnerek kerülnek INSERT-be
+
+> Részletek: [A-024: Partner Upsert Strategy](./A-024-partner-upsert-strategy.md)
+
 ## Consequences
 
 **Pozitív:**
 - Kétirányú szinkronizáció — a felhasználó nem kell manuálisan bevinnie a NAV számlákat
 - Automatikus napi szinkron — mindig naprakész adatok
 - XML ↔ JSON konverzió az Edge Function-ben — a frontend JSON-t kap
+- Partner caching — partnerek automatikusan megjelennek a partnertörzsben
 
 **Negatív:**
 - A NAV API instabil (időnként 500-as hibákat dob, lassú válaszidő)
 - Az XML aláírás komplex (AES-128-ECB, SHA-512 hash, RequestSignature)
 - A NAV API rate limit-eket alkalmaz (nem dokumentált)
+
+## Kapcsolódó
+- [A-024: Partner Upsert Strategy](./A-024-partner-upsert-strategy.md) — partner dedup, foreign, both upgrade
+- [A-010: Credential titkosítás](./A-010-credential-encryption.md) — NAV credentials
+

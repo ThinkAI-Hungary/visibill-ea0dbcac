@@ -43,6 +43,7 @@ import { formatCurrency } from '@/lib/utils';
 import { useScopedBasePath } from '@/lib/navigation';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import { reportError } from '@/lib/errorReporter';
 
 interface ParsedRow {
   position_number: string;
@@ -77,6 +78,7 @@ export default function ShipmentImportPage() {
   const [isParsing, setIsParsing] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [isImporting, setIsImporting] = useState(false);
+  const [isMatching, setIsMatching] = useState(false); // EF retroaktív matching fut
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [deletingBatchId, setDeletingBatchId] = useState<string | null>(null);
   const [confirmDeleteBatch, setConfirmDeleteBatch] = useState<ImportBatch | null>(null);
@@ -88,7 +90,7 @@ export default function ShipmentImportPage() {
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
-        .from('shipment_import_batches' as any)
+        .from('shipment_import_batches')
         .select('*')
         .eq('company_id', selectedCompany.id)
         .order('created_at', { ascending: false });
@@ -257,7 +259,7 @@ export default function ShipmentImportPage() {
     try {
       // 1. Create Import Batch entry
       const { data: batch, error: batchError } = await supabase
-        .from('shipment_import_batches' as any)
+        .from('shipment_import_batches')
         .insert({
           company_id: selectedCompany.id,
           file_name: file.name,
@@ -277,7 +279,7 @@ export default function ShipmentImportPage() {
       // 2. Check which position_numbers already exist for this company
       const positionNumbers = parsedRows.map(r => r.position_number);
       const { data: existingShipments, error: existingError } = await supabase
-        .from('shipments' as any)
+        .from('shipments')
         .select('position_number, match_status, matched_invoice_id')
         .eq('company_id', selectedCompany.id)
         .in('position_number', positionNumbers);
@@ -335,7 +337,7 @@ export default function ShipmentImportPage() {
       let insertedCount = 0;
       if (newRows.length > 0) {
         const { error: insertError } = await supabase
-          .from('shipments' as any)
+          .from('shipments')
           .insert(newRows);
         if (insertError) throw insertError;
         insertedCount = newRows.length;
@@ -345,7 +347,7 @@ export default function ShipmentImportPage() {
       let updatedCount = 0;
       if (updateRows.length > 0) {
         const { error: upsertError } = await supabase
-          .from('shipments' as any)
+          .from('shipments')
           .upsert(updateRows, { onConflict: 'company_id,position_number' });
         if (upsertError) throw upsertError;
         updatedCount = updateRows.length;
@@ -355,7 +357,7 @@ export default function ShipmentImportPage() {
 
       // 6. Update batch status to completed with breakdown
       await supabase
-        .from('shipment_import_batches' as any)
+        .from('shipment_import_batches')
         .update({
           status: 'completed',
           imported_rows: insertedCount,
@@ -379,14 +381,35 @@ export default function ShipmentImportPage() {
       setFile(null);
       setParsedRows([]);
       
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ['shipments', selectedCompany.id] });
+      // Invalidate queries — 'shipments-matching' is the key used by ShipmentMatchingDashboard
+      queryClient.invalidateQueries({ queryKey: ['shipments-matching', selectedCompany.id] });
       queryClient.invalidateQueries({ queryKey: ['shipment-import-batches', selectedCompany.id] });
+      queryClient.invalidateQueries({ queryKey: ['escalations', selectedCompany.id] });
 
-      // Navigate back to shipments
-      setTimeout(() => {
-        navigate(`${basePath}/shipments`);
-      }, 1000);
+      // DR-031: Retroaktív matching — invoice-first életciklus kezelés
+      // FONTOS: await-eljük az EF hívást a navigate() ELŐTT.
+      // isMatching=true alatt a gomb disabled és a progress szöveg változik.
+      setIsMatching(true);
+      try {
+        const efPromise = supabase.functions.invoke('shipment-retroactive-match', {
+          body: { company_id: selectedCompany.id, import_session_id: batch.id },
+        });
+        const timeout = new Promise<void>((resolve) => setTimeout(resolve, 10000));
+        const { error: efError } = await Promise.race([efPromise, timeout.then(() => ({ error: null, data: null }))]);
+        if (efError) {
+          reportError({ type: 'edge_function', component: 'ShipmentImportPage', action: 'warn', message: 'Retroactive match EF error (non-critical)', error: efError });
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['escalated-matches', selectedCompany.id] });
+        }
+      } catch (efErr) {
+        reportError({ type: 'edge_function', component: 'ShipmentImportPage', action: 'warn', message: 'Retroactive match call failed (non-critical)', error: efErr });
+      } finally {
+        setIsMatching(false);
+      }
+
+      // Navigálás csak az EF befejezése (vagy timeout) után
+      navigate(`${basePath}/shipments`);
+
 
     } catch (err: any) {
       toast({
@@ -477,23 +500,27 @@ export default function ShipmentImportPage() {
                       </Button>
                     </div>
 
-                    {isImporting && (
+                    {(isImporting || isMatching) && (
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs font-semibold">
-                          <span>Feltöltés és mentés...</span>
-                          <span>{importProgress}%</span>
+                          <span>
+                            {isMatching
+                              ? '⚡ Párosítás folyamatban...'
+                              : 'Feltöltés és mentés...'}
+                          </span>
+                          <span>{isMatching ? '100%' : `${importProgress}%`}</span>
                         </div>
-                        <Progress value={importProgress} className="h-2" />
+                        <Progress value={isMatching ? 100 : importProgress} className="h-2" />
                       </div>
                     )}
 
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => { setFile(null); setParsedRows([]); }} disabled={isImporting}>
+                      <Button variant="outline" onClick={() => { setFile(null); setParsedRows([]); }} disabled={isImporting || isMatching}>
                         Mégse
                       </Button>
-                      <Button onClick={handleImport} disabled={isImporting || parsedRows.length === 0}>
+                      <Button onClick={handleImport} disabled={isImporting || isMatching || parsedRows.length === 0}>
                         <Check className="h-4 w-4 mr-2" />
-                        Importálás indítása ({parsedRows.length} sor)
+                        {isMatching ? 'Párosítás...' : `Importálás indítása (${parsedRows.length} sor)`}
                       </Button>
                     </div>
                   </div>
@@ -720,7 +747,7 @@ export default function ShipmentImportPage() {
                 try {
                   // 1. Delete all shipments that belong to this batch
                   const { error: shipmentsError } = await supabase
-                    .from('shipments' as any)
+                    .from('shipments')
                     .delete()
                     .eq('import_batch_id', confirmDeleteBatch.id);
 
@@ -728,7 +755,7 @@ export default function ShipmentImportPage() {
 
                   // 2. Delete the batch record itself
                   const { error: batchError } = await supabase
-                    .from('shipment_import_batches' as any)
+                    .from('shipment_import_batches')
                     .delete()
                     .eq('id', confirmDeleteBatch.id);
 
@@ -739,8 +766,8 @@ export default function ShipmentImportPage() {
                     description: `${confirmDeleteBatch.file_name} és a hozzá tartozó fuvar sorok sikeresen törölve.`,
                   });
 
-                  // Invalidate queries to refresh data
-                  queryClient.invalidateQueries({ queryKey: ['shipments', selectedCompany?.id] });
+                  // Invalidate queries — 'shipments-matching' is the key used by ShipmentMatchingDashboard
+                  queryClient.invalidateQueries({ queryKey: ['shipments-matching', selectedCompany?.id] });
                   queryClient.invalidateQueries({ queryKey: ['shipment-import-batches', selectedCompany?.id] });
                 } catch (err: any) {
                   toast({

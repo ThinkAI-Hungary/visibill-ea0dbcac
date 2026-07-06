@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
 import { useTaoYearly } from '@/hooks/useAdminData';
 
 // 11-step year-end wizard steps

@@ -1,6 +1,6 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.3 | **Dátum:** 2026-06-22  
+> **Verzió:** 1.4 | **Dátum:** 2026-06-27  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx)  
 > **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md)
 
@@ -92,7 +92,7 @@ Visibill
 │   ├── /analytics/:tab?           Analitika
 │   └── /vat-return/:tab?          ÁFA bevallás
 │
-├── Accounty (/accounty/)
+├── eaisyBooks (/accounty/)                ← korábban: Accounty
 │   ├── /                          Portfólió (Grid/Lista/Kanban nézet)
 │   ├── /client/:id                Ügyfél részletes nézet
 │   ├── /client/:id/invoices       Ügyfél számlái
@@ -115,7 +115,7 @@ Visibill
 │   ├── /payroll/:id/portal        Ügyfélportál preview
 │   ├── /payroll/:id/tax-params    Adóparaméterek
 │   ├── /tickets/:ticketId?        Hibajegyek
-│   ├── /settings                  Accounty beállítások
+│   ├── /settings                  eaisyBooks beállítások
 │   ├── /help                      Segítség
 │   └── /new-client                Új ügyfél wizard (meghívó kód + manuális létrehozás)
 │
@@ -276,9 +276,9 @@ Sidebar
 
 ---
 
-## 8. [Accounty] Layout Struktúra
+## 8. [eaisyBooks] Layout Struktúra (kódban: AccountyLayout)
 
-Az Accounty modul **teljesen önálló layout-ot** használ (`AccountyLayout`), amely független a fő app `ProtectedLayout`-jától.
+Az eaisyBooks modul **teljesen önálló layout-ot** használ (`AccountyLayout`), amely független a fő app `ProtectedLayout`-jától.
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -325,12 +325,77 @@ Az Accounty modul **teljesen önálló layout-ot** használ (`AccountyLayout`), 
 ```
 
 **Különbségek a fő app-tól:**
-| Tulajdonság | Fő app (ProtectedLayout) | Accounty (AccountyLayout) |
+| Tulajdonság | Fő app (ProtectedLayout) | eaisyBooks (AccountyLayout) |
 |---|---|---|
-| Sidebar | AppSidebar (19 menüpont) | Saját Accounty sidebar (9 menüpont + payroll submenus) |
+| Sidebar | AppSidebar (19 menüpont) | Saját eaisyBooks sidebar (9 menüpont + payroll submenus) |
 | URL pattern | `/:companyId/:dateRange/page` | `/accounty/page` |
 | Company context | GlobalDatePicker + CompanySelector | Nem használ CompanySelector (multi-client) |
-| Branding | eaisybill | eaisybill \| Accounty (piros gradiens) |
+| Branding | eaisyBill | eaisyBill \| eaisyBooks (piros gradiens) |
 | Role | Owner/Admin/Member/Employee | admin/könyvelő |
 | Command palette | Nincs | Ctrl+K — oldalak + ügyfelek keresése |
+
+---
+
+## 9. Oldal-szintű Funkciók (2026-06-26)
+
+### Partnertörzs (`/partners`)
+
+**Layout:** Master–Detail splitscreen (bal: lista, jobb: detail panel)
+
+**Master lista:**
+- Szűrők: típus (Vevő / Szállító / Mindkettő) + szabad szöveges keresés
+- Táblázat oszlopok: Név/Cím, Adószám, Típus, Számlák (db)
+- Számlaszám aggregáció: **mindkét forrásból** (NAV + Beküldött), adószám-prefix alapján
+
+**Detail panel (jobb oldal):**
+- Cégadatok: Adószám, Székhely, Email-cím
+- Könyvelési beállítás: „Bekerüljön a könyvelésbe?" toggle (partner + összes számlája)
+- Számlák szekció:
+  - **Keresőmező** — számlaszám alapú szűrés
+  - **Tab switcher** — NAV | Beküldött (darabszámmal)
+  - **Kattintható kártyák** → `PartnerInvoiceDetailDialog`
+
+**PartnerInvoiceDetailDialog:**
+- Fejléc: számlaszám, ellenpartner, dátumok, bruttó összeg, fizetési mód, irány badge, forrás badge
+- Tételek táblázat: Megnevezés, Mennyiség, Egység, Nettó, ÁFA, Bruttó, **Főkönyvi szám**
+- Adatforrás: `nav_invoice_items` (NAV) vagy `invoice_items` (Beküldött)
+
+> **Kapcsolódó döntés:** [P-040](./decisions/P-040-partners-invoice-panel.md)
+
+---
+
+### Kategóriák (`/categories`)
+
+**Layout:** Accordion lista — egy GL kategória / sor
+
+**Funkciók:**
+- Kategóriákhoz hozzárendelt számlák összegének megjelenítése
+- **Multi-currency:** ha több deviza van, `886 778 Ft | 1 200 USD` formátumban jelenik meg
+- **Hozzárendelési kereső:** mindkét forrásból (NAV + Beküldött) javasol számlákat
+
+> **Kapcsolódó döntés:** [P-041](./decisions/P-041-categories-multicurrency-search.md)
+
+---
+
+### Számla Tételek (`InvoiceItemsDialog`)
+
+**Layout:** Dialógus — számlatételek listája GL besorolás szerkesztéssel
+
+**Megnyitás:**
+- NAV számla sorból → "Tételek" gomb → `source='nav'`
+- Beküldött számla sorból → "Tételek" gomb → `source='submitted'`
+
+**Tételek táblázat:**
+- Oszlopok: Sorszám, Megnevezés, Mennyiség, Egységár, Nettó, ÁFA, Bruttó, **Főkönyvi szám (GL)**
+- GL szerkesztés: ceruza ikon → keresőmezős GL szám választó (`Command` komponens)
+- Preset-alapú: a GL besorolás a cég aktív preset-jéhez (`useActivePreset`) kötődik
+
+**GL Twin Sync (2026-06-27):**
+- Ha a szerkesztett számla párosítva van (NAV `invoice_number` ↔ Beküldött `bizonylatsorszam` normalizálva)
+- A rendszer automatikusan megkeresi a **"testvér" tételt** a másik táblában azonos `line_number`-rel
+- **Egyetlen batch RPC** (`override_gl_classifications_batch`) frissíti mindkét oldalt
+- Toast visszajelzés: *„Főkönyvi besorolás frissítve. (párosított számla is frissítve)"*
+- Graceful degradation: ha nincs twin, csak az elsődleges tétel frissül
+
+> **Kapcsolódó döntés:** [P-043](./decisions/P-043-gl-twin-sync.md) · [P-019](./decisions/P-019-gl-suggestion.md)
 

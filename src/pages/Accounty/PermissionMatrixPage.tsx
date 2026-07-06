@@ -9,6 +9,7 @@ import {
   Eye, Pencil, ToggleLeft, ToggleRight, Layers,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 // ── Types ──
 interface AccountantUser {
@@ -100,8 +101,8 @@ function usePermissionMatrix() {
       if (assignErr) throw assignErr;
 
       // 3. Get unique user IDs and company IDs
-      const userIds = [...new Set((assignments || []).map((a: any) => a.accountant_user_id))];
-      const companyIds = [...new Set((assignments || []).map((a: any) => a.company_id))];
+      const userIds = [...new Set((assignments || []).map((a) => a.accountant_user_id))];
+      const companyIds = [...new Set((assignments || []).map((a) => a.company_id))];
 
       // 4. Get user profiles
       const { data: profiles } = await supabase
@@ -110,7 +111,7 @@ function usePermissionMatrix() {
         .in('user_id', userIds);
 
       const users: AccountantUser[] = userIds.map(uid => {
-        const profile = (profiles || []).find((p: any) => p.user_id === uid);
+        const profile = (profiles || []).find((p) => p.user_id === uid);
         return {
           id: uid,
           email: '',
@@ -128,11 +129,11 @@ function usePermissionMatrix() {
 
       // 6. Get module permissions for all users in this firm
       const { data: modulePermsRaw } = await supabase
-        .from('accounty_module_permissions' as any)
+        .from('accounty_module_permissions')
         .select('id, user_id, module_name, can_read, can_write')
         .eq('accounting_firm_id', firmId);
 
-      const modulePerms: ModulePermRow[] = (modulePermsRaw as any[] || []).map((r: any) => ({
+      const modulePerms: ModulePermRow[] = (modulePermsRaw as { id: string; user_id: string; module_name: string; can_read: boolean; can_write: boolean }[] || []).map((r) => ({
         id: r.id,
         userId: r.user_id,
         moduleName: r.module_name,
@@ -143,12 +144,12 @@ function usePermissionMatrix() {
       return {
         firmId,
         users,
-        companies: (companies || []).map((c: any): CompanyInfo => ({
+        companies: (companies || []).map((c): CompanyInfo => ({
           id: c.id,
           name: c.name,
           taxNumber: c.tax_number,
         })),
-        assignments: (assignments || []).map((a: any): Assignment => ({
+        assignments: (assignments || []).map((a): Assignment => ({
           id: a.id,
           accountantUserId: a.accountant_user_id,
           companyId: a.company_id,
@@ -180,7 +181,7 @@ function useUpdateAssignmentRole() {
       queryClient.invalidateQueries({ queryKey: ['permission-matrix'] });
       toast({ title: 'Szerepkör frissítve', description: 'A változás azonnal érvénybe lépett.' });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
     },
   });
@@ -209,7 +210,7 @@ function useCreateAssignment() {
       queryClient.invalidateQueries({ queryKey: ['permission-matrix'] });
       toast({ title: 'Hozzárendelés létrehozva', description: 'A könyvelő hozzárendelve a céghez.' });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
     },
   });
@@ -231,7 +232,7 @@ function useRemoveAssignment() {
       queryClient.invalidateQueries({ queryKey: ['permission-matrix'] });
       toast({ title: 'Hozzárendelés törölve', description: 'A könyvelő el lett távolítva a cégtől.' });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
     },
   });
@@ -253,7 +254,7 @@ function useToggleModulePermission() {
       if (params.existingId) {
         // Update existing
         const { error } = await supabase
-          .from('accounty_module_permissions' as any)
+          .from('accounty_module_permissions')
           .update({
             can_read: params.canRead,
             can_write: params.canWrite,
@@ -264,7 +265,7 @@ function useToggleModulePermission() {
       } else {
         // Insert new
         const { error } = await supabase
-          .from('accounty_module_permissions' as any)
+          .from('accounty_module_permissions')
           .insert({
             accounting_firm_id: params.firmId,
             user_id: params.userId,
@@ -280,7 +281,7 @@ function useToggleModulePermission() {
       queryClient.invalidateQueries({ queryKey: ['accounty-module-permissions'] });
       toast({ title: 'Modul jogosultság frissítve' });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
     },
   });
@@ -406,7 +407,7 @@ function PermissionToggle({ canRead, canWrite, defaultRead, defaultWrite, onTogg
 
 export default function PermissionMatrixPage() {
   const { isAdmin } = useAccountyRole();
-  const { data, isLoading } = usePermissionMatrix();
+  const { data, isLoading, isError: matrixError, refetch: refetchMatrix } = usePermissionMatrix();
   const updateRole = useUpdateAssignmentRole();
   const createAssignment = useCreateAssignment();
   const removeAssignment = useRemoveAssignment();
@@ -528,6 +529,10 @@ export default function PermissionMatrixPage() {
         </div>
       </div>
     );
+  }
+
+  if (matrixError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a jogosultsági mátrixot." onRetry={() => refetchMatrix()} />;
   }
 
   if (isLoading) {

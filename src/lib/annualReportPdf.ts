@@ -171,12 +171,16 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
       '[Osztalék]': fmt(data.dividendAmount || 0),
       '[Eredménytartalék]': fmt(data.retainedEarnings || 0),
     };
-    // Escape raw user text first, then substitute placeholders (vars are already escaped).
-    let result = esc(text);
+    // B10 FIX: Don't esc() the text body — it may contain intentional HTML from
+    // the Rich Text Editor (<b>, <i>, <ul>, <li>, <br>, <p>, etc.).
+    // Only escape the variable VALUES (already done above with esc()).
+    // Sanitize: strip dangerous tags (script, iframe, etc.) but keep formatting.
+    let result = text
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
+      .replace(/on\w+="[^"]*"/gi, '');
     for (const [key, val] of Object.entries(vars)) {
-      // Match the escaped form of [Key] since we escaped the text above.
-      const escapedKey = esc(key);
-      result = result.split(escapedKey).join(val);
+      result = result.split(key).join(val);
     }
     return result;
   };
@@ -253,10 +257,11 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
       // Remove placeholder markers like [AUTOMATIKUS TÁBLÁZAT...] from text
       const cleanText = text.replace(/\[AUTOMATIKUS TÁBLÁZAT[^\]]*\]/g, '');
 
+      // B10: Use the RTE HTML directly (don't wrap in <p> — it may contain <p>, <ul>, <ol> etc.)
       return `
         <div style="margin-bottom:18px;page-break-inside:avoid;">
           <h3 style="margin:0 0 4px;color:#1f2937;font-size:12px;border-left:3px solid #10b981;padding-left:8px;">${esc(tmpl.section_title)}</h3>
-          <p style="margin:0;font-size:9.5px;line-height:1.6;color:#374151;padding-left:11px;">${cleanText.replace(/\n/g, '<br>')}</p>
+          <div style="margin:0;font-size:9.5px;line-height:1.6;color:#374151;padding-left:11px;">${cleanText}</div>
           ${dynamicTableHtml}
         </div>`;
     }).join('');

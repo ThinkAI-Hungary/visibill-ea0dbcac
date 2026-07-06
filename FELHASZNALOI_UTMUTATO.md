@@ -358,6 +358,10 @@ Az adófizetéseket is rögzítheti a rendszerben:
    - **Hivatkozási szám**: NAV utalási azonosító
 4. Mentse el
 
+### Pénzforgalmi ÁFA kezelése
+
+A VisiBill támogatja a **pénzforgalmi szemléletű** adózást. A rendszer figyeli, hogy egy számla mikor lett ténylegesen kifizetve (banki bizonylat alapján), és az ÁFA-t csak a kifizetés napjával veszi figyelembe a bevallás tervezetben.
+
 ---
 
 ## Email integráció
@@ -396,6 +400,15 @@ Ha nem kívánja tovább használni az email szinkronizálást:
 1. Menjen az **"Integrációk"** oldalra
 2. Kattintson a **"Leválasztás"** gombra a Nylas kártyán
 3. Erősítse meg a műveletet
+
+---
+
+## Bankkivonatok és Binx
+
+A VisiBill nemcsak számlákat, hanem bankkivonatokat is képes feldolgozni:
+- **Támogatott formátumok**: OTP, CIB, Raiffeisen PDF/XLS.
+- **Binx e-pénz**: Speciális támogatás a Binx PDF kivonatokhoz. Ezeket a rendszer natív módon dolgozza fel, így az adatok kinyerése 100%-os pontosságú.
+- **Párosítás**: A feltöltött banki tranzakciókat a rendszer automatikusan megpróbálja hozzárendelni a nyitott számlákhoz.
 
 ---
 
@@ -685,5 +698,5 @@ Magyar és angol nyelven is.
 
 ---
 
-*Utolsó frissítés: 2025. november*  
-*Verzió: 1.0*
+*Utolsó frissítés: 2026. augusztus*  
+*Verzió: 1.2 (Binx & Cash VAT Support)*

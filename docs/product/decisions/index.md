@@ -1,7 +1,7 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-06-16  
-> **Összesen:** 33 döntés | ✅ Decided: 30 | ⛔ Superseded: 2 | 🔴 Open: 1
+> **Utoljára frissítve:** 2026-07-05  
+> **Összesen:** 39 döntés | ✅ Decided: 36 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
 
@@ -36,6 +36,7 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | P-012 | Számla szerkesztés (3 szintű dialógus) | ✅ Decided | [P-012](./P-012-invoice-editing.md) |
 | P-013 | Feltöltés UX (multi-file batch upload) | ✅ Decided | [P-013](./P-013-upload-ux.md) |
 | P-015 | Tömeges műveletek (checkbox bulk actions) | ✅ Decided | [P-015](./P-015-bulk-actions.md) |
+| P-045 | PDF Export UX & Banner viselkedés (auto-download, fallback, toast) | ✅ Decided | [P-045](./P-045-pdf-export-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 
@@ -52,13 +53,14 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | P-019 | GL kategorizálás javaslat (manuális elfogadás) | ✅ Decided | [P-019](./P-019-gl-suggestion.md) |
 | P-020 | Beszámoló workflow (3 oldal, lineáris) | ✅ Decided | [P-020](./P-020-report-workflow.md) |
 | P-021 | Export formátumok (CSV + PDF) | ✅ Decided | [P-021](./P-021-export-formats.md) |
+| P-043 | GL besorolás NAV ↔ Beküldött dual-table szinkronizáció (twin sync) | ✅ Decided | [P-043](./P-043-gl-twin-sync.md) |
 
 ## 🔔 Értesítések & Kommunikáció
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-022 | Email értesítés típusok (granular toggle) | ✅ Decided | [P-022](./P-022-email-notifications.md) |
-| P-023 | In-app értesítési center (nincs, toast marad) | ✅ Decided | [P-023](./P-023-notification-center.md) |
+| P-023 | In-app értesítési center (3 rétegű toast: Realtime + session poll + catch-up) | ✅ Decided | [P-023](./P-023-notification-center.md) |
 | P-024 | Heti/havi összefoglaló (minimál számok) | ✅ Decided | [P-024](./P-024-summary-emails.md) |
 
 ## ⚙️ Beállítások & Profil
@@ -77,11 +79,11 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | P-029 | Limit kezelés | ⛔ Superseded | [P-029](./P-029-limit-handling.md) |
 | P-030 | Trial → fizetős konverzió flow | 🔴 Open | [P-030](./P-030-trial-conversion.md) |
 
-## 💼 Accounty
+## 💼 eaisyBooks
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| P-031 | Accounty layout & navigáció | ✅ Decided | [P-031](./P-031-accounty-layout.md) |
+| P-031 | eaisyBooks layout & navigáció | ✅ Decided | [P-031](./P-031-accounty-layout.md) |
 | P-032 | ÁFA bevallás workflow | ✅ Decided | [P-032](./P-032-vat-return-workflow.md) |
 | P-033 | Bérszámfejtési ciklus workflow | ✅ Decided | [P-033](./P-033-payroll-cycle.md) |
 | P-034 | Jóváhagyási sor (Approval Queue) | ✅ Decided | [P-034](./P-034-approval-queue.md) |
@@ -104,3 +106,16 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 |---|--------|---------|------|
 | P-036 | Management Dashboard UI és navigáció | ✅ Decided | [P-036](./P-036-management-dashboard.md) |
 
+## 👥 Partnertörzs
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-040 | Partnertörzs dual-table számlák + interaktív detail panel | ✅ Decided | [P-040](./P-040-partners-invoice-panel.md) |
+| P-044 | Külföldi partner megjelenítés (FOREIGN: elrejtése, badge) | ✅ Decided | [P-044](./P-044-foreign-partner-display.md) |
+
+## 🏷️ Kategóriák
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-041 | Kategóriák multi-currency összeg + arány konzisztencia + összeg kimutatás | ✅ Decided | [P-041](./P-041-categories-multicurrency-search.md) |
+| P-042 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [P-042](./P-042-categories-projects-sync.md) |

@@ -1,7 +1,7 @@
 # A-019: Management Dashboard Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12 (last updated 2026-06-21)
+**Date:** 2025-12 (last updated 2026-07-05)
 
 ## Context
 
@@ -46,7 +46,7 @@ if (requesterProfile?.role !== "management" && requesterProfile?.role !== "think
 
 ### API Design: Action-based Query Params
 
-Egyetlen Edge Function, 8 action:
+Egyetlen Edge Function, 13 action:
 
 | Action | Params | Visszatérés |
 |---|---|---|
@@ -56,8 +56,12 @@ Egyetlen Edge Function, 8 action:
 | `user-permissions` | `userId` | Felhasználó modul jogosultságai (eaisybill + accounty modulok, read/write) |
 | `update-permissions` | POST body: `{ userId, permissions[] }` | Jogosultságok frissítése |
 | `errors` | `page`, `pageSize`, `sortCol`, `sortDir`, `search`, `filterSource`, `filterCategory`, `filterCompanyId`, `filterUserId` | totalErrors, last24hErrors, mostAffectedCompany, mostAffectedUser, topErrorCategory, errors[], totalRows |
-| `delete-errors` | POST body: `{ ids }` | Hibák törlése az `app_error_logs` táblából |
-| `retry-errors` | POST body: `{ ids, targetQueue?, targetCategory? }` | Hibák újraküldése PGMQ queue-ba |
+| `delete-errors` | POST body: `{ ids }` | Hibák törlése (app_error_logs: DELETE, upload táblák: dismissed) |
+| `delete-all-errors` | POST (no body) | Összes hiba törlése: app_error_logs DELETE + upload táblák error→dismissed |
+| `retry-errors` | POST body: `{ ids, targetQueue?, targetCategory? }` | Hibák újraküldése PGMQ queue-ba (pipeline override) |
+| `files` | `page`, `pageSize`, `sortBy`, `sortDir`, `search`, `companyId`, `status`, `source_table`, `dateFrom`, `dateTo` | KPI: total/processing/error/done, topCompany. Fájlok lapozott listája 4 upload táblából (invoice/transaction/bank_statement/report_uploads) |
+| `update-file-status` | POST body: `{ files: [{id, source_table}], targetStatus }` | Bulk fájl státusz módosítás. `done` → automatikus mapping: `processed` (invoice_uploads) / `completed` (többi). Max 200 fájl/batch. Nem triggerel PGMQ worker-t (kozmetikai változás). |
+| `superadmin-module-data` | `companyId`, `module`, `page`, `pageSize`, `dateFrom`, `dateTo`, `search` | Cégenként 27 modul bármelyikének lapozott adatai (rows[], totalCount) |
 
 ### Adatforrások
 
@@ -68,10 +72,30 @@ Az Edge Function `service_role` klienssel az alábbi táblákat olvassa:
 | `companies` | Cég lista (id, name, tax_number) |
 | `company_members` | Cég-user kapcsolat (role, created_at) |
 | `profiles` | Felhasználó info (name, role) — kiszűri a `management` role-t |
-| `invoices` | Számlaszám cégenkénti összesítés |
-| `nav_invoices` | NAV számlák összesítés |
-| `transactions` | Tranzakciók összesítés |
-| `salary` | Bérszámfejtés összesítés |
+| `invoices` | Számlák (overview összesítés + superadmin modul) |
+| `nav_invoices` | NAV számlák (overview + superadmin) |
+| `transactions` | Tranzakciók (overview + superadmin) |
+| `salary` | Bérszámfejtés (overview + superadmin) |
+| `petty_cash_entries` | Házipénztár (superadmin) |
+| `categories` | Kategóriák (superadmin) |
+| `projects` | Projektek (superadmin) |
+| `partners` | Partnertörzs (superadmin) |
+| `fixed_assets` | Tárgyi eszközök (superadmin) |
+| `shipments` | Fuvarok (superadmin) |
+| `annual_reports` | Éves beszámolók (superadmin) |
+| `accounty_assignments` | eaisyBooks hozzárendelések (overview `hasEaisyBooks` flag + superadmin) |
+| `accounty_tax_profiles` | Adó profilok (superadmin) |
+| `accounty_missing_items` | Hiányzó dokumentumok (superadmin) |
+| `accounty_deadlines` | Határidők (superadmin) |
+| `accounty_employees` | Alkalmazottak (superadmin) |
+| `accounty_payroll_cycles` | Bérszámfejtési ciklusok (superadmin) |
+| `accounty_filings` | Bevallások (superadmin) |
+| `accounty_tao_yearly` | TAO adatok (superadmin) |
+| `accounty_audit_log` | Audit napló (superadmin) |
+| `accounty_documents` | Dokumentumok (superadmin) |
+| `accounty_templates` | Sablonok — **globális**, nincs company_id szűrés (superadmin) |
+| `accounty_job_codes` | Jogviszony kódok — **globális** (superadmin) |
+| `accounty_legal_updates` | Jogszabályfigyelő — **globális** (superadmin) |
 | `llm_koltsegek` | LLM token/költség részletezés (szerver-oldali lapozás) |
 | `app_error_logs` | Centralizált hibalogok (frontend, worker, webhook, mailgun) |
 | `audit_logs` | Utolsó aktivitás (company-detail) |
@@ -132,15 +156,52 @@ Az Edge Function **mindig érvényes JSON-t ad vissza** — hiba esetén üres a
 - A frontend **soha nem kapja meg** a service_role kulcsot
 - 3 rétegű auth (frontend guard + JWT validation + role check)
 
+### Fájl Státusz Normalizáció (Files Panel)
+
+A 4 upload tábla (`invoice_uploads`, `transaction_uploads`, `bank_statement_uploads`, `report_uploads`) sokféle `processing_status` értéket tartalmaz. A management dashboard ezeket **3 kategóriába** normalizálja:
+
+| Kategória | DB státuszok | Badge szín |
+|-----------|-------------|------------|
+| **Feldolgozva** (success) | `done`, `completed`, `processed` | 🟢 zöld |
+| **Hiba** (error) | `error`, `failed`, `ignored`, `dismissed`, `webhook_failed` | 🔴 piros |
+| **Folyamatban** (pending) | **minden más** (pl. `webhook_sent`, `processing`, `pending`, `null`) | 🟡 sárga |
+
+#### Exklúziós logika
+
+> **`pendingCount = total - successCount - errorCount`**
+
+A pending számolás **nem explicit listával** történik, hanem exklúzióval. Ez biztosítja, hogy bármilyen jövőbeli új státusz (pl. `ocr_processing`, `ai_classifying`) automatikusan a "Folyamatban" kategóriába essen anélkül, hogy az EF kódot frissíteni kellene.
+
+#### Error message elsőbbség
+
+> **Ha egy fájlnak van `error_message` mezője → automatikusan "Hiba" kategóriába kerül**, függetlenül a `processing_status` értékétől.
+
+Ez azért szükséges, mert bizonyos webhook hibáknál a `processing_status` `webhook_sent` marad, de az `error_message` már tartalmazza a hiba leírását (pl. `"Webhook failed: 404 Not Found"`).
+
+```typescript
+// EF (management-stats/index.ts)
+const isError = (r) => ERROR_STATUSES.has(r.processing_status) || !!r.error_message;
+const isSuccess = (r) => !r.error_message && SUCCESS_STATUSES.has(r.processing_status);
+
+// FE (ManagementDashboard.tsx)
+function normalizeStatus(status, errorMessage?) {
+  if (errorMessage) return 'error';     // error_message wins
+  if (!status) return 'pending';
+  switch (status) { /* ... */ }
+}
+```
+
 ## Consequences
 
 **Pozitív:**
-- Egyetlen Edge Function, 8 action → egyszerű deployment
+- Egyetlen Edge Function, 13 action → egyszerű deployment
 - Service_role az Edge Function-ben → biztonságos cross-tenant hozzáférés
-- Server-side pagination → LLM tábla akárhány rekordra skálázódik
+- Server-side pagination → LLM tábla és superadmin modulok akárhány rekordra skálázódnak
 - `keepPreviousData` → lapozás közben nincs villogás
 - Graceful error handling → nem crashel, üres adatot mutat
 - Zero-flash management routing → 5 rétegű guard biztosítja, hogy a management user soha nem lát sidebar/navbar villanást
+- Superadmin 27 modul → teljes platform adatáttekintés cégszinten
+- User-mode kontextus megőrzés → cégváltáskor a user filter nem veszik el
 
 **Negatív:**
 - ~~`auth.admin.listUsers({ perPage: 1000 })` → 1000+ felhasználónál csonkolódik~~ — **Javítva:** `listAllAuthUsers()` helper paginál az összes oldalon

@@ -1,13 +1,13 @@
-# Decision 031: [Accounty] Modul Scope
+# Decision 031: [eaisyBooks] Modul Scope (korábban: Accounty)
 
 **Status:** Decided
 
-**Category:** Accounty & Integrált Modulok
+**Category:** eaisyBooks & Integrált Modulok
 
-**Question:** Mi a könyvelőiroda-specifikus modul (Accounty) üzleti scope-ja, és hogyan különül el a fő eaisybill alkalmazástól?
+**Question:** Mi a könyvelőiroda-specifikus modul (eaisyBooks) üzleti scope-ja, és hogyan különül el a fő eaisyBill alkalmazástól?
 
 **Decision:**
-- Az Accounty egy **önálló modul** könyvelőirodák számára, saját layout-tal és navigációval (`/accounty/*`)
+- Az eaisyBooks egy **önálló modul** könyvelőirodák számára, saját layout-tal és navigációval (`/accounty/*`)
 - Célközönség: könyvelőirodák, ahol egy könyvelő több ügyfélcéget kezel párhuzamosan
 - Fő funkciók:
   - **Portfólió nézet:** Grid/lista/kanban az összes ügyfélcégről (státusz, határidő, progress)
@@ -21,4 +21,4 @@
 - DB: `accounty_assignments` (könyvelő → cég hozzárendelés), `accounty_missing_items`, `accounty_audit_log`, `accounty_messages`
 - Role-ok: `admin` (irodavezető, teljes hozzáférés, KPI nézet) és `könyvelő` (saját portfólió)
 
-**Rationale:** A könyvelőirodák igénye alapvetően különbözik az egyéni cégekétől: egy könyvelő 10-50+ céget kezel, szükség van portfólió áttekintésre, batch műveletekre és ügyfél-kommunikációra. Az önálló layout és sidebar biztosítja, hogy az Accounty ne terhelje a fő app felhasználóit, miközben a közös infrastruktúra (Supabase, auth, adat) megosztott.
+**Rationale:** A könyvelőirodák igénye alapvetően különbözik az egyéni cégekétől: egy könyvelő 10-50+ céget kezel, szükség van portfólió áttekintésre, batch műveletekre és ügyfél-kommunikációra. Az önálló layout és sidebar biztosítja, hogy az eaisyBooks ne terhelje a fő app felhasználóit, miközben a közös infrastruktúra (Supabase, auth, adat) megosztott. A kódban és DB-ben a legacy `accounty_*` / `Accounty*` prefix továbbra is használatban van.

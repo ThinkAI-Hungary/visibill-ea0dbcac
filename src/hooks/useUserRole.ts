@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserRole = 'owner' | 'admin' | 'member' | 'assistant' | 'viewer' | 'employee' | null;
+export type UserRole = 'owner' | 'admin' | 'member' | 'assistant' | 'viewer' | 'employee' | 'support_admin' | null;
 
 /**
  * Returns the current user's role in the selected company.
@@ -68,7 +68,7 @@ export function useUserRole(): {
   return {
     role: resolvedRole,
     isLoading: isPending && !!companyId,
-    isAdmin: resolvedRole === 'owner' || resolvedRole === 'admin' || !companyId,
+    isAdmin: resolvedRole === 'owner' || resolvedRole === 'admin' || resolvedRole === 'support_admin' || !companyId,
     isMember: resolvedRole === 'member',
     isAssistant: resolvedRole === 'assistant',
     isViewer: resolvedRole === 'viewer',

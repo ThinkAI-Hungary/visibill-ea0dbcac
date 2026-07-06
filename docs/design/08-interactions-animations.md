@@ -16,30 +16,85 @@ A eaisybill tudatosan **flat design**-t követ:
 
 ## Hover Patternek
 
+### ⚠️ Alapszabály: Hover = Interaktív
+
+> **Csak interaktív (kattintható) elemek kaphatnak hover effektet.** Ha egy elem nem reagál kattintásra, a hover effekt UX anti-pattern — a felhasználót félrevezeti.
+
+### Badge — SOHA nincs hover
+
+A `Badge` komponens (`ui/badge.tsx`) **informatív címke**, nem gomb. Nincs rajta `hover:bg-*`, nincs `transition-colors`.
+
+```tsx
+// ✅ HELYES — Badge statikus, nincs hover
+<Badge variant="destructive">Hiba</Badge>
+<Badge className="bg-amber-500/15 text-amber-700">Figyelmeztetés</Badge>
+
+// ❌ TILOS — Badge-re hover effekt
+<Badge className="hover:bg-primary/80">Kattints</Badge>  // NEM! → Button kell
+```
+
+**Ha kattintható elem kell badge-szerű megjelenéssel** → használj `<button>` elemet saját stílussal (ld. `RoleBadge` minta a `PermissionMatrixPage.tsx`-ben).
+
 ### Gombok (Button)
 
+**Variant hover szabályok (`ui/button.tsx`):**
+
 ```css
-/* Default button */
-hover:bg-primary/90                          /* Sötétebb teal */
+/* Default — light: sötétebb teal, dark: finom háttér */
+hover:bg-primary/90
+dark:hover:bg-primary/20
 
-/* Outline button */
-hover:bg-primary/10 hover:text-primary hover:border-primary/30
+/* Destructive — light: sötétebb piros, dark: finom háttér */
+hover:bg-destructive/90
+dark:bg-destructive/15 dark:hover:bg-destructive/25
 
-/* Ghost button */
+/* Outline — semleges accent hover (nem primary!) */
+hover:bg-accent/50 hover:text-accent-foreground
+
+/* Ghost — semleges accent hover */
 hover:bg-accent/50 hover:text-accent-foreground
 
 /* Sidebar action gombok */
 hover:bg-primary/10 hover:text-primary hover:border-primary/30
 ```
 
-### Sidebar Menüelemek
+### ⚠️ Inline szín override szabály
 
-```css
-/* Aktív elem */
-[data-active="true"] → SidebarMenuButton isActive styling
+Ha egy `outline` Button-on felülírod a szöveget/border-t (pl. destructive styled outline gomb), **MINDIG add hozzá a `hover:text-*`-t is**, különben a base variant `hover:text-accent-foreground` felülírja a szín intent-et.
 
-/* Disabled (nincs company) */
-grayscale opacity-50 cursor-not-allowed
+```tsx
+// ✅ HELYES — explicit hover:text-destructive megtartja a piros szín intent-et
+<Button variant="outline"
+  className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
+  Törlés
+</Button>
+
+// ❌ ROSSZ — hover-kor a text accent szürke/fehérre vált, nem marad piros
+<Button variant="outline"
+  className="border-destructive/30 text-destructive hover:bg-destructive/10">
+  Törlés
+</Button>
+```
+
+**Ugyanez primary-ra:**
+```tsx
+// ✅ HELYES
+<Button variant="outline"
+  className="border-primary/30 text-primary hover:bg-primary/10 hover:text-primary">
+  Újra
+</Button>
+```
+
+### Inline ikonok hover (nem Button komponens)
+
+Sor-szintű akció ikonok (pl. táblázat sorvégi gombok) `<button>` elemet használnak, nem `Button` komponenst:
+
+```tsx
+// Retry ikon — primary tónusú
+<button className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors">
+
+// Delete ikon — destructive tónusú
+<button className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
 ```
 
 ### Interactive Class
@@ -313,3 +368,59 @@ Ez a beállítás az **OS-szintű** accessibility preference-t tiszteletben tart
 | `animate-rotate-in/out` | Sun/Moon ikon |
 | `grid-template-rows 200ms` | Sidebar collapsible nav csoportok |
 | `animation-play-state: paused` | Témaváltás alatti animáció freeze |
+
+---
+
+## ⚠️ Kijelölési Ring — Tailwind `ring` vs Inline `box-shadow`
+
+> **Kontextus:** Szín paletta, kategória badge, és bármely elem ahol React state-ből vezérelt "kijelölt" állapot van, és a kijelölést vizuális ring/keret jelzi.
+
+### Probléma: Tailwind `ring-2` + `:focus-visible` specificitási ütközés
+
+Tailwind `ring-*` utility-k CSS `box-shadow`-ot generálnak CSS custom property-ken keresztül (`--tw-ring-*`). Ha egy gomb **React state alapján** kap `ring-2` osztályt (pl. kijelölt szín), ÉS a böngésző `:focus-visible` állapota is aktív, a két szabály ütközik:
+
+```
+❌ TILTOTT minta:
+className={cn(
+  "ring-0",                          // alap: nincs ring
+  isSelected && "ring-2 ring-offset-2"  // state-ből: van ring
+)}
+```
+
+**Mi történik:**
+1. Kattintás → state `ring-2` + böngésző `:focus-visible` egyszerre aktív → vizuálisan egy ring
+2. Elkattintás máshova → `:focus-visible` eltűnik → a `ring-2` "felvillan" mert eddig a focus stílus maszkolta
+3. Ha `focus-visible:ring-0`-t adsz hozzá → az **felülírja** a state-alapú `ring-2`-t is (magasabb specificitás: `0,2,0 > 0,1,0`) → kattintáskor NINCS ring, elkattintáskor MEGJELENIK → villanás
+
+### Megoldás: Inline `box-shadow` state-alapú kijelöléshez
+
+```tsx
+✅ HELYES minta:
+<button
+  className="w-7 h-7 rounded-md outline-none"
+  style={{
+    backgroundColor: color.value,
+    boxShadow: isSelected
+      ? `0 0 0 2px var(--background, #fff), 0 0 0 4px ${color.value}`
+      : undefined,
+  }}
+/>
+```
+
+**Miért működik:**
+- Az inline `box-shadow` CSS specificitása mindig nyer a Tailwind utility-k felett
+- Nem ütközik a `:focus-visible` pseudo-class-szal
+- A `var(--background)` biztosítja hogy a gap szín követi a témát (light/dark)
+- A `0 0 0 2px` + `0 0 0 4px` kettős shadow pontosan reprodukálja a `ring-2 ring-offset-2` vizuális hatást
+
+### Összefoglaló szabály
+
+| Kijelölés típusa | Technika | Miért |
+|------------------|----------|-------|
+| **Hover** ring | Tailwind `hover:ring-1` | `:hover` nem ütközik `:focus-visible`-lel |
+| **State-alapú** kijelölés ring | Inline `box-shadow` | Elkerüli a Tailwind ring vs focus-visible specificitási bugot |
+| **Focus** ring | Tailwind `focus-visible:ring-2` | A böngésző natív focus jelzéséhez |
+
+### Érintett fájlok (referencia)
+- `src/pages/PartnersPage.tsx` — szín paletta a partner szerkesztőben
+- `src/components/IconPicker.tsx` — szín paletta a kategória szerkesztőben (itt Popover zárja a gombot → nincs ütközés)

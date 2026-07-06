@@ -1,25 +1,14 @@
 import { describe, it, expect } from 'vitest';
+import { computeStatus, computeProgress } from '@/hooks/accounty/useAccountyHelpers';
 
 /**
- * These helper functions are defined inside useAccountyData.ts but not exported.
- * We replicate them here for isolated testing of their business logic.
- * If the source implementation changes, these tests should be updated accordingly.
+ * Tests for the exported computeStatus and computeProgress helpers.
+ * These are the REAL functions imported from the source code — not replicas.
+ *
+ * Business logic:
+ *   computeStatus: determines client health (Rendben / Feldolgozandó / Kritikus)
+ *   computeProgress: calculates a 0-100% progress bar value
  */
-
-// ── computeStatus ──
-function computeStatus(missingCount: number, unprocessedCount: number): 'Rendben' | 'Feldolgozandó' | 'Kritikus' {
-  if (missingCount > 3 || unprocessedCount > 10) return 'Kritikus';
-  if (missingCount > 0 || unprocessedCount > 0) return 'Feldolgozandó';
-  return 'Rendben';
-}
-
-// ── computeProgress ──
-function computeProgress(missingCount: number, totalInvoices: number): number {
-  if (totalInvoices === 0 && missingCount === 0) return 100;
-  if (totalInvoices === 0) return missingCount > 0 ? 30 : 100;
-  const ratio = Math.max(0, 1 - (missingCount / Math.max(totalInvoices, 1)));
-  return Math.round(ratio * 100);
-}
 
 // ═══════════════════════════════════════════════════════════════
 // computeStatus tests
@@ -64,6 +53,26 @@ describe('computeStatus', () => {
 
   it('returns "Feldolgozandó" for small non-zero values below threshold', () => {
     expect(computeStatus(2, 5)).toBe('Feldolgozandó');
+  });
+
+  // Edge cases
+  it('returns type-safe status string (one of exactly 3 values)', () => {
+    const result = computeStatus(0, 0);
+    expect(['Rendben', 'Feldolgozandó', 'Kritikus']).toContain(result);
+  });
+
+  it('threshold boundary: missing=3, unprocessed=10 → "Feldolgozandó" (both at-but-not-over)', () => {
+    expect(computeStatus(3, 10)).toBe('Feldolgozandó');
+  });
+
+  it('missingCount threshold is exclusive (>3, not >=3)', () => {
+    expect(computeStatus(3, 0)).not.toBe('Kritikus');
+    expect(computeStatus(4, 0)).toBe('Kritikus');
+  });
+
+  it('unprocessedCount threshold is exclusive (>10, not >=10)', () => {
+    expect(computeStatus(0, 10)).not.toBe('Kritikus');
+    expect(computeStatus(0, 11)).toBe('Kritikus');
   });
 });
 
@@ -111,5 +120,29 @@ describe('computeProgress', () => {
   it('handles very large missing count', () => {
     const result = computeProgress(10000, 100);
     expect(result).toBe(0);
+  });
+
+  // Edge cases
+  it('always returns an integer', () => {
+    const result = computeProgress(33, 100);
+    expect(Number.isInteger(result)).toBe(true);
+  });
+
+  it('never returns negative', () => {
+    const result = computeProgress(999, 1);
+    expect(result).toBeGreaterThanOrEqual(0);
+  });
+
+  it('never returns above 100', () => {
+    const result = computeProgress(0, 999999);
+    expect(result).toBeLessThanOrEqual(100);
+  });
+
+  it('handles single invoice with 0 missing', () => {
+    expect(computeProgress(0, 1)).toBe(100);
+  });
+
+  it('handles single invoice with 1 missing', () => {
+    expect(computeProgress(1, 1)).toBe(0);
   });
 });

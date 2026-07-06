@@ -1,6 +1,6 @@
 # Visibill — Product Requirements Document (PRD)
 
-> **Verzió:** 1.2 | **Dátum:** 2026-06-16  
+> **Verzió:** 1.3 | **Dátum:** 2026-06-27  
 > **Kapcsolódó:** [Information Architecture](./information-architecture.md) · [Product Decisions](./decisions/index.md)
 
 ---
@@ -86,6 +86,7 @@ Banki tranzakciók importálása, AI-alapú párosítás számlákkal, manuális
 | AI Párosítás Megjelenítés | Confidence score + match type + gl_reasoning DB-ben tárolva. Részletek dialógusban (TransactionDetailsDialog). Lista nézetben vizuális confidence megjelenítés: TODO. | [P-017](./decisions/P-017-matching-display.md) |
 | Manuális Felülírás | Dialógusban keresés + hozzárendelés, is_verified flag, minden felülírás audit logban (`match_transaction_overrides_log` tábla). Deviza-tudatos összeg-összehasonlítás: azonos pénznemű tranzakció↔számla direkt összehasonlítás, eltérő devizánál HUF konverzió. Minimum 10 számla megjelenítés összeg-proximítás szerint. | [P-018](./decisions/P-018-manual-matching.md) |
 | ML tanulás | Felhasználói felülírásokból tanul: `match_transaction_overrides_log` tábla → partner név, összeg, típus pattern-ek rögzítése. A worker pipeline a jövőben ezeket a mintákat használja az AI párosítás pontosságának javítására. | — |
+| Manuális Kifizetés | Virtuális tranzakció rögzítése nem-banki kifizetésekhez (Készpénz, Privát kártya, Tagi hitel). Automatikus párosítás a számlához. | [P-041](../business/decisions/041-manual-payment-recording.md) |
 | Futár Riportok | GLS, MPL, Mixpack CSV import + parsing (3 futár tab) | — |
 
 ---
@@ -97,6 +98,7 @@ Főkönyvi kategorizálás, pénzügyi kimutatások és éves beszámoló.
 | Funkció | Leírás | Ref |
 |---------|--------|-----|
 | GL Javaslat | AI-alapú GL szám javaslat confidence-szel és indoklással. Manuális elfogadás szükséges — nincs auto-accept. | [P-019](./decisions/P-019-gl-suggestion.md) |
+| GL Twin Sync | Párosított számlák (NAV ↔ Beküldött) GL besorolása automatikusan szinkronban marad: ha az egyik tétel GL-jét módosítják, a "testvér" tétel is frissül egyetlen batch RPC hívásban. Matching: `invoice_number` ↔ `bizonylatsorszam` normalizálva + `line_number`. | [P-043](./decisions/P-043-gl-twin-sync.md) |
 | XML Főkönyv Import | Könyvelőprogram által exportált XML főkönyvi kivonat feltöltése és feldolgozása. Támogatott formátumok: RLB/Novitax/Kulcs-Soft/KÖKÉNY. Automatikus számlatükör + tétel importálás `gl_uploads` táblába, audit trail-lel. | — |
 | Eredménykimutatás | P&L oldal — bevételek és kiadások kimutatása. Főkönyvi adat (XML importból) és NAV számlaalapú összesítés. Szekció-szintű részletezés, korrekciók kezelése. | — |
 | Mérleg | Balance Sheet oldal — eszközök és források. Főkönyvi adat (XML importból) és NAV számlaalapú összeállítás. Társasági adó és osztalék kalkuláció. | — |

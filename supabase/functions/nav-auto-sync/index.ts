@@ -34,6 +34,8 @@ interface InvoiceLineItem {
   vatAmount?: number;
   grossAmount?: number;
   productCode?: string;
+  lineDeliveryPeriodFrom?: string;
+  lineDeliveryPeriodTo?: string;
 }
 
 interface InvoiceDetails {
@@ -44,6 +46,7 @@ interface InvoiceDetails {
   paymentDate?: string;
   invoiceGrossAmount?: number;
   lineItems?: InvoiceLineItem[];
+  isCashAccounting?: boolean;
 }
 
 // Rate limiting helper
@@ -84,6 +87,18 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Auth guard: only allow pg_cron and self-reinvocation that send the shared secret.
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  const providedSecret = req.headers.get('x-cron-secret');
+  if (!cronSecret || providedSecret !== cronSecret) {
+    return new Response(
+      JSON.stringify({ error: 'Forbidden' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+
 
   try {
     // Parse request body for optional parameters
@@ -269,7 +284,8 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceRoleKey}`
+            'Authorization': `Bearer ${supabaseServiceRoleKey}`,
+            'x-cron-secret': cronSecret
           },
           body: JSON.stringify({ depth: depth + 1, detailsOnly: true })
         }).catch(err => console.error('Self-reinvocation failed:', err));
@@ -611,6 +627,9 @@ async function fetchInvoiceDetails(
           if (details.invoiceGrossAmount && details.invoiceGrossAmount > 0) {
             updateData.invoice_gross_amount = details.invoiceGrossAmount;
           }
+          if (details.isCashAccounting) {
+            updateData.is_cash_accounting = true;
+          }
 
           const { error: updateError } = await supabase
             .from('nav_invoices')
@@ -640,7 +659,9 @@ async function fetchInvoiceDetails(
                 vat_rate: item.vatRate,
                 vat_amount: item.vatAmount,
                 gross_amount: item.grossAmount,
-                product_code: item.productCode
+                product_code: item.productCode,
+                line_delivery_period_from: item.lineDeliveryPeriodFrom || null,
+                line_delivery_period_to: item.lineDeliveryPeriodTo || null
               }));
 
               const { error: itemsError } = await supabase
@@ -824,6 +845,26 @@ function parseInvoiceDataFromXML(xml: string): InvoiceDetails | null {
     // Extract invoice line items
     details.lineItems = parseInvoiceLines(decodedData);
 
+    // Detect cash accounting (pénzforgalmi elszámolás) — resilient, never fails
+    // 1. Try: NAV API cashAccountingIndicator field
+    try {
+      const cashAccountingIndicator = extractTag(decodedData, 'cashAccountingIndicator');
+      if (cashAccountingIndicator === 'true' || cashAccountingIndicator === 'CASH_ACCOUNTING') {
+        details.isCashAccounting = true;
+      }
+    } catch { /* silent — fallback below */ }
+
+    // 2. Fallback: text-based search in the decoded invoice XML
+    if (!details.isCashAccounting) {
+      try {
+        const upperXml = decodedData.toUpperCase();
+        if (upperXml.includes('PÉNZFORGALMI ELSZÁMOLÁS') ||
+            upperXml.includes('PENZFORGALMI ELSZAMOLAS')) {
+          details.isCashAccounting = true;
+        }
+      } catch { /* silent */ }
+    }
+
     return details;
   } catch (error) {
     console.error('Error parsing invoice data:', error);
@@ -891,6 +932,12 @@ function parseInvoiceLines(xml: string): InvoiceLineItem[] {
     // Extract product code
     const productCode = extractTag(lineXml, 'productCodeValue') || extractTag(lineXml, 'productCodeOwnValue');
     if (productCode) item.productCode = productCode;
+
+    // Extract line delivery period (NAV v3.0: lineDeliveryDate or lineDeliveryPeriod)
+    const periodFrom = extractTag(lineXml, 'lineDeliveryPeriodFrom') || extractTag(lineXml, 'deliveryPeriodFrom');
+    const periodTo = extractTag(lineXml, 'lineDeliveryPeriodTo') || extractTag(lineXml, 'deliveryPeriodTo');
+    if (periodFrom) item.lineDeliveryPeriodFrom = periodFrom;
+    if (periodTo) item.lineDeliveryPeriodTo = periodTo;
 
     lineItems.push(item);
   });
@@ -1200,27 +1247,67 @@ async function cachePartnersFromInvoices(
       return;
     }
 
-    // Upsert partners to database
-    const partnersToUpsert = Array.from(partnersMap.values()).map(p => ({
-      user_id: userId,
-      company_id: companyId,
-      tax_number: p.taxNumber,
-      name: p.name,
-      partner_type: p.type
-    }));
-
-    const { error: partnerError } = await supabase
+    // Fetch existing partners for prefix-based deduplication
+    const { data: existingPartners } = await supabase
       .from('partners')
-      .upsert(partnersToUpsert, {
-        onConflict: 'company_id,tax_number',
-        ignoreDuplicates: false
-      });
+      .select('id, tax_number, partner_type, address')
+      .eq('company_id', companyId);
 
-    if (partnerError) {
-      console.error('Error caching partners:', partnerError);
-    } else {
-      console.log(`📋 Cached ${partnersMap.size} partners from ${direction} invoices`);
+    // Build prefix map: first 8 digits → existing partner record
+    const prefixMap = new Map<string, { id: string; partner_type: string; address: string | null; tax_number: string }>();
+    for (const p of (existingPartners || [])) {
+      const digits = (p.tax_number || '').replace(/[^0-9]/g, '');
+      if (digits.length >= 8) {
+        prefixMap.set(digits.substring(0, 8), p);
+      }
     }
+
+    const trulyNew: Array<{ user_id: string; company_id: string; tax_number: string; name: string; partner_type: string }> = [];
+    let updatedCount = 0;
+
+    for (const p of partnersMap.values()) {
+      const digits = p.taxNumber.replace(/[^0-9]/g, '');
+      const prefix = digits.length >= 8 ? digits.substring(0, 8) : null;
+      const existing = prefix ? prefixMap.get(prefix) : null;
+
+      if (existing) {
+        // Partner already exists by prefix — update address if null + auto-upgrade partner_type to 'both'
+        const updates: Record<string, any> = {};
+        if (!existing.address) {
+          // No address update here (nav-auto-sync doesn't have address data)
+        }
+        if (existing.partner_type && existing.partner_type !== 'both' && existing.partner_type !== p.type) {
+          updates.partner_type = 'both';
+        }
+        if (Object.keys(updates).length > 0) {
+          await supabase.from('partners').update(updates).eq('id', existing.id);
+          updatedCount++;
+        }
+      } else {
+        // Truly new partner — queue for insert
+        trulyNew.push({
+          user_id: userId,
+          company_id: companyId,
+          tax_number: p.taxNumber,
+          name: p.name,
+          partner_type: p.type
+        });
+        // Register in prefix map to prevent duplicates within the same batch
+        if (prefix) {
+          prefixMap.set(prefix, { id: '', partner_type: p.type, address: null, tax_number: p.taxNumber });
+        }
+      }
+    }
+
+    // Batch insert truly new partners
+    if (trulyNew.length > 0) {
+      const { error: insertError } = await supabase.from('partners').insert(trulyNew);
+      if (insertError) {
+        console.error('Error inserting new partners:', insertError);
+      }
+    }
+
+    console.log(`📋 Partners from ${direction}: ${trulyNew.length} new, ${updatedCount} updated, ${partnersMap.size - trulyNew.length - updatedCount} skipped`);
   } catch (error) {
     // Don't fail the sync if partner caching fails
     console.error('Error in partner caching:', error);

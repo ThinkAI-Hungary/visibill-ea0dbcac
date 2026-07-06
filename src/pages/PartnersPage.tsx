@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
@@ -42,17 +42,32 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, Info } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { PartnerRankingCard, type RankedPartner } from "@/components/partners/PartnerRankingCard";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CopyableCell } from "@/components/ui/copyable-cell";
 import { UnifiedPagination } from "@/components/ui/unified-pagination";
 import { PartnerTypeFilter, PartnerTypeFilterValue } from "@/components/ui/partner-type-filter";
+import { ColorPicker, COLOR_PALETTE } from "@/components/IconPicker";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { TableEmptyState } from "@/components/ui/table-empty-state";
 import { TablePlaceholderRows } from "@/components/ui/table-placeholder-rows";
+import {
+  PartnerInvoiceDetailDialog,
+  type PartnerInvoice,
+} from "@/components/partners/PartnerInvoiceDetailDialog";
 
 const DEFAULT_PAGE_SIZE = 15;
+
+/** Returns true if the tax_number is a worker-generated synthetic ID for foreign partners */
+const isForeignPartner = (taxNumber: string | null | undefined): boolean =>
+  !!taxNumber?.startsWith('FOREIGN:');
+
+/** Display-safe tax_number: returns empty string for synthetic FOREIGN: IDs */
+const displayTaxNumber = (taxNumber: string | null | undefined): string =>
+  !taxNumber || isForeignPartner(taxNumber) ? '' : taxNumber;
 
 interface Partner {
   id: string;
@@ -66,6 +81,9 @@ interface Partner {
   created_at: string;
   updated_at: string;
   exclude_from_accounting?: boolean;
+  custom_monogram?: string | null;
+  custom_color?: string | null;
+  custom_bg_color?: string | null;
 }
 
 // Import shared helpers
@@ -96,10 +114,39 @@ export default function PartnersPage() {
     address: "",
     email: "",
     partner_type: "both",
+    custom_monogram: "",
+    custom_color: "",
+    custom_bg_color: "",
   });
   const [emailError, setEmailError] = useState("");
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  // Invoice detail dialog state
+  const [selectedInvoiceForDetail, setSelectedInvoiceForDetail] = useState<PartnerInvoice | null>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  // Invoice tab state in right panel
+  const [invoiceTab, setInvoiceTab] = useState<'nav' | 'uploaded'>('nav');
+  const [invoiceSearch, setInvoiceSearch] = useState('');
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoicePageSize, setInvoicePageSize] = useState(50);
+  // Ranking section collapsible state (default open, persisted)
+  const [rankingOpen, setRankingOpen] = useState(() => {
+    const saved = localStorage.getItem('partners-ranking-open');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const handleRankingToggle = (open: boolean) => {
+    setRankingOpen(open);
+    localStorage.setItem('partners-ranking-open', String(open));
+  };
+
+  const openInvoiceDetail = (inv: PartnerInvoice) => {
+    setSelectedInvoiceForDetail(inv);
+    setIsDetailDialogOpen(true);
+  };
+  const closeInvoiceDetail = () => {
+    setIsDetailDialogOpen(false);
+    setSelectedInvoiceForDetail(null);
+  };
 
   // ── URL param helpers ──
   const setPartnerParam = useCallback((partnerId: string | null) => {
@@ -117,52 +164,94 @@ export default function PartnersPage() {
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
 
-      // Fetch partners
-      const { data: partnerData, error: partnerError } = await supabase
-        .from("partners")
-        .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting")
-        .eq("company_id", selectedCompany.id)
-        .order("name", { ascending: true });
+      // Fetch partners + invoice counts from both tables in parallel
+      const [{ data: partnerData, error: partnerError }, { data: supplierCounts }, { data: customerCounts }, { data: uploadedCounts }] = await Promise.all([
+        supabase
+          .from("partners")
+          .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting, custom_monogram, custom_color, custom_bg_color")
+          .eq("company_id", selectedCompany.id)
+          .order("name", { ascending: true }),
+        supabase.from("nav_invoices").select("supplier_tax_number").eq("company_id", selectedCompany.id),
+        supabase.from("nav_invoices").select("customer_tax_number").eq("company_id", selectedCompany.id),
+        supabase.from("invoices").select("elado_vat_id, vevo_vat_id, elado_nev, vevo_nev").eq("company_id", selectedCompany.id),
+      ]);
 
       if (partnerError) throw partnerError;
 
-      // Fetch invoice counts grouped by tax_number
-      // We will queries for both supplier and customer directions since they use separate columns in nav_invoices
-      const { data: supplierCounts, error: supplierCountsErr } = await supabase
-        .from("nav_invoices")
-        .select("supplier_tax_number")
-        .eq("company_id", selectedCompany.id);
-
-      const { data: customerCounts, error: customerCountsErr } = await supabase
-        .from("nav_invoices")
-        .select("customer_tax_number")
-        .eq("company_id", selectedCompany.id);
-
       const countsMap: Record<string, number> = {};
 
-      if (!supplierCountsErr && supplierCounts) {
-        supplierCounts.forEach((inv: any) => {
-          if (inv.supplier_tax_number) {
-            const cleanTax = inv.supplier_tax_number.substring(0, 8);
-            countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
-          }
-        });
-      }
+      // NAV supplier invoices
+      (supplierCounts || []).forEach((inv: any) => {
+        if (inv.supplier_tax_number) {
+          const cleanTax = inv.supplier_tax_number.substring(0, 8);
+          countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
+        }
+      });
+      // NAV customer invoices
+      (customerCounts || []).forEach((inv: any) => {
+        if (inv.customer_tax_number) {
+          const cleanTax = inv.customer_tax_number.substring(0, 8);
+          countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
+        }
+      });
+      // Uploaded invoices — count BOTH elado and vevo sides independently
+      // Build both tax-based AND name-based count maps
+      const nameCountsMap: Record<string, number> = {}; // key: lowercase partner name
+      (uploadedCounts || []).forEach((inv: any) => {
+        if (inv.elado_vat_id) {
+          const cleanTax = inv.elado_vat_id.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+          countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
+        }
+        if (inv.vevo_vat_id) {
+          const cleanTax = inv.vevo_vat_id.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+          countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
+        }
+        // Name-based counts for invoices where tax ID is missing
+        if (inv.elado_nev && !inv.elado_vat_id) {
+          const key = inv.elado_nev.toLowerCase().trim();
+          nameCountsMap[key] = (nameCountsMap[key] || 0) + 1;
+        }
+        if (inv.vevo_nev && !inv.vevo_vat_id) {
+          const key = inv.vevo_nev.toLowerCase().trim();
+          nameCountsMap[key] = (nameCountsMap[key] || 0) + 1;
+        }
+      });
 
-      if (!customerCountsErr && customerCounts) {
-        customerCounts.forEach((inv: any) => {
-          if (inv.customer_tax_number) {
-            const cleanTax = inv.customer_tax_number.substring(0, 8);
-            countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
-          }
-        });
+      // Name-based invoice counts for FOREIGN: partners (NAV + uploaded by name)
+      const foreignPartners = (partnerData as Partner[]).filter(p => isForeignPartner(p.tax_number));
+      const foreignCounts: Record<string, number> = {};
+      if (foreignPartners.length > 0) {
+        const foreignResults = await Promise.all(
+          foreignPartners.map(async (fp) => {
+            const escapedName = fp.name.replace(/'/g, "''");
+            const [{ count: invCount }, { count: navCount }] = await Promise.all([
+              supabase.from('invoices')
+                .select('*', { count: 'exact', head: true })
+                .eq('company_id', selectedCompany.id)
+                .or(`elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`),
+              supabase.from('nav_invoices')
+                .select('*', { count: 'exact', head: true })
+                .eq('company_id', selectedCompany.id)
+                .or(`supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`),
+            ]);
+            return { id: fp.id, count: (invCount || 0) + (navCount || 0) };
+          })
+        );
+        foreignResults.forEach(r => { foreignCounts[r.id] = r.count; });
       }
 
       return (partnerData as Partner[]).map(partner => {
-        const cleanTax = partner.tax_number ? partner.tax_number.substring(0, 8) : '';
+        if (isForeignPartner(partner.tax_number)) {
+          return { ...partner, invoice_count: foreignCounts[partner.id] || 0 };
+        }
+        const cleanTax = partner.tax_number ? partner.tax_number.replace(/-/g, '').substring(0, 8) : '';
+        const taxCount = countsMap[cleanTax] || 0;
+        // Also add name-based count for invoices without tax IDs
+        const nameKey = partner.name.toLowerCase().trim();
+        const nameCount = nameCountsMap[nameKey] || 0;
         return {
           ...partner,
-          invoice_count: countsMap[cleanTax] || 0
+          invoice_count: taxCount + nameCount
         };
       });
     },
@@ -170,27 +259,182 @@ export default function PartnersPage() {
     placeholderData: keepPreviousData,
   });
 
+  // ── Fetch partner ranking data ──
+  const { data: rankingRaw, isLoading: isRankingLoading } = useQuery({
+    queryKey: ['partner-ranking', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase.rpc('get_partner_ranking', {
+        p_company_id: selectedCompany.id,
+      });
+      if (error) throw error;
+      return data as Array<{
+        partner_tax_number: string;
+        partner_name: string;
+        direction: string;
+        invoice_count: number;
+        total_gross: number;
+      }>;
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 5 * 60 * 1000, // 5 min cache
+  });
+
+  // ── Aggregate ranking: merge HU-prefixed duplicates, split supplier/customer, take top 10 ──
+  const { topSuppliers, topCustomers, totalSupplier, totalCustomer } = useMemo(() => {
+    if (!rankingRaw) return { topSuppliers: [], topCustomers: [], totalSupplier: 0, totalCustomer: 0 };
+
+    // Normalize tax_number: strip HU prefix, take first 8 digits for grouping
+    // HU275532 → 275532, 27553202 → 27553202 — use min 6 chars for matching
+    const normalize = (tax: string) => {
+      const stripped = tax.replace(/^HU/i, '');
+      // Use first 8 chars, but for matching purposes use first 6 as the key
+      // because HU-prefixed versions often have fewer digits
+      return stripped.substring(0, 8);
+    };
+    // Build a secondary lookup: first 6 chars → canonical key (for merging HU duplicates)
+    const canonicalKeys = new Map<string, string>();
+
+    // Find partner custom avatar data from partners list
+    const partnersByTax = new Map<string, { custom_monogram?: string | null; custom_color?: string | null; custom_bg_color?: string | null }>();
+    if (partners) {
+      (partners as Partner[]).forEach(p => {
+        if (p.tax_number) {
+          const clean = p.tax_number.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+          partnersByTax.set(clean, { custom_monogram: p.custom_monogram, custom_color: p.custom_color, custom_bg_color: p.custom_bg_color });
+        }
+      });
+    }
+
+    // Aggregate by normalized tax + direction
+    // Phase 1: collect all entries and build canonical key mapping
+    const agg = new Map<string, { tax: string; name: string; dir: string; count: number; gross: number }>();
+    rankingRaw.forEach(r => {
+      const normTax = normalize(r.partner_tax_number);
+      // Use first 6 chars as merge key to handle HU-prefix variants
+      // e.g., "27553202" and "275532" both have prefix "275532"
+      const mergeKey = normTax.substring(0, 6);
+      const fullKey = `${mergeKey}__${r.direction}`;
+
+      const existing = agg.get(fullKey);
+      if (existing) {
+        existing.count += Number(r.invoice_count);
+        existing.gross += Number(r.total_gross);
+        // Keep the longer tax and name (more complete)
+        if (normTax.length > existing.tax.length) existing.tax = normTax;
+        if (r.partner_name.length > existing.name.length) existing.name = r.partner_name;
+      } else {
+        agg.set(fullKey, { tax: normTax, name: r.partner_name, dir: r.direction, count: Number(r.invoice_count), gross: Number(r.total_gross) });
+      }
+    });
+
+    const all = Array.from(agg.values());
+    const suppliers = all.filter(a => a.dir === 'supplier').sort((a, b) => b.gross - a.gross);
+    const customers = all.filter(a => a.dir === 'customer').sort((a, b) => b.gross - a.gross);
+
+    const toRanked = (items: typeof suppliers): RankedPartner[] =>
+      items.slice(0, 10).map(item => {
+        const avatar = partnersByTax.get(item.tax);
+        return {
+          tax_number: item.tax,
+          name: decodeHtmlEntities(item.name),
+          invoice_count: item.count,
+          total_gross: item.gross,
+          custom_monogram: avatar?.custom_monogram,
+          custom_color: avatar?.custom_color,
+          custom_bg_color: avatar?.custom_bg_color,
+        };
+      });
+
+    return {
+      topSuppliers: toRanked(suppliers),
+      topCustomers: toRanked(customers),
+      totalSupplier: suppliers.reduce((s, a) => s + a.gross, 0),
+      totalCustomer: customers.reduce((s, a) => s + a.gross, 0),
+    };
+  }, [rankingRaw, partners]);
+
   // Selected partner object
   const selectedPartner = useMemo(() => {
     if (!partners || !selectedPartnerId) return null;
     return (partners as any[]).find(p => p.id === selectedPartnerId) || null;
   }, [partners, selectedPartnerId]);
 
-  // Fetch selected partner's NAV invoices
+  // Fetch selected partner's invoices — both NAV and uploaded
   const { data: partnerInvoices, isLoading: isLoadingInvoices } = useQuery({
-    queryKey: ['partner-nav-invoices', selectedPartner?.tax_number],
-    queryFn: async () => {
+    queryKey: ['partner-all-invoices', selectedPartner?.tax_number, selectedPartner?.name, selectedCompany?.id],
+    queryFn: async (): Promise<PartnerInvoice[]> => {
       if (!selectedPartner?.tax_number || !selectedCompany?.id) return [];
-      const { data, error } = await supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, invoice_direction, invoice_gross_amount, invoice_issue_date, currency')
-        .eq('company_id', selectedCompany.id)
-        .or(`supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number}`)
-        .order('invoice_issue_date', { ascending: false })
-        .limit(50); // Show last 50 invoices for performance & space
-      
-      if (error) throw error;
-      return data;
+
+      const isForeign = isForeignPartner(selectedPartner.tax_number);
+      const cleanTax = selectedPartner.tax_number.replace(/-/g, '').substring(0, 8);
+      const escapedName = selectedPartner.name.replace(/'/g, "''");
+
+      const [{ data: navData }, { data: uploadedData }] = await Promise.all([
+        // NAV invoices
+        supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_direction, invoice_gross_amount, invoice_net_amount, invoice_issue_date, payment_date, currency, supplier_name, customer_name, payment_method')
+          .eq('company_id', selectedCompany.id)
+          .or(isForeign
+            ? `supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
+            : `supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number},supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
+          )
+          .order('invoice_issue_date', { ascending: false })
+          .limit(1000),
+        // Uploaded invoices — combine tax + name search for completeness
+        supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, invoice_direction, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem, elado_nev, vevo_nev, fizetesi_mod, elado_vat_id, vevo_vat_id')
+          .eq('company_id', selectedCompany.id)
+          .or(isForeign
+            ? `elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`
+            : `elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%,elado_vat_id.ilike.HU${cleanTax}%,vevo_vat_id.ilike.HU${cleanTax}%,elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`
+          )
+          .order('kibocsatas_datuma', { ascending: false })
+          .limit(1000),
+      ]);
+
+      const fromNav: PartnerInvoice[] = (navData || []).map((inv: any) => {
+        const isOutbound = inv.invoice_direction === 'OUTBOUND';
+        return {
+          id: inv.id,
+          source: 'nav' as const,
+          invoice_number: inv.invoice_number,
+          invoice_direction: inv.invoice_direction,
+          invoice_gross_amount: inv.invoice_gross_amount,
+          invoice_net_amount: inv.invoice_net_amount,
+          invoice_issue_date: inv.invoice_issue_date,
+          payment_date: inv.payment_date,
+          currency: inv.currency || 'HUF',
+          counterparty_name: isOutbound ? inv.customer_name : inv.supplier_name,
+          payment_method: inv.payment_method,
+        };
+      });
+
+      const fromUploaded: PartnerInvoice[] = (uploadedData || []).map((inv: any) => {
+        const isOutbound = inv.invoice_direction === 'OUTBOUND';
+        return {
+          id: inv.id,
+          source: 'uploaded' as const,
+          invoice_number: inv.bizonylatsorszam,
+          invoice_direction: inv.invoice_direction,
+          invoice_gross_amount: inv.brutto_vegosszeg,
+          invoice_net_amount: null,
+          invoice_issue_date: inv.kibocsatas_datuma,
+          payment_date: inv.fizetesi_hatarido,
+          currency: inv.penznem || 'HUF',
+          counterparty_name: isOutbound ? inv.vevo_nev : inv.elado_nev,
+          payment_method: inv.fizetesi_mod,
+        };
+      });
+
+      // Merge, sort by date DESC
+      return [...fromNav, ...fromUploaded].sort((a, b) => {
+        const da = a.invoice_issue_date ? new Date(a.invoice_issue_date).getTime() : 0;
+        const db = b.invoice_issue_date ? new Date(b.invoice_issue_date).getTime() : 0;
+        return db - da;
+      });
     },
     enabled: !!selectedPartner?.tax_number && !!selectedCompany?.id,
   });
@@ -206,6 +450,9 @@ export default function PartnersPage() {
         address: data.address || null,
         email: data.email?.trim() || null,
         partner_type: data.partner_type,
+        custom_monogram: data.custom_monogram?.trim() || null,
+        custom_color: data.custom_color || null,
+        custom_bg_color: data.custom_bg_color || null,
         user_id: user.id,
         company_id: selectedCompany?.id || null,
       };
@@ -291,7 +538,7 @@ export default function PartnersPage() {
       filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(query) ||
-          p.tax_number.toLowerCase().includes(query) ||
+          (!isForeignPartner(p.tax_number) && p.tax_number.toLowerCase().includes(query)) ||
           (p.address && p.address.toLowerCase().includes(query))
       );
     }
@@ -325,10 +572,13 @@ export default function PartnersPage() {
       setEditingPartner(partner);
       setFormData({
         name: partner.name,
-        tax_number: partner.tax_number,
+        tax_number: displayTaxNumber(partner.tax_number),
         address: partner.address || "",
         email: partner.email || "",
         partner_type: partner.partner_type,
+        custom_monogram: partner.custom_monogram || "",
+        custom_color: partner.custom_color || "",
+        custom_bg_color: partner.custom_bg_color || "",
       });
     } else {
       setEditingPartner(null);
@@ -338,6 +588,9 @@ export default function PartnersPage() {
         address: "",
         email: "",
         partner_type: "both",
+        custom_monogram: "",
+        custom_color: "",
+        custom_bg_color: "",
       });
     }
     setEmailError("");
@@ -354,6 +607,9 @@ export default function PartnersPage() {
       address: "",
       email: "",
       partner_type: "both",
+      custom_monogram: "",
+      custom_color: "",
+      custom_bg_color: "",
     });
   };
 
@@ -371,6 +627,8 @@ export default function PartnersPage() {
   const selectPartner = (id: string) => {
     setSelectedPartnerId(id);
     setPartnerParam(id);
+    setInvoiceSearch(''); // reset search on partner switch
+    setInvoicePage(1); // reset pagination on partner switch
   };
 
   const validateEmail = (email: string): boolean => {
@@ -380,10 +638,11 @@ export default function PartnersPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.tax_number.trim()) {
+    const isEditingForeign = editingPartner && isForeignPartner(editingPartner.tax_number);
+    if (!formData.name.trim() || (!isEditingForeign && !formData.tax_number.trim())) {
       toast({
         title: "Hiányzó adatok",
-        description: "A név és adószám megadása kötelező.",
+        description: isEditingForeign ? "A név megadása kötelező." : "A név és adószám megadása kötelező.",
         variant: "destructive",
       });
       return;
@@ -393,8 +652,13 @@ export default function PartnersPage() {
       return;
     }
     setEmailError("");
+    // If editing a foreign partner and tax_number left empty, keep the original FOREIGN: value
+    const finalTaxNumber = isEditingForeign && !formData.tax_number.trim()
+      ? editingPartner.tax_number
+      : formData.tax_number;
     saveMutation.mutate({
       ...formData,
+      tax_number: finalTaxNumber,
       id: editingPartner?.id,
     });
   };
@@ -448,6 +712,60 @@ export default function PartnersPage() {
           <Plus className="h-4 w-4" /> Új partner hozzáadása
         </Button>
       </div>
+
+      {/* ── Ranking & Analytics Section (collapsible) ── */}
+      <Collapsible open={rankingOpen} onOpenChange={handleRankingToggle} className="shrink-0">
+        <CollapsibleTrigger asChild>
+          <button className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full group py-1">
+            <BarChart3 className="h-3.5 w-3.5" />
+            <span>Rangsor & Kimutatás</span>
+            <ChevronDown className={cn(
+              "h-3.5 w-3.5 transition-transform duration-200",
+              rankingOpen && "rotate-180"
+            )} />
+            <div className="flex-1 h-px bg-border/30 group-hover:bg-border/50 transition-colors" />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
+            <PartnerRankingCard
+              title="Top 10 beszállító"
+              type="supplier"
+              data={topSuppliers}
+              totalAll={totalSupplier}
+              isLoading={isRankingLoading}
+              onPartnerClick={(taxNumber) => {
+                // Find partner by tax_number and select it
+                const match = (partners as Partner[] | undefined)?.find(p => {
+                  const clean = p.tax_number?.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+                  return clean === taxNumber;
+                });
+                if (match) {
+                  setSelectedPartnerId(match.id);
+                  setPartnerParam(match.id);
+                }
+              }}
+            />
+            <PartnerRankingCard
+              title="Top 10 vevő"
+              type="customer"
+              data={topCustomers}
+              totalAll={totalCustomer}
+              isLoading={isRankingLoading}
+              onPartnerClick={(taxNumber) => {
+                const match = (partners as Partner[] | undefined)?.find(p => {
+                  const clean = p.tax_number?.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+                  return clean === taxNumber;
+                });
+                if (match) {
+                  setSelectedPartnerId(match.id);
+                  setPartnerParam(match.id);
+                }
+              }}
+            />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Main Splitscreen Container */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 h-full min-h-[930px] overflow-hidden">
@@ -521,9 +839,21 @@ export default function PartnersPage() {
                             <TableCell className="py-2">
                               <div className="flex items-center gap-2 max-w-full overflow-hidden">
                                 <Avatar className="h-7 w-7 shrink-0">
-                                  <AvatarFallback className={`text-xs font-medium ${getAvatarColor(partner.name)}`}>
-                                    {getInitials(partner.name)}
-                                  </AvatarFallback>
+                                  {(partner.custom_color || partner.custom_bg_color) ? (
+                                    <AvatarFallback
+                                      className="text-xs font-medium"
+                                      style={{
+                                        backgroundColor: partner.custom_bg_color || (partner.custom_color ? partner.custom_color + '20' : undefined),
+                                        color: partner.custom_color || '#fff',
+                                      }}
+                                    >
+                                      {partner.custom_monogram || getInitials(partner.name)}
+                                    </AvatarFallback>
+                                  ) : (
+                                    <AvatarFallback className={`text-xs font-medium ${getAvatarColor(partner.name)}`}>
+                                      {partner.custom_monogram || getInitials(partner.name)}
+                                    </AvatarFallback>
+                                  )}
                                 </Avatar>
                                 <div className="min-w-0">
                                   <p className="font-semibold text-sm truncate text-foreground leading-tight">
@@ -538,7 +868,13 @@ export default function PartnersPage() {
                               </div>
                             </TableCell>
                             <TableCell className="font-mono text-xs text-muted-foreground py-2">
-                              {partner.tax_number}
+                              {isForeignPartner(partner.tax_number) ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 font-sans">
+                                  Külföldi
+                                </span>
+                              ) : (
+                                partner.tax_number
+                              )}
                             </TableCell>
                             <TableCell className="py-2">
                               {partner.partner_type === 'customer' && (
@@ -580,6 +916,7 @@ export default function PartnersPage() {
                 onPageChange={setCurrentPage}
                 onPageSizeChange={handlePageSizeChange}
                 pageSizeOptions={[15, 50, 100]}
+                disableScrollToTop
               />
             </div>
           </CardContent>
@@ -593,9 +930,21 @@ export default function PartnersPage() {
               <div className="flex items-start justify-between border-b border-border/40 pb-4">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12 border border-border/50 shadow-sm">
-                    <AvatarFallback className={`text-sm font-semibold ${getAvatarColor(selectedPartner.name)}`}>
-                      {getInitials(selectedPartner.name)}
-                    </AvatarFallback>
+                    {(selectedPartner.custom_color || selectedPartner.custom_bg_color) ? (
+                      <AvatarFallback
+                        className="text-sm font-semibold"
+                        style={{
+                          backgroundColor: selectedPartner.custom_bg_color || (selectedPartner.custom_color ? selectedPartner.custom_color + '20' : undefined),
+                          color: selectedPartner.custom_color || '#fff',
+                        }}
+                      >
+                        {selectedPartner.custom_monogram || getInitials(selectedPartner.name)}
+                      </AvatarFallback>
+                    ) : (
+                      <AvatarFallback className={`text-sm font-semibold ${getAvatarColor(selectedPartner.name)}`}>
+                        {selectedPartner.custom_monogram || getInitials(selectedPartner.name)}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   <div>
                     <h2 className="text-lg font-bold text-foreground leading-tight">
@@ -618,9 +967,11 @@ export default function PartnersPage() {
                         </span>
                       )}
                       
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded-md border border-emerald-500/10">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Szinkronizált
-                      </span>
+                      {partnerInvoices && partnerInvoices.some(inv => inv.source === 'nav') && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded-md border border-emerald-500/10">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> NAV szinkronizált
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -652,19 +1003,15 @@ export default function PartnersPage() {
                 <div className="grid grid-cols-2 gap-y-3 border border-border/30 rounded-xl p-4 bg-muted/10">
                   <div>
                     <p className="text-[10px] text-muted-foreground font-semibold">Adószám</p>
-                    {selectedPartner.tax_number ? (
+                    {selectedPartner.tax_number && !isForeignPartner(selectedPartner.tax_number) ? (
                       <CopyableCell
                         value={selectedPartner.tax_number}
                         className="font-mono text-xs font-semibold mt-0.5"
                         ariaLabel="Adószám másolása"
                       />
                     ) : (
-                      <span className="text-xs text-muted-foreground/50">—</span>
+                      <span className="text-xs text-muted-foreground/50">{isForeignPartner(selectedPartner.tax_number) ? 'Külföldi partner' : '—'}</span>
                     )}
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground font-semibold">NAV státusz</p>
-                    <p className="text-xs font-semibold mt-0.5 text-emerald-600 dark:text-emerald-400">Kapcsolódva</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-[10px] text-muted-foreground font-semibold">Székhely</p>
@@ -709,26 +1056,85 @@ export default function PartnersPage() {
                 </div>
               </div>
 
-              {/* Associated NAV Invoices List */}
+              {/* Partner Számlák — tabbed */}
               <div className="space-y-3 shrink-0">
-                <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">NAV Online Számlák</h4>
-                <div className="h-[350px] border border-border/30 rounded-xl bg-muted/5 overflow-hidden flex flex-col">
-                  <div className="overflow-y-auto flex-1 p-2 space-y-2">
+                {/* Tab header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-0.5">
+                    {(['nav', 'uploaded'] as const).map((tab) => {
+                      const count = partnerInvoices?.filter(inv => inv.source === tab).length ?? 0;
+                      const label = tab === 'nav' ? 'NAV' : 'Beküldött';
+                      return (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => { setInvoiceTab(tab); setInvoicePage(1); }}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all",
+                            invoiceTab === tab
+                              ? "bg-card text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {label}
+                          {count > 0 && (
+                            <span className={cn(
+                              "inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold",
+                              invoiceTab === tab
+                                ? tab === 'nav' ? "bg-violet-500/15 text-violet-400" : "bg-amber-500/15 text-amber-400"
+                                : "bg-muted text-muted-foreground"
+                            )}>
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Invoice search */}
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Számlaszám keresése..."
+                    value={invoiceSearch}
+                    onChange={(e) => { setInvoiceSearch(e.target.value); setInvoicePage(1); }}
+                    className="pl-8 h-8 text-xs bg-background/50"
+                  />
+                </div>
+
+                {/* Invoice list */}
+                <div className="border border-border/30 rounded-xl bg-muted/5 overflow-hidden flex flex-col" style={{ minHeight: '200px' }}>
+                  <div className="overflow-y-auto flex-1 p-2 space-y-2" style={{ maxHeight: '350px' }}>
                     {isLoadingInvoices ? (
                       <div className="flex items-center justify-center h-32">
                         <LoadingSpinner className="h-6 w-6 text-muted-foreground" />
                       </div>
-                    ) : !partnerInvoices || partnerInvoices.length === 0 ? (
-                      <div className="text-center py-10 text-xs text-muted-foreground">
-                        Nincsenek NAV számlák ehhez a partnerhez
-                      </div>
-                    ) : (
-                      partnerInvoices.map((invoice) => {
-                        const isOutbound = invoice.invoice_direction === 'OUTBOUND';
+                    ) : (() => {
+                      const q = invoiceSearch.trim().toLowerCase();
+                      const filtered = (partnerInvoices || [])
+                        .filter(inv => inv.source === invoiceTab)
+                        .filter(inv => !q || (inv.invoice_number || '').toLowerCase().includes(q));
+                      if (filtered.length === 0) {
                         return (
-                          <div
+                          <div className="text-center py-10 text-xs text-muted-foreground">
+                            {invoiceTab === 'nav' ? 'Nincsenek NAV számlák' : 'Nincsenek beküldött számlák'}
+                          </div>
+                        );
+                      }
+                      const totalPages = Math.ceil(filtered.length / invoicePageSize);
+                      const safePage = Math.min(invoicePage, totalPages);
+                      const paged = filtered.slice((safePage - 1) * invoicePageSize, safePage * invoicePageSize);
+                      return paged.map((invoice) => {
+                        const isOutbound = invoice.invoice_direction === 'OUTBOUND';
+                        const cur = invoice.currency || 'HUF';
+                        return (
+                          <button
                             key={invoice.id}
-                            className="flex items-center justify-between p-2.5 rounded-lg bg-card/65 border border-border/40 hover:border-primary/30 hover:bg-muted/15 transition-all text-xs"
+                            type="button"
+                            onClick={() => openInvoiceDetail(invoice)}
+                            className="w-full flex items-center justify-between p-2.5 rounded-lg bg-card/65 border border-border/40 hover:border-primary/30 hover:bg-muted/15 transition-all text-xs cursor-pointer text-left"
                           >
                             <div className="min-w-0 flex-1 pr-2">
                               <div className="flex items-center gap-1.5">
@@ -736,7 +1142,7 @@ export default function PartnersPage() {
                                   "w-1.5 h-1.5 rounded-full shrink-0",
                                   isOutbound ? "bg-emerald-500" : "bg-blue-500"
                                 )}></span>
-                                <span className="font-mono font-medium truncate">{invoice.invoice_number}</span>
+                                <span className="font-mono font-medium truncate">{invoice.invoice_number || '–'}</span>
                               </div>
                               {invoice.invoice_issue_date && (
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -750,17 +1156,41 @@ export default function PartnersPage() {
                             </div>
                             <div className="text-right">
                               <p className="font-mono font-semibold">
-                                {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                                {formatCurrency(invoice.invoice_gross_amount || 0, cur)}
                               </p>
                               <span className="text-[9px] text-muted-foreground uppercase font-bold">
-                                {isOutbound ? 'Vevő' : 'Szállító'}
+                                {isOutbound ? 'Kimenő' : 'Bejövő'}
                               </span>
                             </div>
-                          </div>
+                          </button>
                         );
-                      })
-                    )}
+                      });
+                    })()}
                   </div>
+                  {/* UnifiedPagination — only when multiple pages */}
+                  {(() => {
+                    const q = invoiceSearch.trim().toLowerCase();
+                    const totalFiltered = (partnerInvoices || [])
+                      .filter(inv => inv.source === invoiceTab)
+                      .filter(inv => !q || (inv.invoice_number || '').toLowerCase().includes(q)).length;
+                    const totalPages = Math.ceil(totalFiltered / invoicePageSize);
+                    if (totalPages <= 1) return null;
+                    return (
+                      <div className="border-t border-border/30 px-2 py-1 shrink-0">
+                        <UnifiedPagination
+                          currentPage={Math.min(invoicePage, totalPages)}
+                          totalPages={totalPages}
+                          totalItems={totalFiltered}
+                          pageSize={invoicePageSize}
+                          onPageChange={setInvoicePage}
+                          onPageSizeChange={(size) => { setInvoicePageSize(size); setInvoicePage(1); }}
+                          pageSizeOptions={[50, 100]}
+                          disableScrollToTop
+                          className="text-xs [&_button]:h-6 [&_button]:w-6 [&_button]:text-[10px] [&_.text-sm]:text-[10px] [&_select]:h-6 [&_select]:text-[10px]"
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -805,12 +1235,14 @@ export default function PartnersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tax_number">Adószám *</Label>
+              <Label htmlFor="tax_number">{editingPartner && isForeignPartner(editingPartner.tax_number) ? 'Adószám' : 'Adószám *'}</Label>
               <Input
                 id="tax_number"
                 value={formData.tax_number}
                 onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
-                placeholder="12345678-1-23"
+                placeholder={editingPartner && isForeignPartner(editingPartner.tax_number)
+                  ? 'Külföldi partner – írd be az adószámot ha ismert'
+                  : '12345678-1-23'}
               />
             </div>
             <div className="space-y-2">
@@ -855,6 +1287,105 @@ export default function PartnersPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* ── Avatar customization ── */}
+            <div className="space-y-3 pt-2 border-t border-border/40">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Megjelenés testreszabása</Label>
+                {(formData.custom_monogram || formData.custom_color || formData.custom_bg_color) && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, custom_monogram: '', custom_color: '', custom_bg_color: '' })}
+                    className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Visszaállítás
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-4">
+                {/* Live preview */}
+                {(() => {
+                  const previewMonogram = formData.custom_monogram || (formData.name ? getInitials(formData.name) : '?');
+                  const previewColor = formData.custom_color;
+                  const previewBg = formData.custom_bg_color;
+                  const hasCustom = previewColor || previewBg;
+                  return (
+                    <div
+                      className={cn("h-12 w-12 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 border border-border/50 transition-colors", !hasCustom && getAvatarColor(formData.name || '?'))}
+                      style={hasCustom ? {
+                        backgroundColor: previewBg || (previewColor ? previewColor + '20' : undefined),
+                        color: previewColor || '#fff',
+                      } : undefined}
+                    >
+                      {previewMonogram}
+                    </div>
+                  );
+                })()}
+                <div className="flex-1 space-y-2">
+                  {/* Monogram input */}
+                  <div className="space-y-1">
+                    <Label htmlFor="custom_monogram" className="text-xs">Monogram</Label>
+                    <Input
+                      id="custom_monogram"
+                      value={formData.custom_monogram}
+                      onChange={(e) => setFormData({ ...formData, custom_monogram: e.target.value.slice(0, 3) })}
+                      placeholder={formData.name ? getInitials(formData.name) : 'Auto'}
+                      className="h-8 text-xs font-mono uppercase"
+                      maxLength={3}
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Text color palette */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Betűszín</Label>
+                <div className="grid grid-cols-10 gap-1.5">
+                  {COLOR_PALETTE.map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      className={cn(
+                        "w-7 h-7 rounded-md transition-transform hover:scale-110 outline-none",
+                        formData.custom_color === c.value && "scale-110"
+                      )}
+                      style={{
+                        backgroundColor: c.value,
+                        boxShadow: formData.custom_color === c.value
+                          ? `0 0 0 2px var(--background, #fff), 0 0 0 4px ${c.value}`
+                          : undefined,
+                      }}
+                      onClick={() => setFormData({ ...formData, custom_color: formData.custom_color === c.value ? '' : c.value })}
+                      title={c.label}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Background color palette */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Háttérszín</Label>
+                <div className="grid grid-cols-10 gap-1.5">
+                  {COLOR_PALETTE.map((c) => (
+                    <button
+                      key={`bg-${c.value}`}
+                      type="button"
+                      className={cn(
+                        "w-7 h-7 rounded-md transition-transform hover:scale-110 outline-none",
+                        formData.custom_bg_color === c.value && "scale-110"
+                      )}
+                      style={{
+                        backgroundColor: c.value,
+                        boxShadow: formData.custom_bg_color === c.value
+                          ? `0 0 0 2px var(--background, #fff), 0 0 0 4px ${c.value}`
+                          : undefined,
+                      }}
+                      onClick={() => setFormData({ ...formData, custom_bg_color: formData.custom_bg_color === c.value ? '' : c.value })}
+                      title={c.label}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Mégse
@@ -866,6 +1397,13 @@ export default function PartnersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Invoice detail dialog */}
+      <PartnerInvoiceDetailDialog
+        invoice={selectedInvoiceForDetail}
+        open={isDetailDialogOpen}
+        onClose={closeInvoiceDetail}
+      />
     </div>
   );
 }

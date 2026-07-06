@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useAccountyDocuments, useAccountyClients, type AccountyDocument } from '@/hooks/useAccountyData';
+import { useAccountyDocuments, useAccountyClients, type AccountyDocument } from '@/hooks/accounty';
 import { usePayrollCalculations, usePayrollCycles } from '@/hooks/usePayrollData';
 import { useToast } from '@/hooks/use-toast';
 import { getPayslipPreviewUrl, type PayslipPdfData } from '@/lib/payslipPdf';

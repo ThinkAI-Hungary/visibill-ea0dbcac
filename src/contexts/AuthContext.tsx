@@ -106,7 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) {
           reportError({ type: 'auth', component: 'AuthContext', action: 'error', message: 'Session error:', error: error.message });
           if (error.message.includes('Refresh Token') || error.message.includes('refresh_token')) {
-            console.log('Invalid refresh token detected, clearing session...');
             try {
               localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
             } catch {}
@@ -141,6 +140,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     });
+
+    // Supabase returns a fake success when the email is already registered
+    // (to prevent email enumeration). Detect this via the empty identities array.
+    if (!error && data.user && (data.user.identities?.length ?? 0) === 0) {
+      const alreadyExistsError = {
+        message: 'Ez az email cím már regisztrálva van. Kérjük, jelentkezz be vagy használj jelszóemlékeztetőt.'
+      };
+      toast({
+        variant: 'destructive',
+        title: 'Regisztráció sikertelen',
+        description: alreadyExistsError.message,
+      });
+      return { error: alreadyExistsError };
+    }
     
     if (error) {
       reportError({ type: 'auth', component: 'AuthContext', action: 'signUp', message: error.message, error, context: { email } });
@@ -156,6 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     return { error };
   };
+
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -204,7 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
     } catch (err: any) {
-      console.warn('signOut fallback (forced):', err?.message || err);
+      reportError({ type: 'auth', component: 'AuthContext', action: 'warn', message: 'signOut fallback (forced)', error: err });
     } finally {
       // ── Atomic Cleanup ──
 

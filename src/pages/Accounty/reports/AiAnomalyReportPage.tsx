@@ -6,7 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
 import {
   usePayrollEmployees, usePayrollCycles, usePayrollCalculations,
   useTaxParameters, paramsToTaxParams,

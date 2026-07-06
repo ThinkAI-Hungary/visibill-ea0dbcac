@@ -245,19 +245,31 @@ CSS animáció hover-re:
 
 ## Tranzakció Típus Színkódolás
 
-Táblázat sorok/badge-ek színezése tranzakció típus szerint:
+Táblázat sorok/badge-ek színezése tranzakció típus szerint. A logíkát a `getTypeBgClass()` függvény képviseli a `TransactionTable.tsx`-ben:
 
 ```tsx
-// Háttér szín
-style={{ backgroundColor: `hsl(var(--tr-supplier-bg))` }}
-
-// Szöveg szín
-style={{ color: `hsl(var(--tr-supplier-text))` }}
+// TransactionTable.tsx — getTypeBgClass()
+const getTypeBgClass = (type: string | null): string => {
+  const t = type?.toLowerCase().trim();
+  if (t === 'szállítói tranzakció')
+    return 'bg-[hsl(var(--tr-supplier-bg)/0.6)] text-[hsl(var(--tr-supplier-text))]';
+  if (t === 'vevői tranzakció')
+    return 'bg-[hsl(var(--tr-customer-bg)/0.6)] text-[hsl(var(--tr-customer-text))]';
+  // ...többi típus ugyanezt a mintát követi
+  return '';
+};
 ```
 
-14 különböző tranzakció típus, mindegyiknek saját háttér+szöveg szín páros, light és dark mode-ban.
+**Minta:** `bg-[hsl(var(--tr-xxx-bg)/0.6)] text-[hsl(var(--tr-xxx-text))]`
+- Háttér: 60%-os opacity a CSS változón
+- Szöveg: `--tr-xxx-text` változó — light mode-ban sötét (25% lightness), dark mode-ban fehér/világos (85–100%)
+
+> **⚠️ Bug fix (2026-06-24):** A korábbi implementáció `text-white`-t használt. Light mode-ban a pasztell háttéren (92% lightness) ez WCAG-szinten olvashatatlan volt. Az állásfoglalás: **SOHA ne használj hardkódolt `text-white`-ot a tranzakció badge-eken** — minélta CSS változókat.
+
+14 különböző tranzakció típus, mindkét módban. Șsszefüggő token lista: [02-design-tokens.md](./02-design-tokens.md#tranzakció-típus-színek).
 
 ---
+
 
 ## Sor Státusz Kiemelés
 

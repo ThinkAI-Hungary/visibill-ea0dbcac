@@ -1,4 +1,4 @@
-﻿import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -19,9 +19,10 @@ interface InvoiceImageDialogProps {
   invoice: InvoiceForDialog | null;
   open: boolean;
   onClose: () => void;
+  isLoading?: boolean;
 }
 
-const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps) => {
+const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading }: InvoiceImageDialogProps) => {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,6 +39,24 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
       setImageError(false);
     }
   }, [invoice?.id, open]);
+
+  // While fetching invoice data from parent, show spinner in dialog
+  if (open && externalLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Számla betöltése...</DialogTitle>
+            <DialogDescription> </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-20 gap-4 text-muted-foreground">
+            <span className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            <p className="text-sm">Számla adatok betöltése...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (!invoice) return null;
 
@@ -74,8 +93,9 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
               ) : (
                 <>
                   {isLoading && (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p>Betöltés...</p>
+                    <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
+                      <span className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                      <p className="text-sm">Kép betöltése...</p>
                     </div>
                   )}
                   {isPDF ? (

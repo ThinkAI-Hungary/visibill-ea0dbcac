@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import {
   usePayrollCycles, usePayrollCalculations, usePayrollEmployees
 } from '@/hooks/usePayrollData';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 import { generateFiling08Xml, downloadXml } from '@/lib/payroll/filingGenerator';
 import { supabase } from '@/integrations/supabase/client';

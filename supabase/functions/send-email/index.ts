@@ -1,4 +1,4 @@
-﻿import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0'
+import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0'
 import { Resend } from 'https://esm.sh/resend@4.0.0'
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
@@ -98,6 +98,18 @@ function buildConfirmationHtml(
 </body></html>`
 }
 
+// Email change: only the button link, no OTP code
+function buildEmailChangeHtml(
+  supabaseUrl: string,
+  tokenHash: string,
+  emailActionType: string,
+  redirectTo: string
+): string {
+  const verifyUrl = buildVerifyUrl(supabaseUrl, tokenHash, emailActionType, redirectTo)
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu',sans-serif;"><div style="max-width:600px;margin:0 auto;padding:0 12px;"><h1 style="color:#333;font-size:24px;font-weight:bold;margin:40px 0;">Email c\u00edm m\u00f3dos\u00edt\u00e1s</h1><p style="color:#333;font-size:14px;line-height:1.5;margin:24px 0;">Email c\u00edm v\u00e1ltoztat\u00e1st k\u00e9rt\u00e9l. Az \u00faj email c\u00edm meger\u0151s\u00edt\u00e9s\u00e9hez kattints az al\u00e1bbi gombra:</p><a href="${verifyUrl}" target="_blank" style="display:inline-block;padding:12px 24px;background-color:#0070f3;color:#ffffff;text-decoration:none;border-radius:5px;font-size:14px;margin-bottom:24px;">\u00daj email c\u00edm meger\u0151s\u00edt\u00e9se</a><p style="color:#ababab;font-size:14px;line-height:1.5;margin-top:8px;margin-bottom:16px;">Ha nem te k\u00e9rted az email c\u00edm v\u00e1ltoztat\u00e1st, nyugodtan figyelmen k\u00edv\u00fcl hagyhatod ezt az emailt. A jelenlegi c\u00edmed \u00e9rv\u00e9nyes marad.</p><p style="color:#898989;font-size:12px;line-height:22px;margin-top:12px;margin-bottom:24px;"><a href="https://app.visibill.hu" target="_blank" style="color:#898989;font-size:14px;text-decoration:underline;">Visibill</a> \u2013 Sz\u00e1mlakezel\u00e9s egyszer\u0171en</p></div></body></html>`
+}
+
 async function sendEmailInBackground(to: string, subject: string, html: string) {
   try {
     console.log('[SEND-EMAIL] Background send started:', { to, subject })
@@ -136,7 +148,7 @@ Deno.serve(async (req) => {
     const headers = Object.fromEntries(req.headers)
 
     let webhookData: {
-      user: { email: string }
+      user: { email: string; new_email?: string }
       email_data: {
         token: string
         token_hash: string
@@ -150,8 +162,9 @@ Deno.serve(async (req) => {
       const wh = new Webhook(hookSecret)
       webhookData = wh.verify(payload, headers) as typeof webhookData
       console.log('[SEND-EMAIL] Webhook verified successfully')
-    } catch (verifyError) {
-      console.warn('[SEND-EMAIL] Webhook verification failed, parsing directly:', verifyError.message)
+    } catch (verifyError: unknown) {
+      const verifyMsg = verifyError instanceof Error ? verifyError.message : String(verifyError)
+      console.warn('[SEND-EMAIL] Webhook verification failed, parsing directly:', verifyMsg)
       try {
         webhookData = JSON.parse(payload)
         console.log('[SEND-EMAIL] Parsed payload directly')
@@ -176,13 +189,24 @@ Deno.serve(async (req) => {
     let subject: string
 
     if (email_action_type === 'signup') {
-      subject = 'Er\u0151s\u00edtsd meg az email c\u00edmed - Visibill'
-      html = buildConfirmationHtml(supabaseUrl, token_hash, email_action_type, redirect_to, token)
+      // Signup confirmation is handled by the send-welcome-email Edge Function
+      // (triggered by the handle_new_user Postgres trigger). That email contains
+      // the verify-email link which sets both profiles.email_verified AND
+      // auth.users.email_confirmed_at. No need to send a second email here.
+      console.log('[SEND-EMAIL] Signup: deferring to send-welcome-email, skipping hook email')
+      return new Response(
+        JSON.stringify({ success: true, skipped: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     } else if (email_action_type === 'recovery' || email_action_type === 'magiclink') {
       subject = email_action_type === 'recovery'
         ? 'Jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1s - Visibill'
         : 'Bejelentkez\u00e9si link - Visibill'
       html = buildRecoveryHtml(supabaseUrl, token_hash, email_action_type, redirect_to, token)
+    } else if (email_action_type === 'email_change') {
+      subject = 'Email c\u00edm m\u00f3dos\u00edt\u00e1s meger\u0151s\u00edt\u00e9se - Visibill'
+      // No OTP code for email change — link only
+      html = buildEmailChangeHtml(supabaseUrl, token_hash, email_action_type, redirect_to)
     } else {
       console.error('[SEND-EMAIL] Unsupported type:', email_action_type)
       return new Response(
@@ -191,7 +215,13 @@ Deno.serve(async (req) => {
       )
     }
 
-    const sendPromise = sendEmailInBackground(user.email, subject, html)
+    // For email_change: send to the NEW email address (user.new_email), not the old one
+    const recipient = (email_action_type === 'email_change' && webhookData.user.new_email)
+      ? webhookData.user.new_email
+      : webhookData.user.email
+    console.log('[SEND-EMAIL] Recipient:', recipient, '| Type:', email_action_type)
+
+    const sendPromise = sendEmailInBackground(recipient, subject, html)
 
     if (edgeRuntime?.waitUntil) {
       edgeRuntime.waitUntil(sendPromise)
@@ -210,10 +240,11 @@ Deno.serve(async (req) => {
       JSON.stringify({ success: true, queued: false }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-  } catch (error) {
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error)
     console.error('[SEND-EMAIL] Error:', error)
     return new Response(
-      JSON.stringify({ error: { message: error.message } }),
+      JSON.stringify({ error: { message: errMsg } }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

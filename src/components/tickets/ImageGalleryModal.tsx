@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X, Download } from "lucide-react";
 
 interface ImageGalleryModalProps {
@@ -58,9 +59,9 @@ export function ImageGalleryModal({
   const currentImage = images[currentIndex];
   const hasMultiple = images.length > 1;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
       onClick={onClose}
     >
       {/* Backdrop */}
@@ -161,6 +162,7 @@ export function ImageGalleryModal({
           ))}
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -14,7 +14,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ───────────────────────────────────────────────────
-export type ErrorType = 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'unhandled';
+export type ErrorType = 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'realtime' | 'unhandled';
 export type Severity = 'error' | 'warning' | 'info';
 
 export interface ReportErrorOptions {
@@ -74,12 +74,29 @@ function getCompanyId(): string | null {
 
 // ─── Main reporter ──────────────────────────────────────────
 export async function reportError(opts: ReportErrorOptions): Promise<void> {
-  // 1. Always log to console
+  // 1. Always log to console — with full error details
   const tag = `[${opts.component}/${opts.action}]`;
+
+  // Format the error for console: Error → native, plain object → JSON, else string
+  function fmtErr(err: unknown): unknown {
+    if (err == null || err === '') return undefined;
+    if (err instanceof Error) return err;           // native Error prints stack in DevTools
+    if (typeof err === 'object') {
+      try { return JSON.stringify(err, null, 2); }  // plain object → readable JSON
+      catch { return String(err); }
+    }
+    return err;
+  }
+
+  const formattedErr = fmtErr(opts.error);
   if (opts.severity === 'warning') {
-    console.warn(tag, opts.message, opts.error || '');
+    formattedErr !== undefined
+      ? console.warn(tag, opts.message, formattedErr)
+      : console.warn(tag, opts.message);
   } else {
-    console.error(tag, opts.message, opts.error || '');
+    formattedErr !== undefined
+      ? console.error(tag, opts.message, formattedErr)
+      : console.error(tag, opts.message);
   }
 
   // 2. Rate limit check
@@ -97,7 +114,54 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     }
 
     const companyId = getCompanyId();
+    
+    // 3.1. Robust error message reconstruction
+    let finalMessage = opts.message;
+    if (finalMessage === '[object Object]' || !finalMessage || finalMessage.trim() === '') {
+      if (opts.error) {
+        if (opts.error instanceof Error) {
+          finalMessage = opts.error.message;
+        } else if (typeof opts.error === 'object') {
+          try {
+            const obj = opts.error as Record<string, unknown>;
+            finalMessage = typeof obj.message === 'string'
+              ? obj.message
+              : typeof obj.error === 'string'
+                ? obj.error
+                : JSON.stringify(opts.error);
+          } catch {
+            finalMessage = String(opts.error);
+          }
+        } else {
+          finalMessage = String(opts.error);
+        }
+      }
+      // Fallback if still empty or generic
+      if (!finalMessage || finalMessage === '[object Object]') {
+        finalMessage = `Hiba történt a(z) ${opts.component} komponensben (${opts.action})`;
+      }
+    }
+
     const sanitizedContext = opts.context ? sanitizeContext(opts.context) : {};
+
+    // 3.2. Automatically attach serialized raw error to context for deep visibility
+    if (opts.error && !sanitizedContext.error_details) {
+      try {
+        if (opts.error instanceof Error) {
+          sanitizedContext.error_details = {
+            name: opts.error.name,
+            message: opts.error.message,
+            stack: opts.error.stack,
+          };
+        } else if (typeof opts.error === 'object') {
+          sanitizedContext.error_details = sanitizeContext(opts.error as Record<string, unknown>);
+        } else {
+          sanitizedContext.error_details = { value: String(opts.error) };
+        }
+      } catch {
+        sanitizedContext.error_details = { value: '[Unserializable Error]' };
+      }
+    }
 
     // Extract stack trace
     let stackTrace: string | null = null;
@@ -112,9 +176,9 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
       severity: opts.severity || 'error',
       component: opts.component,
       action: opts.action,
-      message: opts.message.slice(0, 2000),
+      message: finalMessage.slice(0, 2000),
       stack_trace: stackTrace,
-      context: sanitizedContext,
+      context: sanitizedContext as unknown as Record<string, string>,
       url: window.location.pathname,
       user_agent: navigator.userAgent.slice(0, 500),
     });

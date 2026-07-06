@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, ChevronRight, Landmark, PieChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
 
 // GFO-kód → adóalany típus mapping
 const GFO_TYPES = [

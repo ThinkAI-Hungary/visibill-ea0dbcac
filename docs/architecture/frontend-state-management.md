@@ -170,26 +170,35 @@ safeStorage.length           // → number
 
 ## Realtime State — LiveNotificationProvider
 
-**Fájl:** `components/LiveNotificationProvider.tsx` (18KB)
+**Fájl:** `components/LiveNotificationProvider.tsx` (~38KB)
 
 Globális Supabase Realtime listener a `ProtectedLayout`-ban mountolva:
 
-### Figyelt Táblák (12)
+### Figyelt Táblák (19)
 
 | Tábla | Esemény | Akció |
 |-------|---------|-------|
 | `salary` | INSERT | Toast + cache invalidation |
 | `salary_files` | UPDATE (→completed) | Toast + cache invalidation |
-| `invoices` | INSERT | Toast (upload ID-nként deduplikálva) |
-| `invoice_uploads` | UPDATE (→processed) | Toast |
+| `invoices` | INSERT | Toast (upload ID-ként deduplikálva) |
+| `invoice_uploads` | UPDATE (→completed/processed) | Toast |
+| `invoice_uploads` | UPDATE (→cmr_attached) | Toast (Truck) |
+| `invoice_uploads` | UPDATE (→cmr_escalated) | Toast (AlertTriangle, destructive) |
 | `nav_invoices` | * | Cache invalidation |
 | `transactions` | INSERT | Toast + azonnali cache frissítés |
 | `transaction_uploads` | UPDATE (→completed) | Toast + force invalidation |
 | `partners` | * | Cache invalidation |
 | `categories` | * | Cache invalidation |
 | `projects` | * | Cache invalidation |
+| `dunning_sends` | * | Cache invalidation |
 | `nav_invoice_items` | * | GL cache invalidation |
-| `report_uploads` | UPDATE (→completed) | Toast (30s replay protection) |
+| `invoice_items` | * | GL cache invalidation |
+| `nav_sync_logs` | * | Cache invalidation |
+| `report_uploads` | UPDATE (→completed/processed) | Toast (30s replay protection) |
+| `courier_reports` | * | Cache invalidation (nincs toast) |
+| `shipments` | * | Cache invalidation |
+| `shipment_matches` | * | Cache invalidation |
+| `transport_documents` | INSERT + UPDATE | Toast (matched/orphaned/escalated) + Cache |
 
 ### Invalidation Stratégia
 

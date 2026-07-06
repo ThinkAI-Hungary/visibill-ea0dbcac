@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { exportToFile } from '@/lib/exportUtils';
@@ -143,14 +143,12 @@ export function useInvoiceMutations({
       const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
       const dateChunks = splitDateRange(startDate, endDate);
 
-      console.log('[InvoicesPage] NAV sync: splitting 90 days into', dateChunks.length, 'chunks');
 
       let totalOutbound = 0;
       let totalInbound = 0;
       const errors: string[] = [];
 
       for (const chunk of dateChunks) {
-        console.log('[InvoicesPage] Processing chunk:', chunk);
 
         const [outboundResult, inboundResult] = await Promise.allSettled([
           supabase.functions.invoke('nav-query-outbound-invoices', {
@@ -205,7 +203,6 @@ export function useInvoiceMutations({
             body: { companyId: selectedCompany.id, syncType: 'manual', forceRecategorizeIds },
             headers: { Authorization: `Bearer ${session.access_token}` }
           });
-          console.log('Categorization webhook triggered', { forceRecategorizeIds: forceRecategorizeIds.length });
         } catch (categorizationError) {
           reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Categorization webhook failed:', error: categorizationError });
         }
@@ -221,32 +218,40 @@ export function useInvoiceMutations({
     }
   };
 
-  const handleProjectChange = async (invoiceId: string, projectId: string | null) => {
+  const handleProjectChange = async (invoiceId: string, projectId: string | null, invoiceNumber?: string | null) => {
+    const value = projectId === 'none' ? null : projectId;
     try {
-      const { error } = await supabase
-        .from('nav_invoices')
-        .update({ project_id: projectId === 'none' ? null : projectId })
-        .eq('id', invoiceId);
-      if (error) throw error;
+      // Always update nav_invoices by ID
+      const navPromise = supabase.from('nav_invoices').update({ project_id: value }).eq('id', invoiceId);
+      // Update linked invoices row by bizonylatsorszam if we know the invoice number
+      const subPromise = invoiceNumber
+        ? supabase.from('invoices').update({ project_id: value }).eq('bizonylatsorszam', invoiceNumber)
+        : Promise.resolve({ error: null });
+      const [navRes, subRes] = await Promise.all([navPromise, subPromise]);
+      if (navRes.error) throw navRes.error;
+      if (subRes.error) throw subRes.error;
       invalidateInvoiceData();
       toast({ title: 'Projekt hozzárendelve' });
     } catch (error) {
-      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating project:', error: error });
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating project:', error });
       toast({ title: 'Hiba a projekt hozzárendelésekor', variant: 'destructive' });
     }
   };
 
-  const handleCategoryChange = async (invoiceId: string, categoryId: string | null) => {
+  const handleCategoryChange = async (invoiceId: string, categoryId: string | null, invoiceNumber?: string | null) => {
+    const value = categoryId === 'none' ? null : categoryId;
     try {
-      const { error } = await supabase
-        .from('nav_invoices')
-        .update({ category_id: categoryId === 'none' ? null : categoryId })
-        .eq('id', invoiceId);
-      if (error) throw error;
+      const navPromise = supabase.from('nav_invoices').update({ category_id: value }).eq('id', invoiceId);
+      const subPromise = invoiceNumber
+        ? supabase.from('invoices').update({ category_id: value }).eq('bizonylatsorszam', invoiceNumber)
+        : Promise.resolve({ error: null });
+      const [navRes, subRes] = await Promise.all([navPromise, subPromise]);
+      if (navRes.error) throw navRes.error;
+      if (subRes.error) throw subRes.error;
       invalidateInvoiceData();
       toast({ title: 'Kategória hozzárendelve' });
     } catch (error) {
-      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating category:', error: error });
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating category:', error });
       toast({ title: 'Hiba a kategória hozzárendelésekor', variant: 'destructive' });
     }
   };

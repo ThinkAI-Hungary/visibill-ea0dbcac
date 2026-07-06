@@ -1,7 +1,7 @@
 # A-018: Hibajegy Rendszer Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12
+**Date:** 2025-12 (utolsó frissítés: 2026-06)
 
 ## Context
 
@@ -19,7 +19,7 @@ feedback (fő tábla)
 ├── user_id: uuid (FK → auth.users, bejelentő)
 ├── company_id: uuid (FK → companies)
 ├── company_name: text (denormalizált — gyors listázás)
-├── type: text ('bug' | 'feedback')
+├── type: text ('bug' | 'feedback' | 'question')
 ├── service: text ('eaisybill' | 'accounty')
 ├── message: text
 ├── status: text ('created' | 'in_progress' | 'resolved')
@@ -27,6 +27,7 @@ feedback (fő tábla)
 ├── page_url: text (automatikus — beküldés kontextusa)
 ├── attachments: text[] (Storage URL-ek)
 ├── ticket_number: text (trigger generálja)
+├── assigned_to: uuid (FK → auth.users, felelős support agent)
 ├── slack_sent: boolean + slack_sent_at: timestamptz
 ├── created_at / updated_at: timestamptz
 │
@@ -37,11 +38,12 @@ feedback (fő tábla)
 │   ├── is_admin: boolean (support badge megjelenítés)
 │   ├── message: text
 │   ├── attachments: text[]
+│   ├── is_internal: boolean (belső komment, user nem látja)
 │   └── created_at: timestamptz
 │
 ├── ticket_events (1:N, audit trail)
 │   ├── feedback_id: uuid (FK → feedback)
-│   ├── event_type: text ('created' | 'status_changed' | 'comment_added')
+│   ├── event_type: text ('created' | 'status_changed' | 'comment_added' | 'assignee_changed')
 │   ├── actor_id, actor_email, actor_name: user info
 │   ├── old_value, new_value: text (pl. 'created' → 'in_progress')
 │   ├── metadata: jsonb
@@ -67,31 +69,38 @@ CREATE FUNCTION generate_ticket_number()  -- BEFORE INSERT ON feedback
 CREATE FUNCTION create_ticket_created_event()  -- AFTER INSERT ON feedback
 -- Beszúr ticket_events-be: event_type='created'
 
--- 3. Státusz változás event
+-- 3. Státusz és felelős változás event
 CREATE FUNCTION create_ticket_status_event()  -- AFTER UPDATE ON feedback
 -- Ha status változott → ticket_events: event_type='status_changed', old/new value
+-- Ha assigned_to változott → ticket_events: event_type='assignee_changed',
+--   old/new value a felelős neve (profiles.name lookup)
+-- Actor (módosító user) nevét és emailjét is loggolja
 
 -- 4. Komment event
 CREATE FUNCTION create_comment_event()  -- AFTER INSERT ON ticket_comments
 -- Beszúr ticket_events-be: event_type='comment_added'
+
+-- 5. updated_at frissítés
+CREATE FUNCTION update_feedback_updated_at()  -- BEFORE UPDATE ON feedback
+-- updated_at = NOW()
 ```
 
-Mind a 4 trigger function `SECURITY DEFINER` + `search_path = 'public'`.
+Mind az 5 trigger function `SECURITY DEFINER` + `search_path = 'public'`.
 
 ### RLS Stratégia
 
 | Tábla | Policy | Leírás |
 |---|---|---|
 | `feedback` SELECT | `user_id = auth.uid()` | User csak a sajátját látja |
+| `feedback` SELECT | `is_support_admin()` | Support admin minden jegyet lát |
 | `feedback` INSERT | `user_id = auth.uid()` | User csak sajátját hozhatja létre |
+| `feedback` UPDATE | `is_support_admin()` | Support admin módosíthat (státusz, felelős) |
 | `ticket_comments` SELECT | `USING (true)` | Bárki olvashat (a feedback RLS védi az FK-n) |
 | `ticket_comments` INSERT | `user_id = auth.uid()` | Csak saját kommentet írhat |
 | `ticket_events` SELECT | `USING (true)` | Bárki olvashatja (audit trail) |
 | `ticket_reads` SELECT/INSERT/UPDATE | `user_id = auth.uid()` | Csak saját olvasási állapot |
 
-**Admin hozzáférés:** Az `is_support_admin` flag a `profiles` táblában van. A `feedback` RLS **nem szűr admin-re** — az admin **service_role bypass** nélkül csak a saját jegyeit látja. **Ez egy ismert limitáció** — a jelenlegi workaround az, hogy az admin felhasználó minden céghez hozzárendelés kap.
-
-> **TODO:** A `feedback` SELECT policy-t bővíteni kellene: `user_id = auth.uid() OR is_support_admin(auth.uid())`.
+**Admin hozzáférés:** Az `is_support_admin()` DB function ellenőrzi a `profiles.is_support_admin` flag-et. ~~Ez korábban egy ismert limitáció volt~~ — **megoldva**: dedikált SELECT és UPDATE policy-k biztosítják a support admin hozzáférést.
 
 ### Olvasatlan Detektálás
 
@@ -152,9 +161,21 @@ idx_ticket_reads_feedback_user  ON ticket_reads(feedback_id, user_id)
 - Upsert-alapú read tracking → egyszerű, idempotens, nincs race condition
 - Supabase Realtime → instant feedback badge frissítés
 - Denormalizált `company_name`, `user_name`, `user_email` → gyors listázás join nélkül
+- Felelős (assignee) változás automatikus logolás → átlátható support workflow
 
 **Negatív:**
 - `feedback` vs `ticket_*` névkonvenció inkonzisztencia
-- Admin nem lát minden jegyet RLS-en keresztül (workaround: cég hozzárendelés)
 - `ticket_comments` SELECT `USING (true)` — bármelyik authenticated user olvashatja bárki kommentjeit (a feedback FK-n keresztül a frontend véd, de API szinten nincs korlátozás)
 - Denormalizáció → ha a user nevet változtat, a régi jegyekben marad a régi név
+
+## Frontend funkciók (2026-06 állapot)
+
+- **Pagináció:** 15 jegy/oldal (user), 25 jegy/oldal (support admin)
+- **Multi-status szűrő:** Több státusz egyidejű szűrése (pl. Új + Folyamatban) — Popover + Checkbox UI
+- **Ticket típusok:** Hibajelentés (bug), Visszajelzés (feedback), Kérdés (question)
+- **Prioritás:** Felhasználó választhatja meg a beküldéskor (low/medium/high/critical)
+- **Felelős kezelés:** Support admin kijelölhet / módosíthat felelőst, ami timeline event-et generál
+- **Clipboard paste:** Ctrl+V a hozzászólás mezőben képet csatol vágólapról
+- **Kép előnézet:** Csatolt képek kattinthatók küldés előtt → fullscreen preview
+- **Fullscreen galéria:** Portal-alapú overlay (z-index: 9999), teljes képernyős képnézegető
+- **Státusz fordítás:** DB-ben `new` → frontend-en `Új` (normalizáció a hook-ban)

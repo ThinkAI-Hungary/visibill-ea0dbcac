@@ -386,7 +386,7 @@ export function ActivityLogSheet() {
     queryKey: ['audit_logs', companyId, dateRange.from, dateRange.to],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('audit_logs' as any)
+        .from('audit_logs')
         .select('*')
         .eq('company_id', companyId!)
         .gte('created_at', dateRange.from)

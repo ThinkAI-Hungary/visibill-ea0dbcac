@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { reportError } from '@/lib/errorReporter';
 import {
   FileText, Mail, ChevronDown, ChevronRight, ExternalLink, Link2, Loader2, Eye, CheckCircle2,
 } from 'lucide-react';
@@ -109,7 +110,7 @@ export default function CMREscalationDialog({ upload, open, onClose, onResolved 
           status: data.status,
         });
       } catch (err) {
-        console.error('Failed to fetch CMR data:', err);
+        reportError({ type: 'db_query', component: 'CMREscalationDialog', action: 'error', message: 'Failed to fetch CMR data', error: err });
         setCmrData(null);
       } finally {
         setLoading(false);
@@ -193,7 +194,7 @@ export default function CMREscalationDialog({ upload, open, onClose, onResolved 
 
       onResolved();
     } catch (err: any) {
-      console.error('CMR resolution failed:', err);
+      reportError({ type: 'db_query', component: 'CMREscalationDialog', action: 'error', message: 'CMR resolution failed', error: err });
       toast({
         title: 'Hiba a párosítás során',
         description: err.message || 'Ismeretlen hiba',
