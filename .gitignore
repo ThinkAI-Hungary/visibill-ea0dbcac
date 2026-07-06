@@ -29,3 +29,9 @@ dist-ssr
 *.sw?
 .vercel
 tests/docs
+
+# Test scripts (may contain service role keys)
+test_*.ps1
+test_*.js
+test_*.sh
+*.secret
