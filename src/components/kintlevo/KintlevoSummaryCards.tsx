@@ -1,9 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { CAT, fmt } from '@/lib/kintlevo-helpers';
 import type { AgingCategory, UnifiedInvoice, CompanyGroup } from '@/lib/kintlevo-helpers';
-import { ToggleLeft, ToggleRight } from 'lucide-react';
 
 interface Props {
   totals: Record<AgingCategory, number>;
@@ -13,26 +12,42 @@ interface Props {
   companyGroups: CompanyGroup[];
   allInvoices: UnifiedInvoice[];
   showBrutto: boolean;
-  onToggleBrutto: () => void;
+  onShowBruttoChange: (v: boolean) => void;
 }
 
-export function KintlevoSummaryCards({ totals, grandTotal, netTotals, netGrandTotal, companyGroups, allInvoices, showBrutto, onToggleBrutto }: Props) {
+export function KintlevoSummaryCards({ totals, grandTotal, netTotals, netGrandTotal, companyGroups, allInvoices, showBrutto, onShowBruttoChange }: Props) {
   const displayTotals = showBrutto ? totals : netTotals;
   const displayGrand = showBrutto ? grandTotal : netGrandTotal;
 
   return (
-    <div className="space-y-2">
-      {/* Bruttó / Nettó toggle */}
-      <div className="flex items-center justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 text-xs"
-          onClick={onToggleBrutto}
+    <div className="space-y-3">
+      {/* Bruttó / Nettó toggle — same style as dashboard */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => onShowBruttoChange(false)}
+          className={cn(
+            "text-base pb-1 border-b-2 transition-all duration-200 cursor-pointer",
+            !showBrutto
+              ? "text-slate-900 dark:text-white font-semibold border-primary"
+              : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
+          )}
         >
-          {showBrutto ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-          {showBrutto ? 'Bruttó' : 'Nettó'}
-        </Button>
+          Nettó
+        </button>
+        <Switch checked={showBrutto} onCheckedChange={onShowBruttoChange} />
+        <button
+          type="button"
+          onClick={() => onShowBruttoChange(true)}
+          className={cn(
+            "text-base pb-1 border-b-2 transition-all duration-200 cursor-pointer",
+            showBrutto
+              ? "text-slate-900 dark:text-white font-semibold border-primary"
+              : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
+          )}
+        >
+          Bruttó
+        </button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
