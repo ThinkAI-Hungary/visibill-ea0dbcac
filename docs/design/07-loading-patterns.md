@@ -241,3 +241,104 @@ Kijelentkezéskor:
 .step-animate  { animation: stepFadeIn 0.3s ease-out both; }
 .content-animate { animation: pageFadeIn 0.4s ease-out 0.15s both; } /* 150ms delay */
 ```
+
+---
+
+## Szerver-Oldali Szűrt Tábla — Debounce + Skeleton Pattern
+
+> **Alkalmazva:** Management Dashboard (Files, Errors, LLM Cost Table), és minden jövőbeli szerver-oldali szűrt/lapozott táblázat.
+
+### A probléma
+
+Ha egy szöveges kereső mezőbe gépeléskor **minden karakter azonnal triggerel egy fetch-et**, az alábbi UX hibák keletkeznek:
+
+1. **Skeleton flash:** A táblázat tartalma eltűnik → skeleton → új adat → skeleton → új adat (karakterenként)
+2. **Felesleges API hívások:** 10 betű = 10 fetch, amiből 9 felesleges
+3. **Input focus elvesztés:** Ha a filter toolbar skeleton-ra cserélődik, az input DOM elem megsemmisül → a kurzor kiugrik
+
+### A megoldás: 3 réteg
+
+```
+Input → [1] Debounce (useEffect) → [2] Query (keepPreviousData) → [3] Skeleton (isLoading)
+```
+
+#### 1. Debounce: `useEffect` (NEM `useMemo`!)
+
+```tsx
+const [search, setSearch] = useState('');
+const [debouncedSearch, setDebouncedSearch] = useState('');
+
+// ✅ HELYES — useEffect cleanup-ja törli a timer-t
+useEffect(() => {
+  const t = setTimeout(() => {
+    setDebouncedSearch(search);
+    setPage(1);
+  }, 400);
+  return () => clearTimeout(t);
+}, [search]);
+
+// ❌ HIBÁS — useMemo NEM futtat cleanup-ot, clearTimeout soha nem hívódik
+const searchTimerRef = useCallback((val: string) => {
+  const t = setTimeout(() => setDebouncedSearch(val), 300);
+  return () => clearTimeout(t); // ← ez soha nem fut le!
+}, []);
+useMemo(() => searchTimerRef(search), [search, searchTimerRef]);
+```
+
+**Miért 400ms?** 300ms túl rövid a normál gépelési sebességhez — a legtöbb ember 150-250ms-onként üt le egy billentyűt. 400ms egy jó kompromisszum: a gyors gépelő befejezi a szót mielőtt a fetch indul, de a lassú gépelő nem érez késést.
+
+#### 2. Query: `keepPreviousData` + `debouncedSearch` a queryKey-ben
+
+```tsx
+const { data, isLoading, isFetching } = useQuery<FilesData>({
+  queryKey: ['management-files', page, sortCol, sortDir, debouncedSearch, ...filters],
+  queryFn: () => fetchManagementData('files', { search: debouncedSearch, ... }),
+  staleTime: 30_000,
+  placeholderData: keepPreviousData,  // ← régi adat látszik amíg az új tölt
+});
+```
+
+**`keepPreviousData` hatása:**
+
+| Állapot | `isLoading` | `isFetching` | Megjelenítés |
+|---------|-------------|--------------|-------------|
+| Nincs adat (első betöltés) | `true` | `true` | Skeleton |
+| Van régi adat, háttér fetch | `false` | `true` | Régi adat + opacity jelzés |
+| Friss adat | `false` | `false` | Friss adat |
+
+#### 3. Skeleton vs. Opacity: `isLoading` ≠ `isFetching`
+
+```tsx
+// Skeleton: CSAK ha nincs semmilyen adat (első betöltés, vagy cache kiürült)
+{isLoading ? (
+  <SkeletonTable rows={8} />
+) : (
+  <DataTable rows={data.files} />
+)}
+
+// Opacity: diszkrét jelzés hogy háttérben frissül (régi adat LÁTHATÓ marad)
+<Card className={cn(
+  "transition-opacity duration-200",
+  isFetching && !isLoading && "opacity-60"
+)}>
+```
+
+### Összefoglaló szabályok
+
+| Elem | Skeleton feltétel | Opacity feltétel |
+|------|-------------------|------------------|
+| KPI kártyák | `isLoading` | — |
+| Filter toolbar | `isLoading` | — |
+| Táblázat body | `isLoading` | `isFetching && !isLoading` |
+| Pagination | `isLoading` | — |
+
+### ❌ Anti-patternek
+
+```
+❌ useMemo debounce — cleanup nem fut, minden timer lefut
+❌ isFetching skeleton — skeleton flash karakterenként
+❌ Skeleton a filter toolbaron isFetching-re — input focus elvész
+❌ 100-200ms debounce — túl rövid, nem fogja meg a normál gépelést
+❌ keepPreviousData nélkül — adat eltűnik minden fetch-nél
+```
+

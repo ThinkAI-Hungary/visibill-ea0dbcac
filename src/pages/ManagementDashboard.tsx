@@ -352,14 +352,14 @@ function LlmCostTable({ companyId }: { companyId: string }) {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  // Debounce search to avoid too many requests
-  const searchTimerRef = useCallback((val: string) => {
-    const t = setTimeout(() => setDebouncedSearch(val), 300);
+  // Debounce search — useEffect handles cleanup properly (useMemo does NOT)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 400);
     return () => clearTimeout(t);
-  }, []);
-
-  // Update debounced search on search change
-  useMemo(() => searchTimerRef(search), [search, searchTimerRef]);
+  }, [search]);
 
   const toggleSort = useCallback((col: LlmSortCol) => {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -548,12 +548,14 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
   const queryClient = useQueryClient();
 
-  // Debounce search
-  const searchTimerRef = useCallback((val: string) => {
-    const t = setTimeout(() => setDebouncedSearch(val), 300);
+  // Debounce search — useEffect handles cleanup properly (useMemo does NOT)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 400);
     return () => clearTimeout(t);
-  }, []);
-  useMemo(() => searchTimerRef(search), [search, searchTimerRef]);
+  }, [search]);
 
   const toggleSort = useCallback((col: ErrorSortCol) => {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -796,7 +798,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
     <div className="space-y-5 animate-in fade-in duration-300" style={{ maxWidth: '100%' }}>
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {isFetching ? (
+        {isLoading ? (
           <>
             {[0,1,2,3].map(i => (
               <Card key={i}>
@@ -929,7 +931,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
       {/* ── Filter toolbar ── */}
       <Card>
         <CardContent className="p-3">
-          {isFetching ? (
+          {isLoading ? (
             <div className="flex items-center gap-2 flex-wrap">
               <Skeleton className="h-7 w-[160px] rounded-md" />
               <Skeleton className="h-7 w-[90px] rounded-md" />
@@ -1031,7 +1033,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
-                {isFetching ? (
+                {isLoading ? (
                   Array.from({ length: 8 }).map((_, i) => (
                     <tr key={`skel-${i}`}>
                       <td className="py-1.5 px-2"><Skeleton className="h-4 w-4" /></td>
@@ -1178,13 +1180,13 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                     </React.Fragment>
                   );
                 })}
-                {errRows.length === 0 && !isFetching && (
+                {errRows.length === 0 && !isLoading && (
                   <tr><td colSpan={10} className="text-center py-8 text-muted-foreground">Nincs hiba találat</td></tr>
                 )}
               </tbody>
             </table>
           </div>
-          {isFetching ? (
+          {isLoading ? (
             <div className="flex items-center justify-between px-4 py-2.5 border-t border-border">
               <Skeleton className="h-4 w-28" />
               <div className="flex items-center gap-1">
@@ -3061,12 +3063,14 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     });
   }, []);
 
-  // Debounce search
-  const searchTimerRef = useCallback((val: string) => {
-    const t = setTimeout(() => setDebouncedSearch(val), 300);
+  // Debounce search — useEffect handles cleanup properly (useMemo does NOT)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
     return () => clearTimeout(t);
-  }, []);
-  useMemo(() => searchTimerRef(search), [search, searchTimerRef]);
+  }, [search]);
 
   const toggleSort = useCallback((col: FileSortCol) => {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -3174,7 +3178,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     <div className="space-y-5">
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {isFetching ? (
+        {isLoading ? (
           <>
             {[0,1,2,3].map(i => (
               <Card key={i}>
@@ -3269,7 +3273,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
       {/* Filter toolbar */}
       <Card>
         <CardContent className="p-3">
-          {isFetching ? (
+          {isLoading ? (
             <div className="flex flex-wrap gap-2 items-center">
               <Skeleton className="h-8 w-52 rounded-md" />
               <Skeleton className="h-8 w-[180px] rounded-md" />
@@ -3609,7 +3613,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
       )}
 
       {/* Data table */}
-      <Card>
+      <Card className={cn("transition-opacity duration-200", isFetching && !isLoading && "opacity-60")}>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm" role="table" style={{ tableLayout: 'fixed' }}>
@@ -3659,7 +3663,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {isFetching ? (
+                {isLoading ? (
                   Array.from({ length: 8 }).map((_, i) => (
                     <tr key={i}>
                       <td className="py-3 px-2"><Skeleton className="h-4 w-4" /></td>
@@ -3810,7 +3814,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
           </div>
 
           {/* Pagination */}
-          {isFetching ? (
+          {isLoading ? (
             <div className="flex items-center justify-between px-4 py-3 border-t border-border">
               <Skeleton className="h-4 w-32" />
               <div className="flex gap-1">
