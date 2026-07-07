@@ -233,6 +233,83 @@ Deno.serve(async (req: Request) => {
         } catch (notifErr) {
           console.error(`[accounty-detect-missing] Notification error for ${companyId}:`, notifErr)
         }
+
+        // ── Notify client contact (if configured) ──
+        try {
+          const { data: commPrefs } = await supabase
+            .from('accounty_communication_preferences')
+            .select('contact_email, contact_name, channel_email, auto_reminder, gdpr_opted_in')
+            .eq('company_id', companyId)
+            .maybeSingle()
+
+          if (
+            commPrefs?.contact_email &&
+            commPrefs?.channel_email === true &&
+            commPrefs?.auto_reminder === true &&
+            commPrefs?.gdpr_opted_in === true
+          ) {
+            // Build items summary for client email
+            const clientItemsSummary = newItems.slice(0, 5).map((item: any) =>
+              `<tr><td style="padding:6px 12px;border-top:1px solid #e5e7eb;font-size:13px">${item.title}</td><td style="padding:6px 12px;border-top:1px solid #e5e7eb;font-size:13px;color:#6b7280">${item.subtitle}</td></tr>`
+            ).join('')
+            const clientMoreText = newItems.length > 5 ? `<p style="font-size:13px;color:#6b7280;margin-top:8px">...és további ${newItems.length - 5} tétel</p>` : ''
+
+            // Get accounting firm name for the email header
+            const { data: clientAssignments } = await supabase
+              .from('accounty_assignments')
+              .select('accountant_user_id, accounting_firm_id')
+              .eq('company_id', companyId)
+              .limit(1)
+
+            let firmName: string | undefined
+            const firmId = (clientAssignments?.[0] as any)?.accounting_firm_id
+            if (firmId) {
+              const { data: firm } = await supabase
+                .from('companies')
+                .select('name')
+                .eq('id', firmId)
+                .single()
+              firmName = (firm as any)?.name
+            }
+
+            const greeting = commPrefs.contact_name ? `Kedves ${commPrefs.contact_name}!` : 'Tisztelt Ügyfelünk!'
+            const clientBodyHtml = `
+              <p>${greeting}</p>
+              <p>A <strong>${companyName}</strong> könyvelésével kapcsolatban az alábbi dokumentumok hiányoznak a rendszerünkből:</p>
+              <table style="width:100%;border-collapse:collapse;margin:12px 0;border:1px solid #e5e7eb;border-radius:6px">
+                <thead><tr style="background:#f3f4f6">
+                  <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase">Szállító</th>
+                  <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase">Számla</th>
+                </tr></thead>
+                <tbody>${clientItemsSummary}</tbody>
+              </table>
+              ${clientMoreText}
+              <p style="margin-top:16px">Kérjük, juttassa el a hiányzó dokumentumokat könyvelőjéhez mielőbb.</p>
+              <p style="color:#6b7280;font-size:13px;margin-top:20px">Üdvözlettel,<br/>${firmName || 'Könyvelőirodája'}</p>
+            `
+
+            try {
+              await supabase.functions.invoke('send-accounty-notification', {
+                body: {
+                  recipient_type: 'client_contact',
+                  recipient_email: commPrefs.contact_email,
+                  recipient_name: commPrefs.contact_name,
+                  firm_name: firmName,
+                  title: `Hiányzó dokumentumok – ${companyName}`,
+                  body_html: clientBodyHtml,
+                  subject: `Hiányzó számlák: ${companyName} (${newItems.length} db)`,
+                  company_name: companyName,
+                  company_id: companyId,
+                },
+              })
+              console.log(`[accounty-detect-missing] Client contact notified: ${commPrefs.contact_email} for ${companyName}`)
+            } catch (clientNotifErr) {
+              console.error(`[accounty-detect-missing] Client notification failed for ${companyId}:`, clientNotifErr)
+            }
+          }
+        } catch (clientErr) {
+          console.error(`[accounty-detect-missing] Client contact check error for ${companyId}:`, clientErr)
+        }
       }
       totalSkipped += existingSet.size
 

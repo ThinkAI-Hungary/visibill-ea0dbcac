@@ -399,22 +399,32 @@ export function useUpsertCommunicationPrefs() {
       preferredLanguage?: string;
       reminderFrequency?: 'low' | 'normal' | 'high';
       autoReminder?: boolean;
+      gdprOptedIn?: boolean;
     }) => {
+      const upsertData: Record<string, unknown> = {
+        company_id: prefs.companyId,
+        contact_name: prefs.contactName || null,
+        contact_email: prefs.contactEmail || null,
+        contact_phone: prefs.contactPhone || null,
+        channel_email: prefs.channelEmail ?? false,
+        channel_viber: prefs.channelViber ?? false,
+        channel_sms: prefs.channelSms ?? false,
+        channel_phone: prefs.channelPhone ?? false,
+        preferred_language: prefs.preferredLanguage || 'hu',
+        reminder_frequency: prefs.reminderFrequency || 'normal',
+        auto_reminder: prefs.autoReminder ?? false,
+      };
+
+      if (prefs.gdprOptedIn !== undefined) {
+        upsertData.gdpr_opted_in = prefs.gdprOptedIn;
+        if (prefs.gdprOptedIn) {
+          upsertData.gdpr_opted_in_at = new Date().toISOString();
+        }
+      }
+
       const { error } = await supabase
         .from('accounty_communication_preferences')
-        .upsert({
-          company_id: prefs.companyId,
-          contact_name: prefs.contactName || null,
-          contact_email: prefs.contactEmail || null,
-          contact_phone: prefs.contactPhone || null,
-          channel_email: prefs.channelEmail ?? true,
-          channel_viber: prefs.channelViber ?? false,
-          channel_sms: prefs.channelSms ?? false,
-          channel_phone: prefs.channelPhone ?? false,
-          preferred_language: prefs.preferredLanguage || 'hu',
-          reminder_frequency: prefs.reminderFrequency || 'normal',
-          auto_reminder: prefs.autoReminder ?? true,
-        }, { onConflict: 'company_id' });
+        .upsert(upsertData, { onConflict: 'company_id' });
 
       if (error) throw error;
     },

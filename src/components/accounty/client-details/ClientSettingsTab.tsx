@@ -262,8 +262,9 @@ export default function ClientSettingsTab({
               </p>
             </div>
             <button
-              onClick={() => {
-                upsertCommPrefs.mutate({
+              onClick={async () => {
+                const newGdprValue = !commPrefsData?.gdprOptedIn;
+                await upsertCommPrefs.mutateAsync({
                   companyId: clientId,
                   contactName: notifPrefs.contactName,
                   contactEmail: notifPrefs.contactEmail,
@@ -275,6 +276,7 @@ export default function ClientSettingsTab({
                   preferredLanguage: notifPrefs.language,
                   reminderFrequency: notifPrefs.frequency as 'low' | 'normal' | 'high',
                   autoReminder: notifPrefs.autoReminder,
+                  gdprOptedIn: newGdprValue,
                 });
               }}
               className={cn(

@@ -43,6 +43,30 @@ function wrapHtml(title: string, bodyHtml: string): string {
 </html>`
 }
 
+function wrapClientHtml(title: string, bodyHtml: string, firmName?: string): string {
+  const senderName = firmName || 'könyvelőirodája'
+  return `<!DOCTYPE html>
+<html lang="hu">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <div style="max-width:600px;margin:32px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);padding:24px 32px">
+      <div style="color:#fff;font-size:20px;font-weight:700">${senderName}</div>
+      <div style="color:rgba(255,255,255,0.8);font-size:12px;margin-top:4px">Dokumentum értesítés</div>
+    </div>
+    <div style="padding:28px 32px">
+      <h2 style="color:#111827;font-size:18px;font-weight:600;margin:0 0 16px 0">${title}</h2>
+      <div style="color:#374151;font-size:14px;line-height:1.6">${bodyHtml}</div>
+    </div>
+    <div style="background:#f3f4f6;padding:14px 32px;text-align:center">
+      <p style="font-size:12px;color:#9ca3af;margin:0">Ez az értesítés a ${senderName} megbízásából készült.</p>
+      <p style="font-size:12px;color:#9ca3af;margin:4px 0 0">Ha nem kíván több értesítést kapni, kérjük jelezze könyvelőjének.</p>
+    </div>
+  </div>
+</body>
+</html>`
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -68,9 +92,61 @@ Deno.serve(async (req: Request) => {
       callerUserId = jwtUser.id
     }
 
-    const { user_id: bodyUserId, type, title, body_html, subject, company_name, company_id } = await req.json()
+    const body = await req.json()
+    const { 
+      user_id: bodyUserId, type, title, body_html, subject, company_name, company_id,
+      recipient_type, recipient_email, recipient_name, firm_name,
+    } = body
     const user_id = callerUserId || bodyUserId
 
+    // ══════════════════════════════════════════════
+    // MODE A: Client contact — direct email to client
+    // ══════════════════════════════════════════════
+    if (recipient_type === 'client_contact') {
+      if (!recipient_email || !title || !body_html) {
+        return new Response(JSON.stringify({ error: 'Missing fields for client_contact: recipient_email, title, body_html' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const html = wrapClientHtml(title, body_html, firm_name)
+      const emailSubject = subject || `${title} — Dokumentum értesítés`
+
+      const { data: sendData, error: sendError } = await resend.emails.send({
+        from: 'Visibill <info@mail.visibill.hu>',
+        to: [recipient_email],
+        subject: emailSubject,
+        html,
+      })
+
+      if (sendError) {
+        console.error('[accounty-notify] Resend error (client):', sendError)
+        return new Response(JSON.stringify({ error: sendError }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Log
+      await supabase.from('outgoing_emails').insert({
+        user_id: user_id || null,
+        company_id: company_id || null,
+        company_name: company_name || '',
+        recipient_email,
+        subject: emailSubject,
+        category: 'client_notification',
+        status: 'sent',
+        resend_id: sendData?.id || null,
+      }).then(() => {}).catch(() => {})
+
+      console.log(`[accounty-notify] Sent client notification to ${recipient_email} (${recipient_name || 'N/A'}) — Resend: ${sendData?.id}`)
+      return new Response(JSON.stringify({ success: true, resendId: sendData?.id, sentTo: recipient_email, mode: 'client_contact' }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // ══════════════════════════════════════════════
+    // MODE B: Accountant — existing flow (user lookup + pref check)
+    // ══════════════════════════════════════════════
     if (!user_id || !type || !title || !body_html) {
       return new Response(JSON.stringify({ error: 'Missing fields: user_id, type, title, body_html' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -95,9 +171,9 @@ Deno.serve(async (req: Request) => {
         .eq('user_id', user_id)
         .maybeSingle()
 
-      if (prefs && (prefs as any)[prefColumn] === false) {
-        console.log(`[accounty-notify] User ${user_id} opted out of ${type} (${prefColumn}=false)`)
-        return new Response(JSON.stringify({ skipped: true, reason: 'opted_out' }), {
+      if (!prefs || (prefs as any)[prefColumn] !== true) {
+        console.log(`[accounty-notify] User ${user_id} has no prefs or opted out of ${type} (${prefColumn})`)
+        return new Response(JSON.stringify({ skipped: true, reason: !prefs ? 'no_prefs_row' : 'opted_out' }), {
           status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }

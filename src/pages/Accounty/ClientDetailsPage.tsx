@@ -48,13 +48,13 @@ export default function ClientDetailsPage() {
     details: '',
   });
   const [notifPrefs, setNotifPrefs] = useState({
-    email: true,
-    viber: true,
+    email: false,
+    viber: false,
     phone: false,
     sms: false,
     language: 'hu',
     frequency: 'normal',
-    autoReminder: true,
+    autoReminder: false,
     contactName: '',
     contactEmail: '',
     contactPhone: '',

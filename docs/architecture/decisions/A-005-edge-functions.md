@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-07-06
+**Utoljára frissítve:** 2026-07-07
 
 ## Context
 
@@ -83,12 +83,12 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | Function | JWT | Leírás |
 |----------|-----|--------|
 | `accounty-seed` | ❌ | Accounty adatok inicializálása céghez |
-| `accounty-detect-missing` | ❌ | Hiányzó dokumentumok detektálása (cron). Talált hiányokról email értesítést küld a hozzárendelt könyvelőknek (`send-accounty-notification`). |
+| `accounty-detect-missing` | ❌ | Hiányzó dokumentumok detektálása (cron). Talált hiányokról email értesítést küld a hozzárendelt könyvelőknek ÉS az ügyfél kapcsolattartónak (`send-accounty-notification`, dual-mode). |
 | `accounty-detect-bank` | ❌ | Hiányzó bankkivonatok detektálása (cron) |
 | `accounty-generate-deadlines` | ❌ | Kötelezettségek határidő generálás (cron) |
 | `accounty-ai-phone` | ❌ | AI-alapú telefonos asszisztens (hívás fogadás) |
 | `accounty-ai-chat` | ❌ | AI chat asszisztens az eaisyBooks modulhoz |
-| `send-accounty-notification` | ❌ | eaisyBooks email értesítés — `accounty_email_preferences` tábla check → Resend API (`info@mail.visibill.hu`). Log: `outgoing_emails`. (A-030) |
+| `send-accounty-notification` | ❌ | eaisyBooks email értesítés — dual-mode: (A) könyvelő: `accounty_email_preferences` opt-in check, (B) ügyfél: `recipient_type='client_contact'` + kék template (`wrapClientHtml`). Resend API (`info@mail.visibill.hu`). Log: `outgoing_emails`. (A-030) |
 | `validate-partner-code` | ❌ | Meghívó kód (share_token) read-only validáció — cég adatok visszaadása |
 | `join-company-as-accountant` | ❌ | Meghívó kód → `accounty_assignments` INSERT (könyvelő hozzárendelés) |
 
