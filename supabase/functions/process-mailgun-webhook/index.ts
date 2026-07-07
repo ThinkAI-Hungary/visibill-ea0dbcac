@@ -367,13 +367,48 @@ serve(async (req) => {
         return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reason: 'Bank format extension' };
       }
 
-      // 2. xlsx/xls/csv → transaction (sender bank hint if available)
+      // 2. xlsx/xls/csv → transaction ONLY if a banking signal exists
+      //    (sender bank domain, filename keyword, IBAN, or subject keyword).
+      //    Otherwise → invoice (prevents GLS/shipment xlsx being misrouted).
       if (['.xlsx', '.xls', '.csv'].includes(ext)) {
-        return {
-          classification: 'transaction',
-          bankHint: senderBank || detectBankHint(attachmentName),
-          reason: senderBank ? `Bank sender: ${senderDom}` : 'xlsx/csv default → transaction',
-        };
+        // 2a. Sender is a known bank
+        if (senderBank) {
+          return { classification: 'transaction', bankHint: senderBank, reason: `Bank sender: ${senderDom}` };
+        }
+
+        // 2b. Filename contains banking keywords
+        const fnNormXls = fn.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (TRANSACTION_FILENAME_KEYWORDS.some(kw => {
+          const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return fnNormXls.includes(kwNorm);
+        })) {
+          return { classification: 'transaction', bankHint: detectBankHint(attachmentName), reason: 'Transaction keyword in xlsx filename' };
+        }
+
+        // 2c. IBAN pattern in filename
+        if (/hu\d{24,26}/i.test(fn.replace(/[^a-z0-9]/gi, ''))) {
+          return { classification: 'transaction', bankHint: detectBankHint(attachmentName), reason: 'IBAN in xlsx filename' };
+        }
+
+        // 2d. Bank hint detected from filename (otp, cib, kh, etc.)
+        const fileBank = detectBankHint(attachmentName);
+        if (fileBank) {
+          return { classification: 'transaction', bankHint: fileBank, reason: `Bank keyword in filename: ${fileBank}` };
+        }
+
+        // 2e. Email subject contains banking keywords
+        if (emailSubject) {
+          const subj = emailSubject.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (TRANSACTION_SUBJECT_KEYWORDS.some(kw => {
+            const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            return subj.includes(kwNorm);
+          })) {
+            return { classification: 'transaction', bankHint: null, reason: 'Transaction keyword in subject + xlsx' };
+          }
+        }
+
+        // No bank signal → treat as invoice (fallback will handle if needed)
+        return { classification: 'invoice', bankHint: null, reason: 'xlsx/csv without bank signal → invoice' };
       }
 
       // Only apply heuristics to PDFs
