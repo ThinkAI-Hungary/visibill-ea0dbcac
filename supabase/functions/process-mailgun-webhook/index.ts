@@ -359,9 +359,13 @@ serve(async (req) => {
 
       // 0. GLS COD reports (e.g. 18196_HUF_20260703_081056.xlsx)
       // These are financial records — check this BEFORE the general shipment domain check.
-      if (fn.includes('gls') || emailSubject?.toLowerCase().includes('gls')) {
-        if (fn.includes('huf') || fn.includes('utánvét') || /_202\d{5}_/.test(fn)) {
-          return { classification: 'transaction', bankHint: 'gls', reason: 'GLS COD report detected by filename/subject' };
+      const isGlsSender = fn.includes('gls') || (senderDom && senderDom.includes('gls-hungary'));
+      if (isGlsSender) {
+        const isCodFilename = fn.includes('huf') || fn.includes('utanvet') || fn.includes('cod') || /_202\d{5}_/.test(fn);
+        const isCodSubject = emailSubject?.toLowerCase().includes('utanvet') || emailSubject?.toLowerCase().includes('huf');
+        
+        if (isCodFilename || isCodSubject) {
+          return { classification: 'transaction', bankHint: 'gls', reason: 'GLS COD report detected (priority check)' };
         }
       }
 
