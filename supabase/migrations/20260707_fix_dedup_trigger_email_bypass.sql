@@ -1,131 +1,115 @@
--- Migration: Bypass dedup trigger for fallback records
+-- Fix: Dedup trigger bypass for fallback records + uploads with explicit source
 --
--- Problem: When the bidirectional fallback pipeline creates a new record in
---   invoice_uploads or transaction_uploads, the BEFORE INSERT dedup trigger
---   may block it because the same file_name + company_id already exists
---   (from the original upload in the other table, or from this table if the
---   file was first uploaded here). Fallback records are NOT duplicates — they
---   represent a second processing attempt through a different pipeline.
+-- Problem 1 (existing): The 1-minute dedup window incorrectly blocks legitimate
+-- uploads in two cases:
+--   1. Email webhook retries (Mailgun): handled by webhook Message-Id idempotency.
+--   2. Manual re-uploads: the user explicitly confirmed re-upload.
 --
--- Solution: Modify both trigger functions to skip the duplicate check when
---   the `fallback_from_*` column is set (non-null). This column is ONLY set
---   by the worker's fallback_to_invoice / fallback_to_transaction helpers.
+-- Problem 2 (new): When the bidirectional fallback pipeline creates a new record
+-- in invoice_uploads or transaction_uploads, the dedup trigger may block it because
+-- the same file_name + company_id already exists. Fallback records are NOT duplicates
+-- — they represent a second processing attempt through a different pipeline.
+--
+-- Solution:
+-- 1. Skip dedup when metadata.source is ANY non-null value (email_alias, manual_reupload)
+-- 2. Skip dedup when fallback_from_* is NOT NULL (bidirectional fallback pipeline)
+-- 3. Include fallback_from_* in PGMQ payload so worker can detect fallback origin
 
--- ── Invoice uploads trigger ────────────────────────────────────────────
--- Recreate the trigger function with fallback bypass.
--- Preserves the original dedup logic and PGMQ enqueue behavior.
 CREATE OR REPLACE FUNCTION public.trigger_enqueue_invoice_job()
-  RETURNS trigger
-  LANGUAGE plpgsql
-  SECURITY DEFINER
-  SET search_path TO 'public'
-AS $$
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
 BEGIN
-  -- Skip dedup check for fallback records (bidirectional pipeline)
-  IF NEW.fallback_from_transaction_upload_id IS NOT NULL THEN
-    -- Fallback record: always enqueue, never treat as duplicate
-    PERFORM pgmq.send('invoice_jobs', jsonb_build_object(
-      'id', NEW.id,
-      'user_id', NEW.user_id,
-      'company_id', NEW.company_id,
-      'file_url', NEW.file_url,
-      'file_name', NEW.file_name,
-      'file_type', NEW.file_type,
-      'file_size', NEW.file_size,
-      'metadata', NEW.metadata,
-      'document_category', COALESCE(NEW.document_category, 'invoice'),
-      'fallback_from_transaction_upload_id', NEW.fallback_from_transaction_upload_id
-    ));
-    RETURN NEW;
+  IF NEW.processing_status = 'pending' THEN
+
+    -- Bypass dedup for fallback records (bidirectional pipeline)
+    -- and for uploads with an explicit source (email, manual re-upload).
+    -- Default frontend uploads (source IS NULL, no fallback) need the dedup window.
+    IF (NEW.metadata->>'source') IS NULL
+       AND NEW.fallback_from_transaction_upload_id IS NULL
+    THEN
+      IF EXISTS (
+        SELECT 1 FROM invoice_uploads
+        WHERE file_name = NEW.file_name
+          AND company_id = NEW.company_id
+          AND id != NEW.id
+          AND created_at > NOW() - INTERVAL '1 minute'
+          AND processing_status IN ('pending', 'processing')
+        LIMIT 1
+      ) THEN
+        NEW.processing_status := 'ignored';
+        NEW.error_message := 'Duplicate skipped by trigger dedup (1 min window)';
+        RETURN NEW;
+      END IF;
+    END IF;
+
+    PERFORM pgmq.send(
+      'invoice_jobs',
+      jsonb_build_object(
+        'id', NEW.id,
+        'user_id', NEW.user_id,
+        'company_id', NEW.company_id,
+        'file_url', NEW.file_url,
+        'file_name', NEW.file_name,
+        'document_category', NEW.document_category,
+        'source', 'invoice_uploads',
+        'metadata', NEW.metadata,
+        'fallback_from_transaction_upload_id', NEW.fallback_from_transaction_upload_id
+      )
+    );
   END IF;
-
-  -- Original dedup logic: check for existing record with same file
-  IF EXISTS (
-    SELECT 1 FROM public.invoice_uploads
-    WHERE file_name = NEW.file_name
-      AND company_id = NEW.company_id
-      AND processing_status IN ('pending', 'processing', 'processed')
-      AND id != NEW.id
-      AND created_at > NOW() - INTERVAL '24 hours'
-  ) THEN
-    -- Mark as ignored (dedup) — the BEFORE INSERT trigger modifies NEW
-    NEW.processing_status := 'ignored';
-    NEW.error_message := 'Duplicate upload detected (same file within 24h)';
-    RETURN NEW;
-  END IF;
-
-  -- Not a duplicate: enqueue to PGMQ for processing
-  PERFORM pgmq.send('invoice_jobs', jsonb_build_object(
-    'id', NEW.id,
-    'user_id', NEW.user_id,
-    'company_id', NEW.company_id,
-    'file_url', NEW.file_url,
-    'file_name', NEW.file_name,
-    'file_type', NEW.file_type,
-    'file_size', NEW.file_size,
-    'metadata', NEW.metadata,
-    'document_category', COALESCE(NEW.document_category, 'invoice'),
-    'fallback_from_transaction_upload_id', NEW.fallback_from_transaction_upload_id
-  ));
-
   RETURN NEW;
 END;
-$$;
+$function$;
 
 
 -- ── Transaction uploads trigger ────────────────────────────────────────
--- Recreate with fallback bypass.
+-- Same pattern: bypass dedup for fallback records and explicit-source uploads.
 CREATE OR REPLACE FUNCTION public.trigger_enqueue_transaction_job()
-  RETURNS trigger
-  LANGUAGE plpgsql
-  SECURITY DEFINER
-  SET search_path TO 'public'
-AS $$
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
 BEGIN
-  -- Skip dedup check for fallback records (bidirectional pipeline)
-  IF NEW.fallback_from_invoice_upload_id IS NOT NULL THEN
-    -- Fallback record: always enqueue, never treat as duplicate
-    PERFORM pgmq.send('transaction_jobs', jsonb_build_object(
-      'id', NEW.id,
-      'user_id', NEW.user_id,
-      'company_id', NEW.company_id,
-      'file_url', NEW.file_url,
-      'file_name', NEW.file_name,
-      'file_type', NEW.file_type,
-      'file_size', NEW.file_size,
-      'metadata', NEW.metadata,
-      'fallback_from_invoice_upload_id', NEW.fallback_from_invoice_upload_id
-    ));
-    RETURN NEW;
+  IF NEW.processing_status = 'pending' THEN
+
+    -- Bypass dedup for fallback records (bidirectional pipeline)
+    -- and for uploads with an explicit source (email, manual re-upload).
+    IF (NEW.metadata->>'source') IS NULL
+       AND NEW.fallback_from_invoice_upload_id IS NULL
+    THEN
+      IF EXISTS (
+        SELECT 1 FROM transaction_uploads
+        WHERE file_name = NEW.file_name
+          AND company_id = NEW.company_id
+          AND id != NEW.id
+          AND created_at > NOW() - INTERVAL '1 minute'
+          AND processing_status IN ('pending', 'processing')
+        LIMIT 1
+      ) THEN
+        NEW.processing_status := 'ignored';
+        NEW.error_message := 'Duplicate skipped by trigger dedup (1 min window)';
+        RETURN NEW;
+      END IF;
+    END IF;
+
+    PERFORM pgmq.send(
+      'transaction_jobs',
+      jsonb_build_object(
+        'id', NEW.id,
+        'user_id', NEW.user_id,
+        'company_id', NEW.company_id,
+        'file_url', NEW.file_url,
+        'file_name', NEW.file_name,
+        'source', 'transaction_uploads',
+        'metadata', NEW.metadata,
+        'fallback_from_invoice_upload_id', NEW.fallback_from_invoice_upload_id
+      )
+    );
   END IF;
-
-  -- Original dedup logic: check for existing record with same file
-  IF EXISTS (
-    SELECT 1 FROM public.transaction_uploads
-    WHERE file_name = NEW.file_name
-      AND company_id = NEW.company_id
-      AND processing_status IN ('pending', 'processing', 'completed')
-      AND id != NEW.id
-      AND created_at > NOW() - INTERVAL '24 hours'
-  ) THEN
-    NEW.processing_status := 'ignored';
-    NEW.error_message := 'Duplicate upload detected (same file within 24h)';
-    RETURN NEW;
-  END IF;
-
-  -- Not a duplicate: enqueue to PGMQ for processing
-  PERFORM pgmq.send('transaction_jobs', jsonb_build_object(
-    'id', NEW.id,
-    'user_id', NEW.user_id,
-    'company_id', NEW.company_id,
-    'file_url', NEW.file_url,
-    'file_name', NEW.file_name,
-    'file_type', NEW.file_type,
-    'file_size', NEW.file_size,
-    'metadata', NEW.metadata,
-    'fallback_from_invoice_upload_id', NEW.fallback_from_invoice_upload_id
-  ));
-
   RETURN NEW;
 END;
-$$;
+$function$;

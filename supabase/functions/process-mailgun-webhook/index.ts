@@ -483,6 +483,29 @@ serve(async (req) => {
           }
         }
 
+        // ── Mailgun retry idempotency check ──
+        // If we have a Message-Id, check if this exact attachment from this
+        // email has already been processed. Prevents duplicate processing
+        // when Mailgun retries the webhook (e.g. due to timeout).
+        if (messageId) {
+          const idempotencyTable = classification === 'transaction'
+            ? 'transaction_uploads' : 'invoice_uploads';
+
+          const { data: existingUpload } = await supabase
+            .from(idempotencyTable)
+            .select('id')
+            .eq('company_id', alias.company_id)
+            .eq('file_name', attachment.name)
+            .contains('metadata', { mailgun_message_id: messageId })
+            .limit(1);
+
+          if (existingUpload && existingUpload.length > 0) {
+            console.log(`[IDEMPOTENCY] Skipping duplicate attachment: ${attachment.name} ` +
+              `(Message-Id already processed: ${messageId})`);
+            continue;
+          }
+        }
+
         // Choose storage bucket based on classification
         const storageBucket = classification === 'transaction' ? 'transactions' : 'invoice-uploads';
         const storagePath = `${alias.user_id}/${Date.now()}-${attachment.name}`;
