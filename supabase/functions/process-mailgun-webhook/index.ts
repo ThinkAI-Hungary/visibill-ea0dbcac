@@ -358,14 +358,18 @@ serve(async (req) => {
       const senderBank = getBankFromDomain(senderDom);
 
       // 0. GLS COD reports (e.g. 18196_HUF_20260703_081056.xlsx)
-      // These are financial records — check this BEFORE the general shipment domain check.
-      const isGlsSender = fn.includes('gls') || (senderDom && senderDom.includes('gls-hungary'));
-      if (isGlsSender) {
-        const isCodFilename = fn.includes('huf') || fn.includes('utanvet') || fn.includes('cod') || /_202\d{5}_/.test(fn);
-        const isCodSubject = emailSubject?.toLowerCase().includes('utanvet') || emailSubject?.toLowerCase().includes('huf');
-        
-        if (isCodFilename || isCodSubject) {
-          return { classification: 'transaction', bankHint: 'gls', reason: 'GLS COD report detected (priority check)' };
+      // Normalize filename for robust matching
+      const cleanFn = fn.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const cleanSubject = (emailSubject || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      
+      const isGlsFilename = cleanFn.includes('gls') || cleanFn.includes('huf') || cleanFn.includes('utanvet') || cleanFn.includes('cod') || /_202\d{5}_/.test(cleanFn);
+      const isGlsSubject = cleanSubject.includes('gls') || cleanSubject.includes('utanvet') || cleanSubject.includes('huf') || cleanSubject.includes('cod');
+      const isGlsDomain = senderDom && senderDom.includes('gls-hungary');
+
+      if (isGlsDomain || isGlsFilename || isGlsSubject) {
+        // If it has financial keywords, it's definitely a transaction
+        if (cleanFn.includes('huf') || cleanFn.includes('utanvet') || cleanFn.includes('cod') || cleanSubject.includes('huf') || cleanSubject.includes('utanvet')) {
+          return { classification: 'transaction', bankHint: 'gls', reason: 'GLS COD report detected (robust check)' };
         }
       }
 
