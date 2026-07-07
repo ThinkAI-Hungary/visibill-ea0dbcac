@@ -39,6 +39,7 @@ serve(async (req) => {
     let signature: string | null = null;
     let attachments: File[] = [];
     let attachmentCount = 0;
+    let messageId: string | null = null;
 
     // Parse based on content type
     if (contentType.includes('multipart/form-data')) {
@@ -63,6 +64,24 @@ serve(async (req) => {
       token = formData.get('token') as string;
       signature = formData.get('signature') as string;
       attachmentCount = parseInt(formData.get('attachment-count') as string || '0');
+
+      // Extract Message-Id from message-headers for Mailgun retry idempotency.
+      // Mailgun sends message-headers as a JSON string: [["Header-Name", "value"], ...]
+      const messageHeadersRaw = formData.get('message-headers') as string;
+      if (messageHeadersRaw) {
+        try {
+          const headers: [string, string][] = JSON.parse(messageHeadersRaw);
+          const msgIdHeader = headers.find(([name]) =>
+            name.toLowerCase() === 'message-id'
+          );
+          if (msgIdHeader) {
+            messageId = msgIdHeader[1];
+          }
+        } catch (e) {
+          console.warn('Failed to parse message-headers for Message-Id:', e);
+        }
+      }
+      console.log('Message-Id:', messageId);
       
       // Collect attachments
       for (let i = 1; i <= attachmentCount; i++) {
@@ -362,6 +381,29 @@ serve(async (req) => {
         const bankHint = classification === 'transaction' ? detectBankHint(attachment.name) : null;
         console.log(`Processing attachment: ${attachment.name} → ${classification}${bankHint ? ` (bank: ${bankHint})` : ''}`);
 
+        // ── Mailgun retry idempotency check ──
+        // If we have a Message-Id, check if this exact attachment from this
+        // email has already been processed. Prevents duplicate processing
+        // when Mailgun retries the webhook (e.g. due to timeout).
+        if (messageId) {
+          const idempotencyTable = classification === 'transaction'
+            ? 'transaction_uploads' : 'invoice_uploads';
+
+          const { data: existingUpload } = await supabase
+            .from(idempotencyTable)
+            .select('id')
+            .eq('company_id', alias.company_id)
+            .eq('file_name', attachment.name)
+            .contains('metadata', { mailgun_message_id: messageId })
+            .limit(1);
+
+          if (existingUpload && existingUpload.length > 0) {
+            console.log(`[IDEMPOTENCY] Skipping duplicate attachment: ${attachment.name} ` +
+              `(Message-Id already processed: ${messageId})`);
+            continue;
+          }
+        }
+
         // Choose storage bucket based on classification
         const storageBucket = classification === 'transaction' ? 'transactions' : 'invoice-uploads';
         const storagePath = `${alias.user_id}/${Date.now()}-${attachment.name}`;
@@ -402,6 +444,7 @@ serve(async (req) => {
           sender,
           subject,
           received_at: new Date().toISOString(),
+          ...(messageId ? { mailgun_message_id: messageId } : {}),
         };
 
         if (classification === 'transaction') {

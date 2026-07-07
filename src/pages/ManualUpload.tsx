@@ -315,15 +315,15 @@ const ManualUpload = () => {
       // Show confirmation dialog instead of blocking
       setDuplicateFileNames(duplicates);
       setDuplicateUploadType('invoice');
-      pendingUploadRef.current = () => proceedWithInvoiceUpload();
+      pendingUploadRef.current = () => proceedWithInvoiceUpload(true);
       setDuplicateDialogOpen(true);
       return;
     }
 
-    proceedWithInvoiceUpload();
+    proceedWithInvoiceUpload(false);
   };
 
-  const proceedWithInvoiceUpload = async () => {
+  const proceedWithInvoiceUpload = async (isConfirmedReupload = false) => {
     if (uploadMutexRef.current) return;
     uploadMutexRef.current = true;
     setUploading(true);
@@ -347,6 +347,9 @@ const ManualUpload = () => {
       }
 
       // Phase 2: Single batch DB insert
+      // When the user confirmed re-upload via the duplicate dialog, we set
+      // metadata.source = 'manual_reupload' so the DB trigger's dedup guard
+      // skips the 1-minute window check for intentional re-uploads.
       const insertRows = storageResults.map(r => ({
         user_id: user?.id!,
         company_id: selectedCompany?.id || null,
@@ -356,6 +359,7 @@ const ManualUpload = () => {
         file_url: r.fileUrl,
         upload_status: 'uploaded' as const,
         processing_status: 'pending' as const,
+        ...(isConfirmedReupload ? { metadata: { source: 'manual_reupload' } } : {}),
       }));
 
       const { data: uploadRecords, error: batchError } = await supabase
@@ -611,15 +615,15 @@ const ManualUpload = () => {
       // Show confirmation dialog instead of blocking
       setDuplicateFileNames(duplicates);
       setDuplicateUploadType('transaction');
-      pendingUploadRef.current = () => proceedWithTransactionUpload();
+      pendingUploadRef.current = () => proceedWithTransactionUpload(true);
       setDuplicateDialogOpen(true);
       return;
     }
 
-    proceedWithTransactionUpload();
+    proceedWithTransactionUpload(false);
   };
 
-  const proceedWithTransactionUpload = async () => {
+  const proceedWithTransactionUpload = async (isConfirmedReupload = false) => {
     if (uploadMutexRef.current) return;
     uploadMutexRef.current = true;
     setUploading(true);
@@ -635,6 +639,9 @@ const ManualUpload = () => {
       }
 
       // Phase 2: Single batch DB insert
+      // When the user confirmed re-upload via the duplicate dialog, we set
+      // metadata.source = 'manual_reupload' so any future dedup guard in the
+      // transaction trigger would skip the check for intentional re-uploads.
       const insertRows = storageResults.map(r => ({
         user_id: user.id,
         company_id: selectedCompany.id,
@@ -645,6 +652,7 @@ const ManualUpload = () => {
         upload_status: 'uploaded' as const,
         processing_status: 'pending' as const,
         ...(selectedBankHint !== 'auto' ? { bank_hint: selectedBankHint } : {}),
+        ...(isConfirmedReupload ? { metadata: { source: 'manual_reupload' } } : {}),
       }));
 
       const { data: uploadRecords, error: batchError } = await supabase

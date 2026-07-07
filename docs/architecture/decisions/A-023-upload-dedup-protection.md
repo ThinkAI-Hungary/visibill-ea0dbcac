@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-06-28  
-**Utoljára frissítve:** 2026-07-04  
+**Utoljára frissítve:** 2026-07-07  
 **Trigger:** Thinkerman incidens — jún 26-27, duplikált API költségek
 
 ## Context
@@ -34,16 +34,35 @@ A Thinkerman projekt 2026. június 26-27-én **$3.49+ felesleges API költséget
   - Az INSERT megtörténik (a sor bekerül az `invoice_uploads`-ba)
   - De a `processing_status` → `'ignored'`, `error_message` → `'Duplicate skipped by trigger dedup (1 min window)'`
   - **NEM** küld `pgmq.send()` üzenetet → a worker nem kapja meg → nincs LLM hívás
+- **Bypass feltétel (2026-07-07):** Ha `NEW.metadata->>'source'` **NEM NULL**, a dedup check skip-elődik. Jelenleg két source bypass-ol:
+  - `email_alias` — Mailgun webhook feltöltések (idempotency a webhook szinten, Message-Id alapján, ld. [A-011](./A-011-email-processing.md))
+  - `manual_reupload` — A user a duplikátum warning dialog-ban megerősítette hogy szándékosan tölti újra
+- **Metadata a PGMQ payload-ban (2026-07-07):** A trigger a `NEW.metadata`-t is beleteszi a PGMQ `jsonb_build_object()`-be, így a worker megkapja az eredeti metadata-t (source, sender, subject) a job-ban.
 - Alkalmazva: supabase-visibill, supabase-visibill-thinkerman, supabase-visibill-vsweb
 
 ### Rétegek együttműködése
 
 ```
-User kattint → P0 Mutex (useRef) → BLOCK (99.9% itt megáll)
-                    │
-              P1 DB query (checkDuplicateFile) → WARNING dialog
-                    │
-              P2 DB trigger (1 min window) → 'ignored' status, no PGMQ
+Frontend upload (első feltöltés, source=NULL):
+  User kattint → P0 Mutex (useRef) → BLOCK (99.9% itt megáll)
+                      │
+                P1 DB query (checkDuplicateFile) → Nincs duplikátum
+                      │
+                INSERT (metadata: NULL) → P2 dedup AKTÍV (source IS NULL)
+
+Frontend upload (megerősített újrafeltöltés, source='manual_reupload'):
+  User kattint → P1 duplikátum talált → WARNING dialog → User: "Igen, újra feltöltöm"
+                      │
+                INSERT (metadata: {source: 'manual_reupload'})
+                      │
+                P2 dedup BYPASS (source IS NOT NULL) → always enqueue
+
+Email webhook upload:
+  Mailgun hívás → Webhook Message-Id idempotency check → SKIP ha retry
+                      │
+                INSERT (metadata: {source: 'email_alias', ...})
+                      │
+                P2 dedup BYPASS (source IS NOT NULL) → always enqueue
 ```
 
 ## Consequences
@@ -72,7 +91,24 @@ User kattint → P0 Mutex (useRef) → BLOCK (99.9% itt megáll)
 
 **Tesztelés:** Tranzakcióban 2× INSERT ugyanazzal a fájlnévvel → 1. rekord `pending` + PGMQ message, 2. rekord `ignored` + nincs PGMQ message ✅
 
+### 2026-07-07: Email Alias Dedup Bypass + Mailgun Idempotency
+
+**Incidens:** Victoria Music Kft. Mailgun webhook-on érkező 38 csatolmány. A Mailgun retry policy 3× hívta meg a webhookot (~57s és ~130s gap-pal). A dedup trigger az összes email feltöltést `ignored`-ra állította, mert az 1 perces ablakba estek — **76 feltöltésből 75 `ignored`, 0 `processed`**.
+
+**Root cause (2 bug):**
+1. A dedup trigger nem különbözteti meg a frontend és az email forrást — `file_name + company_id` alapon matchel, ami email retry-knál hamis pozitívokat ad.
+2. A worker `job.get("metadata")` → `None` → felülírja a DB metadata-t üres dict-tel → `source: email_alias` elvész.
+
+**Fix (4 módosítás):**
+1. **Trigger source-based bypass:** `IF (NEW.metadata->>'source') IS NULL` — dedup CSAK ha nincs explicit source. Bármilyen source (email_alias, manual_reupload) bypass-olja a dedup-ot.
+2. **Metadata a PGMQ payload-ban:** `'metadata', NEW.metadata` hozzáadva a `jsonb_build_object()`-hez → a worker megkapja az eredeti metadata-t.
+3. **Mailgun Message-Id idempotency a webhook-ban:** A `process-mailgun-webhook` EF kinyeri a `Message-Id`-t a `message-headers` JSON field-ből, és INSERT előtt ellenőrzi hogy az adott `message_id + file_name + company_id` kombináció létezik-e már. Ld. [A-011](./A-011-email-processing.md).
+4. **Frontend manual_reupload:** Ha a user a duplikátum warning dialog-ban megerősíti a feltöltést, `metadata: { source: 'manual_reupload' }` kerül az INSERT-be → a trigger bypass-olja a dedup-ot.
+
+**Migration:** `20260707_fix_dedup_trigger_email_bypass.sql`
+
 ## Kapcsolódó
 - [A-004: PGMQ Queue](./A-004-pgmq-queue.md) — a dedup guard a `pgmq.send()` előtt fut
 - [A-007: LLM Strategy](./A-007-llm-strategy.md) — a felesleges hívások költségvonzata
+- [A-011: Mailgun Email Processing](./A-011-email-processing.md) — Message-Id idempotency az email pipeline-ban
 - [A-016: PostgreSQL Query Strategy](./A-016-postgresql-query-strategy.md) — trigger típusok dokumentáció
