@@ -39,6 +39,9 @@ serve(async (req) => {
     let signature: string | null = null;
     let attachments: File[] = [];
     let attachmentCount = 0;
+    let messageId: string | null = null;
+    let originalFrom: string | null = null;
+    let parsedHeaders: [string, string][] = [];
 
     // Parse based on content type
     if (contentType.includes('multipart/form-data')) {
@@ -63,6 +66,28 @@ serve(async (req) => {
       token = formData.get('token') as string;
       signature = formData.get('signature') as string;
       attachmentCount = parseInt(formData.get('attachment-count') as string || '0');
+
+      // ── Extract original sender (From header, not the forwarder) ──
+      originalFrom = formData.get('from') as string;
+
+      // Extract message-headers for Message-Id, Return-Path, DKIM, etc.
+      // Mailgun sends message-headers as a JSON string: [["Header-Name", "value"], ...]
+      const messageHeadersRaw = formData.get('message-headers') as string;
+      if (messageHeadersRaw) {
+        try {
+          parsedHeaders = JSON.parse(messageHeadersRaw);
+          const msgIdHeader = parsedHeaders.find(([name]) =>
+            name.toLowerCase() === 'message-id'
+          );
+          if (msgIdHeader) {
+            messageId = msgIdHeader[1];
+          }
+        } catch (e) {
+          console.warn('Failed to parse message-headers:', e);
+        }
+      }
+      console.log('Message-Id:', messageId);
+      console.log('Original From:', originalFrom);
       
       // Collect attachments
       for (let i = 1; i <= attachmentCount; i++) {
@@ -119,7 +144,27 @@ serve(async (req) => {
       throw new Error(`Unsupported content type: ${contentType}`);
     }
 
-    console.log('Parsed email data:', { recipient, sender, subject, attachmentCount });
+    console.log('Parsed email data:', { recipient, sender, subject, attachmentCount, originalFrom });
+
+    // ── Sender domain extraction ──────────────────────────────────
+    // Priority: from > Return-Path > DKIM > sender (forwarder)
+    const extractDomain = (addr: string | null): string | null => {
+      if (!addr) return null;
+      const match = addr.match(/@([a-z0-9.-]+)/i);
+      return match ? match[1].toLowerCase() : null;
+    };
+
+    const returnPath = parsedHeaders.find(([h]) => h.toLowerCase() === 'return-path')?.[1] || null;
+    const dkimHeader = parsedHeaders.find(([h]) => h.toLowerCase() === 'dkim-signature')?.[1] || null;
+    const dkimDomain = dkimHeader?.match(/d=([^;\s]+)/)?.[1] || null;
+
+    const senderDomain =
+      extractDomain(originalFrom) ||
+      extractDomain(returnPath) ||
+      dkimDomain?.toLowerCase() ||
+      extractDomain(sender);
+
+    console.log('Sender domain resolved:', senderDomain, '(from:', extractDomain(originalFrom), 'return-path:', extractDomain(returnPath), 'dkim:', dkimDomain, ')');
 
     // Verify webhook signature if signing key is configured.
     // NOTE: If MAILGUN_SIGNING_KEY is not set, verification is skipped with a warning.
@@ -253,14 +298,45 @@ serve(async (req) => {
       return true;
     };
 
+    // ── Sender domain whitelists ──────────────────────────────────
+    const KNOWN_SHIPMENT_DOMAINS = [
+      'gls-group.eu', 'gls-hungary.com',
+      'dpd.hu', 'foxpost.hu',
+      'posta.hu', 'mpl.posta.hu',
+      'dhl.com', 'ups.com', 'tnt.com',
+      'sprinter.hu', 'trans-o-flex.com',
+    ];
+
+    const KNOWN_BANK_DOMAINS: Record<string, string> = {
+      'otpbank.hu': 'otp', 'cib.hu': 'cib',
+      'erstebank.hu': 'erste', 'raiffeisen.hu': 'raiffeisen',
+      'kh.hu': 'kh', 'unicreditbank.hu': 'unicredit',
+      'mkb.hu': 'mkb', 'magnetbank.hu': 'magnet',
+      'granitbank.hu': 'granit', 'mbhbank.hu': 'mbh',
+      'binx.hu': 'binx',
+    };
+
+    const isShipmentDomain = (d: string | null) =>
+      d ? KNOWN_SHIPMENT_DOMAINS.some(sd => d === sd || d.endsWith('.' + sd)) : false;
+
+    const getBankFromDomain = (d: string | null): string | null => {
+      if (!d) return null;
+      for (const [domain, bank] of Object.entries(KNOWN_BANK_DOMAINS)) {
+        if (d === domain || d.endsWith('.' + domain)) return bank;
+      }
+      return null;
+    };
+
     // ── Classify attachment as invoice or transaction ──
     // Rules (in priority order):
-    //   1. .xlsx/.xls/.csv → always 'transaction'
-    //   2. PDF filename keywords (tranzakci, bankszámlakivonat, kivonat, forgalmi, etc.) → 'transaction'
-    //   3. PDF filename with IBAN pattern (HU + 24-26 digits) → 'transaction'
-    //   4. PDF filename with OTP numeric pattern (__NNN-YYYY) → 'transaction'
-    //   5. Email subject keywords (only for PDFs not matched above) → 'transaction'
-    //   6. Default → 'invoice'
+    //   0. Shipment sender domain → invoice (not skip)
+    //   1. .mt940/.sta → always 'transaction'
+    //   2. .xlsx/.xls/.csv → 'transaction' (sender bank hint added if available)
+    //   3. PDF filename keywords (tranzakci, bankszámlakivonat, kivonat, forgalmi, etc.) → 'transaction'
+    //   4. PDF filename with IBAN pattern (HU + 24-26 digits) → 'transaction'
+    //   5. PDF filename with OTP numeric pattern (__NNN-YYYY) → 'transaction'
+    //   6. Email subject keywords (only for PDFs not matched above) → 'transaction'
+    //   7. Default → 'invoice'
     const TRANSACTION_FILENAME_KEYWORDS = [
       'tranzakci', 'bankszámlakivonat', 'számlakivonat', 'kivonat',
       'forgalmi', 'statement', 'account_statement', 'bank_statement',
@@ -270,50 +346,73 @@ serve(async (req) => {
       'forgalmi', 'bank statement', 'account statement',
     ];
 
-    const classifyAttachment = (attachmentName: string, emailSubject: string | null): 'invoice' | 'transaction' => {
+    const classifyAttachment = (
+      attachmentName: string,
+      emailSubject: string | null,
+      senderDom: string | null,
+    ): { classification: 'invoice' | 'transaction'; bankHint: string | null; reason: string } => {
       const fn = attachmentName.toLowerCase();
       const ext = fn.substring(fn.lastIndexOf('.'));
 
-      // 1. Extension-based (100% certain)
-      if (['.xlsx', '.xls', '.csv', '.mt940', '.sta'].includes(ext)) {
-        return 'transaction';
+      // Sender-based bank hint (available for all file types)
+      const senderBank = getBankFromDomain(senderDom);
+
+      // 0. Shipment sender → invoice default (not skip — fallback will handle it)
+      if (isShipmentDomain(senderDom)) {
+        return { classification: 'invoice', bankHint: null, reason: `Shipment sender: ${senderDom} → invoice default` };
+      }
+
+      // 1. Certain bank formats
+      if (['.mt940', '.sta'].includes(ext)) {
+        return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reason: 'Bank format extension' };
+      }
+
+      // 2. xlsx/xls/csv → transaction (sender bank hint if available)
+      if (['.xlsx', '.xls', '.csv'].includes(ext)) {
+        return {
+          classification: 'transaction',
+          bankHint: senderBank || detectBankHint(attachmentName),
+          reason: senderBank ? `Bank sender: ${senderDom}` : 'xlsx/csv default → transaction',
+        };
       }
 
       // Only apply heuristics to PDFs
-      if (ext !== '.pdf') return 'invoice';
+      if (ext !== '.pdf') {
+        return { classification: 'invoice', bankHint: null, reason: 'Default → invoice' };
+      }
 
-      // 2. Filename keywords (normalized — remove diacritics for matching)
+      // 3. Filename keywords (normalized — remove diacritics for matching)
       const fnNorm = fn.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       if (TRANSACTION_FILENAME_KEYWORDS.some(kw => {
         const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         return fnNorm.includes(kwNorm);
       })) {
-        return 'transaction';
+        return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reason: 'Transaction keyword in filename' };
       }
 
-      // 3. IBAN pattern in filename (HU + 24-26 digits)
+      // 4. IBAN pattern in filename (HU + 24-26 digits)
       if (/hu\d{24,26}/i.test(fn.replace(/[^a-z0-9]/gi, ''))) {
-        return 'transaction';
+        return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reason: 'IBAN in filename' };
       }
 
-      // 4. OTP numeric pattern: long digits + __NNN-YYYY
+      // 5. OTP numeric pattern: long digits + __NNN-YYYY
       if (/^\d{10,}.*__\d{3}-\d{4}/.test(fn)) {
-        return 'transaction';
+        return { classification: 'transaction', bankHint: 'otp', reason: 'OTP numeric pattern' };
       }
 
-      // 5. Email subject keywords (fallback for PDFs)
+      // 6. Email subject keywords (fallback for PDFs)
       if (emailSubject) {
         const subj = emailSubject.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         if (TRANSACTION_SUBJECT_KEYWORDS.some(kw => {
           const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           return subj.includes(kwNorm);
         })) {
-          return 'transaction';
+          return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reason: 'Transaction keyword in email subject' };
         }
       }
 
-      // 6. Default
-      return 'invoice';
+      // 7. Default
+      return { classification: 'invoice', bankHint: null, reason: 'Default → invoice' };
     };
 
     // ── Detect bank hint from filename ──
@@ -358,9 +457,31 @@ serve(async (req) => {
           continue;
         }
         
-        const classification = classifyAttachment(attachment.name, subject);
-        const bankHint = classification === 'transaction' ? detectBankHint(attachment.name) : null;
-        console.log(`Processing attachment: ${attachment.name} → ${classification}${bankHint ? ` (bank: ${bankHint})` : ''}`);
+        const { classification, bankHint, reason } = classifyAttachment(attachment.name, subject, senderDomain);
+        console.log(`Processing attachment: ${attachment.name} → ${classification} (reason: ${reason})${bankHint ? ` (bank: ${bankHint})` : ''}`);
+
+        // ── Mailgun retry idempotency check ──
+        // If we have a Message-Id, check if this exact attachment from this
+        // email has already been processed. Prevents duplicate processing
+        // when Mailgun retries the webhook (e.g. due to timeout).
+        if (messageId) {
+          const idempotencyTable: 'transaction_uploads' | 'invoice_uploads' = classification === 'transaction'
+            ? 'transaction_uploads' : 'invoice_uploads';
+
+          const { data: existingUpload } = await supabase
+            .from(idempotencyTable)
+            .select('id')
+            .eq('company_id', alias.company_id)
+            .eq('file_name', attachment.name)
+            .contains('metadata', { mailgun_message_id: messageId })
+            .limit(1);
+
+          if (existingUpload && existingUpload.length > 0) {
+            console.log(`[IDEMPOTENCY] Skipping duplicate attachment: ${attachment.name} ` +
+              `(Message-Id already processed: ${messageId})`);
+            continue;
+          }
+        }
 
         // Choose storage bucket based on classification
         const storageBucket = classification === 'transaction' ? 'transactions' : 'invoice-uploads';
@@ -402,7 +523,17 @@ serve(async (req) => {
           sender,
           subject,
           received_at: new Date().toISOString(),
+          ...(messageId ? { mailgun_message_id: messageId } : {}),
         };
+
+        // Initial note for processing journey tracking
+        const initialNote = [{
+          timestamp: new Date().toISOString(),
+          event: `classified_as_${classification}`,
+          detail: reason,
+          sender_domain: senderDomain,
+          original_from: originalFrom,
+        }];
 
         if (classification === 'transaction') {
           // ── Transaction upload ──
@@ -419,6 +550,8 @@ serve(async (req) => {
               processing_status: 'pending',
               ...(bankHint ? { bank_hint: bankHint } : {}),
               metadata: emailMetadata,
+              notes: initialNote,
+              email_sender_domain: senderDomain,
             })
             .select()
             .single();
@@ -454,6 +587,8 @@ serve(async (req) => {
               upload_status: 'uploaded',
               processing_status: 'pending',
               metadata: emailMetadata,
+              notes: initialNote,
+              email_sender_domain: senderDomain,
             })
             .select()
             .single();
