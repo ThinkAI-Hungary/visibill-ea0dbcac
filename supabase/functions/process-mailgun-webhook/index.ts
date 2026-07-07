@@ -197,6 +197,15 @@ serve(async (req) => {
       });
     }
 
+    // Explicitly ignore legacy test company address to silence logs
+    if (recipient === 'think-ai@in.visibill.hu') {
+      console.log(`[skip] Legacy test recipient: ${recipient}. Skipping silently.`);
+      return new Response(JSON.stringify({ skipped: true, reason: 'legacy_test_company', recipient }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
     // Get the alias from database
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

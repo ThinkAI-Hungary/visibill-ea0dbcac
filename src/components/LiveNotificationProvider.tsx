@@ -652,7 +652,11 @@ export function LiveNotificationProvider() {
         )
 
         .subscribe((status, err) => {
-          if (status !== 'SUBSCRIBED' && status !== 'CLOSED' && status !== 'CHANNEL_ERROR') {
+          // Csak a valódi hibákat logoljuk az adatbázisba.
+          // A TIMED_OUT természetes jelenség (pl. tab váltáskor), a kliens újrakapcsolódik.
+          const isTransient = status === 'TIMED_OUT' || status === 'CLOSED' || status === 'SUBSCRIBED';
+          
+          if (!isTransient) {
             reportError({ type: 'realtime', component: 'LiveNotificationProvider', action: 'warn', message: `[RealtimeSync] Channel: ${status}`, error: err || undefined });
           }
         });
