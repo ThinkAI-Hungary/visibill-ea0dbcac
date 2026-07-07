@@ -357,7 +357,15 @@ serve(async (req) => {
       // Sender-based bank hint (available for all file types)
       const senderBank = getBankFromDomain(senderDom);
 
-      // 0. Shipment sender → invoice default (not skip — fallback will handle it)
+      // 0. GLS COD reports (e.g. 18196_HUF_20260703_081056.xlsx)
+      // These are financial records — check this BEFORE the general shipment domain check.
+      if (fn.includes('gls') || emailSubject?.toLowerCase().includes('gls')) {
+        if (fn.includes('huf') || fn.includes('utánvét') || /_202\d{5}_/.test(fn)) {
+          return { classification: 'transaction', bankHint: 'gls', reason: 'GLS COD report detected by filename/subject' };
+        }
+      }
+
+      // 1. Shipment sender → invoice default
       if (isShipmentDomain(senderDom)) {
         return { classification: 'invoice', bankHint: null, reason: `Shipment sender: ${senderDom} → invoice default` };
       }
@@ -404,6 +412,14 @@ serve(async (req) => {
             return subj.includes(kwNorm);
           })) {
             return { classification: 'transaction', bankHint: null, reason: 'Transaction keyword in subject + xlsx' };
+          }
+        }
+
+        // 2f. GLS COD reports (e.g. 18196_HUF_20260703_081056.xlsx)
+        // These are financial records, unlike the simple tracking reports.
+        if (fn.includes('gls') || emailSubject?.toLowerCase().includes('gls')) {
+          if (fn.includes('huf') || fn.includes('utánvét') || /_202\d{5}_/.test(fn)) {
+            return { classification: 'transaction', bankHint: 'gls', reason: 'GLS COD report detected by filename/subject' };
           }
         }
 
