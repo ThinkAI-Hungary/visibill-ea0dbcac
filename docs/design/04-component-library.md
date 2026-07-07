@@ -288,6 +288,25 @@ const badgeVariants = cva("rounded-full px-2.5 py-0.5 text-xs font-semibold", {
 });
 ```
 
+### Soft Badge Pattern (Management Dashboard, 2026-07-07)
+
+A Management Dashboard Hibák panel **Forrás** és **Típus** badge-jei az ún. soft (fél-átlátszó) stilusút használják a teli kitöltés helyett:
+
+```tsx
+// ✅ Soft badge (Management Dashboard Forrás/Típus)
+'bg-teal-500/15 text-teal-700 dark:text-teal-400 border-teal-500/30'   // Application
+'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30' // Mailgun
+'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30'   // Worker
+
+// ❌ Teli kitöltés — NE használd Forrás/Típus badge-eknél
+'bg-teal-600 text-white'
+```
+
+**Szabályok:**
+- Fix szélesség: `w-[100px] justify-center` mindktét oszlopnál
+- Forrás badge színe **mindig megegyezik** a mellette lévő Típus badge színével (pl. Worker sornai = mindktét badge kék)
+- Nincs hover effect (információs címke, nem interaktív)
+
 ---
 
 ## MetricCard (Dashboard KPI)
@@ -413,3 +432,89 @@ Flat hover transition — szín alapú, nincs shadow.
 ```
 
 Fix szélességű számjegyek pénzügyi adatokhoz.
+
+---
+
+## ⚠️ Anti-CLS Design Szabályok (Kötelező)
+
+> **CLS = Cumulative Layout Shift.** Minden dinamikus elem esetén meg kell akadályozni, hogy a tartalom méretváltozása eltoljon más elemeket.
+
+### 1. Gomb border-space foglalás
+
+**Probléma:** Ha egy gomb `hover`-re kap bordert (`border-1px`), a layout eltolódik 1px-t.
+
+**Megoldás:** Minden gomb alapból kapjon `border border-transparent` osztályt — így helyet foglal a border-nek, de nem látszik.
+
+```tsx
+// ❌ ROSSZ — hover-re shift
+<button className="hover:border hover:border-primary px-4">
+  Gomb
+</button>
+
+// ✅ JÓ — border hely mindig foglalt
+<button className="border border-transparent hover:border-primary px-4">
+  Gomb
+</button>
+```
+
+> **Megjegyzés:** A shadcn/ui `Button` komponens alapból `border border-transparent`-et használ a legtöbb variánsnál. Egyedi gombokhoz kötelező manuálisan felvenni.
+
+---
+
+### 2. Dinamikus counter anti-CLS
+
+**Probléma:** Ha egy counter értéke 1 jegyűről 2 jegyűre nő (`9 → 10`), a szöveg szélesebb lesz és eltolódik a mellette lévő tartalom.
+
+**Megoldás:** `tabular-nums` + `min-w-[Xch]` a counter spanra.
+
+```tsx
+// ❌ ROSSZ — shift 9→10-nél
+<Button>Törlés ({selected.size})</Button>
+
+// ✅ JÓ — 2 karakter hely mindig foglalt, monospace számok
+<Button>
+  Törlés (<span className="tabular-nums inline-block min-w-[2ch] text-center">
+    {selected.size}
+  </span>)
+</Button>
+
+// ✅ JÓ — "N fájl kijelölve" sor elejénél
+<span className="text-sm font-medium">
+  <span className="tabular-nums inline-block min-w-[2ch] text-center">
+    {selectedFiles.size}
+  </span> fájl kijelölve
+</span>
+```
+
+**`min-w` irányelv:**
+
+| Max várható szám | `min-w` érték |
+|-----------------|---------------|
+| 1–99 | `min-w-[2ch]` |
+| 1–999 | `min-w-[3ch]` |
+| 1–9999+ | `min-w-[4ch]` |
+
+**Miért `ch` unit?** `1ch` = az adott font `0` karakterének szélessége. `tabular-nums`-szal ez egyenlő minden számjegynek, így `2ch` pontosan 2 számjegy szélességét jelenti.
+
+**Hol alkalmazzuk kötelezően:**
+- Bulk action sávok: `Törlés (N)`, `Újraküldés (N)`, `N fájl kijelölve`
+- Pagination: `1 / 25 oldal`
+- Feltöltés progress: `3 / 10 fájl`
+- Bármilyen gomb label ahol szám dinamikusan változik
+
+---
+
+### 3. `scrollbar-gutter: stable` — scroll shift megelőzése
+
+**Probléma:** Ha egy container scrollbar-t kap (tartalom túlnő), a scrollbar megjelenése 15-17px-t vesz el a tartalomtól, shifting-et okozva.
+
+**Megoldás:** `style={{ scrollbarGutter: 'stable' }}` az overflow container-en.
+
+```tsx
+// ✅ Használat — ContentArea és scrollható listák
+<main style={{ scrollbarGutter: 'stable' }} className="overflow-y-auto">
+  {children}
+</main>
+```
+
+> Már alkalmazva: `AppLayout` ContentArea `<main>` elemén.

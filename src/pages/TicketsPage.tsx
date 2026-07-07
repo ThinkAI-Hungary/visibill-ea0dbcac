@@ -298,11 +298,11 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   const renderTabsHeader = () => {
     if (!embeddedInManagement || !isAdmin) return null;
     return (
-      <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 mb-6 w-fit gap-1">
+    <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 mb-6 w-fit gap-1">
         <button
           onClick={() => setSubTab('list')}
-          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
-            subView === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
+            subView === 'list' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
           }`}
         >
           <Layers className="h-3.5 w-3.5" />
@@ -310,8 +310,8 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
         </button>
         <button
           onClick={() => setSubTab('console')}
-          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
-            subView === 'console' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
+            subView === 'console' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
           }`}
         >
           <MessageSquare className="h-3.5 w-3.5" />
@@ -319,8 +319,8 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
         </button>
         <button
           onClick={() => setSubTab('analytics')}
-          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
-            subView === 'analytics' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
+            subView === 'analytics' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
           }`}
         >
           <BarChart3 className="h-3.5 w-3.5" />
@@ -328,8 +328,8 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
         </button>
         <button
           onClick={() => setSubTab('assignment')}
-          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
-            subView === 'assignment' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
+            subView === 'assignment' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
           }`}
         >
           <UserCheck className="h-3.5 w-3.5" />

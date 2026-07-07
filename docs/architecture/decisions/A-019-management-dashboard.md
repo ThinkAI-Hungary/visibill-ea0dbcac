@@ -1,7 +1,7 @@
 # A-019: Management Dashboard Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12 (last updated 2026-07-05)
+**Date:** 2025-12 (last updated 2026-07-07)
 
 ## Context
 
@@ -191,6 +191,124 @@ function normalizeStatus(status, errorMessage?) {
 }
 ```
 
+### Filter UX: Command Combobox Pattern (2026-07-07)
+
+A **Cég** és **Felhasználó** szűrők mindkét panelen (Files, Errors) a `Command` + `Popover` combobox patternt használják:
+
+- **Keresővel** ellátott dropdown (nem natív `<select>`)
+- **Scrollbar** nagy listáknál (`max-h-[280px]` vagy `CommandList` auto-scroll)
+- Az adatok a globális `allUsers` prop-ból származnak (nem a táblázat aktuális soraiból)
+- A `Source` és `Category` filterek egyszerűbb `Popover` + scroll wrapperrel (`max-h-[280px] overflow-y-auto`)
+
+```typescript
+// Company/User combobox pattern (Files + Errors panel):
+<Popover open={companySearchOpen} onOpenChange={setCompanySearchOpen}>
+  <PopoverTrigger asChild>
+    <Button variant="outline" role="combobox" ...>
+  </PopoverTrigger>
+  <PopoverContent className="w-[250px] p-0">
+    <Command>
+      <CommandInput placeholder="Cég keresése..." />
+      <CommandList>
+        <CommandEmpty>Nincs találat.</CommandEmpty>
+        <CommandGroup>
+          <CommandItem ...>Minden cég</CommandItem>
+          {companyOptions.map(...)}
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  </PopoverContent>
+</Popover>
+```
+
+### Mailgun User Label (2026-07-07)
+
+Ha egy fájl vagy hiba a Mailgun webhook-ból származik, a User oszlopban a felhasználó neve helyett egy vizuális 📧 **Mailgun** label jelenik meg (amber szín).
+
+**Backend (`management-stats` EF):** Mindkét panelre a backend állítja a `user_name = 'Mailgun'` értéket:
+
+| Panel | Feltétel (backend) | Logika |
+|-------|-------------------|--------|
+| **Fájlok** | `metadata.source === 'email_alias'` VAGY `!user_id` | `buildFiles()` sor 1935-1937 |
+| **Hibák** | `component === 'process-mailgun-webhook'` | `buildErrors()` sor 1212-1214 |
+
+```typescript
+// buildErrors — management-stats/index.ts
+user_name: (isAppLog && row.component === 'process-mailgun-webhook')
+  ? 'Mailgun'
+  : (row.user_id ? (profileByUserId.get(row.user_id) || null) : null),
+```
+
+> **Megjegyzés:** A webhook `logError()`-ba `user_id: alias.user_id` kerül (az email alias tulajdonosa), ezért a backend-nek explicit felül kell írnia `'Mailgun'`-ra — különben a profile lookup az alias-tulajdonos nevét adná vissza.
+
+**Frontend fallback:** A Hibák panelen a Mailgun check **elsőbbséget kap** a `user_name` felett:
+
+```tsx
+// ManagementDashboard.tsx — Hibák panel User oszlop
+{r.error_message?.includes('process-mailgun-webhook') ? (
+  <span>📧 Mailgun</span>     // ← ELSŐ: Mailgun check
+) : r.user_name ? (
+  <button>...</button>        // ← MÁSOD: normál user
+) : <span>—</span>}           // ← HARMAD: nincs user
+```
+
+### Debounce + Loading Pattern (2026-07-07)
+
+Keresés/szűrés közben a `useEffect` debounce-olja a tényleges query paramétert:
+- **`isLoading`**: Skeleton renderelés (csak első betöltéskor)
+- **`isFetching && !isLoading`**: Opacity overlay (`opacity-60 transition-opacity`) — stale adat látható, háttérben frissül
+
+Részletek: [07-loading-patterns.md](../../design/07-loading-patterns.md)
+
+### Error Taxonomy — 3 fő kategória (2026-07-07)
+
+A Management Dashboard **Hibák paneljén** a hibaforrások és típusok **3 egységes kategóriába** vannak csoportosítva, az eredeti több tucat nyers `error_type` érték helyett:
+
+| Kategória | Szín | Source-ok |
+|-----------|------|----------|
+| **Application** | 🩵 Teal | `app_error_logs:frontend`, `app_error_logs:worker` |
+| **Mailgun** | 🟡 Amber | `app_error_logs:mailgun` (minden mailgun/webhook hibát lefed) |
+| **Worker** | 🔵 Kék | `invoice_uploads`, `transaction_uploads`, `report_uploads`, `bank_statement_uploads`, `gl_upload_notifications`, `nav_sync_logs` |
+
+#### Kategória meghatározás — két lépés
+
+1. **Component override:** Ha a log `component === 'process-mailgun-webhook'` → kat. = `Mailgun`, source = `app_error_logs:mailgun` (függetlenül az `error_type`-tól)
+2. **`APP_LOG_CATEGORY_MAP`:** Minden egyéb `error_type`-ot egy lookup-mappa (`Application` / `Worker`) átalakít
+
+```typescript
+// management-stats/index.ts
+const APP_LOG_CATEGORY_MAP: Record<string, 'Application' | 'Worker'> = {
+  // Frontend
+  navigation_error: 'Application',
+  auth_error: 'Application',
+  ui_error: 'Application',
+  warning: 'Application',
+  // Worker
+  transaction_error: 'Worker',
+  invoice_processing_error: 'Worker',
+  // ... stb.
+};
+```
+
+#### Forrás label egységesítés
+
+Minden upload tábla (`invoice_uploads`, `transaction_uploads`, stb.) a Forrás oszlopban **"Feltöltés"** felirattal jelenik meg (közös label a különböző fájltípusok helyett). Az alábbi típus (`Application` vs `Worker`) mutatja, hogy frontend kézi feltöltés vagy worker pipeline hibáról van-e szó.
+
+#### `uploads` csoport-szűrő
+
+A frontend `forrás` szűrőben a “Feltöltés” opció `value: 'uploads'` küldödik a backendnek, ahol az EF az összes upload forrást egyszerre szűri:
+
+```typescript
+const UPLOAD_SOURCES = new Set([
+  "invoice_uploads", "transaction_uploads", "report_uploads",
+  "gl_upload_notifications", "nav_sync_logs", "bank_statement_uploads",
+]);
+
+if (filterSource === 'uploads') {
+  allErrors = allErrors.filter(e => UPLOAD_SOURCES.has(e.source));
+}
+```
+
 ## Consequences
 
 **Pozitív:**
@@ -202,6 +320,11 @@ function normalizeStatus(status, errorMessage?) {
 - Zero-flash management routing → 5 rétegű guard biztosítja, hogy a management user soha nem lát sidebar/navbar villanást
 - Superadmin 27 modul → teljes platform adatáttekintés cégszinten
 - User-mode kontextus megőrzés → cégváltáskor a user filter nem veszik el
+- Command combobox filterek → kereshető, scrollozható, globális adatforrás
+- Mailgun user label → webhook-eredetú hibák/fájlok azonnal felismerhetők
+- Debounce + opacity transition → nincs skeleton flash háttér-refetch-nél
+- Error taxonomy (3 kategória) → Application/Mailgun/Worker egységes besorolás, összecsúszó kategóriák megszűntek
+- Feltöltés forrás-label egységesítés → uploads group filter, típus badge mutatja a részletet
 
 **Negatív:**
 - ~~`auth.admin.listUsers({ perPage: 1000 })` → 1000+ felhasználónál csonkolódik~~ — **Javítva:** `listAllAuthUsers()` helper paginál az összes oldalon
@@ -214,3 +337,4 @@ function normalizeStatus(status, errorMessage?) {
 
 - [Error Logging System](../error-logging-system.md) — Részletes error logging architektúra és dashboard
 - [09-Error Handling & Feedback](../../design/09-error-handling-feedback.md) — Frontend error kezelés design
+- [07-Loading Patterns](../../design/07-loading-patterns.md) — Debounce + skeleton/opacity pattern

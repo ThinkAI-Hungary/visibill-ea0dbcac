@@ -213,17 +213,12 @@ serve(async (req) => {
       .single();
 
     if (aliasError || !alias) {
-      console.error('Alias not found for:', recipient, 'Error:', aliasError);
-      await logError(supabase, {
-        error_type: 'webhook',
-        component: 'process-mailgun-webhook',
-        action: 'lookup_alias',
-        message: `Alias not found for recipient: ${recipient}`,
-        context: { recipient, sender, aliasError: aliasError?.message },
-      });
-      return new Response(JSON.stringify({ error: 'Alias not found', recipient }), {
+      // Alias not found — this is expected for deactivated/deleted companies.
+      // Return 200 so Mailgun does NOT retry. Only log to console (not app_error_logs).
+      console.warn(`[lookup_alias] Alias not found for: ${recipient} (sender: ${sender}). Skipping.`);
+      return new Response(JSON.stringify({ skipped: true, reason: 'alias_not_found', recipient }), {
         headers: { 'Content-Type': 'application/json' },
-        status: 404,
+        status: 200,
       });
     }
 
@@ -357,23 +352,7 @@ serve(async (req) => {
       // Sender-based bank hint (available for all file types)
       const senderBank = getBankFromDomain(senderDom);
 
-      // 0. GLS COD reports (e.g. 18196_HUF_20260703_081056.xlsx)
-      // Normalize filename for robust matching
-      const cleanFn = fn.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const cleanSubject = (emailSubject || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      
-      const isGlsFilename = cleanFn.includes('gls') || cleanFn.includes('huf') || cleanFn.includes('utanvet') || cleanFn.includes('cod') || /_202\d{5}_/.test(cleanFn);
-      const isGlsSubject = cleanSubject.includes('gls') || cleanSubject.includes('utanvet') || cleanSubject.includes('huf') || cleanSubject.includes('cod');
-      const isGlsDomain = senderDom && senderDom.includes('gls-hungary');
-
-      if (isGlsDomain || isGlsFilename || isGlsSubject) {
-        // If it has financial keywords, it's definitely a transaction
-        if (cleanFn.includes('huf') || cleanFn.includes('utanvet') || cleanFn.includes('cod') || cleanSubject.includes('huf') || cleanSubject.includes('utanvet')) {
-          return { classification: 'transaction', bankHint: 'gls', reason: 'GLS COD report detected (robust check)' };
-        }
-      }
-
-      // 1. Shipment sender → invoice default
+      // 0. Shipment sender → invoice default (not skip — fallback will handle it)
       if (isShipmentDomain(senderDom)) {
         return { classification: 'invoice', bankHint: null, reason: `Shipment sender: ${senderDom} → invoice default` };
       }
@@ -391,7 +370,6 @@ serve(async (req) => {
         if (senderBank) {
           return { classification: 'transaction', bankHint: senderBank, reason: `Bank sender: ${senderDom}` };
         }
-
         // 2b. Filename contains banking keywords
         const fnNormXls = fn.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         if (TRANSACTION_FILENAME_KEYWORDS.some(kw => {
@@ -423,21 +401,9 @@ serve(async (req) => {
           }
         }
 
-        // 2f. GLS COD reports (e.g. 18196_HUF_20260703_081056.xlsx)
-        // These are financial records, unlike the simple tracking reports.
-        if (fn.includes('gls') || emailSubject?.toLowerCase().includes('gls')) {
-          if (fn.includes('huf') || fn.includes('utánvét') || /_202\d{5}_/.test(fn)) {
-            return { classification: 'transaction', bankHint: 'gls', reason: 'GLS COD report detected by filename/subject' };
-          }
-        }
 
         // No bank signal → treat as invoice (fallback will handle if needed)
         return { classification: 'invoice', bankHint: null, reason: 'xlsx/csv without bank signal → invoice' };
-      }
-
-      // Only apply heuristics to PDFs
-      if (ext !== '.pdf') {
-        return { classification: 'invoice', bankHint: null, reason: 'Default → invoice' };
       }
 
       // 3. Filename keywords (normalized — remove diacritics for matching)

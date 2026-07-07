@@ -265,6 +265,12 @@ serve(async (req) => {
       return json(await updateFileStatus(admin, body));
     }
 
+    if (action === "delete-files") {
+      if (req.method !== "POST") return json({ error: "POST required" });
+      const body = await req.json().catch(() => ({}));
+      return json(await deleteFiles(admin, body));
+    }
+
     return json({ error: "Unknown action", ...emptyOverview });
   } catch (error) {
     console.error("[MANAGEMENT-STATS] Unexpected error", error);
@@ -1040,71 +1046,70 @@ async function buildUserDetail(admin: ReturnType<typeof createClient>, userId: s
 }
 
 // ─── Error categorization ────────────────────────────
+// Kategorizálja az upload tábla hibáit → 3 fő csoport
 function categorizeError(msg: string | null): string {
-  if (!msg) return "unknown";
+  if (!msg) return "Worker"; // upload táblás hiba → Worker
   const lower = msg.toLowerCase();
-  if (lower.includes("nem beazonosítható") || lower.includes("not identif")) return "classification_error";
-  if (lower.includes("ocr") && (lower.includes("failed") || lower.includes("error"))) return "ocr_error";
-  if (lower.includes("extraction error") || lower.includes("validation error")) return "extraction_error";
-  if (lower.includes("duplicate key") || lower.includes("already exists")) return "duplicate_error";
-  if (lower.includes("timeout") || lower.includes("timed out")) return "timeout_error";
-  if (lower.includes("rate limit") || lower.includes("429")) return "rate_limit_error";
-  if (lower.includes("apierror") || lower.includes("pgrst") || lower.includes("http error")) return "api_error";
-  if (lower.includes("nem található") || lower.includes("no valid") || lower.includes("empty")) return "empty_content";
-  return "unknown";
+  // Application-szintű hibák (timeout, rate-limit, API)
+  if (lower.includes("timeout") || lower.includes("timed out")) return "Application";
+  if (lower.includes("rate limit") || lower.includes("429")) return "Application";
+  if (lower.includes("apierror") || lower.includes("pgrst") || lower.includes("http error")) return "Application";
+  if (lower.includes("duplicate key") || lower.includes("already exists")) return "Worker";
+  // Minden egyéb upload hiba → Worker (OCR, AI, üres tartalom stb.)
+  return "Worker";
 }
 
-function categoryLabel(cat: string): string {
-  const labels: Record<string, string> = {
-    classification_error: "Nem beazonosítható",
-    ocr_error: "OCR hiba",
-    extraction_error: "Extrakciós hiba",
-    duplicate_error: "Duplikátum",
-    timeout_error: "Időtúllépés",
-    rate_limit_error: "Rate limit",
-    api_error: "API / DB hiba",
-    empty_content: "Üres tartalom",
-    // Frontend app_error_logs types
-    auth: "Auth hiba",
-    db_query: "DB lekérdezés",
-    api_call: "API hívás",
-    upload: "Feltöltés (frontend)",
-    validation: "Validáció",
-    navigation: "Navigáció",
-    unhandled: "Nem kezelt hiba",
-    // Worker types
-    worker: "Worker hiba",
-    // Mailgun/email types
-    webhook: "Webhook hiba",
-    mailgun: "Mailgun hiba",
-    email_alias: "Email alias hiba",
-    unknown: "Egyéb",
-  };
-  return labels[cat] || "Egyéb";
-}
-
-const SOURCE_LABELS: Record<string, string> = {
-  invoice_uploads: "Számla",
-  transaction_uploads: "Tranzakció",
-  report_uploads: "Riport",
-  gl_upload_notifications: "Főkönyv",
-  nav_sync_logs: "NAV szinkron",
-  bank_statement_uploads: "Bankkivonat",
-  app_error_logs: "App hiba",
-  // Sub-sources derived from app_error_logs.error_type
-  "app_error_logs:frontend": "Frontend",
-  "app_error_logs:worker": "Worker",
-  "app_error_logs:webhook": "Mailgun webhook",
-  "app_error_logs:mailgun": "Mailgun",
-  "app_error_logs:email_alias": "Email alias",
+// 3 fő kategória csoport — app_error_logs error_type értékek mapping-je
+const APP_LOG_CATEGORY_MAP: Record<string, string> = {
+  // Application csoport
+  auth:         "Application",
+  db_query:     "Application",
+  api_call:     "Application",
+  upload:       "Application",
+  validation:   "Application",
+  navigation:   "Application",
+  unhandled:    "Application",
+  realtime:     "Application",
+  // Mailgun csoport
+  webhook:      "Mailgun",
+  mailgun:      "Mailgun",
+  email_alias:  "Mailgun",
+  // Worker csoport
+  worker:       "Worker",
 };
 
-// Map error_type to a sub-source key for app_error_logs
+function categoryLabel(cat: string): string {
+  // Az app_error_logs error_type értékek már mappelve vannak
+  if (APP_LOG_CATEGORY_MAP[cat]) return APP_LOG_CATEGORY_MAP[cat];
+  // Az upload táblás categorizeError() már a 3 csoportot adja vissza
+  if (cat === "Application" || cat === "Mailgun" || cat === "Worker") return cat;
+  // Fallback
+  return "Worker";
+}
+
+const UPLOAD_SOURCES = new Set([
+  "invoice_uploads", "transaction_uploads", "report_uploads",
+  "gl_upload_notifications", "nav_sync_logs", "bank_statement_uploads",
+]);
+
+const SOURCE_LABELS: Record<string, string> = {
+  // Feltöltések — egységes label
+  invoice_uploads:          "Feltöltés",
+  transaction_uploads:      "Feltöltés",
+  report_uploads:           "Feltöltés",
+  gl_upload_notifications:  "Feltöltés",
+  nav_sync_logs:            "Feltöltés",
+  bank_statement_uploads:   "Feltöltés",
+  // App error log sub-source-ok (3 csoport)
+  "app_error_logs:frontend": "Frontend",
+  "app_error_logs:worker":   "Worker",
+  "app_error_logs:mailgun":  "Mailgun",
+};
+
+// Map error_type → sub-source kulcs (Mailgun típusok összevonva)
 function appLogSubSource(errorType: string): string {
   if (errorType === "worker") return "app_error_logs:worker";
-  if (errorType === "webhook") return "app_error_logs:webhook";
-  if (errorType === "mailgun") return "app_error_logs:mailgun";
-  if (errorType === "email_alias") return "app_error_logs:email_alias";
+  if (["webhook", "mailgun", "email_alias"].includes(errorType)) return "app_error_logs:mailgun";
   return "app_error_logs:frontend";
 }
 
@@ -1144,10 +1149,10 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
     admin.from("profiles").select("user_id, name"),
     // 6 upload error source queries — include file_url where available
     admin.from("invoice_uploads")
-      .select("id, created_at, error_message, file_name, file_url, company_id, user_id")
+      .select("id, created_at, error_message, file_name, file_url, company_id, user_id, metadata")
       .eq("processing_status", "error"),
     admin.from("transaction_uploads")
-      .select("id, created_at, error_message, file_name, file_url, company_id, user_id")
+      .select("id, created_at, error_message, file_name, file_url, company_id, user_id, metadata")
       .eq("processing_status", "error"),
     admin.from("report_uploads")
       .select("id, created_at, error_message, file_name, file_url, company_id, user_id")
@@ -1159,7 +1164,7 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
       .select("id, created_at, error_message, company_id")
       .eq("status", "error"),
     admin.from("bank_statement_uploads")
-      .select("id, created_at, error_message, file_name, file_url, company_id, user_id")
+      .select("id, created_at, error_message, file_name, file_url, company_id, user_id, metadata")
       .eq("processing_status", "error"),
     // 7th source: frontend app error logs
     admin.from("app_error_logs")
@@ -1189,14 +1194,20 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
     for (const row of res.data || []) {
       // For app_error_logs, use error_type as category; for upload tables, categorize from message
       const isAppLog = source === "app_error_logs";
-      const cat = isAppLog ? (row.error_type || "unknown") : categorizeError(row.error_message ?? row.message);
+      // Ha a component 'process-mailgun-webhook' → override: Mailgun csoport, mailgun sub-source
+      const isMailgunComponent = isAppLog && row.component === 'process-mailgun-webhook';
+      const cat = isMailgunComponent
+        ? 'Mailgun'
+        : isAppLog ? (row.error_type || "unknown") : categorizeError(row.error_message ?? row.message);
       // For auth errors, prepend email from context if available
       const ctxEmail = isAppLog && row.context?.email ? ` [${row.context.email}]` : "";
       const errorMsg = isAppLog
         ? `[${row.component || '?'}/${row.action || '?'}]${ctxEmail} ${row.message || ''}`
         : (row.error_message || null);
       // For app_error_logs, derive a sub-source so Frontend/Worker/Mailgun are separate
-      const effectiveSource = isAppLog ? appLogSubSource(row.error_type || "") : source;
+      const effectiveSource = isMailgunComponent
+        ? 'app_error_logs:mailgun'
+        : isAppLog ? appLogSubSource(row.error_type || "") : source;
       allErrors.push({
         id: row.id,
         created_at: row.created_at,
@@ -1210,7 +1221,11 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
         company_id: row.company_id || null,
         company_name: row.company_id ? (companyById.get(row.company_id) as string || null) : null,
         user_id: row.user_id || null,
-        user_name: row.user_id ? (profileByUserId.get(row.user_id) as string || null) : null,
+        user_name: (isAppLog && row.component === 'process-mailgun-webhook')
+          ? 'Mailgun'
+          : (!isAppLog && row.metadata?.source === 'email_alias')
+            ? 'Mailgun'
+            : (row.user_id ? (profileByUserId.get(row.user_id) as string || null) : null),
         context: isAppLog ? (row.context || null) : null,
       });
     }
@@ -1266,9 +1281,16 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
   // Apply filters
   if (filterCompanyId) allErrors = allErrors.filter(e => e.company_id === filterCompanyId);
   if (filterUserId) allErrors = allErrors.filter(e => e.user_id === filterUserId);
-  // Source filter: exact match OR prefix match (e.g. 'app_error_logs' matches 'app_error_logs:frontend')
-  if (filterSource) allErrors = allErrors.filter(e => e.source === filterSource || e.source.startsWith(filterSource + ':'));
-  if (filterCategory) allErrors = allErrors.filter(e => e.error_category === filterCategory);
+  // Source filter: 'uploads' = minden upload tábla; egyedi source: exact/prefix match
+  if (filterSource) {
+    if (filterSource === 'uploads') {
+      allErrors = allErrors.filter(e => UPLOAD_SOURCES.has(e.source));
+    } else {
+      allErrors = allErrors.filter(e => e.source === filterSource || e.source.startsWith(filterSource + ':'));
+    }
+  }
+  // filterCategory a 3 fő csoport egyike: 'Application' | 'Mailgun' | 'Worker'
+  if (filterCategory) allErrors = allErrors.filter(e => e.error_category_label === filterCategory);
   if (dateFrom) {
     const d = new Date(`${dateFrom}T00:00:00.000Z`).getTime();
     allErrors = allErrors.filter(e => new Date(e.created_at).getTime() >= d);
@@ -2075,5 +2097,126 @@ async function updateFileStatus(
     updated: totalUpdated,
     requested: files.length,
     ...(errors.length > 0 ? { errors } : {}),
+  };
+}
+// ───────────────────────────────────────────────────────────────────────────────
+// DELETE FILES: storage + DB row removal
+// ───────────────────────────────────────────────────────────────────────────────
+
+// Maps source_table identifier (short or full) to its storage bucket name
+const SOURCE_TABLE_TO_BUCKET: Record<string, string> = {
+  invoice:            "invoice-uploads",
+  invoice_uploads:    "invoice-uploads",
+  transaction:        "transactions",
+  transaction_uploads:"transactions",
+  bank:               "bank-statements",
+  bank_statement_uploads: "bank-statements",
+  report:             "report-uploads",
+  report_uploads:     "report-uploads",
+};
+
+// Maps short key / full table name to the actual DB table name
+const SOURCE_TABLE_TO_DB: Record<string, string> = {
+  invoice:            "invoice_uploads",
+  invoice_uploads:    "invoice_uploads",
+  transaction:        "transaction_uploads",
+  transaction_uploads:"transaction_uploads",
+  bank:               "bank_statement_uploads",
+  bank_statement_uploads: "bank_statement_uploads",
+  report:             "report_uploads",
+  report_uploads:     "report_uploads",
+};
+
+/**
+ * Parses a Supabase Storage public URL and returns { bucket, path }.
+ * Handles both /object/public/<bucket>/<path> and /object/authenticated/<bucket>/<path>.
+ * Returns null if the URL cannot be parsed.
+ */
+function parseStorageUrl(url: string): { bucket: string; path: string } | null {
+  try {
+    const match = url.match(/\/storage\/v1\/object\/(?:public|authenticated)\/([^/]+)\/(.+)/);
+    if (!match) return null;
+    return { bucket: match[1], path: match[2] };
+  } catch {
+    return null;
+  }
+}
+
+async function deleteFiles(
+  admin: ReturnType<typeof createClient>,
+  body: {
+    files?: Array<{ id: string; source_table: string; file_url: string | null }>;
+  }
+) {
+  const { files } = body;
+
+  if (!files || !Array.isArray(files) || files.length === 0) {
+    return { error: "files array required", deleted: 0 };
+  }
+  if (files.length > 200) {
+    return { error: "Max 200 files per batch", deleted: 0 };
+  }
+
+  // Validate all source_tables before doing anything
+  const invalidTables = files.filter(f => !SOURCE_TABLE_TO_DB[f.source_table]).map(f => f.source_table);
+  if (invalidTables.length > 0) {
+    return { error: `Invalid source_table values: ${[...new Set(invalidTables)].join(", ")}`, deleted: 0 };
+  }
+
+  let storageDeleted = 0;
+  let dbOnlyDeleted = 0;
+  const storageErrors: string[] = [];
+  const dbErrors: string[] = [];
+
+  // Process each file individually: storage first, then DB row
+  await Promise.all(
+    files.map(async (f) => {
+      const dbTable = SOURCE_TABLE_TO_DB[f.source_table];
+
+      // Step 1: Storage deletion (only if file_url exists)
+      if (f.file_url) {
+        const parsed = parseStorageUrl(f.file_url);
+        if (parsed) {
+          const { error: storageError } = await admin.storage
+            .from(parsed.bucket)
+            .remove([parsed.path]);
+          if (storageError) {
+            // Log but don't abort — still delete DB row
+            storageErrors.push(`${f.id}: ${storageError.message}`);
+            console.error(`[delete-files] Storage removal failed for ${f.id}:`, storageError.message);
+          } else {
+            storageDeleted++;
+          }
+        } else {
+          storageErrors.push(`${f.id}: could not parse storage URL`);
+        }
+      } else {
+        // No file_url — DB-only deletion
+        dbOnlyDeleted++;
+      }
+
+      // Step 2: DB row deletion (always)
+      const { error: dbError } = await admin
+        .from(dbTable)
+        .delete()
+        .eq("id", f.id);
+
+      if (dbError) {
+        dbErrors.push(`${f.id}: ${dbError.message}`);
+        console.error(`[delete-files] DB row deletion failed for ${f.id}:`, dbError.message);
+      }
+    })
+  );
+
+  const totalDeleted = storageDeleted + dbOnlyDeleted;
+
+  return {
+    success: dbErrors.length === 0,
+    deleted: totalDeleted,
+    storageDeleted,
+    dbOnlyDeleted,
+    requested: files.length,
+    ...(storageErrors.length > 0 ? { storageErrors } : {}),
+    ...(dbErrors.length > 0 ? { dbErrors } : {}),
   };
 }

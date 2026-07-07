@@ -127,3 +127,24 @@ A Mailgun automatikusan retry-olja a webhookot ha nem kap 200 OK-t időben (expo
 - A `Message-Id` az email-hez tartozik, nem a webhook híváshoz → Mailgun retry-knál UGYANAZ a `Message-Id`
 
 **Kapcsolódó:** [A-023: Upload Dedup Protection](./A-023-upload-dedup-protection.md) — a DB trigger dedup bypass az email_alias source-ra
+
+## Alias Not Found: Silent Handling (2026-07-07)
+
+Ha egy email érkezik egy nem létező alias-ra (pl. `think-ai@in.visibill.hu` — a cég már törölve van a rendszerből):
+
+| Aspektus | Előtte | Utána |
+|----------|--------|-------|
+| **Logolás** | `logError()` → `app_error_logs` tábla (error dashboard zaj) | `console.warn()` → csak EF runtime log |
+| **HTTP válasz** | `404` → Mailgun retry (3x exponential backoff) | `200` → Mailgun elfogadja, nincs retry |
+| **Hatás** | Minden ilyen email 3x újrapróbálkozik + 3 error rekord a dashboard-on | Egy console.warn, semmi más |
+
+**Indoklás:** Az alias-not-found nem valódi hiba — a catch-all Mailgun route (`.*@in.visibill.hu`) fogad minden emailt, de a törölt cégek alias-ai már nem léteznek az `email_aliases` táblában. A `200 OK` válasz biztosítja, hogy a Mailgun ne retry-ozzon feleslegesen.
+
+```typescript
+if (aliasError || !alias) {
+  console.warn(`[lookup_alias] Alias not found for: ${recipient}. Skipping.`);
+  return new Response(JSON.stringify({ skipped: true, reason: 'alias_not_found' }), {
+    status: 200, // ← NOT 404
+  });
+}
+```

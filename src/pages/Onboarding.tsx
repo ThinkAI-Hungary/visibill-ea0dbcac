@@ -662,7 +662,7 @@ const Onboarding = () => {
       // Init stats for new category
       setCategoryStats(prev => ({
         ...prev,
-        [data.id]: { invoiceCount: 0, totalAmount: 0, invoices: [] },
+        [data.id]: { invoiceCount: 0, totalAmount: 0, currencyTotals: {}, invoices: [] },
       }));
       
       setShowNewDialog(false);

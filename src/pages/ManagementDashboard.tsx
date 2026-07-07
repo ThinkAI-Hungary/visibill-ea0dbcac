@@ -19,7 +19,7 @@ import {
   AlertTriangle, Trash2, RefreshCw, RotateCcw, Receipt, Wallet, Landmark, BarChart3,
   Eye, Download, ExternalLink, ShieldCheck, ToggleLeft, ToggleRight, Save, Check, Loader2, Pencil,
   ArrowLeftRight, BookOpen, Briefcase, Upload, AlertCircle, ClipboardList, CalendarClock, HardHat,
-  CreditCard, User,
+  CreditCard, User, Mail,
   Tags, FolderKanban, Package2, Truck, FileSpreadsheet, Scale, ScrollText, Gavel,
   TicketCheck, FolderOpen,
 } from 'lucide-react';
@@ -30,6 +30,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -524,7 +534,7 @@ function LlmCostTable({ companyId }: { companyId: string }) {
 // ═══════════════════════════════════════════════════════
 type ErrorSortCol = 'created_at' | 'source' | 'error_category';
 
-function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => void }) {
+function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: string) => void; allUsers: ControlCenterUser[] }) {
   const PAGE_SIZE = 25;
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -546,7 +556,26 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
   const [deletingAll, setDeletingAll] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
+  const [companySearchOpen, setCompanySearchOpen] = useState(false);
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  // Build company options from allUsers (deduped companies) — same as FilesPanel
+  const companyOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const u of allUsers) {
+      for (const c of (u as any).companies || []) {
+        if (c.id && !seen.has(c.id)) seen.set(c.id, c.name);
+      }
+    }
+    return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [allUsers]);
+
+  // User options filtered by company
+  const userOptions = useMemo(() => {
+    if (!filterCompanyId) return allUsers;
+    return allUsers.filter((u: any) => u.companies?.some((c: any) => c.id === filterCompanyId));
+  }, [allUsers, filterCompanyId]);
 
   // Debounce search — useEffect handles cleanup properly (useMemo does NOT)
   useEffect(() => {
@@ -712,11 +741,11 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
     openRetryModal(ids);
   };
 
-  function ErrSortTh({ col, label }: { col: ErrorSortCol; label: string }) {
+  function ErrSortTh({ col, label, width }: { col: ErrorSortCol; label: string; width?: string }) {
     const active = sortCol === col;
     return (
       <th
-        className="py-2 px-4 font-medium cursor-pointer select-none hover:text-foreground transition-colors duration-150 text-left"
+        className={`py-2 px-4 font-medium cursor-pointer select-none hover:text-foreground transition-colors duration-150 text-left${width ? ` ${width}` : ''}`}
         onClick={() => toggleSort(col)}
       >
         <span className="inline-flex items-center gap-1">
@@ -730,68 +759,36 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
   }
 
   const sourceOptions = [
-    { value: 'invoice_uploads', label: 'Számla' },
-    { value: 'transaction_uploads', label: 'Tranzakció' },
-    { value: 'report_uploads', label: 'Riport' },
-    { value: 'gl_upload_notifications', label: 'Főkönyv' },
-    { value: 'nav_sync_logs', label: 'NAV szinkron' },
-    { value: 'bank_statement_uploads', label: 'Bankkivonat' },
-    { value: 'app_error_logs', label: '── App hibák (mind) ──' },
-    { value: 'app_error_logs:frontend', label: '   Frontend' },
-    { value: 'app_error_logs:worker', label: '   Worker' },
-    { value: 'app_error_logs:webhook', label: '   Mailgun webhook' },
-    { value: 'app_error_logs:mailgun', label: '   Mailgun' },
-    { value: 'app_error_logs:email_alias', label: '   Email alias' },
+    { value: 'uploads',              label: 'Feltöltés' },   // ← minden upload tábla egyben
+    { value: 'app_error_logs:frontend', label: 'Frontend' },
+    { value: 'app_error_logs:worker',   label: 'Worker' },
+    { value: 'app_error_logs:mailgun',  label: 'Mailgun' },
   ];
 
   const categoryOptions = [
-    { value: 'classification_error', label: 'Nem beazonosítható' },
-    { value: 'ocr_error', label: 'OCR hiba' },
-    { value: 'extraction_error', label: 'Extrakciós hiba' },
-    { value: 'duplicate_error', label: 'Duplikátum' },
-    { value: 'api_error', label: 'API / DB hiba' },
-    { value: 'empty_content', label: 'Üres tartalom' },
-    { value: 'timeout_error', label: 'Időtúllépés' },
-    { value: 'rate_limit_error', label: 'Rate limit' },
-    // Frontend-specific categories
-    { value: 'auth', label: 'Auth hiba' },
-    { value: 'db_query', label: 'DB lekérdezés' },
-    { value: 'api_call', label: 'API hívás' },
-    { value: 'upload', label: 'Feltöltés (frontend)' },
-    { value: 'validation', label: 'Validáció' },
-    { value: 'navigation', label: 'Navigáció' },
-    { value: 'unhandled', label: 'Nem kezelt hiba' },
-    // Worker / Mailgun categories
-    { value: 'worker', label: 'Worker hiba' },
-    { value: 'webhook', label: 'Webhook hiba' },
-    { value: 'mailgun', label: 'Mailgun hiba' },
-    { value: 'email_alias', label: 'Email alias hiba' },
-    { value: 'unknown', label: 'Egyéb' },
+    { value: 'Application', label: '⚙️ Application' },
+    { value: 'Mailgun',     label: '📧 Mailgun' },
+    { value: 'Worker',      label: '🔧 Worker' },
   ];
 
   const categoryColors: Record<string, string> = {
-    classification_error: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/25',
-    ocr_error: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/25',
-    extraction_error: 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/25',
-    duplicate_error: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/25',
-    api_error: 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/25',
-    empty_content: 'bg-slate-500/15 text-slate-700 dark:text-slate-400 border-slate-500/25',
-    timeout_error: 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/25',
-    rate_limit_error: 'bg-pink-500/15 text-pink-700 dark:text-pink-400 border-pink-500/25',
-    // Frontend-specific category colors
-    auth: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/25',
-    db_query: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border-cyan-500/25',
-    api_call: 'bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/25',
-    upload: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25',
-    validation: 'bg-lime-500/15 text-lime-700 dark:text-lime-400 border-lime-500/25',
-    navigation: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/25',
-    unhandled: 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/25',
-    // Worker / Mailgun categories
-    worker: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/25',
-    webhook: 'bg-teal-500/15 text-teal-700 dark:text-teal-400 border-teal-500/25',
-    mailgun: 'bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/25',
-    email_alias: 'bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-400 border-fuchsia-500/25',
-    unknown: 'bg-muted text-muted-foreground border-border',
+    Application: 'bg-teal-500/15 text-teal-700 dark:text-teal-400 border-teal-500/30',
+    Mailgun:     'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30',
+    Worker:      'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+  };
+
+  // Forrás badge színek
+  const sourceColors: Record<string, string> = {
+    uploads:                   'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    invoice_uploads:           'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    transaction_uploads:       'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    report_uploads:            'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    bank_statement_uploads:    'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    gl_upload_notifications:   'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    nav_sync_logs:             'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    'app_error_logs:frontend': 'bg-teal-500/15 text-teal-700 dark:text-teal-400 border-teal-500/30',
+    'app_error_logs:worker':   'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    'app_error_logs:mailgun':  'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30',
   };
 
   return (
@@ -941,77 +938,307 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
               <Skeleton className="ml-auto h-7 w-[120px] rounded-md" />
             </div>
           ) : (
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                <Input placeholder="Keresés..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
-                  className="pl-7 h-7 text-[11px] w-[160px]" />
-              </div>
-              <select value={filterSource} onChange={e => { setFilterSource(e.target.value); setPage(0); }}
-                className="h-7 text-[11px] rounded-md border border-input bg-background px-2 min-w-[90px]">
-                <option value="">Forrás ▾</option>
-                {sourceOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              <select value={filterCompanyId} onChange={e => { setFilterCompanyId(e.target.value); setPage(0); }}
-                className="h-7 text-[11px] rounded-md border border-input bg-background px-2 min-w-[90px]">
-                <option value="">Cég ▾</option>
-                {(() => {
-                  const seen = new Map<string, string>();
-                  errRows.forEach(r => { if (r.company_id && r.company_name) seen.set(r.company_id, r.company_name); });
-                  return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => (
-                    <option key={id} value={id}>{name}</option>
-                  ));
-                })()}
-              </select>
-              <select value={filterUserId} onChange={e => { setFilterUserId(e.target.value); setPage(0); }}
-                className="h-7 text-[11px] rounded-md border border-input bg-background px-2 min-w-[90px]">
-                <option value="">User ▾</option>
-                {(() => {
-                  const seen = new Map<string, string>();
-                  errRows.forEach(r => { if (r.user_id && r.user_name) seen.set(r.user_id, r.user_name); });
-                  return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => (
-                    <option key={id} value={id}>{name}</option>
-                  ));
-                })()}
-              </select>
-              <select value={filterCategory} onChange={e => { setFilterCategory(e.target.value); setPage(0); }}
-                className="h-7 text-[11px] rounded-md border border-input bg-background px-2 min-w-[90px]">
-                <option value="">Típus ▾</option>
-                {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              {selected.size > 0 && (
-                <>
-                  <Button variant="destructive" size="sm" className="h-7 gap-1 text-[11px] px-2" disabled={deleting}
-                    onClick={handleBulkDelete}>
-                    <Trash2 className="h-3 w-3" />
-                    {selected.size}
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-7 gap-1 text-[11px] px-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary" disabled={retrying}
-                    onClick={handleBulkRetry}>
-                    <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />
-                    Újra
-                  </Button>
-                </>
-              )}
-              {totalRows > 0 && (
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={e => { setSearch(e.target.value); }}
+                placeholder="Hiba keresése…"
+                className="pl-8 h-8 text-xs w-52 bg-background"
+                id="errors-search"
+              />
+            </div>
+
+            {/* Source filter (Popover + scroll) */}
+            {(() => {
+              const active = sourceOptions.find(o => o.value === filterSource);
+              return (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="h-8 text-xs justify-between min-w-[140px] font-normal gap-2">
+                      <span className="truncate">{active?.label || 'Minden forrás'}</span>
+                      <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[220px] p-1" align="start">
+                    <div className="max-h-[280px] overflow-y-auto">
+                      <button
+                        onClick={() => { setFilterSource(''); setPage(0); }}
+                        className={cn(
+                          "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
+                          filterSource === '' ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"
+                        )}
+                      >
+                        Minden forrás
+                        {filterSource === '' && <Check className="h-3 w-3 ml-auto text-primary" />}
+                      </button>
+                      {sourceOptions.map(o => (
+                        <button
+                          key={o.value}
+                          onClick={() => { setFilterSource(o.value); setPage(0); }}
+                          className={cn(
+                            "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
+                            filterSource === o.value ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"
+                          )}
+                        >
+                          {o.label}
+                          {filterSource === o.value && <Check className="h-3 w-3 ml-auto text-primary" />}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              );
+            })()}
+
+            {/* Category filter (Popover + scroll) */}
+            {(() => {
+              const active = categoryOptions.find(o => o.value === filterCategory);
+              return (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="h-8 text-xs justify-between min-w-[140px] font-normal gap-2">
+                      <span className="truncate">{active?.label || 'Minden típus'}</span>
+                      <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[220px] p-1" align="start">
+                    <div className="max-h-[280px] overflow-y-auto">
+                      <button
+                        onClick={() => { setFilterCategory(''); setPage(0); }}
+                        className={cn(
+                          "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
+                          filterCategory === '' ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"
+                        )}
+                      >
+                        Minden típus
+                        {filterCategory === '' && <Check className="h-3 w-3 ml-auto text-primary" />}
+                      </button>
+                      {categoryOptions.map(o => (
+                        <button
+                          key={o.value}
+                          onClick={() => { setFilterCategory(o.value); setPage(0); }}
+                          className={cn(
+                            "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
+                            filterCategory === o.value ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"
+                          )}
+                        >
+                          <span className={cn("w-2 h-2 rounded-full shrink-0", categoryColors[o.value]?.split(' ')[0] || 'bg-muted')} />
+                          {o.label}
+                          {filterCategory === o.value && <Check className="h-3 w-3 ml-auto text-primary" />}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              );
+            })()}
+
+            {/* Company Search Combobox */}
+            <Popover open={companySearchOpen} onOpenChange={setCompanySearchOpen}>
+              <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="h-7 gap-1 text-[11px] px-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive ml-auto"
+                  role="combobox"
+                  aria-expanded={companySearchOpen}
+                  className="h-8 text-xs justify-between min-w-[180px] font-normal"
+                >
+                  <span className="truncate">
+                    {filterCompanyId
+                      ? companyOptions.find(([id]) => id === filterCompanyId)?.[1]
+                      : "Minden cég"}
+                  </span>
+                  <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[250px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Cég keresése..." className="h-8" />
+                  <CommandList>
+                    <CommandEmpty>Nincs találat.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value=""
+                        onSelect={() => {
+                          setFilterCompanyId("");
+                          setFilterUserId("");
+                          setPage(0);
+                          setCompanySearchOpen(false);
+                        }}
+                        className="text-xs"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-3 w-3",
+                            filterCompanyId === "" ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Minden cég
+                      </CommandItem>
+                      {companyOptions.map(([id, name]) => (
+                        <CommandItem
+                          key={id}
+                          value={name}
+                          onSelect={() => {
+                            setFilterCompanyId(id);
+                            setFilterUserId("");
+                            setPage(0);
+                            setCompanySearchOpen(false);
+                          }}
+                          className="text-xs"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-3 w-3",
+                              filterCompanyId === id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* User Search Combobox */}
+            <Popover open={userSearchOpen} onOpenChange={setUserSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={userSearchOpen}
+                  className="h-8 text-xs justify-between min-w-[180px] font-normal"
+                >
+                  <span className="truncate">
+                    {filterUserId
+                      ? userOptions.find((u) => u.user_id === filterUserId)?.name ||
+                        userOptions.find((u) => u.user_id === filterUserId)?.email
+                      : "Minden felhasználó"}
+                  </span>
+                  <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[250px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Felhasználó keresése..." className="h-8" />
+                  <CommandList>
+                    <CommandEmpty>Nincs találat.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value=""
+                        onSelect={() => {
+                          setFilterUserId("");
+                          setPage(0);
+                          setUserSearchOpen(false);
+                        }}
+                        className="text-xs"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-3 w-3",
+                            filterUserId === "" ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Minden felhasználó
+                      </CommandItem>
+                      {userOptions.map((u) => (
+                        <CommandItem
+                          key={u.user_id}
+                          value={u.name || u.email || ""}
+                          onSelect={() => {
+                            setFilterUserId(u.user_id);
+                            setPage(0);
+                            setUserSearchOpen(false);
+                          }}
+                          className="text-xs"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-3 w-3",
+                              filterUserId === u.user_id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {u.name || u.email}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* Date range */}
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={e => { setDateFrom(e.target.value); setPage(0); }}
+              className="h-8 text-xs bg-background w-36"
+              id="errors-date-from"
+            />
+            <span className="text-xs text-muted-foreground">–</span>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={e => { setDateTo(e.target.value); setPage(0); }}
+              className="h-8 text-xs bg-background w-36"
+              id="errors-date-to"
+            />
+
+            {/* Reset filters */}
+            {(search || filterSource || filterCategory || filterCompanyId || filterUserId || dateFrom || dateTo) && (
+              <Button
+                variant="ghost" size="sm"
+                onClick={() => { setSearch(''); setDebouncedSearch(''); setFilterSource(''); setFilterCategory(''); setFilterCompanyId(''); setFilterUserId(''); setDateFrom(''); setDateTo(''); setPage(0); }}
+                className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+                Szűrők törlése
+              </Button>
+            )}
+
+            {/* Bulk actions */}
+            {selected.size > 0 && (
+              <>
+                <div className="h-4 w-px bg-border" />
+                <Button variant="destructive" size="sm" className="h-8 gap-1.5 text-xs px-3" disabled={deleting}
+                  onClick={handleBulkDelete}>
+                  <Trash2 className="h-3 w-3" />
+                  Törlés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{selected.size}</span>)
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs px-3 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary" disabled={retrying}
+                  onClick={handleBulkRetry}>
+                  <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />
+                  Újraküldés
+                </Button>
+              </>
+            )}
+
+            {/* Delete all + record count */}
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-xs text-muted-foreground tabular-nums">{totalRows} rekord</span>
+              {totalRows > 0 && (
+                <Button
+                  variant="outline" size="sm"
+                  className="h-8 gap-1.5 text-xs px-3 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   disabled={deleting || deletingAll}
                   onClick={() => setDeleteAllModalOpen(true)}
                 >
                   <Trash2 className="h-3 w-3" />
-                  Összes törlés ({totalRows})
+                  Összes törlés
                 </Button>
               )}
             </div>
+          </div>
           )}
         </CardContent>
       </Card>
 
       {/* ── Table with severity strip ── */}
-      <Card className="overflow-hidden">
+      <Card className={cn("overflow-hidden transition-opacity duration-200", isFetching && !isLoading && "opacity-60")}>
         <CardContent className="p-0">
           <div className="w-full overflow-x-auto">
             <table className="w-full text-[11px]" style={{ tableLayout: 'fixed', minWidth: 900 }} role="table">
@@ -1019,14 +1246,14 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                 <tr className="text-muted-foreground border-b border-border">
                   <th className="py-1.5 px-2 w-7">
                     <input type="checkbox" checked={allPageSelected} onChange={toggleAll}
-                      className="rounded border-border" />
+                      className="h-3.5 w-3.5 rounded border-input accent-primary cursor-pointer" />
                   </th>
                   <th className="py-1.5 px-1 w-6"></th>
                   <ErrSortTh col="created_at" label="Dátum" />
                   <th className="text-left py-1.5 px-3 font-medium">Cég</th>
                   <th className="text-left py-1.5 px-3 font-medium">User</th>
-                  <ErrSortTh col="source" label="Forrás" />
-                  <ErrSortTh col="error_category" label="Típus" />
+                  <ErrSortTh col="source" label="Forrás" width="w-[100px]" />
+                  <ErrSortTh col="error_category" label="Típus" width="w-[100px]" />
                   <th className="text-left py-1.5 px-3 font-medium">Fájl</th>
                   <th className="text-left py-1.5 px-3 font-medium">Hibaüzenet</th>
                   <th className="py-1.5 px-2 w-14"></th>
@@ -1060,7 +1287,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                       >
                         <td className="py-1.5 px-2" onClick={e => e.stopPropagation()}>
                           <input type="checkbox" checked={selected.has(key)}
-                            onChange={() => toggleOne(r)} className="rounded border-border" />
+                            onChange={() => toggleOne(r)} className="h-3.5 w-3.5 rounded border-input accent-primary cursor-pointer" />
                         </td>
                         <td className="py-1.5 px-1">
                           <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -1081,7 +1308,12 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="py-1.5 px-3">
-                          {r.user_name ? (
+                          {r.error_message?.includes('process-mailgun-webhook') || r.user_name === 'Mailgun' ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium" title="Mailgun webhook">
+                              <Mail className="h-3 w-3" />
+                              Mailgun
+                            </span>
+                          ) : r.user_name ? (
                             <button className="text-foreground hover:text-primary transition-colors text-left truncate max-w-[120px] block text-[11px]"
                               onClick={e => { e.stopPropagation(); if (r.user_id) { setFilterUserId(r.user_id); setPage(0); } }}
                               title={`Szűrés: ${r.user_name}`}>
@@ -1089,11 +1321,13 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                             </button>
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
-                        <td className="py-1.5 px-3">
-                          <Badge variant="outline" className="text-[10px]">{r.source_label}</Badge>
+                        <td className="py-1.5 px-3 w-[100px]">
+                          <Badge className={`text-[10px] w-full justify-center ${sourceColors[r.source] || 'bg-slate-600 text-white border-transparent dark:bg-slate-500'}`}>
+                            {r.source_label}
+                          </Badge>
                         </td>
-                        <td className="py-1.5 px-3">
-                          <Badge className={`text-[10px] ${categoryColors[r.error_category] || categoryColors.unknown}`}>
+                        <td className="py-1.5 px-3 w-[100px]">
+                          <Badge className={`text-[10px] w-full justify-center ${categoryColors[r.error_category_label] || categoryColors[r.error_category] || 'bg-slate-600 text-white border-transparent'}`}>
                             {r.error_category_label}
                           </Badge>
                         </td>
@@ -1262,7 +1496,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                 </Button>
                 <Button size="sm" className="gap-1.5" onClick={handleRetryConfirm}>
                   <RefreshCw className="h-3.5 w-3.5" />
-                  Újraküldés ({retryTargets.length})
+                  Újraküldés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{retryTargets.length}</span>)
                 </Button>
               </div>
             </CardContent>
@@ -1289,7 +1523,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
                 </Button>
                 <Button variant="destructive" size="sm" className="gap-1.5" onClick={handleDeleteConfirm}>
                   <Trash2 className="h-3.5 w-3.5" />
-                  Törlés ({deleteTargets.length})
+                  Törlés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{deleteTargets.length}</span>)
                 </Button>
               </div>
             </CardContent>
@@ -2329,10 +2563,10 @@ export default function ManagementDashboard() {
             <nav className="max-w-7xl mx-auto px-6 flex items-center gap-0.5 py-1.5" aria-label="Főnavigáció">
               <button
                 onClick={goBack}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
                   view === 'overview'
-                    ? 'bg-primary/10 text-primary border border-primary/20'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent'
+                    ? 'bg-primary text-primary-foreground border-transparent shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
                 }`}
                 aria-current={view === 'overview' ? 'page' : undefined}
               >
@@ -2341,10 +2575,10 @@ export default function ManagementDashboard() {
               </button>
               <button
                 onClick={openErrors}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
                   view === 'errors' || view === 'permissions' || view === 'files'
-                    ? 'bg-primary/10 text-primary border border-primary/20'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent'
+                    ? 'bg-primary text-primary-foreground border-transparent shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
                 }`}
                 aria-current={view === 'errors' || view === 'permissions' || view === 'files' ? 'page' : undefined}
               >
@@ -2353,10 +2587,10 @@ export default function ManagementDashboard() {
               </button>
               <button
                 onClick={openSuperadmin}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
                   view === 'superadmin'
-                    ? 'bg-primary/10 text-primary border border-primary/20'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent'
+                    ? 'bg-primary text-primary-foreground border-transparent shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
                 }`}
                 aria-current={view === 'superadmin' ? 'page' : undefined}
               >
@@ -2365,10 +2599,10 @@ export default function ManagementDashboard() {
               </button>
               <button
                 onClick={openTickets}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
                   view === 'tickets'
-                    ? 'bg-primary/10 text-primary border border-primary/20'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent'
+                    ? 'bg-primary text-primary-foreground border-transparent shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
                 }`}
                 aria-current={view === 'tickets' ? 'page' : undefined}
               >
@@ -2879,42 +3113,39 @@ function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: Co
 
   return (
     <div className="space-y-6 page-animate overflow-hidden">
-      {/* Tab bar */}
-      <div className="flex gap-1 p-1 bg-muted/40 rounded-xl w-fit border border-border/50">
+      {/* Tab bar — azonos design mint a TicketsPage subtabs */}
+      <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 w-fit gap-1">
         <button
           onClick={() => setTab('errors')}
-          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border
-            ${tab === 'errors'
-              ? 'bg-background text-foreground shadow-sm border-border/60'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
-            }`}
-          style={{ minWidth: 110 }}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+            tab === 'errors'
+              ? 'bg-primary/10 text-primary border-primary/20'
+              : 'text-muted-foreground hover:text-foreground border-transparent'
+          }`}
         >
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="h-3.5 w-3.5" />
           Hibák
         </button>
         <button
           onClick={() => setTab('permissions')}
-          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border
-            ${tab === 'permissions'
-              ? 'bg-background text-foreground shadow-sm border-border/60'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
-            }`}
-          style={{ minWidth: 155 }}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+            tab === 'permissions'
+              ? 'bg-primary/10 text-primary border-primary/20'
+              : 'text-muted-foreground hover:text-foreground border-transparent'
+          }`}
         >
-          <ShieldCheck className="h-4 w-4" />
+          <ShieldCheck className="h-3.5 w-3.5" />
           Jogosultságok
         </button>
         <button
           onClick={() => setTab('files')}
-          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border
-            ${tab === 'files'
-              ? 'bg-background text-foreground shadow-sm border-border/60'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
-            }`}
-          style={{ minWidth: 110 }}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+            tab === 'files'
+              ? 'bg-primary/10 text-primary border-primary/20'
+              : 'text-muted-foreground hover:text-foreground border-transparent'
+          }`}
         >
-          <FolderOpen className="h-4 w-4" />
+          <FolderOpen className="h-3.5 w-3.5" />
           Fájlok
         </button>
       </div>
@@ -2922,7 +3153,7 @@ function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: Co
       {/* Tab content — ensures all tabs fill the same width to prevent layout shift */}
       <div className="w-full overflow-hidden">
         <div className="w-full" style={{ minWidth: 900 }}>
-          {tab === 'errors' && <ErrorControlPanel onOpenCompany={onOpenCompany} />}
+          {tab === 'errors' && <ErrorControlPanel onOpenCompany={onOpenCompany} allUsers={allUsers} />}
           {tab === 'permissions' && <PermissionsPanel allUsers={allUsers} />}
           {tab === 'files' && <FilesPanel allUsers={allUsers} />}
         </div>
@@ -3053,6 +3284,9 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   // Selection state for bulk operations
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmCounts, setDeleteConfirmCounts] = useState({ withStorage: 0, dbOnly: 0 });
 
   const toggleFileSelection = useCallback((fileKey: string) => {
     setSelectedFiles(prev => {
@@ -3139,6 +3373,48 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
       setBulkUpdating(false);
     }
   }, [selectedFiles, toast, queryClient]);
+
+  // Open delete confirmation — pre-calculate storage vs db-only counts from current rows
+  const handleOpenDeleteConfirm = useCallback(() => {
+    const withStorage = Array.from(selectedFiles).filter(key => {
+      const [source_table, id] = key.split(':');
+      const row = fileRows.find((r: FileRow) => r.id === id && r.source_table === source_table);
+      return !!row?.file_url;
+    }).length;
+    const dbOnly = selectedFiles.size - withStorage;
+    setDeleteConfirmCounts({ withStorage, dbOnly });
+    setDeleteConfirmOpen(true);
+  }, [selectedFiles, fileRows]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedFiles.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      const files = Array.from(selectedFiles).map(key => {
+        const [source_table, id] = key.split(':');
+        const row = fileRows.find((r: FileRow) => r.id === id && r.source_table === source_table);
+        return { id, source_table, file_url: row?.file_url ?? null };
+      });
+      const result = await postManagementData('delete-files', { files });
+      if (result.success || result.deleted > 0) {
+        toast({
+          title: `${result.deleted} fájl törölve`,
+          description: result.storageDeleted > 0
+            ? `Storage: ${result.storageDeleted} fájl, csak DB: ${result.dbOnlyDeleted ?? 0} fájl`
+            : `Csak adatbázisból törölve (nem volt storage fájl)`,
+        });
+        setSelectedFiles(new Set());
+        queryClient.invalidateQueries({ queryKey: ['management-files'] });
+      } else {
+        toast({ title: 'Hiba történt', description: result.error || 'Ismeretlen hiba', variant: 'destructive' });
+      }
+    } catch (e: any) {
+      toast({ title: 'Hiba', description: e.message, variant: 'destructive' });
+    } finally {
+      setBulkDeleting(false);
+      setDeleteConfirmOpen(false);
+    }
+  }, [selectedFiles, fileRows, toast, queryClient]);
 
   const SortIcon = ({ col }: { col: FileSortCol }) => {
     if (sortCol !== col) return <ArrowUpDown className="h-3 w-3 opacity-40 ml-1 inline" />;
@@ -3565,7 +3841,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
           <CardContent className="p-3">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm font-medium">
-                {selectedFiles.size} fájl kijelölve
+                <span className="tabular-nums inline-block min-w-[2ch] text-center">{selectedFiles.size}</span> fájl kijelölve
               </span>
               <div className="h-4 w-px bg-border" />
               <span className="text-xs text-muted-foreground">Állapot módosítása:</span>
@@ -3573,7 +3849,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                 size="sm" variant="outline"
                 className="h-7 text-xs gap-1.5 border-success/30 hover:bg-success/10"
                 onClick={() => handleBulkStatusUpdate('done')}
-                disabled={bulkUpdating}
+                disabled={bulkUpdating || bulkDeleting}
               >
                 <Check className="h-3 w-3 text-success" />
                 Feldolgozva
@@ -3582,7 +3858,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                 size="sm" variant="outline"
                 className="h-7 text-xs gap-1.5 border-warning/30 hover:bg-warning/10"
                 onClick={() => handleBulkStatusUpdate('pending')}
-                disabled={bulkUpdating}
+                disabled={bulkUpdating || bulkDeleting}
               >
                 <Clock className="h-3 w-3 text-warning" />
                 Folyamatban
@@ -3591,26 +3867,86 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                 size="sm" variant="outline"
                 className="h-7 text-xs gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => handleBulkStatusUpdate('error')}
-                disabled={bulkUpdating}
+                disabled={bulkUpdating || bulkDeleting}
               >
                 <AlertCircle className="h-3 w-3 text-destructive" />
                 Hiba
               </Button>
               <div className="h-4 w-px bg-border" />
               <Button
+                size="sm" variant="outline"
+                className="h-7 text-xs gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={handleOpenDeleteConfirm}
+                disabled={bulkUpdating || bulkDeleting}
+              >
+                <Trash2 className="h-3 w-3" />
+                Törlés
+              </Button>
+              <div className="h-4 w-px bg-border" />
+              <Button
                 size="sm" variant="ghost"
                 className="h-7 text-xs gap-1 text-muted-foreground"
                 onClick={() => setSelectedFiles(new Set())}
-                disabled={bulkUpdating}
+                disabled={bulkUpdating || bulkDeleting}
               >
                 <X className="h-3 w-3" />
                 Kijelölés törlése
               </Button>
-              {bulkUpdating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+              {(bulkUpdating || bulkDeleting) && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={(open) => { if (!bulkDeleting) setDeleteConfirmOpen(open); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-destructive" />
+              Fájlok végleges törlése
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  <span className="font-semibold text-foreground">{selectedFiles.size} fájl</span> kerül törlésre. Ez a művelet nem visszavonható.
+                </p>
+                <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1.5 text-sm">
+                  {deleteConfirmCounts.withStorage > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
+                      <span>
+                        <span className="font-medium text-foreground">{deleteConfirmCounts.withStorage} fájl</span>
+                        {' '}— Storage-ből és adatbázisból egyaránt törlésre kerül
+                      </span>
+                    </div>
+                  )}
+                  {deleteConfirmCounts.dbOnly > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
+                      <span>
+                        <span className="font-medium text-foreground">{deleteConfirmCounts.dbOnly} fájl</span>
+                        {' '}— csak adatbázisból törlésre kerül (Storage fájl már nem létezik)
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleting}>Mégsem</AlertDialogCancel>
+            <Button
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {bulkDeleting ? 'Törlés...' : 'Végleges törlés'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Data table */}
       <Card className={cn("transition-opacity duration-200", isFetching && !isLoading && "opacity-60")}>
@@ -3721,7 +4057,12 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                           <span className="text-xs text-foreground">{row.company_name || '—'}</span>
                         </td>
                         <td className="py-2.5 px-3">
-                          {row.user_name ? (
+                          {row.user_name === 'Mailgun' ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium" title="Mailgun webhook">
+                              <Mail className="h-3 w-3" />
+                              Mailgun
+                            </span>
+                          ) : row.user_name ? (
                             <button 
                               className="text-foreground hover:text-primary transition-colors text-left truncate max-w-[120px] block text-[11px] font-bold"
                               onClick={e => { e.stopPropagation(); if (row.user_id) { setFilterUserId(row.user_id); setPage(0); } }}

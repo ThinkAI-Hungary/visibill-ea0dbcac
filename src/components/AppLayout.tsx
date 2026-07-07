@@ -91,10 +91,14 @@ export function AppLayout({ children }: AppLayoutProps) {
   usePdfExportNotifications();
 
   return (
-    <SidebarProvider className="h-screen w-full overflow-hidden flex !min-h-0 print:h-auto print:overflow-visible">
+    <SidebarProvider
+      className="h-screen w-full overflow-hidden flex !min-h-0 print:h-auto print:overflow-visible"
+    >
       <AppSidebar />
 
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-background print:h-auto print:overflow-visible">
+      <div
+        className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-background print:h-auto print:overflow-visible"
+      >
         <TopBar />
         <ContentArea>{children}</ContentArea>
       </div>

@@ -346,7 +346,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
               }`}
               style={{
                 backgroundColor: c.value,
-                ringColor: value === c.value ? c.value : undefined,
+                ...(value === c.value ? { '--ring-color': c.value } as React.CSSProperties : {}),
               }}
               onClick={() => {
                 onChange(c.value);

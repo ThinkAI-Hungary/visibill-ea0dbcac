@@ -250,6 +250,43 @@ A sidebar, TopBar és FAB `print:hidden` class-szal el van rejtve nyomtatáskor.
 
 ---
 
+## Management Dashboard Tab Stílus (2026-07-07)
+
+A Management Dashboard navigációja **két szintű**, és a két szint **szándékosan fordított** vizuális hierarchiát követ:
+
+| Szint | Komponens | Aktív stílus | Inaktív stílus |
+|-------|-----------|-------------|----------------|
+| **Főmenü** | Áttekintés / Control Center / Superadmin / Hibajegyek | Solid: `bg-primary text-primary-foreground shadow-sm` | `text-muted-foreground border-transparent` |
+| **Submenü** | Hibák / Jogosultságok / Fájlok / Jegyek Listája / ... | Soft: `bg-primary/10 text-primary border-primary/20` | `text-muted-foreground border-transparent` |
+
+### Anti-CLS szabály alkalmazása
+
+Minden tab gomb **mindig hordoz `border` class-t** — csak a szín változik aktív/inaktív között. Ez megelőzi a layout shift-et (→ lásd Anti-CLS #4 szabály):
+
+```tsx
+// ✅ Főmenü — solid aktív, border mindig ott van
+className={`... border ${
+  active
+    ? 'bg-primary text-primary-foreground border-transparent shadow-sm'
+    : 'text-muted-foreground hover:bg-muted/60 border-transparent'
+}`}
+
+// ✅ Submenü — soft aktív, border mindig ott van
+className={`... border ${
+  active
+    ? 'bg-primary/10 text-primary border-primary/20'
+    : 'text-muted-foreground hover:text-foreground border-transparent'
+}`}
+```
+
+### Egységesítési szabály
+
+A Control Center (`ControlCenter` component) és a Tickets Page (`TicketsPage` `renderTabsHeader`) **azonos** submenü stílust használ:
+- Container: `flex bg-muted/20 rounded-lg p-1 w-fit gap-1`
+- Gomb: `px-4 py-2 rounded-md text-xs font-semibold whitespace-nowrap border`
+
+---
+
 ## Layout Shift Prevention (Anti-CLS szabályok)
 
 > **Döntés (2026-07-05):** Több layout shift bugot dokumentáltunk a Management Dashboard hibajegy (tickets) modulban. Az alábbi szabályok KÖTELEZŐEK minden új view/panel/tab implementálásakor.
