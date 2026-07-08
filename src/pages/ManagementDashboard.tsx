@@ -3806,8 +3806,13 @@ function WorkerPanel() {
                   }`}
                 >
                   <CircleDot className={`h-2.5 w-2.5 ${c.is_healthy ? 'text-emerald-500' : 'text-red-500'}`} />
-                  <span className="truncate">{c.container_name}</span>
-                  <span className="ml-auto text-[10px] opacity-60">{c.jobs_24h}</span>
+                  <span className="truncate flex-1 text-left">{c.container_name}</span>
+                  <div className="flex items-center gap-1.5 ml-auto text-[10px] opacity-60 font-mono">
+                    {c.is_healthy && c.cpu_usage !== undefined && c.cpu_usage > 0 && (
+                      <span className={`${c.cpu_usage > 80 ? 'text-red-400 font-semibold' : c.cpu_usage > 50 ? 'text-amber-400' : 'text-muted-foreground/80'}`}>{c.cpu_usage.toFixed(0)}%</span>
+                    )}
+                    <span>({c.jobs_24h})</span>
+                  </div>
                 </button>
               ))}
               {containers.length === 0 && (
@@ -3902,6 +3907,38 @@ function WorkerPanel() {
                     <span>Avg: {formatDuration(containerData.avg_duration_ms)}</span>
                     <span>LLM: ${containerData.total_cost_24h}</span>
                   </div>
+                  {containerData.cpu_usage !== undefined && containerData.ram_usage !== undefined && (
+                    <div className="mt-3 grid grid-cols-2 gap-4 border-t border-border/10 pt-3">
+                      <div>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="text-muted-foreground font-medium">CPU terheltség</span>
+                          <span className="font-semibold text-foreground font-mono">{containerData.cpu_usage.toFixed(0)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              containerData.cpu_usage > 85 ? 'bg-red-500' : containerData.cpu_usage > 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(0, containerData.cpu_usage))}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="text-muted-foreground font-medium">RAM használat</span>
+                          <span className="font-semibold text-foreground font-mono">{containerData.ram_usage.toFixed(0)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              containerData.ram_usage > 85 ? 'bg-red-500' : containerData.ram_usage > 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(0, containerData.ram_usage))}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>

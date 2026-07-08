@@ -2338,6 +2338,8 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
       uptime_seconds: Math.floor((now.getTime() - startedAt.getTime()) / 1000),
       version: h.version,
       active_queues: h.active_queues || [],
+      cpu_usage: h.cpu_usage ?? 0,
+      ram_usage: h.ram_usage ?? 0,
       jobs_24h: 0,
       avg_duration_ms: 0,
       total_cost_24h: 0,
