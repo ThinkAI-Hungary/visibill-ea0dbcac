@@ -464,16 +464,43 @@ export function compareTaxForms(
   costRatioCategory: 'general' | 'high_80' | 'retail_90',
   activeMonths: number = 12,
   params: EvTaxParams = DEFAULT_2026_PARAMS,
+  employmentStatus: EmploymentStatus = 'foallasu',
+  isSkilledActivity: boolean = false,
 ): TaxFormComparison[] {
+  // Helper: calculate annual contributions for a given base
+  const calcContributions = (incomeBase: number) => {
+    if (employmentStatus === 'kiegeszito') {
+      return { tbJarulekBase: 0, tbJarulek: 0, szocho: 0, minimumBaseApplied: false };
+    }
+    const monthlyMinimum = isSkilledActivity ? params.garantaltBerminimum : params.minimalber;
+    const annualMinimum = monthlyMinimum * activeMonths;
+    let base = incomeBase;
+    let minimumBaseApplied = false;
+
+    if (employmentStatus === 'foallasu' && base < annualMinimum) {
+      base = annualMinimum;
+      minimumBaseApplied = true;
+    }
+
+    return {
+      tbJarulekBase: base,
+      tbJarulek: Math.round(base * params.tbJarulekKulcs),
+      szocho: Math.round(base * params.szochoKulcs),
+      minimumBaseApplied,
+    };
+  };
+
   // 1. Átalány
   const flat = calculateFlatRateIncome(revenue, costRatioCategory, params);
-  const flatTotal = flat.szja;
+  const flatContrib = calcContributions(flat.income);
+  const flatTotal = flat.szja + flatContrib.tbJarulek + flatContrib.szocho;
 
   // 2. VSZJA
   const entre = calculateEntrepreneurialTax(revenue, deductibleCosts, kivet, 0, params);
-  const entreTotal = entre.totalTax;
+  const vszjaContrib = calcContributions(kivet);
+  const entreTotal = entre.totalTax + vszjaContrib.tbJarulek + vszjaContrib.szocho;
 
-  // 3. KATA
+  // 3. KATA (tételes adó mindent tartalmaz)
   const kata = calculateKata(revenue, activeMonths, params);
   const kataTotal = kata.totalTax;
 
@@ -484,12 +511,16 @@ export function compareTaxForms(
       form: 'atalany',
       label: 'Átalányadó',
       totalTax: flatTotal,
-      effectiveRate: flat.effectiveRate,
+      effectiveRate: revenue > 0 ? flatTotal / revenue : 0,
       details: {
         szja: flat.szja,
         revenue: flat.revenue,
         income: flat.income,
         costRatio: flat.costRatio,
+        tbJarulekBase: flatContrib.tbJarulekBase,
+        tbJarulek: flatContrib.tbJarulek,
+        szocho: flatContrib.szocho,
+        minimumBaseApplied: flatContrib.minimumBaseApplied ? 1 : 0,
       },
       isBest: flatTotal === minTax,
     },
@@ -497,12 +528,16 @@ export function compareTaxForms(
       form: 'vszja',
       label: 'Vállalkozói SZJA',
       totalTax: entreTotal,
-      effectiveRate: entre.effectiveRate,
+      effectiveRate: revenue > 0 ? entreTotal / revenue : 0,
       details: {
         entrepreneurialTax: entre.entrepreneurialTax,
         dividendSzja: entre.dividendSzja,
         dividendSzocho: entre.dividendSzocho,
         taxBase: entre.taxBase,
+        tbJarulekBase: vszjaContrib.tbJarulekBase,
+        tbJarulek: vszjaContrib.tbJarulek,
+        szocho: vszjaContrib.szocho,
+        minimumBaseApplied: vszjaContrib.minimumBaseApplied ? 1 : 0,
       },
       isBest: entreTotal === minTax,
     },

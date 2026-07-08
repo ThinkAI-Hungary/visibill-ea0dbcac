@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { useAccountyClient } from '@/hooks/accounty';
 import {
   compareTaxForms, formatHuf, formatPercent, formatMillionHuf,
-  DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, type TaxFormComparison
+  DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, type TaxFormComparison,
+  type EmploymentStatus
 } from '@/lib/evCalculations';
 
 const FORM_ICONS: Record<string, React.ReactNode> = {
@@ -35,10 +36,12 @@ export default function EvComparePage() {
   const [costs, setCosts] = useState(8_470_000);
   const [kivet, setKivet] = useState(6_000_000);
   const [costCategory, setCostCategory] = useState<'general' | 'high_80' | 'retail_90'>('general');
+  const [employmentStatus, setEmploymentStatus] = useState<EmploymentStatus>('foallasu');
+  const [isSkilledActivity, setIsSkilledActivity] = useState(false);
 
   const comparison = useMemo(
-    () => compareTaxForms(revenue, costs, kivet, costCategory, 12, params),
-    [revenue, costs, kivet, costCategory, params]
+    () => compareTaxForms(revenue, costs, kivet, costCategory, 12, params, employmentStatus, isSkilledActivity),
+    [revenue, costs, kivet, costCategory, params, employmentStatus, isSkilledActivity]
   );
 
   const bestForm = comparison.find(c => c.isBest);
@@ -123,6 +126,42 @@ export default function EvComparePage() {
                 ))}
               </div>
             </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Foglalkoztatási státusz</label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([
+                  { value: 'foallasu' as EmploymentStatus, label: 'Főfoglalk.' },
+                  { value: 'mellekallasu' as EmploymentStatus, label: 'Mellékáll.' },
+                  { value: 'kiegeszito' as EmploymentStatus, label: 'Kiegészítő' },
+                ]).map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setEmploymentStatus(opt.value)}
+                    className={cn(
+                      'py-2 rounded-lg border text-xs font-medium transition-all',
+                      employmentStatus === opt.value
+                        ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700'
+                        : 'border-border text-slate-500'
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {employmentStatus === 'foallasu' && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isSkilledActivity}
+                  onChange={e => setIsSkilledActivity(e.target.checked)}
+                  className="rounded border-border accent-indigo-600"
+                />
+                <span className="text-xs text-slate-600 dark:text-slate-400">Szakképzettséget igénylő főtevékenység</span>
+              </label>
+            )}
           </div>
         </div>
 
@@ -197,6 +236,16 @@ export default function EvComparePage() {
                         <DetailRow label="Jövedelem" value={formatHuf(form.details.income)} />
                         <DetailRow label={`Költséghányad (${formatPercent(form.details.costRatio)})`} value={formatHuf(form.details.revenue * form.details.costRatio)} />
                         <DetailRow label="SZJA" value={formatHuf(form.details.szja)} bold />
+                        {employmentStatus !== 'kiegeszito' && (
+                          <>
+                            <div className="border-t border-border/30 my-1.5" />
+                            <DetailRow label="TB-járulék (18,5%)" value={formatHuf(form.details.tbJarulek)} />
+                            <DetailRow label="Szocho (13%)" value={formatHuf(form.details.szocho)} />
+                            {form.details.minimumBaseApplied === 1 && (
+                              <DetailRow label="⚠ Minimum-járulékalap" value={formatHuf(form.details.tbJarulekBase)} warn />
+                            )}
+                          </>
+                        )}
                       </>
                     )}
                     {form.form === 'vszja' && (
@@ -205,6 +254,16 @@ export default function EvComparePage() {
                         <DetailRow label="Váll. SZJA (9%)" value={formatHuf(form.details.entrepreneurialTax)} />
                         <DetailRow label="Osztalék SZJA" value={formatHuf(form.details.dividendSzja)} />
                         <DetailRow label="Osztalék szocho" value={formatHuf(form.details.dividendSzocho)} />
+                        {employmentStatus !== 'kiegeszito' && (
+                          <>
+                            <div className="border-t border-border/30 my-1.5" />
+                            <DetailRow label="TB-járulék (18,5%)" value={formatHuf(form.details.tbJarulek)} />
+                            <DetailRow label="Szocho (13%)" value={formatHuf(form.details.szocho)} />
+                            {form.details.minimumBaseApplied === 1 && (
+                              <DetailRow label="⚠ Minimum-járulékalap" value={formatHuf(form.details.tbJarulekBase)} warn />
+                            )}
+                          </>
+                        )}
                       </>
                     )}
                     {form.form === 'kata' && (
@@ -226,8 +285,8 @@ export default function EvComparePage() {
           <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-4 flex gap-3">
             <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <div className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
-              <p className="font-semibold">Figyelem</p>
-              <p>Az összehasonlítás nem tartalmazza a TB-járulék és szocho összegét (azok a közteher-modulban számítandók). A KATA kalkuláció az éves tételes adót mutatja. Az átalányadó választhatósági feltételeit a rendszer automatikusan ellenőrzi.</p>
+              <p className="font-semibold">Megjegyzés</p>
+              <p>Az összehasonlítás tartalmazza az adókat és a járulékokat (TB 18,5% + szocho 13%). Főfoglalkozásúaknál minimum-járulékalap érvényesül. HIPA és kamarai hozzájárulás a közteher-modulban számítandó.</p>
             </div>
           </div>
         </div>

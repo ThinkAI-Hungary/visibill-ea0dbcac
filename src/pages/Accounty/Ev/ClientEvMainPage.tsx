@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatMillionHuf, formatPercent, formatHuf, getEvThresholds } from '@/lib/evCalculations';
 import type { ThresholdStatus } from '@/lib/evCalculations';
-import { useEvClientSettings, useEvRealTotals } from '@/hooks/useEvData';
+import { useEvClientSettings, useEvRealTotals, useCashbookTotals } from '@/hooks/useEvData';
 
 // ─── Employment/VAT labels ──────────────────────────────────────────────────
 
@@ -52,6 +52,7 @@ export default function ClientEvMainPage() {
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: evSettings, isLoading: settingsLoading } = useEvClientSettings(id, taxYear);
   const { data: realTotals, isLoading: totalsLoading } = useEvRealTotals(id, taxYear);
+  const { data: cashbookTotals, isLoading: cashbookLoading } = useCashbookTotals(id, taxYear);
 
   const taxpayerForm = evSettings?.taxpayer_form || 'atalany';
   const employmentStatus = evSettings?.employment_status || 'foallasu';
@@ -253,8 +254,8 @@ export default function ClientEvMainPage() {
         </div>
         <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
           <p className="text-xs text-slate-500 mb-1">Egyenleg</p>
-          <p className={cn('text-xl font-bold', ytdIncome >= 0 ? 'text-indigo-600' : 'text-red-600')}>
-            {totalsLoading ? '...' : formatMillionHuf(realTotals?.balance || 0)}
+          <p className={cn('text-xl font-bold', (cashbookTotals?.balance || 0) >= 0 ? 'text-indigo-600' : 'text-red-600')}>
+            {cashbookLoading ? '...' : formatMillionHuf(cashbookTotals?.balance || 0)}
           </p>
         </div>
         <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
