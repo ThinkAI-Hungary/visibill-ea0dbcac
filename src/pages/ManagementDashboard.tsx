@@ -3280,9 +3280,70 @@ function LLMCostPanel() {
 
   if (isLoading || !data) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground gap-2">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        LLM költség adatok betöltése...
+      <div className="space-y-4">
+        {/* Period selector skeleton */}
+        <div className="flex justify-end">
+          <Skeleton className="h-8 w-64 rounded-md" />
+        </div>
+        {/* KPI cards skeleton */}
+        <div className="grid grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="border-border/40">
+              <CardContent className="p-3.5 space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-7 w-24" />
+                <Skeleton className="h-2 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {/* Pie charts + Top companies row skeleton */}
+        <div className="grid grid-cols-3 gap-4">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i} className="border-border/40">
+              <CardContent className="p-4 flex flex-col items-center gap-3">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-28 w-28 rounded-full" />
+                <div className="space-y-1.5 w-full">
+                  {Array.from({ length: 3 }).map((_, j) => (
+                    <Skeleton key={j} className="h-3 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          <Card className="border-border/40">
+            <CardContent className="p-4 space-y-3">
+              <Skeleton className="h-4 w-32" />
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-1.5">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-2 w-full rounded-full" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+        {/* Daily trend skeleton */}
+        <Card className="border-border/40">
+          <CardContent className="p-4 space-y-3">
+            <Skeleton className="h-4 w-36" />
+            <div className="flex items-end gap-1 h-24">
+              {Array.from({ length: 14 }).map((_, i) => (
+                <Skeleton key={i} className="flex-1 rounded-t" style={{ height: `${20 + Math.random() * 60}%` }} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        {/* Model table skeleton */}
+        <Card className="border-border/40">
+          <CardContent className="p-4 space-y-3">
+            <Skeleton className="h-4 w-40" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-8 w-full rounded-md" />
+            ))}
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -3530,9 +3591,42 @@ function WorkerPanel() {
 
   if (isLoading || !data) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground gap-2">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        Worker adatok betöltése...
+      <div className="space-y-4">
+        {/* Sub-tab skeleton */}
+        <Skeleton className="h-9 w-60 rounded-lg" />
+        {/* KPI row skeleton */}
+        <div className="grid grid-cols-5 gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i} className="border-border/40">
+              <CardContent className="p-3.5 space-y-2">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-2 w-12" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {/* Container + Content skeleton */}
+        <div className="grid grid-cols-[240px_1fr] gap-4">
+          <Card className="border-border/40">
+            <CardContent className="p-3 space-y-2">
+              <Skeleton className="h-4 w-24 mb-3" />
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-md" />
+              ))}
+            </CardContent>
+          </Card>
+          <div className="space-y-4">
+            <Card className="border-border/40">
+              <CardContent className="p-4 space-y-3">
+                <Skeleton className="h-5 w-32" />
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full rounded-md" />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
