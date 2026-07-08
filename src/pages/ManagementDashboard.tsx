@@ -3580,6 +3580,7 @@ function WorkerPanel() {
   const [selectedContainer, setSelectedContainer] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<'containers' | 'queues'>('containers');
   const [workerTab, setWorkerTab] = useState<'overview' | 'llm-costs'>('overview');
+  const [selectedQueue, setSelectedQueue] = useState<string | null>(null);
 
   // 30s polling
   const { data, isLoading } = useQuery({
@@ -3776,18 +3777,37 @@ function WorkerPanel() {
               Queue-k
             </button>
             <div className="mt-1 space-y-0.5">
-              {filteredQueues.map((q: any) => (
-                <div
-                  key={q.queue_name}
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground"
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${q.queue_length > 0 ? 'bg-amber-500' : 'bg-emerald-500/50'}`} />
-                  <span className="truncate flex-1">{q.queue_name.replace(/_jobs$/, '').replace(/^(PROD|VSWEB|THINKERMAN):/, '')}</span>
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                    {q.queue_length}
-                  </Badge>
-                </div>
-              ))}
+              {filteredQueues.map((q: any) => {
+                const hasItems = q.queue_length > 0;
+                const isSelected = selectedQueue === q.queue_name && selectedSection === 'queues';
+                return (
+                  <button
+                    key={q.queue_name}
+                    onClick={() => {
+                      if (hasItems) {
+                        setSelectedQueue(q.queue_name);
+                        setSelectedSection('queues');
+                      }
+                    }}
+                    className={`flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs transition-colors ${
+                      isSelected
+                        ? 'bg-amber-500/10 text-amber-400 font-medium'
+                        : hasItems
+                          ? 'text-muted-foreground hover:text-foreground hover:bg-muted/50 cursor-pointer'
+                          : 'text-muted-foreground/60 cursor-default'
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${hasItems ? 'bg-amber-500' : 'bg-emerald-500/50'}`} />
+                    <span className="truncate flex-1 text-left">{q.queue_name.replace(/_jobs$/, '').replace(/^(PROD|VSWEB|THINKERMAN):/, '')}</span>
+                    <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${hasItems ? 'bg-amber-500/15 text-amber-400' : ''}`}>
+                      {q.queue_length}
+                    </Badge>
+                    {hasItems && (
+                      <ChevronDown className={`h-3 w-3 flex-shrink-0 transition-transform duration-200 ${isSelected ? 'rotate-180 text-amber-400' : 'text-muted-foreground/40'}`} />
+                    )}
+                  </button>
+                );
+              })}
               {filteredQueues.length === 0 && (
                 <p className="text-xs text-muted-foreground/60 px-3 py-1">Nincs queue adat</p>
               )}
@@ -3924,6 +3944,134 @@ function WorkerPanel() {
           </Card>
         </div>
       </div>
+
+      {/* ── Queue Detail Panel ── */}
+      {selectedSection === 'queues' && selectedQueue && (() => {
+        const queueData = filteredQueues.find((q: any) => q.queue_name === selectedQueue);
+        if (!queueData) return null;
+        const items = queueData.pending_items || [];
+        const queueDisplayName = queueData.queue_name.replace(/_jobs$/, '').replace(/^(PROD|VSWEB|THINKERMAN):/, '');
+
+        const formatWaitTime = (enqueuedAt: string) => {
+          const diffMs = Date.now() - new Date(enqueuedAt).getTime();
+          const secs = Math.floor(diffMs / 1000);
+          if (secs < 60) return `${secs} mp`;
+          const mins = Math.floor(secs / 60);
+          const remainSecs = secs % 60;
+          if (mins < 60) return `${mins}:${remainSecs.toString().padStart(2, '0')}`;
+          return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+        };
+        const waitColor = (enqueuedAt: string) => {
+          const diffMs = Date.now() - new Date(enqueuedAt).getTime();
+          if (diffMs < 2 * 60 * 1000) return 'text-emerald-500';
+          if (diffMs < 5 * 60 * 1000) return 'text-amber-500';
+          return 'text-red-500';
+        };
+        const sourceIcon = (src: string) => {
+          if (src === 'email_alias' || src === 'email') return <Mail className="h-3 w-3" />;
+          if (src === 'retry') return <RefreshCw className="h-3 w-3" />;
+          return <Upload className="h-3 w-3" />;
+        };
+        const sourceLabel = (src: string) => {
+          if (src === 'email_alias' || src === 'email') return 'Email';
+          if (src === 'retry') return 'Retry';
+          return 'Feltöltés';
+        };
+        const sourceBgClass = (src: string) => {
+          if (src === 'email_alias' || src === 'email') return 'bg-purple-500/10 text-purple-400';
+          if (src === 'retry') return 'bg-red-500/10 text-red-400';
+          return 'bg-blue-500/10 text-blue-400';
+        };
+
+        return (
+          <div className="space-y-4 col-span-1">
+            {/* Queue header */}
+            <Card className="p-3 bg-card/60 border-border/40">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-amber-500/10">
+                  <ClipboardList className="h-5 w-5 text-amber-500" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">{queueDisplayName}</span>
+                    <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-400">
+                      {queueData.queue_length} várakozó
+                    </Badge>
+                  </div>
+                  <div className="flex gap-3 mt-0.5 text-[10px] text-muted-foreground">
+                    <span>Projekt: {queueData.project}</span>
+                    {queueData.oldest_msg_age_sec != null && (
+                      <span>Legrégebbi: {queueData.oldest_msg_age_sec < 60 ? `${queueData.oldest_msg_age_sec}s` : `${Math.floor(queueData.oldest_msg_age_sec / 60)}m ${queueData.oldest_msg_age_sec % 60}s`}</span>
+                    )}
+                    <span>Összesen feldolgozva: {queueData.total_messages}</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Pending items table */}
+            <Card className="border-border/40">
+              <CardHeader className="pb-2 pt-3 px-4">
+                <CardTitle className="text-xs font-semibold flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-amber-500" />
+                  Várakozó elemek
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-0 pb-2">
+                {items.length > 0 ? (
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border/30 text-muted-foreground">
+                        <th className="text-left px-4 py-1.5 font-medium w-12">#</th>
+                        <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
+                        <th className="text-left px-3 py-1.5 font-medium">Cég</th>
+                        <th className="text-right px-3 py-1.5 font-medium">Várakozás</th>
+                        <th className="text-left px-3 py-1.5 font-medium">Forrás</th>
+                        <th className="text-left px-3 py-1.5 font-medium">Típus</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((item: any) => (
+                        <tr key={item.msg_id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-1.5 text-muted-foreground font-mono text-[10px]">
+                            #{item.msg_id}
+                          </td>
+                          <td className="px-3 py-1.5 max-w-[200px] truncate font-medium" title={item.file_name}>
+                            <div className="flex items-center gap-1.5">
+                              <FileText className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+                              {item.file_name || '—'}
+                            </div>
+                          </td>
+                          <td className="px-3 py-1.5 text-muted-foreground max-w-[140px] truncate" title={item.company_name}>
+                            {item.company_name || '—'}
+                          </td>
+                          <td className={`text-right px-3 py-1.5 font-mono tabular-nums ${waitColor(item.enqueued_at)}`}>
+                            {formatWaitTime(item.enqueued_at)}
+                          </td>
+                          <td className="px-3 py-1.5">
+                            <span className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded ${sourceBgClass(item.source)}`}>
+                              {sourceIcon(item.source)}
+                              {sourceLabel(item.source)}
+                            </span>
+                          </td>
+                          <td className="px-3 py-1.5">
+                            <span className="text-[9px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">
+                              {item.document_category}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-center py-6 text-muted-foreground text-xs">A queue nem üres, de az elemek részletei nem elérhetők</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        );
+      })()}
+
       </>
       )}
     </div>

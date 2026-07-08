@@ -2341,14 +2341,38 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>) {
     try {
       const { data: queueMetrics } = await pc.client.rpc("pgmq_metrics_all");
       for (const q of (queueMetrics || [])) {
-        queues.push({
+        const queueEntry: any = {
           queue_name: `${pc.name}:${q.queue_name}`,
           queue_length: q.queue_length ?? 0,
           total_messages: q.total_messages ?? 0,
           newest_msg_age_sec: q.newest_msg_age_sec,
           oldest_msg_age_sec: q.oldest_msg_age_sec,
           project: pc.name,
-        });
+          pending_items: [],
+        };
+
+        // Peek into non-empty queues to get item details
+        if ((q.queue_length ?? 0) > 0) {
+          try {
+            const { data: items } = await pc.client.rpc("peek_queue_items", {
+              queue_name: q.queue_name,
+              max_items: 20,
+            });
+            queueEntry.pending_items = (items || []).map((item: any) => ({
+              msg_id: item.msg_id,
+              enqueued_at: item.enqueued_at,
+              read_ct: item.read_ct,
+              file_name: item.file_name,
+              company_name: item.company_name,
+              source: item.source || 'upload',
+              document_category: item.document_category || 'unknown',
+            }));
+          } catch (peekErr) {
+            console.warn(`[worker-status] peek failed for ${pc.name}:${q.queue_name}:`, peekErr);
+          }
+        }
+
+        queues.push(queueEntry);
       }
     } catch (e) {
       console.warn(`[worker-status] pgmq_metrics_all failed for ${pc.name}:`, e);
