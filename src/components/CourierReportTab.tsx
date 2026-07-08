@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -24,6 +24,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ReportFilesDialog } from '@/components/courier/ReportFilesDialog';
 import { reportError } from '@/lib/errorReporter';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const REPORT_LABELS: Record<string, string> = {
   gls: 'GLS',
@@ -572,7 +583,39 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
     handlePageSizeChange,
     handleSync,
     handleRematch,
+    handleDelete,
   } = useCourierReportData(reportType, localDateFrom, localDateTo);
+
+  // Selection state for bulk delete
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Only non-total rows are selectable
+  const selectableReports = filteredReports;
+
+  const allSelected = selectableReports.length > 0 && selectableReports.every(r => selectedIds.has(r.id));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(selectableReports.map(r => r.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    await handleDelete(Array.from(selectedIds));
+    setSelectedIds(new Set());
+    setShowDeleteConfirm(false);
+  };
 
   // Details dialog state
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -767,11 +810,41 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
             className="mb-3"
           />
 
+          {/* Bulk action bar */}
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20">
+              <span className="text-sm font-medium">{selectedIds.size} sor kijelölve</span>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Törlés
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs ml-auto"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Kijelölés törlése
+              </Button>
+            </div>
+          )}
+
           {/* Table */}
           <div className="rounded-md border overflow-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
+                  <th className="px-2 py-2 text-center w-10">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </th>
                   <th className="px-3 py-2 text-left font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('delivery_date')}>
                     <span className="inline-flex items-center gap-1">
                       Dátum
@@ -805,7 +878,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="border-b">
-                      {Array.from({ length: 9 }).map((_, j) => (
+                      {Array.from({ length: 10 }).map((_, j) => (
                         <td key={j} className="px-3 py-3">
                           <div className="h-4 bg-muted animate-pulse rounded" />
                         </td>
@@ -814,7 +887,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                   ))
                 ) : filteredReports.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
+                    <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
                       {hasActiveFilters ? 'Nincs találat a szűrőkkel' : 'Még nincsenek feltöltött riportok'}
                     </td>
                   </tr>
@@ -831,6 +904,12 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                           isTotal ? 'bg-blue-50/50 dark:bg-blue-950/20 font-bold' : statusCfg.rowBg,
                         )}
                       >
+                      <td className="px-2 py-2 text-center">
+                            <Checkbox
+                              checked={selectedIds.has(row.id)}
+                              onCheckedChange={() => toggleSelect(row.id)}
+                            />
+                        </td>
                         <td className="px-3 py-2 whitespace-nowrap">{formatDate(row.delivery_date)}</td>
                         <td className="px-3 py-2 font-mono text-xs">{row.package_number || '-'}</td>
                         <td className="px-3 py-2 font-mono text-xs max-w-[180px] truncate" title={row.reference_number || ''}>
@@ -909,6 +988,23 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
         handleRematch={handleRematch}
         onManualMatch={handleSync}
       />
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Biztosan törölni szeretnéd?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedIds.size} riport sor véglegesen törlésre kerül. Ez a művelet nem vonható vissza.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Mégse</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Törlés
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

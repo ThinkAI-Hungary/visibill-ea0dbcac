@@ -113,6 +113,8 @@ export function useUpdateEvSettings() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['ev-client-settings', variables.company_id] });
+      // Also invalidate portfolio-wide settings (used by EvPortfolioDashboard)
+      queryClient.invalidateQueries({ queryKey: ['all-ev-client-settings'] });
     },
   });
 }

@@ -191,6 +191,22 @@ export function useCourierReportData(
     }
   }, [refetch]);
 
+  // Delete courier reports by IDs
+  const handleDelete = useCallback(async (ids: string[]) => {
+    if (!ids.length) return;
+    try {
+      const { error } = await supabase
+        .from('courier_reports')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+      toast({ title: `${ids.length} sor törölve` });
+      refetch();
+    } catch (error: any) {
+      toast({ title: 'Törlés sikertelen', description: error.message, variant: 'destructive' });
+    }
+  }, [refetch]);
+
   return {
     selectedCompany,
     filteredReports,
@@ -210,6 +226,7 @@ export function useCourierReportData(
     handlePageSizeChange,
     handleSync,
     handleRematch,
+    handleDelete,
     queryClient,
   };
 }

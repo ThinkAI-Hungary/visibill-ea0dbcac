@@ -21,6 +21,46 @@ async function verifySignature(timestamp: string, token: string, signature: stri
   return hashHex === signature;
 }
 
+// ── Sender domain whitelists ──────────────────────────────────
+const KNOWN_SHIPMENT_DOMAINS = [
+  'gls-hungary.com', 'gls-group.eu',  // GLS (gls-hungary.com = actual production sender)
+  'dpd.hu', 'foxpost.hu',
+  'posta.hu', 'mpl.posta.hu',
+  'dhl.com', 'ups.com', 'tnt.com',
+  'sprinter.hu', 'trans-o-flex.com',
+];
+
+const KNOWN_BANK_DOMAINS: Record<string, string> = {
+  'otpbank.hu': 'otp', 'cib.hu': 'cib',
+  'erstebank.hu': 'erste', 'raiffeisen.hu': 'raiffeisen',
+  'kh.hu': 'kh', 'unicreditbank.hu': 'unicredit',
+  'mkb.hu': 'mkb', 'magnetbank.hu': 'magnet',
+  'granitbank.hu': 'granit', 'mbhbank.hu': 'mbh',
+  'binx.hu': 'binx',
+};
+
+const isShipmentDomain = (d: string | null) =>
+  d ? KNOWN_SHIPMENT_DOMAINS.some(sd => d === sd || d.endsWith('.' + sd)) : false;
+
+const getBankFromDomain = (d: string | null): string | null => {
+  if (!d) return null;
+  for (const [domain, bank] of Object.entries(KNOWN_BANK_DOMAINS)) {
+    if (d === domain || d.endsWith('.' + domain)) return bank;
+  }
+  return null;
+};
+
+
+function sanitizeFileName(fileName: string): string {
+  const clean = fileName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9.-]/g, '_')
+    .replace(/__+/g, '_');
+  return clean;
+}
+
+
 serve(async (req) => {
   try {
     console.log('=== Mailgun Webhook Received ===');
@@ -147,7 +187,11 @@ serve(async (req) => {
     console.log('Parsed email data:', { recipient, sender, subject, attachmentCount, originalFrom });
 
     // ── Sender domain extraction ──────────────────────────────────
-    // Priority: from > Return-Path > DKIM > sender (forwarder)
+    // Smart resolution: check ALL candidate domains against known
+    // shipment/bank whitelists. If a known domain is found in ANY
+    // source, use it. Otherwise, fall back to priority order.
+    // This is critical for forwarded emails where `from` is the
+    // forwarder but `sender` (SMTP envelope) is the original sender.
     const extractDomain = (addr: string | null): string | null => {
       if (!addr) return null;
       const match = addr.match(/@([a-z0-9.-]+)/i);
@@ -158,13 +202,24 @@ serve(async (req) => {
     const dkimHeader = parsedHeaders.find(([h]) => h.toLowerCase() === 'dkim-signature')?.[1] || null;
     const dkimDomain = dkimHeader?.match(/d=([^;\s]+)/)?.[1] || null;
 
-    const senderDomain =
-      extractDomain(originalFrom) ||
-      extractDomain(returnPath) ||
-      dkimDomain?.toLowerCase() ||
-      extractDomain(sender);
+    // Collect ALL possible sender domains from every available source
+    const candidateDomains = [
+      extractDomain(originalFrom),    // from header (may be forwarding user)
+      extractDomain(sender),          // SMTP envelope sender (often original!)
+      extractDomain(returnPath),      // Return-Path header
+      dkimDomain?.toLowerCase(),      // DKIM signing domain
+    ].filter(Boolean) as string[];
 
-    console.log('Sender domain resolved:', senderDomain, '(from:', extractDomain(originalFrom), 'return-path:', extractDomain(returnPath), 'dkim:', dkimDomain, ')');
+    // Try to find a KNOWN domain first (bank or shipment) in ANY source
+    const knownDomain = candidateDomains.find(d =>
+      isShipmentDomain(d) || getBankFromDomain(d) !== null
+    );
+
+    // If a known domain was found in any source, prefer it.
+    // Otherwise, fall back to first available domain.
+    const senderDomain = knownDomain || candidateDomains[0] || null;
+
+    console.log('Sender domain resolved:', senderDomain, '(known:', knownDomain, 'from:', extractDomain(originalFrom), 'sender:', extractDomain(sender), 'return-path:', extractDomain(returnPath), 'dkim:', dkimDomain, ')');
 
     // Verify webhook signature if signing key is configured.
     // NOTE: If MAILGUN_SIGNING_KEY is not set, verification is skipped with a warning.
@@ -302,44 +357,17 @@ serve(async (req) => {
       return true;
     };
 
-    // ── Sender domain whitelists ──────────────────────────────────
-    const KNOWN_SHIPMENT_DOMAINS = [
-      'gls-group.eu', 'gls-hungary.com',
-      'dpd.hu', 'foxpost.hu',
-      'posta.hu', 'mpl.posta.hu',
-      'dhl.com', 'ups.com', 'tnt.com',
-      'sprinter.hu', 'trans-o-flex.com',
-    ];
 
-    const KNOWN_BANK_DOMAINS: Record<string, string> = {
-      'otpbank.hu': 'otp', 'cib.hu': 'cib',
-      'erstebank.hu': 'erste', 'raiffeisen.hu': 'raiffeisen',
-      'kh.hu': 'kh', 'unicreditbank.hu': 'unicredit',
-      'mkb.hu': 'mkb', 'magnetbank.hu': 'magnet',
-      'granitbank.hu': 'granit', 'mbhbank.hu': 'mbh',
-      'binx.hu': 'binx',
-    };
 
-    const isShipmentDomain = (d: string | null) =>
-      d ? KNOWN_SHIPMENT_DOMAINS.some(sd => d === sd || d.endsWith('.' + sd)) : false;
-
-    const getBankFromDomain = (d: string | null): string | null => {
-      if (!d) return null;
-      for (const [domain, bank] of Object.entries(KNOWN_BANK_DOMAINS)) {
-        if (d === domain || d.endsWith('.' + domain)) return bank;
-      }
-      return null;
-    };
-
-    // ── Classify attachment as invoice or transaction ──
+    // ── Classify attachment as invoice, transaction, or report ──
     // Rules (in priority order):
-    //   0. Shipment sender domain → invoice (not skip)
+    //   0. Shipment sender domain + tabular file → 'report' (courier report)
+    //   0b. Shipment sender + non-tabular → 'invoice'
     //   1. .mt940/.sta → always 'transaction'
-    //   2. .xlsx/.xls/.csv → 'transaction' (sender bank hint added if available)
-    //   3. PDF filename keywords (tranzakci, bankszámlakivonat, kivonat, forgalmi, etc.) → 'transaction'
-    //   4. PDF filename with IBAN pattern (HU + 24-26 digits) → 'transaction'
-    //   5. PDF filename with OTP numeric pattern (__NNN-YYYY) → 'transaction'
-    //   6. Email subject keywords (only for PDFs not matched above) → 'transaction'
+    //   2. Bank sender + xlsx/xls/csv → 'transaction'
+    //   2b-2e. xlsx with bank keyword/IBAN/subject → 'transaction'
+    //   2f. GLS filename pattern (forwarded without GLS sender) → 'report'
+    //   3-6. PDF filename/subject keywords → 'transaction'
     //   7. Default → 'invoice'
     const TRANSACTION_FILENAME_KEYWORDS = [
       'tranzakci', 'bankszámlakivonat', 'számlakivonat', 'kivonat',
@@ -350,34 +378,62 @@ serve(async (req) => {
       'forgalmi', 'bank statement', 'account statement',
     ];
 
+    // GLS filename patterns (detected from production data):
+    //   COD daily:     18196_HUF_20260703_081056.xlsx  (NNN_HUF_YYYYMMDD_HHMMSS)
+    //   Pcl statuses:  20260703_093611_7871277_134275377714665885.xlsx
+    // Supports optional prefix (like timestamp and dash: '1783059276111-')
+    const GLS_FILENAME_PATTERNS = [
+      /^(?:\d+-)?\d+_huf_\d{8}_\d{6}\.xlsx$/i,          // COD daily: NNN_HUF_YYYYMMDD_HHMMSS
+      /^(?:\d+-)?\d{8}_\d{6}_\d{7}_\d{15,}\.xlsx$/i,    // Pcl statuses: YYYYMMDD_HHMMSS_NNN_LONGID
+    ];
+    const isGlsFilename = (fn: string): boolean =>
+      GLS_FILENAME_PATTERNS.some(p => p.test(fn));
+
+    // Detect courier report type from sender domain
+    const detectCourierReportType = (senderDom: string | null): string | null => {
+      if (!senderDom) return null;
+      if (senderDom.includes('gls')) return 'gls';
+      if (senderDom.includes('posta') || senderDom.includes('mpl')) return 'mpl';
+      if (senderDom.includes('mixpack')) return 'mixpack';
+      if (senderDom.includes('dpd')) return 'dpd';
+      if (senderDom.includes('foxpost')) return 'foxpost';
+      return null;
+    };
+
     const classifyAttachment = (
       attachmentName: string,
       emailSubject: string | null,
       senderDom: string | null,
-    ): { classification: 'invoice' | 'transaction'; bankHint: string | null; reason: string } => {
+    ): { classification: 'invoice' | 'transaction' | 'report'; bankHint: string | null; reportType: string | null; reason: string } => {
       const fn = attachmentName.toLowerCase();
       const ext = fn.substring(fn.lastIndexOf('.'));
 
       // Sender-based bank hint (available for all file types)
       const senderBank = getBankFromDomain(senderDom);
 
-      // 0. Shipment sender → invoice default (not skip — fallback will handle it)
+      // 0. Shipment sender + tabular file → REPORT (courier report pipeline)
+      if (isShipmentDomain(senderDom) && ['.xlsx', '.xls', '.csv'].includes(ext)) {
+        const reportType = detectCourierReportType(senderDom);
+        return { classification: 'report', bankHint: null, reportType, reason: `Shipment sender (${senderDom}) + tabular file → courier report` };
+      }
+
+      // 0b. Shipment sender + non-tabular file → invoice default
       if (isShipmentDomain(senderDom)) {
-        return { classification: 'invoice', bankHint: null, reason: `Shipment sender: ${senderDom} → invoice default` };
+        return { classification: 'invoice', bankHint: null, reportType: null, reason: `Shipment sender: ${senderDom} + non-tabular → invoice default` };
       }
 
       // 1. Certain bank formats
       if (['.mt940', '.sta'].includes(ext)) {
-        return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reason: 'Bank format extension' };
+        return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reportType: null, reason: 'Bank format extension' };
       }
 
       // 2. xlsx/xls/csv → transaction ONLY if a banking signal exists
       //    (sender bank domain, filename keyword, IBAN, or subject keyword).
-      //    Otherwise → invoice (prevents GLS/shipment xlsx being misrouted).
+      //    Otherwise check for GLS filename pattern, then → invoice.
       if (['.xlsx', '.xls', '.csv'].includes(ext)) {
         // 2a. Sender is a known bank
         if (senderBank) {
-          return { classification: 'transaction', bankHint: senderBank, reason: `Bank sender: ${senderDom}` };
+          return { classification: 'transaction', bankHint: senderBank, reportType: null, reason: `Bank sender: ${senderDom}` };
         }
         // 2b. Filename contains banking keywords
         const fnNormXls = fn.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -385,18 +441,18 @@ serve(async (req) => {
           const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           return fnNormXls.includes(kwNorm);
         })) {
-          return { classification: 'transaction', bankHint: detectBankHint(attachmentName), reason: 'Transaction keyword in xlsx filename' };
+          return { classification: 'transaction', bankHint: detectBankHint(attachmentName), reportType: null, reason: 'Transaction keyword in xlsx filename' };
         }
 
         // 2c. IBAN pattern in filename
         if (/hu\d{24,26}/i.test(fn.replace(/[^a-z0-9]/gi, ''))) {
-          return { classification: 'transaction', bankHint: detectBankHint(attachmentName), reason: 'IBAN in xlsx filename' };
+          return { classification: 'transaction', bankHint: detectBankHint(attachmentName), reportType: null, reason: 'IBAN in xlsx filename' };
         }
 
         // 2d. Bank hint detected from filename (otp, cib, kh, etc.)
         const fileBank = detectBankHint(attachmentName);
         if (fileBank) {
-          return { classification: 'transaction', bankHint: fileBank, reason: `Bank keyword in filename: ${fileBank}` };
+          return { classification: 'transaction', bankHint: fileBank, reportType: null, reason: `Bank keyword in filename: ${fileBank}` };
         }
 
         // 2e. Email subject contains banking keywords
@@ -406,13 +462,17 @@ serve(async (req) => {
             const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
             return subj.includes(kwNorm);
           })) {
-            return { classification: 'transaction', bankHint: null, reason: 'Transaction keyword in subject + xlsx' };
+            return { classification: 'transaction', bankHint: null, reportType: null, reason: 'Transaction keyword in subject + xlsx' };
           }
         }
 
+        // 2f. GLS filename pattern (forwarded without GLS sender domain)
+        if (isGlsFilename(fn)) {
+          return { classification: 'report', bankHint: null, reportType: 'gls', reason: 'GLS filename pattern detected (no GLS sender)' };
+        }
 
         // No bank signal → treat as invoice (fallback will handle if needed)
-        return { classification: 'invoice', bankHint: null, reason: 'xlsx/csv without bank signal → invoice' };
+        return { classification: 'invoice', bankHint: null, reportType: null, reason: 'xlsx/csv without bank signal → invoice' };
       }
 
       // 3. Filename keywords (normalized — remove diacritics for matching)
@@ -421,17 +481,17 @@ serve(async (req) => {
         const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         return fnNorm.includes(kwNorm);
       })) {
-        return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reason: 'Transaction keyword in filename' };
+        return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reportType: null, reason: 'Transaction keyword in filename' };
       }
 
       // 4. IBAN pattern in filename (HU + 24-26 digits)
       if (/hu\d{24,26}/i.test(fn.replace(/[^a-z0-9]/gi, ''))) {
-        return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reason: 'IBAN in filename' };
+        return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reportType: null, reason: 'IBAN in filename' };
       }
 
       // 5. OTP numeric pattern: long digits + __NNN-YYYY
       if (/^\d{10,}.*__\d{3}-\d{4}/.test(fn)) {
-        return { classification: 'transaction', bankHint: 'otp', reason: 'OTP numeric pattern' };
+        return { classification: 'transaction', bankHint: 'otp', reportType: null, reason: 'OTP numeric pattern' };
       }
 
       // 6. Email subject keywords (fallback for PDFs)
@@ -441,12 +501,12 @@ serve(async (req) => {
           const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           return subj.includes(kwNorm);
         })) {
-          return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reason: 'Transaction keyword in email subject' };
+          return { classification: 'transaction', bankHint: senderBank || detectBankHint(attachmentName), reportType: null, reason: 'Transaction keyword in email subject' };
         }
       }
 
       // 7. Default
-      return { classification: 'invoice', bankHint: null, reason: 'Default → invoice' };
+      return { classification: 'invoice', bankHint: null, reportType: null, reason: 'Default → invoice' };
     };
 
     // ── Detect bank hint from filename ──
@@ -491,31 +551,8 @@ serve(async (req) => {
           continue;
         }
         
-        const { classification, bankHint, reason } = classifyAttachment(attachment.name, subject, senderDomain);
-        console.log(`Processing attachment: ${attachment.name} → ${classification} (reason: ${reason})${bankHint ? ` (bank: ${bankHint})` : ''}`);
-
-        // ── Mailgun retry idempotency check ──
-        // If we have a Message-Id, check if this exact attachment from this
-        // email has already been processed. Prevents duplicate processing
-        // when Mailgun retries the webhook (e.g. due to timeout).
-        if (messageId) {
-          const idempotencyTable: 'transaction_uploads' | 'invoice_uploads' = classification === 'transaction'
-            ? 'transaction_uploads' : 'invoice_uploads';
-
-          const { data: existingUpload } = await supabase
-            .from(idempotencyTable)
-            .select('id')
-            .eq('company_id', alias.company_id)
-            .eq('file_name', attachment.name)
-            .contains('metadata', { mailgun_message_id: messageId })
-            .limit(1);
-
-          if (existingUpload && existingUpload.length > 0) {
-            console.log(`[IDEMPOTENCY] Skipping duplicate attachment: ${attachment.name} ` +
-              `(Message-Id already processed: ${messageId})`);
-            continue;
-          }
-        }
+        const { classification, bankHint, reportType, reason } = classifyAttachment(attachment.name, subject, senderDomain);
+        console.log(`Processing attachment: ${attachment.name} → ${classification} (reason: ${reason})${bankHint ? ` (bank: ${bankHint})` : ''}${reportType ? ` (report: ${reportType})` : ''}`);
 
         // ── Mailgun retry idempotency check ──
         // If we have a Message-Id, check if this exact attachment from this
@@ -523,7 +560,10 @@ serve(async (req) => {
         // when Mailgun retries the webhook (e.g. due to timeout).
         if (messageId) {
           const idempotencyTable = classification === 'transaction'
-            ? 'transaction_uploads' : 'invoice_uploads';
+            ? 'transaction_uploads'
+            : classification === 'report'
+              ? 'report_uploads'
+              : 'invoice_uploads';
 
           const { data: existingUpload } = await supabase
             .from(idempotencyTable)
@@ -541,8 +581,15 @@ serve(async (req) => {
         }
 
         // Choose storage bucket based on classification
-        const storageBucket = classification === 'transaction' ? 'transactions' : 'invoice-uploads';
-        const storagePath = `${alias.user_id}/${Date.now()}-${attachment.name}`;
+        const storageBucket = 
+          classification === 'transaction' 
+            ? 'transactions' 
+            : classification === 'report' 
+              ? 'report-uploads' 
+              : 'invoice-uploads';
+
+        const sanitizedAttachmentName = sanitizeFileName(attachment.name);
+        const storagePath = `${alias.user_id}/${Date.now()}-${sanitizedAttachmentName}`;
 
         // Upload to Supabase storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -592,7 +639,45 @@ serve(async (req) => {
           original_from: originalFrom,
         }];
 
-        if (classification === 'transaction') {
+        if (classification === 'report') {
+          // ── Courier report upload (GLS/MPL/DPD etc.) ──
+          const { data: reportRecord, error: reportError } = await supabase
+            .from('report_uploads')
+            .insert({
+              user_id: alias.user_id,
+              company_id: alias.company_id,
+              file_name: attachment.name,
+              file_type: attachment.type,
+              file_size: attachment.size,
+              file_url: publicUrl,
+              report_type: reportType || 'gls',
+              upload_status: 'uploaded',
+              processing_status: 'pending',
+              metadata: emailMetadata,
+              notes: initialNote,
+              email_sender_domain: senderDomain,
+            })
+            .select()
+            .single();
+
+          if (reportError) {
+            console.error('Error creating report upload record:', reportError);
+            await logError(supabase, {
+              error_type: 'db_query',
+              component: 'process-mailgun-webhook',
+              action: 'create_report_upload_record',
+              message: `Failed to create report upload record for: ${attachment.name}`,
+              user_id: alias.user_id,
+              company_id: alias.company_id,
+              context: { fileName: attachment.name, recordError: reportError.message, reportType },
+            });
+          } else {
+            console.log('Report upload record created:', reportRecord.id, `(type: ${reportType})`);
+            // Processing is handled automatically by the DB trigger (enqueue_report_job)
+            // which enqueues the job to the PGMQ report_jobs queue on INSERT.
+            console.log('Report job enqueued via DB trigger for PGMQ worker processing.');
+          }
+        } else if (classification === 'transaction') {
           // ── Transaction upload ──
           const { data: txRecord, error: txError } = await supabase
             .from('transaction_uploads')

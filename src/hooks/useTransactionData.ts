@@ -319,6 +319,17 @@ export function useTransactionData() {
   const handleBulkDelete = useCallback(async (ids: string[]) => {
     if (!selectedCompany?.id || ids.length === 0) return;
     try {
+      // 1. Unlink any courier_reports referencing these transactions (prevents FK violation)
+      const { error: unlinkErr } = await supabase
+        .from('courier_reports')
+        .update({ matched_transaction_id: null, match_status: 'unmatched' })
+        .in('matched_transaction_id', ids);
+      if (unlinkErr) {
+        reportError({ type: 'db_query', component: 'useTransactionData', action: 'unlink_courier', message: unlinkErr.message, error: unlinkErr });
+        // Non-fatal: continue with delete attempt
+      }
+
+      // 2. Delete the transactions
       const { error } = await supabase
         .from('transactions')
         .delete()
@@ -329,6 +340,7 @@ export function useTransactionData() {
       await queryClient.invalidateQueries({ queryKey: ['tx-kpis', selectedCompany.id] });
       await queryClient.invalidateQueries({ queryKey: ['tx-duplicates', selectedCompany.id] });
       await queryClient.invalidateQueries({ queryKey: queryKeys.transactionFilterOptions(selectedCompany.id) });
+      await queryClient.invalidateQueries({ queryKey: ['courier-reports', selectedCompany.id] });
       toast({ title: `${ids.length} tranzakció törölve`, className: 'bg-red-50 text-red-900 border-red-200' });
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'useTransactionData', action: 'error', message: 'Bulk delete error:', error });

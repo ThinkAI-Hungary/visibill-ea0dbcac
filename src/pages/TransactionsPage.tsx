@@ -121,6 +121,9 @@ const TransactionsPage = () => {
     for (const row of bankUploads) {
       if (row.processing_status === 'completed') bankSet.add(row.detected_bank);
     }
+    // Exclude 'gls' and 'szep' — handled by dedicated tabs, not bank tabs
+    bankSet.delete('gls');
+    bankSet.delete('szep');
     return Array.from(bankSet).sort();
   }, [bankUploads]);
 

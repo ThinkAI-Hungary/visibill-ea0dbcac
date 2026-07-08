@@ -30,12 +30,12 @@ import {
 export function useAccountyClients() {
   const { user } = useAuth();
   const userId = user?.id || '';
-  const { data: myAssignsData } = useMyAssignedCompanyIds();
+  const { data: myAssignsData, isPending: myAssignsPending } = useMyAssignedCompanyIds();
   const companyIds = myAssignsData?.companyIds || [];
   const isAdmin = myAssignsData?.isAdmin || false;
   const firmId = myAssignsData?.firmId;
 
-  return useQuery({
+  const queryResult = useQuery({
     queryKey: queryKeys.accountyClients(userId),
     queryFn: async (): Promise<AccountyClient[]> => {
       if (companyIds.length === 0) return [];
@@ -153,6 +153,11 @@ export function useAccountyClients() {
     enabled: !!userId && !!myAssignsData,
     staleTime: 30_000,
   });
+
+  return {
+    ...queryResult,
+    isLoading: queryResult.isLoading || myAssignsPending,
+  };
 }
 
 /**
