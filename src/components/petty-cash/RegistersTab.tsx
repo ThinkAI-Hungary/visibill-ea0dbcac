@@ -372,6 +372,7 @@ function OpeningBalancesEditor({ registerId, currencies, companyId }: { register
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashOpeningBalances(registerId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
+      qc.invalidateQueries({ queryKey: ['petty-cash-entries-opening-balances', companyId] });
       qc.invalidateQueries({ queryKey: ['petty-cash-all-opening-balances', companyId] });
       toast({ title: 'Nyitó egyenlegek mentve' });
       // U3: Show saved feedback briefly
