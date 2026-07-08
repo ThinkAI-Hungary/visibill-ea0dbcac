@@ -224,7 +224,7 @@ export default function RegistersTab() {
                   </Button>
                 </div>
                 {editingBalances === reg.id && (
-                  <OpeningBalancesEditor registerId={reg.id} currencies={reg.currencies} />
+                  <OpeningBalancesEditor registerId={reg.id} currencies={reg.currencies} companyId={companyId} />
                 )}
               </CardContent>
             </Card>
@@ -321,7 +321,7 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
 }
 
 // U3: Opening balances editor with visual feedback
-function OpeningBalancesEditor({ registerId, currencies }: { registerId: string; currencies: string[] }) {
+function OpeningBalancesEditor({ registerId, currencies, companyId }: { registerId: string; currencies: string[]; companyId: string }) {
   const qc = useQueryClient();
   const [saved, setSaved] = useState(false);
 
@@ -370,8 +370,9 @@ function OpeningBalancesEditor({ registerId, currencies }: { registerId: string;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashOpeningBalances(registerId) });
-      qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary('') }); // broad invalidation
-      qc.invalidateQueries({ queryKey: ['petty-cash-all-opening-balances'] });
+      qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
+      qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
+      qc.invalidateQueries({ queryKey: ['petty-cash-all-opening-balances', companyId] });
       toast({ title: 'Nyitó egyenlegek mentve' });
       // U3: Show saved feedback briefly
       setSaved(true);
