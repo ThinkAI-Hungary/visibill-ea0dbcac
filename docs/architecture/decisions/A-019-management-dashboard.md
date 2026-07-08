@@ -1,7 +1,7 @@
 # A-019: Management Dashboard Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12 (last updated 2026-07-07)
+**Date:** 2025-12 (last updated 2026-07-08)
 
 ## Context
 
@@ -46,7 +46,7 @@ if (requesterProfile?.role !== "management" && requesterProfile?.role !== "think
 
 ### API Design: Action-based Query Params
 
-Egyetlen Edge Function, 14 action:
+Egyetlen Edge Function, 15 action:
 
 | Action | Params | Visszatérés |
 |---|---|---|
@@ -63,6 +63,7 @@ Egyetlen Edge Function, 14 action:
 | `update-file-status` | POST body: `{ files: [{id, source_table}], targetStatus }` | Bulk fájl státusz módosítás. `done` → automatikus mapping: `processed` (invoice_uploads) / `completed` (többi). Max 200 fájl/batch. Nem triggerel PGMQ worker-t (kozmetikai változás). |
 | `superadmin-module-data` | `companyId`, `module`, `page`, `pageSize`, `dateFrom`, `dateTo`, `search` | Cégenként 27 modul bármelyikének lapozott adatai (rows[], totalCount) |
 | `worker-status` | — | containers[] (heartbeat health), queues[] (PGMQ metrics), pipelines[] (24h teljesítmény + 7d sparkline), recent_jobs[] (utolsó 20), summary KPI-k |
+| `llm-costs` | `period` (24h/7d/30d/90d) | Cross-project LLM költségaggregáció: kpi{total_cost, total_jobs, avg_cost_per_job, total_tokens}, by_pipeline[], by_project[], top_companies[] (top 3), daily_trend[], by_model[] |
 
 ### Adatforrások
 
@@ -340,3 +341,56 @@ if (filterSource === 'uploads') {
 - [Error Logging System](../error-logging-system.md) — Részletes error logging architektúra és dashboard
 - [09-Error Handling & Feedback](../../design/09-error-handling-feedback.md) — Frontend error kezelés design
 - [07-Loading Patterns](../../design/07-loading-patterns.md) — Debounce + skeleton/opacity pattern
+
+---
+
+## Worker Monitor Panel
+
+### Architektúra
+
+A Worker Monitor a management dashboard "Worker" fülén található. Két al-tab-ot tartalmaz:
+
+| Tab | Leírás | Adatforrás |
+|-----|--------|------------|
+| **Áttekintés** | Konténer health, PGMQ queue-k, pipeline teljesítmény, utolsó jobok | `worker-status` action (30s polling) |
+| **LLM Költség** | Cross-project költségaggregáció, pie chartek, top cégek, trend, modell tábla | `llm-costs` action (60s polling) |
+
+### Cross-Project Monitoring
+
+A `worker-status` és `llm-costs` action-ök **3 Supabase projektet** kérdeznek le párhuzamosan:
+
+| Projekt | Env vars | Cél |
+|---------|----------|-----|
+| **PROD** | (default admin client) | Fő production projekt |
+| **VSWEB** | `VSWEB_SUPABASE_URL`, `VSWEB_SERVICE_ROLE_KEY` | VS Web projekt |
+| **THINKERMAN** | `THINKERMAN_SUPABASE_URL`, `THINKERMAN_SERVICE_ROLE_KEY` | Thinkerman projekt |
+
+### LLM Cost Tab — Komponensek
+
+```
+LLMCostPanel
+  ├── Időszak választó (24h / 7d / 30d / 90d)
+  ├── 4 KPI kártya (költség, jobok, átlag/job, tokenek)
+  ├── 2 CSS Pie Chart (pipeline bontás + projekt bontás)
+  ├── Top 3 legdrágább cég (rangsor + progress bar)
+  ├── Napi költség trend (bar chart, hover tooltip)
+  └── Modell használat tábla (modell × pipeline × jobok × token × költség × arány)
+```
+
+### Per-Model Cost Splitting (Worker)
+
+A `LLMCostTracker.save()` (worker/llm_tracker.py) **modellekre bontva** menti a költségeket:
+
+- Ha egy pipeline feldolgozás során **egyetlen modellt** használtunk → 1 sor az `llm_koltsegek` táblába
+- Ha **több modellt** használtunk (pl. `deepseek/deepseek-chat` klasszifikáció + `gpt-4o-mini` Vision OCR) → **1 sor modellenként**
+
+Ez biztosítja, hogy a dashboard a Vision OCR költségeket is pontosan, külön modellként mutatja.
+
+### Project-Scoped Filtering
+
+A **Pipeline** szekció és a **Queue** lista a kiválasztott konténer projektje szerint szűrt:
+
+- Konténer kiválasztása → `activeProject` meghatározása (heartbeat `project` mező)
+- Pipeline-ok: `${project}:${pipeline}` prefix alapján szűrve
+- Queue-k: projekt mező alapján szűrve, **mindig alfabetikus sorrendben**
+- PGMQ queue-k: `public.pgmq_metrics_all()` wrapper RPC-n keresztül érhetők el (mindhárom projektben létrehozva)
