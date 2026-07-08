@@ -3269,7 +3269,7 @@ function CSSPieChart({ data, centerLabel, centerSub, size = 140 }: {
 }
 
 function LLMCostPanel() {
-  const [period, setPeriod] = useState<string>('7d');
+  const [period, setPeriod] = useState<string>('all');
 
   const { data, isLoading } = useQuery({
     queryKey: ['llm-costs', period],
@@ -3290,7 +3290,7 @@ function LLMCostPanel() {
   const { kpi = {}, by_pipeline = [], by_project = [], top_companies = [], daily_trend = [], by_model = [] } = data;
   const maxDailyCost = Math.max(...daily_trend.map((d: any) => d.cost), 0.001);
 
-  const periodLabel: Record<string, string> = { '24h': '24 óra', '7d': '7 nap', '30d': '30 nap', '90d': '90 nap' };
+  const periodLabel: Record<string, string> = { 'all': 'Összesen', '24h': '24 óra', '7d': '7 nap', '30d': '30 nap', '90d': '90 nap' };
 
   const formatTokens = (n: number) => {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -3303,7 +3303,7 @@ function LLMCostPanel() {
       {/* Period selector */}
       <div className="flex justify-end">
         <div className="flex gap-0.5 bg-muted/30 p-0.5 rounded-md">
-          {['24h', '7d', '30d', '90d'].map(p => (
+          {['all', '24h', '7d', '30d', '90d'].map(p => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
@@ -3311,7 +3311,7 @@ function LLMCostPanel() {
                 period === p ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {p === '24h' ? '24h' : p === '7d' ? '7 nap' : p === '30d' ? '30 nap' : '90 nap'}
+              {periodLabel[p] || p}
             </button>
           ))}
         </div>

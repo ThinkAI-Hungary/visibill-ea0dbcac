@@ -2559,8 +2559,8 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
     "30d": 30 * 24 * 60 * 60 * 1000,
     "90d": 90 * 24 * 60 * 60 * 1000,
   };
-  const ms = periodMs[period] || periodMs["7d"];
-  const since = new Date(now.getTime() - ms).toISOString();
+  const ms = periodMs[period];
+  const since = ms ? new Date(now.getTime() - ms).toISOString() : null; // null = all time
 
   // Build cross-project clients
   interface PC { name: string; client: ReturnType<typeof createClient> }
@@ -2579,10 +2579,13 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
   // Fetch LLM data from all projects in parallel
   const fetches = projectClients.map(async (pc) => {
     try {
-      const { data } = await pc.client
+      let query = pc.client
         .from("llm_koltsegek")
         .select("pipeline, model_name, company_id, total_tokens, estimated_cost_usd, processing_duration_ms, created_at")
-        .gte("created_at", since);
+        .order("created_at", { ascending: false })
+        .limit(10000);
+      if (since) query = query.gte("created_at", since);
+      const { data } = await query;
       // Also fetch company names
       const companyIds = [...new Set((data || []).map((r: any) => r.company_id).filter(Boolean))];
       let companyMap = new Map<string, string>();
