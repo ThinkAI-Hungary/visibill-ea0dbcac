@@ -2557,9 +2557,10 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     }
   });
   const recentResults = await Promise.all(recentFetches);
+  // Keep enough per project so every container has recent jobs visible
   const recent_jobs = recentResults.flat()
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 20);
+    .slice(0, 60);
 
   // ── Summary KPIs ──
   const totalJobs24h = Array.from(pipelineMap.values()).reduce((s, p) => s + p.jobs, 0);
