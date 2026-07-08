@@ -3582,6 +3582,7 @@ function WorkerPanel() {
   const [selectedSection, setSelectedSection] = useState<'containers' | 'queues'>('containers');
   const [workerTab, setWorkerTab] = useState<'overview' | 'llm-costs'>('overview');
   const [selectedQueue, setSelectedQueue] = useState<string | null>(null);
+  const [showAllQueues, setShowAllQueues] = useState(false);
   const [workerPeriod, setWorkerPeriod] = useState<string>('24h');
 
   const workerPeriodLabel: Record<string, string> = { 'all': 'Összesen', '24h': '24 óra', '7d': '7 nap', '30d': '30 nap', '90d': '90 nap' };
@@ -3738,15 +3739,30 @@ function WorkerPanel() {
             color: (summary.total_errors_24h || 0) > 0 ? 'text-red-500' : 'text-muted-foreground',
             sub: 'hiba',
           },
-        ].map((kpi) => (
-          <Card key={kpi.label} className="p-3 bg-card/80 border-border/50 hover:border-border transition-colors">
+        ].map((kpi) => {
+          const isQueueKpi = kpi.label === 'Queue várakozó';
+          const isClickable = isQueueKpi && (summary.total_queue_pending || 0) > 0;
+          return (
+          <Card
+            key={kpi.label}
+            className={`p-3 bg-card/80 border-border/50 transition-colors ${
+              isClickable ? 'cursor-pointer hover:border-amber-500/50 hover:bg-amber-500/5' : 'hover:border-border'
+            } ${showAllQueues && isQueueKpi ? 'border-amber-500/50 bg-amber-500/5' : ''}`}
+            onClick={() => {
+              if (isClickable) {
+                setShowAllQueues(prev => !prev);
+                setSelectedQueue(null);
+              }
+            }}
+          >
             <div className="flex items-center gap-2 mb-1">
               <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
               <span className="text-xs text-muted-foreground font-medium">{kpi.label}</span>
             </div>
             <div className="text-lg font-bold">{kpi.value}</div>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {/* ── Split Panel: Left Nav + Right Content ── */}
@@ -3914,11 +3930,14 @@ function WorkerPanel() {
           </Card>
 
           {/* ── Queue Detail Panel (inline above recent jobs) ── */}
-          {selectedQueue && (() => {
-            const queueData = filteredQueues.find((q: any) => q.queue_name === selectedQueue);
-            if (!queueData || queueData.queue_length === 0) return null;
-            const items = queueData.pending_items || [];
-            const queueDisplayName = queueData.queue_name.replace(/_jobs$/, '').replace(/^(PROD|VSWEB|THINKERMAN):/, '');
+          {(() => {
+            // Determine which queues to show
+            const queuesToShow = showAllQueues
+              ? filteredQueues.filter((q: any) => q.queue_length > 0)
+              : selectedQueue
+                ? filteredQueues.filter((q: any) => q.queue_name === selectedQueue && q.queue_length > 0)
+                : [];
+            if (queuesToShow.length === 0) return null;
 
             const formatWaitTime = (enqueuedAt: string) => {
               const diffMs = Date.now() - new Date(enqueuedAt).getTime();
@@ -3952,71 +3971,86 @@ function WorkerPanel() {
             };
 
             return (
-              <Card className="border-amber-500/30 bg-amber-500/5">
-                <CardHeader className="pb-2 pt-3 px-4">
+              <div className="space-y-3">
+                {showAllQueues && (
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-semibold flex items-center gap-2">
-                      <ClipboardList className="h-4 w-4 text-amber-500" />
-                      <span className="capitalize">{queueDisplayName}</span>
-                      <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-400">
-                        {queueData.queue_length} várakozó
-                      </Badge>
-                    </CardTitle>
-                    <button onClick={() => setSelectedQueue(null)} className="text-muted-foreground hover:text-foreground">
+                    <span className="text-xs font-semibold text-amber-400 flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4" />
+                      Összes várakozó queue ({queuesToShow.reduce((acc: number, q: any) => acc + q.queue_length, 0)} elem)
+                    </span>
+                    <button onClick={() => { setShowAllQueues(false); setSelectedQueue(null); }} className="text-muted-foreground hover:text-foreground">
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  <div className="flex gap-3 text-[10px] text-muted-foreground">
-                    <span>Projekt: {queueData.project}</span>
-                    {queueData.oldest_msg_age_sec != null && (
-                      <span>Legrégebbi: {queueData.oldest_msg_age_sec < 60 ? `${queueData.oldest_msg_age_sec}s` : `${Math.floor(queueData.oldest_msg_age_sec / 60)}m ${queueData.oldest_msg_age_sec % 60}s`}</span>
-                    )}
-                    <span>Összesen feldolgozva: {queueData.total_messages}</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-0 pb-2">
-                  {items.length > 0 ? (
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-border/30 text-muted-foreground">
-                          <th className="text-left px-4 py-1.5 font-medium w-12">#</th>
-                          <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
-                          <th className="text-left px-3 py-1.5 font-medium">Cég</th>
-                          <th className="text-right px-3 py-1.5 font-medium">Várakozás</th>
-                          <th className="text-left px-3 py-1.5 font-medium">Forrás</th>
-                          <th className="text-left px-3 py-1.5 font-medium">Típus</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {items.map((item: any) => (
-                          <tr key={item.msg_id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
-                            <td className="px-4 py-1.5 text-muted-foreground font-mono text-[10px]">#{item.msg_id}</td>
-                            <td className="px-3 py-1.5 max-w-[200px] truncate font-medium" title={item.file_name}>
-                              <div className="flex items-center gap-1.5">
-                                <FileText className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
-                                {item.file_name || '—'}
-                              </div>
-                            </td>
-                            <td className="px-3 py-1.5 text-muted-foreground max-w-[140px] truncate" title={item.company_name}>{item.company_name || '—'}</td>
-                            <td className={`text-right px-3 py-1.5 font-mono tabular-nums ${waitColor(item.enqueued_at)}`}>{formatWaitTime(item.enqueued_at)}</td>
-                            <td className="px-3 py-1.5">
-                              <span className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded ${sourceBgClass(item.source)}`}>
-                                {sourceIcon(item.source)}
-                                {sourceLabel(item.source)}
-                              </span>
-                            </td>
-                            <td className="px-3 py-1.5">
-                              <span className="text-[9px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">{item.document_category}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <p className="text-center py-4 text-muted-foreground text-xs">A queue nem üres, de az elemek részletei nem elérhetők</p>
-                  )}
-                </CardContent>
-              </Card>
+                )}
+                {queuesToShow.map((queueData: any) => {
+                  const items = queueData.pending_items || [];
+                  const queueDisplayName = queueData.queue_name.replace(/_jobs$/, '').replace(/^(PROD|VSWEB|THINKERMAN):/, '');
+                  return (
+                    <Card key={queueData.queue_name} className="border-amber-500/30 bg-amber-500/5">
+                      <CardHeader className="pb-2 pt-3 px-4">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-xs font-semibold flex items-center gap-2">
+                            <ClipboardList className="h-4 w-4 text-amber-500" />
+                            <span className="capitalize">{queueDisplayName}</span>
+                            <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-400">
+                              {queueData.queue_length} várakozó
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground font-normal">{queueData.project}</span>
+                          </CardTitle>
+                          {!showAllQueues && (
+                            <button onClick={() => setSelectedQueue(null)} className="text-muted-foreground hover:text-foreground">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="px-0 pb-2">
+                        {items.length > 0 ? (
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-border/30 text-muted-foreground">
+                                <th className="text-left px-4 py-1.5 font-medium w-12">#</th>
+                                <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
+                                <th className="text-left px-3 py-1.5 font-medium">Cég</th>
+                                <th className="text-right px-3 py-1.5 font-medium">Várakozás</th>
+                                <th className="text-left px-3 py-1.5 font-medium">Forrás</th>
+                                <th className="text-left px-3 py-1.5 font-medium">Típus</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {items.map((item: any) => (
+                                <tr key={item.msg_id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
+                                  <td className="px-4 py-1.5 text-muted-foreground font-mono text-[10px]">#{item.msg_id}</td>
+                                  <td className="px-3 py-1.5 max-w-[200px] truncate font-medium" title={item.file_name}>
+                                    <div className="flex items-center gap-1.5">
+                                      <FileText className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+                                      {item.file_name || '—'}
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-1.5 text-muted-foreground max-w-[140px] truncate" title={item.company_name}>{item.company_name || '—'}</td>
+                                  <td className={`text-right px-3 py-1.5 font-mono tabular-nums ${waitColor(item.enqueued_at)}`}>{formatWaitTime(item.enqueued_at)}</td>
+                                  <td className="px-3 py-1.5">
+                                    <span className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded ${sourceBgClass(item.source)}`}>
+                                      {sourceIcon(item.source)}
+                                      {sourceLabel(item.source)}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-1.5">
+                                    <span className="text-[9px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">{item.document_category}</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-center py-4 text-muted-foreground text-xs">Az elemek részletei nem elérhetők</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             );
           })()}
 
