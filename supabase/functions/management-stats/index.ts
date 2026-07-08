@@ -2387,7 +2387,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     }
   }
 
-  // ── 3. LLM costs — query ALL projects in parallel ──
+  // ── 3. LLM pipeline stats via SQL aggregation (no row limit!) ──
   const pipelineMap = new Map<string, {
     jobs: number;
     totalDuration: number;
@@ -2395,19 +2395,14 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
   }>();
   const workerMap = new Map<string, { jobs: number; totalDuration: number; totalCost: number }>();
 
-  // 3a. Fetch 24h LLM rows from all projects in parallel
   const llmFetches = projectClients.map(async (pc) => {
     try {
-      let llmQuery = pc.client
-        .from("llm_koltsegek")
-        .select("pipeline, worker_id, processing_duration_ms, estimated_cost_usd, created_at")
-        .order("created_at", { ascending: false })
-        .limit(10000);
-      if (periodSince) llmQuery = llmQuery.gte("created_at", periodSince);
-      const { data } = await llmQuery;
+      const { data } = await pc.client.rpc("worker_pipeline_stats", {
+        since_ts: periodSince || undefined,
+      });
       return { project: pc.name, rows: data || [] };
     } catch (e) {
-      console.warn(`[worker-status] llm_koltsegek query failed for ${pc.name}:`, e);
+      console.warn(`[worker-status] worker_pipeline_stats RPC failed for ${pc.name}:`, e);
       return { project: pc.name, rows: [] };
     }
   });
@@ -2417,25 +2412,24 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     for (const row of rows) {
       const p = row.pipeline || "unknown";
       const wid = row.worker_id || `worker-${project.toLowerCase()}`;
-      // Pipeline key includes project for per-project breakdown
       const pipeKey = `${project}:${p}`;
 
       if (!pipelineMap.has(pipeKey)) {
         pipelineMap.set(pipeKey, { jobs: 0, totalDuration: 0, totalCost: 0 });
       }
       const pm = pipelineMap.get(pipeKey)!;
-      pm.jobs += 1;
-      pm.totalDuration += row.processing_duration_ms || 0;
-      pm.totalCost += parseFloat(row.estimated_cost_usd) || 0;
+      pm.jobs += Number(row.jobs) || 0;
+      pm.totalDuration += Number(row.total_duration_ms) || 0;
+      pm.totalCost += parseFloat(row.total_cost) || 0;
 
       // Worker aggregation (per container)
       if (!workerMap.has(wid)) {
         workerMap.set(wid, { jobs: 0, totalDuration: 0, totalCost: 0 });
       }
       const wm = workerMap.get(wid)!;
-      wm.jobs += 1;
-      wm.totalDuration += row.processing_duration_ms || 0;
-      wm.totalCost += parseFloat(row.estimated_cost_usd) || 0;
+      wm.jobs += Number(row.jobs) || 0;
+      wm.totalDuration += Number(row.total_duration_ms) || 0;
+      wm.totalCost += parseFloat(row.total_cost) || 0;
     }
   }
 
@@ -2449,14 +2443,10 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     }
   }
 
-  // ── 3b. Daily counts for sparkline (last 7 days, per project) ──
+  // ── 3b. Daily counts for sparkline (last 7 days, via SQL aggregation) ──
   const weeklyFetches = projectClients.map(async (pc) => {
     try {
-      const { data } = await pc.client
-        .from("llm_koltsegek")
-        .select("pipeline, created_at")
-        .gte("created_at", sevenDaysAgo)
-        .limit(10000);
+      const { data } = await pc.client.rpc("worker_daily_counts", { days_back: 7 });
       return { project: pc.name, rows: data || [] };
     } catch (e) {
       return { project: pc.name, rows: [] };
@@ -2468,10 +2458,10 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
   for (const { project, rows } of weeklyResults) {
     for (const row of rows) {
       const pipeKey = `${project}:${row.pipeline || "unknown"}`;
-      const dayKey = row.created_at.substring(0, 10);
+      const dayKey = String(row.day_key).substring(0, 10);
       if (!dailyMap.has(pipeKey)) dailyMap.set(pipeKey, new Map());
       const dm = dailyMap.get(pipeKey)!;
-      dm.set(dayKey, (dm.get(dayKey) || 0) + 1);
+      dm.set(dayKey, (dm.get(dayKey) || 0) + Number(row.cnt));
     }
   }
 
