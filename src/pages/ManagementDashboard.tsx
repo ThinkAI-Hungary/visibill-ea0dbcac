@@ -22,6 +22,8 @@ import {
   CreditCard, User, Mail,
   Tags, FolderKanban, Package2, Truck, FileSpreadsheet, Scale, ScrollText, Gavel,
   TicketCheck, FolderOpen,
+  Server, Activity, CircleDot, CheckCircle2, XCircle, TrendingUp,
+  DollarSign, PieChart, Cpu,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -634,17 +636,19 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
 
   const handleDeleteConfirm = async () => {
     if (deleteTargets.length === 0) return;
-    setDeleteModalOpen(false);
     setDeleting(true);
     try {
       await postManagementData('delete-errors', { ids: deleteTargets });
+      toast({ title: 'Hibák törölve', description: `${deleteTargets.length} hiba sikeresen törölve.` });
       setSelected(new Set());
       queryClient.invalidateQueries({ queryKey: ['management-errors'] });
       queryClient.invalidateQueries({ queryKey: ['management-overview'] });
     } catch (e) {
       reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Delete errors failed:', error: e });
+      toast({ title: 'Törlés sikertelen', description: 'Hiba történt a törlés során.', variant: 'destructive' });
     } finally {
       setDeleting(false);
+      setDeleteModalOpen(false);
       setDeleteTargets([]);
     }
   };
@@ -706,7 +710,6 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
   const handleRetryConfirm = async () => {
     if (retryTargets.length === 0) return;
     setRetrying(true);
-    setRetryModalOpen(false);
     try {
       const pipelineOverride = retryPipeline !== 'same'
         ? PIPELINE_OPTIONS.find(p => p.value === retryPipeline)
@@ -719,17 +722,25 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
           targetCategory: pipelineOverride.category,
         }),
       });
-      if (result.error) reportError({ type: 'api_call', component: 'ManagementDashboard', action: 'warning', message: 'Retry partial errors', error: result.error });
+      if (result.error) {
+        reportError({ type: 'api_call', component: 'ManagementDashboard', action: 'warning', message: 'Retry partial errors', error: result.error });
+        toast({ title: 'Részleges újraküldés', description: `${result.retried || 0} elem újraküldve, néhány hiba történt.`, variant: 'destructive' });
+      } else {
+        toast({ title: 'Újraküldés sikeres', description: `${result.retried || retryTargets.length} elem újra feldolgozásra küldve.` });
+      }
       setSelected(new Set());
       queryClient.invalidateQueries({ queryKey: ['management-errors'] });
       queryClient.invalidateQueries({ queryKey: ['management-overview'] });
     } catch (e) {
       reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Retry errors failed:', error: e });
+      toast({ title: 'Újraküldés sikertelen', description: 'Hiba történt az újraküldés során.', variant: 'destructive' });
     } finally {
       setRetrying(false);
+      setRetryModalOpen(false);
       setRetryTargets([]);
     }
   };
+
 
   const handleBulkRetry = () => {
     const ids = [...selected].map(key => {
@@ -1491,12 +1502,12 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                 </p>
               )}
               <div className="flex items-center justify-end gap-2 pt-2">
-                <Button variant="ghost" size="sm" onClick={() => setRetryModalOpen(false)}>
+                <Button variant="ghost" size="sm" onClick={() => setRetryModalOpen(false)} disabled={retrying}>
                   Mégse
                 </Button>
-                <Button size="sm" className="gap-1.5" onClick={handleRetryConfirm}>
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Újraküldés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{retryTargets.length}</span>)
+                <Button size="sm" className="gap-1.5" onClick={handleRetryConfirm} disabled={retrying}>
+                  {retrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                  {retrying ? 'Küldés…' : <>Újraküldés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{retryTargets.length}</span>)</>}
                 </Button>
               </div>
             </CardContent>
@@ -1518,12 +1529,12 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-end gap-2 pt-1">
-                <Button variant="ghost" size="sm" onClick={() => { setDeleteModalOpen(false); setDeleteTargets([]); }}>
+                <Button variant="ghost" size="sm" onClick={() => { setDeleteModalOpen(false); setDeleteTargets([]); }} disabled={deleting}>
                   Mégse
                 </Button>
-                <Button variant="destructive" size="sm" className="gap-1.5" onClick={handleDeleteConfirm}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Törlés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{deleteTargets.length}</span>)
+                <Button variant="destructive" size="sm" className="gap-1.5" onClick={handleDeleteConfirm} disabled={deleting}>
+                  {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  {deleting ? 'Törlés…' : <>Törlés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{deleteTargets.length}</span>)</>}
                 </Button>
               </div>
             </CardContent>
@@ -1545,7 +1556,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-end gap-2 pt-1">
-                <Button variant="ghost" size="sm" onClick={() => setDeleteAllModalOpen(false)}>
+                <Button variant="ghost" size="sm" onClick={() => setDeleteAllModalOpen(false)} disabled={deletingAll}>
                   Mégse
                 </Button>
                 <Button
@@ -1554,22 +1565,24 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                   className="gap-1.5"
                   disabled={deletingAll}
                   onClick={async () => {
-                    setDeleteAllModalOpen(false);
                     setDeletingAll(true);
                     try {
                       await postManagementData('delete-all-errors', {});
+                      toast({ title: 'Összes hiba törölve', description: 'Minden hiba sikeresen törölve.' });
                       setSelected(new Set());
                       queryClient.invalidateQueries({ queryKey: ['management-errors'] });
                       queryClient.invalidateQueries({ queryKey: ['management-overview'] });
                     } catch (e) {
                       reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Delete all errors failed:', error: e });
+                      toast({ title: 'Törlés sikertelen', description: 'Hiba történt az összes hiba törlése során.', variant: 'destructive' });
                     } finally {
                       setDeletingAll(false);
+                      setDeleteAllModalOpen(false);
                     }
                   }}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Összes törlés
+                  {deletingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  {deletingAll ? 'Törlés…' : 'Összes törlés'}
                 </Button>
               </div>
             </CardContent>
@@ -2415,13 +2428,13 @@ export default function ManagementDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Derive view state from URL
-  const urlView = searchParams.get('view') as 'company' | 'user' | 'errors' | 'permissions' | 'files' | 'superadmin' | 'tickets' | null;
+  const urlView = searchParams.get('view') as 'company' | 'user' | 'errors' | 'permissions' | 'files' | 'superadmin' | 'tickets' | 'worker' | null;
   const urlId = searchParams.get('id');
   const hasSuperadminParams = !!searchParams.get('sa_company') || !!searchParams.get('sa_mode');
-  const view: 'overview' | 'company' | 'user' | 'errors' | 'permissions' | 'files' | 'superadmin' | 'tickets' =
+  const view: 'overview' | 'company' | 'user' | 'errors' | 'permissions' | 'files' | 'superadmin' | 'tickets' | 'worker' =
     hasSuperadminParams
       ? 'superadmin'
-      : (urlView === 'company' || urlView === 'user' || urlView === 'errors' || urlView === 'permissions' || urlView === 'files' || urlView === 'superadmin' || urlView === 'tickets')
+      : (urlView === 'company' || urlView === 'user' || urlView === 'errors' || urlView === 'permissions' || urlView === 'files' || urlView === 'superadmin' || urlView === 'tickets' || urlView === 'worker')
         ? urlView
         : 'overview';
   const selectedCompanyId = view === 'company' ? urlId : null;
@@ -2492,6 +2505,7 @@ export default function ManagementDashboard() {
   const openErrors = useCallback(() => { setSearchParams({ view: 'errors' }); }, [setSearchParams]);
   const openSuperadmin = useCallback(() => { setSearchParams({ view: 'superadmin' }); }, [setSearchParams]);
   const openTickets = useCallback(() => { setSearchParams({ view: 'tickets' }); }, [setSearchParams]);
+  const openWorker = useCallback(() => { setSearchParams({ view: 'worker' }); }, [setSearchParams]);
   const goBack = useCallback(() => { setSearchParams({}); }, [setSearchParams]);
 
   // Auth guard — MUST be after all hooks to satisfy Rules of Hooks
@@ -2500,7 +2514,7 @@ export default function ManagementDashboard() {
   // ── Title / subtitle derivation ─────────────────────
   const title = view === 'overview'
     ? 'Management Dashboard'
-    : (view === 'errors' || view === 'permissions' || view === 'files')
+    : (view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker')
       ? 'Control Center'
       : view === 'superadmin'
         ? 'Control Center'
@@ -2512,7 +2526,7 @@ export default function ManagementDashboard() {
 
   const subtitle = view === 'overview'
     ? 'eaisybill platform áttekintés'
-    : (view === 'errors' || view === 'permissions' || view === 'superadmin' || view === 'files')
+    : (view === 'errors' || view === 'permissions' || view === 'superadmin' || view === 'files' || view === 'worker')
       ? 'Hibák, jogosultságok és adatnézet'
       : view === 'tickets'
         ? 'Beérkezett ügyfél hibajegyek és support csevegés'
@@ -2558,7 +2572,7 @@ export default function ManagementDashboard() {
         </div>
 
         {/* ── Főnavigáció tab bar (áttekintés + control center + tickets) ── */}
-        {(view === 'overview' || view === 'errors' || view === 'permissions' || view === 'files' || view === 'superadmin' || view === 'tickets') && (
+        {(view === 'overview' || view === 'errors' || view === 'permissions' || view === 'files' || view === 'superadmin' || view === 'tickets' || view === 'worker') && (
           <div className="border-t border-border/40">
             <nav className="max-w-7xl mx-auto px-6 flex items-center gap-0.5 py-1.5" aria-label="Főnavigáció">
               <button
@@ -2576,11 +2590,11 @@ export default function ManagementDashboard() {
               <button
                 onClick={openErrors}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
-                  view === 'errors' || view === 'permissions' || view === 'files'
+                  view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker'
                     ? 'bg-primary text-primary-foreground border-transparent shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
                 }`}
-                aria-current={view === 'errors' || view === 'permissions' || view === 'files' ? 'page' : undefined}
+                aria-current={view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker' ? 'page' : undefined}
               >
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Control Center
@@ -3082,8 +3096,8 @@ export default function ManagementDashboard() {
         })()}
 
         {/* ═══ CONTROL CENTER ═══ */}
-        {(view === 'errors' || view === 'permissions' || view === 'files') && (
-          <ControlCenter initialTab={view as 'errors' | 'permissions' | 'files'} onOpenCompany={openCompany} allUsers={overview?.users || []} />
+        {(view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker') && (
+          <ControlCenter initialTab={view as 'errors' | 'permissions' | 'files' | 'worker'} onOpenCompany={openCompany} allUsers={overview?.users || []} />
         )}
       </main>
       </div>
@@ -3093,9 +3107,9 @@ export default function ManagementDashboard() {
 }
 
 // ═══════════════════════════════════════════════════════
-// ─── Control Center (tabs: Hibák / Jogosultságok) ────
+// ─── Control Center (tabs: Hibák / Jogosultságok / Fájlok / Worker) ────
 // ═══════════════════════════════════════════════════════
-type ControlCenterTab = 'errors' | 'permissions' | 'files';
+type ControlCenterTab = 'errors' | 'permissions' | 'files' | 'worker';
 
 interface ControlCenterUser {
   user_id: string;
@@ -3148,6 +3162,17 @@ function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: Co
           <FolderOpen className="h-3.5 w-3.5" />
           Fájlok
         </button>
+        <button
+          onClick={() => setTab('worker')}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+            tab === 'worker'
+              ? 'bg-primary/10 text-primary border-primary/20'
+              : 'text-muted-foreground hover:text-foreground border-transparent'
+          }`}
+        >
+          <Server className="h-3.5 w-3.5" />
+          Worker
+        </button>
       </div>
 
       {/* Tab content — ensures all tabs fill the same width to prevent layout shift */}
@@ -3156,8 +3181,657 @@ function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: Co
           {tab === 'errors' && <ErrorControlPanel onOpenCompany={onOpenCompany} allUsers={allUsers} />}
           {tab === 'permissions' && <PermissionsPanel allUsers={allUsers} />}
           {tab === 'files' && <FilesPanel allUsers={allUsers} />}
+          {tab === 'worker' && <WorkerPanel />}
         </div>
       </div>
+    </div>
+  );
+}
+// ═══════════════════════════════════════════════════════
+// ─── Worker Panel ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+
+/** SVG sparkline bar chart — dependency-free */
+function MiniSparkline({ data, color = 'hsl(var(--primary))' }: { data: number[]; color?: string }) {
+  if (!data || data.length === 0) return null;
+  const max = Math.max(...data, 1);
+  const w = 100;
+  const h = 20;
+  const gap = 2;
+  const barW = Math.max(2, (w - (data.length - 1) * gap) / data.length);
+  return (
+    <svg width={w} height={h} className="inline-block align-middle">
+      {data.map((v, i) => {
+        const barH = Math.max(1, (v / max) * h);
+        return (
+          <rect
+            key={i}
+            x={i * (barW + gap)}
+            y={h - barH}
+            width={barW}
+            height={barH}
+            rx={1}
+            fill={color}
+            opacity={0.35 + (i / data.length) * 0.6}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+/** Format uptime seconds to human-readable */
+function formatUptime(sec: number): string {
+  if (sec < 60) return `${sec}s`;
+  if (sec < 3600) return `${Math.floor(sec / 60)}m`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
+  return `${Math.floor(sec / 86400)}d ${Math.floor((sec % 86400) / 3600)}h`;
+}
+
+/** Format duration ms */
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+
+// ═══════════════════════════════════════════════════════
+// ─── LLM Cost Panel ──────────────────────────────────
+// ═══════════════════════════════════════════════════════
+const PIE_COLORS = ['#a78bfa', '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#6b7280'];
+const PROJECT_COLORS: Record<string, string> = { PROD: '#10b981', VSWEB: '#3b82f6', THINKERMAN: '#f59e0b' };
+
+function CSSPieChart({ data, centerLabel, centerSub, size = 140 }: {
+  data: { label: string; value: number; color: string }[];
+  centerLabel: string;
+  centerSub: string;
+  size?: number;
+}) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  if (total === 0) return <div className="flex items-center justify-center text-muted-foreground text-xs" style={{ width: size, height: size }}>Nincs adat</div>;
+  let cumPct = 0;
+  const stops = data.map(d => {
+    const start = cumPct;
+    cumPct += (d.value / total) * 100;
+    return `${d.color} ${start}% ${cumPct}%`;
+  }).join(', ');
+
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <div className="w-full h-full rounded-full" style={{ background: `conic-gradient(${stops})` }} />
+      <div className="absolute rounded-full bg-background" style={{ inset: size * 0.2 }} />
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+        <span className="text-sm font-bold">{centerLabel}</span>
+        <span className="text-[9px] text-muted-foreground">{centerSub}</span>
+      </div>
+    </div>
+  );
+}
+
+function LLMCostPanel() {
+  const [period, setPeriod] = useState<string>('7d');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['llm-costs', period],
+    queryFn: () => fetchManagementData('llm-costs', { period }),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+
+  if (isLoading || !data) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground gap-2">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        LLM költség adatok betöltése...
+      </div>
+    );
+  }
+
+  const { kpi = {}, by_pipeline = [], by_project = [], top_companies = [], daily_trend = [], by_model = [] } = data;
+  const maxDailyCost = Math.max(...daily_trend.map((d: any) => d.cost), 0.001);
+
+  const periodLabel: Record<string, string> = { '24h': '24 óra', '7d': '7 nap', '30d': '30 nap', '90d': '90 nap' };
+
+  const formatTokens = (n: number) => {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+    return String(n);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Period selector */}
+      <div className="flex justify-end">
+        <div className="flex gap-0.5 bg-muted/30 p-0.5 rounded-md">
+          {['24h', '7d', '30d', '90d'].map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
+                period === p ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {p === '24h' ? '24h' : p === '7d' ? '7 nap' : p === '30d' ? '30 nap' : '90 nap'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* KPI Row */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: 'Összes LLM költség', value: `$${kpi.total_cost?.toFixed(2) || '0'}`, icon: DollarSign, color: 'text-purple-400', sub: '3 projekt összesen' },
+          { label: 'Feldolgozott jobok', value: String(kpi.total_jobs || 0), icon: CheckCircle2, color: 'text-emerald-500', sub: 'összes pipeline' },
+          { label: 'Átlag költség/job', value: `$${kpi.avg_cost_per_job?.toFixed(4) || '0'}`, icon: TrendingUp, color: 'text-blue-400', sub: 'összes pipeline átlag' },
+          { label: 'Összes token', value: formatTokens(kpi.total_tokens || 0), icon: Zap, color: 'text-amber-400', sub: 'input + output' },
+        ].map((kpiItem, i) => (
+          <Card key={i} className="border-border/40">
+            <CardContent className="p-3.5">
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1">
+                <kpiItem.icon className={`h-3.5 w-3.5 ${kpiItem.color}`} />
+                {kpiItem.label}
+              </div>
+              <div className={`text-xl font-bold tracking-tight ${kpiItem.color}`}>{kpiItem.value}</div>
+              <div className="text-[10px] text-muted-foreground/60 mt-0.5">{kpiItem.sub}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Pie Charts Row */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Cost by Pipeline */}
+        <Card className="border-border/40">
+          <CardHeader className="pb-2 pt-3 px-4">
+            <CardTitle className="text-[13px] font-semibold flex items-center gap-2">
+              <PieChart className="h-4 w-4 text-purple-400" />
+              Költség pipeline szerint
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="flex items-center gap-6">
+              <CSSPieChart
+                data={by_pipeline.map((p: any, i: number) => ({ label: p.pipeline, value: p.cost, color: PIE_COLORS[i % PIE_COLORS.length] }))}
+                centerLabel={`$${kpi.total_cost?.toFixed(2) || '0'}`}
+                centerSub={periodLabel[period] || '7 nap'}
+              />
+              <div className="flex flex-col gap-1.5 flex-1">
+                {by_pipeline.map((p: any, i: number) => (
+                  <div key={p.pipeline} className="flex items-center gap-2 text-[11px]">
+                    <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span className="text-muted-foreground flex-1 truncate">{p.pipeline}</span>
+                    <span className="font-semibold tabular-nums">${p.cost}</span>
+                    <span className="text-muted-foreground/50 text-[10px] w-8 text-right">{p.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Cost by Project */}
+        <Card className="border-border/40">
+          <CardHeader className="pb-2 pt-3 px-4">
+            <CardTitle className="text-[13px] font-semibold flex items-center gap-2">
+              <Server className="h-4 w-4 text-emerald-500" />
+              Költség projekt szerint
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="flex items-center gap-6">
+              <CSSPieChart
+                data={by_project.map((p: any) => ({ label: p.project, value: p.cost, color: PROJECT_COLORS[p.project] || '#6b7280' }))}
+                centerLabel="3 projekt"
+                centerSub={periodLabel[period] || '7 nap'}
+              />
+              <div className="flex flex-col gap-1.5 flex-1">
+                {by_project.map((p: any) => (
+                  <div key={p.project} className="flex items-center gap-2 text-[11px]">
+                    <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: PROJECT_COLORS[p.project] || '#6b7280' }} />
+                    <span className="text-muted-foreground flex-1">{p.project}</span>
+                    <span className="font-semibold tabular-nums">${p.cost}</span>
+                    <span className="text-muted-foreground/50 text-[10px] w-8 text-right">{p.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Top Companies + Daily Trend */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Top 3 Companies */}
+        <Card className="border-border/40">
+          <CardHeader className="pb-2 pt-3 px-4">
+            <CardTitle className="text-[13px] font-semibold flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-amber-400" />
+              Top 3 legdrágább cég
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {top_companies.map((c: any, i: number) => {
+              const maxCost = top_companies[0]?.cost || 1;
+              const rankColors = ['bg-amber-500/15 text-amber-500', 'bg-slate-400/15 text-slate-400', 'bg-orange-700/15 text-orange-600'];
+              return (
+                <div key={i} className="flex items-center gap-3 py-2.5 border-b border-border/20 last:border-0">
+                  <div className={`w-5 h-5 rounded flex items-center justify-center text-[11px] font-bold flex-shrink-0 ${rankColors[i] || rankColors[2]}`}>
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium truncate">{c.name}</div>
+                    <div className="text-[10px] text-muted-foreground/60">{c.jobs} job · {c.project}</div>
+                    <div className="mt-1.5 h-0.5 bg-muted/30 rounded-full">
+                      <div className="h-full rounded-full bg-gradient-to-r from-purple-400 to-purple-600" style={{ width: `${(c.cost / maxCost) * 100}%` }} />
+                    </div>
+                  </div>
+                  <div className="text-sm font-bold text-purple-400 tabular-nums">${c.cost}</div>
+                </div>
+              );
+            })}
+            {top_companies.length === 0 && (
+              <p className="text-xs text-muted-foreground/60 py-4 text-center">Nincs adat</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Daily Cost Trend */}
+        <Card className="border-border/40">
+          <CardHeader className="pb-2 pt-3 px-4">
+            <CardTitle className="text-[13px] font-semibold flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-blue-400" />
+              Napi költség trend
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="flex items-end gap-[2px] h-20">
+              {daily_trend.slice(-14).map((d: any, i: number, arr: any[]) => (
+                <div
+                  key={d.date}
+                  className="flex-1 rounded-t-sm min-h-[2px] relative group cursor-default"
+                  style={{
+                    height: `${Math.max((d.cost / maxDailyCost) * 100, 2)}%`,
+                    background: i === arr.length - 1
+                      ? 'linear-gradient(180deg, #10b981, #10b98150)'
+                      : 'linear-gradient(180deg, #a78bfa, #7c3aed50)',
+                  }}
+                >
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-popover border border-border px-1.5 py-0.5 rounded text-[9px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                    ${d.cost} · {d.date.slice(5)}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-[2px] mt-1">
+              {daily_trend.slice(-14).map((d: any, i: number, arr: any[]) => (
+                <div key={d.date} className="flex-1 text-center text-[8px] text-muted-foreground/40">
+                  {i === 0 || i === arr.length - 1 || i === Math.floor(arr.length / 2) ? d.date.slice(5) : ''}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Model Usage Table */}
+      <Card className="border-border/40">
+        <CardHeader className="pb-2 pt-3 px-4">
+          <CardTitle className="text-[13px] font-semibold flex items-center gap-2">
+            <Cpu className="h-4 w-4 text-purple-400" />
+            Modell használat
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-0 pb-0">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="border-b border-border/30">
+                <th className="text-left px-4 py-1.5 font-medium text-muted-foreground">Modell</th>
+                <th className="text-left px-3 py-1.5 font-medium text-muted-foreground">Pipeline</th>
+                <th className="text-right px-3 py-1.5 font-medium text-muted-foreground">Jobok</th>
+                <th className="text-right px-3 py-1.5 font-medium text-muted-foreground">Átlag token</th>
+                <th className="text-right px-3 py-1.5 font-medium text-muted-foreground">Költség</th>
+                <th className="text-right px-4 py-1.5 font-medium text-muted-foreground">Arány</th>
+              </tr>
+            </thead>
+            <tbody>
+              {by_model.map((m: any, i: number) => (
+                <tr key={i} className="border-b border-border/10 hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-2 font-medium text-purple-400">{m.model?.split('/')?.pop() || m.model}</td>
+                  <td className="px-3 py-2">{m.pipeline}</td>
+                  <td className="text-right px-3 py-2 font-mono tabular-nums">{m.jobs.toLocaleString()}</td>
+                  <td className="text-right px-3 py-2 font-mono tabular-nums text-muted-foreground">{m.avg_tokens.toLocaleString()}</td>
+                  <td className="text-right px-3 py-2 font-mono tabular-nums text-purple-400 font-semibold">${m.cost}</td>
+                  <td className="text-right px-4 py-2 text-muted-foreground/60">{m.pct}%</td>
+                </tr>
+              ))}
+              {by_model.length === 0 && (
+                <tr><td colSpan={6} className="text-center py-4 text-muted-foreground/60">Nincs modell adat</td></tr>
+              )}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function WorkerPanel() {
+  const [selectedContainer, setSelectedContainer] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<'containers' | 'queues'>('containers');
+  const [workerTab, setWorkerTab] = useState<'overview' | 'llm-costs'>('overview');
+
+  // 30s polling
+  const { data, isLoading } = useQuery({
+    queryKey: ['worker-status'],
+    queryFn: () => fetchManagementData('worker-status'),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+
+  if (isLoading || !data) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground gap-2">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        Worker adatok betöltése...
+      </div>
+    );
+  }
+
+  const { containers = [], queues = [], pipelines = [], recent_jobs = [], summary = {} } = data;
+
+  // Default: select first container
+  const activeContainer = selectedContainer || containers[0]?.container_name || null;
+  const containerData = containers.find((c: any) => c.container_name === activeContainer);
+
+  // Filter recent jobs & pipelines for the selected container's project
+  const activeProject = containerData?.supabase_project || null;
+  const filteredJobs = activeProject
+    ? recent_jobs.filter((j: any) => j.worker_id === activeContainer || j.project === activeProject)
+    : recent_jobs;
+  const filteredPipelines = activeProject
+    ? pipelines.filter((p: any) => p.project === activeProject)
+    : pipelines;
+  const filteredQueues = (activeProject
+    ? queues.filter((q: any) => q.project === activeProject)
+    : queues
+  ).sort((a: any, b: any) => a.queue_name.localeCompare(b.queue_name));
+
+  return (
+    <div className="space-y-4">
+      {/* ── Worker Sub-Tabs ── */}
+      <div className="flex items-center gap-1 bg-muted/30 p-0.5 rounded-lg w-fit">
+        <button
+          onClick={() => setWorkerTab('overview')}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
+            workerTab === 'overview' ? 'bg-emerald-500/12 text-emerald-500' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Server className="h-3.5 w-3.5" />
+          Áttekintés
+        </button>
+        <button
+          onClick={() => setWorkerTab('llm-costs')}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
+            workerTab === 'llm-costs' ? 'bg-purple-500/12 text-purple-400' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <DollarSign className="h-3.5 w-3.5" />
+          LLM Költség
+        </button>
+      </div>
+
+      {workerTab === 'llm-costs' ? (
+        <LLMCostPanel />
+      ) : (
+      <>
+      {/* ── KPI Summary Row ── */}
+      <div className="grid grid-cols-5 gap-3">
+        {[
+          {
+            label: 'Konténerek',
+            value: `${summary.healthy_containers || 0}/${summary.total_containers || 0}`,
+            icon: Server,
+            color: summary.healthy_containers === summary.total_containers ? 'text-emerald-500' : 'text-amber-500',
+            sub: 'healthy',
+          },
+          {
+            label: 'Queue várakozó',
+            value: summary.total_queue_pending || 0,
+            icon: ClipboardList,
+            color: (summary.total_queue_pending || 0) > 20 ? 'text-amber-500' : 'text-blue-500',
+            sub: 'üzenet',
+          },
+          {
+            label: 'Feldolgozva (24h)',
+            value: summary.total_jobs_24h || 0,
+            icon: CheckCircle2,
+            color: 'text-emerald-500',
+            sub: 'job',
+          },
+          {
+            label: 'LLM költség (24h)',
+            value: `$${(summary.total_cost_24h || 0).toFixed(2)}`,
+            icon: Coins,
+            color: 'text-purple-500',
+            sub: 'USD',
+          },
+          {
+            label: 'Hibák (24h)',
+            value: summary.total_errors_24h || 0,
+            icon: AlertTriangle,
+            color: (summary.total_errors_24h || 0) > 0 ? 'text-red-500' : 'text-muted-foreground',
+            sub: 'hiba',
+          },
+        ].map((kpi) => (
+          <Card key={kpi.label} className="p-3 bg-card/80 border-border/50 hover:border-border transition-colors">
+            <div className="flex items-center gap-2 mb-1">
+              <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+              <span className="text-xs text-muted-foreground font-medium">{kpi.label}</span>
+            </div>
+            <div className="text-lg font-bold">{kpi.value}</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* ── Split Panel: Left Nav + Right Content ── */}
+      <div className="grid grid-cols-[220px_1fr] gap-4">
+        {/* Left sidebar */}
+        <div className="space-y-3">
+          {/* Containers section */}
+          <div>
+            <button
+              onClick={() => setSelectedSection('containers')}
+              className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded w-full text-left transition-colors ${
+                selectedSection === 'containers' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Server className="h-3 w-3" />
+              Konténerek
+            </button>
+            <div className="mt-1 space-y-0.5">
+              {containers.map((c: any) => (
+                <button
+                  key={c.container_name}
+                  onClick={() => { setSelectedContainer(c.container_name); setSelectedSection('containers'); }}
+                  className={`flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs transition-colors ${
+                    activeContainer === c.container_name && selectedSection === 'containers'
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  }`}
+                >
+                  <CircleDot className={`h-2.5 w-2.5 ${c.is_healthy ? 'text-emerald-500' : 'text-red-500'}`} />
+                  <span className="truncate">{c.container_name}</span>
+                  <span className="ml-auto text-[10px] opacity-60">{c.jobs_24h}</span>
+                </button>
+              ))}
+              {containers.length === 0 && (
+                <p className="text-xs text-muted-foreground/60 px-3 py-1">Nincs heartbeat adat</p>
+              )}
+            </div>
+          </div>
+
+          {/* Queues section */}
+          <div>
+            <button
+              onClick={() => setSelectedSection('queues')}
+              className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded w-full text-left transition-colors ${
+                selectedSection === 'queues' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <ClipboardList className="h-3 w-3" />
+              Queue-k
+            </button>
+            <div className="mt-1 space-y-0.5">
+              {filteredQueues.map((q: any) => (
+                <div
+                  key={q.queue_name}
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground"
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${q.queue_length > 0 ? 'bg-amber-500' : 'bg-emerald-500/50'}`} />
+                  <span className="truncate flex-1">{q.queue_name.replace(/_jobs$/, '').replace(/^(PROD|VSWEB|THINKERMAN):/, '')}</span>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    {q.queue_length}
+                  </Badge>
+                </div>
+              ))}
+              {filteredQueues.length === 0 && (
+                <p className="text-xs text-muted-foreground/60 px-3 py-1">Nincs queue adat</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right panel */}
+        <div className="space-y-4">
+          {/* Container header */}
+          {selectedSection === 'containers' && containerData && (
+            <Card className="p-3 bg-card/60 border-border/40">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${containerData.is_healthy ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                  <Server className={`h-5 w-5 ${containerData.is_healthy ? 'text-emerald-500' : 'text-red-500'}`} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">{containerData.container_name}</span>
+                    <Badge variant={containerData.is_healthy ? 'secondary' : 'destructive'} className="text-[10px] px-1.5 py-0">
+                      {containerData.is_healthy ? 'Healthy' : 'Unhealthy'}
+                    </Badge>
+                    {containerData.version && (
+                      <span className="text-[10px] text-muted-foreground font-mono">{containerData.version}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 mt-0.5 text-xs text-muted-foreground">
+                    <span>Uptime: {formatUptime(containerData.uptime_seconds)}</span>
+                    {containerData.host_ip && <span>IP: {containerData.host_ip}</span>}
+                    <span>Jobs (24h): {containerData.jobs_24h}</span>
+                    <span>Avg: {formatDuration(containerData.avg_duration_ms)}</span>
+                    <span>LLM: ${containerData.total_cost_24h}</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Pipeline Performance Table */}
+          <Card className="border-border/40">
+            <CardHeader className="pb-2 pt-3 px-4">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" />
+                Pipeline teljesítmény (24h)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-0 pb-2">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border/30 text-muted-foreground">
+                    <th className="text-left px-4 py-1.5 font-medium">Pipeline</th>
+                    <th className="text-right px-3 py-1.5 font-medium">Kész</th>
+                    <th className="text-right px-3 py-1.5 font-medium">Avg idő</th>
+                    <th className="text-right px-3 py-1.5 font-medium">LLM $</th>
+                    <th className="text-right px-3 py-1.5 font-medium">Hibák</th>
+                    <th className="text-center px-3 py-1.5 font-medium">7 nap</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPipelines.map((p: any) => (
+                    <tr key={p.pipeline} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-2 font-medium">{p.pipeline}</td>
+                      <td className="text-right px-3 py-2 font-mono">{p.jobs_24h}</td>
+                      <td className="text-right px-3 py-2 font-mono text-muted-foreground">{formatDuration(p.avg_duration_ms)}</td>
+                      <td className="text-right px-3 py-2 font-mono text-purple-500">${p.total_cost_usd}</td>
+                      <td className="text-right px-3 py-2">
+                        {p.error_count_24h > 0 ? (
+                          <span className="text-red-500 font-mono">{p.error_count_24h}</span>
+                        ) : (
+                          <span className="text-muted-foreground/40">0</span>
+                        )}
+                      </td>
+                      <td className="text-center px-3 py-2">
+                        <MiniSparkline data={p.daily_counts || []} />
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredPipelines.length === 0 && (
+                    <tr><td colSpan={6} className="text-center py-4 text-muted-foreground">Nincs pipeline adat az utolsó 24 órában</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+
+          {/* Recent Jobs */}
+          <Card className="border-border/40">
+            <CardHeader className="pb-2 pt-3 px-4">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-500" />
+                Utolsó feldolgozások
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-0 pb-2">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border/30 text-muted-foreground">
+                    <th className="text-left px-4 py-1.5 font-medium">Idő</th>
+                    <th className="text-left px-3 py-1.5 font-medium">Pipeline</th>
+                    <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
+                    <th className="text-left px-3 py-1.5 font-medium">Cég</th>
+                    <th className="text-right px-3 py-1.5 font-medium">Idő</th>
+                    <th className="text-right px-3 py-1.5 font-medium">$</th>
+                    <th className="text-left px-3 py-1.5 font-medium">Worker</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredJobs.map((j: any) => {
+                    const time = new Date(j.created_at);
+                    const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+                    return (
+                      <tr key={j.id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-1.5 font-mono text-muted-foreground">{timeStr}</td>
+                        <td className="px-3 py-1.5">
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{j.pipeline}</Badge>
+                        </td>
+                        <td className="px-3 py-1.5 max-w-[180px] truncate" title={j.file_name}>{j.file_name}</td>
+                        <td className="px-3 py-1.5 text-muted-foreground max-w-[120px] truncate">{j.company_name || '—'}</td>
+                        <td className="text-right px-3 py-1.5 font-mono text-muted-foreground">{formatDuration(j.processing_duration_ms)}</td>
+                        <td className="text-right px-3 py-1.5 font-mono text-purple-500">${j.estimated_cost_usd?.toFixed(4)}</td>
+                        <td className="px-3 py-1.5 text-[10px] text-muted-foreground/60 font-mono">
+                          {j.project && j.project !== 'PROD' && <span className="text-primary/50 mr-1">[{j.project}]</span>}
+                          {j.worker_id || '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredJobs.length === 0 && (
+                    <tr><td colSpan={7} className="text-center py-4 text-muted-foreground">Nincs feldolgozás ennél a konténernél az utolsó időszakban</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      </>
+      )}
     </div>
   );
 }

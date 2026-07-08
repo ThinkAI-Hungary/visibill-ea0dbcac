@@ -46,7 +46,7 @@ if (requesterProfile?.role !== "management" && requesterProfile?.role !== "think
 
 ### API Design: Action-based Query Params
 
-Egyetlen Edge Function, 13 action:
+Egyetlen Edge Function, 14 action:
 
 | Action | Params | Visszatérés |
 |---|---|---|
@@ -62,6 +62,7 @@ Egyetlen Edge Function, 13 action:
 | `files` | `page`, `pageSize`, `sortBy`, `sortDir`, `search`, `companyId`, `status`, `source_table`, `dateFrom`, `dateTo` | KPI: total/processing/error/done, topCompany. Fájlok lapozott listája 4 upload táblából (invoice/transaction/bank_statement/report_uploads) |
 | `update-file-status` | POST body: `{ files: [{id, source_table}], targetStatus }` | Bulk fájl státusz módosítás. `done` → automatikus mapping: `processed` (invoice_uploads) / `completed` (többi). Max 200 fájl/batch. Nem triggerel PGMQ worker-t (kozmetikai változás). |
 | `superadmin-module-data` | `companyId`, `module`, `page`, `pageSize`, `dateFrom`, `dateTo`, `search` | Cégenként 27 modul bármelyikének lapozott adatai (rows[], totalCount) |
+| `worker-status` | — | containers[] (heartbeat health), queues[] (PGMQ metrics), pipelines[] (24h teljesítmény + 7d sparkline), recent_jobs[] (utolsó 20), summary KPI-k |
 
 ### Adatforrások
 
@@ -96,8 +97,9 @@ Az Edge Function `service_role` klienssel az alábbi táblákat olvassa:
 | `accounty_templates` | Sablonok — **globális**, nincs company_id szűrés (superadmin) |
 | `accounty_job_codes` | Jogviszony kódok — **globális** (superadmin) |
 | `accounty_legal_updates` | Jogszabályfigyelő — **globális** (superadmin) |
-| `llm_koltsegek` | LLM token/költség részletezés (szerver-oldali lapozás) |
+| `llm_koltsegek` | LLM token/költség részletezés (szerver-oldali lapozás). `worker_id` oszlop per-konténer bontáshoz |
 | `app_error_logs` | Centralizált hibalogok (frontend, worker, webhook, mailgun) |
+| `worker_heartbeats` | Worker konténer heartbeat (60s UPSERT, container_name UNIQUE). Health threshold: 120s |
 | `audit_logs` | Utolsó aktivitás (company-detail) |
 | `auth.users` (admin API) | Email címek (listUsers) |
 

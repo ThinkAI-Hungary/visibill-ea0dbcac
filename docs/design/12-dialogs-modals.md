@@ -251,3 +251,93 @@ Cégválasztó dropdown a sidebar-ban, keresési funkcióval.
 | Idle Warning | `bg-black/60` | `backdrop-blur-md` |
 | Sign-out | `bg-background/95` | `backdrop-blur-sm` |
 | Error Boundary | – | `backdrop-blur-md` (card-on) |
+
+---
+
+## ⭐ Async Confirm Dialog Pattern (DB műveletek)
+
+> **Kötelező minta** minden olyan dialógushoz, amely megerősítés után DB műveletet (API call-t) hajt végre.
+
+### Szabály
+
+A dialog **nyitva marad** az API hívás teljes ideje alatt loading állapottal. Bezáródni és toast-ot mutatni **csak a válasz megérkezése után** szabad.
+
+### Flow
+
+```
+User kattint "Megerősítés" →
+  1. setLoading(true)
+  2. Gombok: disabled, Loader2 animate-spin, szöveg csere
+  3. API call (await)
+  4. Toast (siker / hiba)
+  5. finally { setLoading(false); setModalOpen(false); cleanup(); }
+```
+
+### ❌ Anti-pattern (TILOS)
+
+```tsx
+// NE csináld ezt — a dialog bezárul az API hívás ELŐTT
+setModalOpen(false);      // ← Modal eltűnik
+setLoading(true);
+await apiCall();          // ← User nem lát semmit
+```
+
+### ✅ Helyes implementáció
+
+**Handler:**
+
+```tsx
+const handleConfirm = async () => {
+  setLoading(true);
+  try {
+    const result = await postManagementData('action', payload);
+    toast({ title: 'Sikeres', description: '...' });
+    // ... invalidate queries, clear selection
+  } catch (e) {
+    toast({ title: 'Sikertelen', description: '...', variant: 'destructive' });
+  } finally {
+    setLoading(false);
+    setModalOpen(false);   // ← Modal CSAK itt záródik be
+    setTargets([]);
+  }
+};
+```
+
+**UI gombok:**
+
+```tsx
+{/* Cancel — disabled loading közben */}
+<Button variant="ghost" size="sm" onClick={() => setModalOpen(false)} disabled={loading}>
+  Mégse
+</Button>
+
+{/* Action — Loader2 ikon + szöveg csere */}
+<Button variant="destructive" size="sm" className="gap-1.5"
+  onClick={handleConfirm} disabled={loading}>
+  {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+  {loading ? 'Törlés…' : 'Végleges törlés'}
+</Button>
+```
+
+### Checklist (minden async confirm dialog-ra)
+
+| # | Szempont | Kötelező |
+|---|---------|----------|
+| 1 | `setLoading(true)` az API hívás **előtt** | ✅ |
+| 2 | Modal **NEM** záródik be az API hívás előtt | ✅ |
+| 3 | Cancel gomb `disabled={loading}` | ✅ |
+| 4 | Action gomb `disabled={loading}` | ✅ |
+| 5 | `Loader2 animate-spin` a loading ikonhoz | ✅ |
+| 6 | Szöveg csere loading közben (pl. `'Törlés…'`) | ✅ |
+| 7 | Toast success a try-ban | ✅ |
+| 8 | Toast error a catch-ben | ✅ |
+| 9 | `setModalOpen(false)` a `finally`-ban | ✅ |
+
+### Implementálva
+
+| Dialog | Fájl | Loading state |
+|--------|------|---------------|
+| Fájlok végleges törlés | `ManagementDashboard.tsx` (Fájlok tab) | `bulkDeleting` |
+| Error retry | `ManagementDashboard.tsx` (Hibák tab) | `retrying` |
+| Error delete | `ManagementDashboard.tsx` (Hibák tab) | `deleting` |
+| Error delete ALL | `ManagementDashboard.tsx` (Hibák tab) | `deletingAll` |

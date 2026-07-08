@@ -66,11 +66,37 @@ const emptyFiles = {
   },
 };
 
+const emptyWorkerStatus = {
+  containers: [],
+  queues: [],
+  pipelines: [],
+  recent_jobs: [],
+  summary: {
+    healthy_containers: 0,
+    total_containers: 0,
+    total_queue_pending: 0,
+    total_jobs_24h: 0,
+    total_cost_24h: 0,
+    total_errors_24h: 0,
+  },
+};
+
+const emptyLLMCosts = {
+  kpi: { total_cost: 0, total_jobs: 0, avg_cost_per_job: 0, total_tokens: 0 },
+  by_pipeline: [],
+  by_project: [],
+  top_companies: [],
+  daily_trend: [],
+  by_model: [],
+};
+
 function emptyForAction(action: string) {
   if (action === "company-detail") return emptyCompanyDetail;
   if (action === "user-detail") return emptyUserDetail;
   if (action === "errors") return emptyErrors;
   if (action === "files") return emptyFiles;
+  if (action === "worker-status") return emptyWorkerStatus;
+  if (action === "llm-costs") return emptyLLMCosts;
   return emptyOverview;
 }
 
@@ -269,6 +295,15 @@ serve(async (req) => {
       if (req.method !== "POST") return json({ error: "POST required" });
       const body = await req.json().catch(() => ({}));
       return json(await deleteFiles(admin, body));
+    }
+
+    if (action === "worker-status") {
+      return json(await buildWorkerStatus(admin));
+    }
+
+    if (action === "llm-costs") {
+      const period = url.searchParams.get("period") || "7d";
+      return json(await buildLLMCosts(admin, period));
     }
 
     return json({ error: "Unknown action", ...emptyOverview });
@@ -2218,5 +2253,470 @@ async function deleteFiles(
     requested: files.length,
     ...(storageErrors.length > 0 ? { storageErrors } : {}),
     ...(dbErrors.length > 0 ? { dbErrors } : {}),
+  };
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ─── Worker Status ────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+async function buildWorkerStatus(admin: ReturnType<typeof createClient>) {
+  const HEALTH_THRESHOLD_SECONDS = 120;
+  const now = new Date();
+  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  // Generate last 7 day keys for sparklines
+  const dayKeys: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    dayKeys.push(d.toISOString().substring(0, 10));
+  }
+
+  // ── Build cross-project client map ──
+  // Each container writes heartbeats to PROD, but LLM costs to its OWN project.
+  // container.supabase_project tells us which DB to query for that container's data.
+  interface ProjectClient {
+    name: string;
+    client: ReturnType<typeof createClient>;
+  }
+  const projectClients: ProjectClient[] = [
+    { name: "PROD", client: admin },
+  ];
+
+  // Add VSWEB client if secrets are available
+  const vswebUrl = Deno.env.get("VSWEB_SUPABASE_URL");
+  const vswebKey = Deno.env.get("VSWEB_SERVICE_ROLE_KEY");
+  if (vswebUrl && vswebKey) {
+    try {
+      projectClients.push({ name: "VSWEB", client: createClient(vswebUrl, vswebKey) });
+    } catch (e) { console.warn("[worker-status] VSWEB client creation failed:", e); }
+  }
+
+  // Add Thinkerman client if secrets are available
+  const thinkUrl = Deno.env.get("THINKERMAN_SUPABASE_URL");
+  const thinkKey = Deno.env.get("THINKERMAN_SERVICE_ROLE_KEY");
+  if (thinkUrl && thinkKey) {
+    try {
+      projectClients.push({ name: "THINKERMAN", client: createClient(thinkUrl, thinkKey) });
+    } catch (e) { console.warn("[worker-status] THINKERMAN client creation failed:", e); }
+  }
+
+  // Helper: get client for a given project name
+  const getProjectClient = (projectName: string): ReturnType<typeof createClient> => {
+    const pc = projectClients.find(p => p.name === projectName);
+    return pc?.client || admin; // fallback to PROD
+  };
+
+  // ── 1. Container heartbeats (always from PROD — centralized) ──
+  const { data: heartbeats } = await admin
+    .from("worker_heartbeats")
+    .select("*")
+    .order("container_name");
+
+  const containers = (heartbeats || []).map((h: any) => {
+    const lastBeat = new Date(h.last_heartbeat);
+    const startedAt = new Date(h.started_at);
+    const ageSec = (now.getTime() - lastBeat.getTime()) / 1000;
+    return {
+      container_name: h.container_name,
+      host_ip: h.host_ip,
+      supabase_project: h.supabase_project,
+      started_at: h.started_at,
+      last_heartbeat: h.last_heartbeat,
+      is_healthy: ageSec < HEALTH_THRESHOLD_SECONDS,
+      uptime_seconds: Math.floor((now.getTime() - startedAt.getTime()) / 1000),
+      version: h.version,
+      active_queues: h.active_queues || [],
+      jobs_24h: 0,
+      avg_duration_ms: 0,
+      total_cost_24h: 0,
+    };
+  });
+
+  // ── 2. PGMQ queue metrics (per project) ──
+  let queues: any[] = [];
+  for (const pc of projectClients) {
+    try {
+      const { data: queueMetrics } = await pc.client.rpc("pgmq_metrics_all");
+      for (const q of (queueMetrics || [])) {
+        queues.push({
+          queue_name: `${pc.name}:${q.queue_name}`,
+          queue_length: q.queue_length ?? 0,
+          total_messages: q.total_messages ?? 0,
+          newest_msg_age_sec: q.newest_msg_age_sec,
+          oldest_msg_age_sec: q.oldest_msg_age_sec,
+          project: pc.name,
+        });
+      }
+    } catch (e) {
+      console.warn(`[worker-status] pgmq_metrics_all failed for ${pc.name}:`, e);
+    }
+  }
+
+  // ── 3. LLM costs — query ALL projects in parallel ──
+  const pipelineMap = new Map<string, {
+    jobs: number;
+    totalDuration: number;
+    totalCost: number;
+  }>();
+  const workerMap = new Map<string, { jobs: number; totalDuration: number; totalCost: number }>();
+
+  // 3a. Fetch 24h LLM rows from all projects in parallel
+  const llmFetches = projectClients.map(async (pc) => {
+    try {
+      const { data } = await pc.client
+        .from("llm_koltsegek")
+        .select("pipeline, worker_id, processing_duration_ms, estimated_cost_usd, created_at")
+        .gte("created_at", twentyFourHoursAgo);
+      return { project: pc.name, rows: data || [] };
+    } catch (e) {
+      console.warn(`[worker-status] llm_koltsegek query failed for ${pc.name}:`, e);
+      return { project: pc.name, rows: [] };
+    }
+  });
+  const llmResults = await Promise.all(llmFetches);
+
+  for (const { project, rows } of llmResults) {
+    for (const row of rows) {
+      const p = row.pipeline || "unknown";
+      const wid = row.worker_id || `worker-${project.toLowerCase()}`;
+      // Pipeline key includes project for per-project breakdown
+      const pipeKey = `${project}:${p}`;
+
+      if (!pipelineMap.has(pipeKey)) {
+        pipelineMap.set(pipeKey, { jobs: 0, totalDuration: 0, totalCost: 0 });
+      }
+      const pm = pipelineMap.get(pipeKey)!;
+      pm.jobs += 1;
+      pm.totalDuration += row.processing_duration_ms || 0;
+      pm.totalCost += parseFloat(row.estimated_cost_usd) || 0;
+
+      // Worker aggregation (per container)
+      if (!workerMap.has(wid)) {
+        workerMap.set(wid, { jobs: 0, totalDuration: 0, totalCost: 0 });
+      }
+      const wm = workerMap.get(wid)!;
+      wm.jobs += 1;
+      wm.totalDuration += row.processing_duration_ms || 0;
+      wm.totalCost += parseFloat(row.estimated_cost_usd) || 0;
+    }
+  }
+
+  // Fill per-container stats
+  for (const c of containers) {
+    const wStats = workerMap.get(c.container_name);
+    if (wStats) {
+      c.jobs_24h = wStats.jobs;
+      c.avg_duration_ms = wStats.jobs > 0 ? Math.round(wStats.totalDuration / wStats.jobs) : 0;
+      c.total_cost_24h = Math.round(wStats.totalCost * 100) / 100;
+    }
+  }
+
+  // ── 3b. Daily counts for sparkline (last 7 days, per project) ──
+  const weeklyFetches = projectClients.map(async (pc) => {
+    try {
+      const { data } = await pc.client
+        .from("llm_koltsegek")
+        .select("pipeline, created_at")
+        .gte("created_at", sevenDaysAgo);
+      return { project: pc.name, rows: data || [] };
+    } catch (e) {
+      return { project: pc.name, rows: [] };
+    }
+  });
+  const weeklyResults = await Promise.all(weeklyFetches);
+
+  const dailyMap = new Map<string, Map<string, number>>();
+  for (const { project, rows } of weeklyResults) {
+    for (const row of rows) {
+      const pipeKey = `${project}:${row.pipeline || "unknown"}`;
+      const dayKey = row.created_at.substring(0, 10);
+      if (!dailyMap.has(pipeKey)) dailyMap.set(pipeKey, new Map());
+      const dm = dailyMap.get(pipeKey)!;
+      dm.set(dayKey, (dm.get(dayKey) || 0) + 1);
+    }
+  }
+
+  // ── 4. Error count (24h) — all projects ──
+  let totalErrors24h = 0;
+  const pipelineErrorMap = new Map<string, number>();
+
+  const errorFetches = projectClients.map(async (pc) => {
+    try {
+      const { count } = await pc.client
+        .from("app_error_logs")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", twentyFourHoursAgo);
+
+      const { data: errorRows } = await pc.client
+        .from("app_error_logs")
+        .select("error_type")
+        .gte("created_at", twentyFourHoursAgo);
+
+      return { count: count || 0, errorRows: errorRows || [] };
+    } catch (e) {
+      return { count: 0, errorRows: [] };
+    }
+  });
+  const errorResults = await Promise.all(errorFetches);
+
+  for (const { count, errorRows } of errorResults) {
+    totalErrors24h += count;
+    for (const e of errorRows) {
+      const key = e.error_type || "unknown";
+      pipelineErrorMap.set(key, (pipelineErrorMap.get(key) || 0) + 1);
+    }
+  }
+
+  // Build pipeline results (per project)
+  const pipelines = Array.from(pipelineMap.entries()).map(([pipeKey, data]) => {
+    const [project, ...rest] = pipeKey.split(':');
+    const pipeline = rest.join(':');
+    return {
+      pipeline,
+      project,
+      jobs_24h: data.jobs,
+      avg_duration_ms: data.jobs > 0 ? Math.round(data.totalDuration / data.jobs) : 0,
+      total_cost_usd: Math.round(data.totalCost * 1000) / 1000,
+      error_count_24h: pipelineErrorMap.get(pipeline) || 0,
+      daily_counts: dayKeys.map(dk => (dailyMap.get(pipeKey)?.get(dk)) || 0),
+    };
+  });
+  pipelines.sort((a, b) => b.jobs_24h - a.jobs_24h);
+
+  // ── 5. Recent jobs (last 20, all projects merged) ──
+  const recentFetches = projectClients.map(async (pc) => {
+    try {
+      const { data } = await pc.client
+        .from("llm_koltsegek")
+        .select("id, created_at, pipeline, file_name, company_id, model_name, total_tokens, estimated_cost_usd, processing_duration_ms, worker_id")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      // Resolve company names from the same project
+      const companyIds = [...new Set((data || []).map((r: any) => r.company_id).filter(Boolean))];
+      let companyNameMap = new Map<string, string>();
+      if (companyIds.length > 0) {
+        const { data: companies } = await pc.client
+          .from("companies")
+          .select("id, name")
+          .in("id", companyIds);
+        for (const c of (companies || [])) {
+          companyNameMap.set(c.id, c.name);
+        }
+      }
+
+      return (data || []).map((r: any) => ({
+        id: r.id,
+        created_at: r.created_at,
+        pipeline: r.pipeline,
+        file_name: r.file_name,
+        company_name: companyNameMap.get(r.company_id) || null,
+        model_name: r.model_name,
+        total_tokens: r.total_tokens || 0,
+        estimated_cost_usd: parseFloat(r.estimated_cost_usd) || 0,
+        processing_duration_ms: r.processing_duration_ms || 0,
+        worker_id: r.worker_id || `worker-${pc.name.toLowerCase()}`,
+        project: pc.name,
+      }));
+    } catch (e) {
+      return [];
+    }
+  });
+  const recentResults = await Promise.all(recentFetches);
+  const recent_jobs = recentResults.flat()
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 20);
+
+  // ── Summary KPIs ──
+  const totalJobs24h = Array.from(pipelineMap.values()).reduce((s, p) => s + p.jobs, 0);
+  const totalCost24h = Array.from(pipelineMap.values()).reduce((s, p) => s + p.totalCost, 0);
+  const totalQueuePending = queues.reduce((s, q) => s + (q.queue_length || 0), 0);
+
+  return {
+    containers,
+    queues,
+    pipelines,
+    recent_jobs,
+    summary: {
+      healthy_containers: containers.filter((c: any) => c.is_healthy).length,
+      total_containers: containers.length,
+      total_queue_pending: totalQueuePending,
+      total_jobs_24h: totalJobs24h,
+      total_cost_24h: Math.round(totalCost24h * 100) / 100,
+      total_errors_24h: totalErrors24h,
+    },
+  };
+}
+
+async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: string) {
+  const now = new Date();
+  const periodMs: Record<string, number> = {
+    "24h": 24 * 60 * 60 * 1000,
+    "7d": 7 * 24 * 60 * 60 * 1000,
+    "30d": 30 * 24 * 60 * 60 * 1000,
+    "90d": 90 * 24 * 60 * 60 * 1000,
+  };
+  const ms = periodMs[period] || periodMs["7d"];
+  const since = new Date(now.getTime() - ms).toISOString();
+
+  // Build cross-project clients
+  interface PC { name: string; client: ReturnType<typeof createClient> }
+  const projectClients: PC[] = [{ name: "PROD", client: admin }];
+  const vswebUrl = Deno.env.get("VSWEB_SUPABASE_URL");
+  const vswebKey = Deno.env.get("VSWEB_SERVICE_ROLE_KEY");
+  if (vswebUrl && vswebKey) {
+    try { projectClients.push({ name: "VSWEB", client: createClient(vswebUrl, vswebKey) }); } catch {}
+  }
+  const thinkUrl = Deno.env.get("THINKERMAN_SUPABASE_URL");
+  const thinkKey = Deno.env.get("THINKERMAN_SERVICE_ROLE_KEY");
+  if (thinkUrl && thinkKey) {
+    try { projectClients.push({ name: "THINKERMAN", client: createClient(thinkUrl, thinkKey) }); } catch {}
+  }
+
+  // Fetch LLM data from all projects in parallel
+  const fetches = projectClients.map(async (pc) => {
+    try {
+      const { data } = await pc.client
+        .from("llm_koltsegek")
+        .select("pipeline, model_name, company_id, total_tokens, estimated_cost_usd, processing_duration_ms, created_at")
+        .gte("created_at", since);
+      // Also fetch company names
+      const companyIds = [...new Set((data || []).map((r: any) => r.company_id).filter(Boolean))];
+      let companyMap = new Map<string, string>();
+      if (companyIds.length > 0) {
+        const { data: companies } = await pc.client
+          .from("companies")
+          .select("id, name")
+          .in("id", companyIds);
+        for (const c of (companies || [])) companyMap.set(c.id, c.name);
+      }
+      return { project: pc.name, rows: data || [], companyMap };
+    } catch (e) {
+      console.warn(`[llm-costs] query failed for ${pc.name}:`, e);
+      return { project: pc.name, rows: [], companyMap: new Map<string, string>() };
+    }
+  });
+  const results = await Promise.all(fetches);
+
+  // Aggregation maps
+  let totalCost = 0, totalJobs = 0, totalTokens = 0;
+  const pipelineAgg = new Map<string, { cost: number; jobs: number }>();
+  const projectAgg = new Map<string, { cost: number; jobs: number }>();
+  const companyAgg = new Map<string, { name: string; cost: number; jobs: number; project: string }>();
+  const modelAgg = new Map<string, { cost: number; jobs: number; tokens: number; pipeline: string }>();
+  const dailyAgg = new Map<string, number>(); // dayKey -> cost
+
+  for (const { project, rows, companyMap } of results) {
+    for (const row of rows) {
+      const cost = parseFloat(row.estimated_cost_usd) || 0;
+      const tokens = row.total_tokens || 0;
+      const pipeline = row.pipeline || "unknown";
+      const model = row.model_name || "unknown";
+      const companyId = row.company_id || "unknown";
+      const companyName = companyMap.get(companyId) || "N/A";
+      const dayKey = row.created_at.substring(0, 10);
+
+      totalCost += cost;
+      totalJobs += 1;
+      totalTokens += tokens;
+
+      // Pipeline
+      if (!pipelineAgg.has(pipeline)) pipelineAgg.set(pipeline, { cost: 0, jobs: 0 });
+      const pa = pipelineAgg.get(pipeline)!;
+      pa.cost += cost; pa.jobs += 1;
+
+      // Project
+      if (!projectAgg.has(project)) projectAgg.set(project, { cost: 0, jobs: 0 });
+      const pra = projectAgg.get(project)!;
+      pra.cost += cost; pra.jobs += 1;
+
+      // Company
+      const cKey = `${project}:${companyId}`;
+      if (!companyAgg.has(cKey)) companyAgg.set(cKey, { name: companyName, cost: 0, jobs: 0, project });
+      const ca = companyAgg.get(cKey)!;
+      ca.cost += cost; ca.jobs += 1;
+
+      // Model
+      const mKey = `${model}|${pipeline}`;
+      if (!modelAgg.has(mKey)) modelAgg.set(mKey, { cost: 0, jobs: 0, tokens: 0, pipeline });
+      const ma = modelAgg.get(mKey)!;
+      ma.cost += cost; ma.jobs += 1; ma.tokens += tokens;
+
+      // Daily
+      dailyAgg.set(dayKey, (dailyAgg.get(dayKey) || 0) + cost);
+    }
+  }
+
+  // Build by_pipeline
+  const by_pipeline = Array.from(pipelineAgg.entries())
+    .map(([pipeline, d]) => ({
+      pipeline,
+      cost: Math.round(d.cost * 10000) / 10000,
+      jobs: d.jobs,
+      pct: totalCost > 0 ? Math.round((d.cost / totalCost) * 1000) / 10 : 0,
+    }))
+    .sort((a, b) => b.cost - a.cost);
+
+  // Build by_project
+  const by_project = Array.from(projectAgg.entries())
+    .map(([project, d]) => ({
+      project,
+      cost: Math.round(d.cost * 10000) / 10000,
+      jobs: d.jobs,
+      pct: totalCost > 0 ? Math.round((d.cost / totalCost) * 1000) / 10 : 0,
+    }))
+    .sort((a, b) => b.cost - a.cost);
+
+  // Build top_companies (top 3)
+  const top_companies = Array.from(companyAgg.values())
+    .sort((a, b) => b.cost - a.cost)
+    .slice(0, 3)
+    .map((c) => ({
+      name: c.name,
+      project: c.project,
+      cost: Math.round(c.cost * 10000) / 10000,
+      jobs: c.jobs,
+    }));
+
+  // Build daily_trend
+  const dayCount = Math.min(Math.ceil(ms / (24 * 60 * 60 * 1000)), 90);
+  const daily_trend: { date: string; cost: number }[] = [];
+  for (let i = dayCount - 1; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const dk = d.toISOString().substring(0, 10);
+    daily_trend.push({ date: dk, cost: Math.round((dailyAgg.get(dk) || 0) * 10000) / 10000 });
+  }
+
+  // Build by_model
+  const by_model = Array.from(modelAgg.entries())
+    .map(([key, d]) => {
+      const [model] = key.split("|");
+      return {
+        model,
+        pipeline: d.pipeline,
+        cost: Math.round(d.cost * 10000) / 10000,
+        jobs: d.jobs,
+        avg_tokens: d.jobs > 0 ? Math.round(d.tokens / d.jobs) : 0,
+        pct: totalCost > 0 ? Math.round((d.cost / totalCost) * 1000) / 10 : 0,
+      };
+    })
+    .sort((a, b) => b.cost - a.cost);
+
+  return {
+    kpi: {
+      total_cost: Math.round(totalCost * 10000) / 10000,
+      total_jobs: totalJobs,
+      avg_cost_per_job: totalJobs > 0 ? Math.round((totalCost / totalJobs) * 10000) / 10000 : 0,
+      total_tokens: totalTokens,
+    },
+    by_pipeline,
+    by_project,
+    top_companies,
+    daily_trend,
+    by_model,
+    period,
   };
 }
