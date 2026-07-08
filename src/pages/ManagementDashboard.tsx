@@ -3926,7 +3926,7 @@ function WorkerPanel() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border/30 text-muted-foreground">
-                    <th className="text-left px-4 py-1.5 font-medium">Idő</th>
+                    <th className="text-left px-4 py-1.5 font-medium">Dátum</th>
                     <th className="text-left px-3 py-1.5 font-medium">Pipeline</th>
                     <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
                     <th className="text-left px-3 py-1.5 font-medium">Cég</th>
@@ -3938,10 +3938,11 @@ function WorkerPanel() {
                 <tbody>
                   {filteredJobs.map((j: any) => {
                     const time = new Date(j.created_at);
+                    const dateStr = `${(time.getMonth() + 1).toString().padStart(2, '0')}.${time.getDate().toString().padStart(2, '0')}`;
                     const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
                     return (
                       <tr key={j.id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-1.5 font-mono text-muted-foreground">{timeStr}</td>
+                        <td className="px-4 py-1.5 font-mono text-muted-foreground whitespace-nowrap">{dateStr} - {timeStr}</td>
                         <td className="px-3 py-1.5">
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{j.pipeline}</Badge>
                         </td>

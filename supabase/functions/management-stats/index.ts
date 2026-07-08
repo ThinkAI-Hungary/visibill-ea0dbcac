@@ -2455,7 +2455,8 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
       const { data } = await pc.client
         .from("llm_koltsegek")
         .select("pipeline, created_at")
-        .gte("created_at", sevenDaysAgo);
+        .gte("created_at", sevenDaysAgo)
+        .limit(10000);
       return { project: pc.name, rows: data || [] };
     } catch (e) {
       return { project: pc.name, rows: [] };
@@ -2488,7 +2489,8 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
 
       let errRowsQ = pc.client
         .from("app_error_logs")
-        .select("error_type");
+        .select("error_type")
+        .limit(10000);
       if (periodSince) errRowsQ = errRowsQ.gte("created_at", periodSince);
       const { data: errorRows } = await errRowsQ;
 
@@ -2526,11 +2528,13 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
   // ── 5. Recent jobs (last 20, all projects merged) ──
   const recentFetches = projectClients.map(async (pc) => {
     try {
-      const { data } = await pc.client
+      let recentQuery = pc.client
         .from("llm_koltsegek")
         .select("id, created_at, pipeline, file_name, company_id, model_name, total_tokens, estimated_cost_usd, processing_duration_ms, worker_id")
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(50);
+      if (periodSince) recentQuery = recentQuery.gte("created_at", periodSince);
+      const { data } = await recentQuery;
 
       // Resolve company names from the same project
       const companyIds = [...new Set((data || []).map((r: any) => r.company_id).filter(Boolean))];
