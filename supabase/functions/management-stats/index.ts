@@ -2465,39 +2465,45 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     }
   }
 
-  // ── 4. Error count (24h) — all projects ──
+  // ── 4. Worker error count — uploads with processing_status='error' ──
   let totalErrors24h = 0;
   const pipelineErrorMap = new Map<string, number>();
 
   const errorFetches = projectClients.map(async (pc) => {
+    let invoiceErrors = 0;
+    let txErrors = 0;
+
     try {
-      let errCountQ = pc.client
-        .from("app_error_logs")
-        .select("id", { count: "exact", head: true });
-      if (periodSince) errCountQ = errCountQ.gte("created_at", periodSince);
-      const { count } = await errCountQ;
+      let q = pc.client
+        .from("invoice_uploads")
+        .select("id, document_category", { count: "exact", head: false })
+        .eq("processing_status", "error");
+      if (periodSince) q = q.gte("updated_at", periodSince);
+      const { count, data } = await q;
+      invoiceErrors = count || 0;
+      for (const r of (data || [])) {
+        const cat = r.document_category || "invoice";
+        pipelineErrorMap.set(cat, (pipelineErrorMap.get(cat) || 0) + 1);
+      }
+    } catch (_) { /* best effort */ }
 
-      let errRowsQ = pc.client
-        .from("app_error_logs")
-        .select("error_type")
-        .limit(10000);
-      if (periodSince) errRowsQ = errRowsQ.gte("created_at", periodSince);
-      const { data: errorRows } = await errRowsQ;
+    try {
+      let q = pc.client
+        .from("transaction_uploads")
+        .select("id", { count: "exact", head: true })
+        .eq("processing_status", "error");
+      if (periodSince) q = q.gte("updated_at", periodSince);
+      const { count } = await q;
+      txErrors = count || 0;
+      if (txErrors > 0) {
+        pipelineErrorMap.set("transaction", (pipelineErrorMap.get("transaction") || 0) + txErrors);
+      }
+    } catch (_) { /* best effort */ }
 
-      return { count: count || 0, errorRows: errorRows || [] };
-    } catch (e) {
-      return { count: 0, errorRows: [] };
-    }
+    return invoiceErrors + txErrors;
   });
   const errorResults = await Promise.all(errorFetches);
-
-  for (const { count, errorRows } of errorResults) {
-    totalErrors24h += count;
-    for (const e of errorRows) {
-      const key = e.error_type || "unknown";
-      pipelineErrorMap.set(key, (pipelineErrorMap.get(key) || 0) + 1);
-    }
-  }
+  totalErrors24h = errorResults.reduce((s, c) => s + c, 0);
 
   // Build pipeline results (per project)
   const pipelines = Array.from(pipelineMap.entries()).map(([pipeKey, data]) => {
@@ -2567,6 +2573,77 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     .flat()
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+  // ── 5b. Currently processing items (all projects, both tables) ──
+  const processingFetches = projectClients.map(async (pc) => {
+    const results: any[] = [];
+    
+    // Query invoice_uploads
+    try {
+      const { data } = await pc.client
+        .from("invoice_uploads")
+        .select("id, file_name, company_id, processing_status, created_at, updated_at, document_category")
+        .eq("processing_status", "processing")
+        .order("updated_at", { ascending: false })
+        .limit(50);
+      for (const r of (data || [])) {
+        results.push({ ...r, pipeline_type: "invoice" });
+      }
+    } catch (e) {
+      console.warn(`[worker-status] invoice processing query failed for ${pc.name}:`, e);
+    }
+
+    // Query transaction_uploads
+    try {
+      const { data } = await pc.client
+        .from("transaction_uploads")
+        .select("id, file_name, company_id, processing_status, created_at, updated_at")
+        .eq("processing_status", "processing")
+        .order("updated_at", { ascending: false })
+        .limit(50);
+      for (const r of (data || [])) {
+        results.push({
+          ...r,
+          pipeline_type: "transaction",
+          document_category: "bank_statement",
+          source: "upload",
+        });
+      }
+    } catch (e) {
+      console.warn(`[worker-status] transaction processing query failed for ${pc.name}:`, e);
+    }
+
+    // Resolve company names for all results
+    const companyIds = [...new Set(results.map((r: any) => r.company_id).filter(Boolean))];
+    let companyNameMap = new Map<string, string>();
+    if (companyIds.length > 0) {
+      try {
+        const { data: companies } = await pc.client
+          .from("companies")
+          .select("id, name")
+          .in("id", companyIds);
+        for (const c of (companies || [])) {
+          companyNameMap.set(c.id, c.name);
+        }
+      } catch (_) { /* best effort */ }
+    }
+
+    return results.map((r: any) => ({
+      id: r.id,
+      file_name: r.file_name,
+      company_name: companyNameMap.get(r.company_id) || null,
+      company_id: r.company_id,
+      pipeline_type: r.pipeline_type,
+      started_at: r.updated_at,
+      created_at: r.created_at,
+      document_category: r.document_category || 'unknown',
+      source: r.source || 'upload',
+      elapsed_sec: Math.floor((now.getTime() - new Date(r.updated_at).getTime()) / 1000),
+      project: pc.name,
+    }));
+  });
+  const processingResults = await Promise.all(processingFetches);
+  const active_processing = processingResults.flat().sort((a, b) => a.elapsed_sec - b.elapsed_sec);
+
   // ── Summary KPIs ──
   const totalJobs24h = Array.from(pipelineMap.values()).reduce((s, p) => s + p.jobs, 0);
   const totalCost24h = Array.from(pipelineMap.values()).reduce((s, p) => s + p.totalCost, 0);
@@ -2577,10 +2654,12 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     queues,
     pipelines,
     recent_jobs,
+    active_processing,
     summary: {
       healthy_containers: containers.filter((c: any) => c.is_healthy).length,
       total_containers: containers.length,
       total_queue_pending: totalQueuePending,
+      total_processing: active_processing.length,
       total_jobs_24h: totalJobs24h,
       total_cost_24h: Math.round(totalCost24h * 100) / 100,
       total_errors_24h: totalErrors24h,

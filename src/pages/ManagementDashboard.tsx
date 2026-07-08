@@ -17,9 +17,9 @@ import {
   Bot, Coins, ArrowUpDown, ArrowUp, ArrowDown,
   Trophy, Zap, Calendar, X, Crown, Sun, Moon,
   AlertTriangle, Trash2, RefreshCw, RotateCcw, Receipt, Wallet, Landmark, BarChart3,
-  Eye, Download, ExternalLink, ShieldCheck, ToggleLeft, ToggleRight, Save, Check, Loader2, Pencil,
+  Eye, Download, ExternalLink, ShieldCheck, ToggleLeft, ToggleRight, Save, Check, Loader, Loader2, Pencil,
   ArrowLeftRight, BookOpen, Briefcase, Upload, AlertCircle, ClipboardList, CalendarClock, HardHat,
-  CreditCard, User, Mail,
+  CreditCard, User, Mail, Inbox,
   Tags, FolderKanban, Package2, Truck, FileSpreadsheet, Scale, ScrollText, Gavel,
   TicketCheck, FolderOpen,
   Server, Activity, CircleDot, CheckCircle2, XCircle, TrendingUp,
@@ -3583,6 +3583,8 @@ function WorkerPanel() {
   const [workerTab, setWorkerTab] = useState<'overview' | 'llm-costs'>('overview');
   const [selectedQueue, setSelectedQueue] = useState<string | null>(null);
   const [showAllQueues, setShowAllQueues] = useState(false);
+  const [dismissedQueues, setDismissedQueues] = useState<Set<string>>(new Set());
+  const [showProcessing, setShowProcessing] = useState(false);
   const [workerPeriod, setWorkerPeriod] = useState<string>('24h');
 
   const workerPeriodLabel: Record<string, string> = { 'all': 'Összesen', '24h': '24 óra', '7d': '7 nap', '30d': '30 nap', '90d': '90 nap' };
@@ -3637,7 +3639,7 @@ function WorkerPanel() {
     );
   }
 
-  const { containers = [], queues = [], pipelines = [], recent_jobs = [], summary = {} } = data;
+  const { containers = [], queues = [], pipelines = [], recent_jobs = [], active_processing = [], summary = {} } = data;
 
   // Default: select first container
   const activeContainer = selectedContainer || containers[0]?.container_name || null;
@@ -3726,14 +3728,14 @@ function WorkerPanel() {
             sub: 'job',
           },
           {
-            label: `LLM költség (${workerPeriodLabel[workerPeriod]})`,
-            value: `$${(summary.total_cost_24h || 0).toFixed(2)}`,
-            icon: Coins,
-            color: 'text-purple-500',
-            sub: 'USD',
+            label: 'Feldolgozás alatt',
+            value: summary.total_processing || 0,
+            icon: Loader,
+            color: (summary.total_processing || 0) > 0 ? 'text-cyan-500' : 'text-muted-foreground',
+            sub: 'aktív',
           },
           {
-            label: `Hibák (${workerPeriodLabel[workerPeriod]})`,
+            label: `Worker hibák (${workerPeriodLabel[workerPeriod]})`,
             value: summary.total_errors_24h || 0,
             icon: AlertTriangle,
             color: (summary.total_errors_24h || 0) > 0 ? 'text-red-500' : 'text-muted-foreground',
@@ -3741,22 +3743,34 @@ function WorkerPanel() {
           },
         ].map((kpi) => {
           const isQueueKpi = kpi.label === 'Queue várakozó';
-          const isClickable = isQueueKpi && (summary.total_queue_pending || 0) > 0;
+          const isProcessingKpi = kpi.label === 'Feldolgozás alatt';
+          const isQueueClickable = isQueueKpi && (summary.total_queue_pending || 0) > 0;
+          const isProcessingClickable = isProcessingKpi;
+          const isClickable = isQueueClickable || isProcessingClickable;
+          const isActive = (showAllQueues && isQueueKpi) || (showProcessing && isProcessingKpi);
+          const activeColor = isQueueKpi ? 'border-amber-500/50 bg-amber-500/5' : 'border-cyan-500/50 bg-cyan-500/5';
+          const hoverColor = isQueueKpi ? 'hover:border-amber-500/50 hover:bg-amber-500/5' : 'hover:border-cyan-500/50 hover:bg-cyan-500/5';
           return (
           <Card
             key={kpi.label}
             className={`p-3 bg-card/80 border-border/50 transition-colors ${
-              isClickable ? 'cursor-pointer hover:border-amber-500/50 hover:bg-amber-500/5' : 'hover:border-border'
-            } ${showAllQueues && isQueueKpi ? 'border-amber-500/50 bg-amber-500/5' : ''}`}
+              isClickable ? `cursor-pointer ${hoverColor}` : 'hover:border-border'
+            } ${isActive ? activeColor : ''}`}
             onClick={() => {
-              if (isClickable) {
+              if (isQueueClickable) {
                 setShowAllQueues(prev => !prev);
+                setShowProcessing(false);
+                setSelectedQueue(null);
+                setDismissedQueues(new Set());
+              } else if (isProcessingClickable) {
+                setShowProcessing(prev => !prev);
+                setShowAllQueues(false);
                 setSelectedQueue(null);
               }
             }}
           >
             <div className="flex items-center gap-2 mb-1">
-              <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+              <kpi.icon className={`h-4 w-4 ${kpi.color} ${isProcessingKpi && (summary.total_processing || 0) > 0 ? 'animate-spin' : ''}`} />
               <span className="text-xs text-muted-foreground font-medium">{kpi.label}</span>
             </div>
             <div className="text-lg font-bold">{kpi.value}</div>
@@ -3816,17 +3830,28 @@ function WorkerPanel() {
             <div className="mt-1 space-y-0.5">
               {filteredQueues.map((q: any) => {
                 const hasItems = q.queue_length > 0;
-                const isSelected = selectedQueue === q.queue_name;
+                const queueKey = `${q.project}:${q.queue_name}`;
+                const isDismissed = dismissedQueues.has(queueKey);
+                // In showAllQueues mode: expanded = has items & not dismissed
+                const isExpanded = showAllQueues ? (hasItems && !isDismissed) : selectedQueue === q.queue_name;
                 return (
                   <button
                     key={q.queue_name}
                     onClick={() => {
-                      if (hasItems) {
+                      if (!hasItems) return;
+                      if (showAllQueues) {
+                        // Toggle dismiss
+                        if (isDismissed) {
+                          setDismissedQueues(prev => { const next = new Set(prev); next.delete(queueKey); return next; });
+                        } else {
+                          setDismissedQueues(prev => new Set([...prev, queueKey]));
+                        }
+                      } else {
                         setSelectedQueue(prev => prev === q.queue_name ? null : q.queue_name);
                       }
                     }}
                     className={`flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs transition-colors ${
-                      isSelected
+                      isExpanded
                         ? 'bg-amber-500/10 text-amber-400 font-medium'
                         : hasItems
                           ? 'text-muted-foreground hover:text-foreground hover:bg-muted/50 cursor-pointer'
@@ -3835,12 +3860,12 @@ function WorkerPanel() {
                   >
                     <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${hasItems ? 'bg-amber-500' : 'bg-emerald-500/50'}`} />
                     <span className="truncate flex-1 text-left">{q.queue_name.replace(/_jobs$/, '').replace(/^(PROD|VSWEB|THINKERMAN):/, '')}</span>
-                    <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${hasItems ? 'bg-amber-500/15 text-amber-400' : ''}`}>
+                    <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 min-w-[24px] text-center justify-center ${hasItems ? 'bg-amber-500/15 text-amber-400' : ''}`}>
                       {q.queue_length}
                     </Badge>
-                    {hasItems && (
-                      <ChevronDown className={`h-3 w-3 flex-shrink-0 transition-transform duration-200 ${isSelected ? 'rotate-180 text-amber-400' : 'text-muted-foreground/40'}`} />
-                    )}
+                    <ChevronDown className={`h-3 w-3 flex-shrink-0 transition-transform duration-200 ${
+                      !hasItems ? 'invisible' : isExpanded ? 'rotate-180 text-amber-400' : 'text-muted-foreground/40'
+                    }`} />
                   </button>
                 );
               })}
@@ -3882,6 +3907,231 @@ function WorkerPanel() {
             </Card>
           )}
 
+          {/* ── Active Processing Panel (replaces pipeline+jobs when active) ── */}
+          {showProcessing ? (
+            <Card className="border-cyan-500/30 bg-cyan-500/5">
+              <CardHeader className="pb-2 pt-3 px-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Loader className={`h-4 w-4 text-cyan-500 ${active_processing.length > 0 ? 'animate-spin' : ''}`} />
+                    Feldolgozás alatt (globális)
+                    <Badge className="text-[10px] px-1.5 py-0 bg-cyan-500/15 text-cyan-400">
+                      {active_processing.length} aktív
+                    </Badge>
+                  </CardTitle>
+                  <button onClick={() => setShowProcessing(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </CardHeader>
+              <CardContent className="px-0 pb-2 space-y-3">
+                {active_processing.length > 0 ? (() => {
+                  // Group by project
+                  const byProject = new Map<string, any[]>();
+                  for (const item of active_processing) {
+                    const key = item.project || 'unknown';
+                    if (!byProject.has(key)) byProject.set(key, []);
+                    byProject.get(key)!.push(item);
+                  }
+
+                  const formatElapsed = (sec: number) => {
+                    if (sec < 60) return `${sec}s`;
+                    if (sec < 3600) return `${Math.floor(sec / 60)}m ${sec % 60}s`;
+                    return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
+                  };
+                  const elapsedColor = (sec: number) => {
+                    if (sec < 30) return 'text-emerald-500';
+                    if (sec < 120) return 'text-amber-500';
+                    return 'text-red-500';
+                  };
+
+                  return Array.from(byProject.entries()).map(([project, items]) => (
+                    <div key={project}>
+                      <div className="flex items-center gap-2 px-4 py-1.5 bg-muted/20 border-y border-border/20">
+                        <Activity className="h-3.5 w-3.5 text-cyan-500" />
+                        <span className="text-xs font-semibold">{project}</span>
+                        <Badge className="text-[10px] px-1.5 py-0 bg-cyan-500/15 text-cyan-400">{items.length}</Badge>
+                      </div>
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-border/30 text-muted-foreground">
+                            <th className="text-left px-4 py-1.5 font-medium w-12">Pipeline</th>
+                            <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
+                            <th className="text-left px-3 py-1.5 font-medium">Cég</th>
+                            <th className="text-left px-3 py-1.5 font-medium">Típus</th>
+                            <th className="text-right px-3 py-1.5 font-medium">Eltelt idő</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((item: any) => (
+                            <tr key={item.id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
+                              <td className="px-4 py-1.5">
+                                <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${
+                                  item.pipeline_type === 'invoice' ? 'bg-blue-500/10 text-blue-400' : 'bg-green-500/10 text-green-400'
+                                }`}>
+                                  {item.pipeline_type}
+                                </Badge>
+                              </td>
+                              <td className="px-3 py-1.5 max-w-[200px] truncate font-medium" title={item.file_name}>
+                                <div className="flex items-center gap-1.5">
+                                  <FileText className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+                                  {item.file_name || '—'}
+                                </div>
+                              </td>
+                              <td className="px-3 py-1.5 text-muted-foreground max-w-[140px] truncate" title={item.company_name}>{item.company_name || '—'}</td>
+                              <td className="px-3 py-1.5">
+                                <span className="text-[9px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">{item.document_category}</span>
+                              </td>
+                              <td className={`text-right px-3 py-1.5 font-mono tabular-nums ${elapsedColor(item.elapsed_sec || 0)}`}>
+                                {formatElapsed(item.elapsed_sec || 0)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ));
+                })() : (
+                  <div className="text-center py-8 space-y-2">
+                    <CheckCircle2 className="h-8 w-8 text-emerald-500/40 mx-auto" />
+                    <p className="text-muted-foreground text-sm">Jelenleg nincs aktív feldolgozás</p>
+                    <p className="text-muted-foreground/60 text-xs">A workerek várakoznak új feladatokra</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : showAllQueues ? (
+            /* ── Global Queue Panel (replaces pipeline+jobs when active) ── */
+            (() => {
+              const allPendingQueues = queues.filter((q: any) => q.queue_length > 0 && !dismissedQueues.has(`${q.project}:${q.queue_name}`)).sort((a: any, b: any) => a.queue_name.localeCompare(b.queue_name));
+
+              // Auto-close if all dismissed
+              if (allPendingQueues.length === 0 && queues.some((q: any) => q.queue_length > 0)) {
+                setTimeout(() => { setShowAllQueues(false); setDismissedQueues(new Set()); }, 0);
+                return null;
+              }
+
+              const formatWaitTime = (enqueuedAt: string) => {
+                const diffMs = Date.now() - new Date(enqueuedAt).getTime();
+                const secs = Math.floor(diffMs / 1000);
+                if (secs < 60) return `${secs} mp`;
+                const mins = Math.floor(secs / 60);
+                const remainSecs = secs % 60;
+                if (mins < 60) return `${mins}:${remainSecs.toString().padStart(2, '0')}`;
+                return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+              };
+              const waitColor = (enqueuedAt: string) => {
+                const diffMs = Date.now() - new Date(enqueuedAt).getTime();
+                if (diffMs < 2 * 60 * 1000) return 'text-emerald-500';
+                if (diffMs < 5 * 60 * 1000) return 'text-amber-500';
+                return 'text-red-500';
+              };
+              const sourceIcon = (src: string) => {
+                if (src === 'email_alias' || src === 'email') return <Mail className="h-3 w-3" />;
+                if (src === 'retry') return <RefreshCw className="h-3 w-3" />;
+                return <Upload className="h-3 w-3" />;
+              };
+              const sourceLabel = (src: string) => {
+                if (src === 'email_alias' || src === 'email') return 'Email';
+                if (src === 'retry') return 'Retry';
+                return 'Feltöltés';
+              };
+              const sourceBgClass = (src: string) => {
+                if (src === 'email_alias' || src === 'email') return 'bg-purple-500/10 text-purple-400';
+                if (src === 'retry') return 'bg-red-500/10 text-red-400';
+                return 'bg-blue-500/10 text-blue-400';
+              };
+
+              return (
+                <Card className="border-amber-500/30 bg-amber-500/5">
+                  <CardHeader className="pb-2 pt-3 px-4">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                        <Inbox className="h-4 w-4 text-amber-500" />
+                        Queue várakozó (globális)
+                        <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-400">
+                          {allPendingQueues.reduce((s: number, q: any) => s + (q.queue_length || 0), 0)} várakozó
+                        </Badge>
+                      </CardTitle>
+                      <button onClick={() => setShowAllQueues(false)} className="text-muted-foreground hover:text-foreground">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-0 pb-2 space-y-3">
+                    {allPendingQueues.length > 0 ? allPendingQueues.map((queueData: any) => {
+                      const items = queueData.pending_items || [];
+                      const queueDisplayName = queueData.queue_name.replace(/_jobs$/, '').replace(/^(PROD|VSWEB|THINKERMAN):/, '');
+                      return (
+                        <div key={`${queueData.project}:${queueData.queue_name}`}>
+                          <div className="flex items-center gap-2 px-4 py-1.5 bg-muted/20 border-y border-border/20">
+                            <ClipboardList className="h-3.5 w-3.5 text-amber-500" />
+                            <span className="text-xs font-semibold capitalize">{queueDisplayName}</span>
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0">{queueData.project}</Badge>
+                            <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-400">{queueData.queue_length}</Badge>
+                            <span className="flex-1" />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setDismissedQueues(prev => new Set([...prev, `${queueData.project}:${queueData.queue_name}`])); }}
+                              className="text-muted-foreground/40 hover:text-foreground transition-colors"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                          {items.length > 0 ? (
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="border-b border-border/30 text-muted-foreground">
+                                  <th className="text-left px-4 py-1.5 font-medium w-12">#</th>
+                                  <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
+                                  <th className="text-left px-3 py-1.5 font-medium">Cég</th>
+                                  <th className="text-right px-3 py-1.5 font-medium">Várakozás</th>
+                                  <th className="text-left px-3 py-1.5 font-medium">Forrás</th>
+                                  <th className="text-left px-3 py-1.5 font-medium">Típus</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {items.map((item: any) => (
+                                  <tr key={item.msg_id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
+                                    <td className="px-4 py-1.5 text-muted-foreground font-mono text-[10px]">#{item.msg_id}</td>
+                                    <td className="px-3 py-1.5 max-w-[200px] truncate font-medium" title={item.file_name}>
+                                      <div className="flex items-center gap-1.5">
+                                        <FileText className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+                                        {item.file_name || '—'}
+                                      </div>
+                                    </td>
+                                    <td className="px-3 py-1.5 text-muted-foreground max-w-[140px] truncate" title={item.company_name}>{item.company_name || '—'}</td>
+                                    <td className={`text-right px-3 py-1.5 font-mono tabular-nums ${waitColor(item.enqueued_at)}`}>{formatWaitTime(item.enqueued_at)}</td>
+                                    <td className="px-3 py-1.5">
+                                      <span className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded ${sourceBgClass(item.source)}`}>
+                                        {sourceIcon(item.source)}
+                                        {sourceLabel(item.source)}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-1.5">
+                                      <span className="text-[9px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">{item.document_category}</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <p className="text-center py-3 text-muted-foreground text-xs">Az elemek részletei nem elérhetők</p>
+                          )}
+                        </div>
+                      );
+                    }) : (
+                      <div className="text-center py-8 space-y-2">
+                        <CheckCircle2 className="h-8 w-8 text-emerald-500/40 mx-auto" />
+                        <p className="text-muted-foreground text-sm">Jelenleg nincs várakozó üzenet</p>
+                        <p className="text-muted-foreground/60 text-xs">Minden queue üres</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()
+          ) : (
+          <>
           {/* Pipeline Performance Table */}
           <Card className="border-border/40">
             <CardHeader className="pb-2 pt-3 px-4">
@@ -3933,7 +4183,7 @@ function WorkerPanel() {
           {(() => {
             // Determine which queues to show
             const queuesToShow = showAllQueues
-              ? filteredQueues.filter((q: any) => q.queue_length > 0)
+              ? queues.filter((q: any) => q.queue_length > 0).sort((a: any, b: any) => a.queue_name.localeCompare(b.queue_name))
               : selectedQueue
                 ? filteredQueues.filter((q: any) => q.queue_name === selectedQueue && q.queue_length > 0)
                 : [];
@@ -4104,14 +4354,16 @@ function WorkerPanel() {
               </table>
             </CardContent>
           </Card>
+          </>
+          )}
         </div>
       </div>
-
-
-
-
       </>
       )}
+
+
+
+
     </div>
   );
 }

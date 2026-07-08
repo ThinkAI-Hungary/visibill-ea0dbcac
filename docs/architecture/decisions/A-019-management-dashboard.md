@@ -346,6 +346,8 @@ if (filterSource === 'uploads') {
 
 ## Worker Monitor Panel
 
+**Utoljára frissítve:** 2026-07-08
+
 ### Architektúra
 
 A Worker Monitor a management dashboard "Worker" fülén található. Két al-tab-ot tartalmaz:
@@ -354,6 +356,63 @@ A Worker Monitor a management dashboard "Worker" fülén található. Két al-ta
 |-----|--------|------------|
 | **Áttekintés** | Konténer health, PGMQ queue-k, pipeline teljesítmény, utolsó jobok | `worker-status` action (30s polling) |
 | **LLM Költség** | Cross-project költségaggregáció, pie chartek, top cégek, trend, modell tábla | `llm-costs` action (60s polling) |
+
+### KPI Metrika Kártyák (Áttekintés tab)
+
+Az Áttekintés tab tetején 5 KPI kártya látható:
+
+| KPI | Adatforrás | Kattintható | Viselkedés |
+|-----|-----------|-------------|------------|
+| **Konténerek** | `worker_heartbeats` (healthy/total) | ❌ | — |
+| **Queue várakozó** | `pgmq.metrics_all()` összesített queue_length | ✅ | Globális queue panel (pipeline+recent jobs eltűnik) |
+| **Feldolgozva (period)** | `invoice_uploads` + `transaction_uploads` completed count | ❌ | — |
+| **Feldolgozás alatt** | `invoice_uploads` + `transaction_uploads` where `processing_status='processing'` | ✅ | Globális processing panel (pipeline+recent jobs eltűnik) |
+| **Worker hibák (period)** | `invoice_uploads` + `transaction_uploads` where `processing_status='error'` | ❌ | — |
+
+**Alapértelmezett időszak:** 24 óra (`workerPeriod` state default: `'24h'`)
+
+> **Fontos:** A "Worker hibák" KPI az upload táblák `processing_status='error'` sorait számolja, **NEM** az `app_error_logs` tábla frontend hibáit.
+
+### Globális KPI Panelek
+
+Két KPI kártya kattintható és **globális nézetet** nyit (mindhárom projekt adatai):
+
+#### Feldolgozás alatt panel (`showProcessing` state)
+
+- **Trigger:** "Feldolgozás alatt" KPI kattintás
+- **Adatforrás:** `active_processing` tömb a `management-stats` EF-ből
+- **Query:** `invoice_uploads` + `transaction_uploads` where `processing_status='processing'` (mindhárom projekt)
+- **Megjelenítés:** Projekt-csoportosított tábla (Pipeline | Fájl | Cég | Típus | Eltelt idő)
+- **Eltelt idő szín:** zöld (<30s), sárga (<120s), piros (>120s)
+- **Üres állapot:** CheckCircle2 ikon + "Jelenleg nincs aktív feldolgozás"
+- **Rejtett elemek:** Pipeline teljesítmény tábla + Utolsó feldolgozások
+- **Oszlop kompatibilitás:** Csak univerzális oszlopok (`id, file_name, company_id, processing_status, created_at, updated_at, document_category`). A `source` és `detected_bank` oszlopok kihagyva (VSWEB-en nem léteznek).
+
+#### Queue várakozó panel (`showAllQueues` state)
+
+- **Trigger:** "Queue várakozó" KPI kattintás
+- **Adatforrás:** `queues` tömb (mindhárom projekt PGMQ adatai)
+- **Szűrés:** `queue_length > 0` és nem dismissed
+- **Megjelenítés:** Queue-csoportosított tábla (# | Fájl | Cég | Várakozás | Forrás | Típus)
+- **Várakozás szín:** zöld (<2min), sárga (<5min), piros (>5min)
+- **Per-queue dismiss:** Minden queue szekció fejlécében X gomb → eltávolítja a panelből
+- **Sidebar szinkron:** `showAllQueues` módban a sidebar queue chevronjei szinkronban vannak:
+  - Chevron felfelé (rotate-180) = queue megjelenik a panelben
+  - Sidebar kattintás = toggle dismiss (chevron lefelé → queue eltűnik a panelből)
+- **Auto-close:** Ha az utolsó queue-t is bezárja → `showAllQueues = false`, teljes panel eltűnik
+- **Dismissed reset:** KPI újra kattintás → `dismissedQueues` state resetelődik
+- **Rejtett elemek:** Pipeline teljesítmény tábla + Utolsó feldolgozások
+
+### Queue Sidebar — `dismissedQueues` State
+
+A sidebar queue lista viselkedése a `showAllQueues` állapottól függ:
+
+| Mód | Sidebar kattintás hatása | Chevron állapot |
+|-----|-------------------------|----------------|
+| **Normál** (showAllQueues=false) | `selectedQueue` toggle → inline queue detail panel | Felfelé ha selected |
+| **Globális** (showAllQueues=true) | `dismissedQueues` toggle → queue eltűnik/visszajön a panelből | Felfelé ha nem dismissed |
+
+A badge (`queue_length`) fix szélességű (`min-w-[24px]`) és a chevron mindig helyet foglal (`invisible` ha nincs elem).
 
 ### Cross-Project Monitoring
 
@@ -388,9 +447,14 @@ Ez biztosítja, hogy a dashboard a Vision OCR költségeket is pontosan, külön
 
 ### Project-Scoped Filtering
 
-A **Pipeline** szekció és a **Queue** lista a kiválasztott konténer projektje szerint szűrt:
+A **Pipeline** szekció és a **Queue** lista a kiválasztott konténer projektje szerint szűrt (normál módban):
 
 - Konténer kiválasztása → `activeProject` meghatározása (heartbeat `project` mező)
 - Pipeline-ok: `${project}:${pipeline}` prefix alapján szűrve
 - Queue-k: projekt mező alapján szűrve, **mindig alfabetikus sorrendben**
 - PGMQ queue-k: `public.pgmq_metrics_all()` wrapper RPC-n keresztül érhetők el (mindhárom projektben létrehozva)
+
+> **Megjegyzés:** A globális KPI panelek (showProcessing / showAllQueues) felülírják a projekt szűrést — ilyenkor minden projekt adata megjelenik.
+
+
+
