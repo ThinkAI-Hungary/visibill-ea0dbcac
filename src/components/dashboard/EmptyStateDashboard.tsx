@@ -361,7 +361,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                 // Refresh session before each chunk to prevent JWT expiration
                 const { data: { session: freshSession } } = await supabase.auth.getSession();
                 if (!freshSession) {
-                  reportError({ type: 'auth', component: 'EmptyStateDashboard', action: 'warn', message: 'Session expired during background sync, aborting remaining chunks' });
+                  reportError({ type: 'auth', severity: 'warning', component: 'EmptyStateDashboard', action: 'warn', message: 'Session expired during background sync, aborting remaining chunks' });
                   break;
                 }
                 const currentToken = freshSession.access_token;
@@ -427,7 +427,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
       // Rollback: delete the company if it was created but sub-steps failed
       if (rollbackNeeded && createdCompanyId) {
-        reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'warn', message: 'Rolling back company:', error: createdCompanyId });
+        reportError({ type: 'db_query', severity: 'warning', component: 'EmptyStateDashboard', action: 'warn', message: 'Rolling back company:', error: createdCompanyId });
         await supabase.from('companies').delete().eq('id', createdCompanyId);
       }
     } finally {

@@ -312,6 +312,19 @@ if (filterSource === 'uploads') {
 }
 ```
 
+### Severity Diszciplína (2026-07-08)
+
+A Hibák panel és az Overview "Összes hiba" KPI **csak `severity='error'`** bejegyzéseket mutat az `app_error_logs` táblából. A `management-stats` EF `buildErrors` és `buildOverview` query-i `.eq("severity", "error")` szűrőt alkalmaznak.
+
+**Miért:** Korábban minden `app_error_logs` bejegyzés megjelent a panelen (warning + realtime channel zaj + validation warningok), ami elárasztotta a valódi hibákat. A `severity` oszlop default értéke `'error'`, így ha egy warning szintű log `severity` nélkül lett hívva, `severity='error'`-ként tárolódott → zajként jelent meg.
+
+**Szabályok:**
+- **Frontend:** Minden `action: 'warn'` / `action: 'warning'` hívásnál **kötelező** `severity: 'warning'`-ot megadni a `reportError`-nek. (10 call site javítva.)
+- **Realtime:** A `LiveNotificationProvider` channel státusz változásai (TIMED_OUT/CLOSED/SUBSCRIBED/CHANNEL_ERROR) **csak konzolra** kerülnek (`console.warn`), nem DB-be — operációs zaj, a kliens auto-reconnect-el.
+- **Történelmi adat:** 41 régi realtime channel log visszaamenőleg `severity='warning'`-ra lett reklasszifikálva.
+
+Részletek: [error-logging-system.md — Severity diszciplína](../error-logging-system.md#severity-diszciplína)
+
 ## Consequences
 
 **Pozitív:**
@@ -327,6 +340,7 @@ if (filterSource === 'uploads') {
 - Mailgun user label → webhook-eredetú hibák/fájlok azonnal felismerhetők
 - Debounce + opacity transition → nincs skeleton flash háttér-refetch-nél
 - Error taxonomy (3 kategória) → Application/Mailgun/Worker egységes besorolás, összecsúszó kategóriák megszűntek
+- Severity diszciplína → a Hibák panel csak `severity='error'` logokat mutat; warning/realtime zaj kiszűrve; frontend call site-ok kötelezően `severity:'warning'`-ot adnak meg warningoknál
 - Feltöltés forrás-label egységesítés → uploads group filter, típus badge mutatja a részletet
 
 **Negatív:**

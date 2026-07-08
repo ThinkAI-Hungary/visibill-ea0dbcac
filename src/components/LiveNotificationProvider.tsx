@@ -657,7 +657,7 @@ export function LiveNotificationProvider() {
           const isTransient = status === 'TIMED_OUT' || status === 'CLOSED' || status === 'SUBSCRIBED';
           
           if (!isTransient) {
-            reportError({ type: 'realtime', component: 'LiveNotificationProvider', action: 'warn', message: `[RealtimeSync] Channel: ${status}`, error: err || undefined });
+            console.warn('[LiveNotificationProvider]', `[RealtimeSync] Channel: ${status}`, err || '');
           }
         });
 

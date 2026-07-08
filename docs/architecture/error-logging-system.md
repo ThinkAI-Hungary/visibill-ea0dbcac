@@ -1,6 +1,6 @@
 # Visibill — Error Logging & Dashboard Rendszer
 
-> **Verzió:** 1.0 | **Dátum:** 2026-06-14  
+> **Verzió:** 1.1 | **Dátum:** 2026-07-08 (severity diszciplína + realtime zaj szűrés)  
 > **Kapcsolódó:** [A-019 Management Dashboard](./decisions/A-019-management-dashboard.md) · [09-error-handling-feedback](../design/09-error-handling-feedback.md) · [management-stats EF](../../supabase/functions/management-stats/index.ts)
 
 ---
@@ -47,6 +47,8 @@ Centralizált hibalogolási rendszer, amely a rendszer minden rétegéből gyűj
 | `id` | `uuid` (PK) | Auto-generált azonosító |
 | `created_at` | `timestamptz` | Hiba időpontja |
 | `error_type` | `text` | Kategória kulcs (ld. lent) |
+| `severity` | `text` | `'error'` \| `'warning'` \| `'info'` — a Hibák panel csak `error`-t mutat (ld. [Severity diszciplína](#severity-diszciplína)) |
+| `stack_trace` | `text` | Stack trace (max 3000 karakter, csak `Error` objektumoknál) |
 | `component` | `text` | Fájl/modul neve (pl. `AuthContext`, `InvoicePipeline`) |
 | `action` | `text` | Művelet (`error`, `warning`, `info`) |
 | `message` | `text` | Hibaüzenet szövege |
@@ -89,9 +91,10 @@ Centralizált hibalogolási rendszer, amely a rendszer minden rétegéből gyűj
 
 ```typescript
 interface ErrorReport {
-  type: 'auth_error' | 'db_query' | 'api_error' | 'unhandled';
+  type: 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'realtime' | 'unhandled';
+  severity?: 'error' | 'warning' | 'info';  // default 'error' — warninghoz KÖTELEZŐ severity: 'warning' (ld. lent)
   component: string;      // pl. 'AuthContext', 'InvoicesPage'
-  action: 'error' | 'warning' | 'info';
+  action: string;         // pl. 'error', 'warn', 'warning' (csak címke, NEM ír felül severity-t)
   message: string;
   error?: unknown;         // eredeti Error objektum
   context?: Record<string, unknown>;  // extra adatok (pl. email)
@@ -99,6 +102,8 @@ interface ErrorReport {
 
 reportError(report: ErrorReport): void
 ```
+
+> ⚠️ **`severity` default = `'error'`.** Ha egy hívás `action: 'warn'`-ot ad meg `severity` nélkül, a log **`severity='error'`-ként** tárolódik → megjelenik a Hibák panelen. **Minden warning szintű lognál kötelező `severity: 'warning'`-ot megadni.** Lásd: [Severity diszciplína](#severity-diszciplína).
 
 **Használati példák:**
 ```typescript
@@ -128,6 +133,37 @@ reportError({
 - `upload-ticket-image.ts` — ticket kép feltöltés
 - `ErrorBoundary.tsx` — unhandled runtime errors
 - Minden `supabase.from()` hívás error ágai
+
+### Severity diszciplína
+
+A `app_error_logs.severity` oszlop (`'error'` | `'warning'` | `'info'`) **kötött jelentéssel bír** a Management Dashboard szempontjából:
+
+| severity | Megjelenik a Hibák panelen? | Megjelenik az Overview "Összes hiba" KPI-ban? |
+|----------|------------------------------|------------------------------------------------|
+| `error` | ✅ Igen | ✅ Igen |
+| `warning` | ❌ Nem (EF szűri) | ❌ Nem (EF szűri) |
+| `info` | ❌ Nem (EF szűri) | ❌ Nem (EF szűri) |
+
+**EF szűrés (2026-07-08):** A `management-stats` EF `buildErrors` és `buildOverview` query-i `.eq("severity", "error")` szűrőt alkalmaznak az `app_error_logs` táblán. Így a Hibák panel és a totalErrors KPI csak valódi errorokat mutat — warning/info nem szennyezi.
+
+**Frontend kötelező szabály:**
+- `severity` default = `'error'`. Ha egy warning szintű lognál **nem** adod meg `severity: 'warning'`-ot, a log `severity='error'`-ként tárolódik → **megjelenik a Hibák panelen** (zaj).
+- Ezért minden `action: 'warn'` / `action: 'warning'` hívásnál **kötelező** a `severity: 'warning'` mező. (10 call site javítva 2026-07-08: EmptyStateDashboard, EmailAliasManager, TransactionDetailsDialog, AuthContext, CompanyContext, useDashboardData, ManagementDashboard, ShipmentImportPage.)
+
+### Realtime channel zaj — NEM logolva DB-be
+
+A `LiveNotificationProvider` Supabase Realtime channel státusz változásai (`TIMED_OUT`, `CLOSED`, `SUBSCRIBED`, `CHANNEL_ERROR`) **operációs zajok**, nem környező hibák — a kliens auto-reconnect-el. Ezeket **csak konzolra** (`console.warn`) írjuk, **nem** az `app_error_logs` táblába.
+
+```typescript
+// LiveNotificationProvider.tsx — subscribe callback
+const isTransient = status === 'TIMED_OUT' || status === 'CLOSED' || status === 'SUBSCRIBED';
+if (!isTransient) {
+  // Csak konzol — DB-be NEM (korábban reportError pollute-olta a panelt)
+  console.warn('[LiveNotificationProvider]', `[RealtimeSync] Channel: ${status}`, err || '');
+}
+```
+
+> **Előzmény:** 2026-07-08-ig a `CHANNEL_ERROR` (és régebben a `TIMED_OUT` is) `reportError`-rel `severity='error'`-ként (default) került a DB-be, ami elárasztotta a Hibák panelt. A 41 történelni realtime log visszaamenőleg `severity='warning'`-ra lett reklasszifikálva.
 
 ### 2.2 Worker — `error_reporter.py`
 
@@ -255,6 +291,8 @@ Sor kattintásra kibontott részletek:
 ## 4. Edge Function: `management-stats` — Error Actions
 
 ### Action: `errors`
+
+> **Severity szűrés (2026-07-08):** Az `app_error_logs` query `.eq("severity", "error")` szűrőt alkalmaz — a panel csak valódi errorokat mutat. `warning`/`info` severity-vel rendelkező logok (realtime channel zaj, MNB árfolyam warning, validation warningok) nem jelennek meg. Lásd: [Severity diszciplína](#severity-diszciplína).
 
 **Query params:**
 

@@ -218,7 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
     } catch (err: any) {
-      reportError({ type: 'auth', component: 'AuthContext', action: 'warn', message: 'signOut fallback (forced)', error: err });
+      reportError({ type: 'auth', severity: 'warning', component: 'AuthContext', action: 'warn', message: 'signOut fallback (forced)', error: err });
     } finally {
       // ── Atomic Cleanup ──
 

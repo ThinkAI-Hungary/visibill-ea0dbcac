@@ -395,7 +395,7 @@ export function useDashboardData() {
             });
           }
         } catch (e) {
-          reportError({ type: 'api_call', component: 'useDashboardData', action: 'warning', message: 'Failed to auto-fetch MNB rates', error: e });
+          reportError({ type: 'api_call', severity: 'warning', component: 'useDashboardData', action: 'warning', message: 'Failed to auto-fetch MNB rates', error: e });
         }
       }
 

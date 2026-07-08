@@ -808,7 +808,7 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
     admin.from("gl_upload_notifications").select("id", { count: "exact", head: true }).eq("processing_status", "error"),
     admin.from("nav_sync_logs").select("id", { count: "exact", head: true }).eq("status", "error"),
     admin.from("bank_statement_uploads").select("id", { count: "exact", head: true }).eq("processing_status", "error"),
-    admin.from("app_error_logs").select("id", { count: "exact", head: true }).order("created_at", { ascending: false }).limit(500),
+    admin.from("app_error_logs").select("id", { count: "exact", head: true }).eq("severity", "error").order("created_at", { ascending: false }).limit(500),
     // ── eaisyBooks assignment lookup (distinct company_ids that have accounty access) ──
     admin.from("accounty_assignments").select("company_id"),
   ]);
@@ -1205,6 +1205,7 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
     // 7th source: frontend app error logs
     admin.from("app_error_logs")
       .select("id, created_at, message, error_type, component, action, company_id, user_id, context")
+      .eq("severity", "error")
       .order("created_at", { ascending: false })
       .limit(500),
   ]);

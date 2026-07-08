@@ -53,7 +53,7 @@ const EmailAliasManager = () => {
         setAlias(null);
       }
     } catch (error: any) {
-      reportError({ type: 'db_query', component: 'EmailAliasManager', action: 'warn', message: 'Error fetching alias', error: error });
+      reportError({ type: 'db_query', severity: 'warning', component: 'EmailAliasManager', action: 'warn', message: 'Error fetching alias', error: error });
       setAlias(null);
     } finally {
       setLoading(false);

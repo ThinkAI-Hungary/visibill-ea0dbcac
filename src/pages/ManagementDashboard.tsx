@@ -724,7 +724,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
         }),
       });
       if (result.error) {
-        reportError({ type: 'api_call', component: 'ManagementDashboard', action: 'warning', message: 'Retry partial errors', error: result.error });
+        reportError({ type: 'api_call', severity: 'warning', component: 'ManagementDashboard', action: 'warning', message: 'Retry partial errors', error: result.error });
         toast({ title: 'Részleges újraküldés', description: `${result.retried || 0} elem újraküldve, néhány hiba történt.`, variant: 'destructive' });
       } else {
         toast({ title: 'Újraküldés sikeres', description: `${result.retried || retryTargets.length} elem újra feldolgozásra küldve.` });

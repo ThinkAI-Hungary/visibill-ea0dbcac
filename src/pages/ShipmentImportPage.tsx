@@ -397,12 +397,12 @@ export default function ShipmentImportPage() {
         const timeout = new Promise<void>((resolve) => setTimeout(resolve, 10000));
         const { error: efError } = await Promise.race([efPromise, timeout.then(() => ({ error: null, data: null }))]);
         if (efError) {
-          reportError({ type: 'edge_function', component: 'ShipmentImportPage', action: 'warn', message: 'Retroactive match EF error (non-critical)', error: efError });
+          reportError({ type: 'edge_function', severity: 'warning', component: 'ShipmentImportPage', action: 'warn', message: 'Retroactive match EF error (non-critical)', error: efError });
         } else {
           queryClient.invalidateQueries({ queryKey: ['escalated-matches', selectedCompany.id] });
         }
       } catch (efErr) {
-        reportError({ type: 'edge_function', component: 'ShipmentImportPage', action: 'warn', message: 'Retroactive match call failed (non-critical)', error: efErr });
+        reportError({ type: 'edge_function', severity: 'warning', component: 'ShipmentImportPage', action: 'warn', message: 'Retroactive match call failed (non-critical)', error: efErr });
       } finally {
         setIsMatching(false);
       }
