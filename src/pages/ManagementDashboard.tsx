@@ -3916,7 +3916,7 @@ function WorkerPanel() {
           {/* ── Queue Detail Panel (inline above recent jobs) ── */}
           {selectedQueue && (() => {
             const queueData = filteredQueues.find((q: any) => q.queue_name === selectedQueue);
-            if (!queueData) return null;
+            if (!queueData || queueData.queue_length === 0) return null;
             const items = queueData.pending_items || [];
             const queueDisplayName = queueData.queue_name.replace(/_jobs$/, '').replace(/^(PROD|VSWEB|THINKERMAN):/, '');
 
