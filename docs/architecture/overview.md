@@ -59,11 +59,11 @@ A Visibill egy három rétegű rendszer:
 Számla beérkezés                    Tranzakció beérkezés
   │                                   │
   ├── Email (Mailgun webhook)         ├── CSV upload (frontend)
-  ├── NAV sync (edge function)        └── Futár riport CSV
-  └── Kézi feltöltés (frontend)
+  ├── NAV sync (edge function)        ├── Futár riport CSV
+  └── Kézi feltöltés (frontend)       └── PDF tranzakciós bizonylat
   │                                   │
   ▼                                   ▼
-Supabase Storage + DB INSERT          DB INSERT
+Supabase Storage + DB INSERT          DB INSERT / Storage
   │                                   │
   ▼                                   ▼
 Edge Function → PGMQ enqueue         Edge Function → PGMQ enqueue
@@ -71,10 +71,10 @@ Edge Function → PGMQ enqueue         Edge Function → PGMQ enqueue
   ▼                                   ▼
 Python Worker poll                   Python Worker poll
   │                                   │
-  ├── OCR (Vision/MarkItDown)         ├── CSV parsing
-  ├── LLM klasszifikáció              ├── AI matching (számlákhoz)
-  ├── Adatkinyerés                    └── GL kategorizálás
-  └── GL kategorizálás
+  ├── OCR (Vision/MarkItDown)         ├── CSV parsing / PDF OCR
+  ├── LLM klasszifikáció              ├── PDF parser (pl. CIB Visszaigazolás)
+  ├── Adatkinyerés                    ├── AI matching (számlákhoz)
+  └── GL kategorizálás                └── GL kategorizálás
   │                                   │
   ▼                                   ▼
 DB UPDATE (feldolgozott adatok)      DB UPDATE (párosított tételek)
@@ -82,6 +82,7 @@ DB UPDATE (feldolgozott adatok)      DB UPDATE (párosított tételek)
   ▼
 Frontend (React Query invalidation → friss adat)
 ```
+
 
 ### XML főkönyvi import
 

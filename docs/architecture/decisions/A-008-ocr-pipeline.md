@@ -30,12 +30,17 @@ Markdown szöveg → LLM extraction (adatkinyerés)
 
 **pdf_splitter:** Többoldalas PDF-ek oldalankénti képekre bontása — a Vision OCR oldalanként dolgozik.
 
+**Robustness & Fallbacks (2026-07 frissítés):**
+- **Gibberish & CIDFont Detection:** A rendszer észleli a vezérlőkarakterekből vagy `(cid:X)` tokenekből álló értelmezhetetlen szövegeket (gibberish), és automatikusan OCR fallback-et indít.
+- **High-Quality PDF Rendering:** Kép-alapú / szkennelt PDF-ek esetén a beágyazott képek hibás kicsomagolása helyett a PyMuPDF (`fitz`) segítségével nagy felbontású (200 DPI) PNG képként rendereljük le a PDF első oldalát a Direct Vision OCR számára.
+- **Flaky Vision Refusal Retry:** Ha a Vision API ideiglenesen/flaky módon elutasítja a kép beolvasását (pl. *"I'm sorry, I can't read this..."* sablonválaszok), a rendszer automatikusan észleli a nem-hasznos választ (`_is_vision_response_useful`), és újrapróbálkozik (`max_attempts=2`) a direct vision OCR-rel.
+
 ## Consequences
 
 **Pozitív:**
 - MarkItDown gyors és olcsó (nincs API hívás, lokális feldolgozás)
 - Vision OCR magas pontosságú kézzel írt/rossz minőségű dokumentumoknál
-- A két útvonal kombinációja lefedi a dokumentumtípusok 99%-át
+- A két útvonal kombinációja és a hibatűrő automatikus retry logikák minimalizálják a feldolgozási hibákat flaky API válaszok esetén is
 
 **Negatív:**
 - Vision OCR költséges (GPT-4o Vision per-image pricing)
