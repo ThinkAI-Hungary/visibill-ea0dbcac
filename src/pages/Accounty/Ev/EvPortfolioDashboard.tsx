@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAccountyClients, type AccountyClient } from '@/hooks/accounty';
 import { formatMillionHuf, formatPercent, getEvThresholds, type ThresholdStatus } from '@/lib/evCalculations';
 import {
-  useAllEvClientSettings, useEvYtdRevenue,
+  useAllEvClientSettings, useEvYtdRevenue, useEvYtdTotals,
   type EvTaxpayerForm, type EvClientSettings,
 } from '@/hooks/useEvData';
 
@@ -84,9 +84,9 @@ export default function EvPortfolioDashboard() {
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: allSettings = [], isLoading: settingsLoading } = useAllEvClientSettings(taxYear);
-  const { data: ytdRevenueMap, isLoading: revenueLoading } = useEvYtdRevenue(taxYear);
+  const { data: ytdTotalsMap, isLoading: totalsLoading } = useEvYtdTotals(taxYear);
 
-  const isLoading = clientsLoading || settingsLoading || revenueLoading;
+  const isLoading = clientsLoading || settingsLoading || totalsLoading;
 
   // Build a lookup: company_id → settings
   const settingsMap = useMemo(() => {
@@ -97,11 +97,22 @@ export default function EvPortfolioDashboard() {
     return map;
   }, [allSettings]);
 
+  // Derive stable ytdRevenueMap from ytdTotalsMap for threshold checking
+  const ytdRevenueMap = useMemo(() => {
+    const map = new Map<string, number>();
+    ytdTotalsMap?.forEach((val, key) => {
+      map.set(key, val.revenue);
+    });
+    return map;
+  }, [ytdTotalsMap]);
+
   // Enrich clients with real DB data
   const enriched = useMemo<EnrichedEvClient[]>(() => {
     return clients.map((c: AccountyClient) => {
       const settings = settingsMap.get(c.companyId);
-      const revenue = ytdRevenueMap?.get(c.companyId) ?? 0;
+      const totals = ytdTotalsMap?.get(c.companyId) || { revenue: 0, expense: 0 };
+      const revenue = totals.revenue;
+      const expense = totals.expense;
       const form = settings?.taxpayer_form ?? null;
 
       // Compute threshold status from real revenue
@@ -128,14 +139,14 @@ export default function EvPortfolioDashboard() {
         employmentStatus: settings ? (EMPLOYMENT_LABELS[settings.employment_status] || settings.employment_status) : '—',
         vatStatus: settings ? (VAT_LABELS[settings.vat_status] || settings.vat_status) : '—',
         ytdRevenue: revenue,
-        ytdIncome: revenue, // Income = revenue for simplified view (costs from cashbook not aggregated here)
+        ytdIncome: revenue - expense, // Real Income = Revenue - Expenses from eaisybill invoices!
         filingStatus,
         thresholdStatus,
         isOrgType: !!settings?.org_type,
         orgType: settings?.org_type || undefined,
       };
     });
-  }, [clients, settingsMap, ytdRevenueMap]);
+  }, [clients, settingsMap, ytdTotalsMap]);
 
   const filtered = useMemo(() => {
     let list = enriched;

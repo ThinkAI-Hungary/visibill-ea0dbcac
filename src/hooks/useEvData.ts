@@ -783,7 +783,82 @@ export function useAllEvClientSettings(taxYear: number) {
 }
 
 /**
- * Fetch YTD revenue per company (for the threshold monitor)
+ * Fetch real eaisybill invoice totals for a company/year
+ */
+export function useEvRealTotals(companyId: string | undefined, taxYear: number) {
+  return useQuery({
+    queryKey: ['ev-real-totals', companyId, taxYear],
+    queryFn: async () => {
+      if (!companyId) return { totalBevetel: 0, totalKiadas: 0, balance: 0, itemCount: 0 };
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('invoice_direction, brutto_vegosszeg')
+        .eq('company_id', companyId)
+        .or(`and(teljesites_datuma.gte.${taxYear}-01-01,teljesites_datuma.lte.${taxYear}-12-31),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${taxYear}-01-01,kibocsatas_datuma.lte.${taxYear}-12-31)`)
+        .not('exclude_from_accounting', 'is', true);
+
+      if (error) throw error;
+
+      let totalBevetel = 0;
+      let totalKiadas = 0;
+
+      (data || []).forEach(inv => {
+        const val = Number(inv.brutto_vegosszeg) || 0;
+        if (inv.invoice_direction === 'outbound') {
+          totalBevetel += val;
+        } else if (inv.invoice_direction === 'inbound') {
+          totalKiadas += val;
+        }
+      });
+
+      return {
+        totalBevetel,
+        totalKiadas,
+        balance: totalBevetel - totalKiadas,
+        itemCount: data?.length || 0,
+      };
+    },
+    enabled: !!companyId,
+  });
+}
+
+/**
+ * Fetch YTD revenue and expenses per company from real eaisybill invoices.
+ */
+export function useEvYtdTotals(taxYear: number) {
+  return useQuery({
+    queryKey: ['ev-real-ytd-totals', taxYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('company_id, invoice_direction, brutto_vegosszeg')
+        .or(`and(teljesites_datuma.gte.${taxYear}-01-01,teljesites_datuma.lte.${taxYear}-12-31),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${taxYear}-01-01,kibocsatas_datuma.lte.${taxYear}-12-31)`)
+        .not('exclude_from_accounting', 'is', true);
+
+      if (error) throw error;
+
+      const map = new Map<string, { revenue: number; expense: number }>();
+      (data || []).forEach(inv => {
+        if (!inv.company_id) return;
+        const val = Number(inv.brutto_vegosszeg) || 0;
+        const current = map.get(inv.company_id) || { revenue: 0, expense: 0 };
+        
+        if (inv.invoice_direction === 'outbound') {
+          current.revenue += val;
+        } else if (inv.invoice_direction === 'inbound') {
+          current.expense += val;
+        }
+        
+        map.set(inv.company_id, current);
+      });
+      return map;
+    },
+  });
+}
+
+/**
+ * Fetch YTD revenue per company (for the threshold monitor) from real invoices
  * Returns a Map<company_id, ytd_revenue> for easy lookup.
  */
 export function useEvYtdRevenue(taxYear: number) {
@@ -791,11 +866,19 @@ export function useEvYtdRevenue(taxYear: number) {
     queryKey: ['ev-ytd-revenue', taxYear],
     queryFn: async () => {
       const { data, error } = await supabase
-        .rpc('get_ev_ytd_revenue_by_company', { p_tax_year: taxYear });
+        .from('invoices')
+        .select('company_id, brutto_vegosszeg')
+        .eq('invoice_direction', 'outbound')
+        .or(`and(teljesites_datuma.gte.${taxYear}-01-01,teljesites_datuma.lte.${taxYear}-12-31),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${taxYear}-01-01,kibocsatas_datuma.lte.${taxYear}-12-31)`)
+        .not('exclude_from_accounting', 'is', true);
+
       if (error) throw error;
+
       const map = new Map<string, number>();
-      (data || []).forEach((row: { company_id: string; ytd_revenue: number }) => {
-        map.set(row.company_id, Number(row.ytd_revenue) || 0);
+      (data || []).forEach(inv => {
+        if (!inv.company_id) return;
+        const val = Number(inv.brutto_vegosszeg) || 0;
+        map.set(inv.company_id, (map.get(inv.company_id) || 0) + val);
       });
       return map;
     },

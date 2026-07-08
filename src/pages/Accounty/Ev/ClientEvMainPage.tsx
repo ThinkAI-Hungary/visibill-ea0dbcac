@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatMillionHuf, formatPercent, formatHuf, getEvThresholds } from '@/lib/evCalculations';
 import type { ThresholdStatus } from '@/lib/evCalculations';
-import { useEvClientSettings, useCashbookTotals } from '@/hooks/useEvData';
+import { useEvClientSettings, useEvRealTotals } from '@/hooks/useEvData';
 
 // ─── Employment/VAT labels ──────────────────────────────────────────────────
 
@@ -51,15 +51,15 @@ export default function ClientEvMainPage() {
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: evSettings, isLoading: settingsLoading } = useEvClientSettings(id, taxYear);
-  const { data: cashbookTotals, isLoading: totalsLoading } = useCashbookTotals(id, taxYear);
+  const { data: realTotals, isLoading: totalsLoading } = useEvRealTotals(id, taxYear);
 
   const taxpayerForm = evSettings?.taxpayer_form || 'atalany';
   const employmentStatus = evSettings?.employment_status || 'foallasu';
   const vatStatus = evSettings?.vat_status || 'alanyi_mentes';
 
-  const ytdRevenue = cashbookTotals?.totalBevetel || 0;
-  const ytdExpenses = cashbookTotals?.totalKiadas || 0;
-  const ytdIncome = ytdRevenue - ytdExpenses;
+  const ytdRevenue = realTotals?.totalBevetel || 0;
+  const ytdExpenses = realTotals?.totalKiadas || 0;
+  const ytdIncome = realTotals?.balance || 0;
 
   const thresholds = getEvThresholds(ytdRevenue, taxpayerForm, false);
 
@@ -254,12 +254,12 @@ export default function ClientEvMainPage() {
         <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
           <p className="text-xs text-slate-500 mb-1">Egyenleg</p>
           <p className={cn('text-xl font-bold', ytdIncome >= 0 ? 'text-indigo-600' : 'text-red-600')}>
-            {totalsLoading ? '...' : formatMillionHuf(cashbookTotals?.balance || 0)}
+            {totalsLoading ? '...' : formatMillionHuf(realTotals?.balance || 0)}
           </p>
         </div>
         <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
           <p className="text-xs text-slate-500 mb-1">Tételek</p>
-          <p className="text-xl font-bold text-violet-600">{totalsLoading ? '...' : Object.keys(cashbookTotals?.totals || {}).length}</p>
+          <p className="text-xl font-bold text-violet-600">{totalsLoading ? '...' : (realTotals?.itemCount || 0)}</p>
         </div>
       </div>
 
