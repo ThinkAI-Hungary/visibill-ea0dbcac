@@ -222,12 +222,13 @@ function roleBadge(role: string) {
 }
 
 // ─── Skeleton shimmer ─────────────────────────────────
-function Skeleton({ className = '' }: { className?: string }) {
+function Skeleton({ className = '', style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <div
       className={`relative overflow-hidden rounded-lg bg-muted/60 animate-shimmer ${className}`}
       role="status"
       aria-label="Betöltés…"
+      style={style}
     />
   );
 }
@@ -3581,11 +3582,14 @@ function WorkerPanel() {
   const [selectedSection, setSelectedSection] = useState<'containers' | 'queues'>('containers');
   const [workerTab, setWorkerTab] = useState<'overview' | 'llm-costs'>('overview');
   const [selectedQueue, setSelectedQueue] = useState<string | null>(null);
+  const [workerPeriod, setWorkerPeriod] = useState<string>('all');
+
+  const workerPeriodLabel: Record<string, string> = { 'all': 'Összesen', '24h': '24 óra', '7d': '7 nap', '30d': '30 nap', '90d': '90 nap' };
 
   // 30s polling
   const { data, isLoading } = useQuery({
-    queryKey: ['worker-status'],
-    queryFn: () => fetchManagementData('worker-status'),
+    queryKey: ['worker-status', workerPeriod],
+    queryFn: () => fetchManagementData('worker-status', { period: workerPeriod }),
     refetchInterval: 30_000,
     staleTime: 15_000,
   });
@@ -3679,6 +3683,23 @@ function WorkerPanel() {
         <LLMCostPanel />
       ) : (
       <>
+      {/* ── Period Selector ── */}
+      <div className="flex justify-end">
+        <div className="flex gap-0.5 bg-muted/30 p-0.5 rounded-md">
+          {['all', '24h', '7d', '30d', '90d'].map(p => (
+            <button
+              key={p}
+              onClick={() => setWorkerPeriod(p)}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
+                workerPeriod === p ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {workerPeriodLabel[p] || p}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ── KPI Summary Row ── */}
       <div className="grid grid-cols-5 gap-3">
         {[
@@ -3697,21 +3718,21 @@ function WorkerPanel() {
             sub: 'üzenet',
           },
           {
-            label: 'Feldolgozva (24h)',
+            label: `Feldolgozva (${workerPeriodLabel[workerPeriod]})`,
             value: summary.total_jobs_24h || 0,
             icon: CheckCircle2,
             color: 'text-emerald-500',
             sub: 'job',
           },
           {
-            label: 'LLM költség (24h)',
+            label: `LLM költség (${workerPeriodLabel[workerPeriod]})`,
             value: `$${(summary.total_cost_24h || 0).toFixed(2)}`,
             icon: Coins,
             color: 'text-purple-500',
             sub: 'USD',
           },
           {
-            label: 'Hibák (24h)',
+            label: `Hibák (${workerPeriodLabel[workerPeriod]})`,
             value: summary.total_errors_24h || 0,
             icon: AlertTriangle,
             color: (summary.total_errors_24h || 0) > 0 ? 'text-red-500' : 'text-muted-foreground',
@@ -3851,7 +3872,7 @@ function WorkerPanel() {
             <CardHeader className="pb-2 pt-3 px-4">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Activity className="h-4 w-4 text-primary" />
-                Pipeline teljesítmény (24h)
+                Pipeline teljesítmény ({workerPeriodLabel[workerPeriod]})
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0 pb-2">

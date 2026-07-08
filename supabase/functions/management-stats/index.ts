@@ -298,7 +298,8 @@ serve(async (req) => {
     }
 
     if (action === "worker-status") {
-      return json(await buildWorkerStatus(admin));
+      const period = url.searchParams.get("period") || "all";
+      return json(await buildWorkerStatus(admin, period));
     }
 
     if (action === "llm-costs") {
@@ -2261,10 +2262,17 @@ async function deleteFiles(
 // ─── Worker Status ────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════
 
-async function buildWorkerStatus(admin: ReturnType<typeof createClient>) {
+async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period: string = "all") {
   const HEALTH_THRESHOLD_SECONDS = 120;
   const now = new Date();
-  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const periodMs: Record<string, number> = {
+    "24h": 24 * 60 * 60 * 1000,
+    "7d": 7 * 24 * 60 * 60 * 1000,
+    "30d": 30 * 24 * 60 * 60 * 1000,
+    "90d": 90 * 24 * 60 * 60 * 1000,
+  };
+  const ms = periodMs[period];
+  const periodSince = ms ? new Date(now.getTime() - ms).toISOString() : null; // null = all time
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   // Generate last 7 day keys for sparklines
@@ -2390,10 +2398,13 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>) {
   // 3a. Fetch 24h LLM rows from all projects in parallel
   const llmFetches = projectClients.map(async (pc) => {
     try {
-      const { data } = await pc.client
+      let llmQuery = pc.client
         .from("llm_koltsegek")
         .select("pipeline, worker_id, processing_duration_ms, estimated_cost_usd, created_at")
-        .gte("created_at", twentyFourHoursAgo);
+        .order("created_at", { ascending: false })
+        .limit(10000);
+      if (periodSince) llmQuery = llmQuery.gte("created_at", periodSince);
+      const { data } = await llmQuery;
       return { project: pc.name, rows: data || [] };
     } catch (e) {
       console.warn(`[worker-status] llm_koltsegek query failed for ${pc.name}:`, e);
@@ -2469,15 +2480,17 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>) {
 
   const errorFetches = projectClients.map(async (pc) => {
     try {
-      const { count } = await pc.client
+      let errCountQ = pc.client
         .from("app_error_logs")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", twentyFourHoursAgo);
+        .select("id", { count: "exact", head: true });
+      if (periodSince) errCountQ = errCountQ.gte("created_at", periodSince);
+      const { count } = await errCountQ;
 
-      const { data: errorRows } = await pc.client
+      let errRowsQ = pc.client
         .from("app_error_logs")
-        .select("error_type")
-        .gte("created_at", twentyFourHoursAgo);
+        .select("error_type");
+      if (periodSince) errRowsQ = errRowsQ.gte("created_at", periodSince);
+      const { data: errorRows } = await errRowsQ;
 
       return { count: count || 0, errorRows: errorRows || [] };
     } catch (e) {
