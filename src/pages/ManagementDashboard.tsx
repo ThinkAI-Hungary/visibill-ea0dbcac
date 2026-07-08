@@ -3589,12 +3589,12 @@ function WorkerPanel() {
 
   const workerPeriodLabel: Record<string, string> = { 'all': 'Összesen', '24h': '24 óra', '7d': '7 nap', '30d': '30 nap', '90d': '90 nap' };
 
-  // 30s polling
+  // Near-realtime 5s polling for operator dashboard responsiveness
   const { data, isLoading } = useQuery({
     queryKey: ['worker-status', workerPeriod],
     queryFn: () => fetchManagementData('worker-status', { period: workerPeriod }),
-    refetchInterval: 30_000,
-    staleTime: 15_000,
+    refetchInterval: 5_000,
+    staleTime: 2_500,
   });
 
   if (isLoading || !data) {
