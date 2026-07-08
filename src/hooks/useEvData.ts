@@ -805,9 +805,10 @@ export function useEvRealTotals(companyId: string | undefined, taxYear: number) 
 
       (data || []).forEach(inv => {
         const val = Number(inv.brutto_vegosszeg) || 0;
-        if (inv.invoice_direction === 'outbound') {
+        const dir = (inv.invoice_direction || '').toUpperCase();
+        if (dir === 'OUTBOUND') {
           totalBevetel += val;
-        } else if (inv.invoice_direction === 'inbound') {
+        } else if (dir === 'INBOUND') {
           totalKiadas += val;
         }
       });
@@ -843,10 +844,11 @@ export function useEvYtdTotals(taxYear: number) {
         if (!inv.company_id) return;
         const val = Number(inv.brutto_vegosszeg) || 0;
         const current = map.get(inv.company_id) || { revenue: 0, expense: 0 };
+        const dir = (inv.invoice_direction || '').toUpperCase();
         
-        if (inv.invoice_direction === 'outbound') {
+        if (dir === 'OUTBOUND') {
           current.revenue += val;
-        } else if (inv.invoice_direction === 'inbound') {
+        } else if (dir === 'INBOUND') {
           current.expense += val;
         }
         
@@ -868,7 +870,7 @@ export function useEvYtdRevenue(taxYear: number) {
       const { data, error } = await supabase
         .from('invoices')
         .select('company_id, brutto_vegosszeg')
-        .eq('invoice_direction', 'outbound')
+        .in('invoice_direction', ['OUTBOUND', 'outbound'])
         .or(`and(teljesites_datuma.gte.${taxYear}-01-01,teljesites_datuma.lte.${taxYear}-12-31),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${taxYear}-01-01,kibocsatas_datuma.lte.${taxYear}-12-31)`)
         .not('exclude_from_accounting', 'is', true);
 
