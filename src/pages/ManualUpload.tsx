@@ -52,12 +52,17 @@ const ManualUpload = () => {
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('upload');
 
-  // Duplicate re-upload confirmation state
+  // Duplicate re-upload confirmation state (DB-level: file already processed)
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [duplicateFileNames, setDuplicateFileNames] = useState<string[]>([]);
   const [duplicateUploadType, setDuplicateUploadType] = useState<'invoice' | 'transaction'>('invoice');
   const pendingUploadRef = useRef<(() => void) | null>(null);
   const [filesModalOpen, setFilesModalOpen] = useState(false);
+
+  // List-level duplicate dialog (file already in pending selection list)
+  const [listDuplicateDialogOpen, setListDuplicateDialogOpen] = useState(false);
+  const [listDuplicateFileNames, setListDuplicateFileNames] = useState<string[]>([]);
+  const pendingListAddRef = useRef<{ skipDupes: () => void; addAll: () => void } | null>(null);
 
   const delayedUploadHistoryInvalidation = useCallback(() => {
     setTimeout(() => {
@@ -107,7 +112,20 @@ const ManualUpload = () => {
       return false;
     });
 
-    setSelectedInvoiceFiles(prev => [...prev, ...validFiles]);
+    const currentFiles = selectedInvoiceFiles;
+    const existingNames = new Set(currentFiles.map(f => f.name));
+    const newFiles = validFiles.filter(f => !existingNames.has(f.name));
+    const dupeFiles = validFiles.filter(f => existingNames.has(f.name));
+    if (dupeFiles.length > 0) {
+      setListDuplicateFileNames(dupeFiles.map(f => f.name));
+      pendingListAddRef.current = {
+        skipDupes: () => setSelectedInvoiceFiles(prev => [...prev, ...newFiles]),
+        addAll: () => setSelectedInvoiceFiles(prev => [...prev, ...validFiles]),
+      };
+      setListDuplicateDialogOpen(true);
+    } else {
+      setSelectedInvoiceFiles(prev => [...prev, ...newFiles]);
+    }
     event.target.value = '';
   };
 
@@ -134,7 +152,20 @@ const ManualUpload = () => {
       return false;
     });
 
-    setSelectedBankFiles(prev => [...prev, ...validFiles]);
+    const currentFiles = selectedBankFiles;
+    const existingNames = new Set(currentFiles.map(f => f.name));
+    const newFiles = validFiles.filter(f => !existingNames.has(f.name));
+    const dupeFiles = validFiles.filter(f => existingNames.has(f.name));
+    if (dupeFiles.length > 0) {
+      setListDuplicateFileNames(dupeFiles.map(f => f.name));
+      pendingListAddRef.current = {
+        skipDupes: () => setSelectedBankFiles(prev => [...prev, ...newFiles]),
+        addAll: () => setSelectedBankFiles(prev => [...prev, ...validFiles]),
+      };
+      setListDuplicateDialogOpen(true);
+    } else {
+      setSelectedBankFiles(prev => [...prev, ...newFiles]);
+    }
     event.target.value = '';
   };
 
@@ -169,7 +200,20 @@ const ManualUpload = () => {
       return false;
     });
 
-    setSelectedSalaryFiles(prev => [...prev, ...validFiles]);
+    const currentFiles = selectedSalaryFiles;
+    const existingNames = new Set(currentFiles.map(f => f.name));
+    const newFiles = validFiles.filter(f => !existingNames.has(f.name));
+    const dupeFiles = validFiles.filter(f => existingNames.has(f.name));
+    if (dupeFiles.length > 0) {
+      setListDuplicateFileNames(dupeFiles.map(f => f.name));
+      pendingListAddRef.current = {
+        skipDupes: () => setSelectedSalaryFiles(prev => [...prev, ...newFiles]),
+        addAll: () => setSelectedSalaryFiles(prev => [...prev, ...validFiles]),
+      };
+      setListDuplicateDialogOpen(true);
+    } else {
+      setSelectedSalaryFiles(prev => [...prev, ...newFiles]);
+    }
     event.target.value = '';
   };
 
@@ -200,7 +244,20 @@ const ManualUpload = () => {
       return false;
     });
 
-    setSelectedTransactionFiles(prev => [...prev, ...validFiles]);
+    const currentFiles = selectedTransactionFiles;
+    const existingNames = new Set(currentFiles.map(f => f.name));
+    const newFiles = validFiles.filter(f => !existingNames.has(f.name));
+    const dupeFiles = validFiles.filter(f => existingNames.has(f.name));
+    if (dupeFiles.length > 0) {
+      setListDuplicateFileNames(dupeFiles.map(f => f.name));
+      pendingListAddRef.current = {
+        skipDupes: () => setSelectedTransactionFiles(prev => [...prev, ...newFiles]),
+        addAll: () => setSelectedTransactionFiles(prev => [...prev, ...validFiles]),
+      };
+      setListDuplicateDialogOpen(true);
+    } else {
+      setSelectedTransactionFiles(prev => [...prev, ...newFiles]);
+    }
     event.target.value = '';
   };
 
@@ -227,7 +284,20 @@ const ManualUpload = () => {
       });
       return false;
     });
-    setSelectedReportFiles(prev => [...prev, ...validFiles.map(f => ({ file: f, reportType }))]);
+    const currentFiles = selectedReportFiles;
+    const existingNames = new Set(currentFiles.map(e => e.file.name));
+    const newEntries = validFiles.filter(f => !existingNames.has(f.name)).map(f => ({ file: f, reportType }));
+    const dupeFiles = validFiles.filter(f => existingNames.has(f.name));
+    if (dupeFiles.length > 0) {
+      setListDuplicateFileNames(dupeFiles.map(f => f.name));
+      pendingListAddRef.current = {
+        skipDupes: () => setSelectedReportFiles(prev => [...prev, ...newEntries]),
+        addAll: () => setSelectedReportFiles(prev => [...prev, ...validFiles.map(f => ({ file: f, reportType }))]),
+      };
+      setListDuplicateDialogOpen(true);
+    } else {
+      setSelectedReportFiles(prev => [...prev, ...newEntries]);
+    }
     event.target.value = '';
   };
 
@@ -1600,6 +1670,53 @@ const ManualUpload = () => {
               }}
             >
               Igen, újra feltöltöm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* List-level duplicate warning dialog (file already in pending selection) */}
+      <AlertDialog open={listDuplicateDialogOpen} onOpenChange={setListDuplicateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Fájl már szerepel a listában</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  A következő fájl(ok) már szerepelnek a feltöltési listában:
+                </p>
+                <ul className="list-disc pl-5 space-y-1 max-h-40 overflow-y-auto">
+                  {listDuplicateFileNames.map((name, i) => (
+                    <li key={i} className="font-medium text-foreground text-sm">{name}</li>
+                  ))}
+                </ul>
+                <p>
+                  Szándékosan szeretnéd kétszer hozzáadni őket?
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                if (pendingListAddRef.current) {
+                  pendingListAddRef.current.skipDupes();
+                  pendingListAddRef.current = null;
+                }
+              }}
+            >
+              Kihagyás
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setListDuplicateDialogOpen(false);
+                if (pendingListAddRef.current) {
+                  pendingListAddRef.current.addAll();
+                  pendingListAddRef.current = null;
+                }
+              }}
+            >
+              Hozzáadás
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

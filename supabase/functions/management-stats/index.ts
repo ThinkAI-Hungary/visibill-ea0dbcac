@@ -2322,6 +2322,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
   const { data: heartbeats } = await admin
     .from("worker_heartbeats")
     .select("*")
+    .gt("last_heartbeat", new Date(now.getTime() - 10 * 60 * 1000).toISOString())
     .order("container_name");
 
   const containers = (heartbeats || []).map((h: any) => {
