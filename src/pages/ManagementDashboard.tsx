@@ -3582,7 +3582,7 @@ function WorkerPanel() {
   const [selectedSection, setSelectedSection] = useState<'containers' | 'queues'>('containers');
   const [workerTab, setWorkerTab] = useState<'overview' | 'llm-costs'>('overview');
   const [selectedQueue, setSelectedQueue] = useState<string | null>(null);
-  const [workerPeriod, setWorkerPeriod] = useState<string>('all');
+  const [workerPeriod, setWorkerPeriod] = useState<string>('24h');
 
   const workerPeriodLabel: Record<string, string> = { 'all': 'Összesen', '24h': '24 óra', '7d': '7 nap', '30d': '30 nap', '90d': '90 nap' };
 
