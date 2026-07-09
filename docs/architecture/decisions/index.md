@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-07-09  
-> **Összesen:** 32 döntés | ✅ Decided: 31 | ⛔ Superseded: 1
+> **Összesen:** 33 döntés | ✅ Decided: 32 | ⛔ Superseded: 1
 
 ---
 
@@ -96,6 +96,7 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | # | DĂ¶ntĂ©s | StĂˇtusz | FĂˇjl |
 |---|--------|---------|------|
 | A-019 | Management Dashboard architektĂşra (11 action, 27 superadmin modul, 5 rĂ©tegĹ± guard, Edge Function + service_role) | âś… Decided | [A-019](./A-019-management-dashboard.md) |
+| A-033 | Service Role kizárása a cég szintű Audit naplóból | ✅ Decided | [A-033](./A-033-exclude-service-role-from-audit.md) |
 
 ---
 

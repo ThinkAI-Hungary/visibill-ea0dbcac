@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { reportError } from '@/lib/errorReporter';
 import { useToast } from '@/hooks/use-toast';
+import { useTickets } from '@/hooks/useTickets';
 import {
   Users, Building2, FileText, Clock,
   ChevronRight, ChevronLeft, ChevronDown, Search, LogOut, ArrowLeft, Shield,
@@ -61,6 +62,9 @@ import TicketsPage from './TicketsPage';
 // ─── Types ────────────────────────────────────────────
 interface OverviewData {
   usersCount: number;
+  totalErrors?: number;
+  mostErrorCompany?: { id: string; name: string; errorCount: number } | null;
+  mostErrorUser?: { id: string; name: string; email: string; errorCount: number } | null;
   companiesCount: number;
   companies: Array<{
     id: string; name: string; tax_number: string | null; created_at: string;
@@ -538,18 +542,24 @@ function LlmCostTable({ companyId }: { companyId: string }) {
 type ErrorSortCol = 'created_at' | 'source' | 'error_category';
 
 function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: string) => void; allUsers: ControlCenterUser[] }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const PAGE_SIZE = 25;
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [sortCol, setSortCol] = useState<ErrorSortCol>('created_at');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(0);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [filterSource, setFilterSource] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [filterCompanyId, setFilterCompanyId] = useState('');
-  const [filterUserId, setFilterUserId] = useState('');
+
+  // Deriving states directly from URL search parameters
+  const page = Number(searchParams.get('err_page')) || 0;
+  const sortCol = (searchParams.get('err_sort') as ErrorSortCol) || 'created_at';
+  const sortDir = (searchParams.get('err_dir') as 'asc' | 'desc') || 'desc';
+  const filterCompanyId = searchParams.get('err_company') || '';
+  const filterUserId = searchParams.get('err_user') || '';
+  const filterSource = searchParams.get('err_source') || '';
+  const filterCategory = searchParams.get('err_category') || '';
+  const dateFrom = searchParams.get('err_from') || '';
+  const dateTo = searchParams.get('err_to') || '';
+  const debouncedSearch = searchParams.get('err_q') || '';
+
+  // Local state for the input field to prevent layout/input lag
+  const [search, setSearch] = useState(debouncedSearch);
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
@@ -562,6 +572,38 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
   const [companySearchOpen, setCompanySearchOpen] = useState(false);
   const [userSearchOpen, setUserSearchOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  // Helper function to update search parameters atomically
+  const updateParams = useCallback((updates: Record<string, string | number | null>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, val]) => {
+      if (val !== null && val !== '') {
+        next.set(key, String(val));
+      } else {
+        next.delete(key);
+      }
+    });
+    // Reset page on filter changes unless page is explicitly updated
+    if (!('err_page' in updates)) {
+      next.delete('err_page');
+    }
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
+  // Sync local search input value when URL changes externally
+  useEffect(() => {
+    setSearch(debouncedSearch);
+  }, [debouncedSearch]);
+
+  // Debounce search input to URL parameters
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (search !== debouncedSearch) {
+        updateParams({ err_q: search });
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search, debouncedSearch, updateParams]);
 
   // Build company options from allUsers (deduped companies) — same as FilesPanel
   const companyOptions = useMemo(() => {
@@ -580,20 +622,13 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
     return allUsers.filter((u: any) => u.companies?.some((c: any) => c.id === filterCompanyId));
   }, [allUsers, filterCompanyId]);
 
-  // Debounce search — useEffect handles cleanup properly (useMemo does NOT)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(0);
-    }, 400);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const toggleSort = useCallback((col: ErrorSortCol) => {
-    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortCol(col); setSortDir('desc'); }
-    setPage(0);
-  }, [sortCol]);
+    if (sortCol === col) {
+      updateParams({ err_dir: sortDir === 'asc' ? 'desc' : 'asc' });
+    } else {
+      updateParams({ err_sort: col, err_dir: 'desc' });
+    }
+  }, [sortCol, sortDir, updateParams]);
 
   const { data, isLoading, isFetching } = useQuery<ErrorsData>({
     queryKey: ['management-errors', page, PAGE_SIZE, sortCol, sortDir, debouncedSearch, filterCompanyId, filterSource, filterCategory, filterUserId, dateFrom, dateTo],
@@ -832,10 +867,17 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                 !hasAnyFilter ? "border-destructive/50 bg-destructive/5" : ""
               )}
               onClick={() => {
-                setSearch(''); setFilterCompanyId(''); setFilterUserId('');
-                setFilterSource(''); setFilterCategory('');
-                setDateFrom(''); setDateTo('');
-                setPage(0);
+                updateParams({
+                  err_q: '',
+                  err_company: '',
+                  err_user: '',
+                  err_source: '',
+                  err_category: '',
+                  err_from: '',
+                  err_to: '',
+                  err_page: null,
+                });
+                setSearch('');
               }}
               role="button" tabIndex={0}
             >
@@ -863,11 +905,10 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
               )}
               onClick={() => {
                 if (is24hActive) {
-                  setDateFrom(''); setDateTo('');
+                  updateParams({ err_from: '', err_to: '', err_page: null });
                 } else {
-                  setDateFrom(today); setDateTo('');
+                  updateParams({ err_from: today, err_to: '', err_page: null });
                 }
-                setPage(0);
               }}
               role="button" tabIndex={0}
             >
@@ -892,8 +933,11 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
           onClick={() => {
             if (data?.mostAffectedCompany) {
               const id = data.mostAffectedCompany.id;
-              setFilterCompanyId(prev => prev === id ? '' : id);
-              setPage(0);
+              updateParams({
+                err_company: filterCompanyId === id ? '' : id,
+                err_user: '',
+                err_page: null,
+              });
             }
           }}
           role="button" tabIndex={0}
@@ -917,8 +961,10 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
           onClick={() => {
             if (data?.mostAffectedUser) {
               const id = data.mostAffectedUser.id;
-              setFilterUserId(prev => prev === id ? '' : id);
-              setPage(0);
+              updateParams({
+                err_user: filterUserId === id ? '' : id,
+                err_page: null,
+              });
             }
           }}
           role="button" tabIndex={0}
@@ -963,7 +1009,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
               />
             </div>
 
-            {/* Source filter (Popover + scroll) */}
+             {/* Source filter (Popover + scroll) */}
             {(() => {
               const active = sourceOptions.find(o => o.value === filterSource);
               return (
@@ -977,7 +1023,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                   <PopoverContent className="w-[220px] p-1" align="start">
                     <div className="max-h-[280px] overflow-y-auto">
                       <button
-                        onClick={() => { setFilterSource(''); setPage(0); }}
+                        onClick={() => { updateParams({ err_source: '' }); }}
                         className={cn(
                           "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
                           filterSource === '' ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"
@@ -989,7 +1035,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                       {sourceOptions.map(o => (
                         <button
                           key={o.value}
-                          onClick={() => { setFilterSource(o.value); setPage(0); }}
+                          onClick={() => { updateParams({ err_source: o.value }); }}
                           className={cn(
                             "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
                             filterSource === o.value ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"
@@ -1019,7 +1065,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                   <PopoverContent className="w-[220px] p-1" align="start">
                     <div className="max-h-[280px] overflow-y-auto">
                       <button
-                        onClick={() => { setFilterCategory(''); setPage(0); }}
+                        onClick={() => { updateParams({ err_category: '' }); }}
                         className={cn(
                           "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
                           filterCategory === '' ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"
@@ -1031,7 +1077,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                       {categoryOptions.map(o => (
                         <button
                           key={o.value}
-                          onClick={() => { setFilterCategory(o.value); setPage(0); }}
+                          onClick={() => { updateParams({ err_category: o.value }); }}
                           className={cn(
                             "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
                             filterCategory === o.value ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"
@@ -1048,6 +1094,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
               );
             })()}
 
+            {/* Company Search Combobox */}
             {/* Company Search Combobox */}
             <Popover open={companySearchOpen} onOpenChange={setCompanySearchOpen}>
               <PopoverTrigger asChild>
@@ -1074,9 +1121,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                       <CommandItem
                         value=""
                         onSelect={() => {
-                          setFilterCompanyId("");
-                          setFilterUserId("");
-                          setPage(0);
+                          updateParams({ err_company: '', err_user: '', err_page: null });
                           setCompanySearchOpen(false);
                         }}
                         className="text-xs"
@@ -1094,9 +1139,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                           key={id}
                           value={name}
                           onSelect={() => {
-                            setFilterCompanyId(id);
-                            setFilterUserId("");
-                            setPage(0);
+                            updateParams({ err_company: id, err_user: '', err_page: null });
                             setCompanySearchOpen(false);
                           }}
                           className="text-xs"
@@ -1143,8 +1186,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                       <CommandItem
                         value=""
                         onSelect={() => {
-                          setFilterUserId("");
-                          setPage(0);
+                          updateParams({ err_user: '', err_page: null });
                           setUserSearchOpen(false);
                         }}
                         className="text-xs"
@@ -1162,8 +1204,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                           key={u.user_id}
                           value={u.name || u.email || ""}
                           onSelect={() => {
-                            setFilterUserId(u.user_id);
-                            setPage(0);
+                            updateParams({ err_user: u.user_id, err_page: null });
                             setUserSearchOpen(false);
                           }}
                           className="text-xs"
@@ -1187,7 +1228,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
             <Input
               type="date"
               value={dateFrom}
-              onChange={e => { setDateFrom(e.target.value); setPage(0); }}
+              onChange={e => { updateParams({ err_from: e.target.value, err_page: null }); }}
               className="h-8 text-xs bg-background w-36"
               id="errors-date-from"
             />
@@ -1195,7 +1236,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
             <Input
               type="date"
               value={dateTo}
-              onChange={e => { setDateTo(e.target.value); setPage(0); }}
+              onChange={e => { updateParams({ err_to: e.target.value, err_page: null }); }}
               className="h-8 text-xs bg-background w-36"
               id="errors-date-to"
             />
@@ -1204,7 +1245,19 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
             {(search || filterSource || filterCategory || filterCompanyId || filterUserId || dateFrom || dateTo) && (
               <Button
                 variant="ghost" size="sm"
-                onClick={() => { setSearch(''); setDebouncedSearch(''); setFilterSource(''); setFilterCategory(''); setFilterCompanyId(''); setFilterUserId(''); setDateFrom(''); setDateTo(''); setPage(0); }}
+                onClick={() => {
+                  updateParams({
+                    err_q: '',
+                    err_company: '',
+                    err_user: '',
+                    err_source: '',
+                    err_category: '',
+                    err_from: '',
+                    err_to: '',
+                    err_page: null,
+                  });
+                  setSearch('');
+                }}
                 className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3 w-3" />
@@ -1225,6 +1278,11 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                   onClick={handleBulkRetry}>
                   <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />
                   Újraküldés
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelected(new Set())}>
+                  <X className="h-3 w-3" />
+                  Kijelölés törlése
                 </Button>
               </>
             )}
@@ -1313,7 +1371,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                         <td className="py-1.5 px-3">
                           {r.company_name ? (
                             <button className="text-foreground hover:text-primary transition-colors font-medium text-left truncate max-w-[140px] block"
-                              onClick={e => { e.stopPropagation(); if (r.company_id) { setFilterCompanyId(r.company_id); setPage(0); } }}
+                              onClick={e => { e.stopPropagation(); if (r.company_id) { updateParams({ err_company: r.company_id, err_page: null }); } }}
                               title={`Szűrés: ${r.company_name}`}>
                               {r.company_name}
                             </button>
@@ -1327,7 +1385,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                             </span>
                           ) : r.user_name ? (
                             <button className="text-foreground hover:text-primary transition-colors text-left truncate max-w-[120px] block text-[11px]"
-                              onClick={e => { e.stopPropagation(); if (r.user_id) { setFilterUserId(r.user_id); setPage(0); } }}
+                              onClick={e => { e.stopPropagation(); if (r.user_id) { updateParams({ err_user: r.user_id, err_page: null }); } }}
                               title={`Szűrés: ${r.user_name}`}>
                               {r.user_name}
                             </button>
@@ -1446,12 +1504,12 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
               </span>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" className="h-6 w-6" disabled={page === 0}
-                  onClick={() => setPage(p => p - 1)}>
+                  onClick={() => updateParams({ err_page: page - 1 })}>
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
                 <span className="text-[11px] text-muted-foreground tabular-nums px-2">{page + 1}/{totalPages}</span>
                 <Button variant="ghost" size="icon" className="h-6 w-6" disabled={page >= totalPages - 1}
-                  onClick={() => setPage(p => p + 1)}>
+                  onClick={() => updateParams({ err_page: page + 1 })}>
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -1645,66 +1703,8 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-hidden">
-                {isPdf && (
-                  <iframe
-                    src={previewFile.url}
-                    className="w-full h-full border-0"
-                    title={`PDF előnézet: ${previewFile.name}`}
-                  />
-                )}
-                {isImage && (
-                  <div className="w-full h-full flex items-center justify-center p-6 overflow-auto bg-black/20">
-                    <img
-                      src={previewFile.url}
-                      alt={previewFile.name}
-                      className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-                    />
-                  </div>
-                )}
-                {isCsv && (
-                  <iframe
-                    src={previewFile.url}
-                    className="w-full h-full border-0 bg-white text-black"
-                    title={`CSV előnézet: ${previewFile.name}`}
-                  />
-                )}
-                {isExcel && (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-muted-foreground">
-                    <FileText className="h-16 w-16 opacity-30" />
-                    <p className="text-sm">Excel fájlok böngészőben nem jeleníthetők meg.</p>
-                    <a
-                      href={previewFile.url}
-                      download={previewFile.name}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-                    >
-                      <Download className="h-4 w-4" /> Letöltés
-                    </a>
-                  </div>
-                )}
-                {!isPdf && !isImage && !isCsv && !isExcel && (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-muted-foreground">
-                    <FileText className="h-16 w-16 opacity-30" />
-                    <p className="text-sm">A fájl típusa ({ext || 'ismeretlen'}) nem jeleníthető meg előnézetben.</p>
-                    <div className="flex gap-2">
-                      <a
-                        href={previewFile.url}
-                        download={previewFile.name}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-                      >
-                        <Download className="h-4 w-4" /> Letöltés
-                      </a>
-                      <a
-                        href={previewFile.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors"
-                      >
-                        <ExternalLink className="h-4 w-4" /> Megnyitás
-                      </a>
-                    </div>
-                  </div>
-                )}
+              <div className="flex-1 overflow-hidden relative">
+                <FilePreviewContent previewFile={previewFile} />
               </div>
             </div>
           </div>
@@ -2420,6 +2420,115 @@ function SuperadminPanel({ overview }: { overview: OverviewData | undefined }) {
   );
 }
 
+function OverviewSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* 4 Stat Cards Skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <Card key={idx} className="p-5 flex items-center justify-between border border-border/30 bg-card/50">
+            <div className="space-y-2 flex-1">
+              <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3"></div>
+              <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2"></div>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-800"></div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Bento Grid Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Column 1: Financial & Costs */}
+        <div>
+          <Card className="p-5 h-full space-y-4 flex flex-col justify-between">
+            <div className="space-y-4 flex-1">
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3"></div>
+              <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2"></div>
+              <div className="space-y-2 pt-2">
+                <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
+                <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
+                <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4"></div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Column 2: Worker Status */}
+        <div className="flex flex-col space-y-4 h-full">
+          <Card className="p-5 space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3"></div>
+              <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-16"></div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="h-12 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+              <div className="h-12 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+            </div>
+            <div className="space-y-3 pt-2">
+              <div className="space-y-1">
+                <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/4"></div>
+                <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
+              </div>
+              <div className="space-y-1">
+                <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/4"></div>
+                <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
+              </div>
+            </div>
+            <div className="border-t border-zinc-200 dark:border-zinc-900 pt-4 space-y-3">
+              <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2"></div>
+              <div className="h-10 bg-zinc-200/60 dark:bg-zinc-900 rounded"></div>
+            </div>
+          </Card>
+
+          <Card className="p-5 flex-1 flex flex-col justify-between">
+            <div className="flex justify-between items-center">
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3"></div>
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-12"></div>
+            </div>
+            <div className="h-20 bg-zinc-100 dark:bg-zinc-900 rounded flex items-end justify-between p-2 gap-4 mt-4">
+              <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+              <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+              <div className="h-14 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+              <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Column 3: Tickets & Files */}
+        <div className="flex flex-col space-y-3 h-full">
+          <Card className="p-3.5 space-y-2">
+            <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3"></div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="h-14 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+              <div className="h-14 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+            </div>
+          </Card>
+
+          {/* Applikáció hibák card skeleton */}
+          <Card className="p-3.5 space-y-2">
+            <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3"></div>
+            <div className="h-14 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+          </Card>
+
+          {/* Recent Files card skeleton */}
+          <Card className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
+            <div className="flex justify-between items-center">
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3"></div>
+              <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-10"></div>
+            </div>
+            <div className="space-y-2 flex-1 flex flex-col justify-end mt-2">
+              <div className="h-10 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+              <div className="h-10 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+              <div className="h-10 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+              <div className="h-10 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════
 // ─── Main Component ──────────────────────────────────
 // ═══════════════════════════════════════════════════════
@@ -2427,24 +2536,21 @@ export default function ManagementDashboard() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
 
   // Derive view state from URL
-  const urlView = searchParams.get('view') as 'company' | 'user' | 'errors' | 'permissions' | 'files' | 'superadmin' | 'tickets' | 'worker' | null;
+  const urlView = searchParams.get('view') as 'company' | 'user' | 'errors' | 'permissions' | 'files' | 'superadmin' | 'tickets' | 'worker' | 'users' | null;
   const urlId = searchParams.get('id');
   const hasSuperadminParams = !!searchParams.get('sa_company') || !!searchParams.get('sa_mode');
-  const view: 'overview' | 'company' | 'user' | 'errors' | 'permissions' | 'files' | 'superadmin' | 'tickets' | 'worker' =
-    hasSuperadminParams
-      ? 'superadmin'
-      : (urlView === 'company' || urlView === 'user' || urlView === 'errors' || urlView === 'permissions' || urlView === 'files' || urlView === 'superadmin' || urlView === 'tickets' || urlView === 'worker')
-        ? urlView
-        : 'overview';
+  const view = (urlView === 'superadmin' && user?.email === 'superadmin@thinkai.hu')
+    ? 'superadmin'
+    : (urlView === 'company' || urlView === 'user' || urlView === 'errors' || urlView === 'permissions' || urlView === 'files' || urlView === 'superadmin' || urlView === 'tickets' || urlView === 'worker' || urlView === 'users')
+      ? urlView
+      : 'overview';
   const selectedCompanyId = view === 'company' ? urlId : null;
   const selectedUserId = view === 'user' ? urlId : null;
 
-  const [searchUser, setSearchUser] = useState('');
-  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
-  const [userPage, setUserPage] = useState(0);
-  const USER_PAGE_SIZE = 15;
+  // No local user search states needed here
 
   // ── Queries (auto-refresh: overview 60s, details 30s) ─
   const { data: overview, isLoading: overviewLoading } = useQuery<OverviewData>({
@@ -2480,22 +2586,78 @@ export default function ManagementDashboard() {
     return m;
   }, [overview?.companies]);
 
-  const filteredUsers = useMemo(() => {
-    if (!overview?.users) return [];
-    if (!searchUser.trim()) return overview.users;
-    const q = searchUser.toLowerCase();
-    return overview.users.filter(u =>
-      (u.name || '').toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
-    );
-  }, [overview?.users, searchUser]);
+  // Unused user filtering and pagination removed
 
-  // Reset user page when search changes
-  useEffect(() => { setUserPage(0); }, [searchUser]);
+  const queryClient = useQueryClient();
 
-  const userTotalPages = Math.ceil(filteredUsers.length / USER_PAGE_SIZE);
-  const paginatedUsers = useMemo(() =>
-    filteredUsers.slice(userPage * USER_PAGE_SIZE, (userPage + 1) * USER_PAGE_SIZE)
-  , [filteredUsers, userPage]);
+  // Reset queries on navigating to overview to trigger fresh fetches & skeleton loading state
+  useEffect(() => {
+    if (view === 'overview') {
+      queryClient.resetQueries({ queryKey: ['management-overview'] });
+      queryClient.resetQueries({ queryKey: ['llm-costs-trend'] });
+      queryClient.resetQueries({ queryKey: ['llm-costs-all-time'] });
+      queryClient.resetQueries({ queryKey: ['worker-status'] });
+      queryClient.resetQueries({ queryKey: ['management-files-latest'] });
+      queryClient.resetQueries({ queryKey: ['tickets'] });
+    }
+  }, [view, queryClient]);
+
+  // ── Bento Grid Queries ───────────────────────────────
+  const [bentoLlmPeriod, setBentoLlmPeriod] = useState<'7d' | '30d'>('7d');
+  const { data: bentoLlmCostsData, isLoading: bentoLlmCostsLoading } = useQuery({
+    queryKey: ['llm-costs-trend', bentoLlmPeriod],
+    queryFn: () => fetchManagementData('llm-costs', { period: bentoLlmPeriod }),
+    enabled: !!user && view === 'overview',
+    staleTime: 30_000,
+  });
+
+  const { data: bentoLlmCostsAllTime } = useQuery({
+    queryKey: ['llm-costs-all-time'],
+    queryFn: () => fetchManagementData('llm-costs', { period: 'all' }),
+    enabled: !!user && view === 'overview',
+    staleTime: 60_000,
+  });
+
+  const { data: workerStatusData, isLoading: workerStatusLoading } = useQuery({
+    queryKey: ['worker-status', '24h'],
+    queryFn: () => fetchManagementData('worker-status', { period: '24h' }),
+    refetchInterval: 5_000,
+    staleTime: 2_500,
+    enabled: !!user && view === 'overview',
+  });
+
+  const { data: ticketsData, isLoading: ticketsLoading } = useTickets('all');
+  const ticketsOverview = useMemo(() => {
+    if (!ticketsData) return { newUnassigned: 0, resolved: 0 };
+    return {
+      newUnassigned: ticketsData.filter((t: any) => t.status === 'created' && !t.assigned_to).length,
+      resolved: ticketsData.filter((t: any) => t.status === 'resolved').length,
+    };
+  }, [ticketsData]);
+
+  const latestCriticalError = workerStatusData?.error_jobs?.[0] || null;
+
+  const { data: recentFilesData, isLoading: recentFilesLoading } = useQuery<FilesData>({
+    queryKey: ['management-files-latest'],
+    queryFn: () => fetchManagementData('files', {
+      page: '0',
+      pageSize: '4',
+      sortBy: 'uploaded_at',
+      sortDir: 'desc',
+      search: '',
+      companyId: '',
+      userId: '',
+      fileType: '',
+      status: '',
+      dateFrom: '',
+      dateTo: '',
+    }),
+    enabled: !!user && view === 'overview',
+    staleTime: 10_000,
+  });
+  const recentFilesList = recentFilesData?.files || [];
+
+  const isOverviewLoading = overviewLoading || bentoLlmCostsLoading || workerStatusLoading || recentFilesLoading || ticketsLoading;
 
   const selectedCompanyName = overview?.companies.find(c => c.id === selectedCompanyId)?.name;
   const selectedUserObj = overview?.users.find(u => u.user_id === selectedUserId);
@@ -2507,7 +2669,13 @@ export default function ManagementDashboard() {
   const openSuperadmin = useCallback(() => { setSearchParams({ view: 'superadmin' }); }, [setSearchParams]);
   const openTickets = useCallback(() => { setSearchParams({ view: 'tickets' }); }, [setSearchParams]);
   const openWorker = useCallback(() => { setSearchParams({ view: 'worker' }); }, [setSearchParams]);
-  const goBack = useCallback(() => { setSearchParams({}); }, [setSearchParams]);
+  const goBack = useCallback(() => {
+    if (view === 'company' || view === 'user') {
+      setSearchParams({ view: 'users' });
+    } else {
+      setSearchParams({});
+    }
+  }, [view, setSearchParams]);
 
   // Auth guard — MUST be after all hooks to satisfy Rules of Hooks
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
@@ -2515,7 +2683,7 @@ export default function ManagementDashboard() {
   // ── Title / subtitle derivation ─────────────────────
   const title = view === 'overview'
     ? 'Management Dashboard'
-    : (view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker')
+    : (view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker' || view === 'users')
       ? 'Control Center'
       : view === 'superadmin'
         ? 'Control Center'
@@ -2527,7 +2695,7 @@ export default function ManagementDashboard() {
 
   const subtitle = view === 'overview'
     ? 'eaisybill platform áttekintés'
-    : (view === 'errors' || view === 'permissions' || view === 'superadmin' || view === 'files' || view === 'worker')
+    : (view === 'errors' || view === 'permissions' || view === 'superadmin' || view === 'files' || view === 'worker' || view === 'users')
       ? 'Hibák, jogosultságok és adatnézet'
       : view === 'tickets'
         ? 'Beérkezett ügyfél hibajegyek és support csevegés'
@@ -2573,7 +2741,7 @@ export default function ManagementDashboard() {
         </div>
 
         {/* ── Főnavigáció tab bar (áttekintés + control center + tickets) ── */}
-        {(view === 'overview' || view === 'errors' || view === 'permissions' || view === 'files' || view === 'superadmin' || view === 'tickets' || view === 'worker') && (
+        {(view === 'overview' || view === 'errors' || view === 'permissions' || view === 'files' || view === 'superadmin' || view === 'tickets' || view === 'worker' || view === 'users') && (
           <div className="border-t border-border/40">
             <nav className="max-w-7xl mx-auto px-6 flex items-center gap-0.5 py-1.5" aria-label="Főnavigáció">
               <button
@@ -2591,11 +2759,11 @@ export default function ManagementDashboard() {
               <button
                 onClick={openErrors}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
-                  view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker'
+                  view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker' || view === 'users'
                     ? 'bg-primary text-primary-foreground border-transparent shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
                 }`}
-                aria-current={view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker' ? 'page' : undefined}
+                aria-current={view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker' || view === 'users' ? 'page' : undefined}
               >
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Control Center
@@ -2651,7 +2819,10 @@ export default function ManagementDashboard() {
       <main className="w-full max-w-7xl mx-auto px-6 py-8">
         {/* ═══ OVERVIEW ═══ */}
         {view === 'overview' && (
-          <div className="space-y-8 page-animate">
+          isOverviewLoading ? (
+            <OverviewSkeleton />
+          ) : (
+            <div className="space-y-6 page-animate">
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard icon={Users} label="Felhasználók"
@@ -2675,7 +2846,7 @@ export default function ManagementDashboard() {
                     <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-warning/10 border border-warning/20 shrink-0">
                       <Trophy className="h-6 w-6 text-warning" aria-hidden="true" />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-foreground truncate">{overview.llmOverview.mostExpensiveCompany.name}</p>
                       <p className="text-xs text-muted-foreground">Legdrágább cég</p>
                       <p className="text-[11px] text-muted-foreground/60 mt-0.5 tabular-nums">
@@ -2687,199 +2858,522 @@ export default function ManagementDashboard() {
               ) : (
                 <StatCard icon={Trophy} label="Legdrágább cég" value="—" sub="Nincs LLM költség" />
               )}
-
-              {overviewLoading ? (
-                <StatCard icon={AlertTriangle} label="Feldolgozási hibák" value="..." loading />
-              ) : (
-                <Card
-                  className="cursor-pointer hover:bg-accent/30 transition-colors duration-150 border-destructive/20"
-                  onClick={openErrors}
-                  role="button" tabIndex={0}
-                  onKeyDown={e => { if (e.key === 'Enter') openErrors(); }}
-                >
-                  <CardContent className="flex items-center gap-4 p-5">
-                    <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-destructive/10 border border-destructive/20 shrink-0">
-                      <AlertTriangle className="h-6 w-6 text-destructive" aria-hidden="true" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-2xl font-bold text-foreground tabular-nums tracking-tight">
-                        {(overview as any)?.totalErrors ?? '—'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Feldolgozási hibák</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" aria-hidden="true" /> Felhasználók
-                </CardTitle>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    value={searchUser}
-                    onChange={e => setSearchUser(e.target.value)}
-                    placeholder="Keresés név vagy email..."
-                    className="pl-8 h-8 text-xs w-56 bg-background"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm" role="table" style={{ tableLayout: 'fixed' }}>
-                    <thead>
-                      <tr className="border-b border-border text-muted-foreground text-xs bg-muted/30">
-                        <th className="text-left py-3 px-5 font-medium" style={{ width: 40 }}></th>
-                        <th className="text-left py-3 px-2 font-medium">Név</th>
-                        <th className="text-center py-3 px-4 font-medium" style={{ width: 80 }}>Cégek</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {overviewLoading ? (
-                        Array.from({ length: 5 }).map((_, i) => (
-                          <tr key={i}>
-                            <td className="py-3 px-5"><Skeleton className="h-4 w-4" /></td>
-                            <td className="py-3 px-2"><Skeleton className="h-4 w-40" /></td>
-                            <td className="py-3 px-4 text-center"><Skeleton className="h-5 w-8 mx-auto rounded-full" /></td>
-                          </tr>
-                        ))
-                      ) : paginatedUsers.length === 0 ? (
-                        <tr>
-                          <td colSpan={3} className="text-center py-8 text-muted-foreground text-sm">Nincs találat</td>
-                        </tr>
-                      ) : paginatedUsers.map(u => {
-                        const isExpanded = expandedUserId === u.user_id;
-                        return (
-                          <React.Fragment key={u.user_id}>
-                            <tr
-                              onClick={() => setExpandedUserId(isExpanded ? null : u.user_id)}
-                              className="cursor-pointer hover:bg-accent/50 active:bg-accent/70
-                                         transition-colors duration-150 group h-[52px]"
-                              role="button"
-                              tabIndex={0}
-                              aria-expanded={isExpanded}
-                              aria-label={`${u.name || u.email} kibontása`}
-                              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedUserId(isExpanded ? null : u.user_id); } }}
-                            >
-                              <td className="py-3 px-5 w-8">
-                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                              </td>
-                              <td className="py-3 px-2 overflow-hidden">
-                                <div>
-                                  <span className="font-medium text-foreground group-hover:text-primary transition-colors duration-150 block truncate">
-                                    {u.name || 'N/A'}
-                                  </span>
-                                  <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 text-center">
-                                {u.companies.length > 0 ? (
-                                  <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-full
-                                    bg-primary/10 text-primary text-xs font-semibold border border-primary/20"
-                                    title={u.companies.map(c => c.name).join(', ')}>
-                                    {u.companies.length}
-                                  </span>
-                                ) : (
-                                  <span className="text-muted-foreground italic text-xs">0</span>
-                                )}
-                              </td>
-                            </tr>
-                            {isExpanded && u.companies.length > 0 && (
-                              <tr>
-                                <td colSpan={3} className="p-0">
-                                  <div className="bg-muted/20 border-t border-border animate-in slide-in-from-top-1 duration-200">
-                                    <table className="w-full text-xs">
-                                      <thead>
-                                        <tr className="text-muted-foreground border-b border-border/50">
-                                          <th className="text-left py-2 px-6 font-medium">Cég</th>
-                                          <th className="text-left py-2 px-3 font-medium">Rang</th>
-                                          <th className="text-center py-2 px-3 font-medium">Számlák</th>
-                                          <th className="text-center py-2 px-3 font-medium">NAV</th>
-                                          <th className="text-center py-2 px-3 font-medium">Tranzakciók</th>
-                                          <th className="text-center py-2 px-3 font-medium">Bér/járulék</th>
-                                          <th className="text-right py-2 px-6 font-medium">Havi költség</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="divide-y divide-border/30">
-                                        {u.companies.map(c => {
-                                          const stats = companyCostMap.get(c.id);
-                                          return (
-                                            <tr
-                                              key={c.id}
-                                              onClick={(e) => { e.stopPropagation(); openCompany(c.id); }}
-                                              className="cursor-pointer hover:bg-accent/40 transition-colors duration-150 group/company"
-                                              role="button"
-                                              tabIndex={0}
-                                              onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); openCompany(c.id); } }}
-                                            >
-                                              <td className="py-2.5 px-6">
-                                                <span className="font-medium text-foreground group-hover/company:text-primary transition-colors duration-150 flex items-center gap-1.5">
-                                                  {c.name}
-                                                  <ChevronRight className="h-3 w-3 opacity-0 group-hover/company:opacity-100 transition-opacity" />
-                                                </span>
-                                              </td>
-                                              <td className="py-2.5 px-3">{roleBadge(c.role)}</td>
-                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.invoiceCount ?? '—'}</td>
-                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.navInvoiceCount ?? '—'}</td>
-                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.transactionCount ?? '—'}</td>
-                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.payrollCount ?? '—'}</td>
-                                              <td className="py-2.5 px-6 text-right tabular-nums font-medium text-foreground">
-                                                ${(stats?.monthlyCostUsd ?? 0).toFixed(4)}
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                      {!overviewLoading && paginatedUsers.length > 0 && paginatedUsers.length < USER_PAGE_SIZE &&
-                        Array.from({ length: USER_PAGE_SIZE - paginatedUsers.length }).map((_, i) => (
-                          <tr key={`empty-${i}`} className="pointer-events-none">
-                            <td className="py-3 px-5">&nbsp;</td>
-                            <td className="py-3 px-2 overflow-hidden">
-                              <div>
-                                <span className="block text-sm invisible">&nbsp;</span>
-                                <p className="text-xs invisible">&nbsp;</p>
+            {/* Bento Grid Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Bento Col 1: LLM Pénzügyi Áttekintés */}
+              <Card className="flex flex-col justify-between p-5 space-y-4 h-full">
+                {(() => {
+                  const calculateProportionalTokenCosts = (inputTokens: number, outputTokens: number, totalCost: number) => {
+                    if (totalCost <= 0) return { inputCost: 0, outputCost: 0 };
+                    const r = 4.0; // average multiplier for output tokens vs input tokens
+                    const inputWeight = inputTokens;
+                    const outputWeight = outputTokens * r;
+                    const totalWeight = inputWeight + outputWeight;
+                    if (totalWeight <= 0) return { inputCost: 0, outputCost: 0 };
+                    
+                    const inputCost = totalCost * (inputWeight / totalWeight);
+                    const outputCost = totalCost * (outputWeight / totalWeight);
+                    return { inputCost, outputCost };
+                  };
+
+                  const monthlyTokenCosts = calculateProportionalTokenCosts(
+                    overview?.llmOverview.totalMonthlyInputTokens || 0,
+                    overview?.llmOverview.totalMonthlyOutputTokens || 0,
+                    overview?.llmOverview.totalMonthlyCostUsd || 0
+                  );
+
+                  const allTimeTokenCosts = calculateProportionalTokenCosts(
+                    bentoLlmCostsAllTime?.kpi?.total_input_tokens || 0,
+                    bentoLlmCostsAllTime?.kpi?.total_output_tokens || 0,
+                    bentoLlmCostsAllTime?.kpi?.total_cost || 0
+                  );
+
+                  const rawModels = bentoLlmCostsData?.by_model || [];
+
+                  return (
+                    <>
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Coins className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                          <span className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wide">LLM Pénzügyi Áttekintés</span>
+                        </div>
+                        <div className="space-y-4 mt-2">
+                          <div>
+                            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Havi összköltség</h3>
+                            <span className="text-3xl font-extrabold text-foreground block mt-0.5 tracking-tight">
+                              {overview ? `$${overview.llmOverview.totalMonthlyCostUsd.toFixed(4)}` : '$0.0000'}
+                            </span>
+                            <div className="mt-2 p-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 rounded-lg border border-zinc-200 dark:border-zinc-800/50 space-y-1 text-xs text-muted-foreground">
+                              <div className="flex justify-between">
+                                <span>Input token:</span>
+                                <span className="font-medium text-foreground">
+                                  {overview ? `${(overview.llmOverview.totalMonthlyInputTokens / 1000).toFixed(1)}k ($${monthlyTokenCosts.inputCost.toFixed(4)})` : '—'}
+                                </span>
                               </div>
-                            </td>
-                            <td className="py-3 px-4"></td>
-                          </tr>
-                        ))
-                      }
-                    </tbody>
-                  </table>
-                </div>
-                {!overviewLoading && userTotalPages > 1 && (
-                  <div className="flex items-center justify-between px-5 py-2.5 border-t border-border">
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {filteredUsers.length === 0 ? '0' : `${userPage * USER_PAGE_SIZE + 1}–${Math.min((userPage + 1) * USER_PAGE_SIZE, filteredUsers.length)} / ${filteredUsers.length}`}
+                              <div className="flex justify-between">
+                                <span>Output token:</span>
+                                <span className="font-medium text-foreground">
+                                  {overview ? `${(overview.llmOverview.totalMonthlyOutputTokens / 1000).toFixed(1)}k ($${monthlyTokenCosts.outputCost.toFixed(4)})` : '—'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 border-t border-zinc-200 dark:border-zinc-900/60">
+                            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Összes költség</h3>
+                            <span className="text-xl font-extrabold text-teal-600 dark:text-teal-400 block mt-0.5 tracking-tight">
+                              {bentoLlmCostsAllTime ? `$${(bentoLlmCostsAllTime.kpi?.total_cost || 0).toFixed(4)}` : '$0.0000'}
+                            </span>
+                            <div className="mt-2 p-2.5 bg-zinc-100/40 dark:bg-zinc-900/40 rounded-lg border border-zinc-200/60 dark:border-zinc-800/30 space-y-1 text-xs text-muted-foreground">
+                              <div className="flex justify-between">
+                                <span>Input token:</span>
+                                <span className="font-medium text-foreground">
+                                  {bentoLlmCostsAllTime ? `${(bentoLlmCostsAllTime.kpi.total_input_tokens / 1000).toFixed(1)}k ($${allTimeTokenCosts.inputCost.toFixed(4)})` : '—'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Output token:</span>
+                                <span className="font-medium text-foreground">
+                                  {bentoLlmCostsAllTime ? `${(bentoLlmCostsAllTime.kpi.total_output_tokens / 1000).toFixed(1)}k ($${allTimeTokenCosts.outputCost.toFixed(4)})` : '—'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-zinc-200 dark:border-zinc-900 space-y-2">
+                        <span className="text-xs font-semibold text-muted-foreground block">Költség Megoszlás (Modellek)</span>
+                        <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
+                          {(() => {
+                            if (rawModels.length === 0) {
+                              return <div className="text-center text-muted-foreground/60 text-[10px] py-2">Nincs modell adat</div>;
+                            }
+
+                            // Aggregate costs per normalized model name
+                            const aggregated: Record<string, { name: string; cost: number; colorClass: string }> = {};
+                            let totalCost = 0;
+
+                            for (const m of rawModels) {
+                              const low = (m.model || '').toLowerCase();
+                              let normName = m.model || '';
+                              let colorClass = 'bg-zinc-500';
+
+                              if (low.includes('deepseek')) {
+                                if (low.includes('flash')) {
+                                  normName = 'deepseek-v4-flash';
+                                  colorClass = 'bg-teal-500';
+                                } else {
+                                  normName = 'deepseek-chat';
+                                  colorClass = 'bg-teal-500/80';
+                                }
+                              } else if (low.includes('gpt-4') || low.includes('openai')) {
+                                normName = 'gpt-4o';
+                                colorClass = 'bg-amber-500';
+                              } else if (low.includes('gemini') || low.includes('google')) {
+                                normName = 'gemini-1.5-flash';
+                                colorClass = 'bg-purple-500';
+                              } else {
+                                normName = m.model?.split('/')?.pop() || m.model;
+                              }
+
+                              const cost = Number(m.cost) || 0;
+                              totalCost += cost;
+
+                              if (!aggregated[normName]) {
+                                aggregated[normName] = { name: normName, cost: 0, colorClass };
+                              }
+                              aggregated[normName].cost += cost;
+                            }
+
+                            // Convert to array, sort by cost descending, and calculate percentages
+                            const modelList = Object.values(aggregated)
+                              .sort((a, b) => b.cost - a.cost)
+                              .map((item) => ({
+                                ...item,
+                                pct: totalCost > 0 ? ((item.cost / totalCost) * 100).toFixed(1) : '0.0',
+                              }));
+
+                            return modelList.map((m, idx) => (
+                              <div key={idx} className="flex items-center justify-between text-xs">
+                                <span className="flex items-center gap-1.5">
+                                  <span className={`w-2 h-2 rounded-sm ${m.colorClass}`}></span>
+                                  {m.name}
+                                </span>
+                                <span className="font-bold text-zinc-800 dark:text-zinc-200">{m.pct}%</span>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </Card>
+
+              {/* Bento Col 2: Worker Status & Feldolgozási hibák */}
+              <div className="flex flex-col space-y-4 h-full">
+                <Card className="p-5">
+                  {(() => {
+                    const isHealthy = workerStatusData?.containers?.length > 0 
+                      ? workerStatusData.containers.every((c: any) => c.is_healthy) 
+                      : true;
+                    const healthyCount = workerStatusData?.summary?.healthy_containers ?? 0;
+                    const totalCount = workerStatusData?.summary?.total_containers ?? 0;
+
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <Server className="h-4 w-4 text-teal-400" />
+                            <h4 className="text-sm font-semibold">Worker Status</h4>
+                          </div>
+                          <span className={`text-xs font-bold flex items-center gap-2 ${isHealthy ? 'text-emerald-400' : 'text-red-400'}`}>
+                            <span className="relative flex h-2.5 w-2.5">
+                              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                                isHealthy ? 'bg-emerald-400' : 'bg-red-400'
+                              }`}></span>
+                              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                                isHealthy ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'
+                              }`}></span>
+                            </span>
+                            {healthyCount}/{totalCount} Konténer fut
+                          </span>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="p-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40">
+                              <span className="text-[9px] text-muted-foreground block">Státusz</span>
+                              <span className={`font-bold mt-0.5 block ${isHealthy ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                                {isHealthy ? 'Fut (Egészséges)' : 'Hiba (Unhealthy)'}
+                              </span>
+                            </div>
+                            <div className="p-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40">
+                              <span className="text-[9px] text-muted-foreground block">Feldolgozás alatt</span>
+                              <span className="font-bold text-teal-600 dark:text-teal-400 mt-0.5 block">
+                                {workerStatusData?.queues?.reduce((acc: number, q: any) => acc + (q.visible_messages || 0), 0) ?? 0} elem
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* CPU / RAM bars */}
+                          <div className="space-y-2 pt-1">
+                            <div>
+                              <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                                <span>CPU Terheltség</span>
+                                <span className="font-mono text-zinc-800 dark:text-zinc-200">
+                                  {(workerStatusData?.containers?.reduce((acc: number, c: any) => acc + (c.cpu_usage || 0), 0) / (workerStatusData?.containers?.length || 1)).toFixed(0)}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-zinc-100 dark:bg-zinc-900 h-1.5 rounded overflow-hidden">
+                                <div
+                                  className="bg-teal-500 h-full transition-all duration-300"
+                                  style={{ width: `${Math.min(100, Math.max(10, (workerStatusData?.containers?.reduce((acc: number, c: any) => acc + (c.cpu_usage || 0), 0) / (workerStatusData?.containers?.length || 1))))}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                                <span>RAM Használat</span>
+                                <span className="font-mono text-zinc-800 dark:text-zinc-200">
+                                  {((workerStatusData?.containers?.reduce((acc: number, c: any) => acc + (c.ram_usage || 0), 0) / (workerStatusData?.containers?.length || 1)) * 0.04).toFixed(1)} GB / 4.0 GB
+                                </span>
+                              </div>
+                              <div className="w-full bg-zinc-100 dark:bg-zinc-900 h-1.5 rounded overflow-hidden">
+                                <div
+                                  className="bg-teal-500 h-full transition-all duration-300"
+                                  style={{ width: `${Math.min(100, Math.max(10, (workerStatusData?.containers?.reduce((acc: number, c: any) => acc + (c.ram_usage || 0), 0) / (workerStatusData?.containers?.length || 1))))}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Processing Errors */}
+                          <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-900 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span 
+                                onClick={openWorker}
+                                className="text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wider flex items-center gap-1 cursor-pointer hover:text-red-400 dark:hover:text-red-300 transition-colors"
+                              >
+                                <AlertTriangle className="h-3.5 w-3.5" />
+                                Feldolgozási hibák (24h)
+                              </span>
+                              <span className="px-1.5 py-0.5 bg-red-500/10 text-red-500 dark:text-red-400 text-[9px] font-bold rounded">
+                                {workerStatusData?.summary?.total_errors_24h ?? 0} hiba
+                              </span>
+                            </div>
+                            {latestCriticalError ? (
+                              <div 
+                                onClick={openWorker}
+                                className="p-2 bg-red-500/5 hover:bg-red-500/10 dark:hover:bg-red-500/15 rounded border border-red-500/15 dark:border-red-500/10 flex justify-between items-center cursor-pointer transition-colors duration-150"
+                              >
+                                <div className="min-w-0 flex-1 pr-2">
+                                  <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 block truncate">
+                                    [{latestCriticalError.pipeline}] {latestCriticalError.error_message || 'Feldolgozási hiba'}
+                                  </span>
+                                  <span className="text-[9px] text-zinc-500 dark:text-zinc-400 block truncate mt-0.5">
+                                    {latestCriticalError.file_name} · {latestCriticalError.company_name || 'Ismeretlen cég'} · {new Date(latestCriticalError.created_at).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                                <span className="text-[9px] text-red-500 dark:text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded font-bold border border-red-500/20 shrink-0">Kritikus</span>
+                              </div>
+                            ) : (
+                              <div className="p-2 bg-emerald-500/5 rounded border border-emerald-500/10 text-center py-3">
+                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Nincs aktív feldolgozási hiba</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                    </>
+                  );
+                })()}
+              </Card>
+
+                {/* LLM Costs Chart Panel */}
+                {(() => {
+                  const chartData = (bentoLlmCostsData?.daily_trend || []).length > 0
+                    ? bentoLlmPeriod === '7d'
+                      ? (bentoLlmCostsData.daily_trend).slice(-7).map((d: any) => ({
+                          key: d.date,
+                          cost: d.cost,
+                          label: d.date.slice(5),
+                        }))
+                      : (() => {
+                          const last28 = (bentoLlmCostsData.daily_trend).slice(-28);
+                          const weeks = [];
+                          for (let i = 0; i < last28.length; i += 7) {
+                            const chunk = last28.slice(i, i + 7);
+                            if (chunk.length === 0) continue;
+                            const costSum = chunk.reduce((sum: number, day: any) => sum + (day.cost || 0), 0);
+                            const start = chunk[0].date.slice(5);
+                            const end = chunk[chunk.length - 1].date.slice(5);
+                            weeks.push({
+                              key: `week_${i}`,
+                              cost: costSum,
+                              label: `${start}–${end}`,
+                            });
+                          }
+                          return weeks;
+                        })()
+                    : [];
+
+                  const maxBentoCost = chartData.length > 0 ? Math.max(...chartData.map((x: any) => x.cost), 0.001) : 0.001;
+
+                  return (
+                    <Card className="p-5 flex-1 flex flex-col justify-between">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-xs font-semibold">
+                          {bentoLlmPeriod === '7d' ? 'LLM Napi Költségek (7 nap)' : 'LLM Heti Költségek (4 hét)'}
+                        </span>
+                        <div className="flex gap-1.5 text-[9px] bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded border border-zinc-200 dark:border-zinc-800">
+                          <span 
+                            onClick={() => setBentoLlmPeriod('7d')}
+                            className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                              bentoLlmPeriod === '7d' ? 'bg-white dark:bg-zinc-800 text-teal-600 dark:text-teal-400 font-bold shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Napi
+                          </span>
+                          <span 
+                            onClick={() => setBentoLlmPeriod('30d')}
+                            className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                              bentoLlmPeriod === '30d' ? 'bg-white dark:bg-zinc-800 text-teal-600 dark:text-teal-400 font-bold shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Heti
+                          </span>
+                        </div>
+                      </div>
+                      <div className="h-20 w-full flex items-end justify-between gap-4 pt-5 px-2">
+                        {chartData.length > 0 ? (
+                          chartData.map((d: any, i: number, arr: any[]) => (
+                            <div
+                              key={d.key}
+                              className="flex-1 rounded-t-sm min-h-[2px] relative group cursor-default"
+                              style={{
+                                height: `${Math.max((d.cost / maxBentoCost) * 100, 4)}%`,
+                                background: i === arr.length - 1
+                                  ? 'linear-gradient(180deg, #14b8a6, #14b8a650)'
+                                  : 'linear-gradient(180deg, #6366f1, #6366f150)',
+                              }}
+                            >
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 font-mono text-[8.5px] text-muted-foreground text-center whitespace-nowrap">
+                                <span className="font-bold text-foreground">${d.cost.toFixed(4)}</span>
+                                <span className="block text-[7px] text-muted-foreground/50 mt-0.5">{d.label}</span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center text-muted-foreground text-xs py-6 w-full">Nincs elérhető trend adat</div>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })()}
+              </div>
+
+              {/* Bento Col 3: Tickets & Files */}
+              <div className="flex flex-col space-y-3 h-full">
+                {/* Tickets card */}
+                <Card className="p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span 
+                      onClick={openTickets}
+                      className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider flex items-center gap-1.5 cursor-pointer hover:text-teal-500 dark:hover:text-teal-300 transition-colors"
+                    >
+                      <TicketCheck className="h-3.5 w-3.5" />
+                      Hibajegyek
                     </span>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={userPage === 0}
-                        onClick={() => setUserPage(p => p - 1)} aria-label="Előző oldal">
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <span className="text-xs text-muted-foreground tabular-nums px-2">{userPage + 1}/{userTotalPages}</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={userPage >= userTotalPages - 1}
-                        onClick={() => setUserPage(p => p + 1)} aria-label="Következő oldal">
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div 
+                      onClick={openTickets}
+                      className="py-1.5 px-3 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 text-center cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-900 transition-colors"
+                    >
+                      <span className="text-[9px] text-zinc-500 block mb-1">Új (felelős nélkül)</span>
+                      <span className="text-xl font-black text-teal-600 dark:text-teal-400">{ticketsOverview.newUnassigned}</span>
+                    </div>
+                    <div 
+                      onClick={openTickets}
+                      className="py-1.5 px-3 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 text-center cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-900 transition-colors"
+                    >
+                      <span className="text-[9px] text-zinc-500 block mb-1">Megoldott</span>
+                      <span className="text-xl font-bold text-zinc-700 dark:text-zinc-300">{ticketsOverview.resolved}</span>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </Card>
 
+                {/* Applikáció hibák card */}
+                <Card className="p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span 
+                      onClick={openErrors}
+                      className="text-xs font-bold text-red-500 dark:text-red-400 uppercase tracking-wider flex items-center gap-1.5 cursor-pointer hover:text-red-600 dark:hover:text-red-300 transition-colors"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      Applikáció hibák
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div 
+                      onClick={openErrors}
+                      className="py-1.5 px-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-900 transition-colors flex items-center justify-between"
+                    >
+                      <div>
+                        <span className="text-[9px] text-zinc-500 block mb-0.5 font-bold">Rendszer & feltöltési naplók</span>
+                        <span className="text-[10px] text-muted-foreground block">Kattints a részletes hibanaplóhoz</span>
+                      </div>
+                      <span className={`text-xl font-black px-2 py-0.5 rounded flex items-center justify-center min-w-[36px] ${
+                        (overview?.totalErrors ?? 0) > 0 
+                          ? 'text-red-500 dark:text-red-400 bg-red-500/10 animate-pulse border border-red-500/20' 
+                          : 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+                      }`}>
+                        {overview?.totalErrors ?? 0}
+                      </span>
+                    </div>
+
+                    {/* Most Error Company & User Stats */}
+                    {overview && (overview.mostErrorCompany || overview.mostErrorUser) && (
+                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                        {overview.mostErrorCompany ? (
+                          <div className="p-1.5 bg-zinc-100/40 dark:bg-zinc-900/40 rounded border border-zinc-200/60 dark:border-zinc-800/20">
+                            <span className="text-[8px] text-zinc-500 block uppercase font-bold tracking-wide">Legtöbb hiba (Cég)</span>
+                            <span className="font-semibold text-zinc-800 dark:text-zinc-200 block truncate mt-0.5" title={overview.mostErrorCompany.name}>
+                              {overview.mostErrorCompany.name}
+                            </span>
+                            <span className="text-[9px] text-red-500 dark:text-red-400 font-bold block mt-0.5">
+                              {overview.mostErrorCompany.errorCount} hiba
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="p-1.5 bg-zinc-100/20 dark:bg-zinc-900/20 rounded border border-dashed border-zinc-200 dark:border-zinc-800/30 flex items-center justify-center text-zinc-500 text-[8px] uppercase">
+                            Nincs cég hiba
+                          </div>
+                        )}
+
+                        {overview.mostErrorUser ? (
+                          <div className="p-1.5 bg-zinc-100/40 dark:bg-zinc-900/40 rounded border border-zinc-200/60 dark:border-zinc-800/20">
+                            <span className="text-[8px] text-zinc-500 block uppercase font-bold tracking-wide">Legtöbb hiba (Felh.)</span>
+                            <span className="font-semibold text-zinc-800 dark:text-zinc-200 block truncate mt-0.5" title={`${overview.mostErrorUser.name} (${overview.mostErrorUser.email})`}>
+                              {overview.mostErrorUser.name}
+                            </span>
+                            <span className="text-[9px] text-red-500 dark:text-red-400 font-bold block mt-0.5">
+                              {overview.mostErrorUser.errorCount} hiba
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="p-1.5 bg-zinc-100/20 dark:bg-zinc-900/20 rounded border border-dashed border-zinc-200 dark:border-zinc-800/30 flex items-center justify-center text-zinc-500 text-[8px] uppercase">
+                            Nincs felhasználó hiba
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
+                {/* Recent Files card */}
+                <Card className="p-3.5 space-y-2 flex-1 flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      Utolsó fájlok
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">Frissítve</span>
+                  </div>
+                  <div className="space-y-1 text-xs flex-1 flex flex-col justify-start">
+                    {recentFilesList.length > 0 ? (
+                      recentFilesList.map((f: any) => (
+                        <button
+                          key={f.id}
+                          disabled={!f.file_url}
+                          onClick={() => {
+                            if (f.file_url) {
+                              setPreviewFile({ url: f.file_url, name: f.file_name });
+                            }
+                          }}
+                          className={cn(
+                            "w-full flex items-center justify-between py-1.5 px-2 bg-zinc-100/50 dark:bg-zinc-900/50 rounded transition-colors text-left",
+                            f.file_url ? "hover:bg-zinc-200/85 dark:hover:bg-zinc-900/85 cursor-pointer" : "cursor-default"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "flex-1 mr-2 truncate text-xs transition-colors",
+                              f.file_url
+                                ? "text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium"
+                                : "text-zinc-700 dark:text-zinc-300"
+                            )}
+                            title={f.file_name}
+                          >
+                            {f.file_name}
+                          </span>
+                          <span className={`text-[9px] font-bold shrink-0 ${
+                            f.processing_status === 'completed' || f.processing_status === 'done' || f.processing_status === 'processed'
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : f.processing_status === 'error' || f.processing_status === 'failed'
+                                ? 'text-red-500 dark:text-red-400'
+                                : 'text-teal-600 dark:text-teal-400 animate-pulse'
+                          }`}>
+                            {f.processing_status === 'completed' || f.processing_status === 'done' || f.processing_status === 'processed'
+                              ? 'Kész'
+                              : f.processing_status === 'error' || f.processing_status === 'failed'
+                                ? 'Hiba'
+                                : 'Feldolgozás'}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="text-center text-muted-foreground text-xs py-4">Nincs nemrég feltöltött fájl</div>
+                    )}
+                  </div>
+                </Card>
+              </div>
+            </div>
           </div>
+          )
         )}
 
         {/* ═══ COMPANY DETAIL ═══ */}
@@ -3097,20 +3591,89 @@ export default function ManagementDashboard() {
         })()}
 
         {/* ═══ CONTROL CENTER ═══ */}
-        {(view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker') && (
-          <ControlCenter initialTab={view as 'errors' | 'permissions' | 'files' | 'worker'} onOpenCompany={openCompany} allUsers={overview?.users || []} />
+        {(view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker' || view === 'users') && (
+          <ControlCenter
+            initialTab={view as any}
+            onOpenCompany={openCompany}
+            allUsers={overview?.users || []}
+            overviewLoading={overviewLoading}
+            companyCostMap={companyCostMap}
+          />
         )}
       </main>
       </div>
       )}
+
+      {/* File Preview Modal */}
+      {previewFile && createPortal((() => {
+        const ext = (previewFile.name.split('.').pop() || '').toLowerCase();
+        const isPdf = ext === 'pdf';
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext);
+        const isCsv = ['csv', 'tsv'].includes(ext);
+        const isExcel = ['xls', 'xlsx', 'xlsm'].includes(ext);
+
+        return (
+          <div
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-150"
+            onClick={() => setPreviewFile(null)}
+          >
+            <div
+              className="relative w-full max-w-5xl mx-4 h-[85vh] flex flex-col bg-card rounded-xl border border-border shadow-2xl overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30 shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-sm font-medium truncate">{previewFile.name}</span>
+                  <Badge variant="outline" className="text-[10px] shrink-0">{ext.toUpperCase() || 'FILE'}</Badge>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <a
+                    href={previewFile.url}
+                    download={previewFile.name}
+                    className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                    title="Letöltés"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Download className="h-4 w-4" />
+                  </a>
+                  <a
+                    href={previewFile.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                    title="Megnyitás új lapon"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                  <button
+                    className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                    onClick={() => setPreviewFile(null)}
+                    title="Bezárás"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-hidden relative">
+                <FilePreviewContent previewFile={previewFile} />
+              </div>
+            </div>
+          </div>
+        );
+      })(), document.body)}
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════
-// ─── Control Center (tabs: Hibák / Jogosultságok / Fájlok / Worker) ────
+// ─── Control Center (tabs: Hibák / Jogosultságok / Fájlok / Worker / Felhasználók) ────
 // ═══════════════════════════════════════════════════════
-type ControlCenterTab = 'errors' | 'permissions' | 'files' | 'worker';
+type ControlCenterTab = 'errors' | 'permissions' | 'files' | 'worker' | 'users';
 
 interface ControlCenterUser {
   user_id: string;
@@ -3118,7 +3681,19 @@ interface ControlCenterUser {
   email: string;
 }
 
-function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: ControlCenterTab; onOpenCompany: (id: string) => void; allUsers: ControlCenterUser[] }) {
+function ControlCenter({
+  initialTab,
+  onOpenCompany,
+  allUsers,
+  overviewLoading,
+  companyCostMap,
+}: {
+  initialTab: ControlCenterTab;
+  onOpenCompany: (id: string) => void;
+  allUsers: ControlCenterUser[];
+  overviewLoading: boolean;
+  companyCostMap: Map<string, any>;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = initialTab;
 
@@ -3142,17 +3717,6 @@ function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: Co
           Hibák
         </button>
         <button
-          onClick={() => setTab('permissions')}
-          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
-            tab === 'permissions'
-              ? 'bg-primary/10 text-primary border-primary/20'
-              : 'text-muted-foreground hover:text-foreground border-transparent'
-          }`}
-        >
-          <ShieldCheck className="h-3.5 w-3.5" />
-          Jogosultságok
-        </button>
-        <button
           onClick={() => setTab('files')}
           className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
             tab === 'files'
@@ -3174,6 +3738,28 @@ function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: Co
           <Server className="h-3.5 w-3.5" />
           Worker
         </button>
+        <button
+          onClick={() => setTab('users')}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+            tab === 'users'
+              ? 'bg-primary/10 text-primary border-primary/20'
+              : 'text-muted-foreground hover:text-foreground border-transparent'
+          }`}
+        >
+          <Users className="h-3.5 w-3.5" />
+          Felhasználók
+        </button>
+        <button
+          onClick={() => setTab('permissions')}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+            tab === 'permissions'
+              ? 'bg-primary/10 text-primary border-primary/20'
+              : 'text-muted-foreground hover:text-foreground border-transparent'
+          }`}
+        >
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Jogosultságok
+        </button>
       </div>
 
       {/* Tab content — ensures all tabs fill the same width to prevent layout shift */}
@@ -3183,6 +3769,14 @@ function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: Co
           {tab === 'permissions' && <PermissionsPanel allUsers={allUsers} />}
           {tab === 'files' && <FilesPanel allUsers={allUsers} />}
           {tab === 'worker' && <WorkerPanel />}
+          {tab === 'users' && (
+            <UsersControlPanel
+              allUsers={allUsers}
+              overviewLoading={overviewLoading}
+              companyCostMap={companyCostMap}
+              onOpenCompany={onOpenCompany}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -3577,15 +4171,226 @@ function LLMCostPanel() {
   );
 }
 
+// ─── Global File Preview Content Component ────────────────
+function FilePreviewContent({ previewFile }: { previewFile: { url: string; name: string } }) {
+  const ext = (previewFile.name.split('.').pop() || '').toLowerCase();
+  const isPdf = ext === 'pdf';
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext);
+  const isCsv = ['csv', 'tsv'].includes(ext);
+  const isExcel = ['xls', 'xlsx', 'xlsm'].includes(ext);
+
+  if (isPdf) {
+    return (
+      <iframe
+        src={`${previewFile.url}#toolbar=1`}
+        className="w-full h-full border-0"
+        title={`PDF előnézet: ${previewFile.name}`}
+      />
+    );
+  }
+
+  if (isImage) {
+    return (
+      <div className="w-full h-full flex items-center justify-center p-6 overflow-auto bg-black/20">
+        <img
+          src={previewFile.url}
+          alt={previewFile.name}
+          className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+        />
+      </div>
+    );
+  }
+
+  if (isExcel) {
+    const encodedUrl = encodeURIComponent(previewFile.url);
+    const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`;
+    return (
+      <iframe
+        src={officeUrl}
+        className="w-full h-full border-0 bg-background"
+        title={`Excel előnézet: ${previewFile.name}`}
+      />
+    );
+  }
+
+  if (isCsv) {
+    return <CsvPreviewComponent url={previewFile.url} />;
+  }
+
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-muted-foreground">
+      <FileText className="h-16 w-16 opacity-30" />
+      <p className="text-sm">A fájl típusa ({ext || 'ismeretlen'}) nem jeleníthető meg előnézetben.</p>
+      <div className="flex gap-2">
+        <a
+          href={previewFile.url}
+          download={previewFile.name}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
+          <Download className="h-4 w-4" /> Letöltés
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function CsvPreviewComponent({ url }: { url: string }) {
+  const [content, setContent] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch(url)
+      .then(res => res.text())
+      .then(text => {
+        setContent(text);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
+        setLoading(false);
+      });
+  }, [url]);
+
+  if (loading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <Loader className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-xs">Nem sikerült betölteni a CSV tartalmát.</p>
+      </div>
+    );
+  }
+
+  const lines = content.split('\n').filter(line => line.trim().length > 0).slice(0, 100);
+  const rows = lines.map(line => {
+    const delimiter = line.includes(';') ? ';' : ',';
+    return line.split(delimiter);
+  });
+
+  return (
+    <div className="w-full h-full overflow-auto p-4 bg-background">
+      <div className="border border-border/40 rounded-lg overflow-x-auto">
+        <table className="w-full text-[11px] font-mono border-collapse">
+          <tbody>
+            {rows.map((row, rIdx) => (
+              <tr key={rIdx} className={`border-b border-border/20 ${rIdx === 0 ? 'bg-muted/50 font-bold text-foreground' : 'hover:bg-muted/20 text-muted-foreground'}`}>
+                {row.map((cell, cIdx) => (
+                  <td key={cIdx} className="px-3 py-1.5 border-r border-border/25 whitespace-nowrap">
+                    {cell.replace(/^"|"$/g, '')}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {lines.length === 100 && (
+        <p className="text-[10px] text-muted-foreground mt-2 text-center">Csak az első 100 sor jelenik meg előnézetben.</p>
+      )}
+    </div>
+  );
+}
+
 function WorkerPanel() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Driving state from URL search params
+  const workerTab = (searchParams.get('wrk_tab') as 'overview' | 'llm-costs') || 'overview';
+  const workerPeriod = searchParams.get('wrk_period') || '24h';
+  const errorPage = Number(searchParams.get('wrk_err_page')) || 1;
+
+  // Helper to update parameters atomically
+  const updateParams = useCallback((updates: Record<string, string | number | null>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, val]) => {
+      if (val !== null && val !== '') {
+        next.set(key, String(val));
+      } else {
+        next.delete(key);
+      }
+    });
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
   const [selectedContainer, setSelectedContainer] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<'containers' | 'queues'>('containers');
-  const [workerTab, setWorkerTab] = useState<'overview' | 'llm-costs'>('overview');
   const [selectedQueue, setSelectedQueue] = useState<string | null>(null);
   const [showAllQueues, setShowAllQueues] = useState(false);
   const [dismissedQueues, setDismissedQueues] = useState<Set<string>>(new Set());
   const [showProcessing, setShowProcessing] = useState(false);
-  const [workerPeriod, setWorkerPeriod] = useState<string>('24h');
+  const [showWorkerErrors, setShowWorkerErrors] = useState(false);
+  const [expandedErrorRowId, setExpandedErrorRowId] = useState<string | null>(null);
+  const ERROR_PAGE_SIZE = 10;
+
+  const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
+  const [retryModalOpen, setRetryModalOpen] = useState(false);
+  const [retryTargets, setRetryTargets] = useState<Array<{ source: string; id: string }>>([]);
+  const [retryPipeline, setRetryPipeline] = useState('same');
+  const [retrying, setRetrying] = useState(false);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const RETRYABLE_SOURCES = new Set(['invoice_uploads', 'transaction_uploads', 'gl_upload_notifications']);
+
+  const PIPELINE_OPTIONS: Array<{ value: string; label: string; icon: React.ReactNode; queue?: string; category?: string | null }> = [
+    { value: 'same', label: 'Eredeti pipeline (változatlan)', icon: <RotateCcw className="h-4 w-4 text-muted-foreground" /> },
+    { value: 'invoice', label: 'Számla feldolgozás', icon: <Receipt className="h-4 w-4 text-emerald-500" />, queue: 'invoice_jobs', category: 'invoice' },
+    { value: 'payroll', label: 'Bérjegyzék feldolgozás', icon: <Wallet className="h-4 w-4 text-amber-500" />, queue: 'invoice_jobs', category: 'payroll' },
+    { value: 'transaction', label: 'Tranzakció feldolgozás', icon: <Landmark className="h-4 w-4 text-blue-500" />, queue: 'transaction_jobs', category: null },
+    { value: 'gl', label: 'Főkönyvi besorolás', icon: <BarChart3 className="h-4 w-4 text-purple-500" />, queue: 'gl_classification_jobs', category: null },
+  ];
+
+  const openRetryModal = (ids: Array<{ source: string; id: string }>) => {
+    const retryable = ids.filter(i => RETRYABLE_SOURCES.has(i.source));
+    if (retryable.length === 0) {
+      toast({ title: 'Nem támogatott', description: 'A kijelölt fájl nem támogatja az újraküldést.', variant: 'destructive' });
+      return;
+    }
+    setRetryTargets(retryable);
+    setRetryPipeline('same');
+    setRetryModalOpen(true);
+  };
+
+  const handleRetryConfirm = async () => {
+    if (retryTargets.length === 0) return;
+    setRetrying(true);
+    try {
+      const pipelineOverride = retryPipeline !== 'same'
+        ? PIPELINE_OPTIONS.find(p => p.value === retryPipeline)
+        : null;
+
+      const result = await postManagementData('retry-errors', {
+        ids: retryTargets,
+        ...(pipelineOverride && {
+          targetQueue: pipelineOverride.queue,
+          targetCategory: pipelineOverride.category,
+        }),
+      });
+      if (result.error) {
+        reportError({ type: 'api_call', severity: 'warning', component: 'ManagementDashboard', action: 'warning', message: 'Retry partial errors from worker', error: result.error });
+        toast({ title: 'Részleges újraküldés', description: `${result.retried || 0} elem újraküldve, néhány hiba történt.`, variant: 'destructive' });
+      } else {
+        toast({ title: 'Újraküldés sikeres', description: `${result.retried || retryTargets.length} elem újra feldolgozásra küldve.` });
+      }
+      queryClient.invalidateQueries({ queryKey: ['worker-status'] });
+    } catch (e) {
+      reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Retry errors from worker failed:', error: e });
+      toast({ title: 'Újraküldés sikertelen', description: 'Hiba történt az újraküldés során.', variant: 'destructive' });
+    } finally {
+      setRetrying(false);
+      setRetryModalOpen(false);
+      setRetryTargets([]);
+    }
+  };
 
   const workerPeriodLabel: Record<string, string> = { 'all': 'Összesen', '24h': '24 óra', '7d': '7 nap', '30d': '30 nap', '90d': '90 nap' };
 
@@ -3598,27 +4403,67 @@ function WorkerPanel() {
   });
 
   const recent_jobs = data?.recent_jobs || [];
+  const { containers = [], queues = [], pipelines = [], active_processing = [], summary = {} } = data || {};
+
+  // Default: select first container
+  const activeContainer = selectedContainer || containers[0]?.container_name || null;
+  const containerData = containers.find((c: any) => c.container_name === activeContainer);
+
+  // Filter recent jobs & pipelines for the selected container's project
+  const activeProject = containerData?.supabase_project || null;
 
   // Group recent jobs by job execution to avoid duplicate entries for multi-model runs
   const groupedRecentJobs = useMemo(() => {
     const grouped: Record<string, any> = {};
     for (const j of recent_jobs) {
-      const key = `${j.project}_${j.worker_id}_${j.pipeline}_${j.file_name}_${j.created_at}`;
+      // Group by upload_id if available, otherwise fall back to a minute-precision timestamp key
+      const key = j.upload_id 
+        ? `${j.project}_${j.upload_id}` 
+        : `${j.project}_${j.worker_id}_${j.pipeline}_${j.file_name}_${j.created_at?.substring(0, 16)}`;
       if (!grouped[key]) {
         grouped[key] = {
           ...j,
           estimated_cost_usd: j.estimated_cost_usd || 0,
           total_tokens: j.total_tokens || 0,
           processing_duration_ms: j.processing_duration_ms || 0,
+          status: j.status || 'OK',
         };
       } else {
         grouped[key].estimated_cost_usd += (j.estimated_cost_usd || 0);
         grouped[key].total_tokens += (j.total_tokens || 0);
         grouped[key].processing_duration_ms = Math.max(grouped[key].processing_duration_ms, j.processing_duration_ms || 0);
+        if (j.status === 'ERROR') {
+          grouped[key].status = 'ERROR';
+        }
       }
     }
     return Object.values(grouped).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [recent_jobs]);
+
+  const filteredJobs = useMemo(() => {
+    return activeProject
+      ? groupedRecentJobs.filter((j: any) => j.worker_id === activeContainer || j.project === activeProject)
+      : groupedRecentJobs;
+  }, [groupedRecentJobs, activeProject, activeContainer]);
+
+  const errorJobs = useMemo(() => {
+    return data?.error_jobs || [];
+  }, [data]);
+
+  const filteredErrorJobs = useMemo(() => {
+    return errorJobs;
+  }, [errorJobs]);
+
+  const errorTotalPages = Math.max(1, Math.ceil(filteredErrorJobs.length / ERROR_PAGE_SIZE));
+
+  const paginatedErrorJobs = useMemo(() => {
+    return filteredErrorJobs.slice((errorPage - 1) * ERROR_PAGE_SIZE, errorPage * ERROR_PAGE_SIZE);
+  }, [filteredErrorJobs, errorPage]);
+
+  // Reset error page when filter changes
+  useEffect(() => {
+    updateParams({ wrk_err_page: null });
+  }, [filteredJobs, updateParams]);
 
   if (isLoading || !data) {
     return (
@@ -3662,17 +4507,6 @@ function WorkerPanel() {
     );
   }
 
-  const { containers = [], queues = [], pipelines = [], active_processing = [], summary = {} } = data;
-
-  // Default: select first container
-  const activeContainer = selectedContainer || containers[0]?.container_name || null;
-  const containerData = containers.find((c: any) => c.container_name === activeContainer);
-
-  // Filter recent jobs & pipelines for the selected container's project
-  const activeProject = containerData?.supabase_project || null;
-  const filteredJobs = activeProject
-    ? groupedRecentJobs.filter((j: any) => j.worker_id === activeContainer || j.project === activeProject)
-    : groupedRecentJobs;
   const filteredPipelines = activeProject
     ? pipelines.filter((p: any) => p.project === activeProject)
     : pipelines;
@@ -3686,7 +4520,7 @@ function WorkerPanel() {
       {/* ── Worker Sub-Tabs ── */}
       <div className="flex items-center gap-1 bg-muted/30 p-0.5 rounded-lg w-fit">
         <button
-          onClick={() => setWorkerTab('overview')}
+          onClick={() => updateParams({ wrk_tab: 'overview' })}
           className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
             workerTab === 'overview' ? 'bg-emerald-500/12 text-emerald-500' : 'text-muted-foreground hover:text-foreground'
           }`}
@@ -3695,7 +4529,7 @@ function WorkerPanel() {
           Áttekintés
         </button>
         <button
-          onClick={() => setWorkerTab('llm-costs')}
+          onClick={() => updateParams({ wrk_tab: 'llm-costs' })}
           className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
             workerTab === 'llm-costs' ? 'bg-purple-500/12 text-purple-400' : 'text-muted-foreground hover:text-foreground'
           }`}
@@ -3715,7 +4549,7 @@ function WorkerPanel() {
           {['all', '24h', '7d', '30d', '90d'].map(p => (
             <button
               key={p}
-              onClick={() => setWorkerPeriod(p)}
+              onClick={() => updateParams({ wrk_period: p })}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
                 workerPeriod === p ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -3767,12 +4601,22 @@ function WorkerPanel() {
         ].map((kpi) => {
           const isQueueKpi = kpi.label === 'Queue várakozó';
           const isProcessingKpi = kpi.label === 'Feldolgozás alatt';
+          const isErrorKpi = kpi.label.startsWith('Worker hibák');
           const isQueueClickable = isQueueKpi && (summary.total_queue_pending || 0) > 0;
           const isProcessingClickable = isProcessingKpi;
-          const isClickable = isQueueClickable || isProcessingClickable;
-          const isActive = (showAllQueues && isQueueKpi) || (showProcessing && isProcessingKpi);
-          const activeColor = isQueueKpi ? 'border-amber-500/50 bg-amber-500/5' : 'border-cyan-500/50 bg-cyan-500/5';
-          const hoverColor = isQueueKpi ? 'hover:border-amber-500/50 hover:bg-amber-500/5' : 'hover:border-cyan-500/50 hover:bg-cyan-500/5';
+          const isErrorClickable = isErrorKpi && (summary.total_errors_24h || 0) > 0;
+          const isClickable = isQueueClickable || isProcessingClickable || isErrorClickable;
+          const isActive = (showAllQueues && isQueueKpi) || (showProcessing && isProcessingKpi) || (showWorkerErrors && isErrorKpi);
+          const activeColor = isQueueKpi 
+            ? 'border-amber-500/50 bg-amber-500/5' 
+            : isProcessingKpi 
+              ? 'border-cyan-500/50 bg-cyan-500/5' 
+              : 'border-red-500/50 bg-red-500/5';
+          const hoverColor = isQueueKpi 
+            ? 'hover:border-amber-500/50 hover:bg-amber-500/5' 
+            : isProcessingKpi 
+              ? 'hover:border-cyan-500/50 hover:bg-cyan-500/5' 
+              : 'hover:border-red-500/50 hover:bg-red-500/5';
           return (
           <Card
             key={kpi.label}
@@ -3783,11 +4627,18 @@ function WorkerPanel() {
               if (isQueueClickable) {
                 setShowAllQueues(prev => !prev);
                 setShowProcessing(false);
+                setShowWorkerErrors(false);
                 setSelectedQueue(null);
                 setDismissedQueues(new Set());
               } else if (isProcessingClickable) {
                 setShowProcessing(prev => !prev);
                 setShowAllQueues(false);
+                setShowWorkerErrors(false);
+                setSelectedQueue(null);
+              } else if (isErrorClickable) {
+                setShowWorkerErrors(prev => !prev);
+                setShowAllQueues(false);
+                setShowProcessing(false);
                 setSelectedQueue(null);
               }
             }}
@@ -3967,8 +4818,169 @@ function WorkerPanel() {
             </Card>
           )}
 
-          {/* ── Active Processing Panel (replaces pipeline+jobs when active) ── */}
-          {showProcessing ? (
+          {/* ── Worker Errors Panel (replaces pipeline+jobs when active) ── */}
+          {showWorkerErrors ? (
+            <Card className="border-red-500/30 bg-red-500/5">
+              <CardHeader className="pb-2 pt-3 px-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                    Hibás feldolgozások (Összes projekt)
+                    <Badge className="text-[10px] px-1.5 py-0 bg-red-500/15 text-red-400">
+                      {filteredErrorJobs.length} hiba
+                    </Badge>
+                  </CardTitle>
+                  <button onClick={() => setShowWorkerErrors(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </CardHeader>
+              <CardContent className="px-0 pb-2">
+                {filteredErrorJobs.length > 0 ? (
+                  <>
+                    <table className="w-full text-xs table-fixed">
+                      <thead>
+                        <tr className="border-b border-border/30 text-muted-foreground">
+                          <th className="text-left px-4 py-1.5 font-medium w-[110px]">Dátum</th>
+                          <th className="text-left px-3 py-1.5 font-medium w-[110px]">Pipeline</th>
+                          <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
+                          <th className="text-left px-3 py-1.5 font-medium w-[160px]">Cég</th>
+                          <th className="text-right px-3 py-1.5 font-medium w-[70px]">Idő</th>
+                          <th className="text-right px-3 py-1.5 font-medium w-[80px]">$</th>
+                          <th className="text-left px-3 py-1.5 font-medium w-[220px]">Worker</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedErrorJobs.map((j: any) => {
+                          const time = new Date(j.created_at);
+                          const dateStr = `${(time.getMonth() + 1).toString().padStart(2, '0')}.${time.getDate().toString().padStart(2, '0')}`;
+                          const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+                          return (
+                            <React.Fragment key={j.id}>
+                              <tr 
+                                className={`border-b border-border/20 hover:bg-muted/30 transition-colors cursor-pointer ${expandedErrorRowId === j.id ? 'bg-red-500/5 hover:bg-red-500/5' : ''}`}
+                                onClick={() => setExpandedErrorRowId(prev => prev === j.id ? null : j.id)}
+                              >
+                                <td className="px-4 py-1.5 font-mono text-muted-foreground whitespace-nowrap">{dateStr} - {timeStr}</td>
+                                <td className="px-3 py-1.5">
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 w-[75px] justify-center">{j.pipeline}</Badge>
+                                </td>
+                                <td className="px-3 py-1.5 max-w-[200px] truncate" title={j.file_name}>
+                                  {j.file_url ? (
+                                    <button
+                                      className="font-medium hover:underline text-left truncate flex items-center gap-1.5 w-full text-foreground/90"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPreviewFile({ url: j.file_url, name: j.file_name });
+                                      }}
+                                    >
+                                      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                      <span className="truncate">{j.file_name}</span>
+                                    </button>
+                                  ) : (
+                                    <div className="flex items-center gap-1.5 truncate text-muted-foreground/80">
+                                      <FileText className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                                      <span className="truncate">{j.file_name}</span>
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-3 py-1.5 text-muted-foreground max-w-[140px] truncate">{j.company_name || '—'}</td>
+                                <td className="text-right px-3 py-1.5 font-mono text-muted-foreground">{formatDuration(j.processing_duration_ms)}</td>
+                                <td className="text-right px-3 py-1.5 font-mono text-purple-500">${j.estimated_cost_usd?.toFixed(4)}</td>
+                                <td className="px-3 py-1.5 text-[10px] text-muted-foreground/60 font-mono flex items-center gap-2">
+                                  <div className="truncate flex-1">
+                                    {j.project && j.project !== 'PROD' && <span className="text-primary/50 mr-1">[{j.project}]</span>}
+                                    {j.worker_id || '—'}
+                                  </div>
+                                  {j.source && j.upload_id && (
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-5 w-5 text-muted-foreground hover:text-foreground shrink-0"
+                                      disabled={retrying}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openRetryModal([{ source: j.source, id: j.upload_id }]);
+                                      }}
+                                    >
+                                      <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />
+                                    </Button>
+                                  )}
+                                </td>
+                              </tr>
+                              {expandedErrorRowId === j.id && (
+                                <tr className="bg-red-500/5 border-b border-border/20">
+                                  <td colSpan={7} className="px-4 py-2.5 text-xs text-red-400/90 font-mono whitespace-pre-wrap break-all leading-relaxed">
+                                    <div className="flex flex-col gap-1 pl-4 border-l-2 border-red-500/30">
+                                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Részletes hibaüzenet</span>
+                                      <span className="text-red-400">{j.error_message || 'Ismeretlen hiba történt a feldolgozás során.'}</span>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                        {(() => {
+                          const emptyRowsCount = ERROR_PAGE_SIZE - paginatedErrorJobs.length;
+                          if (emptyRowsCount <= 0) return null;
+                          return Array.from({ length: emptyRowsCount }).map((_, index) => (
+                            <tr key={`placeholder-${index}`} className="border-b border-transparent">
+                              <td colSpan={7} className="px-3 py-1.5 select-none pointer-events-none">&nbsp;</td>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                    </table>
+
+                    {errorTotalPages > 1 && (
+                      <div className="flex items-center justify-between px-4 py-3 border-t border-border/10">
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {((errorPage - 1) * ERROR_PAGE_SIZE) + 1}–{Math.min(errorPage * ERROR_PAGE_SIZE, filteredErrorJobs.length)} / {filteredErrorJobs.length} hiba
+                        </span>
+                        <div className="flex gap-1">
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: 1 })} disabled={errorPage === 1} aria-label="Első">
+                            <ChevronLeft className="h-3.5 w-3.5" /><ChevronLeft className="h-3.5 w-3.5 -ml-2" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: Math.max(1, errorPage - 1) })} disabled={errorPage === 1} aria-label="Előző">
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                          </Button>
+                          {Array.from({ length: Math.min(5, errorTotalPages) }, (_, i) => {
+                            const pNum = Math.max(1, Math.min(errorTotalPages - 4, errorPage - 2)) + i;
+                            return pNum <= errorTotalPages ? (
+                              <Button
+                                key={pNum}
+                                variant={pNum === errorPage ? 'default' : 'outline'}
+                                size="icon"
+                                className="h-7 w-7 text-xs"
+                                onClick={() => updateParams({ wrk_err_page: pNum })}
+                                aria-label={`${pNum}. oldal`}
+                                aria-current={pNum === errorPage ? 'page' : undefined}
+                              >
+                                {pNum}
+                              </Button>
+                            ) : null;
+                          })}
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: Math.min(errorTotalPages, errorPage + 1) })} disabled={errorPage === errorTotalPages} aria-label="Következő">
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: errorTotalPages })} disabled={errorPage === errorTotalPages} aria-label="Utolsó">
+                            <ChevronRight className="h-3.5 w-3.5" /><ChevronRight className="h-3.5 w-3.5 -ml-2" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8 space-y-2">
+                    <CheckCircle2 className="h-8 w-8 text-emerald-500/40 mx-auto" />
+                    <p className="text-muted-foreground text-sm">Nincs hibás feldolgozás</p>
+                    <p className="text-muted-foreground/60 text-xs">Minden feladat sikeresen lefutott</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : showProcessing ? (
             <Card className="border-cyan-500/30 bg-cyan-500/5">
               <CardHeader className="pb-2 pt-3 px-4">
                 <div className="flex items-center justify-between">
@@ -4373,16 +5385,17 @@ function WorkerPanel() {
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0 pb-2">
-              <table className="w-full text-xs">
+              <table className="w-full text-xs table-fixed">
                 <thead>
                   <tr className="border-b border-border/30 text-muted-foreground">
-                    <th className="text-left px-4 py-1.5 font-medium">Dátum</th>
-                    <th className="text-left px-3 py-1.5 font-medium">Pipeline</th>
+                    <th className="text-left px-4 py-1.5 font-medium w-[110px]">Dátum</th>
+                    <th className="text-left px-3 py-1.5 font-medium w-[110px]">Pipeline</th>
                     <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
-                    <th className="text-left px-3 py-1.5 font-medium">Cég</th>
-                    <th className="text-right px-3 py-1.5 font-medium">Idő</th>
-                    <th className="text-right px-3 py-1.5 font-medium">$</th>
-                    <th className="text-left px-3 py-1.5 font-medium">Worker</th>
+                    <th className="text-left px-3 py-1.5 font-medium w-[160px]">Cég</th>
+                    <th className="text-center px-3 py-1.5 font-medium w-[70px]">Státusz</th>
+                    <th className="text-right px-3 py-1.5 font-medium w-[70px]">Idő</th>
+                    <th className="text-right px-3 py-1.5 font-medium w-[80px]">$</th>
+                    <th className="text-left px-3 py-1.5 font-medium w-[220px]">Worker</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -4394,21 +5407,59 @@ function WorkerPanel() {
                       <tr key={j.id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-1.5 font-mono text-muted-foreground whitespace-nowrap">{dateStr} - {timeStr}</td>
                         <td className="px-3 py-1.5">
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{j.pipeline}</Badge>
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 w-[75px] justify-center">{j.pipeline}</Badge>
                         </td>
-                        <td className="px-3 py-1.5 max-w-[180px] truncate" title={j.file_name}>{j.file_name}</td>
+                        <td className="px-3 py-1.5 max-w-[180px] truncate" title={j.file_name}>
+                          {j.file_url ? (
+                            <button
+                              className="font-medium hover:underline text-left truncate flex items-center gap-1.5 w-full text-foreground/90"
+                              onClick={() => setPreviewFile({ url: j.file_url, name: j.file_name })}
+                            >
+                              <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="truncate">{j.file_name}</span>
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-1.5 truncate text-muted-foreground/80">
+                              <FileText className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                              <span className="truncate">{j.file_name}</span>
+                            </div>
+                          )}
+                        </td>
                         <td className="px-3 py-1.5 text-muted-foreground max-w-[120px] truncate">{j.company_name || '—'}</td>
+                        <td className="text-center px-3 py-1.5">
+                          {j.status === 'ERROR' ? (
+                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] px-1.5 py-0 font-medium">ERROR</Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px] px-1.5 py-0 font-medium">OK</Badge>
+                          )}
+                        </td>
                         <td className="text-right px-3 py-1.5 font-mono text-muted-foreground">{formatDuration(j.processing_duration_ms)}</td>
                         <td className="text-right px-3 py-1.5 font-mono text-purple-500">${j.estimated_cost_usd?.toFixed(4)}</td>
-                        <td className="px-3 py-1.5 text-[10px] text-muted-foreground/60 font-mono">
-                          {j.project && j.project !== 'PROD' && <span className="text-primary/50 mr-1">[{j.project}]</span>}
-                          {j.worker_id || '—'}
+                        <td className="px-3 py-1.5 text-[10px] text-muted-foreground/60 font-mono flex items-center gap-2">
+                          <div className="truncate flex-1">
+                            {j.project && j.project !== 'PROD' && <span className="text-primary/50 mr-1">[{j.project}]</span>}
+                            {j.worker_id || '—'}
+                          </div>
+                          {j.source && j.upload_id && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-5 w-5 text-muted-foreground hover:text-foreground shrink-0"
+                              disabled={retrying}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openRetryModal([{ source: j.source, id: j.upload_id }]);
+                              }}
+                            >
+                              <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     );
                   })}
                   {filteredJobs.length === 0 && (
-                    <tr><td colSpan={7} className="text-center py-4 text-muted-foreground">Nincs feldolgozás ennél a konténernél az utolsó időszakban</td></tr>
+                    <tr><td colSpan={8} className="text-center py-4 text-muted-foreground">Nincs feldolgozás ennél a konténernél az utolsó időszakban</td></tr>
                   )}
                 </tbody>
               </table>
@@ -4424,6 +5475,82 @@ function WorkerPanel() {
 
 
 
+      {/* File Preview Dialog */}
+      <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
+        <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-4 border-b shrink-0">
+            <DialogTitle className="text-sm font-medium flex items-center justify-between pr-8">
+              <span className="truncate">{previewFile?.name}</span>
+              <div className="flex gap-2 shrink-0 ml-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 gap-1.5"
+                  onClick={() => window.open(previewFile?.url, '_blank')}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Megnyitás új lapon
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 bg-muted/20 relative">
+            {previewFile && <FilePreviewContent previewFile={previewFile} />}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Retry Pipeline Modal */}
+      {retryModalOpen && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in-0">
+          <Card className="w-full max-w-md border border-border shadow-2xl bg-card">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 text-primary" />
+                Fájl újraküldése
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                {retryTargets.length} elem kerül újra feldolgozásra. Válaszd ki a cél pipeline-t:
+              </p>
+              <div className="space-y-2">
+                {PIPELINE_OPTIONS.map((p) => (
+                  <label
+                    key={p.value}
+                    className={`flex items-center gap-3 p-3 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                      retryPipeline === p.value
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-border/60 hover:bg-muted/40 text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="retryPipeline"
+                      value={p.value}
+                      checked={retryPipeline === p.value}
+                      onChange={() => setRetryPipeline(p.value)}
+                      className="sr-only"
+                    />
+                    {p.icon}
+                    <span>{p.label}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="ghost" size="sm" onClick={() => setRetryModalOpen(false)} disabled={retrying}>
+                  Mégsem
+                </Button>
+                <Button size="sm" className="gap-1.5" onClick={handleRetryConfirm} disabled={retrying}>
+                  {retrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                  {retrying ? 'Küldés ' : <>Újraküldés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{retryTargets.length}</span>)</>}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
@@ -4528,20 +5655,26 @@ function fileTypeBadge(label: string, sourceTable: string) {
 }
 
 function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const PAGE_SIZE = 25;
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [sortCol, setSortCol] = useState<FileSortCol>('created_at');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(1);
-  const [filterCompanyId, setFilterCompanyId] = useState('');
-  const [filterUserId, setFilterUserId] = useState('');
-  const [filterFileType, setFilterFileType] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+
+  // Deriving states directly from URL search parameters
+  const page = Number(searchParams.get('file_page')) || 1;
+  const sortCol = (searchParams.get('file_sort') as FileSortCol) || 'created_at';
+  const sortDir = (searchParams.get('file_dir') as 'asc' | 'desc') || 'desc';
+  const filterCompanyId = searchParams.get('file_company') || '';
+  const filterUserId = searchParams.get('file_user') || '';
+  const filterFileType = searchParams.get('file_type') || '';
+  const filterStatus = searchParams.get('file_status') || '';
+  const dateFrom = searchParams.get('file_from') || '';
+  const dateTo = searchParams.get('file_to') || '';
+  const debouncedSearch = searchParams.get('file_q') || '';
+
+  // Local state for the input field to prevent layout/input lag
+  const [search, setSearch] = useState(debouncedSearch);
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<{ url: string, name: string } | null>(null);
   const [companySearchOpen, setCompanySearchOpen] = useState(false);
@@ -4563,20 +5696,45 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     });
   }, []);
 
-  // Debounce search — useEffect handles cleanup properly (useMemo does NOT)
+  // Helper function to update search parameters atomically
+  const updateParams = useCallback((updates: Record<string, string | number | null>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, val]) => {
+      if (val !== null && val !== '') {
+        next.set(key, String(val));
+      } else {
+        next.delete(key);
+      }
+    });
+    // Reset page on filter changes unless page is explicitly updated
+    if (!('file_page' in updates)) {
+      next.set('file_page', '1');
+    }
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
+  // Sync local search input value when URL changes externally
+  useEffect(() => {
+    setSearch(debouncedSearch);
+  }, [debouncedSearch]);
+
+  // Debounce search input to URL parameters
   useEffect(() => {
     const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
+      if (search !== debouncedSearch) {
+        updateParams({ file_q: search });
+      }
     }, 400);
     return () => clearTimeout(t);
-  }, [search]);
+  }, [search, debouncedSearch, updateParams]);
 
   const toggleSort = useCallback((col: FileSortCol) => {
-    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortCol(col); setSortDir('desc'); }
-    setPage(1);
-  }, [sortCol]);
+    if (sortCol === col) {
+      updateParams({ file_dir: sortDir === 'asc' ? 'desc' : 'asc' });
+    } else {
+      updateParams({ file_sort: col, err_dir: 'desc' });
+    }
+  }, [sortCol, sortDir, updateParams]);
 
   const { data, isLoading, isFetching } = useQuery<FilesData>({
     queryKey: ['management-files', page, PAGE_SIZE, sortCol, sortDir, debouncedSearch, filterCompanyId, filterUserId, filterFileType, filterStatus, dateFrom, dateTo],
@@ -4707,11 +5865,17 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   }, [allUsers, filterCompanyId]);
 
   const resetFilters = () => {
-    setSearch(''); setDebouncedSearch('');
-    setFilterCompanyId(''); setFilterUserId('');
-    setFilterFileType(''); setFilterStatus('');
-    setDateFrom(''); setDateTo('');
-    setPage(1);
+    updateParams({
+      file_q: '',
+      file_company: '',
+      file_user: '',
+      file_type: '',
+      file_status: '',
+      file_from: '',
+      file_to: '',
+      file_page: 1,
+    });
+    setSearch('');
   };
 
   const hasActiveFilters = search || filterCompanyId || filterUserId || filterFileType || filterStatus || dateFrom || dateTo;
@@ -4738,9 +5902,9 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
           <>
         <Card
           className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30", filterStatus === '' ? "border-primary/50 bg-primary/5" : "")}
-          onClick={() => { setFilterStatus(''); setPage(1); }}
+          onClick={() => { updateParams({ file_status: '' }); }}
           role="button" tabIndex={0}
-          onKeyDown={e => { if (e.key === 'Enter') { setFilterStatus(''); setPage(1); } }}
+          onKeyDown={e => { if (e.key === 'Enter') { updateParams({ file_status: '' }); } }}
         >
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
@@ -4756,9 +5920,9 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
         </Card>
         <Card
           className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30", filterStatus === 'success' ? "border-success/50 bg-success/5" : "")}
-          onClick={() => { setFilterStatus(filterStatus === 'success' ? '' : 'success'); setPage(1); }}
+          onClick={() => { updateParams({ file_status: filterStatus === 'success' ? '' : 'success' }); }}
           role="button" tabIndex={0}
-          onKeyDown={e => { if (e.key === 'Enter') { setFilterStatus(filterStatus === 'success' ? '' : 'success'); setPage(1); } }}
+          onKeyDown={e => { if (e.key === 'Enter') { updateParams({ file_status: filterStatus === 'success' ? '' : 'success' }); } }}
         >
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-success/10 border border-success/20 shrink-0">
@@ -4774,9 +5938,9 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
         </Card>
         <Card
           className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30", filterStatus === 'error' ? "border-destructive/50 bg-destructive/5" : "")}
-          onClick={() => { setFilterStatus(filterStatus === 'error' ? '' : 'error'); setPage(1); }}
+          onClick={() => { updateParams({ file_status: filterStatus === 'error' ? '' : 'error' }); }}
           role="button" tabIndex={0}
-          onKeyDown={e => { if (e.key === 'Enter') { setFilterStatus(filterStatus === 'error' ? '' : 'error'); setPage(1); } }}
+          onKeyDown={e => { if (e.key === 'Enter') { updateParams({ file_status: filterStatus === 'error' ? '' : 'error' }); } }}
         >
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-destructive/10 border border-destructive/20 shrink-0">
@@ -4792,9 +5956,9 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
         </Card>
         <Card
           className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30", filterStatus === 'pending' ? "border-warning/50 bg-warning/5" : "")}
-          onClick={() => { setFilterStatus(filterStatus === 'pending' ? '' : 'pending'); setPage(1); }}
+          onClick={() => { updateParams({ file_status: filterStatus === 'pending' ? '' : 'pending' }); }}
           role="button" tabIndex={0}
-          onKeyDown={e => { if (e.key === 'Enter') { setFilterStatus(filterStatus === 'pending' ? '' : 'pending'); setPage(1); } }}
+          onKeyDown={e => { if (e.key === 'Enter') { updateParams({ file_status: filterStatus === 'pending' ? '' : 'pending' }); } }}
         >
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-warning/10 border border-warning/20 shrink-0">
@@ -4828,13 +5992,14 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
               <Skeleton className="ml-auto h-4 w-16" />
             </div>
           ) : (
+          <>
           <div className="flex flex-wrap gap-2 items-center">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                onChange={e => { setSearch(e.target.value); }}
                 placeholder="Fájlnév keresése…"
                 className="pl-8 h-8 text-xs w-52 bg-background"
                 id="files-search"
@@ -4867,9 +6032,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                       <CommandItem
                         value=""
                         onSelect={() => {
-                          setFilterCompanyId("");
-                          setFilterUserId("");
-                          setPage(1);
+                          updateParams({ file_company: '', file_user: '', file_page: null });
                           setCompanySearchOpen(false);
                         }}
                         className="text-xs"
@@ -4887,9 +6050,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                           key={id}
                           value={name}
                           onSelect={() => {
-                            setFilterCompanyId(id);
-                            setFilterUserId("");
-                            setPage(1);
+                            updateParams({ file_company: id, file_user: '', file_page: null });
                             setCompanySearchOpen(false);
                           }}
                           className="text-xs"
@@ -4936,8 +6097,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                       <CommandItem
                         value=""
                         onSelect={() => {
-                          setFilterUserId("");
-                          setPage(1);
+                          updateParams({ file_user: '', file_page: null });
                           setUserSearchOpen(false);
                         }}
                         className="text-xs"
@@ -4955,8 +6115,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                           key={u.user_id}
                           value={u.name || u.email || ""}
                           onSelect={() => {
-                            setFilterUserId(u.user_id);
-                            setPage(1);
+                            updateParams({ file_user: u.user_id, file_page: null });
                             setUserSearchOpen(false);
                           }}
                           className="text-xs"
@@ -5004,7 +6163,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                       return (
                         <button
                           key={opt.value}
-                          onClick={() => { setFilterFileType(opt.value); setPage(1); }}
+                          onClick={() => { updateParams({ file_type: opt.value, file_page: null }); }}
                           className={cn(
                             "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
                             filterFileType === opt.value
@@ -5050,7 +6209,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                       return (
                         <button
                           key={opt.value}
-                          onClick={() => { setFilterStatus(opt.value); setPage(1); }}
+                          onClick={() => { updateParams({ file_status: opt.value, file_page: null }); }}
                           className={cn(
                             "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-xs transition-colors",
                             filterStatus === opt.value
@@ -5073,7 +6232,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
             <Input
               type="date"
               value={dateFrom}
-              onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+              onChange={e => { updateParams({ file_from: e.target.value, file_page: null }); }}
               className="h-8 text-xs bg-background w-36"
               id="files-date-from"
             />
@@ -5081,7 +6240,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
             <Input
               type="date"
               value={dateTo}
-              onChange={e => { setDateTo(e.target.value); setPage(1); }}
+              onChange={e => { updateParams({ file_to: e.target.value, file_page: null }); }}
               className="h-8 text-xs bg-background w-36"
               id="files-date-to"
             />
@@ -5097,23 +6256,17 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
               {`${totalRows} rekord`}
             </span>
           </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Bulk action bar */}
-      {selectedFiles.size > 0 && (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-sm font-medium">
-                <span className="tabular-nums inline-block min-w-[2ch] text-center">{selectedFiles.size}</span> fájl kijelölve
+          {selectedFiles.size > 0 && (
+            <div className="pt-2.5 border-t border-border/40 flex items-center gap-3 flex-wrap animate-in fade-in duration-200">
+              <span className="text-xs font-semibold text-muted-foreground">
+                <span className="tabular-nums inline-block min-w-[2ch] text-center text-primary font-bold">{selectedFiles.size}</span> fájl kijelölve
               </span>
               <div className="h-4 w-px bg-border" />
               <span className="text-xs text-muted-foreground">Állapot módosítása:</span>
               <Button
                 size="sm" variant="outline"
-                className="h-7 text-xs gap-1.5 border-success/30 hover:bg-success/10"
+                className="h-8 text-xs gap-1.5 border-success/30 hover:bg-success/10"
                 onClick={() => handleBulkStatusUpdate('done')}
                 disabled={bulkUpdating || bulkDeleting}
               >
@@ -5122,7 +6275,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
               </Button>
               <Button
                 size="sm" variant="outline"
-                className="h-7 text-xs gap-1.5 border-warning/30 hover:bg-warning/10"
+                className="h-8 text-xs gap-1.5 border-warning/30 hover:bg-warning/10"
                 onClick={() => handleBulkStatusUpdate('pending')}
                 disabled={bulkUpdating || bulkDeleting}
               >
@@ -5131,7 +6284,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
               </Button>
               <Button
                 size="sm" variant="outline"
-                className="h-7 text-xs gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="h-8 text-xs gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-primary"
                 onClick={() => handleBulkStatusUpdate('error')}
                 disabled={bulkUpdating || bulkDeleting}
               >
@@ -5141,7 +6294,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
               <div className="h-4 w-px bg-border" />
               <Button
                 size="sm" variant="outline"
-                className="h-7 text-xs gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="h-8 text-xs gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-primary"
                 onClick={handleOpenDeleteConfirm}
                 disabled={bulkUpdating || bulkDeleting}
               >
@@ -5151,7 +6304,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
               <div className="h-4 w-px bg-border" />
               <Button
                 size="sm" variant="ghost"
-                className="h-7 text-xs gap-1 text-muted-foreground"
+                className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
                 onClick={() => setSelectedFiles(new Set())}
                 disabled={bulkUpdating || bulkDeleting}
               >
@@ -5160,9 +6313,11 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
               </Button>
               {(bulkUpdating || bulkDeleting) && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+          </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={(open) => { if (!bulkDeleting) setDeleteConfirmOpen(open); }}>
@@ -5331,7 +6486,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                           ) : row.user_name ? (
                             <button 
                               className="text-foreground hover:text-primary transition-colors text-left truncate max-w-[120px] block text-[11px] font-bold"
-                              onClick={e => { e.stopPropagation(); if (row.user_id) { setFilterUserId(row.user_id); setPage(0); } }}
+                              onClick={e => { e.stopPropagation(); if (row.user_id) { updateParams({ file_user: row.user_id, file_page: null }); } }}
                               title={`Szűrés: ${row.user_name}`}
                             >
                               {row.user_name}
@@ -5434,10 +6589,10 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                 {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalRows)} / {totalRows} rekord
               </span>
               <div className="flex gap-1">
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(1)} disabled={page === 1} aria-label="Első">
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ file_page: 1 })} disabled={page === 1} aria-label="Első">
                   <ChevronLeft className="h-3.5 w-3.5" /><ChevronLeft className="h-3.5 w-3.5 -ml-2" />
                 </Button>
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} aria-label="Előző">
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ file_page: Math.max(1, page - 1) })} disabled={page === 1} aria-label="Előző">
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -5448,7 +6603,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                       variant={pNum === page ? 'default' : 'outline'}
                       size="icon"
                       className="h-7 w-7 text-xs"
-                      onClick={() => setPage(pNum)}
+                      onClick={() => updateParams({ file_page: pNum })}
                       aria-label={`${pNum}. oldal`}
                       aria-current={pNum === page ? 'page' : undefined}
                     >
@@ -5456,10 +6611,10 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                     </Button>
                   ) : null;
                 })}
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} aria-label="Következő">
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ file_page: Math.min(totalPages, page + 1) })} disabled={page === totalPages} aria-label="Következő">
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(totalPages)} disabled={page === totalPages} aria-label="Utolsó">
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ file_page: totalPages })} disabled={page === totalPages} aria-label="Utolsó">
                   <ChevronRight className="h-3.5 w-3.5" /><ChevronRight className="h-3.5 w-3.5 -ml-2" />
                 </Button>
               </div>
@@ -5488,29 +6643,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 bg-muted/20 relative">
-            {previewFile && (
-              previewFile.url.toLowerCase().includes('.pdf') || previewFile.name.toLowerCase().endsWith('.pdf') ? (
-                <iframe 
-                  src={`${previewFile.url}#toolbar=1`} 
-                  className="w-full h-full border-0"
-                  title="PDF Preview"
-                />
-              ) : (previewFile.name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/) ? (
-                <div className="w-full h-full flex items-center justify-center p-4">
-                  <img 
-                    src={previewFile.url} 
-                    alt={previewFile.name} 
-                    className="max-w-full max-h-full object-contain shadow-lg rounded-sm"
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-muted-foreground">
-                  <FileText className="h-12 w-12 opacity-20" />
-                  <p className="text-sm text-center px-8">Ez a fájltípus nem tekinthető meg előnézetben.<br/>Kérjük, töltsd le vagy nyisd meg új lapon.</p>
-                  <Button onClick={() => window.open(previewFile.url, '_blank')}>Megnyitás új lapon</Button>
-                </div>
-              ))
-            )}
+            {previewFile && <FilePreviewContent previewFile={previewFile} />}
           </div>
         </DialogContent>
       </Dialog>
@@ -5565,9 +6698,249 @@ const MODULE_LABELS: Record<string, string> = {
   ai_assistant: 'AI Asszisztens', help: 'Segítség', profile: 'Profil',
 };
 
-function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
-  const [searchUser, setSearchUser] = useState('');
+interface UsersControlPanelProps {
+  allUsers: any[];
+  overviewLoading: boolean;
+  companyCostMap: Map<string, any>;
+  onOpenCompany: (id: string) => void;
+}
+
+function UsersControlPanel({ allUsers, overviewLoading, companyCostMap, onOpenCompany }: UsersControlPanelProps) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const USER_PAGE_SIZE = 15;
+
+  // Deriving state from URL search params
+  const searchUser = searchParams.get('usr_q') || '';
+  const userPage = Number(searchParams.get('usr_page')) || 0;
+
+  // Local input search state
+  const [search, setSearch] = useState(searchUser);
+
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+
+  // Helper to update search parameters atomically
+  const updateParams = useCallback((updates: Record<string, string | number | null>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, val]) => {
+      if (val !== null && val !== '') {
+        next.set(key, String(val));
+      } else {
+        next.delete(key);
+      }
+    });
+    // Reset page to 0 on query update
+    if (!('usr_page' in updates)) {
+      next.set('usr_page', '0');
+    }
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
+  // Debounce sync local input search to URL search parameter
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (search !== searchUser) {
+        updateParams({ usr_q: search });
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search, searchUser, updateParams]);
+
+  // Sync local search state when URL changes externally
+  useEffect(() => {
+    setSearch(searchUser);
+  }, [searchUser]);
+
+  const filteredUsers = useMemo(() => {
+    if (!allUsers) return [];
+    if (!searchUser.trim()) return allUsers;
+    const q = searchUser.toLowerCase();
+    return allUsers.filter(u =>
+      (u.name || '').toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    );
+  }, [allUsers, searchUser]);
+
+  const userTotalPages = Math.ceil(filteredUsers.length / USER_PAGE_SIZE);
+  const paginatedUsers = useMemo(() =>
+    filteredUsers.slice(userPage * USER_PAGE_SIZE, (userPage + 1) * USER_PAGE_SIZE)
+  , [filteredUsers, userPage]);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <Users className="h-4 w-4 text-primary" aria-hidden="true" /> Felhasználók
+        </CardTitle>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Keresés név vagy email..."
+            className="pl-8 h-8 text-xs w-56 bg-background"
+          />
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" role="table" style={{ tableLayout: 'fixed' }}>
+            <thead>
+              <tr className="border-b border-border text-muted-foreground text-xs bg-muted/30">
+                <th className="text-left py-3 px-5 font-medium" style={{ width: 40 }}></th>
+                <th className="text-left py-3 px-2 font-medium">Név</th>
+                <th className="text-center py-3 px-4 font-medium" style={{ width: 80 }}>Cégek</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {overviewLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="py-3 px-5"><Skeleton className="h-4 w-4" /></td>
+                    <td className="py-3 px-2"><Skeleton className="h-4 w-40" /></td>
+                    <td className="py-3 px-4 text-center"><Skeleton className="h-5 w-8 mx-auto rounded-full" /></td>
+                  </tr>
+                ))
+              ) : paginatedUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="text-center py-8 text-muted-foreground text-sm">Nincs találat</td>
+                </tr>
+              ) : paginatedUsers.map(u => {
+                const isExpanded = expandedUserId === u.user_id;
+                return (
+                  <React.Fragment key={u.user_id}>
+                    <tr
+                      onClick={() => setExpandedUserId(isExpanded ? null : u.user_id)}
+                      className="cursor-pointer hover:bg-accent/50 active:bg-accent/70
+                                 transition-colors duration-150 group h-[52px]"
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isExpanded}
+                      aria-label={`${u.name || u.email} kibontása`}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedUserId(isExpanded ? null : u.user_id); } }}
+                    >
+                      <td className="py-3 px-5 w-8">
+                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </td>
+                      <td className="py-3 px-2 overflow-hidden">
+                        <div>
+                          <span className="font-medium text-foreground group-hover:text-primary transition-colors duration-150 block truncate">
+                            {u.name || 'N/A'}
+                          </span>
+                          <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {u.companies.length > 0 ? (
+                          <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-full
+                            bg-primary/10 text-primary text-xs font-semibold border border-primary/20"
+                            title={u.companies.map(c => c.name).join(', ')}>
+                            {u.companies.length}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground italic text-xs">0</span>
+                        )}
+                      </td>
+                    </tr>
+                    {isExpanded && u.companies.length > 0 && (
+                      <tr>
+                        <td colSpan={3} className="p-0">
+                          <div className="bg-muted/20 border-t border-border animate-in slide-in-from-top-1 duration-200">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="text-muted-foreground border-b border-border/50">
+                                  <th className="text-left py-2 px-6 font-medium">Cég</th>
+                                  <th className="text-left py-2 px-3 font-medium">Rang</th>
+                                  <th className="text-center py-2 px-3 font-medium">Számlák</th>
+                                  <th className="text-center py-2 px-3 font-medium">NAV</th>
+                                  <th className="text-center py-2 px-3 font-medium">Tranzakciók</th>
+                                  <th className="text-center py-2 px-3 font-medium">Bér/járulék</th>
+                                  <th className="text-right py-2 px-6 font-medium">Havi költség</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border/30">
+                                {u.companies.map(c => {
+                                  const stats = companyCostMap.get(c.id);
+                                  return (
+                                    <tr
+                                      key={c.id}
+                                      onClick={(e) => { e.stopPropagation(); onOpenCompany(c.id); }}
+                                      className="cursor-pointer hover:bg-accent/40 transition-colors duration-150 group/company"
+                                      role="button"
+                                      tabIndex={0}
+                                      onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); onOpenCompany(c.id); } }}
+                                    >
+                                      <td className="py-2.5 px-6">
+                                        <span className="font-medium text-foreground group-hover/company:text-primary transition-colors duration-150 flex items-center gap-1.5">
+                                          {c.name}
+                                          <ChevronRight className="h-3 w-3 opacity-0 group-hover/company:opacity-100 transition-opacity" />
+                                        </span>
+                                      </td>
+                                      <td className="py-2.5 px-3">{roleBadge(c.role)}</td>
+                                      <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.invoiceCount ?? '—'}</td>
+                                      <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.navInvoiceCount ?? '—'}</td>
+                                      <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.transactionCount ?? '—'}</td>
+                                      <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.payrollCount ?? '—'}</td>
+                                      <td className="py-2.5 px-6 text-right tabular-nums font-medium text-foreground">
+                                        ${(stats?.monthlyCostUsd ?? 0).toFixed(4)}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+              {!overviewLoading && paginatedUsers.length > 0 && paginatedUsers.length < USER_PAGE_SIZE &&
+                Array.from({ length: USER_PAGE_SIZE - paginatedUsers.length }).map((_, i) => (
+                  <tr key={`empty-${i}`} className="pointer-events-none">
+                    <td className="py-3 px-5">&nbsp;</td>
+                    <td className="py-3 px-2 overflow-hidden">
+                      <div>
+                        <span className="block text-sm invisible">&nbsp;</span>
+                        <p className="text-xs invisible">&nbsp;</p>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4"></td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+        {!overviewLoading && userTotalPages > 1 && (
+          <div className="flex items-center justify-between px-5 py-2.5 border-t border-border">
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {filteredUsers.length === 0 ? '0' : `${userPage * USER_PAGE_SIZE + 1}–${Math.min((userPage + 1) * USER_PAGE_SIZE, filteredUsers.length)} / ${filteredUsers.length}`}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={userPage === 0}
+                onClick={() => updateParams({ usr_page: userPage - 1 })} aria-label="Előző oldal">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-xs text-muted-foreground tabular-nums px-2">{userPage + 1}/{userTotalPages}</span>
+              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={userPage >= userTotalPages - 1}
+                onClick={() => updateParams({ usr_page: userPage + 1 })} aria-label="Következő oldal">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Driving searchUser from URL parameter perm_q
+  const searchUser = searchParams.get('perm_q') || '';
+  const [search, setSearch] = useState(searchUser);
+
   const selectedUserId = searchParams.get('userId') || null;
 
   const setSelectedUserId = useCallback((userId: string | null) => {
@@ -5579,6 +6952,34 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     }
     setSearchParams(nextParams);
   }, [searchParams, setSearchParams]);
+
+  // Helper to update parameter atomically
+  const updateParams = useCallback((updates: Record<string, string | null>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, val]) => {
+      if (val !== null && val !== '') {
+        next.set(key, val);
+      } else {
+        next.delete(key);
+      }
+    });
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
+  // Debounce sync local input value to URL search parameter
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (search !== searchUser) {
+        updateParams({ perm_q: search });
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search, searchUser, updateParams]);
+
+  // Sync local search input when URL changes externally
+  useEffect(() => {
+    setSearch(searchUser);
+  }, [searchUser]);
 
   const [pendingChanges, setPendingChanges] = useState<Map<string, { canRead: boolean; canWrite: boolean }>>(new Map());
   const [isSupportAdmin, setIsSupportAdmin] = useState<boolean>(false);
@@ -5775,8 +7176,8 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
           <div className="relative mt-2">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              value={searchUser}
-              onChange={e => setSearchUser(e.target.value)}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
               placeholder="Keresés..."
               className="pl-8 h-8 text-xs"
             />

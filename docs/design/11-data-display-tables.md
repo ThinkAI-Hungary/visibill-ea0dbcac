@@ -49,6 +49,21 @@
 
 A `table-layout: fixed` kényszeríti a táblát a konténer szélességébe, ami levágja a tartalmat. Az `auto` mód a tartalom szerint méretezi az oszlopokat.
 
+**Kivétel (Operator / Dashboard táblázatok):**
+Ha a táblázat paginált (pl. a Management Dashboard hibalistái vagy naplói), és meg kell akadályozni, hogy a különböző hosszúságú szövegek (pl. fájlnevek, cégnevek) miatt az oszlopok elugráljanak (column shifting) lapozás közben:
+- Használj `table-fixed` (Tailwind) elrendezést.
+- Határozz meg fix szélességet a `<th>` fejléceken (pl. `w-[100px]`, `w-[160px]`).
+- **Szimmetrikus oszlopközök (Badge-ek és fix szövegek):** Amennyiben egymás mellett fix szélességű szövegek (pl. dátum) és fix szélességű komponensek (pl. `w-[75px]` méretű pipeline badge) helyezkednek el, adj meg azonos szélességet a fejléceken (pl. mindkettő `w-[110px]`), hogy a köztük lévő vizuális távolság (gap) tökéletesen kiegyensúlyozott és szimmetrikus legyen.
+- Hagyj egy rugalmas oszlopot (pl. Fájlnév) fix szélesség nélkül, hogy dinamikusan kitöltse a fennmaradó helyet, és a benne lévő elemeken alkalmazz `truncate` csonkolást.
+
+### 1b. Expandable Rows Pattern (Lenyitható részlet-sorok)
+
+Ha a táblázat egyes soraihoz részletesebb háttéradat (pl. részletes hibaüzenet, JSON log) tartozik, az alábbi mintát kell követni:
+- **Fragment csomagolás**: A `map` ciklusban a fő `<tr>`-t és a lenyíló részlet `<tr>`-t egy `<React.Fragment key={item.id}>` blokkba kell csomagolni.
+- **Kattintható sor**: A fő `<tr>` kapjon `cursor-pointer hover:bg-muted/30` osztályokat és egy `onClick` kezelőt, ami váltja a lenyitott sor ID-ját.
+- **Esemény-terjedés gátlása**: Minden olyan belső interaktív elemen (pl. fájl előnézet link, újraküldés ikon), ami nem a sor lenyitását szolgálja, kötelező az `e.stopPropagation()` hívása.
+- **Részlet sor kialakítása**: A lenyíló részlet sor (`<tr>`) kapjon finom státusz-háttérszínt (pl. hiba esetén `bg-red-500/5`) és egy `colSpan={TOTAL_COLS}` cellát, amelyben bal oldali színes szegély (`border-l-2`) és `whitespace-pre-wrap` segítségével tisztán olvasható a részletes log/üzenet.
+
 ### 2. Horizontális scroll wrapper
 
 ```tsx
@@ -144,6 +159,26 @@ Betöltés alatti tábla placeholder skeleton animációval.
 ## Unified Pagination
 
 **Fájl:** `ui/unified-pagination.tsx`
+
+### Layout Shift Megelőzés (Placeholder Sorok)
+
+Paginált táblázatok esetén, ha az utolsó lapra navigálva nincs elegendő elem a lapméret kitöltéséhez (pl. 10 helyett csak 6 elem van), a tábla magasságának összeesését és a pagination vezérlők elugrását **placeholder sorokkal** kell megelőzni.
+
+A táblázat `<tbody>` végén ki kell egészíteni a sorokat a kívánt lapméretig (`emptyRowsCount = PAGE_SIZE - currentItems.length`):
+
+```tsx
+{(() => {
+  const emptyRowsCount = PAGE_SIZE - currentItems.length;
+  if (emptyRowsCount <= 0) return null;
+  return Array.from({ length: emptyRowsCount }).map((_, index) => (
+    <tr key={`placeholder-${index}`} className="border-b border-transparent">
+      <td colSpan={COL_SPAN} className="px-3 py-1.5 select-none pointer-events-none">&nbsp;</td>
+    </tr>
+  ));
+})()
+```
+
+Ezek a sorok transzparensek (nem kapnak látható keretet) és a bennük lévő `&nbsp;` karakter miatt pixel-pontosan megegyeznek egy átlagos sor magasságával, így a pagination szekció fixen a kártya alján marad.
 
 ### Layout
 

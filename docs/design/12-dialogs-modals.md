@@ -341,3 +341,36 @@ const handleConfirm = async () => {
 | Error retry | `ManagementDashboard.tsx` (Hibák tab) | `retrying` |
 | Error delete | `ManagementDashboard.tsx` (Hibák tab) | `deleting` |
 | Error delete ALL | `ManagementDashboard.tsx` (Hibák tab) | `deletingAll` |
+
+---
+
+## Globális Fájl Előnézet Pattern (FilePreviewContent)
+
+> **Döntés (2026-07-09):** A fájlok előnézetéért felelős dialógusok egységesítve lettek. A CSV és Excel (.xls, .xlsx) formátumok globálisan támogatottak lettek minden előnézet panelben.
+
+### Támogatott Formátumok & Megjelenítési Technológia
+
+| Formátum | Kiterjesztés | Megjelenítési Mód | Megjegyzés |
+|----------|--------------|-------------------|------------|
+| **PDF** | `.pdf` | `<iframe>` PDF Viewer | Beépített böngésző PDF renderelő |
+| **Kép** | `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.svg`, `.bmp` | `<img>` tag flex centerben | Kép arányos igazítással |
+| **Excel** | `.xls`, `.xlsx`, `.xlsm` | `<iframe>` MS Office Web Viewer | Microsoft felhő alapú beágyazott Excel renderelő |
+| **CSV** | `.csv`, `.tsv` | Egyedi kliens-oldali táblázat | Automatikus `,` / `;` detektálás, első 100 sor limit |
+| **Egyéb** | – | Letöltés kártya | Letöltési gombbal és megnyitás új lapon opcióval |
+
+### CSV Előnézet Működése (CsvPreviewComponent)
+A kliensoldali CSV renderelő a megadott tárolási URL-ről fetch-eli a fájlt mint nyers szöveget (`res.text()`).
+1. **Elválasztó karakter automatikus detektálása**: Ha a sor tartalmaz pontosvesszőt (`;`), akkor pontosvesszővel szeli a cellákat, egyébként vesszővel (`,`).
+2. **Idézőjelek tisztítása**: Eltávolítja a cella szélén maradó extra idézőjeleket (`row.map(cell => cell.replace(/^"|"$/g, ''))`).
+3. **Fejléc kiemelés**: Az első sor (`rIdx === 0`) félkövér fejléc hátteret kap a könnyebb olvashatóságért.
+4. **Biztonsági limit**: Csak az első 100 sor kerül renderelésre a memória és DOM teljesítmény védelméért.
+
+### Reusable Komponensek
+A két globális komponens a `ManagementDashboard.tsx` fájlban:
+* `FilePreviewContent`: Kezeli az elágazásokat a kiterjesztés alapján.
+* `CsvPreviewComponent`: Felelős a CSV-k aszinkron betöltéséért és táblázatos rendereléséért.
+
+### Kattintható Fájlok és Linkek Design Irányelvei
+
+* **Kattinthatóság & Színezés**: Ha egy fájlnév vagy dokumentum link kattintható (vagyis elérhető hozzá letöltési vagy előnézeti URL), a szövegszíne **MINDIG** a felület elsődleges színe kell legyen (`text-teal-600 dark:text-teal-400`). Ez a design token garantálja a vizuális konzisztenciát.
+* **Hover állapot**: A link fölé víve a kurzort a színnek finoman változnia kell (`hover:text-teal-700 dark:hover:text-teal-300`), a konténernek pedig jeleznie kell az interaktivitást (pl. `hover:bg-zinc-200/85` / `dark:hover:bg-zinc-900/85` és `cursor-pointer`).

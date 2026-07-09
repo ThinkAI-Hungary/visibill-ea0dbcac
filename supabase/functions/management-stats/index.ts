@@ -801,14 +801,14 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
       .select("company_id, input_tokens, output_tokens, total_tokens, estimated_cost_usd, llm_calls, created_at")
       .gte("created_at", monthStart),
     listAllAuthUsers(admin),
-    // Lightweight error counts (id only, filtered by error status)
-    admin.from("invoice_uploads").select("id", { count: "exact", head: true }).eq("processing_status", "error"),
-    admin.from("transaction_uploads").select("id", { count: "exact", head: true }).eq("processing_status", "error"),
-    admin.from("report_uploads").select("id", { count: "exact", head: true }).eq("processing_status", "error"),
-    admin.from("gl_upload_notifications").select("id", { count: "exact", head: true }).eq("processing_status", "error"),
-    admin.from("nav_sync_logs").select("id", { count: "exact", head: true }).eq("status", "error"),
-    admin.from("bank_statement_uploads").select("id", { count: "exact", head: true }).eq("processing_status", "error"),
-    admin.from("app_error_logs").select("id", { count: "exact", head: true }).eq("severity", "error").order("created_at", { ascending: false }).limit(500),
+    // Fetch error references for company/user aggregation
+    admin.from("invoice_uploads").select("company_id, user_id").eq("processing_status", "error"),
+    admin.from("transaction_uploads").select("company_id, user_id").eq("processing_status", "error"),
+    admin.from("report_uploads").select("company_id, user_id").eq("processing_status", "error"),
+    admin.from("gl_upload_notifications").select("company_id").eq("processing_status", "error"),
+    admin.from("nav_sync_logs").select("company_id").eq("status", "error"),
+    admin.from("bank_statement_uploads").select("company_id, user_id").eq("processing_status", "error"),
+    admin.from("app_error_logs").select("company_id, user_id").eq("severity", "error").order("created_at", { ascending: false }).limit(500),
     // ── eaisyBooks assignment lookup (distinct company_ids that have accounty access) ──
     admin.from("accounty_assignments").select("company_id"),
   ]);
@@ -890,13 +890,77 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
     null,
   );
 
-  const totalErrors = (errInvoicesRes.count || 0) + (errTxRes.count || 0) + (errReportsRes.count || 0)
-    + (errGlRes.count || 0) + (errNavRes.count || 0) + (errBankRes.count || 0) + Math.min(errAppRes.count || 0, 500);
+  const invoiceErrors = errInvoicesRes.data || [];
+  const txErrors = errTxRes.data || [];
+  const reportErrors = errReportsRes.data || [];
+  const glErrors = errGlRes.data || [];
+  const navErrors = errNavRes.data || [];
+  const bankErrors = errBankRes.data || [];
+  const appErrors = errAppRes.data || [];
+
+  const totalErrors = invoiceErrors.length + txErrors.length + reportErrors.length 
+    + glErrors.length + navErrors.length + bankErrors.length + appErrors.length;
+
+  const companyErrorCounts = new Map<string, number>();
+  const userErrorCounts = new Map<string, number>();
+
+  const addError = (companyId?: string | null, userId?: string | null) => {
+    if (companyId) {
+      companyErrorCounts.set(companyId, (companyErrorCounts.get(companyId) || 0) + 1);
+    }
+    if (userId) {
+      userErrorCounts.set(userId, (userErrorCounts.get(userId) || 0) + 1);
+    }
+  };
+
+  invoiceErrors.forEach((e: any) => addError(e.company_id, e.user_id));
+  txErrors.forEach((e: any) => addError(e.company_id, e.user_id));
+  reportErrors.forEach((e: any) => addError(e.company_id, e.user_id));
+  glErrors.forEach((e: any) => addError(e.company_id, null));
+  navErrors.forEach((e: any) => addError(e.company_id, null));
+  bankErrors.forEach((e: any) => addError(e.company_id, e.user_id));
+  appErrors.forEach((e: any) => addError(e.company_id, e.user_id));
+
+  let maxCompanyId = "";
+  let maxCompanyCount = 0;
+  for (const [cid, count] of companyErrorCounts.entries()) {
+    if (count > maxCompanyCount) {
+      maxCompanyCount = count;
+      maxCompanyId = cid;
+    }
+  }
+
+  let maxUserId = "";
+  let maxUserCount = 0;
+  for (const [uid, count] of userErrorCounts.entries()) {
+    if (count > maxUserCount) {
+      maxUserCount = count;
+      maxUserId = uid;
+    }
+  }
+
+  const companyById = new Map(companies.map(c => [c.id, c.name]));
+  const profileNameByUserId = new Map(profiles.map(p => [p.user_id, p.name]));
+
+  const mostErrorCompany = maxCompanyId && maxCompanyCount > 0 ? {
+    id: maxCompanyId,
+    name: companyById.get(maxCompanyId) || "Ismeretlen cég",
+    errorCount: maxCompanyCount
+  } : null;
+
+  const mostErrorUser = maxUserId && maxUserCount > 0 ? {
+    id: maxUserId,
+    name: profileNameByUserId.get(maxUserId) || "Ismeretlen felhasználó",
+    email: emailByUserId.get(maxUserId) || "—",
+    errorCount: maxUserCount
+  } : null;
 
   return {
     usersCount: profiles.filter((profile) => profile.role !== "management" && profile.role !== "thinkai").length,
     companiesCount: companies.length,
     totalErrors,
+    mostErrorCompany,
+    mostErrorUser,
     companies: companySummaries,
     users: profiles
       .filter((profile) => profile.role !== "management" && profile.role !== "thinkai")
@@ -1956,7 +2020,7 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
     if (companyId) q = q.eq("company_id", companyId);
     if (userId) q = q.eq("user_id", userId);
     // NOTE: status filter is applied in-memory AFTER stats are computed
-    if (search) q = q.ilike("file_name", `%${search}%`);
+    if (search) q = q.or(`file_name.ilike.%${search}%,error_message.ilike.%${search}%`);
     if (dateFrom) q = q.gte("created_at", dateFrom);
     if (dateTo) q = q.lte("created_at", `${dateTo}T23:59:59`);
     
@@ -2519,7 +2583,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
       let q = pc.client
         .from("invoice_uploads")
         .select("id, document_category", { count: "exact", head: false })
-        .eq("processing_status", "error");
+        .or("processing_status.eq.error,and(processing_status.eq.ignored,error_message.not.is.null)");
       if (periodSince) q = q.gte("updated_at", periodSince);
       const { count, data } = await q;
       invoiceErrors = count || 0;
@@ -2568,7 +2632,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     try {
       let recentQuery = pc.client
         .from("llm_koltsegek")
-        .select("id, created_at, pipeline, file_name, company_id, model_name, total_tokens, estimated_cost_usd, processing_duration_ms, worker_id")
+        .select("id, created_at, pipeline, file_name, company_id, model_name, total_tokens, estimated_cost_usd, processing_duration_ms, worker_id, upload_id")
         .order("created_at", { ascending: false })
         .limit(50);
       if (periodSince) recentQuery = recentQuery.gte("created_at", periodSince);
@@ -2587,19 +2651,89 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
         }
       }
 
-      return (data || []).map((r: any) => ({
-        id: r.id,
-        created_at: r.created_at,
-        pipeline: r.pipeline,
-        file_name: r.file_name,
-        company_name: companyNameMap.get(r.company_id) || null,
-        model_name: r.model_name,
-        total_tokens: r.total_tokens || 0,
-        estimated_cost_usd: parseFloat(r.estimated_cost_usd) || 0,
-        processing_duration_ms: r.processing_duration_ms || 0,
-        worker_id: r.worker_id || `worker-${pc.name.toLowerCase()}`,
-        project: pc.name,
-      }));
+      // Resolve upload statuses
+      const uploadIds = [...new Set((data || []).map((r: any) => r.upload_id).filter(Boolean))];
+      const uploadStatusMap = new Map<string, string>();
+      const uploadUrlMap = new Map<string, string>();
+      const uploadSourceMap = new Map<string, string>();
+
+      if (uploadIds.length > 0) {
+        // Query invoice_uploads
+        try {
+          const { data: invUploads } = await pc.client
+            .from("invoice_uploads")
+            .select("id, processing_status, error_message, file_url")
+            .in("id", uploadIds);
+          for (const u of (invUploads || [])) {
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
+            uploadSourceMap.set(u.id, "invoice_uploads");
+          }
+        } catch (_) {}
+
+        // Query transaction_uploads
+        try {
+          const { data: txUploads } = await pc.client
+            .from("transaction_uploads")
+            .select("id, processing_status, error_message, file_url")
+            .in("id", uploadIds);
+          for (const u of (txUploads || [])) {
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
+            uploadSourceMap.set(u.id, "transaction_uploads");
+          }
+        } catch (_) {}
+
+        // Query bank_statement_uploads
+        try {
+          const { data: bankUploads } = await pc.client
+            .from("bank_statement_uploads")
+            .select("id, processing_status, error_message, file_url")
+            .in("id", uploadIds);
+          for (const u of (bankUploads || [])) {
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
+            uploadSourceMap.set(u.id, "bank_statement_uploads");
+          }
+        } catch (_) {}
+
+        // Query report_uploads
+        try {
+          const { data: reportUploads } = await pc.client
+            .from("report_uploads")
+            .select("id, processing_status, error_message, file_url")
+            .in("id", uploadIds);
+          for (const u of (reportUploads || [])) {
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
+            uploadSourceMap.set(u.id, "report_uploads");
+          }
+        } catch (_) {}
+      }
+
+      return (data || [])
+        .map((r: any) => ({
+          id: r.id,
+          created_at: r.created_at,
+          pipeline: r.pipeline,
+          file_name: r.file_name,
+          company_name: companyNameMap.get(r.company_id) || null,
+          model_name: r.model_name,
+          total_tokens: r.total_tokens || 0,
+          estimated_cost_usd: parseFloat(r.estimated_cost_usd) || 0,
+          processing_duration_ms: r.processing_duration_ms || 0,
+          worker_id: r.worker_id || `worker-${pc.name.toLowerCase()}`,
+          project: pc.name,
+          upload_id: r.upload_id || null,
+          status: r.upload_id ? (uploadStatusMap.get(r.upload_id) || "OK") : "OK",
+          file_url: r.upload_id ? (uploadUrlMap.get(r.upload_id) || null) : null,
+          source: r.upload_id ? (uploadSourceMap.get(r.upload_id) || null) : null,
+        }))
+        .filter((r: any) => !r.upload_id || r.source !== null);
     } catch (e) {
       return [];
     }
@@ -2612,6 +2746,124 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 20)
     )
+    .flat()
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // ── 5c. Fetch error uploads (up to 100 per project) ──
+  const errorJobsFetches = projectClients.map(async (pc) => {
+    const results: any[] = [];
+
+    // Query invoice_uploads with processing_status = 'error'
+    try {
+      let q = pc.client
+        .from("invoice_uploads")
+        .select("id, file_name, company_id, document_category, file_url, created_at, updated_at, error_message")
+        .or("processing_status.eq.error,and(processing_status.eq.ignored,error_message.not.is.null)")
+        .order("updated_at", { ascending: false })
+        .limit(100);
+      if (periodSince) q = q.gte("updated_at", periodSince);
+      const { data } = await q;
+      for (const r of (data || [])) {
+        results.push({
+          id: r.id,
+          upload_id: r.id,
+          created_at: r.created_at,
+          updated_at: r.updated_at,
+          file_name: r.file_name,
+          company_id: r.company_id,
+          pipeline: r.document_category || "invoice",
+          file_url: r.file_url,
+          error_message: r.error_message,
+          source: "invoice_uploads",
+          project: pc.name,
+          status: "ERROR",
+        });
+      }
+    } catch (_) {}
+
+    // Query transaction_uploads with processing_status = 'error'
+    try {
+      let q = pc.client
+        .from("transaction_uploads")
+        .select("id, file_name, company_id, file_url, created_at, updated_at, error_message")
+        .eq("processing_status", "error")
+        .order("updated_at", { ascending: false })
+        .limit(100);
+      if (periodSince) q = q.gte("updated_at", periodSince);
+      const { data } = await q;
+      for (const r of (data || [])) {
+        results.push({
+          id: r.id,
+          upload_id: r.id,
+          created_at: r.created_at,
+          updated_at: r.updated_at,
+          file_name: r.file_name,
+          company_id: r.company_id,
+          pipeline: "transaction",
+          file_url: r.file_url,
+          error_message: r.error_message,
+          source: "transaction_uploads",
+          project: pc.name,
+          status: "ERROR",
+        });
+      }
+    } catch (_) {}
+
+    // Resolve company names
+    const companyIds = [...new Set(results.map((r: any) => r.company_id).filter(Boolean))];
+    const companyNameMap = new Map<string, string>();
+    if (companyIds.length > 0) {
+      try {
+        const { data: companies } = await pc.client
+          .from("companies")
+          .select("id, name")
+          .in("id", companyIds);
+        for (const c of (companies || [])) {
+          companyNameMap.set(c.id, c.name);
+        }
+      } catch (_) {}
+    }
+
+    // Try to lookup cost and worker_id from llm_koltsegek
+    const uploadIds = results.map(r => r.upload_id);
+    const llmDetailsMap = new Map<string, { cost: number; worker_id: string; duration: number }>();
+    if (uploadIds.length > 0) {
+      try {
+        const { data: llmCosts } = await pc.client
+          .from("llm_koltsegek")
+          .select("upload_id, estimated_cost_usd, worker_id, processing_duration_ms")
+          .in("upload_id", uploadIds);
+        for (const l of (llmCosts || [])) {
+          if (l.upload_id) {
+            const current = llmDetailsMap.get(l.upload_id) || { cost: 0, worker_id: l.worker_id, duration: 0 };
+            current.cost += parseFloat(l.estimated_cost_usd) || 0;
+            if (l.processing_duration_ms) {
+              current.duration = Math.max(current.duration, l.processing_duration_ms);
+            }
+            if (l.worker_id) {
+              current.worker_id = l.worker_id;
+            }
+            llmDetailsMap.set(l.upload_id, current);
+          }
+        }
+      } catch (_) {}
+    }
+
+    return results.map(r => {
+      const llm = llmDetailsMap.get(r.upload_id);
+      const fallbackDuration = new Date(r.updated_at).getTime() - new Date(r.created_at).getTime();
+      return {
+        ...r,
+        company_name: companyNameMap.get(r.company_id) || null,
+        estimated_cost_usd: llm?.cost || 0,
+        worker_id: llm?.worker_id || `worker-${pc.name.toLowerCase()}`,
+        processing_duration_ms: llm?.duration || (fallbackDuration > 0 ? fallbackDuration : 0),
+      };
+    });
+  });
+
+  const errorJobsResults = await Promise.all(errorJobsFetches);
+  const error_jobs = errorJobsResults
     .flat()
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
@@ -2696,6 +2948,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     queues,
     pipelines,
     recent_jobs,
+    error_jobs,
     active_processing,
     summary: {
       healthy_containers: containers.filter((c: any) => c.is_healthy).length,
@@ -2739,7 +2992,7 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
     try {
       let query = pc.client
         .from("llm_koltsegek")
-        .select("pipeline, model_name, company_id, total_tokens, estimated_cost_usd, processing_duration_ms, created_at")
+        .select("pipeline, model_name, company_id, input_tokens, output_tokens, total_tokens, estimated_cost_usd, processing_duration_ms, created_at")
         .order("created_at", { ascending: false })
         .limit(10000);
       if (since) query = query.gte("created_at", since);
@@ -2763,7 +3016,7 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
   const results = await Promise.all(fetches);
 
   // Aggregation maps
-  let totalCost = 0, totalJobs = 0, totalTokens = 0;
+  let totalCost = 0, totalJobs = 0, totalTokens = 0, totalInputTokens = 0, totalOutputTokens = 0;
   const pipelineAgg = new Map<string, { cost: number; jobs: number }>();
   const projectAgg = new Map<string, { cost: number; jobs: number }>();
   const companyAgg = new Map<string, { name: string; cost: number; jobs: number; project: string }>();
@@ -2774,6 +3027,8 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
     for (const row of rows) {
       const cost = parseFloat(row.estimated_cost_usd) || 0;
       const tokens = row.total_tokens || 0;
+      const inputTokens = Number(row.input_tokens) || 0;
+      const outputTokens = Number(row.output_tokens) || 0;
       const pipeline = row.pipeline || "unknown";
       const model = row.model_name || "unknown";
       const companyId = row.company_id || "unknown";
@@ -2783,6 +3038,8 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
       totalCost += cost;
       totalJobs += 1;
       totalTokens += tokens;
+      totalInputTokens += inputTokens;
+      totalOutputTokens += outputTokens;
 
       // Pipeline
       if (!pipelineAgg.has(pipeline)) pipelineAgg.set(pipeline, { cost: 0, jobs: 0 });
@@ -2872,6 +3129,8 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
       total_jobs: totalJobs,
       avg_cost_per_job: totalJobs > 0 ? Math.round((totalCost / totalJobs) * 10000) / 10000 : 0,
       total_tokens: totalTokens,
+      total_input_tokens: totalInputTokens,
+      total_output_tokens: totalOutputTokens,
     },
     by_pipeline,
     by_project,
