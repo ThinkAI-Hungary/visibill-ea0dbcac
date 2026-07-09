@@ -2647,7 +2647,7 @@ export default function ManagementDashboard() {
     queryFn: () => fetchManagementData('files', {
       page: '0',
       pageSize: '4',
-      sortBy: 'uploaded_at',
+      sortBy: 'updated_at',
       sortDir: 'desc',
       search: '',
       companyId: '',
