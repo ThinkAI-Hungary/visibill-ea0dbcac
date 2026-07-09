@@ -1412,7 +1412,10 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                               <span className="truncate">{r.file_name}</span>
                             </button>
                           ) : (
-                            <span className="text-foreground/50 truncate">{r.file_name || '—'}</span>
+                            <span className="text-foreground/50 truncate inline-flex items-center gap-1 max-w-full">
+                              <span className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{r.file_name || '—'}</span>
+                            </span>
                           )}
                         </td>
                         <td className="py-1.5 px-3 text-foreground/50 truncate max-w-[200px]" title={r.error_message || ''}>
@@ -1420,13 +1423,15 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                         </td>
                         <td className="py-1.5 px-2" onClick={e => e.stopPropagation()}>
                           <div className="flex items-center gap-0.5">
-                            {RETRYABLE_SOURCES.has(r.source) && (
+                            {RETRYABLE_SOURCES.has(r.source) ? (
                               <button className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
                                 title="Újraküldés feldolgozásra"
                                 disabled={retrying}
                                 onClick={() => openRetryModal([{ source: r.source, id: r.id }])}>
                                 <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />
                               </button>
+                            ) : (
+                              <div className="w-5 h-5 shrink-0" />
                             )}
                             <button className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                               title="Hiba törlése"
