@@ -7,7 +7,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
-import { useEvTaxReturns, useEvClientSettings } from '@/hooks/useEvData';
+import { useEvTaxReturns, useEvClientSettings, useUpdateEvTaxReturn } from '@/hooks/useEvData';
+import { toast } from '@/hooks/use-toast';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -45,6 +46,7 @@ function mapReturn(r: any) {
     status,
     amount: r.calculated_tax || 0,
     submittedDate: r.submitted_at,
+    xmlData: r.xml_data,
   };
 }
 
@@ -60,6 +62,7 @@ const QUARTER_DEADLINES_20 = [
 export default function EvVatCarReturnPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
+  const updateReturn = useUpdateEvTaxReturn();
 
   const { data: allReturns, isLoading } = useEvTaxReturns(id, 2026);
   const { data: evSettings } = useEvClientSettings(id, 2026);
@@ -88,6 +91,68 @@ export default function EvVatCarReturnPage() {
     // Cégautóadó is only needed if the EV uses a company car — show placeholder message
     return dbReturns;
   }, [allReturns]);
+
+  const handlePrepareAndDownload = async (ret: any) => {
+    if (!id) return;
+    try {
+      const isCar = ret.type?.toLowerCase().includes('cégautó') || ret.code === 'CAR';
+      const rType = isCar ? 'car' : 'afa';
+      const fCode = isCar ? 'CAR' : (ret.code || '65A');
+
+      // 1. Generate XML
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+      xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
+      xml += `  <fejlec>\n`;
+      xml += `    <nyomtatvany>${fCode}</nyomtatvany>\n`;
+      xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+      xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
+      xml += `    <idoszak>${ret.period}</idoszak>\n`;
+      xml += `  </fejlec>\n`;
+      xml += `  <tartalom>\n`;
+      xml += `    <fizetendo>${ret.amount}</fizetendo>\n`;
+      xml += `  </tartalom>\n`;
+      xml += `</nav_bevallassablon>\n`;
+
+      // 2. Save/upsert return to db
+      await updateReturn.mutateAsync({
+        company_id: id,
+        tax_year: 2026,
+        return_type: rType,
+        form_code: fCode,
+        period_key: ret.period,
+        status: 'submitted',
+        calculated_tax: ret.amount,
+        paid_amount: 0,
+        deadline: ret.deadline || null,
+        submitted_at: new Date().toISOString(),
+        xml_data: xml,
+        data: {
+          period: ret.period,
+          amount: ret.amount,
+        }
+      });
+
+      // 3. Download the file
+      const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NAV_${fCode}_${ret.period.replace(/\s+/g, '_')}.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Siker',
+        description: `${ret.period} ${isCar ? 'Cégautóadó' : 'ÁFA'} bevallás sikeresen elkészítve és beküldöttként mentve, az XML letöltése elindult.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba történt',
+        description: err.message || 'Nem sikerült menteni a bevallást.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const renderSection = (
     title: string,
@@ -138,8 +203,37 @@ export default function EvVatCarReturnPage() {
                   <div className="text-right">
                     <p className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">{ret.amount > 0 ? formatHuf(ret.amount) : '–'}</p>
                   </div>
-                  {ret.status === 'draft' && <button className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 hover:bg-indigo-100 transition-colors"><Send className="w-3.5 h-3.5" /></button>}
-                  {ret.status === 'submitted' && <button className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 hover:bg-slate-100 transition-colors"><Download className="w-3.5 h-3.5" /></button>}
+                  {ret.status !== 'submitted' && (
+                    <button
+                      onClick={() => handlePrepareAndDownload(ret)}
+                      className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                      title="Bevallás elkészítése és beküldése"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {ret.status === 'submitted' && (
+                    <button
+                      onClick={() => {
+                        if (!ret.xmlData) {
+                          toast({ title: 'Hiba', description: 'Nincs társított XML adat ehhez a bevalláshoz.' });
+                          return;
+                        }
+                        const blob = new Blob([ret.xmlData], { type: 'application/xml;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `NAV_${ret.code}_${ret.period.replace(/\s+/g, '_')}.xml`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast({ title: 'Siker', description: 'Bevallás XML letöltve.' });
+                      }}
+                      className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 hover:bg-slate-100 transition-colors"
+                      title="Letöltés"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             );

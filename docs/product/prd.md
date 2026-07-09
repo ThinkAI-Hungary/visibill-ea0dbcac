@@ -136,6 +136,41 @@ Cég és felhasználói beállítások, csapatkezelés.
 
 ---
 
+### 2.8 eaisyBooks EV Modul
+
+Az eaisyBooks könyvelői nézeten belüli egyéni vállalkozó (EV) kezelő modul.
+
+| Funkció | Leírás | Ref |
+|---------|--------|-----|
+| EV Főoldal | Pénztárkönyv egyenleg, havi bevétel/kiadás, éves összesítők, küszöbérték-figyelő | — |
+| Pénztárkönyv | Egyszeres könyvvitel: bevétel/kiadás könyvelés, időszak-zárás, storno, nyomtatás | — |
+| Nyilvántartások | 14 féle: vevők, szállítók, tárgyi eszközök, beruházások, készlet, gépjármű, stb. | — |
+| Adóforma-összehasonlítás | Átalányadó vs VSZJA vs KATA interaktív kalkulátor. Bevétel slider, költséghányad, foglalkoztatási státusz és szakképzettség toggle-ökkel. | [020](../business/decisions/020-tax-module.md) |
+| TB-járulék & szocho | TB (18,5%) + szocho (13%) kalkuláció adóformánként. Főfoglalkozásúaknál **minimumjárulék-alap** érvényesül (minimálbér vagy garantált bérminimum). Kiegészítő tevékenységűek mentesek. | [020](../business/decisions/020-tax-module.md) |
+| Küszöbérték-figyelő | KATA keret (18M), átalány bevételi határ (38,7M/193,7M), ÁFA alanyi mentesség (20M) — zöld/sárga/piros státusz | — |
+| Bevallások | SZJA, ÁFA, Járulék, HIPA, KATA, cégautóadó — draft/submitted/accepted workflow, XML generálás | — |
+| HIPA | Egyszerűsített (sávos) és általános módszer, települési adókulcs beállítás | — |
+| Életút | EV alapítás, adóforma-váltás, szüneteltetés, megszüntetés — idővonalas megjelenítés | — |
+| Optimalizáció | AI-alapú adó-optimalizálási javaslatok (tervezett) | — |
+
+**Kulcs számítási paraméterek (2026):**
+
+| Paraméter | Érték |
+|-----------|-------|
+| SZJA kulcs | 15% |
+| Vállalkozói SZJA | 9% |
+| TB-járulék | 18,5% |
+| Szocho | 13% |
+| Minimálbér | 322.800 Ft/hó |
+| Garantált bérminimum | 373.200 Ft/hó |
+| Átalány költséghányad | 45% / 80% / 90% |
+| KATA havi tétel | 50.000 Ft |
+| KATA éves keret | 18.000.000 Ft |
+
+**Implementáció:** `evCalculations.ts` (pure functions) + `EvComparePage.tsx` (UI)
+
+---
+
 ## 3. Fejlesztendő Funkciók Összesítése
 
 | Funkció | Modul | Döntés |

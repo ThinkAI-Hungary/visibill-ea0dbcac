@@ -13,6 +13,7 @@ import { useCashbookEntries, useEvClientSettings, useCreateCashbookEntry, type P
 import { useDateRange } from '@/contexts/DateRangeContext';
 import CashbookEntryForm, { type CashbookEntryFormData } from './CashbookEntryForm';
 import { toast } from '@/hooks/use-toast';
+import { exportEvCashbookAnykXml, exportEvCashbookOnyaXml } from '@/lib/evCashbookXml';
 
 // ─── Category labels (constant, not mock) ────────────────────────────────────
 
@@ -39,7 +40,34 @@ export default function CashbookMainPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDirection, setFilterDirection] = useState<FilterDirection>('all');
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   const { dateFromFormatted, dateToFormatted } = useDateRange();
+
+  const handleAnykExport = () => {
+    exportEvCashbookAnykXml({
+      companyName: client?.name || 'Egyéni Vállalkozó',
+      companyTaxNumber: client?.taxNumber || client?.tax_number || '',
+      companyAddress: client?.address || '',
+      taxYear,
+      periodFrom: dateFromFormatted || `${taxYear}-01-01`,
+      periodTo: dateToFormatted || `${taxYear}-12-31`,
+      entries: filtered,
+    });
+    setShowExportDropdown(false);
+  };
+
+  const handleOnyaExport = () => {
+    exportEvCashbookOnyaXml({
+      companyName: client?.name || 'Egyéni Vállalkozó',
+      companyTaxNumber: client?.taxNumber || client?.tax_number || '',
+      companyAddress: client?.address || '',
+      taxYear,
+      periodFrom: dateFromFormatted || `${taxYear}-01-01`,
+      periodTo: dateToFormatted || `${taxYear}-12-31`,
+      entries: filtered,
+    });
+    setShowExportDropdown(false);
+  };
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawEntries, isLoading } = useCashbookEntries(id, taxYear);
@@ -127,9 +155,47 @@ export default function CashbookMainPage() {
           >
             <Lock className="w-3.5 h-3.5" /> Periódus zárás
           </Link>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 transition-colors">
-            <Download className="w-3.5 h-3.5" /> Export
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              XML Export
+              <ChevronDown className={cn("w-3 h-3 transition-transform", showExportDropdown && "rotate-180")} />
+            </button>
+            {showExportDropdown && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
+                <div className="absolute right-0 mt-1.5 w-56 rounded-xl border border-border bg-card p-1 shadow-lg z-20 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <button
+                    onClick={handleAnykExport}
+                    className="flex items-center gap-2 w-full rounded-lg px-3 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+                  >
+                    <div className="p-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600">
+                      <Download className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">ÁNYK XML</p>
+                      <p className="text-[10px] text-slate-400">ÁNYK-ba importálható formátum</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={handleOnyaExport}
+                    className="flex items-center gap-2 w-full rounded-lg px-3 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+                  >
+                    <div className="p-1 rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-600">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">ONYA XML</p>
+                      <p className="text-[10px] text-slate-400">ONYA-ba feltölthető formátum</p>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           <button
             onClick={() => setShowNewEntryForm(!showNewEntryForm)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"

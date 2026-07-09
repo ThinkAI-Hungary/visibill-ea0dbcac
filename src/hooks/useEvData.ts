@@ -389,6 +389,29 @@ export function useEvTaxReturns(companyId: string | undefined, taxYear: number) 
   });
 }
 
+/**
+ * Upsert a tax return
+ */
+export function useUpdateEvTaxReturn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ['update-ev-tax-return'],
+    mutationFn: async (taxReturn: Partial<EvTaxReturn> & { company_id: string; tax_year: number; return_type: any }) => {
+      const { data, error } = await supabase
+        .from('accounty_ev_tax_returns')
+        .upsert(taxReturn)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['ev-tax-returns', variables.company_id] });
+    },
+  });
+}
+
 // ─── Additional Types ───────────────────────────────────────────────────────
 
 export interface EvFixedAsset {
@@ -486,6 +509,7 @@ export interface EvTaxReturn {
   accepted_at: string | null;
   nav_submission_id: string | null;
   nav_status: string | null;
+  xml_data: string | null;
   created_at: string;
   updated_at: string;
 }

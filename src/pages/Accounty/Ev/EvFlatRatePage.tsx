@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, PiggyBank, TrendingUp,
-  Calculator, Info, BarChart3, AlertTriangle
+  Calculator, Info, BarChart3, AlertTriangle, Send
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -11,11 +11,15 @@ import {
   calculateFlatRateIncome, formatHuf, formatPercent, formatMillionHuf,
   DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, type EvTaxParams
 } from '@/lib/evCalculations';
+import { useUpdateEvTaxReturn } from '@/hooks/useEvData';
+import { toast } from '@/hooks/use-toast';
 
 export default function EvFlatRatePage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
   const [taxYear, setTaxYear] = useState(2026);
+  const updateReturn = useUpdateEvTaxReturn();
+  const [saving, setSaving] = useState(false);
 
   const params: EvTaxParams = taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS;
 
@@ -33,6 +37,78 @@ export default function EvFlatRatePage() {
 
   const limit = costCategory === 'retail_90' ? params.atalanyKiskerHatar : params.atalanyBevetelHatar;
   const usagePercent = limit > 0 ? (revenue / limit) * 100 : 0;
+
+  const handleGenerateReturn = async () => {
+    if (!id) return;
+    setSaving(true);
+    try {
+      // 1. Generate the XML content
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+      xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
+      xml += `  <fejlec>\n`;
+      xml += `    <nyomtatvany>2553</nyomtatvany>\n`;
+      xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+      xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
+      xml += `    <idoszak>${taxYear} Éves</idoszak>\n`;
+      xml += `  </fejlec>\n`;
+      xml += `  <tartalom>\n`;
+      xml += `    <bevetel>${result.revenue}</bevetel>\n`;
+      xml += `    <koltseghanyad>${result.costRatio * 100}</koltseghanyad>\n`;
+      xml += `    <szamitott_koltseg>${result.calculatedCosts}</szamitott_koltseg>\n`;
+      xml += `    <jovedelem>${result.income}</jovedelem>\n`;
+      xml += `    <adomentes_resz>${result.taxFreeAmount}</adomentes_resz>\n`;
+      xml += `    <adokoteles_jovedelem>${result.taxableIncome}</adokoteles_jovedelem>\n`;
+      xml += `    <szja>${result.szja}</szja>\n`;
+      xml += `  </tartalom>\n`;
+      xml += `</nav_bevallassablon>\n`;
+
+      // 2. Save to database
+      await updateReturn.mutateAsync({
+        company_id: id,
+        tax_year: taxYear,
+        return_type: 'szja',
+        form_code: '2553',
+        period_key: `${taxYear} Éves`,
+        status: 'submitted',
+        calculated_tax: result.szja,
+        paid_amount: 0,
+        deadline: `${taxYear + 1}-05-20`,
+        submitted_at: new Date().toISOString(),
+        xml_data: xml,
+        data: {
+          revenue: result.revenue,
+          cost_ratio: result.costRatio,
+          calculated_costs: result.calculatedCosts,
+          income: result.income,
+          tax_free_amount: result.taxFreeAmount,
+          taxable_income: result.taxableIncome,
+          szja: result.szja,
+        }
+      });
+
+      // 3. Download the XML
+      const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NAV_2553_${taxYear}_Eves.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Siker',
+        description: 'SZJA bevallás (2553) sikeresen elkészítve és beküldöttként mentve a rendszerbe, az XML letöltése elindult.',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba történt',
+        description: err.message || 'Nem sikerült menteni a bevallást.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -56,14 +132,24 @@ export default function EvFlatRatePage() {
             <p className="text-sm text-slate-500">Szja tv. 50–56. § — {client?.name || 'Ügyfél'}</p>
           </div>
         </div>
-        <select
-          value={taxYear}
-          onChange={(e) => setTaxYear(Number(e.target.value))}
-          className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
-        >
-          <option value={2026}>2026</option>
-          <option value={2025}>2025</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={taxYear}
+            onChange={(e) => setTaxYear(Number(e.target.value))}
+            className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
+          >
+            <option value={2026}>2026</option>
+            <option value={2025}>2025</option>
+          </select>
+          <button
+            onClick={handleGenerateReturn}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+          >
+            <Send className="w-3.5 h-3.5" />
+            Bevallás elkészítése (2553)
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

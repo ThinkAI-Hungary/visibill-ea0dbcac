@@ -37,3 +37,22 @@
 4. **Edge Function nevek NEM változtak:** `accounty-seed`, `accounty-detect-missing`, `accounty-detect-bank`, `accounty-generate-deadlines`, `accounty-ai-phone` — ezek deployed function-ök, a legacy nevükön futnak.
 
 5. **URL path nem változott:** A `/accounty/` útvonal továbbra is aktív.
+
+---
+
+## EV (Egyéni Vállalkozó) Terminológia
+
+| Kifejezés | Jelentés | Technikai azonosító |
+|-----------|---------|---------------------|
+| **Átalányadó** | Egyszerűsített adózási forma, fix költséghányaddal (45/80/90%) | `atalany` |
+| **VSZJA** | Vállalkozói személyi jövedelemadó (9% + osztalék utáni SZJA/szocho) | `vszja` |
+| **KATA** | Kisadózó vállalkozások tételes adója (50.000 Ft/hó) | `kata` |
+| **TB-járulék** | Társadalombiztosítási járulék (18,5%) | `tbJarulek` / `tb_amount` |
+| **Szocho** | Szociális hozzájárulási adó (13%) | `szocho` / `szocho_amount` |
+| **Minimumjárulék** | Főfoglalkozásúaknál: járulékalap nem lehet kevesebb mint minimálbér/garBérmin × hónapok | `minimumBaseApplied` |
+| **Garantált bérminimum** | Szakképzettséget igénylő tevékenység esetén magasabb járulékalap | `garantaltBerminimum` |
+| **Főfoglalkozású** | Az EV a fő jövedelemforrás → teljes járulékfizetési kötelezettség | `foallasu` |
+| **Mellékállású** | Más főállás mellett → járulékfizetés tényleges jövedelem után | `mellekallasu` |
+| **Kiegészítő** | Nyugdíj mellett → járulékmentes | `kiegeszito` |
+| **Pénztárkönyv** | Egyszeres könyvvitel fő nyilvántartása | `accounty_penztarkonyv_tetel` |
+

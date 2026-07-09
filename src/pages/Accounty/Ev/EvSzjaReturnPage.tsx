@@ -8,7 +8,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
-import { useEvTaxReturns, useEvClientSettings, type EvTaxReturn, type EvClientSettings } from '@/hooks/useEvData';
+import { useEvTaxReturns, useEvClientSettings, useUpdateEvTaxReturn, type EvTaxReturn, type EvClientSettings } from '@/hooks/useEvData';
+import { toast } from '@/hooks/use-toast';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -143,16 +144,106 @@ function generateExpectedReturns(taxYear: number, settings: EvClientSettings | n
   return expected;
 }
 
+function generateDraftReturnXml(code: string, period: string, client: any) {
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
+  xml += `  <fejlec>\n`;
+  xml += `    <nyomtatvany>${code}</nyomtatvany>\n`;
+  xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+  xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
+  xml += `    <idoszak>${period}</idoszak>\n`;
+  xml += `  </fejlec>\n`;
+  xml += `  <tartalom>\n`;
+  xml += `    <statusz>tervezet</statusz>\n`;
+  xml += `  </tartalom>\n`;
+  xml += `</nav_bevallassablon>\n`;
+  return xml;
+}
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvSzjaReturnPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
   const [tab, setTab] = useState<'all' | 'pending' | 'submitted'>('all');
+  const updateReturn = useUpdateEvTaxReturn();
 
   // ─── Real data ────────────────────────────────────────────────────────────
   const { data: allReturns, isLoading } = useEvTaxReturns(id, 2026);
   const { data: evSettings } = useEvClientSettings(id, 2026);
+
+  const handlePrepareAndDownload = async (ret: any) => {
+    if (!id) return;
+    try {
+      let rType = 'szja';
+      const codeLower = ret.code.toLowerCase();
+      if (codeLower.includes('2658') || codeLower.includes('58')) {
+        rType = 'contrib';
+      } else if (codeLower.includes('kata')) {
+        rType = 'kata';
+      } else if (codeLower.includes('hipa')) {
+        rType = 'hipa';
+      } else if (codeLower.includes('65') || codeLower.includes('afa')) {
+        rType = 'afa';
+      } else if (codeLower.includes('car')) {
+        rType = 'car';
+      }
+
+      // 1. Generate XML
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+      xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
+      xml += `  <fejlec>\n`;
+      xml += `    <nyomtatvany>${ret.code}</nyomtatvany>\n`;
+      xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+      xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
+      xml += `    <idoszak>${ret.period}</idoszak>\n`;
+      xml += `  </fejlec>\n`;
+      xml += `  <tartalom>\n`;
+      xml += `    <statusz>vegleges</statusz>\n`;
+      xml += `    <osszeg>${ret.amount || 0}</osszeg>\n`;
+      xml += `  </tartalom>\n`;
+      xml += `</nav_bevallassablon>\n`;
+
+      // 2. Save/upsert return to db
+      await updateReturn.mutateAsync({
+        company_id: id,
+        tax_year: 2026,
+        return_type: rType,
+        form_code: ret.code,
+        period_key: ret.period,
+        status: 'submitted',
+        calculated_tax: ret.amount,
+        paid_amount: 0,
+        deadline: ret.deadline || null,
+        submitted_at: new Date().toISOString(),
+        xml_data: xml,
+        data: {
+          period: ret.period,
+          amount: ret.amount,
+        }
+      });
+
+      // 3. Download the file
+      const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NAV_${ret.code}_${ret.period.replace(/\s+/g, '_')}.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Siker',
+        description: `${ret.period} ${ret.type} sikeresen elkészítve és beküldöttként mentve, az XML letöltése elindult.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba történt',
+        description: err.message || 'Nem sikerült menteni a bevallást.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const returns = useMemo(() => {
     const dbReturns = (allReturns || []).map((r: any) => {
@@ -173,6 +264,7 @@ export default function EvSzjaReturnPage() {
         submittedDate: r.submitted_at,
         navSubmissionId: r.nav_submission_id,
         isGenerated: false,
+        xmlData: r.xml_data,
       };
     });
 
@@ -277,59 +369,112 @@ export default function EvSzjaReturnPage() {
           filtered.map(ret => {
             const cfg = STATUS_CONFIG[ret.status] || STATUS_CONFIG.upcoming;
             const Icon = cfg.icon;
+            let linkPath = "";
+            const codeLower = ret.code.toLowerCase();
+            if (codeLower.includes('2658') || codeLower.includes('58')) {
+              linkPath = `/accounty/client/${id}/ev/returns/contrib`;
+            } else if (codeLower.includes('kata')) {
+              linkPath = `/accounty/client/${id}/ev/returns/kata`;
+            } else if (codeLower.includes('hipa')) {
+              linkPath = `/accounty/client/${id}/ev/returns/hipa`;
+            } else if (codeLower.includes('65') || codeLower.includes('car')) {
+              linkPath = `/accounty/client/${id}/ev/returns/vat-car`;
+            } else if (codeLower.includes('2553') || codeLower.includes('szja') || codeLower.includes('53')) {
+              const isAtalany = evSettings?.taxpayer_form === 'atalany';
+              linkPath = isAtalany 
+                ? `/accounty/client/${id}/ev/flat-rate`
+                : `/accounty/client/${id}/ev/entrepreneurial/base`;
+            }
+
+            const InnerContent = (
+              <div className="flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shrink-0',
+                    ret.status === 'submitted' ? 'bg-green-100 dark:bg-green-900/30 text-green-600'
+                      : ret.status === 'draft' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                  )}>
+                    {ret.code}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 transition-colors">{ret.type}</p>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="text-xs text-slate-500">{ret.period}</span>
+                      <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full', cfg.color)}>
+                        <Icon className="w-3 h-3" />
+                        {cfg.label}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
+                  <div className="text-right">
+                    <p className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+                      {ret.amount > 0 ? formatHuf(ret.amount) : '–'}
+                    </p>
+                    {ret.deadline && (
+                      <p className="text-[10px] text-slate-400 flex items-center gap-1 justify-end">
+                        <Calendar className="w-3 h-3" />
+                        Határidő: {new Date(ret.deadline).toLocaleDateString('hu-HU')}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {ret.status !== 'submitted' && (
+                      <button
+                        onClick={() => handlePrepareAndDownload(ret)}
+                        className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                        title="Benyújtás"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        let xmlContent = ret.xmlData;
+                        let isOfficial = true;
+                        if (!xmlContent) {
+                          xmlContent = generateDraftReturnXml(ret.code, ret.period, client);
+                          isOfficial = false;
+                        }
+                        const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        const filename = isOfficial 
+                          ? `NAV_${ret.code}_${ret.period.replace(/\s+/g, '_')}.xml`
+                          : `NAV_${ret.code}_${ret.period.replace(/\s+/g, '_')}_tervezet.xml`;
+                        a.download = filename;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast({ 
+                          title: 'Siker', 
+                          description: isOfficial ? 'Bevallás XML letöltve.' : 'Tervezet XML letöltve (ÁNYK/ONYA ellenőrzéshez).' 
+                        });
+                      }}
+                      className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 hover:bg-slate-100 transition-colors"
+                      title={ret.status === 'submitted' ? "Letöltés" : "Tervezet XML letöltése"}
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
 
             return (
               <div key={ret.id} className={cn(
                 'bg-card rounded-xl border shadow-soft overflow-hidden transition-all hover:shadow-md',
                 ret.status === 'overdue' ? 'border-red-200 dark:border-red-800' : 'border-border'
               )}>
-                <div className="flex items-center justify-between px-5 py-4">
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                      'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold',
-                      ret.status === 'submitted' ? 'bg-green-100 dark:bg-green-900/30 text-green-600'
-                        : ret.status === 'draft' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-                    )}>
-                      {ret.code}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{ret.type}</p>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-slate-500">{ret.period}</span>
-                        <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full', cfg.color)}>
-                          <Icon className="w-3 h-3" />
-                          {cfg.label}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
-                        {ret.amount > 0 ? formatHuf(ret.amount) : '–'}
-                      </p>
-                      {ret.deadline && (
-                        <p className="text-[10px] text-slate-400 flex items-center gap-1 justify-end">
-                          <Calendar className="w-3 h-3" />
-                          Határidő: {new Date(ret.deadline).toLocaleDateString('hu-HU')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {ret.status === 'draft' && (
-                        <button className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 hover:bg-indigo-100 transition-colors" title="Benyújtás">
-                          <Send className="w-4 h-4" />
-                        </button>
-                      )}
-                      {ret.status === 'submitted' && (
-                        <button className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 hover:bg-slate-100 transition-colors" title="Letöltés">
-                          <Download className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {linkPath ? (
+                  <Link to={linkPath} className="block hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+                    {InnerContent}
+                  </Link>
+                ) : (
+                  InnerContent
+                )}
                 {ret.submittedDate && (
                   <div className="px-5 py-2 bg-green-50/50 dark:bg-green-900/10 border-t border-green-100 dark:border-green-900/30">
                     <p className="text-[10px] text-green-600 flex items-center gap-1">

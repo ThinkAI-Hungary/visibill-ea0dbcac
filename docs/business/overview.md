@@ -92,6 +92,7 @@ Az év végén a rendszer az összegyűjtött adatokból elkészíti:
 | **Házipénztár** | Több regiszter (pénztár), több deviza, alapertelm. regiszter, szabály-alapú tr. elosztás | Kiskereskedelmi cégek |
 | **Árfolyamok** | MNB napi árfolyamok (SOAP API, auto-sync), devizás árfolyam-különbözet dashboard | Exportáló cégek |
 | **XML főkönyv import** | Könyvelőprogram XML főkönyvi kivonat feltöltés és feldolgozás | Könyvelők |
+| **EV modul** | Egyéni vállalkozó kezelés: 3 adóforma (átalány/VSZJA/KATA), járulék-kalkuláció minimumjárulékkal, pénztárkönyv, 14 nyilvántartás, bevallások, adóforma-összehasonlítás | Könyvelők (eaisyBooks) |
 
 ---
 
@@ -147,6 +148,8 @@ A Visibill egyszeri vásárlással érhető el. A felhasználó megvásárolja a
 - ✅ MNB árfolyam integráció (SOAP API, auto-sync)
 - ✅ Devizás árfolyam-különbözet dashboard
 - ✅ Tranzakció párosítás ML tanulás (felülírás audit log)
+- ✅ EV (Egyéni Vállalkozó) modul eaisyBooks-ban: 3 adóforma, járulék-kalkuláció minimumjárulékkal, pénztárkönyv, 14 nyilvántartás, bevallások (2026-07-08)
+- ✅ EV adóforma-összehasonlítás TB-járulék + szocho kalkulációval (foglalkoztatási státusz, szakképzettség) (2026-07-08)
 
 ### Amin még dolgozunk
 - 🟡 Árazási modell véglegesítése (egyszeri díj struktúra)

@@ -17,13 +17,13 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import {
   Save, Plus, ArrowRightLeft, Loader2, Filter, AlertTriangle, BookOpen, FileDown,
-  ChevronDown, ChevronUp, Edit2, Trash2
+  ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
-import type { PettyCashRegister, PettyCashEntry } from './types';
+import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice } from './types';
 import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf } from './types';
 import CashClosingDialog from './CashClosingDialog';
 
@@ -607,8 +607,35 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     isExpense: false,
   });
 
+  // ─── Invoice settlement mode ────────────────────────────────────────────
+  const [invoiceMode, setInvoiceMode] = useState(false);
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
+
+  // Fetch open outbound invoices for this company
+  const { data: openInvoices = [] } = useQuery({
+    queryKey: ['open-outbound-invoices', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, bizonylatsorszam, vevo_nev, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem')
+        .eq('company_id', companyId)
+        .in('invoice_direction', ['OUTBOUND', 'outbound'])
+        .eq('fizetve', false)
+        .is('transaction_id', null)
+        .not('exclude_from_accounting', 'is', true)
+        .order('fizetesi_hatarido', { ascending: true });
+      if (error) throw error;
+      return (data || []) as OpenOutboundInvoice[];
+    },
+    enabled: !!companyId && open,
+  });
+
   React.useEffect(() => {
     if (open) {
+      // Reset invoice mode on open
+      setInvoiceMode(false);
+      setSelectedInvoiceIds(new Set());
+
       if (editingEntry) {
         setForm({
           register_id: editingEntry.register_id,
@@ -646,6 +673,49 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
 
   const save = useMutation({
     mutationFn: async () => {
+      if (invoiceMode) {
+        // Invoice settlement mode — create entry from selected invoices
+        const selectedInvs = openInvoices.filter(inv => selectedInvoiceIds.has(inv.id));
+        const totalAmount = selectedInvs.reduce((sum, inv) => sum + (Number(inv.brutto_vegosszeg) || 0), 0);
+        const bizSorszamok = selectedInvs.map(inv => inv.bizonylatsorszam).join(', ');
+        const description = `Utalásos számla KP-ban rendezve: ${bizSorszamok}`;
+        const rounded = roundHuf(totalAmount, 'HUF');
+
+        // 1. Insert petty cash entry
+        const { error: insertError } = await supabase.from('petty_cash_entries')
+          .insert({
+            company_id: companyId,
+            register_id: form.register_id,
+            entry_date: form.entry_date,
+            description,
+            amount: rounded,
+            currency: 'HUF',
+            source_type: 'invoice_settlement',
+            source_id: selectedInvs.length === 1 ? selectedInvs[0].id : null,
+            source_table: selectedInvs.length === 1 ? 'invoices' : null,
+            routed_by: 'manual',
+            created_by: userId,
+          });
+        if (insertError) throw insertError;
+
+        // 2. Mark invoices as paid
+        const { error: updateError } = await supabase
+          .from('invoices')
+          .update({ fizetve: true })
+          .in('id', Array.from(selectedInvoiceIds));
+        if (updateError) {
+          console.error('Failed to mark invoices as paid:', updateError);
+          // Don't throw — entry was created; notify user about partial failure
+          toast({
+            title: 'Figyelem',
+            description: 'A pénztári tétel rögzítve, de a számla(k) fizetve jelölése sikertelen.',
+            variant: 'destructive',
+          });
+        }
+        return { isInvoice: true, count: selectedInvs.length };
+      }
+
+      // Regular manual entry
       const rawAmount = parseFloat(form.amount) || 0;
       const signed = form.isExpense ? -Math.abs(rawAmount) : Math.abs(rawAmount);
       const rounded = roundHuf(signed, form.currency);
@@ -678,13 +748,21 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           });
         if (error) throw error;
       }
+      return { isInvoice: false };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
+      if (result?.isInvoice) {
+        qc.invalidateQueries({ queryKey: ['open-outbound-invoices', companyId] });
+      }
       onOpenChange(false);
       if (onCancelEditing) onCancelEditing();
-      toast({ title: editingEntry ? 'Tétel módosítva' : 'Manuális tétel rögzítve' });
+      if (result?.isInvoice) {
+        toast({ title: 'Számla rendezve', description: `${result.count} számla KP-ban rendezve és fizetve jelölve.` });
+      } else {
+        toast({ title: editingEntry ? 'Tétel módosítva' : 'Manuális tétel rögzítve' });
+      }
     },
     onError: (e: any) => toast({ title: 'Hiba', description: e.message, variant: 'destructive' }),
   });
@@ -716,10 +794,138 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{editingEntry ? 'Pénztári tétel szerkesztése' : 'Manuális pénztári tétel'}</DialogTitle>
-          <DialogDescription>Kézi bevétel vagy kiadás rögzítése vagy módosítása a házipénztárba.</DialogDescription>
+          <DialogTitle>{editingEntry ? 'Pénztári tétel szerkesztése' : invoiceMode ? 'Utalásos számla KP-ban rendezve' : 'Manuális pénztári tétel'}</DialogTitle>
+          <DialogDescription>{invoiceMode
+            ? 'Válaszd ki a nyitott kimenő számlákat, amelyeket készpénzben rendeztek.'
+            : 'Kézi bevétel vagy kiadás rögzítése vagy módosítása a házipénztárba.'}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          {/* Invoice settlement toggle — only for new entries */}
+          {!editingEntry && openInvoices.length > 0 && (
+            <button
+              onClick={() => {
+                setInvoiceMode(prev => !prev);
+                if (!invoiceMode) {
+                  setSelectedInvoiceIds(new Set());
+                }
+              }}
+              className={cn(
+                'w-full flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all',
+                invoiceMode
+                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-400 shadow-sm ring-1 ring-blue-500/20'
+                  : 'border-dashed border-muted-foreground/30 text-muted-foreground hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'
+              )}
+            >
+              <div className={cn(
+                'w-7 h-7 rounded-md flex items-center justify-center shrink-0',
+                invoiceMode ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'
+              )}>
+                <FileText className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold">Utalásos számla KP-ban rendezve</p>
+                <p className="text-[10px] opacity-70 mt-0.5">
+                  {invoiceMode
+                    ? `${selectedInvoiceIds.size} számla kiválasztva`
+                    : `${openInvoices.length} nyitott kimenő számla érhető el`
+                  }
+                </p>
+              </div>
+              <div className={cn(
+                'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                invoiceMode
+                  ? 'bg-blue-500 border-blue-500 text-white'
+                  : 'border-muted-foreground/30'
+              )}>
+                {invoiceMode && <Check className="w-3 h-3" />}
+              </div>
+            </button>
+          )}
+
+          {/* Invoice multiselect panel */}
+          {invoiceMode && (
+            <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">
+                  Számlák kiválasztása ({selectedInvoiceIds.size}/{openInvoices.length})
+                </Label>
+                {selectedInvoiceIds.size > 0 && (
+                  <p className="text-xs font-bold text-blue-600 dark:text-blue-400 font-mono tabular-nums">
+                    Σ {openInvoices
+                      .filter(inv => selectedInvoiceIds.has(inv.id))
+                      .reduce((s, inv) => s + (Number(inv.brutto_vegosszeg) || 0), 0)
+                      .toLocaleString('hu-HU')} HUF
+                  </p>
+                )}
+              </div>
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-border divide-y divide-border/50">
+                {openInvoices.map(inv => {
+                  const isSelected = selectedInvoiceIds.has(inv.id);
+                  const amount = Number(inv.brutto_vegosszeg) || 0;
+                  return (
+                    <button
+                      key={inv.id}
+                      onClick={() => {
+                        setSelectedInvoiceIds(prev => {
+                          const next = new Set(prev);
+                          if (next.has(inv.id)) next.delete(inv.id);
+                          else next.add(inv.id);
+                          return next;
+                        });
+                      }}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-3 py-2 text-left transition-all',
+                        isSelected
+                          ? 'bg-blue-50 dark:bg-blue-900/15'
+                          : 'hover:bg-muted/50'
+                      )}
+                    >
+                      <div className={cn(
+                        'rounded border-2 flex items-center justify-center shrink-0 transition-all',
+                        isSelected
+                          ? 'bg-blue-500 border-blue-500 text-white'
+                          : 'border-muted-foreground/30'
+                      )} style={{ width: '18px', height: '18px' }}>
+                        {isSelected && <Check className="w-3 h-3" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-foreground font-mono">
+                            {inv.bizonylatsorszam}
+                          </p>
+                          <span className="text-[10px] text-muted-foreground">
+                            {inv.kibocsatas_datuma}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                          {inv.vevo_nev}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-bold font-mono tabular-nums text-foreground">
+                          {amount.toLocaleString('hu-HU')} {inv.penznem || 'HUF'}
+                        </p>
+                        {inv.fizetesi_hatarido && (
+                          <p className={cn(
+                            'text-[10px] font-mono tabular-nums',
+                            new Date(inv.fizetesi_hatarido) < new Date() ? 'text-destructive' : 'text-muted-foreground'
+                          )}>
+                            {new Date(inv.fizetesi_hatarido) < new Date() ? 'Lejárt: ' : 'Hat.idő: '}
+                            {inv.fizetesi_hatarido}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Standard form fields — only visible when NOT in invoice mode */}
+          {!invoiceMode && (
+            <>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Pénztár</Label>
@@ -780,6 +986,27 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               Szokatlanul nagy összeg — biztosan helyes?
             </div>
           )}
+            </>
+          )}
+
+          {/* Invoice mode: register + date selector */}
+          {invoiceMode && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Cél pénztár</Label>
+                <Select value={form.register_id} onValueChange={v => setForm(f => ({ ...f, register_id: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {registers.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Rendezés dátuma</Label>
+                <Input type="date" value={form.entry_date} onChange={e => setForm(f => ({ ...f, entry_date: e.target.value }))} />
+              </div>
+            </div>
+          )}
         </div>
         <DialogFooter className="flex justify-between items-center w-full gap-2 sm:gap-0">
           {editingEntry ? (
@@ -797,7 +1024,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             <Button variant="outline" onClick={handleClose}>Mégse</Button>
             <Button
               onClick={() => save.mutate()}
-              disabled={save.isPending || !isAmountValid || !form.description}
+              disabled={save.isPending || (invoiceMode ? selectedInvoiceIds.size === 0 : (!isAmountValid || !form.description))}
             >
               {save.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               {editingEntry ? 'Mentés' : 'Rögzítés'}

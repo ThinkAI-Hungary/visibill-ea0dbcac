@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   TrendingUp, ArrowLeft, ChevronRight, Calculator,
-  FileText, AlertTriangle, Info, ChevronDown, ArrowRight
+  FileText, AlertTriangle, Info, ChevronDown, ArrowRight, Send
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
@@ -10,12 +10,17 @@ import {
   calculateEntrepreneurialTax, formatHuf, formatPercent,
   DEFAULT_2026_PARAMS
 } from '@/lib/evCalculations';
+import { useUpdateEvTaxReturn } from '@/hooks/useEvData';
+import { toast } from '@/hooks/use-toast';
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvEntrepreneurialBasePage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
+  const updateReturn = useUpdateEvTaxReturn();
+  const [saving, setSaving] = useState(false);
+  const [taxYear, setTaxYear] = useState(2026);
 
   const [revenue, setRevenue] = useState(32_000_000);
   const [costs, setCosts] = useState(14_400_000);
@@ -40,6 +45,82 @@ export default function EvEntrepreneurialBasePage() {
   const totalTax = result.totalTax;
   const effectiveTaxRate = revenue > 0 ? (totalTax / revenue) * 100 : 0;
 
+  const handleGenerateReturn = async () => {
+    if (!id) return;
+    setSaving(true);
+    try {
+      // 1. Generate the XML content
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+      xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
+      xml += `  <fejlec>\n`;
+      xml += `    <nyomtatvany>2553</nyomtatvany>\n`;
+      xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+      xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
+      xml += `    <idoszak>${taxYear} Éves</idoszak>\n`;
+      xml += `  </fejlec>\n`;
+      xml += `  <tartalom>\n`;
+      xml += `    <bevetel>${revenue + otherIncome}</bevetel>\n`;
+      xml += `    <koltsegek>${totalDeductible}</koltsegek>\n`;
+      xml += `    <kivet>${kivet}</kivet>\n`;
+      xml += `    <szamitott_adoalap>${result.taxBase}</szamitott_adoalap>\n`;
+      xml += `    <vallalkozoi_szja>${result.entrepreneurialTax}</vallalkozoi_szja>\n`;
+      xml += `    <osztalekalap>${result.dividendBase}</osztalekalap>\n`;
+      xml += `    <osztalek_szja>${result.dividendSzja}</osztalek_szja>\n`;
+      xml += `    <szocho>${result.dividendSzocho}</szocho>\n`;
+      xml += `    <osszes_szja_teher>${result.totalTax}</osszes_szja_teher>\n`;
+      xml += `  </tartalom>\n`;
+      xml += `</nav_bevallassablon>\n`;
+
+      // 2. Save to database
+      await updateReturn.mutateAsync({
+        company_id: id,
+        tax_year: taxYear,
+        return_type: 'szja',
+        form_code: '2553',
+        period_key: `${taxYear} Éves`,
+        status: 'submitted',
+        calculated_tax: result.totalTax,
+        paid_amount: 0,
+        deadline: `${taxYear + 1}-05-20`,
+        submitted_at: new Date().toISOString(),
+        xml_data: xml,
+        data: {
+          revenue: revenue + otherIncome,
+          deductible: totalDeductible,
+          kivet,
+          tax_base: result.taxBase,
+          entrepreneurial_tax: result.entrepreneurialTax,
+          dividend_base: result.dividendBase,
+          dividend_szja: result.dividendSzja,
+          dividend_szocho: result.dividendSzocho,
+          total_tax: result.totalTax,
+        }
+      });
+
+      // 3. Download the XML
+      const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NAV_2553_${taxYear}_Eves.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Siker',
+        description: 'SZJA bevallás (2553) sikeresen elkészítve és beküldöttként mentve a rendszerbe, az XML letöltése elindult.',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba történt',
+        description: err.message || 'Nem sikerült menteni a bevallást.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
@@ -56,13 +137,33 @@ export default function EvEntrepreneurialBasePage() {
       </div>
 
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-violet-500/25">
-          <TrendingUp className="w-5 h-5 text-white" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-violet-500/25">
+            <TrendingUp className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Vállalkozói SZJA – Adóalap számítás</h1>
+            <p className="text-sm text-slate-500">Szja tv. 49/B.§ szerinti adóalap-megállapítás – {client?.name || 'Ügyfél'}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Vállalkozói SZJA – Adóalap számítás</h1>
-          <p className="text-sm text-slate-500">Szja tv. 49/B.§ szerinti adóalap-megállapítás – {client?.name || 'Ügyfél'}</p>
+        <div className="flex items-center gap-2">
+          <select
+            value={taxYear}
+            onChange={(e) => setTaxYear(Number(e.target.value))}
+            className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
+          >
+            <option value={2026}>2026</option>
+            <option value={2025}>2025</option>
+          </select>
+          <button
+            onClick={handleGenerateReturn}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+          >
+            <Send className="w-3.5 h-3.5" />
+            Bevallás elkészítése (2553)
+          </button>
         </div>
       </div>
 

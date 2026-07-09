@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, ChevronRight, Landmark, Calculator, Info, MapPin
+  ArrowLeft, ChevronRight, Landmark, Calculator, Info, MapPin, Send
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,14 @@ import { useAccountyClient } from '@/hooks/accounty';
 import {
   calculateHipaSimplified, calculateHipaGeneral, formatHuf, formatPercent
 } from '@/lib/evCalculations';
+import { useUpdateEvTaxReturn } from '@/hooks/useEvData';
+import { toast } from '@/hooks/use-toast';
 
 export default function EvHipaPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
+  const updateReturn = useUpdateEvTaxReturn();
+  const [saving, setSaving] = useState(false);
 
   const [mode, setMode] = useState<'simplified' | 'general'>('simplified');
   const [revenue, setRevenue] = useState(24_200_000);
@@ -31,6 +35,72 @@ export default function EvHipaPage() {
     return calculateHipaGeneral(revenue, elab, intermediary, material, subcontractor, municipalityRate / 100);
   }, [mode, revenue, municipalityRate, elab, intermediary, material, subcontractor]);
 
+  const handleGenerateReturn = async () => {
+    if (!id) return;
+    setSaving(true);
+    try {
+      const period = '2026. adóévi HIPA bevallás';
+      // 1. Generate XML
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+      xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
+      xml += `  <fejlec>\n`;
+      xml += `    <nyomtatvany>HIPAK</nyomtatvany>\n`;
+      xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+      xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
+      xml += `    <idoszak>${period}</idoszak>\n`;
+      xml += `  </fejlec>\n`;
+      xml += `  <tartalom>\n`;
+      xml += `    <adoalap>${result.taxBase}</adoalap>\n`;
+      xml += `    <adomertek>${result.municipalityRate * 100}%</adomertek>\n`;
+      xml += `    <hipa_osszeg>${result.taxAmount}</hipa_osszeg>\n`;
+      xml += '  </tartalom>\n';
+      xml += '</nav_bevallassablon>\n';
+
+      // 2. Save/upsert return to db
+      await updateReturn.mutateAsync({
+        company_id: id,
+        tax_year: 2026,
+        return_type: 'hipa',
+        form_code: 'HIPAK',
+        period_key: period,
+        status: 'submitted',
+        calculated_tax: result.taxAmount,
+        paid_amount: 0,
+        deadline: '2027-05-31',
+        submitted_at: new Date().toISOString(),
+        xml_data: xml,
+        data: {
+          period: period,
+          amount: result.taxAmount,
+          tax_base: result.taxBase,
+          rate: result.municipalityRate * 100,
+        }
+      });
+
+      // 3. Download the file
+      const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NAV_HIPA_2026_Eves_Bevallas.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Siker',
+        description: `HIPA bevallás (2026) sikeresen elkészítve és beküldöttként mentve, az XML letöltése elindult.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba történt',
+        description: err.message || 'Nem sikerült menteni a bevallást.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
@@ -43,14 +113,24 @@ export default function EvHipaPage() {
       </div>
 
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl shadow-lg shadow-rose-500/25">
-          <Landmark className="w-5 h-5 text-white" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl shadow-lg shadow-rose-500/25">
+            <Landmark className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Helyi iparűzési adó (HIPA)</h1>
+            <p className="text-sm text-slate-500">Htv. 39. § — {client?.name || 'Ügyfél'}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Helyi iparűzési adó (HIPA)</h1>
-          <p className="text-sm text-slate-500">Htv. 39. § — {client?.name || 'Ügyfél'}</p>
-        </div>
+        <button
+          onClick={handleGenerateReturn}
+          disabled={saving}
+          className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+        >
+          <Send className="w-3.5 h-3.5" />
+          Bevallás elkészítése (HIPA)
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -1,6 +1,6 @@
 # Visibill — Architecture Overview
 
-> **Verzió:** 1.5 | **Dátum:** 2026-07-05  
+> **Verzió:** 1.6 | **Dátum:** 2026-07-09  
 > **Kapcsolódó:** [Business Overview](../business/overview.md) · [PRD](../product/prd.md) · [Design System](../design/00-overview.md)
 
 ---
@@ -137,6 +137,7 @@ Dashboard: FxDifferencesSection (KPI kártyák + bar chart + tételszintű tábl
 | **Auth** | Supabase Auth + custom RBAC | JWT token, RLS policy-k, 4 szerep |
 | **Email** | Mailgun webhook → Edge Function | Megbízható, skálázható, spam szűréssel |
 | **Modul jogosultságok** | `eaisybill_module_permissions` DB tábla | Per-user, per-company modul ki-/bekapcsolás, kliens-specifikus feature-ök (pl. Szállítmányozás) |
+| **EV kezelés** | eaisyBooks EV modul (21 DB tábla, pure function kalkulátor) | Könyvelőirodák EV ügyfeleihez: adóforma-összehasonlítás, járulék-kalkuláció minimumjárulékkal, pénztárkönyv, bevallások |
 
 ---
 

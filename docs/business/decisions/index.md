@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-06-28  
-> **Összesen:** 40 döntés | ✅ Decided: 25 | 🟡 Partially Decided: 6 | ⛔ Superseded: 1 | 🔴 Open: 8
+> **Utoljára frissítve:** 2026-07-09  
+> **Összesen:** 41 döntés | ✅ Decided: 25 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
 
 ---
 
@@ -21,7 +21,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | 001 | Elsődleges célcsoport | 🟡 Partially Decided | [001-primary-audience.md](./001-primary-audience.md) |
-| 002 | Támogatott vállalkozási formák | 🔴 Open | [002-supported-business-types.md](./002-supported-business-types.md) |
+| 002 | Támogatott vállalkozási formák | 🟡 Partially Decided | [002-supported-business-types.md](./002-supported-business-types.md) |
 | 003 | Lokalizáció & nyelv | 🟡 Partially Decided | [003-localization-strategy.md](./003-localization-strategy.md) |
 | 004 | Árazási modell (egyszeri díj) | 🟡 Partially Decided | [004-pricing-model.md](./004-pricing-model.md) |
 | 005 | Előfizetés scope | ⛔ Superseded | [005-subscription-scope.md](./005-subscription-scope.md) |
@@ -66,7 +66,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 017 | Tranzakció kezelés & párosítás | ✅ Decided | [017-transaction-matching.md](./017-transaction-matching.md) |
 | 018 | Futárszolgálat riportok | ✅ Decided | [018-courier-reports.md](./018-courier-reports.md) |
 | 019 | Bér & járulék modul | ✅ Decided | [019-salary-module.md](./019-salary-module.md) |
-| 020 | Adó modul scope | 🔴 Open | [020-tax-module.md](./020-tax-module.md) |
+| 020 | Adó modul scope | 🟡 Partially Decided | [020-tax-module.md](./020-tax-module.md) |
 | 021 | Főkönyvi rendszer (GL) | ✅ Decided | [021-general-ledger.md](./021-general-ledger.md) |
 | 022 | Éves beszámoló | ✅ Decided | [022-annual-reporting.md](./022-annual-reporting.md) |
 | 023 | Tárgyi eszközök | ✅ Decided | [023-fixed-assets.md](./023-fixed-assets.md) |

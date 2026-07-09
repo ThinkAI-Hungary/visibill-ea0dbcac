@@ -1,6 +1,6 @@
 # 📘 eaisyBooks — EV (Egyéni Vállalkozó)
 
-> ⚠️ **Planned/Empty** — EV ügyfelek speciális nyilvántartásai. Jelenleg 0 sorral, fejlesztés alatt.
+> ✅ **Active** — EV ügyfelek speciális nyilvántartásai. Frontend implementáció kész (2026-07-08): adóforma-összehasonlítás (átalány/VSZJA/KATA), TB-járulék & szocho kalkuláció minimumjárulék-alappal, pénztárkönyv, 14 nyilvántartás típus, bevallás workflow.
 
 **Táblák ebben a csoportban:** 21
 

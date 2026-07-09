@@ -114,6 +114,25 @@ Visibill
 │   ├── /payroll/:id/reports       Bérszámfejtési riportok
 │   ├── /payroll/:id/portal        Ügyfélportál preview
 │   ├── /payroll/:id/tax-params    Adóparaméterek
+│   ├── /client/:id/ev             EV Főoldal (pénztárkönyv egyenleg, küszöbérték-figyelő)
+│   ├── /client/:id/ev/cashbook    Pénztárkönyv (egyszeres könyvvitel)
+│   ├── /client/:id/ev/records     Nyilvántartások áttekintés
+│   ├── /client/:id/ev/records/:type  Nyilvántartás részletes (14 típus)
+│   ├── /client/:id/ev/compare     Adóforma-összehasonlítás (átalány/VSZJA/KATA + járulékok)
+│   ├── /client/:id/ev/flat-rate   Átalányadó kalkulátor
+│   ├── /client/:id/ev/entrepreneurial  Vállalkozói SZJA kalkulátor
+│   ├── /client/:id/ev/kata        KATA kalkulátor
+│   ├── /client/:id/ev/contributions  TB-járulék & szocho negyedéves
+│   ├── /client/:id/ev/vat         ÁFA nyilvántartás
+│   ├── /client/:id/ev/hipa        HIPA kalkulátor
+│   ├── /client/:id/ev/depreciation  Értékcsökkenés
+│   ├── /client/:id/ev/thresholds  Küszöbérték-figyelő
+│   ├── /client/:id/ev/returns     Bevallások (SZJA, ÁFA, járulék, HIPA, KATA, cégautóadó)
+│   ├── /client/:id/ev/lifecycle   Életút (alapítás, forma-váltás, szüneteltetés)
+│   ├── /client/:id/ev/calendar    Adónaptár
+│   ├── /client/:id/ev/optimization  Optimalizáció (tervezett)
+│   ├── /client/:id/ev/master-data Törzsadatok (EV beállítások)
+│   ├── /client/:id/ev/setup       EV beállító wizard
 │   ├── /tickets/:ticketId?        Hibajegyek
 │   ├── /settings                  eaisyBooks beállítások
 │   ├── /help                      Segítség

@@ -33,6 +33,17 @@ export interface PettyCashEntry {
   created_at: string;
 }
 
+/** Open (unpaid) outbound invoice available for cash settlement */
+export interface OpenOutboundInvoice {
+  id: string;
+  bizonylatsorszam: string;
+  vevo_nev: string;
+  brutto_vegosszeg: number;
+  kibocsatas_datuma: string;
+  fizetesi_hatarido: string | null;
+  penznem: string;
+}
+
 export interface RoutingRule {
   id: string;
   company_id: string;
@@ -66,6 +77,7 @@ export const SOURCE_LABELS: Record<string, string> = {
   cash_expense: 'KP kiadás',
   manual: 'Manuális',
   transfer: 'Átvezetés',
+  invoice_settlement: 'Számla rendezés',
 };
 
 export const SOURCE_COLORS: Record<string, string> = {
@@ -75,6 +87,7 @@ export const SOURCE_COLORS: Record<string, string> = {
   cash_expense: 'bg-destructive/10 text-destructive',
   manual: 'bg-violet-500/10 text-violet-500',
   transfer: 'bg-sky-500/10 text-sky-500',
+  invoice_settlement: 'bg-blue-500/10 text-blue-500',
 };
 
 /** Round HUF to nearest 5 */
