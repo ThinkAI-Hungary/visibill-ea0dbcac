@@ -129,22 +129,43 @@ export function AccountyNotificationPreferences() {
     monthlyReport: 'monthly_report',
   };
 
+  type PushDbColumnKey = 'enabled' | 'missing_invoice_alert' | 'deadline_reminder' | 'client_status_change' | 'approval_request' | 'critical_alerts';
+  const pushKeyToColumn: Record<keyof PushNotifPrefs, PushDbColumnKey> = {
+    enabled: 'enabled',
+    missingInvoiceAlert: 'missing_invoice_alert',
+    deadlineReminder: 'deadline_reminder',
+    clientStatusChange: 'client_status_change',
+    approvalRequest: 'approval_request',
+    criticalAlerts: 'critical_alerts',
+  };
+
   // Load from DB
   useEffect(() => {
     if (!user) return;
     const load = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        // Fetch Email Prefs
+        const emailReq = supabase
           .from('accounty_email_preferences' as any)
           .select('missing_invoice_alert, deadline_reminder, client_status_change, approval_request, weekly_report, monthly_report')
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') throw error;
+        // Fetch Push Prefs
+        const pushReq = supabase
+          .from('accounty_push_preferences' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        if (data) {
-          const d = data as any;
+        const [emailRes, pushRes] = await Promise.all([emailReq, pushReq]);
+
+        if (emailRes.error && emailRes.error.code !== 'PGRST116') throw emailRes.error;
+        if (pushRes.error && pushRes.error.code !== 'PGRST116') throw pushRes.error;
+
+        if (emailRes.data) {
+          const d = emailRes.data as any;
           setEmailPrefs({
             missingInvoiceAlert: d.missing_invoice_alert ?? false,
             deadlineReminder: d.deadline_reminder ?? false,
@@ -152,6 +173,18 @@ export function AccountyNotificationPreferences() {
             approvalRequest: d.approval_request ?? false,
             weeklyReport: d.weekly_report ?? false,
             monthlyReport: d.monthly_report ?? false,
+          });
+        }
+
+        if (pushRes.data) {
+          const pd = pushRes.data as any;
+          setPushPrefs({
+            enabled: pd.enabled ?? false,
+            missingInvoiceAlert: pd.missing_invoice_alert ?? false,
+            deadlineReminder: pd.deadline_reminder ?? false,
+            clientStatusChange: pd.client_status_change ?? false,
+            approvalRequest: pd.approval_request ?? false,
+            criticalAlerts: pd.critical_alerts ?? false,
           });
         }
       } catch (err) {
@@ -193,14 +226,14 @@ export function AccountyNotificationPreferences() {
     }
   };
 
-  // Push prefs (UI only — not persisted yet)
+  // Push prefs (now persisted in DB)
   const [pushPrefs, setPushPrefs] = useState<PushNotifPrefs>({
     enabled: false,
-    missingInvoiceAlert: true,
-    deadlineReminder: true,
+    missingInvoiceAlert: false,
+    deadlineReminder: false,
     clientStatusChange: false,
-    approvalRequest: true,
-    criticalAlerts: true,
+    approvalRequest: false,
+    criticalAlerts: false,
   });
 
   const [pushPermission, setPushPermission] = useState<'default' | 'granted' | 'denied'>(() => {
@@ -220,9 +253,32 @@ export function AccountyNotificationPreferences() {
     includeAuditLog: false,
   });
 
-  const updatePush = (key: keyof PushNotifPrefs, value: boolean) => {
-    setPushPrefs(prev => ({ ...prev, [key]: value }));
-    toast({ title: 'Beállítás frissítve' });
+  const updatePush = async (key: keyof PushNotifPrefs, value: boolean) => {
+    if (!user) return;
+    const newPrefs = { ...pushPrefs, [key]: value };
+    setPushPrefs(newPrefs);
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('accounty_push_preferences' as any)
+        .upsert(
+          {
+            user_id: user.id,
+            [pushKeyToColumn[key]]: value,
+          } as any,
+          { onConflict: 'user_id' }
+        );
+
+      if (error) throw error;
+      toast({ title: 'Beállítás frissítve' });
+    } catch (err) {
+      setPushPrefs(pushPrefs);
+      reportError({ type: 'db_query', component: 'AccountyNotificationPreferences', action: 'update_push', message: 'Error updating push pref', error: err });
+      toast({ title: 'Nem sikerült menteni a beállítást', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const updateDigest = <K extends keyof DigestPrefs>(key: K, value: DigestPrefs[K]) => {
@@ -238,7 +294,7 @@ export function AccountyNotificationPreferences() {
     const result = await Notification.requestPermission();
     setPushPermission(result as any);
     if (result === 'granted') {
-      setPushPrefs(prev => ({ ...prev, enabled: true }));
+      await updatePush('enabled', true);
       toast({ title: 'Push értesítések engedélyezve', description: 'Mostantól böngésző értesítéseket is kapsz.' });
     } else if (result === 'denied') {
       toast({ title: 'Push értesítések tiltva', description: 'A böngésző beállításaiban engedélyezheted újra.', variant: 'destructive' });

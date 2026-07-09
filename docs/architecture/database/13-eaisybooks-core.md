@@ -369,3 +369,30 @@
 **Trigger:** `set_accounty_email_prefs_updated_at` → `extensions.moddatetime(updated_at)`
 
 ---
+
+### `accounty_push_preferences`
+
+> Felhasználónkénti push értesítési preferenciák az eaisyBooks modulhoz (Web Push pop-upok). 1:1 user_id. Upsert alapú mentés a frontendről.
+
+**RLS:** ✅ | **Sorok:** ~0
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| user_id | uuid | — |  |
+| enabled | boolean | — | `false` |
+| missing_invoice_alert | boolean | — | `false` |
+| deadline_reminder | boolean | — | `false` |
+| client_status_change | boolean | — | `false` |
+| approval_request | boolean | — | `false` |
+| critical_alerts | boolean | — | `false` |
+| created_at | timestamptz | — | `now()` |
+| updated_at | timestamptz | — | `now()` |
+
+**FK:** `user_id` → `auth.users.id` ON DELETE CASCADE
+
+**Indexek:** `accounty_push_preferences_pkey`, `accounty_push_preferences_user_id_key` (UNIQUE)
+
+**Trigger:** `set_accounty_push_prefs_updated_at` → custom plpgsql function
+
+---
