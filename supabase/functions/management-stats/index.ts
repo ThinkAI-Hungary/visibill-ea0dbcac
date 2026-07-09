@@ -2852,12 +2852,13 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     return results.map(r => {
       const llm = llmDetailsMap.get(r.upload_id);
       const fallbackDuration = new Date(r.updated_at).getTime() - new Date(r.created_at).getTime();
+      const safeFallback = (fallbackDuration > 0 && fallbackDuration < 300_000) ? fallbackDuration : 0;
       return {
         ...r,
         company_name: companyNameMap.get(r.company_id) || null,
         estimated_cost_usd: llm?.cost || 0,
         worker_id: llm?.worker_id || `worker-${pc.name.toLowerCase()}`,
-        processing_duration_ms: llm?.duration || (fallbackDuration > 0 ? fallbackDuration : 0),
+        processing_duration_ms: llm?.duration || safeFallback,
       };
     });
   });
