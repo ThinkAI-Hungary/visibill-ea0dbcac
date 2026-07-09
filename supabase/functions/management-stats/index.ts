@@ -2865,7 +2865,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
   const errorJobsResults = await Promise.all(errorJobsFetches);
   const error_jobs = errorJobsResults
     .flat()
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
   // ── 5b. Currently processing items (all projects, both tables) ──
   const processingFetches = projectClients.map(async (pc) => {
