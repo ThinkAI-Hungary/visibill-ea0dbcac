@@ -2322,10 +2322,10 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
   const { data: heartbeats } = await admin
     .from("worker_heartbeats")
     .select("*")
-    .gt("last_heartbeat", new Date(now.getTime() - 10 * 60 * 1000).toISOString())
+    .gt("last_heartbeat", new Date(now.getTime() - 3 * 60 * 1000).toISOString())
     .order("container_name");
 
-  const containers = (heartbeats || []).map((h: any) => {
+  const activeContainers = (heartbeats || []).map((h: any) => {
     const lastBeat = new Date(h.last_heartbeat);
     const startedAt = new Date(h.started_at);
     const ageSec = (now.getTime() - lastBeat.getTime()) / 1000;
@@ -2346,6 +2346,44 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
       total_cost_24h: 0,
     };
   });
+
+  // Expected replicas per tenant/service type
+  const expectedReplicas: Record<string, { count: number, project: string }> = {
+    "worker-prod": { count: 4, project: "PROD" },
+    "worker-vsweb": { count: 1, project: "VSWEB" },
+    "worker-thinkerman": { count: 1, project: "THINKERMAN" },
+  };
+
+  const containers = [...activeContainers];
+
+  // Count active ones by base service type
+  for (const [baseName, spec] of Object.entries(expectedReplicas)) {
+    const activeForService = activeContainers.filter(c => 
+      c.container_name === baseName || c.container_name.startsWith(`${baseName}-`)
+    );
+    
+    const missingCount = spec.count - activeForService.length;
+    if (missingCount > 0) {
+      for (let i = 0; i < missingCount; i++) {
+        containers.push({
+          container_name: `${baseName}-offline-${i + 1}`,
+          host_ip: "unknown",
+          supabase_project: spec.project,
+          started_at: new Date().toISOString(),
+          last_heartbeat: new Date(0).toISOString(), // Epoch -> force unhealthy
+          is_healthy: false,
+          uptime_seconds: 0,
+          version: "offline",
+          active_queues: [],
+          cpu_usage: 0,
+          ram_usage: 0,
+          jobs_24h: 0,
+          avg_duration_ms: 0,
+          total_cost_24h: 0,
+        });
+      }
+    }
+  }
 
   // ── 2. PGMQ queue metrics (per project) ──
   let queues: any[] = [];

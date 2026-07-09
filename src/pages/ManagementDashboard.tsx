@@ -3597,6 +3597,29 @@ function WorkerPanel() {
     staleTime: 2_500,
   });
 
+  const recent_jobs = data?.recent_jobs || [];
+
+  // Group recent jobs by job execution to avoid duplicate entries for multi-model runs
+  const groupedRecentJobs = useMemo(() => {
+    const grouped: Record<string, any> = {};
+    for (const j of recent_jobs) {
+      const key = `${j.project}_${j.worker_id}_${j.pipeline}_${j.file_name}_${j.created_at}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          ...j,
+          estimated_cost_usd: j.estimated_cost_usd || 0,
+          total_tokens: j.total_tokens || 0,
+          processing_duration_ms: j.processing_duration_ms || 0,
+        };
+      } else {
+        grouped[key].estimated_cost_usd += (j.estimated_cost_usd || 0);
+        grouped[key].total_tokens += (j.total_tokens || 0);
+        grouped[key].processing_duration_ms = Math.max(grouped[key].processing_duration_ms, j.processing_duration_ms || 0);
+      }
+    }
+    return Object.values(grouped).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [recent_jobs]);
+
   if (isLoading || !data) {
     return (
       <div className="space-y-4">
@@ -3639,7 +3662,7 @@ function WorkerPanel() {
     );
   }
 
-  const { containers = [], queues = [], pipelines = [], recent_jobs = [], active_processing = [], summary = {} } = data;
+  const { containers = [], queues = [], pipelines = [], active_processing = [], summary = {} } = data;
 
   // Default: select first container
   const activeContainer = selectedContainer || containers[0]?.container_name || null;
@@ -3648,8 +3671,8 @@ function WorkerPanel() {
   // Filter recent jobs & pipelines for the selected container's project
   const activeProject = containerData?.supabase_project || null;
   const filteredJobs = activeProject
-    ? recent_jobs.filter((j: any) => j.worker_id === activeContainer || j.project === activeProject)
-    : recent_jobs;
+    ? groupedRecentJobs.filter((j: any) => j.worker_id === activeContainer || j.project === activeProject)
+    : groupedRecentJobs;
   const filteredPipelines = activeProject
     ? pipelines.filter((p: any) => p.project === activeProject)
     : pipelines;
