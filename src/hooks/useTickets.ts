@@ -333,9 +333,10 @@ export function useTicketDetail(feedbackId: string | null) {
         .from("feedback")
         .select("*, assigned_to_profile:profiles!feedback_assigned_to_fkey(name)")
         .eq("id", feedbackId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!ticket) return null;
 
       const { data: comments } = await supabase
         .from("ticket_comments")
