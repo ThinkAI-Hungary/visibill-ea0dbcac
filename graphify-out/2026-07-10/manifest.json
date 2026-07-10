@@ -1505,8 +1505,8 @@
     "semantic_hash": ""
   },
   "src/pages/ManagementDashboard.tsx": {
-    "mtime": 1783687392.3498154,
-    "ast_hash": "4b65a0837036d9ea7c2d9d8e31f1e486",
+    "mtime": 1783688828.9674916,
+    "ast_hash": "f16899380985cbb6d388e096d2168e51",
     "semantic_hash": ""
   },
   "src/pages/ManualUpload.tsx": {
@@ -1700,8 +1700,8 @@
     "semantic_hash": "ff7983437ae5d07804815e4662ebd916"
   },
   "supabase/functions/management-stats/index.ts": {
-    "mtime": 1783687450.4885623,
-    "ast_hash": "5e72707837681ba42b2f8753ca22262e",
+    "mtime": 1783687725.3174002,
+    "ast_hash": "58229a78d23b214c175781e8769fca93",
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {

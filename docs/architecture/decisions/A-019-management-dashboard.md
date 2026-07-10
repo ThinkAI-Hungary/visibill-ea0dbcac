@@ -479,5 +479,20 @@ A **Pipeline** szekció és a **Queue** lista a kiválasztott konténer projektj
 
 > **Megjegyzés:** A globális KPI panelek (showProcessing / showAllQueues) felülírják a projekt szűrést — ilyenkor minden projekt adata megjelenik.
 
+### Aszinkron URL Állapot Szinkronizáció & Pagináció
+
+A dashboard és a WorkerPanel állapota URL-query paramétereken keresztül szinkronizált, megelőzve a React lokális state-ek alaphelyzetbe állását (pl. külső adathívások vagy navigáció esetén):
+
+* **Query Paraméterek:**
+  * `wrk_show_errors` (`true` / `null`): A Worker hibapanel megjelenítése.
+  * `wrk_show_processing` (`true` / `null`): A globális feldolgozás alatti panel megjelenítése.
+  * `wrk_show_queues` (`true` / `null`): A globális queue várakozó panel megjelenítése.
+  * `wrk_err_page` (szám): A Worker hibatábla aktív oldalszáma.
+* **Időszak váltás szűrő:** A `wrk_err_page` értéke csak a monitoring időszak (`workerPeriod`) megváltozásakor áll vissza az első oldalra, megakadályozva a lapozási állapot elvesztését sima frissítések során.
+
+### Virtuális Fallback Átirányítás Státusz (REDIRECTED)
+
+Amikor egy fájl feldolgozása elbukik egy pipeline-ban (pl. a `transaction` pipeline-ban a K&H bankkivonat koordináta-alapú parsolása), de a rendszer sikeresen átirányítja és feldolgozza egy fallback gyermek pipeline-ban (pl. `invoice`), a szülő upload rekord státusza a dashboardon virtuálisan `REDIRECTED` (REDIRECT badge) lesz a korábbi zavaró `ERROR` helyett.
+
 
 

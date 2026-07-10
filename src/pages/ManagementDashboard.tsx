@@ -2646,7 +2646,7 @@ export default function ManagementDashboard() {
     queryKey: ['management-files-latest'],
     queryFn: () => fetchManagementData('files', {
       page: '0',
-      pageSize: '4',
+      pageSize: '10',
       sortBy: 'updated_at',
       sortDir: 'desc',
       search: '',
@@ -2660,7 +2660,35 @@ export default function ManagementDashboard() {
     enabled: !!user && view === 'overview',
     staleTime: 10_000,
   });
-  const recentFilesList = recentFilesData?.files || [];
+
+  const recentFilesList = useMemo(() => {
+    const rawFiles = recentFilesData?.files || [];
+    
+    // Identify parent upload IDs that have a child fallback row present in this fetch
+    const parentIdsToExclude = new Set<string>();
+    for (const f of rawFiles) {
+      if (f.fallback_from_invoice_upload_id) {
+        parentIdsToExclude.add(f.fallback_from_invoice_upload_id);
+      }
+      if (f.fallback_from_transaction_upload_id) {
+        parentIdsToExclude.add(f.fallback_from_transaction_upload_id);
+      }
+    }
+
+    // Filter out parent rows and deduplicate by file name for safety
+    const filtered = rawFiles.filter((f: any) => !parentIdsToExclude.has(f.id));
+    
+    const uniqueFiles: any[] = [];
+    const seenNames = new Set<string>();
+    for (const f of filtered) {
+      if (!seenNames.has(f.file_name)) {
+        seenNames.add(f.file_name);
+        uniqueFiles.push(f);
+      }
+    }
+
+    return uniqueFiles.slice(0, 4);
+  }, [recentFilesData]);
 
   const isOverviewLoading = overviewLoading || bentoLlmCostsLoading || workerStatusLoading || recentFilesLoading || ticketsLoading;
 
@@ -4328,10 +4356,10 @@ function WorkerPanel() {
   const [selectedContainer, setSelectedContainer] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<'containers' | 'queues'>('containers');
   const [selectedQueue, setSelectedQueue] = useState<string | null>(null);
-  const [showAllQueues, setShowAllQueues] = useState(false);
+  const showAllQueues = searchParams.get('wrk_show_queues') === 'true';
   const [dismissedQueues, setDismissedQueues] = useState<Set<string>>(new Set());
-  const [showProcessing, setShowProcessing] = useState(false);
-  const [showWorkerErrors, setShowWorkerErrors] = useState(false);
+  const showProcessing = searchParams.get('wrk_show_processing') === 'true';
+  const showWorkerErrors = searchParams.get('wrk_show_errors') === 'true';
   const [expandedErrorRowId, setExpandedErrorRowId] = useState<string | null>(null);
   const ERROR_PAGE_SIZE = 10;
 
@@ -4467,10 +4495,13 @@ function WorkerPanel() {
     return filteredErrorJobs.slice((errorPage - 1) * ERROR_PAGE_SIZE, errorPage * ERROR_PAGE_SIZE);
   }, [filteredErrorJobs, errorPage]);
 
-  // Reset error page when filter changes
+  const prevPeriodRef = React.useRef(workerPeriod);
   useEffect(() => {
-    updateParams({ wrk_err_page: null });
-  }, [filteredJobs, updateParams]);
+    if (prevPeriodRef.current !== workerPeriod) {
+      updateParams({ wrk_err_page: null });
+      prevPeriodRef.current = workerPeriod;
+    }
+  }, [workerPeriod, updateParams]);
 
   if (isLoading || !data) {
     return (
@@ -4632,20 +4663,29 @@ function WorkerPanel() {
             } ${isActive ? activeColor : ''}`}
             onClick={() => {
               if (isQueueClickable) {
-                setShowAllQueues(prev => !prev);
-                setShowProcessing(false);
-                setShowWorkerErrors(false);
+                updateParams({
+                  wrk_show_queues: showAllQueues ? null : 'true',
+                  wrk_show_processing: null,
+                  wrk_show_errors: null,
+                  wrk_err_page: null,
+                });
                 setSelectedQueue(null);
                 setDismissedQueues(new Set());
               } else if (isProcessingClickable) {
-                setShowProcessing(prev => !prev);
-                setShowAllQueues(false);
-                setShowWorkerErrors(false);
+                updateParams({
+                  wrk_show_processing: showProcessing ? null : 'true',
+                  wrk_show_queues: null,
+                  wrk_show_errors: null,
+                  wrk_err_page: null,
+                });
                 setSelectedQueue(null);
               } else if (isErrorClickable) {
-                setShowWorkerErrors(prev => !prev);
-                setShowAllQueues(false);
-                setShowProcessing(false);
+                updateParams({
+                  wrk_show_errors: showWorkerErrors ? null : 'true',
+                  wrk_show_queues: null,
+                  wrk_show_processing: null,
+                  wrk_err_page: null,
+                });
                 setSelectedQueue(null);
               }
             }}
@@ -4837,7 +4877,7 @@ function WorkerPanel() {
                       {filteredErrorJobs.length} hiba
                     </Badge>
                   </CardTitle>
-                  <button onClick={() => setShowWorkerErrors(false)} className="text-muted-foreground hover:text-foreground">
+                  <button onClick={() => updateParams({ wrk_show_errors: null, wrk_err_page: null })} className="text-muted-foreground hover:text-foreground">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -4998,7 +5038,7 @@ function WorkerPanel() {
                       {active_processing.length} aktív
                     </Badge>
                   </CardTitle>
-                  <button onClick={() => setShowProcessing(false)} className="text-muted-foreground hover:text-foreground">
+                  <button onClick={() => updateParams({ wrk_show_processing: null })} className="text-muted-foreground hover:text-foreground">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -5086,7 +5126,7 @@ function WorkerPanel() {
 
               // Auto-close if all dismissed
               if (allPendingQueues.length === 0 && queues.some((q: any) => q.queue_length > 0)) {
-                setTimeout(() => { setShowAllQueues(false); setDismissedQueues(new Set()); }, 0);
+                setTimeout(() => { updateParams({ wrk_show_queues: null }); setDismissedQueues(new Set()); }, 0);
                 return null;
               }
 
@@ -5132,7 +5172,7 @@ function WorkerPanel() {
                           {allPendingQueues.reduce((s: number, q: any) => s + (q.queue_length || 0), 0)} várakozó
                         </Badge>
                       </CardTitle>
-                      <button onClick={() => setShowAllQueues(false)} className="text-muted-foreground hover:text-foreground">
+                      <button onClick={() => updateParams({ wrk_show_queues: null })} className="text-muted-foreground hover:text-foreground">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -5307,7 +5347,7 @@ function WorkerPanel() {
                       <ClipboardList className="h-4 w-4" />
                       Összes várakozó queue ({queuesToShow.reduce((acc: number, q: any) => acc + q.queue_length, 0)} elem)
                     </span>
-                    <button onClick={() => { setShowAllQueues(false); setSelectedQueue(null); }} className="text-muted-foreground hover:text-foreground">
+                    <button onClick={() => { updateParams({ wrk_show_queues: null }); setSelectedQueue(null); }} className="text-muted-foreground hover:text-foreground">
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -5585,6 +5625,8 @@ interface FileRow {
   error_message: string | null;
   created_at: string;
   updated_at: string | null;
+  fallback_from_invoice_upload_id?: string | null;
+  fallback_from_transaction_upload_id?: string | null;
 }
 
 interface FilesData {

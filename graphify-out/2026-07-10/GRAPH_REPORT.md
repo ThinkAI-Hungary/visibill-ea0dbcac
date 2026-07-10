@@ -1,16 +1,16 @@
 # Graph Report - eaisybill-prod  (2026-07-10)
 
 ## Corpus Check
-- 1139 files · ~1,792,645 words
+- 1139 files · ~1,792,922 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 6289 nodes · 14541 edges · 460 communities (342 shown, 118 thin omitted)
+- 6289 nodes · 14541 edges · 461 communities (343 shown, 118 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 45 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `42670757`
+- Built from commit: `c0d76453`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -443,6 +443,7 @@
 - [[_COMMUNITY_Community 442|Community 442]]
 - [[_COMMUNITY_Community 443|Community 443]]
 - [[_COMMUNITY_Community 444|Community 444]]
+- [[_COMMUNITY_Community 445|Community 445]]
 - [[_COMMUNITY_Community 450|Community 450]]
 - [[_COMMUNITY_Community 454|Community 454]]
 - [[_COMMUNITY_Community 455|Community 455]]
@@ -482,7 +483,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (460 total, 118 thin omitted)
+## Communities (461 total, 118 thin omitted)
 
 ### Community 0 - "Financial Operations & Banking"
 Cohesion: 0.05
@@ -541,8 +542,8 @@ Cohesion: 0.22
 Nodes (7): DepreciationCards(), DepreciationCardsProps, calculateDepreciation(), handleRateLimitError(), handleSupabaseError(), SupabaseError, DepreciationResult
 
 ### Community 14 - "Accounty Generaterequestemail Generateemailparams"
-Cohesion: 0.08
-Nodes (47): EmployeeLeaveTabProps, PayrollCalculation, CafeteriaAllocation, CafeteriaTaxResult, CafeteriaWarning, calculateCafeteriaTax(), DEFAULT_2026_SZEP_LIMITS, formatCafeteriaSummary() (+39 more)
+Cohesion: 0.09
+Nodes (45): EmployeeLeaveTabProps, PayrollCalculation, CafeteriaAllocation, CafeteriaTaxResult, CafeteriaWarning, calculateCafeteriaTax(), DEFAULT_2026_SZEP_LIMITS, formatCafeteriaSummary() (+37 more)
 
 ### Community 15 - "Accounty Generaterequestemail Generaterequestemail"
 Cohesion: 0.08
@@ -1525,8 +1526,8 @@ Cohesion: 0.60
 Nodes (4): getProgress(), OnboardingPage(), setProgress(), Step
 
 ### Community 374 - "Community 374"
-Cohesion: 0.05
-Nodes (65): EmployeeDetailsPage(), TABS, EmployeeImportPage(), ImportRow, SAMPLE_ROWS, TEMPLATE_HEADERS, EmployeeWizardPage(), EMPLOYMENT_TYPES (+57 more)
+Cohesion: 0.08
+Nodes (41): EmployeeDetailsPage(), TABS, DECLARATION_TYPES, EditDeclarationDialog(), NewDeclarationDialog(), selectStyle, EmployeeDeclarationsTab(), EmployeeDeclarationsTabProps (+33 more)
 
 ### Community 375 - "Community 375"
 Cohesion: 0.50
@@ -1740,6 +1741,10 @@ Nodes (85): Props, State, AccountyWelcomeWizardProps, EmailAlias, InvoiceImagePr
 Cohesion: 0.25
 Nodes (7): NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle, NavigationMenuViewport
 
+### Community 445 - "Community 445"
+Cohesion: 0.11
+Nodes (26): EmployeeImportPage(), ImportRow, SAMPLE_ROWS, TEMPLATE_HEADERS, EmployeeWizardPage(), EMPLOYMENT_TYPES, FormData, FormField() (+18 more)
+
 ### Community 450 - "Community 450"
 Cohesion: 0.29
 Nodes (6): A-029: Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció, Consequences, Context, Decision, Kapcsolódó, Rationale
@@ -1776,7 +1781,7 @@ Nodes (4): entrypoint_path, files, name, verify_jwt
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `Hooks Useaccountydata Useresolvemissingitem` to `Community 386`, `Email Processing Ecosystem`, `Invoice Type Definitions`, `Community 391`, `Accounty Accountyrolecontext Useaccountyrole`, `Accounty Generaterequestemail Addtoapprovalqueue`, `Accounty Generaterequestemail Generaterequestemail`, `Accounty Generaterequestemail Getapprovalqueue`, `Accounty Generaterequestemail Messagecategory`, `Accounty Generaterequestemail Messagestatus`, `Accounty Generaterequestemail Missingitemforemail`, `Hooks Useleaverequests Leavestatus`, `Accounty Generaterequestemail Updatemessagebody`, `Community 407`, `Accounty Mockdata Blockingcategory`, `Hooks Usepayrolldata Batchpayrollresult`, `Accounty Mockdata Blockingitem`, `Community 411`, `Accounty Types Blockingcategory`, `Accounty Types Blockingitem`, `Community 415`, `Components Emailpreferences Emailpreferences`, `Components Feedbackfab Feedbackfab`, `Community 419`, `Components Producttour Producttour`, `Components Scopedlayout Scopedlayout`, `Community 421`, `Contexts Companycontext Company`, `Community 423`, `Community 420`, `Community 170`, `Contexts Themecontext Usetheme`, `Community 171`, `Community 175`, `Eaisybill Prod Readme`, `Community 177`, `Community 433`, `General Ledger Uploadchartofaccountsmodal Uploadch`, `Fixed Assets Depreciationcards Depreciationcards`, `Hooks Useaccountydata Accountyaccountant`, `Community 431`, `Community 441`, `Hooks Useaccountydata Accountykpis`, `Community 443`, `Hooks Useaccountydata Accountydeadline`, `Hooks Useaccountydata Auditlogentry`, `Hooks Useaccountydata Colleaguestat`, `Community 444`, `Hooks Useaccountydata Companyinvoice`, `Hooks Useaccountydata Monthlytrendpoint`, `Community 323`, `Community 327`, `Hooks Useaccountydata Useaccountyauditlog`, `Community 457`, `Community 332`, `Hooks Useaccountydata Useaccountydeadlines`, `Hooks Useaccountydata Useaccountyportalstats`, `Community 339`, `Hooks Useaccountydata Useaccountyreportdata`, `Community 212`, `Community 343`, `Community 216`, `Hooks Useaccountydata Useupdatekanbanstatus`, `Hooks Useaccountydata Useupsertcommunicationprefs`, `Community 351`, `Hooks Useaccountydata Useupserttaxprofile`, `Hooks Useappready Redirecttarget`, `Community 358`, `Hooks Usedashboarddata Monthlydata`, `Community 242`, `Community 373`, `Community 374`?**
+- **Why does `cn()` connect `Hooks Useaccountydata Useresolvemissingitem` to `Community 386`, `Email Processing Ecosystem`, `Invoice Type Definitions`, `Community 391`, `Accounty Accountyrolecontext Useaccountyrole`, `Accounty Generaterequestemail Addtoapprovalqueue`, `Accounty Generaterequestemail Generaterequestemail`, `Accounty Generaterequestemail Getapprovalqueue`, `Accounty Generaterequestemail Messagecategory`, `Accounty Generaterequestemail Messagestatus`, `Accounty Generaterequestemail Missingitemforemail`, `Hooks Useleaverequests Leavestatus`, `Accounty Generaterequestemail Updatemessagebody`, `Community 407`, `Accounty Mockdata Blockingcategory`, `Hooks Usepayrolldata Batchpayrollresult`, `Accounty Mockdata Blockingitem`, `Community 411`, `Accounty Types Blockingcategory`, `Accounty Types Blockingitem`, `Community 415`, `Components Emailpreferences Emailpreferences`, `Components Feedbackfab Feedbackfab`, `Community 419`, `Components Producttour Producttour`, `Components Scopedlayout Scopedlayout`, `Community 421`, `Contexts Companycontext Company`, `Community 423`, `Community 420`, `Community 170`, `Contexts Themecontext Usetheme`, `Community 171`, `Community 175`, `Eaisybill Prod Readme`, `Community 177`, `Community 433`, `General Ledger Uploadchartofaccountsmodal Uploadch`, `Fixed Assets Depreciationcards Depreciationcards`, `Hooks Useaccountydata Accountyaccountant`, `Community 431`, `Community 441`, `Hooks Useaccountydata Accountykpis`, `Community 443`, `Hooks Useaccountydata Accountydeadline`, `Community 445`, `Hooks Useaccountydata Auditlogentry`, `Hooks Useaccountydata Colleaguestat`, `Community 444`, `Hooks Useaccountydata Companyinvoice`, `Hooks Useaccountydata Monthlytrendpoint`, `Community 323`, `Community 327`, `Hooks Useaccountydata Useaccountyauditlog`, `Community 457`, `Community 332`, `Hooks Useaccountydata Useaccountydeadlines`, `Hooks Useaccountydata Useaccountyportalstats`, `Community 339`, `Hooks Useaccountydata Useaccountyreportdata`, `Community 212`, `Community 343`, `Community 216`, `Hooks Useaccountydata Useupdatekanbanstatus`, `Hooks Useaccountydata Useupsertcommunicationprefs`, `Community 351`, `Hooks Useaccountydata Useupserttaxprofile`, `Hooks Useappready Redirecttarget`, `Community 358`, `Hooks Usedashboarddata Monthlydata`, `Community 242`, `Community 373`, `Community 374`?**
   _High betweenness centrality (0.049) - this node is a cross-community bridge._
 - **Why does `VisiBill - Project Documentation` connect `Accounty Sharedcomponents Animatednumber` to `Hooks Useaccountydata Invoicereportrow`, `Community 417`, `Community 455`, `Community 424`, `Dashboard Dashboardskeleton Metriccardskeleton`, `Fixed Assets Inventorycheckdialog Inventorycheckdi`, `Hooks Useaccountydata Useaccountytaxprofile`, `Community 437`, `Hooks Useaccountydata Accountycommunicationprefs`?**
   _High betweenness centrality (0.035) - this node is a cross-community bridge._
