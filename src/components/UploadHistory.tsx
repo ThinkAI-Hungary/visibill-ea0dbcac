@@ -441,7 +441,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                               />
                             </div>
                           )}
-                          {record.error_message && (processingErrorStatuses.has(record.processing_status) || uploadErrorStatuses.has(record.processing_status) || record.processing_status === 'ignored') && (
+                          {record.error_message && (
                             <p className={`text-xs max-w-[150px] truncate ${(processingErrorStatuses.has(record.processing_status) || uploadErrorStatuses.has(record.processing_status)) ? 'text-destructive' : 'text-muted-foreground'}`} title={record.error_message}>
                               {record.error_message.startsWith('Extraction error') ? 'Extraction hiba' : record.error_message}
                             </p>
