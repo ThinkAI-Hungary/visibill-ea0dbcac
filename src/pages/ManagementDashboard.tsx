@@ -3383,18 +3383,23 @@ export default function ManagementDashboard() {
                           >
                             {f.file_name}
                           </span>
-                          <span className={`text-[9px] font-bold shrink-0 ${
-                            f.processing_status === 'completed' || f.processing_status === 'done' || f.processing_status === 'processed'
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : f.processing_status === 'error' || f.processing_status === 'failed'
-                                ? 'text-red-500 dark:text-red-400'
-                                : 'text-teal-600 dark:text-teal-400 animate-pulse'
-                          }`}>
-                            {f.processing_status === 'completed' || f.processing_status === 'done' || f.processing_status === 'processed'
-                              ? 'Kész'
-                              : f.processing_status === 'error' || f.processing_status === 'failed'
-                                ? 'Hiba'
-                                : 'Feldolgozás'}
+                          <span className={cn(
+                            "text-[9px] font-bold shrink-0",
+                            (() => {
+                              const cat = normalizeStatus(f.processing_status, f.error_message);
+                              if (cat === "success") return "text-emerald-600 dark:text-emerald-400";
+                              if (cat === "error") return "text-red-500 dark:text-red-400";
+                              if (cat === "redirected") return "text-blue-500 dark:text-blue-400";
+                              return "text-teal-600 dark:text-teal-400 animate-pulse";
+                            })()
+                          )}>
+                            {(() => {
+                              const cat = normalizeStatus(f.processing_status, f.error_message);
+                              if (cat === "success") return "Kész";
+                              if (cat === "error") return "Hiba";
+                              if (cat === "redirected") return "Átirányítva";
+                              return "Feldolgozás";
+                            })()}
                           </span>
                         </button>
                       ))
