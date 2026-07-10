@@ -352,17 +352,25 @@
 | Oszlop | Típus | Null | Default |
 |--------|-------|------|---------|
 | id | uuid | — | `gen_random_uuid()` |
-| user_id | uuid | — |  |
-| missing_invoice_alert | boolean | — | `true` |
-| deadline_reminder | boolean | — | `true` |
-| client_status_change | boolean | — | `false` |
-| approval_request | boolean | — | `true` |
-| weekly_report | boolean | — | `true` |
-| monthly_report | boolean | — | `false` |
-| created_at | timestamptz | — | `now()` |
-| updated_at | timestamptz | — | `now()` |
+| user_id | uuid | — | |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+| missing_invoice_alert | boolean | ✓ | `true` |
+| deadline_reminder | boolean | ✓ | `true` |
+| client_status_change | boolean | ✓ | `true` |
+| approval_request | boolean | ✓ | `true` |
+| weekly_report | boolean | ✓ | `true` |
+| monthly_report | boolean | ✓ | `true` |
+| digest_enabled | boolean | ✓ | `false` |
+| digest_frequency | text | ✓ | `'daily'` |
+| digest_delivery_time | text | ✓ | `'08:00'` |
+| digest_include_kpis | boolean | ✓ | `true` |
+| digest_include_deadlines | boolean | ✓ | `true` |
+| digest_include_missing_items | boolean | ✓ | `true` |
+| digest_include_client_summary | boolean | ✓ | `true` |
+| digest_include_audit_log | boolean | ✓ | `false` |
 
-**FK:** `user_id` → `auth.users.id` ON DELETE CASCADE
+**FK:** `user_id` → `auth.users.id`
 
 **Indexek:** `accounty_email_preferences_pkey`, `accounty_email_preferences_user_id_key` (UNIQUE)
 

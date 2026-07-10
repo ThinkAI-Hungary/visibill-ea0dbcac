@@ -149,7 +149,7 @@ export function AccountyNotificationPreferences() {
         // Fetch Email Prefs
         const emailReq = supabase
           .from('accounty_email_preferences' as any)
-          .select('missing_invoice_alert, deadline_reminder, client_status_change, approval_request, weekly_report, monthly_report')
+          .select('missing_invoice_alert, deadline_reminder, client_status_change, approval_request, weekly_report, monthly_report, digest_enabled, digest_frequency, digest_delivery_time, digest_include_kpis, digest_include_deadlines, digest_include_missing_items, digest_include_client_summary, digest_include_audit_log')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -174,6 +174,16 @@ export function AccountyNotificationPreferences() {
             approvalRequest: d.approval_request ?? false,
             weeklyReport: d.weekly_report ?? false,
             monthlyReport: d.monthly_report ?? false,
+          });
+          setDigestPrefs({
+            enabled: d.digest_enabled ?? false,
+            frequency: d.digest_frequency ?? 'daily',
+            deliveryTime: d.digest_delivery_time ?? '08:00',
+            includeKpis: d.digest_include_kpis ?? true,
+            includeDeadlines: d.digest_include_deadlines ?? true,
+            includeMissingItems: d.digest_include_missing_items ?? true,
+            includeClientSummary: d.digest_include_client_summary ?? true,
+            includeAuditLog: d.digest_include_audit_log ?? false,
           });
         }
 
@@ -242,9 +252,9 @@ export function AccountyNotificationPreferences() {
     return 'default';
   });
 
-  // Digest prefs (UI only — not persisted yet)
+  // Digest prefs
   const [digestPrefs, setDigestPrefs] = useState<DigestPrefs>({
-    enabled: true,
+    enabled: false,
     frequency: 'daily',
     deliveryTime: '08:00',
     includeKpis: true,
@@ -288,9 +298,44 @@ export function AccountyNotificationPreferences() {
     }
   };
 
-  const updateDigest = <K extends keyof DigestPrefs>(key: K, value: DigestPrefs[K]) => {
-    setDigestPrefs(prev => ({ ...prev, [key]: value }));
-    toast({ title: 'Beállítás frissítve' });
+  type DigestDbColumnKey = 'digest_enabled' | 'digest_frequency' | 'digest_delivery_time' | 'digest_include_kpis' | 'digest_include_deadlines' | 'digest_include_missing_items' | 'digest_include_client_summary' | 'digest_include_audit_log';
+  const digestKeyToColumn: Record<keyof DigestPrefs, DigestDbColumnKey> = {
+    enabled: 'digest_enabled',
+    frequency: 'digest_frequency',
+    deliveryTime: 'digest_delivery_time',
+    includeKpis: 'digest_include_kpis',
+    includeDeadlines: 'digest_include_deadlines',
+    includeMissingItems: 'digest_include_missing_items',
+    includeClientSummary: 'digest_include_client_summary',
+    includeAuditLog: 'digest_include_audit_log',
+  };
+
+  const updateDigest = async <K extends keyof DigestPrefs>(key: K, value: DigestPrefs[K]) => {
+    if (!user) return;
+    const newPrefs = { ...digestPrefs, [key]: value };
+    setDigestPrefs(newPrefs);
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('accounty_email_preferences' as any)
+        .upsert(
+          {
+            user_id: user.id,
+            [digestKeyToColumn[key]]: value,
+          } as any,
+          { onConflict: 'user_id' }
+        );
+
+      if (error) throw error;
+      toast({ title: 'Beállítás frissítve' });
+    } catch (err) {
+      setDigestPrefs(digestPrefs);
+      reportError({ type: 'db_query', component: 'AccountyNotificationPreferences', action: 'update_digest', message: 'Error updating digest pref', error: err });
+      toast({ title: 'Nem sikerült menteni a beállítást', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const requestPushPermission = async () => {

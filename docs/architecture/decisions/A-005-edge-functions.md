@@ -10,7 +10,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — 50 deployed function + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — 52 deployed function + `_shared/` közös kód.
 
 **Közös kód:** `_shared/` mappa — CORS headers, Supabase client, utility-k.
 
@@ -78,7 +78,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `save-credentials` | ❌ | NAV API credentials titkosított mentése (AES-256-GCM → `save_nav_credentials` RPC) |
 | `delete-nav-credentials` | ✅ | NAV API credentials törlése |
 
-#### 📱 Accounty Modul (10 db)
+#### 📱 Accounty Modul (11 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
@@ -90,6 +90,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `accounty-ai-chat` | ❌ | AI chat asszisztens az eaisyBooks modulhoz |
 | `send-accounty-notification` | ❌ | eaisyBooks email értesítés — dual-mode: (A) könyvelő: `accounty_email_preferences` opt-in check, (B) ügyfél: `recipient_type='client_contact'` + kék template (`wrapClientHtml`). Aszinkron meghívja a `send-web-push`-t is. Resend API (`info@mail.visibill.hu`). Log: `outgoing_emails`. (A-030) |
 | `send-web-push` | ❌ | eaisyBooks Web Push értesítés kiküldése. Ellenőrzi az `accounty_push_preferences` táblát, lekéri az aktív eszközöket az `accounty_push_subscriptions` táblából, és VAPID kulcsokkal push-t küld. |
+| `send-accounty-digest` | ❌ | Napi/heti Digest email kiküldése a könyvelőknek. Óránként indul, és elvégzi a szűrést (`accounty_email_preferences`), majd Resend API-val kiküldi az összefoglalót a kért modulokkal (A-034). |
 | `validate-partner-code` | ❌ | Meghívó kód (share_token) read-only validáció — cég adatok visszaadása |
 | `join-company-as-accountant` | ❌ | Meghívó kód → `accounty_assignments` INSERT (könyvelő hozzárendelés) |
 
@@ -181,3 +182,4 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 - [A-019: Management Dashboard](./A-019-management-dashboard.md)
 - [A-021: Email Auth Flow Redesign](./A-021-email-auth-flow-redesign.md) (send-email hook, verify-email, signup single email)
 - [A-030: Accounty Email Notification Architecture](./A-030-accounty-email-notifications.md)
+- [A-034: Accounty Digest Emails](./A-034-accounty-digest-emails.md)

@@ -23,6 +23,10 @@ DO $$ BEGIN
   PERFORM cron.unschedule('accounty-monthly-report');
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
+DO $$ BEGIN
+  PERFORM cron.unschedule('accounty-digest-hourly');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- 2. Hiányzó számla detektálás + ügyfél státusz változás — NAPONTA 5:00 CET
 SELECT cron.schedule(
@@ -70,6 +74,19 @@ SELECT cron.schedule(
   $$
   SELECT net.http_post(
     url := 'https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/send-accounty-monthly-report',
+    headers := '{"Content-Type": "application/json", "x-cron-secret": "<CRON_SECRET_ACCOUNTY>"}'::jsonb,
+    body := '{}'::jsonb
+  ) AS request_id;
+  $$
+);
+
+-- 6. Új Digest funkció (óránként fut, de csak annak küld, akinek akkor kell)
+SELECT cron.schedule(
+  'accounty-digest-hourly',
+  '0 * * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/send-accounty-digest',
     headers := '{"Content-Type": "application/json", "x-cron-secret": "<CRON_SECRET_ACCOUNTY>"}'::jsonb,
     body := '{}'::jsonb
   ) AS request_id;
