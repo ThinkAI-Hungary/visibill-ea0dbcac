@@ -1030,8 +1030,8 @@
     "semantic_hash": "64181f0f0c553cc19a7165ffe6353303"
   },
   "src/hooks/useTickets.ts": {
-    "mtime": 1783616130.6572592,
-    "ast_hash": "7173f91d38a0dfa37d59f10416a46915",
+    "mtime": 1783222456.1949568,
+    "ast_hash": "efa2652bc2ea15c79d6dbe68e9805115",
     "semantic_hash": ""
   },
   "src/hooks/useTimeEntries.ts": {
@@ -1505,8 +1505,8 @@
     "semantic_hash": ""
   },
   "src/pages/ManagementDashboard.tsx": {
-    "mtime": 1783687392.3498154,
-    "ast_hash": "4b65a0837036d9ea7c2d9d8e31f1e486",
+    "mtime": 1783616006.5634642,
+    "ast_hash": "92ce7add616afd8514251513d0394571",
     "semantic_hash": ""
   },
   "src/pages/ManualUpload.tsx": {
@@ -1700,8 +1700,8 @@
     "semantic_hash": "ff7983437ae5d07804815e4662ebd916"
   },
   "supabase/functions/management-stats/index.ts": {
-    "mtime": 1783687450.4885623,
-    "ast_hash": "5e72707837681ba42b2f8753ca22262e",
+    "mtime": 1783615187.1757264,
+    "ast_hash": "76fc3ebe07742985fb88b79a68609f0c",
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
@@ -3145,8 +3145,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
-    "mtime": 1783687475.3544507,
-    "ast_hash": "fed7de912a39a35a17cf1d502243d097",
+    "mtime": 1783539554.7019458,
+    "ast_hash": "1e78b9c761b72f4af22a1e68219fdc8b",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-020-auth-trigger-chain-incident.md": {
@@ -3450,8 +3450,8 @@
     "semantic_hash": ""
   },
   "docs/design/12-dialogs-modals.md": {
-    "mtime": 1783684485.7285993,
-    "ast_hash": "9ebccf5ef81ef7896a8cf751696181f2",
+    "mtime": 1783614984.5880616,
+    "ast_hash": "1f19a459bf7ff67b90d535dc2167d1f8",
     "semantic_hash": ""
   },
   "docs/design/design_opcio/DESIGN.md": {

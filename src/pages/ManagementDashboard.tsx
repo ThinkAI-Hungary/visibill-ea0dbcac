@@ -5615,10 +5615,11 @@ function fileExtBadge(fileName: string) {
   return <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-bold font-mono ${cls}`}>{ext || '?'}</span>;
 }
 
-/** Normalize raw processing_status to one of 3 display categories */
-type StatusCategory = 'success' | 'pending' | 'error';
+/** Normalize raw processing_status to one of 4 display categories */
+type StatusCategory = 'success' | 'pending' | 'error' | 'redirected';
 
 function normalizeStatus(status: string | null, errorMessage?: string | null): StatusCategory {
+  if (status === 'redirected') return 'redirected';
   // If there's an error_message, it's an error regardless of processing_status
   if (errorMessage) return 'error';
   if (!status) return 'pending';
@@ -5633,6 +5634,7 @@ const STATUS_DISPLAY: Record<StatusCategory, { label: string; cls: string }> = {
   success: { label: 'Feldolgozva', cls: 'bg-success/10 text-success border-success/25' },
   pending:  { label: 'Folyamatban', cls: 'bg-warning/10 text-warning border-warning/25' },
   error:   { label: 'Hiba',        cls: 'bg-destructive/10 text-destructive border-destructive/25' },
+  redirected: { label: 'Átirányítva', cls: 'bg-info/10 text-info border-info/25' },
 };
 
 /** Comma-separated DB values for each filter category (sent to EF) */
@@ -5803,6 +5805,14 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     }
   }, [selectedFiles, toast, queryClient]);
 
+  const selectedUploads = useMemo(() => {
+    return Array.from(selectedFiles).map(key => {
+      const [source_table, id] = key.split(':');
+      const row = fileRows.find((r: FileRow) => r.id === id && r.source_table === source_table);
+      return row;
+    }).filter(Boolean) as FileRow[];
+  }, [selectedFiles, fileRows]);
+
   // Open delete confirmation — pre-calculate storage vs db-only counts from current rows
   const handleOpenDeleteConfirm = useCallback(() => {
     const withStorage = Array.from(selectedFiles).filter(key => {
@@ -5815,7 +5825,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     setDeleteConfirmOpen(true);
   }, [selectedFiles, fileRows]);
 
-  const handleBulkDelete = useCallback(async () => {
+  const handleBulkDelete = useCallback(async (isDbOnly: boolean = false) => {
     if (selectedFiles.size === 0) return;
     setBulkDeleting(true);
     try {
@@ -5824,13 +5834,15 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
         const row = fileRows.find((r: FileRow) => r.id === id && r.source_table === source_table);
         return { id, source_table, file_url: row?.file_url ?? null };
       });
-      const result = await postManagementData('delete-files', { files });
+      const result = await postManagementData('delete-files', { files, dbOnly: isDbOnly });
       if (result.success || result.deleted > 0) {
         toast({
-          title: `${result.deleted} fájl törölve`,
-          description: result.storageDeleted > 0
-            ? `Storage: ${result.storageDeleted} fájl, csak DB: ${result.dbOnlyDeleted ?? 0} fájl`
-            : `Csak adatbázisból törölve (nem volt storage fájl)`,
+          title: isDbOnly ? `${result.deleted} adatbázis sor törölve` : `${result.deleted} fájl törölve`,
+          description: isDbOnly
+            ? `A Storage fájlok megmaradtak, csak az adatbázisból kerültek ki a sorok.`
+            : result.storageDeleted > 0
+              ? `Storage: ${result.storageDeleted} fájl, csak DB: ${result.dbOnlyDeleted ?? 0} fájl`
+              : `Csak adatbázisból törölve (nem volt storage fájl)`,
         });
         setSelectedFiles(new Set());
         queryClient.invalidateQueries({ queryKey: ['management-files'] });
@@ -6326,50 +6338,76 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={(open) => { if (!bulkDeleting) setDeleteConfirmOpen(open); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-4 w-4 text-destructive" />
-              Fájlok végleges törlése
+            <AlertDialogTitle>
+              {selectedFiles.size} dokumentum törlése
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>
-                  <span className="font-semibold text-foreground">{selectedFiles.size} fájl</span> kerül törlésre. Ez a művelet nem visszavonható.
-                </p>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1.5 text-sm">
-                  {deleteConfirmCounts.withStorage > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
-                      <span>
-                        <span className="font-medium text-foreground">{deleteConfirmCounts.withStorage} fájl</span>
-                        {' '}— Storage-ből és adatbázisból egyaránt törlésre kerül
-                      </span>
+              <div className="space-y-2">
+                <p>Válaszd ki a törlés módját az összes kijelölt elemre:</p>
+                {/* Selected files preview */}
+                <div className="max-h-28 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-2 space-y-1 w-full max-w-[340px] sm:max-w-[500px] overflow-x-hidden">
+                  {selectedUploads.map(u => (
+                    <div key={`${u.source_table}:${u.id}`} className="text-xs text-muted-foreground truncate block w-full" title={u.file_name}>
+                      • {u.file_name} <span className="text-foreground/60 ml-1">({u.file_type_label})</span>
                     </div>
-                  )}
-                  {deleteConfirmCounts.dbOnly > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
-                      <span>
-                        <span className="font-medium text-foreground">{deleteConfirmCounts.dbOnly} fájl</span>
-                        {' '}— csak adatbázisból törlésre kerül (Storage fájl már nem létezik)
-                      </span>
-                    </div>
-                  )}
+                  ))}
                 </div>
+                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <div className="space-y-2 py-1">
+            {/* Option A: dbOnly = true */}
+            <button
+              disabled={bulkDeleting}
+              onClick={() => handleBulkDelete(true)}
+              className="w-full text-left p-3 rounded-lg border border-border/60 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Csak a sorok törlése</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {selectedFiles.size === 1 ? '1 adatbázis sor' : `${selectedFiles.size} adatbázis sor`} törlődik, a Storage fájlok megmaradnak.
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* Option B: dbOnly = false */}
+            <button
+              disabled={bulkDeleting}
+              onClick={() => handleBulkDelete(false)}
+              className="w-full text-left p-3 rounded-lg border border-red-200 dark:border-red-900/40 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-destructive">Sorok és fájlok törlése</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {selectedFiles.size === 1 ? '1 sor' : `${selectedFiles.size} sor`} és a hozzá tartozó Storage fájl(ok) véglegesen törlődnek.
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          {bulkDeleting && (
+            <div className="flex items-center justify-center py-2 animate-in fade-in duration-200">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Törlés folyamatban...</span>
+            </div>
+          )}
+
           <AlertDialogFooter>
             <AlertDialogCancel disabled={bulkDeleting}>Mégsem</AlertDialogCancel>
-            <Button
-              onClick={handleBulkDelete}
-              disabled={bulkDeleting}
-              className="gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {bulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-              {bulkDeleting ? 'Törlés...' : 'Végleges törlés'}
-            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

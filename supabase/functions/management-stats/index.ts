@@ -2039,6 +2039,24 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
 
   let allRows = [...invoiceRows, ...transactionRows, ...bankRows, ...reportRows];
 
+  const SUCCESS_STATUSES = new Set(["done", "completed", "processed"]);
+  const ERROR_STATUSES = new Set(["error", "failed", "ignored", "dismissed", "webhook_failed"]);
+
+  // Create child maps to detect fallback redirections
+  const txChildMap = new Map<string, any>();
+  transactionRows.forEach((r: any) => {
+    if (r.fallback_from_invoice_upload_id) {
+      txChildMap.set(r.fallback_from_invoice_upload_id, r);
+    }
+  });
+
+  const invChildMap = new Map<string, any>();
+  invoiceRows.forEach((r: any) => {
+    if (r.fallback_from_transaction_upload_id) {
+      invChildMap.set(r.fallback_from_transaction_upload_id, r);
+    }
+  });
+
   // Resolve Names manually since FKs might be missing or broken for PostgREST joins
   const [companiesRes, profilesRes] = await Promise.all([
     admin.from("companies").select("id, name"),
@@ -2048,35 +2066,53 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
   const companyMap = new Map((companiesRes.data || []).map((c: any) => [c.id, c.name]));
   const profileMap = new Map((profilesRes.data || []).map((p: any) => [p.user_id, p.name]));
 
-  const mappedRows = allRows.map(row => ({
-    id: row.id,
-    source_table: row.source_table,
-    file_type_label: row.file_type_label,
-    company_id: row.company_id,
-    company_name: companyMap.get(row.company_id) || null,
-    user_id: row.user_id,
-    user_name: row.metadata?.source === 'email_alias' 
-      ? 'Mailgun'
-      : (row.user_id ? (profileMap.get(row.user_id) || null) : 'Mailgun'),
-    user_email: row.metadata?.sender || null,
-    file_name: row.file_name,
-    file_size: row.file_size,
-    file_type: row.file_type,
-    file_url: row.file_url,
-    upload_status: row.upload_status,
-    processing_status: row.processing_status,
-    error_message: row.error_message,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-  }));
+  const mappedRows = allRows.map(row => {
+    let processing_status = row.processing_status;
+    let error_message = row.error_message;
+
+    if (row.source_table === "invoice") {
+      const child = txChildMap.get(row.id);
+      if (child && SUCCESS_STATUSES.has(child.processing_status || "")) {
+        processing_status = "redirected";
+        error_message = null; // Clear error so it is treated as a success
+      }
+    } else if (row.source_table === "transaction") {
+      const child = invChildMap.get(row.id);
+      if (child && SUCCESS_STATUSES.has(child.processing_status || "")) {
+        processing_status = "redirected";
+        error_message = null; // Clear error so it is treated as a success
+      }
+    }
+
+    return {
+      id: row.id,
+      source_table: row.source_table,
+      file_type_label: row.file_type_label,
+      company_id: row.company_id,
+      company_name: companyMap.get(row.company_id) || null,
+      user_id: row.user_id,
+      user_name: row.metadata?.source === 'email_alias' 
+        ? 'Mailgun'
+        : (row.user_id ? (profileMap.get(row.user_id) || null) : 'Mailgun'),
+      user_email: row.metadata?.sender || null,
+      file_name: row.file_name,
+      file_size: row.file_size,
+      file_type: row.file_type,
+      file_url: row.file_url,
+      upload_status: row.upload_status,
+      processing_status,
+      error_message,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+  });
 
   // Stats are computed from ALL rows (before status filter) so KPI cards always show global counts
-  const SUCCESS_STATUSES = new Set(["done", "completed", "processed"]);
-  const ERROR_STATUSES = new Set(["error", "failed", "ignored", "dismissed", "webhook_failed"]);
+
 
   // Helper: a row is an error if its status is in ERROR_STATUSES OR it has an error_message
   const isError = (r: typeof mappedRows[0]) => ERROR_STATUSES.has(r.processing_status || "") || !!r.error_message;
-  const isSuccess = (r: typeof mappedRows[0]) => !r.error_message && SUCCESS_STATUSES.has(r.processing_status || "");
+  const isSuccess = (r: typeof mappedRows[0]) => !r.error_message && (SUCCESS_STATUSES.has(r.processing_status || "") || r.processing_status === "redirected");
 
   const stats = {
     totalCount: mappedRows.length,
@@ -2096,6 +2132,7 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
       const s = r.processing_status || "";
       // Explicit status match
       if (vals.includes(s)) return true;
+      if (s === "redirected" && vals.some(v => SUCCESS_STATUSES.has(v))) return true;
       // Error category: also match rows with error_message regardless of processing_status
       if (isError(r) && !isSuccess(r)) {
         // Check if any error-related value is requested
@@ -2247,9 +2284,10 @@ async function deleteFiles(
   admin: ReturnType<typeof createClient>,
   body: {
     files?: Array<{ id: string; source_table: string; file_url: string | null }>;
+    dbOnly?: boolean;
   }
 ) {
-  const { files } = body;
+  const { files, dbOnly } = body;
 
   if (!files || !Array.isArray(files) || files.length === 0) {
     return { error: "files array required", deleted: 0 };
@@ -2274,8 +2312,8 @@ async function deleteFiles(
     files.map(async (f) => {
       const dbTable = SOURCE_TABLE_TO_DB[f.source_table];
 
-      // Step 1: Storage deletion (only if file_url exists)
-      if (f.file_url) {
+      // Step 1: Storage deletion (only if file_url exists and dbOnly is not true)
+      if (f.file_url && !dbOnly) {
         const parsed = parseStorageUrl(f.file_url);
         if (parsed) {
           const { error: storageError } = await admin.storage
@@ -2292,7 +2330,7 @@ async function deleteFiles(
           storageErrors.push(`${f.id}: could not parse storage URL`);
         }
       } else {
-        // No file_url — DB-only deletion
+        // No file_url or dbOnly is true — DB-only deletion
         dbOnlyDeleted++;
       }
 
@@ -2320,6 +2358,60 @@ async function deleteFiles(
     ...(storageErrors.length > 0 ? { storageErrors } : {}),
     ...(dbErrors.length > 0 ? { dbErrors } : {}),
   };
+}
+
+
+async function getActiveErrors(pc: any, periodSince?: string | null) {
+  // Fetch all invoice errors
+  let invQ = pc.client
+    .from("invoice_uploads")
+    .select("id, document_category, file_name, company_id, file_url, created_at, updated_at, error_message")
+    .or("processing_status.eq.error,and(processing_status.eq.ignored,error_message.not.is.null)");
+  if (periodSince) invQ = invQ.gte("updated_at", periodSince);
+  const { data: invData } = await invQ;
+
+  // Fetch all transaction errors
+  let txQ = pc.client
+    .from("transaction_uploads")
+    .select("id, file_name, company_id, file_url, created_at, updated_at, error_message")
+    .eq("processing_status", "error");
+  if (periodSince) txQ = txQ.gte("updated_at", periodSince);
+  const { data: txData } = await txQ;
+
+  const invRows = invData || [];
+  const txRows = txData || [];
+
+  const invIds = invRows.map((r: any) => r.id);
+  const txIds = txRows.map((r: any) => r.id);
+
+  const txSuccessIds = new Set<string>();
+  if (invIds.length > 0) {
+    const { data: txChildren } = await pc.client
+      .from("transaction_uploads")
+      .select("fallback_from_invoice_upload_id")
+      .in("fallback_from_invoice_upload_id", invIds)
+      .in("processing_status", ["done", "completed", "processed"]);
+    (txChildren || []).forEach((c: any) => {
+      if (c.fallback_from_invoice_upload_id) txSuccessIds.add(c.fallback_from_invoice_upload_id);
+    });
+  }
+
+  const invSuccessIds = new Set<string>();
+  if (txIds.length > 0) {
+    const { data: invChildren } = await pc.client
+      .from("invoice_uploads")
+      .select("fallback_from_transaction_upload_id")
+      .in("fallback_from_transaction_upload_id", txIds)
+      .in("processing_status", ["done", "completed", "processed"]);
+    (invChildren || []).forEach((c: any) => {
+      if (c.fallback_from_transaction_upload_id) invSuccessIds.add(c.fallback_from_transaction_upload_id);
+    });
+  }
+
+  const activeInv = invRows.filter((r: any) => !txSuccessIds.has(r.id));
+  const activeTx = txRows.filter((r: any) => !invSuccessIds.has(r.id));
+
+  return { activeInv, activeTx };
 }
 
 
@@ -2576,37 +2668,22 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
   const pipelineErrorMap = new Map<string, number>();
 
   const errorFetches = projectClients.map(async (pc) => {
-    let invoiceErrors = 0;
-    let txErrors = 0;
-
     try {
-      let q = pc.client
-        .from("invoice_uploads")
-        .select("id, document_category", { count: "exact", head: false })
-        .or("processing_status.eq.error,and(processing_status.eq.ignored,error_message.not.is.null)");
-      if (periodSince) q = q.gte("updated_at", periodSince);
-      const { count, data } = await q;
-      invoiceErrors = count || 0;
-      for (const r of (data || [])) {
+      const { activeInv, activeTx } = await getActiveErrors(pc, periodSince);
+      
+      activeInv.forEach((r: any) => {
         const cat = r.document_category || "invoice";
         pipelineErrorMap.set(cat, (pipelineErrorMap.get(cat) || 0) + 1);
+      });
+      
+      if (activeTx.length > 0) {
+        pipelineErrorMap.set("transaction", (pipelineErrorMap.get("transaction") || 0) + activeTx.length);
       }
-    } catch (_) { /* best effort */ }
 
-    try {
-      let q = pc.client
-        .from("transaction_uploads")
-        .select("id", { count: "exact", head: true })
-        .eq("processing_status", "error");
-      if (periodSince) q = q.gte("updated_at", periodSince);
-      const { count } = await q;
-      txErrors = count || 0;
-      if (txErrors > 0) {
-        pipelineErrorMap.set("transaction", (pipelineErrorMap.get("transaction") || 0) + txErrors);
-      }
-    } catch (_) { /* best effort */ }
-
-    return invoiceErrors + txErrors;
+      return activeInv.length + activeTx.length;
+    } catch (_) {
+      return 0;
+    }
   });
   const errorResults = await Promise.all(errorFetches);
   totalErrors24h = errorResults.reduce((s, c) => s + c, 0);
@@ -2753,17 +2830,10 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
   const errorJobsFetches = projectClients.map(async (pc) => {
     const results: any[] = [];
 
-    // Query invoice_uploads with processing_status = 'error'
     try {
-      let q = pc.client
-        .from("invoice_uploads")
-        .select("id, file_name, company_id, document_category, file_url, created_at, updated_at, error_message")
-        .or("processing_status.eq.error,and(processing_status.eq.ignored,error_message.not.is.null)")
-        .order("updated_at", { ascending: false })
-        .limit(100);
-      if (periodSince) q = q.gte("updated_at", periodSince);
-      const { data } = await q;
-      for (const r of (data || [])) {
+      const { activeInv, activeTx } = await getActiveErrors(pc, periodSince);
+
+      for (const r of activeInv.slice(0, 100)) {
         results.push({
           id: r.id,
           upload_id: r.id,
@@ -2779,19 +2849,8 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
           status: "ERROR",
         });
       }
-    } catch (_) {}
 
-    // Query transaction_uploads with processing_status = 'error'
-    try {
-      let q = pc.client
-        .from("transaction_uploads")
-        .select("id, file_name, company_id, file_url, created_at, updated_at, error_message")
-        .eq("processing_status", "error")
-        .order("updated_at", { ascending: false })
-        .limit(100);
-      if (periodSince) q = q.gte("updated_at", periodSince);
-      const { data } = await q;
-      for (const r of (data || [])) {
+      for (const r of activeTx.slice(0, 100)) {
         results.push({
           id: r.id,
           upload_id: r.id,

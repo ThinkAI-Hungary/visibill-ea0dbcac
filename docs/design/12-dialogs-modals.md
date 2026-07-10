@@ -335,9 +335,7 @@ const handleConfirm = async () => {
 
 ### Implementálva
 
-| Dialog | Fájl | Loading state |
-|--------|------|---------------|
-| Fájlok végleges törlés | `ManagementDashboard.tsx` (Fájlok tab) | `bulkDeleting` |
+| Fájlok végleges törlés | `ManagementDashboard.tsx` (Fájlok tab) | `bulkDeleting` (A/B mód: Sor törlése vs Storage + sor) |
 | Error retry | `ManagementDashboard.tsx` (Hibák tab) | `retrying` |
 | Error delete | `ManagementDashboard.tsx` (Hibák tab) | `deleting` |
 | Error delete ALL | `ManagementDashboard.tsx` (Hibák tab) | `deletingAll` |

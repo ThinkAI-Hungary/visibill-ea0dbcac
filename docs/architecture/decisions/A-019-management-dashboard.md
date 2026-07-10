@@ -161,13 +161,20 @@ Az Edge Function **mindig érvényes JSON-t ad vissza** — hiba esetén üres a
 
 ### Fájl Státusz Normalizáció (Files Panel)
 
-A 4 upload tábla (`invoice_uploads`, `transaction_uploads`, `bank_statement_uploads`, `report_uploads`) sokféle `processing_status` értéket tartalmaz. A management dashboard ezeket **3 kategóriába** normalizálja:
+A 4 upload tábla (`invoice_uploads`, `transaction_uploads`, `bank_statement_uploads`, `report_uploads`) sokféle `processing_status` értéket tartalmaz. A management dashboard ezeket **4 kategóriába** normalizálja:
 
-| Kategória | DB státuszok | Badge szín |
+| Kategória | DB státuszok / Feltétel | Badge szín |
 |-----------|-------------|------------|
 | **Feldolgozva** (success) | `done`, `completed`, `processed` | 🟢 zöld |
+| **Átirányítva** (redirected) | `redirected` (sikeresen fallback-redirectelt szülő sorok) | 🔵 kék/indigo |
 | **Hiba** (error) | `error`, `failed`, `ignored`, `dismissed`, `webhook_failed` | 🔴 piros |
 | **Folyamatban** (pending) | **minden más** (pl. `webhook_sent`, `processing`, `pending`, `null`) | 🟡 sárga |
+
+#### Fallback átirányítás és virtuális státusz
+Ha egy fájl feldolgozása során fallback-átirányítás történik (pl. számlából tranzakció lesz), és a létrejött gyermek sor sikeresen befejeződik:
+- A backend (`management-stats` Edge Function) a szülő sor státuszát virtuálisan `redirected` értékre írja át, és elrejti a hibaüzenetét.
+- A szülő sor így nem fog megjelenni a "Hibás feldolgozások" listában és nem számítódik bele a hibaszámokba.
+- Ha a gyermek feldolgozás is hibára fut, a szülő sor marad "Hiba" státuszban.
 
 #### Exklúziós logika
 
@@ -177,17 +184,19 @@ A pending számolás **nem explicit listával** történik, hanem exklúzióval.
 
 #### Error message elsőbbség
 
-> **Ha egy fájlnak van `error_message` mezője → automatikusan "Hiba" kategóriába kerül**, függetlenül a `processing_status` értékétől.
-
-Ez azért szükséges, mert bizonyos webhook hibáknál a `processing_status` `webhook_sent` marad, de az `error_message` már tartalmazza a hiba leírását (pl. `"Webhook failed: 404 Not Found"`).
+> **Ha egy fájlnak van `error_message` mezője, és nem sikeresen átirányított (`redirected`) → automatikusan "Hiba" kategóriába kerül**, függetlenül a `processing_status` értékétől.
 
 ```typescript
 // EF (management-stats/index.ts)
-const isError = (r) => ERROR_STATUSES.has(r.processing_status) || !!r.error_message;
-const isSuccess = (r) => !r.error_message && SUCCESS_STATUSES.has(r.processing_status);
+const isError = (r) => {
+  if (r.processing_status === "redirected") return false;
+  return ERROR_STATUSES.has(r.processing_status) || !!r.error_message;
+};
+const isSuccess = (r) => !r.error_message && (SUCCESS_STATUSES.has(r.processing_status) || r.processing_status === "redirected");
 
 // FE (ManagementDashboard.tsx)
 function normalizeStatus(status, errorMessage?) {
+  if (status === 'redirected') return 'redirected';
   if (errorMessage) return 'error';     // error_message wins
   if (!status) return 'pending';
   switch (status) { /* ... */ }

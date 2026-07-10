@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overview Dashboard Mockups - Visibill</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Outfit Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            border: 'rgba(255, 255, 255, 0.08)',
+            background: 'rgb(10, 10, 10)',
+            foreground: 'rgb(250, 250, 250)',
+            muted: {
+              DEFAULT: 'rgb(24, 24, 27)',
+              foreground: 'rgb(161, 161, 170)'
+            },
+            primary: {
+              DEFAULT: 'rgb(20, 184, 166)',
+              foreground: 'rgb(250, 250, 250)',
+            },
+            secondary: {
+              DEFAULT: 'rgb(39, 39, 42)',
+              foreground: 'rgb(244, 244, 245)',
+            },
+            warning: {
+              DEFAULT: 'rgb(245, 158, 11)',
+              foreground: 'rgb(251, 243, 219)',
+            },
+            destructive: {
+              DEFAULT: 'rgb(239, 68, 68)',
+              foreground: 'rgb(254, 242, 242)',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: rgb(10, 10, 10);
+      color: rgb(250, 250, 250);
+      font-family: 'Outfit', sans-serif;
+    }
+    .glass-card {
+      background: rgba(18, 18, 18, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+    }
+    .glass-card:hover {
+      border-color: rgba(20, 184, 166, 0.25);
+      box-shadow: 0 4px 30px rgba(20, 184, 166, 0.05);
+    }
+    .neon-glow {
+      text-shadow: 0 0 10px rgba(20, 184, 166, 0.3);
+    }
+  </style>
+</head>
+<body class="p-6 pb-24 overflow-x-hidden min-h-screen">
+
+  <!-- TOP MOCKUP SELECTOR CONTROLS -->
+  <div class="max-w-7xl mx-auto mb-10 p-4 rounded-xl border border-teal-500/20 bg-teal-950/10 backdrop-blur-md">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div>
+        <h1 class="text-lg font-bold text-teal-400 flex items-center gap-2">
+          <span>🎨</span> Overview Layout Rework Mockups
+        </h1>
+        <p class="text-xs text-zinc-400 mt-1">Hasonlítsd össze az 5 különböző felületi elrendezést. Mindegyik tartalmazza a Worker státuszt és az LLM költségeket.</p>
+      </div>
+      <div class="flex flex-wrap gap-1.5 bg-zinc-900/80 p-1 rounded-lg border border-zinc-800">
+        <button onclick="switchLayout(1)" id="btn-1" class="layout-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all bg-teal-500/10 text-teal-400 border border-teal-500/20">
+          1. Bento Grid
+        </button>
+        <button onclick="switchLayout(2)" id="btn-2" class="layout-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-zinc-400 hover:text-zinc-200 border border-transparent">
+          2. Kétoszlopos Split
+        </button>
+        <button onclick="switchLayout(3)" id="btn-3" class="layout-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-zinc-400 hover:text-zinc-200 border border-transparent">
+          3. Tabbed Modular
+        </button>
+        <button onclick="switchLayout(4)" id="btn-4" class="layout-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-zinc-400 hover:text-zinc-200 border border-transparent">
+          4. Command Center Flow
+        </button>
+        <button onclick="switchLayout(5)" id="btn-5" class="layout-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-zinc-400 hover:text-zinc-200 border border-transparent">
+          5. Minimalist Executive
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN HEADER PREVIEW -->
+  <div class="max-w-7xl mx-auto mb-6 flex items-center justify-between border-b border-zinc-900 pb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-400 border border-teal-500/20">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold">Management Dashboard</h2>
+        <p class="text-xs text-zinc-400">eaisybill platform áttekintés</p>
+      </div>
+    </div>
+    <div class="text-teal-400 font-extrabold tracking-wider text-sm select-none">E A I S Y B I L L</div>
+  </div>
+
+  <!-- INTERACTIVE MOCKUPS WRAPPER -->
+  <div class="max-w-7xl mx-auto">
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- CONCEPT 1: BENTO GRID DASHBOARD -->
+    <!-- ────────────────────────────────────────── -->
+    <div id="layout-1" class="layout-content space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Card 1 -->
+        <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+          <div>
+            <span class="text-xs text-zinc-400 block font-medium">Felhasználók</span>
+            <span class="text-3xl font-extrabold mt-1 block">69</span>
+          </div>
+          <div class="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-400 border border-teal-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A12.018 12.018 0 0112 21c-3.11 0-5.922-.84-8.303-2.316a8.81 8.81 0 01-.177-.384c-.496-.906-.78-1.948-.78-3.053 0-1.503.493-2.925 1.328-4.088a4.125 4.125 0 017.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 9.162a3 3 0 100-4.143 3 3 0 000 4.143zm-3-2.28h.008v.008H12V6.882z" /></svg>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+          <div>
+            <span class="text-xs text-zinc-400 block font-medium">Regisztrált cégek</span>
+            <span class="text-3xl font-extrabold mt-1 block">36</span>
+          </div>
+          <div class="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-400 border border-teal-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="glass-card p-4 rounded-xl flex items-center justify-between col-span-1 md:col-span-2">
+          <div>
+            <span class="text-xs text-zinc-400 block font-medium">Legdrágább cég</span>
+            <span class="text-base font-bold text-foreground mt-0.5 truncate max-w-[220px] block">Mauroni Events KFT.</span>
+            <span class="text-xs text-teal-400 font-semibold tabular-nums">Össz: $3.0726 • Havi: $3.0726</span>
+          </div>
+          <div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-2.25c-.621 0-1.125.504-1.125 1.125V18.75m9 0t-9 0M9 3.75h6m-6 0a3 3 0 013 3v7.5a3 3 0 01-3 3H9a3 3 0 01-3-3v-7.5a3 3 0 013-3z" /></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Layout Main Content -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        
+        <!-- Bento Col 1: Costs Summary & Period Analysis -->
+        <div class="glass-card p-5 rounded-xl flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold text-teal-400 uppercase tracking-wide">LLM Pénzügyi Áttekintés</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+            </div>
+            <h3 class="text-sm font-medium text-zinc-400">Összes havi költség</h3>
+            <span class="text-4xl font-black text-foreground block mt-2 tracking-tight">$7.1249</span>
+            <div class="mt-4 p-3 bg-zinc-900/60 rounded-lg border border-zinc-800/50 space-y-1.5 text-xs text-zinc-400">
+              <div class="flex justify-between">
+                <span>Input token:</span>
+                <span class="font-medium text-foreground">14,709.2k ($4.8211)</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Output token:</span>
+                <span class="font-medium text-foreground">906.6k ($2.3038)</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="pt-4 border-t border-zinc-900 space-y-2">
+            <span class="text-xs font-semibold text-zinc-400 block">Költség Megoszlás (Modellek)</span>
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded bg-teal-500"></span>DeepSeek Chat</span>
+                <span class="font-bold text-zinc-200">76%</span>
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded bg-amber-500"></span>GPT-4o Mini</span>
+                <span class="font-bold text-zinc-200">18%</span>
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded bg-purple-500"></span>Gemini Flash</span>
+                <span class="font-bold text-zinc-200">6%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bento Col 2: Worker Status + LLM Sparklines -->
+        <div class="space-y-4">
+          <!-- Live Worker Activity Card -->
+          <div class="glass-card p-5 rounded-xl">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-teal-400"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3V7.5a3 3 0 013-3h13.5a3 3 0 013 3v3.75a3 3 0 01-3 3zm-.75 3h15a.75.75 0 00.75-.75V15a.75.75 0 00-.75-.75H4.5A.75.75 0 003.75 15v1.5a.75.75 0 00.75.75z" /></svg>
+                <h4 class="text-sm font-semibold">Worker Status</h4>
+              </div>
+              <span class="text-xs text-emerald-400 font-bold flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
+                3 Konténer fut
+              </span>
+            </div>
+            
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="p-2.5 bg-zinc-900/60 rounded border border-zinc-800/40">
+                  <span class="text-[9px] text-zinc-500 block">Státusz</span>
+                  <span class="font-bold text-emerald-400 mt-0.5 block">Fut (Egészséges)</span>
+                </div>
+                <div class="p-2.5 bg-zinc-900/60 rounded border border-zinc-800/40">
+                  <span class="text-[9px] text-zinc-500 block">Aktív sor méret</span>
+                  <span class="font-bold text-teal-400 mt-0.5 block">4 elem</span>
+                </div>
+              </div>
+
+              <!-- CPU / RAM bars -->
+              <div class="space-y-2 pt-1">
+                <div>
+                  <div class="flex justify-between text-[10px] text-zinc-400 mb-1">
+                    <span>CPU Terheltség</span>
+                    <span class="font-mono text-zinc-200">24%</span>
+                  </div>
+                  <div class="w-full bg-zinc-900 h-1.5 rounded overflow-hidden">
+                    <div class="bg-teal-500 h-full w-[24%]"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-[10px] text-zinc-400 mb-1">
+                    <span>RAM Használat</span>
+                    <span class="font-mono text-zinc-200">1.2 GB / 4.0 GB</span>
+                  </div>
+                  <div class="w-full bg-zinc-900 h-1.5 rounded overflow-hidden">
+                    <div class="bg-teal-500 h-full w-[30%]"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Processing Errors (Moved here) -->
+              <div class="mt-4 pt-3 border-t border-zinc-900 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.3c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                    Feldolgozási hibák (24h)
+                  </span>
+                  <span class="px-1.5 py-0.5 bg-red-500/10 text-red-400 text-[9px] font-bold rounded">59 hiba</span>
+                </div>
+                <div class="p-2 bg-red-500/5 hover:bg-red-500/10 rounded border border-red-500/10 flex justify-between items-center transition-colors duration-150">
+                  <div>
+                    <span class="text-xs font-semibold text-zinc-200 block truncate max-w-[170px]">Nem beazonosítható számla</span>
+                    <span class="text-[9px] text-zinc-500">Invoice Pipeline • 10 perce</span>
+                  </div>
+                  <span class="text-[9px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded font-bold border border-red-500/20">Kritikus</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Spending Chart (Simulated) -->
+          <div class="glass-card p-5 rounded-xl">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-semibold">LLM Napi Költségek (7 nap)</span>
+              <div class="flex gap-1.5 text-[9px] bg-zinc-900 p-0.5 rounded border border-zinc-800">
+                <span class="px-1 py-0.5 bg-zinc-800 text-teal-400 rounded cursor-pointer">Napi</span>
+                <span class="px-1 py-0.5 text-zinc-400 hover:text-zinc-200 cursor-pointer">Heti</span>
+              </div>
+            </div>
+            <!-- Sparkline visualization -->
+            <div class="h-20 w-full flex items-end justify-between gap-1 pt-4">
+              <div class="w-full bg-zinc-900 hover:bg-teal-500/20 rounded h-10 relative group transition-all duration-200">
+                <div class="absolute bottom-0 left-0 right-0 bg-teal-500/20 hover:bg-teal-400/35 h-1/2 rounded-b"></div>
+              </div>
+              <div class="w-full bg-zinc-900 hover:bg-teal-500/20 rounded h-14 relative group transition-all duration-200">
+                <div class="absolute bottom-0 left-0 right-0 bg-teal-500/25 hover:bg-teal-400/35 h-2/3 rounded-b"></div>
+              </div>
+              <div class="w-full bg-zinc-900 hover:bg-teal-500/20 rounded h-18 relative group transition-all duration-200">
+                <div class="absolute bottom-0 left-0 right-0 bg-teal-500/30 hover:bg-teal-400/35 h-4/5 rounded-b"></div>
+              </div>
+              <div class="w-full bg-zinc-900 hover:bg-teal-500/20 rounded h-12 relative group transition-all duration-200">
+                <div class="absolute bottom-0 left-0 right-0 bg-teal-500/20 hover:bg-teal-400/35 h-3/5 rounded-b"></div>
+              </div>
+              <div class="w-full bg-zinc-900 hover:bg-teal-500/20 rounded h-6 relative group transition-all duration-200">
+                <div class="absolute bottom-0 left-0 right-0 bg-teal-500/15 hover:bg-teal-400/35 h-1/3 rounded-b"></div>
+              </div>
+              <div class="w-full bg-zinc-900 hover:bg-teal-500/20 rounded h-20 relative group transition-all duration-200 border border-teal-500/20">
+                <div class="absolute bottom-0 left-0 right-0 bg-teal-500/40 h-full rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bento Col 3: Tickets & Files -->
+        <div class="space-y-4">
+          <!-- Recent Tickets -->
+          <div class="glass-card p-4 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" /></svg>
+                Hibajegyek
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="p-3 bg-zinc-900/60 rounded border border-zinc-800/40 text-center">
+                <span class="text-[9px] text-zinc-500 block mb-1">Új (felelős nélkül)</span>
+                <span class="text-xl font-black text-teal-400">3</span>
+              </div>
+              <div class="p-3 bg-zinc-900/60 rounded border border-zinc-800/40 text-center">
+                <span class="text-[9px] text-zinc-500 block mb-1">Megoldott</span>
+                <span class="text-xl font-bold text-zinc-300">128</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Files -->
+          <div class="glass-card p-4 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                Utolsó fájlok
+              </span>
+              <span class="text-[10px] text-zinc-500">Frissítve</span>
+            </div>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex items-center justify-between p-2 bg-zinc-900/50 rounded hover:bg-zinc-900 transition-colors">
+                <span class="text-zinc-300 truncate max-w-[170px]">SMBD-2026-14.pdf</span>
+                <span class="text-[9px] text-emerald-400 font-semibold">Kész</span>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-zinc-900/50 rounded hover:bg-zinc-900 transition-colors">
+                <span class="text-zinc-300 truncate max-w-[170px]">IMG_6008.jpeg</span>
+                <span class="text-[9px] text-teal-400 font-semibold">Feldolgozás</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- CONCEPT 2: TWO-COLUMN SPLIT DASHBOARD -->
+    <!-- ────────────────────────────────────────── -->
+    <div id="layout-2" class="layout-content hidden space-y-6 animate-fadeIn">
+      <div class="flex flex-col lg:flex-row gap-6">
+        
+        <!-- Left Sidebar Column (40% width) -->
+        <div class="w-full lg:w-2/5 space-y-4">
+          <div class="glass-card p-5 rounded-xl space-y-4">
+            <h3 class="text-sm font-bold text-teal-400 border-b border-zinc-800 pb-2">Hálózati Alapadatok</h3>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between py-1 border-b border-zinc-900">
+                <span class="text-xs text-zinc-400">Platform felhasználók</span>
+                <span class="text-sm font-bold text-foreground">69</span>
+              </div>
+              <div class="flex items-center justify-between py-1 border-b border-zinc-900">
+                <span class="text-xs text-zinc-400">Regisztrált cégek száma</span>
+                <span class="text-sm font-bold text-foreground">36</span>
+              </div>
+              <div class="flex items-center justify-between py-1 border-b border-zinc-900">
+                <span class="text-xs text-zinc-400">Feldolgozási hibák száma</span>
+                <span class="text-sm font-bold text-destructive">59</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Highlight Card -->
+          <div class="glass-card p-5 rounded-xl bg-gradient-to-br from-teal-950/20 to-zinc-900 border border-teal-500/20">
+            <span class="text-[10px] uppercase font-bold text-teal-400 tracking-wider">Havi Fogyasztás</span>
+            <div class="mt-2 flex items-baseline gap-2">
+              <span class="text-3xl font-extrabold">$7.1249</span>
+              <span class="text-xs text-zinc-500">USD</span>
+            </div>
+            <div class="mt-3 text-xs text-zinc-400 leading-relaxed">
+              Az elmúlt 30 napban feldolgozott dokumentumok és NAV online szinkronizációk kumulált LLM erőforrás ára.
+            </div>
+          </div>
+
+          <!-- Premium Top customer card -->
+          <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+            <div>
+              <span class="text-[10px] text-amber-500 uppercase tracking-wider block font-bold">Kiemelt Ügyfél</span>
+              <span class="text-sm font-bold block truncate max-w-[200px] mt-1">Mauroni Events KFT.</span>
+            </div>
+            <span class="text-xs font-mono font-bold text-zinc-200 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800">$3.0726</span>
+          </div>
+        </div>
+
+        <!-- Right Main Column (60% width) -->
+        <div class="w-full lg:w-3/5 space-y-4">
+          
+          <!-- LLM Costs Summary Panel -->
+          <div class="glass-card p-5 rounded-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-teal-500 rounded-full"></div>
+                <h4 class="text-sm font-bold">LLM Költségek és Token analitika</h4>
+              </div>
+              <span class="text-[10px] bg-teal-500/10 text-teal-400 border border-teal-500/25 px-2 py-0.5 rounded">Valós idejű</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30">
+                <span class="text-[10px] text-zinc-500 block">Kimenő Tokenek (Output)</span>
+                <span class="text-lg font-bold block mt-1">906.6k token</span>
+                <span class="text-xs text-zinc-400 mt-1 block">Ár: $2.3038</span>
+              </div>
+              <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30">
+                <span class="text-[10px] text-zinc-500 block">Bemenő Tokenek (Input)</span>
+                <span class="text-lg font-bold block mt-1">14,709.2k token</span>
+                <span class="text-xs text-zinc-400 mt-1 block">Ár: $4.8211</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pipeline Worker Card -->
+          <div class="glass-card p-5 rounded-xl space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-bold flex items-center gap-2">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                Szolgáltatás Worker Pipeline-ok
+              </h4>
+              <span class="text-[10px] text-zinc-500">Frissítve: Éppen most</span>
+            </div>
+
+            <div class="space-y-2">
+              <div class="p-3 bg-zinc-900/30 hover:bg-zinc-900/60 rounded-lg border border-zinc-800/40 flex justify-between items-center transition-colors">
+                <div>
+                  <span class="text-xs font-semibold block text-zinc-200">Invoice Pipeline (Számlák)</span>
+                  <span class="text-[10px] text-zinc-400">Aktív feldolgozó listener</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-teal-400 block">Működik</span>
+                  <span class="text-[9px] text-zinc-500">1.2 mp átlag</span>
+                </div>
+              </div>
+              <div class="p-3 bg-zinc-900/30 hover:bg-zinc-900/60 rounded-lg border border-zinc-800/40 flex justify-between items-center transition-colors">
+                <div>
+                  <span class="text-xs font-semibold block text-zinc-200">NAV Sync Pipeline</span>
+                  <span class="text-[10px] text-zinc-400">API szinkronizáló queue</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-teal-400 block">Működik</span>
+                  <span class="text-[9px] text-zinc-500">4.5 mp átlag</span>
+                </div>
+              </div>
+              <div class="p-3 bg-zinc-900/30 hover:bg-zinc-900/60 rounded-lg border border-zinc-800/40 flex justify-between items-center transition-colors">
+                <div>
+                  <span class="text-xs font-semibold block text-zinc-200">Payroll Pipeline (Bérszámfejtés)</span>
+                  <span class="text-[10px] text-zinc-400">Adat kinyerési szerviz</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-teal-400 block">Működik</span>
+                  <span class="text-[9px] text-zinc-500">2.1 mp átlag</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- CONCEPT 3: TABBED MODULAR DASHBOARD -->
+    <!-- ────────────────────────────────────────── -->
+    <div id="layout-3" class="layout-content hidden space-y-6 animate-fadeIn">
+      <!-- Subtabs Navigation -->
+      <div class="flex border-b border-zinc-900 bg-zinc-900/20 p-1 rounded-lg w-fit gap-1">
+        <button onclick="switchTabbedLayout('tab-stats')" id="btn-tab-stats" class="subtab-btn px-4 py-2 rounded-md text-xs font-semibold transition-all bg-teal-500/10 text-teal-400 border border-teal-500/20">
+          Rendszer Statisztikák
+        </button>
+        <button onclick="switchTabbedLayout('tab-worker')" id="btn-tab-worker" class="subtab-btn px-4 py-2 rounded-md text-xs font-semibold transition-all text-zinc-400 hover:text-zinc-200 border border-transparent">
+          Worker Pipeline-ok
+        </button>
+        <button onclick="switchTabbedLayout('tab-costs')" id="btn-tab-costs" class="subtab-btn px-4 py-2 rounded-md text-xs font-semibold transition-all text-zinc-400 hover:text-zinc-200 border border-transparent">
+          LLM Költségelemzés
+        </button>
+      </div>
+
+      <!-- Tab Content 1: Stats -->
+      <div id="tab-stats" class="tab-pane space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="glass-card p-5 rounded-xl">
+            <span class="text-xs text-zinc-400 block">Menedzselt Felhasználó</span>
+            <span class="text-3xl font-extrabold mt-1 block">69</span>
+            <p class="text-xs text-teal-400 mt-2">Felhő alapú fiókadatok</p>
+          </div>
+          <div class="glass-card p-5 rounded-xl">
+            <span class="text-xs text-zinc-400 block">Ügyfél Cégek</span>
+            <span class="text-3xl font-extrabold mt-1 block">36</span>
+            <p class="text-xs text-teal-400 mt-2">Aktív előfizetői entitások</p>
+          </div>
+          <div class="glass-card p-5 rounded-xl border-red-500/20">
+            <span class="text-xs text-zinc-400 block">Feldolgozási hibák (24h)</span>
+            <span class="text-3xl font-extrabold text-red-400 mt-1 block">59</span>
+            <p class="text-xs text-red-500 mt-2">11 beavatkozást igényel</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Worker -->
+      <div id="tab-worker" class="tab-pane hidden space-y-4">
+        <div class="glass-card p-5 rounded-xl">
+          <h3 class="text-sm font-bold mb-4">Pipeline Sorok Terheltsége</h3>
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span>Számla feldolgozás (Invoice)</span>
+                <span class="font-bold text-teal-400">Alacsony terheltség (2 elem/perc)</span>
+              </div>
+              <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden border border-zinc-800">
+                <div class="bg-teal-500 h-full w-1/4 rounded"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span>NAV online lekérdezések</span>
+                <span class="font-bold text-teal-400">Normál terheltség (15 elem/perc)</span>
+              </div>
+              <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden border border-zinc-800">
+                <div class="bg-teal-500 h-full w-2/3 rounded"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span>Bér és Járulékok (Payroll)</span>
+                <span class="font-bold text-amber-500">Magas terheltség (45 elem/perc)</span>
+              </div>
+              <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden border border-zinc-800">
+                <div class="bg-amber-500 h-full w-11/12 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 3: Costs -->
+      <div id="tab-costs" class="tab-pane hidden space-y-4">
+        <div class="glass-card p-5 rounded-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+            <h3 class="text-sm font-bold text-teal-400">LLM Havi Költségmegoszlás</h3>
+            <span class="text-xl font-bold font-mono text-zinc-100">$7.1249</span>
+          </div>
+          <div class="grid grid-cols-2 gap-4 text-xs">
+            <div class="p-3 bg-zinc-900/60 rounded border border-zinc-800">
+              <span class="text-zinc-400">Input Token Ár:</span>
+              <p class="text-sm font-bold mt-1 text-foreground">$4.8211</p>
+            </div>
+            <div class="p-3 bg-zinc-900/60 rounded border border-zinc-800">
+              <span class="text-zinc-400">Output Token Ár:</span>
+              <p class="text-sm font-bold mt-1 text-foreground">$2.3038</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- CONCEPT 4: LINEAR COMMAND CENTER FLOW -->
+    <!-- ────────────────────────────────────────── -->
+    <div id="layout-4" class="layout-content hidden space-y-6 animate-fadeIn">
+      <div class="glass-card p-6 rounded-xl space-y-6">
+        <h3 class="text-sm font-bold text-teal-400 uppercase tracking-wider flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span> Command Center Pipeline Folyamat
+        </h3>
+        
+        <!-- Horizontal Timeline/Flow layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 items-center">
+          
+          <!-- Step 1: Input -->
+          <div class="p-4 bg-zinc-900/50 rounded-lg border border-zinc-800 text-center relative">
+            <span class="text-[10px] text-teal-400 font-bold block mb-1">1. BEKÜLDÉS / INPUT</span>
+            <span class="text-xl font-extrabold text-foreground block">36 Cég</span>
+            <span class="text-[10px] text-zinc-500 mt-1 block">Aktív adatforrás</span>
+          </div>
+
+          <!-- Flow arrow -->
+          <div class="hidden lg:flex justify-center text-teal-500/60">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+          </div>
+
+          <!-- Step 2: Processing (Worker) -->
+          <div class="p-4 bg-zinc-900/50 rounded-lg border border-zinc-800 text-center relative">
+            <span class="text-[10px] text-teal-400 font-bold block mb-1">2. WORKER PIPELINE</span>
+            <span class="text-xl font-extrabold text-foreground block">3 Aktív Sor</span>
+            <span class="text-[10px] text-emerald-400 mt-1 block">Rendszer: Stabil</span>
+          </div>
+
+          <!-- Flow arrow -->
+          <div class="hidden lg:flex justify-center text-teal-500/60">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+          </div>
+
+          <!-- Step 3: Cost Analysis -->
+          <div class="p-4 bg-zinc-900/50 rounded-lg border border-zinc-800 text-center relative">
+            <span class="text-[10px] text-teal-400 font-bold block mb-1">3. ERŐFORRÁS KÖLTSÉG</span>
+            <span class="text-xl font-extrabold text-foreground block">$7.1249</span>
+            <span class="text-[10px] text-zinc-400 mt-1 block">15.6M Token / Hó</span>
+          </div>
+
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-zinc-900">
+          <div class="p-4 bg-zinc-950 rounded-lg border border-zinc-900">
+            <span class="text-xs font-bold text-zinc-400 block mb-2">Utolsó műveletek</span>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between border-b border-zinc-900 pb-1">
+                <span class="text-zinc-500">Invoice Parser:</span>
+                <span class="text-zinc-300">Sikeres (0.8 mp)</span>
+              </div>
+              <div class="flex justify-between border-b border-zinc-900 pb-1">
+                <span class="text-zinc-500">NAV Online Szinkron:</span>
+                <span class="text-zinc-300">Sikeres (4.2 mp)</span>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 bg-zinc-950 rounded-lg border border-zinc-900 border-red-500/20 bg-red-950/5">
+            <span class="text-xs font-bold text-red-400 block mb-2">Kritikus hibák</span>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between border-b border-zinc-900 pb-1">
+                <span class="text-red-400">Nem beazonosítható cég:</span>
+                <span class="text-zinc-400">10:42 PM (11 hiba)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- CONCEPT 5: MINIMALIST EXECUTIVE REPORT -->
+    <!-- ────────────────────────────────────────── -->
+    <div id="layout-5" class="layout-content hidden space-y-6 animate-fadeIn">
+      <div class="max-w-4xl mx-auto bg-zinc-950 p-8 rounded-2xl border border-zinc-900 shadow-2xl space-y-6">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-teal-400">Havi Szerver Riport</span>
+          <h3 class="text-2xl font-light text-foreground mt-1">Összesített Költség & Pipeline Teljesítmény</h3>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 py-6 border-y border-zinc-900">
+          <div>
+            <span class="text-[10px] text-zinc-500 uppercase font-mono block">Kumulált ár</span>
+            <span class="text-2xl font-bold block mt-1 font-mono text-zinc-100">$7.1249</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-zinc-500 uppercase font-mono block">Aktív ügyfelek</span>
+            <span class="text-2xl font-bold block mt-1 font-mono text-zinc-100">36 Cég</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-zinc-500 uppercase font-mono block">Felhasználók</span>
+            <span class="text-2xl font-bold block mt-1 font-mono text-zinc-100">69 Fő</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-zinc-500 uppercase font-mono block">Hibaarány</span>
+            <span class="text-2xl font-bold text-red-500 block mt-1 font-mono">4.8%</span>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <span class="text-xs font-bold text-zinc-300 uppercase tracking-wider block">Worker státusz és terheltségi eloszlás</span>
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                <span>LLM Token Limit felvétel:</span>
+                <span>15.6M / 100M token</span>
+              </div>
+              <div class="w-full bg-zinc-900 h-1.5 rounded overflow-hidden">
+                <div class="bg-teal-500 h-full w-[15.6%]"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                <span>Worker CPU átlagterhelés:</span>
+                <span>32% CPU</span>
+              </div>
+              <div class="w-full bg-zinc-900 h-1.5 rounded overflow-hidden">
+                <div class="bg-teal-500 h-full w-[32%]"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function switchLayout(conceptNumber) {
+      // Hide all layout contents
+      document.querySelectorAll('.layout-content').forEach(el => el.classList.add('hidden'));
+      // Show selected
+      document.getElementById('layout-' + conceptNumber).classList.remove('hidden');
+      
+      // Update buttons styling
+      document.querySelectorAll('.layout-btn').forEach(btn => {
+        btn.classList.remove('bg-teal-500/10', 'text-teal-400', 'border-teal-500/20');
+        btn.classList.add('text-zinc-400', 'hover:text-zinc-200', 'border-transparent');
+      });
+      
+      const activeBtn = document.getElementById('btn-' + conceptNumber);
+      activeBtn.classList.remove('text-zinc-400', 'hover:text-zinc-200', 'border-transparent');
+      activeBtn.classList.add('bg-teal-500/10', 'text-teal-400', 'border-teal-500/20');
+    }
+
+    function switchTabbedLayout(tabId) {
+      // Hide all tabs panes
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      // Show selected
+      document.getElementById(tabId).classList.remove('hidden');
+
+      // Update subtab buttons styling
+      document.querySelectorAll('.subtab-btn').forEach(btn => {
+        btn.classList.remove('bg-teal-500/10', 'text-teal-400', 'border-teal-500/20');
+        btn.classList.add('text-zinc-400', 'hover:text-zinc-200', 'border-transparent');
+      });
+
+      const activeBtnId = 'btn-' + tabId;
+      const activeBtn = document.getElementById(activeBtnId);
+      activeBtn.classList.remove('text-zinc-400', 'hover:text-zinc-200', 'border-transparent');
+      activeBtn.classList.add('bg-teal-500/10', 'text-teal-400', 'border-teal-500/20');
+    }
+  </script>
+</body>
+</html>
