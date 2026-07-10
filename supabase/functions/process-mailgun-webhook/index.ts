@@ -471,8 +471,8 @@ serve(async (req) => {
           return { classification: 'report', bankHint: null, reportType: 'gls', reason: 'GLS filename pattern detected (no GLS sender)' };
         }
 
-        // No bank signal → treat as invoice (fallback will handle if needed)
-        return { classification: 'invoice', bankHint: null, reportType: null, reason: 'xlsx/csv without bank signal → invoice' };
+        // No bank signal -> default tabular files to transaction (invoices cannot be csv/xlsx)
+        return { classification: 'transaction', bankHint: null, reportType: null, reason: 'xlsx/csv without bank signal -> transaction default' };
       }
 
       // 3. Filename keywords (normalized — remove diacritics for matching)
