@@ -2077,9 +2077,16 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
 
   // Stats are computed from ALL rows (before status filter) so KPI cards always show global counts
 
-  // Helper: a row is an error if its status is in ERROR_STATUSES OR it has an error_message
-  const isError = (r: typeof mappedRows[0]) => ERROR_STATUSES.has(r.processing_status || "") || !!r.error_message;
-  const isSuccess = (r: typeof mappedRows[0]) => !r.error_message && SUCCESS_STATUSES.has(r.processing_status || "");
+  // Helper: check if the error message is actually a success message
+  const isCompletedMessage = (msg: string | null | undefined) => {
+    if (!msg) return true;
+    const lower = msg.toLowerCase();
+    return lower === "job completed" || lower.includes("job completed");
+  };
+
+  // Helper: a row is an error if its status is in ERROR_STATUSES OR it has an error_message (excluding success messages)
+  const isError = (r: typeof mappedRows[0]) => ERROR_STATUSES.has(r.processing_status || "") || (!!r.error_message && !isCompletedMessage(r.error_message));
+  const isSuccess = (r: typeof mappedRows[0]) => isCompletedMessage(r.error_message) && SUCCESS_STATUSES.has(r.processing_status || "");
 
   const stats = {
     totalCount: mappedRows.length,

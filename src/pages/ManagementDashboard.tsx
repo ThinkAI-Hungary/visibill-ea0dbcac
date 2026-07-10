@@ -5666,8 +5666,9 @@ type StatusCategory = 'success' | 'pending' | 'error' | 'redirected';
 
 function normalizeStatus(status: string | null, errorMessage?: string | null): StatusCategory {
   if (status === 'redirected') return 'redirected';
-  // If there's an error_message, it's an error regardless of processing_status
-  if (errorMessage) return 'error';
+  // If there's an error_message, it's an error regardless of processing_status (excluding success messages)
+  const isCompleted = errorMessage?.toLowerCase() === 'job completed' || errorMessage?.toLowerCase().includes('job completed');
+  if (errorMessage && !isCompleted) return 'error';
   if (!status) return 'pending';
   switch (status) {
     case 'done': case 'completed': case 'processed': return 'success';
