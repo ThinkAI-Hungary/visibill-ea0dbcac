@@ -2042,21 +2042,6 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
   const SUCCESS_STATUSES = new Set(["done", "completed", "processed"]);
   const ERROR_STATUSES = new Set(["error", "failed", "ignored", "dismissed", "webhook_failed"]);
 
-  // Create child maps to detect fallback redirections
-  const txChildMap = new Map<string, any>();
-  transactionRows.forEach((r: any) => {
-    if (r.fallback_from_invoice_upload_id) {
-      txChildMap.set(r.fallback_from_invoice_upload_id, r);
-    }
-  });
-
-  const invChildMap = new Map<string, any>();
-  invoiceRows.forEach((r: any) => {
-    if (r.fallback_from_transaction_upload_id) {
-      invChildMap.set(r.fallback_from_transaction_upload_id, r);
-    }
-  });
-
   // Resolve Names manually since FKs might be missing or broken for PostgREST joins
   const [companiesRes, profilesRes] = await Promise.all([
     admin.from("companies").select("id, name"),
@@ -2067,23 +2052,6 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
   const profileMap = new Map((profilesRes.data || []).map((p: any) => [p.user_id, p.name]));
 
   const mappedRows = allRows.map(row => {
-    let processing_status = row.processing_status;
-    let error_message = row.error_message;
-
-    if (row.source_table === "invoice") {
-      const child = txChildMap.get(row.id);
-      if (child && SUCCESS_STATUSES.has(child.processing_status || "")) {
-        processing_status = "redirected";
-        error_message = null; // Clear error so it is treated as a success
-      }
-    } else if (row.source_table === "transaction") {
-      const child = invChildMap.get(row.id);
-      if (child && SUCCESS_STATUSES.has(child.processing_status || "")) {
-        processing_status = "redirected";
-        error_message = null; // Clear error so it is treated as a success
-      }
-    }
-
     return {
       id: row.id,
       source_table: row.source_table,
@@ -2100,8 +2068,8 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
       file_type: row.file_type,
       file_url: row.file_url,
       upload_status: row.upload_status,
-      processing_status,
-      error_message,
+      processing_status: row.processing_status,
+      error_message: row.error_message,
       created_at: row.created_at,
       updated_at: row.updated_at,
     };
@@ -2109,10 +2077,9 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
 
   // Stats are computed from ALL rows (before status filter) so KPI cards always show global counts
 
-
   // Helper: a row is an error if its status is in ERROR_STATUSES OR it has an error_message
   const isError = (r: typeof mappedRows[0]) => ERROR_STATUSES.has(r.processing_status || "") || !!r.error_message;
-  const isSuccess = (r: typeof mappedRows[0]) => !r.error_message && (SUCCESS_STATUSES.has(r.processing_status || "") || r.processing_status === "redirected");
+  const isSuccess = (r: typeof mappedRows[0]) => !r.error_message && SUCCESS_STATUSES.has(r.processing_status || "");
 
   const stats = {
     totalCount: mappedRows.length,
@@ -2132,7 +2099,6 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
       const s = r.processing_status || "";
       // Explicit status match
       if (vals.includes(s)) return true;
-      if (s === "redirected" && vals.some(v => SUCCESS_STATUSES.has(v))) return true;
       // Error category: also match rows with error_message regardless of processing_status
       if (isError(r) && !isSuccess(r)) {
         // Check if any error-related value is requested
@@ -2381,37 +2347,7 @@ async function getActiveErrors(pc: any, periodSince?: string | null) {
   const invRows = invData || [];
   const txRows = txData || [];
 
-  const invIds = invRows.map((r: any) => r.id);
-  const txIds = txRows.map((r: any) => r.id);
-
-  const txSuccessIds = new Set<string>();
-  if (invIds.length > 0) {
-    const { data: txChildren } = await pc.client
-      .from("transaction_uploads")
-      .select("fallback_from_invoice_upload_id")
-      .in("fallback_from_invoice_upload_id", invIds)
-      .in("processing_status", ["done", "completed", "processed"]);
-    (txChildren || []).forEach((c: any) => {
-      if (c.fallback_from_invoice_upload_id) txSuccessIds.add(c.fallback_from_invoice_upload_id);
-    });
-  }
-
-  const invSuccessIds = new Set<string>();
-  if (txIds.length > 0) {
-    const { data: invChildren } = await pc.client
-      .from("invoice_uploads")
-      .select("fallback_from_transaction_upload_id")
-      .in("fallback_from_transaction_upload_id", txIds)
-      .in("processing_status", ["done", "completed", "processed"]);
-    (invChildren || []).forEach((c: any) => {
-      if (c.fallback_from_transaction_upload_id) invSuccessIds.add(c.fallback_from_transaction_upload_id);
-    });
-  }
-
-  const activeInv = invRows.filter((r: any) => !txSuccessIds.has(r.id));
-  const activeTx = txRows.filter((r: any) => !invSuccessIds.has(r.id));
-
-  return { activeInv, activeTx };
+  return { activeInv: invRows, activeTx: txRows };
 }
 
 
@@ -2735,32 +2671,6 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
       const uploadSourceMap = new Map<string, string>();
 
       if (uploadIds.length > 0) {
-        // Query fallback success statuses to check for redirected success
-        const txSuccessIds = new Set<string>();
-        const invSuccessIds = new Set<string>();
-
-        try {
-          const { data: txChildren } = await pc.client
-            .from("transaction_uploads")
-            .select("fallback_from_invoice_upload_id")
-            .in("fallback_from_invoice_upload_id", uploadIds)
-            .in("processing_status", ["done", "completed", "processed"]);
-          (txChildren || []).forEach((c: any) => {
-            if (c.fallback_from_invoice_upload_id) txSuccessIds.add(c.fallback_from_invoice_upload_id);
-          });
-        } catch (_) {}
-
-        try {
-          const { data: invChildren } = await pc.client
-            .from("invoice_uploads")
-            .select("fallback_from_transaction_upload_id")
-            .in("fallback_from_transaction_upload_id", uploadIds)
-            .in("processing_status", ["done", "completed", "processed"]);
-          (invChildren || []).forEach((c: any) => {
-            if (c.fallback_from_transaction_upload_id) invSuccessIds.add(c.fallback_from_transaction_upload_id);
-          });
-        } catch (_) {}
-
         // Query invoice_uploads
         try {
           const { data: invUploads } = await pc.client
@@ -2768,9 +2678,8 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
             .select("id, processing_status, error_message, file_url")
             .in("id", uploadIds);
           for (const u of (invUploads || [])) {
-            const hasSuccessFallback = txSuccessIds.has(u.id);
-            const hasError = !hasSuccessFallback && (u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message);
-            uploadStatusMap.set(u.id, hasError ? "ERROR" : (hasSuccessFallback ? "REDIRECTED" : "OK"));
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "invoice_uploads");
           }
@@ -2783,9 +2692,8 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
             .select("id, processing_status, error_message, file_url")
             .in("id", uploadIds);
           for (const u of (txUploads || [])) {
-            const hasSuccessFallback = invSuccessIds.has(u.id);
-            const hasError = !hasSuccessFallback && (u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message);
-            uploadStatusMap.set(u.id, hasError ? "ERROR" : (hasSuccessFallback ? "REDIRECTED" : "OK"));
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "transaction_uploads");
           }
