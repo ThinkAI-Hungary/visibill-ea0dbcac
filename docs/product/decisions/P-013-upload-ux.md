@@ -15,6 +15,14 @@
 - `UploadHistory` komponens: korábbi feltöltések státusza; **3 másodperces polling** (aktív amíg van folyamatban lévő feltöltés, vagy az utolsó feltöltés 90 másodpercnél frissebb)
 - `UploadedFilesModal` — feltöltött fájlok kezelése a tab-ra szűrve
 
+**Fájl előnézet (File Preview) — 2026-07-11:**
+- Az előzmények táblázatban az előnézet ikonra kattintva megnyitható a fájl részletes előnézete egy felugró modalban.
+- **Támogatott előnézeti formátumok:**
+  - **PDF:** Kényelmes, beágyazott `iframe`-en keresztül.
+  - **Képfájlok:** EXIF-helyreállított `img` elemként.
+  - **CSV (és TSV):** Egyedi `CsvPreviewComponent` letölti és táblázatosan ábrázolja a fájl első 100 sorát (a mezőelválasztókat automatikusan igazítva).
+  - **Excel (XLS, XLSX, XLSM):** Beágyazott Microsoft Office Live online dokumentumolvasó iframe segítségével jeleníti meg a táblázatot.
+
 **UploadHistory státusz badge leképezés (2026-07-04):**
 
 | `processing_status` | Badge label | Variant | Szín | Megjegyzés |
