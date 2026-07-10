@@ -499,8 +499,11 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
         <div className="mt-4 overflow-auto max-h-[calc(90vh-120px)]">
           {previewFile && (() => {
             const url = previewFile.url;
-            const isPDF = url.toLowerCase().endsWith('.pdf');
-            const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(url);
+            const ext = (previewFile.name.split('.').pop() || '').toLowerCase();
+            const isPDF = ext === 'pdf';
+            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext);
+            const isCsv = ['csv', 'tsv'].includes(ext);
+            const isExcel = ['xls', 'xlsx', 'xlsm'].includes(ext);
 
             if (previewError) {
               return (
@@ -517,7 +520,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
 
             return (
               <>
-                {previewLoading && (
+                {previewLoading && !isCsv && !isExcel && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                     <p>Betöltés...</p>
@@ -555,6 +558,22 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                       onError={() => { setPreviewError(true); setPreviewLoading(false); }}
                     />
                   </div>
+                ) : isCsv ? (
+                  <CsvPreviewComponent url={url} />
+                ) : isExcel ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-center">
+                      <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Megnyitás új ablakban
+                      </Button>
+                    </div>
+                    <iframe
+                      src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`}
+                      className="w-full h-[60vh] border rounded bg-background"
+                      title={previewFile.name}
+                    />
+                  </div>
                 ) : (
                   <div className="text-center py-12 space-y-4">
                     <FileText className="h-12 w-12 mx-auto text-muted-foreground" />
@@ -588,5 +607,70 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       </Suspense>
     )}
     </>
+  );
+}
+
+function CsvPreviewComponent({ url }: { url: string }) {
+  const [content, setContent] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch(url)
+      .then(res => res.text())
+      .then(text => {
+        setContent(text);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
+        setLoading(false);
+      });
+  }, [url]);
+
+  if (loading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-12">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-xs">Nem sikerült betölteni a CSV tartalmát.</p>
+      </div>
+    );
+  }
+
+  const lines = content.split('\n').filter(line => line.trim().length > 0).slice(0, 100);
+  const rows = lines.map(line => {
+    const delimiter = line.includes(';') ? ';' : ',';
+    return line.split(delimiter);
+  });
+
+  return (
+    <div className="w-full h-full overflow-auto p-4 bg-background">
+      <div className="border border-border/40 rounded-lg overflow-x-auto">
+        <table className="w-full text-[11px] font-mono border-collapse">
+          <tbody>
+            {rows.map((row, rIdx) => (
+              <tr key={rIdx} className={`border-b border-border/20 ${rIdx === 0 ? 'bg-muted/50 font-bold text-foreground' : 'hover:bg-muted/20 text-muted-foreground'}`}>
+                {row.map((cell, cIdx) => (
+                  <td key={cIdx} className="px-3 py-1.5 border-r border-border/25 whitespace-nowrap">
+                    {cell.replace(/^"|"$/g, '')}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {lines.length === 100 && (
+        <p className="text-[10px] text-muted-foreground mt-2 text-center">Csak az első 100 sor jelenik meg előnézetben.</p>
+      )}
+    </div>
   );
 }
