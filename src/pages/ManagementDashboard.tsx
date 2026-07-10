@@ -4439,6 +4439,8 @@ function WorkerPanel() {
         grouped[key].processing_duration_ms = Math.max(grouped[key].processing_duration_ms, j.processing_duration_ms || 0);
         if (j.status === 'ERROR') {
           grouped[key].status = 'ERROR';
+        } else if (j.status === 'REDIRECTED' && grouped[key].status !== 'ERROR') {
+          grouped[key].status = 'REDIRECTED';
         }
       }
     }
@@ -5434,6 +5436,8 @@ function WorkerPanel() {
                         <td className="text-center px-3 py-1.5">
                           {j.status === 'ERROR' ? (
                             <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] px-1.5 py-0 font-medium">ERROR</Badge>
+                          ) : j.status === 'REDIRECTED' ? (
+                            <Badge variant="outline" className="bg-info/10 text-info border-info/20 text-[10px] px-1.5 py-0 font-medium">REDIRECT</Badge>
                           ) : (
                             <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px] px-1.5 py-0 font-medium">OK</Badge>
                           )}

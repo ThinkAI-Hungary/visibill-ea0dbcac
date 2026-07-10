@@ -18560,7 +18560,7 @@
       "source_location": "L268",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usecreateemployee",
-      "community": 374,
+      "community": 445,
       "norm_label": "usecreateemployee()"
     },
     {
@@ -18590,7 +18590,7 @@
       "source_location": "L339",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usecreateemployment",
-      "community": 374,
+      "community": 445,
       "norm_label": "usecreateemployment()"
     },
     {
@@ -18760,7 +18760,7 @@
       "source_location": "L759",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usejobcodes",
-      "community": 374,
+      "community": 445,
       "norm_label": "usejobcodes()"
     },
     {
@@ -21730,7 +21730,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_validators_test",
-      "community": 374,
+      "community": 445,
       "norm_label": "validators.test.ts"
     },
     {
@@ -22600,7 +22600,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "payroll_validators",
-      "community": 374,
+      "community": 445,
       "norm_label": "validators.ts"
     },
     {
@@ -22610,7 +22610,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "payroll_validators_validatetajnumber",
-      "community": 374,
+      "community": 445,
       "norm_label": "validatetajnumber()"
     },
     {
@@ -22620,7 +22620,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "payroll_validators_formattajnumber",
-      "community": 374,
+      "community": 445,
       "norm_label": "formattajnumber()"
     },
     {
@@ -22630,7 +22630,7 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "payroll_validators_validatetaxid",
-      "community": 374,
+      "community": 445,
       "norm_label": "validatetaxid()"
     },
     {
@@ -22640,7 +22640,7 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "payroll_validators_validatebankaccount",
-      "community": 374,
+      "community": 445,
       "norm_label": "validatebankaccount()"
     },
     {
@@ -22650,7 +22650,7 @@
       "source_location": "L153",
       "_origin": "ast",
       "id": "payroll_validators_formatbankaccount",
-      "community": 374,
+      "community": 445,
       "norm_label": "formatbankaccount()"
     },
     {
@@ -22660,7 +22660,7 @@
       "source_location": "L168",
       "_origin": "ast",
       "id": "payroll_validators_converttoiban",
-      "community": 374,
+      "community": 445,
       "norm_label": "converttoiban()"
     },
     {
@@ -22670,7 +22670,7 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "payroll_validators_bigmod97",
-      "community": 374,
+      "community": 445,
       "norm_label": "bigmod97()"
     },
     {
@@ -22680,7 +22680,7 @@
       "source_location": "L196",
       "_origin": "ast",
       "id": "payroll_validators_validatefeorcode",
-      "community": 374,
+      "community": 445,
       "norm_label": "validatefeorcode()"
     },
     {
@@ -22690,7 +22690,7 @@
       "source_location": "L221",
       "_origin": "ast",
       "id": "payroll_validators_isskilled",
-      "community": 14,
+      "community": 445,
       "norm_label": "isskilled()"
     },
     {
@@ -22700,7 +22700,7 @@
       "source_location": "L228",
       "_origin": "ast",
       "id": "payroll_validators_minwagevalidation",
-      "community": 374,
+      "community": 445,
       "norm_label": "minwagevalidation"
     },
     {
@@ -22710,7 +22710,7 @@
       "source_location": "L240",
       "_origin": "ast",
       "id": "payroll_validators_validateminimumwage",
-      "community": 14,
+      "community": 445,
       "norm_label": "validateminimumwage()"
     },
     {
@@ -22730,7 +22730,7 @@
       "source_location": "L278",
       "_origin": "ast",
       "id": "payroll_validators_validatecompanytaxnumber",
-      "community": 374,
+      "community": 445,
       "norm_label": "validatecompanytaxnumber()"
     },
     {
@@ -24360,7 +24360,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_employeeimportpage",
-      "community": 374,
+      "community": 445,
       "norm_label": "employeeimportpage.tsx"
     },
     {
@@ -24370,7 +24370,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "accounty_employeeimportpage_importrow",
-      "community": 374,
+      "community": 445,
       "norm_label": "importrow"
     },
     {
@@ -24380,7 +24380,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "accounty_employeeimportpage_template_headers",
-      "community": 374,
+      "community": 445,
       "norm_label": "template_headers"
     },
     {
@@ -24390,7 +24390,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "accounty_employeeimportpage_sample_rows",
-      "community": 374,
+      "community": 445,
       "norm_label": "sample_rows"
     },
     {
@@ -24400,7 +24400,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "accounty_employeeimportpage_employeeimportpage",
-      "community": 374,
+      "community": 445,
       "norm_label": "employeeimportpage()"
     },
     {
@@ -24410,7 +24410,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_employeewizardpage",
-      "community": 374,
+      "community": 445,
       "norm_label": "employeewizardpage.tsx"
     },
     {
@@ -24420,7 +24420,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_steps",
-      "community": 374,
+      "community": 445,
       "norm_label": "steps"
     },
     {
@@ -24430,7 +24430,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_employment_types",
-      "community": 374,
+      "community": 445,
       "norm_label": "employment_types"
     },
     {
@@ -24440,7 +24440,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_formdata",
-      "community": 374,
+      "community": 445,
       "norm_label": "formdata"
     },
     {
@@ -24450,7 +24450,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_initial_form",
-      "community": 374,
+      "community": 445,
       "norm_label": "initial_form"
     },
     {
@@ -24460,7 +24460,7 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_employeewizardpage",
-      "community": 374,
+      "community": 445,
       "norm_label": "employeewizardpage()"
     },
     {
@@ -24470,7 +24470,7 @@
       "source_location": "L531",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_formfield",
-      "community": 374,
+      "community": 445,
       "norm_label": "formfield()"
     },
     {
@@ -24480,7 +24480,7 @@
       "source_location": "L555",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_reviewrow",
-      "community": 374,
+      "community": 445,
       "norm_label": "reviewrow()"
     },
     {
@@ -29450,7 +29450,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "employee_details_employeetabsections_employeeoverviewtab",
-      "community": 374,
+      "community": 445,
       "norm_label": "employeeoverviewtab()"
     },
     {
@@ -32237,7 +32237,7 @@
       "label": "FileRow",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5566",
+      "source_location": "L5570",
       "_origin": "ast",
       "id": "pages_managementdashboard_filerow",
       "community": 216,
@@ -32247,7 +32247,7 @@
       "label": "FilesData",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5586",
+      "source_location": "L5590",
       "_origin": "ast",
       "id": "pages_managementdashboard_filesdata",
       "community": 216,
@@ -32257,7 +32257,7 @@
       "label": "FileSortCol",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5597",
+      "source_location": "L5601",
       "_origin": "ast",
       "id": "pages_managementdashboard_filesortcol",
       "community": 216,
@@ -32267,7 +32267,7 @@
       "label": "formatFileSize()",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5599",
+      "source_location": "L5603",
       "_origin": "ast",
       "id": "pages_managementdashboard_formatfilesize",
       "community": 216,
@@ -32277,7 +32277,7 @@
       "label": "fileExtBadge()",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5606",
+      "source_location": "L5610",
       "_origin": "ast",
       "id": "pages_managementdashboard_fileextbadge",
       "community": 216,
@@ -32287,7 +32287,7 @@
       "label": "StatusCategory",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5619",
+      "source_location": "L5623",
       "_origin": "ast",
       "id": "pages_managementdashboard_statuscategory",
       "community": 216,
@@ -32297,7 +32297,7 @@
       "label": "normalizeStatus()",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5621",
+      "source_location": "L5625",
       "_origin": "ast",
       "id": "pages_managementdashboard_normalizestatus",
       "community": 216,
@@ -32307,7 +32307,7 @@
       "label": "STATUS_DISPLAY",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5633",
+      "source_location": "L5637",
       "_origin": "ast",
       "id": "pages_managementdashboard_status_display",
       "community": 216,
@@ -32317,7 +32317,7 @@
       "label": "STATUS_FILTER_VALUES",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5641",
+      "source_location": "L5645",
       "_origin": "ast",
       "id": "pages_managementdashboard_status_filter_values",
       "community": 216,
@@ -32327,7 +32327,7 @@
       "label": "processingStatusBadge()",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5647",
+      "source_location": "L5651",
       "_origin": "ast",
       "id": "pages_managementdashboard_processingstatusbadge",
       "community": 216,
@@ -32337,7 +32337,7 @@
       "label": "fileTypeBadge()",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5653",
+      "source_location": "L5657",
       "_origin": "ast",
       "id": "pages_managementdashboard_filetypebadge",
       "community": 216,
@@ -32347,7 +32347,7 @@
       "label": "FilesPanel()",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L5664",
+      "source_location": "L5668",
       "_origin": "ast",
       "id": "pages_managementdashboard_filespanel",
       "community": 216,
@@ -32357,7 +32357,7 @@
       "label": "UserPermissionsData",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L6700",
+      "source_location": "L6704",
       "_origin": "ast",
       "id": "pages_managementdashboard_userpermissionsdata",
       "community": 216,
@@ -32367,7 +32367,7 @@
       "label": "MODULE_LABELS",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L6722",
+      "source_location": "L6726",
       "_origin": "ast",
       "id": "pages_managementdashboard_module_labels",
       "community": 216,
@@ -32377,7 +32377,7 @@
       "label": "UsersControlPanelProps",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L6744",
+      "source_location": "L6748",
       "_origin": "ast",
       "id": "pages_managementdashboard_userscontrolpanelprops",
       "community": 216,
@@ -32387,7 +32387,7 @@
       "label": "UsersControlPanel()",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L6751",
+      "source_location": "L6755",
       "_origin": "ast",
       "id": "pages_managementdashboard_userscontrolpanel",
       "community": 216,
@@ -32397,7 +32397,7 @@
       "label": "PermissionsPanel()",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L6980",
+      "source_location": "L6984",
       "_origin": "ast",
       "id": "pages_managementdashboard_permissionspanel",
       "community": 216,
@@ -32407,7 +32407,7 @@
       "label": "PLATFORM_MODULE_GROUPS",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L7445",
+      "source_location": "L7449",
       "_origin": "ast",
       "id": "pages_managementdashboard_platform_module_groups",
       "community": 216,
@@ -32417,7 +32417,7 @@
       "label": "ModuleMatrix()",
       "file_type": "code",
       "source_file": "src/pages/ManagementDashboard.tsx",
-      "source_location": "L7500",
+      "source_location": "L7504",
       "_origin": "ast",
       "id": "pages_managementdashboard_modulematrix",
       "community": 216,
@@ -36307,7 +36307,7 @@
       "label": "buildLLMCosts()",
       "file_type": "code",
       "source_file": "supabase/functions/management-stats/index.ts",
-      "source_location": "L3025",
+      "source_location": "L3053",
       "_origin": "ast",
       "id": "management_stats_index_buildllmcosts",
       "community": 41,
@@ -191073,9 +191073,9 @@
       "source_file": "supabase/functions/management-stats/index.ts",
       "source_location": "L2364",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "management_stats_index",
-      "target": "management_stats_index_getactiveerrors",
-      "confidence_score": 1.0
+      "target": "management_stats_index_getactiveerrors"
     },
     {
       "relation": "contains",
@@ -204941,9 +204941,9 @@
       "source_file": "docs/architecture/decisions/A-019-management-dashboard.md",
       "source_location": "L173",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_019_management_dashboard_f\u00e1jl_st\u00e1tusz_normaliz\u00e1ci\u00f3_files_panel",
-      "target": "decisions_a_019_management_dashboard_fallback_\u00e1tir\u00e1ny\u00edt\u00e1s_\u00e9s_virtu\u00e1lis_st\u00e1tusz",
-      "confidence_score": 1.0
+      "target": "decisions_a_019_management_dashboard_fallback_\u00e1tir\u00e1ny\u00edt\u00e1s_\u00e9s_virtu\u00e1lis_st\u00e1tusz"
     },
     {
       "relation": "contains",
@@ -217457,5 +217457,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "426707574c33b666b371bfa912e00791a214442f"
+  "built_at_commit": "8a7c5a1f19ea4125cfff04e26d6203389787664c"
 }

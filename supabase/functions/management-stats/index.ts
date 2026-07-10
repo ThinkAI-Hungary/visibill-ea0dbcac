@@ -2735,6 +2735,32 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
       const uploadSourceMap = new Map<string, string>();
 
       if (uploadIds.length > 0) {
+        // Query fallback success statuses to check for redirected success
+        const txSuccessIds = new Set<string>();
+        const invSuccessIds = new Set<string>();
+
+        try {
+          const { data: txChildren } = await pc.client
+            .from("transaction_uploads")
+            .select("fallback_from_invoice_upload_id")
+            .in("fallback_from_invoice_upload_id", uploadIds)
+            .in("processing_status", ["done", "completed", "processed"]);
+          (txChildren || []).forEach((c: any) => {
+            if (c.fallback_from_invoice_upload_id) txSuccessIds.add(c.fallback_from_invoice_upload_id);
+          });
+        } catch (_) {}
+
+        try {
+          const { data: invChildren } = await pc.client
+            .from("invoice_uploads")
+            .select("fallback_from_transaction_upload_id")
+            .in("fallback_from_transaction_upload_id", uploadIds)
+            .in("processing_status", ["done", "completed", "processed"]);
+          (invChildren || []).forEach((c: any) => {
+            if (c.fallback_from_transaction_upload_id) invSuccessIds.add(c.fallback_from_transaction_upload_id);
+          });
+        } catch (_) {}
+
         // Query invoice_uploads
         try {
           const { data: invUploads } = await pc.client
@@ -2742,8 +2768,9 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
             .select("id, processing_status, error_message, file_url")
             .in("id", uploadIds);
           for (const u of (invUploads || [])) {
-            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
-            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            const hasSuccessFallback = txSuccessIds.has(u.id);
+            const hasError = !hasSuccessFallback && (u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message);
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : (hasSuccessFallback ? "REDIRECTED" : "OK"));
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "invoice_uploads");
           }
@@ -2756,8 +2783,9 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
             .select("id, processing_status, error_message, file_url")
             .in("id", uploadIds);
           for (const u of (txUploads || [])) {
-            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
-            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            const hasSuccessFallback = invSuccessIds.has(u.id);
+            const hasError = !hasSuccessFallback && (u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message);
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : (hasSuccessFallback ? "REDIRECTED" : "OK"));
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "transaction_uploads");
           }

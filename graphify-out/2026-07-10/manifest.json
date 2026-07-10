@@ -1505,8 +1505,8 @@
     "semantic_hash": ""
   },
   "src/pages/ManagementDashboard.tsx": {
-    "mtime": 1783684958.2203825,
-    "ast_hash": "5d94251201d43cc8fd8f12248eb91789",
+    "mtime": 1783687392.3498154,
+    "ast_hash": "4b65a0837036d9ea7c2d9d8e31f1e486",
     "semantic_hash": ""
   },
   "src/pages/ManualUpload.tsx": {
@@ -1700,8 +1700,8 @@
     "semantic_hash": "ff7983437ae5d07804815e4662ebd916"
   },
   "supabase/functions/management-stats/index.ts": {
-    "mtime": 1783684429.0178456,
-    "ast_hash": "daf840f17ccd82f0a8a4027fdb0ccbbc",
+    "mtime": 1783687450.4885623,
+    "ast_hash": "5e72707837681ba42b2f8753ca22262e",
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
@@ -3145,8 +3145,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
-    "mtime": 1783539554.7019458,
-    "ast_hash": "1e78b9c761b72f4af22a1e68219fdc8b",
+    "mtime": 1783687475.3544507,
+    "ast_hash": "fed7de912a39a35a17cf1d502243d097",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-020-auth-trigger-chain-incident.md": {
