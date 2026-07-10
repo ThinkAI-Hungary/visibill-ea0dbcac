@@ -10,7 +10,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — 49 deployed function + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — 50 deployed function + `_shared/` közös kód.
 
 **Közös kód:** `_shared/` mappa — CORS headers, Supabase client, utility-k.
 
@@ -78,7 +78,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `save-credentials` | ❌ | NAV API credentials titkosított mentése (AES-256-GCM → `save_nav_credentials` RPC) |
 | `delete-nav-credentials` | ✅ | NAV API credentials törlése |
 
-#### 📱 Accounty Modul (9 db)
+#### 📱 Accounty Modul (10 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
@@ -88,7 +88,8 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `accounty-generate-deadlines` | ❌ | Kötelezettségek határidő generálás (cron) |
 | `accounty-ai-phone` | ❌ | AI-alapú telefonos asszisztens (hívás fogadás) |
 | `accounty-ai-chat` | ❌ | AI chat asszisztens az eaisyBooks modulhoz |
-| `send-accounty-notification` | ❌ | eaisyBooks email értesítés — dual-mode: (A) könyvelő: `accounty_email_preferences` opt-in check, (B) ügyfél: `recipient_type='client_contact'` + kék template (`wrapClientHtml`). Resend API (`info@mail.visibill.hu`). Log: `outgoing_emails`. (A-030) |
+| `send-accounty-notification` | ❌ | eaisyBooks email értesítés — dual-mode: (A) könyvelő: `accounty_email_preferences` opt-in check, (B) ügyfél: `recipient_type='client_contact'` + kék template (`wrapClientHtml`). Aszinkron meghívja a `send-web-push`-t is. Resend API (`info@mail.visibill.hu`). Log: `outgoing_emails`. (A-030) |
+| `send-web-push` | ❌ | eaisyBooks Web Push értesítés kiküldése. Ellenőrzi az `accounty_push_preferences` táblát, lekéri az aktív eszközöket az `accounty_push_subscriptions` táblából, és VAPID kulcsokkal push-t küld. |
 | `validate-partner-code` | ❌ | Meghívó kód (share_token) read-only validáció — cég adatok visszaadása |
 | `join-company-as-accountant` | ❌ | Meghívó kód → `accounty_assignments` INSERT (könyvelő hozzárendelés) |
 

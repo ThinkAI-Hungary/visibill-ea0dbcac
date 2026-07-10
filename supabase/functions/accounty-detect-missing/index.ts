@@ -122,14 +122,18 @@ Deno.serve(async (req: Request) => {
       if (missing.length === 0) continue
 
       // 5. Check which ones we already have in accounty_missing_items (avoid duplicates)
-      const existingInvoiceNumbers = missing.map((m: any) => m.invoice_number)
-      const { data: existing } = await supabase
+      // FIX: Fetch all open items for this company instead of passing a massive array to .in()
+      const { data: existing, error: existingErr } = await supabase
         .from('accounty_missing_items')
         .select('invoice_number')
         .eq('company_id', companyId)
         .eq('source', 'nav_detektor')
         .in('status', ['open', 'notified'])
-        .in('invoice_number', existingInvoiceNumbers)
+
+      if (existingErr) {
+        console.error(`[accounty-detect-missing] Error fetching existing items for ${companyId}:`, existingErr)
+        continue // DO NOT proceed if we can't verify existing items (prevents duplicate spam)
+      }
 
       const existingSet = new Set((existing || []).map((e: any) => e.invoice_number))
 
@@ -337,21 +341,39 @@ Deno.serve(async (req: Request) => {
         const invoiceNumbers = items.map(i => i.invoice_number).filter(Boolean)
         if (invoiceNumbers.length === 0) continue
 
-        const { data: nowUploaded } = await supabase
-          .from('invoices')
-          .select('bizonylatsorszam')
-          .eq('company_id', compId)
-          .in('bizonylatsorszam', invoiceNumbers)
+        // FIX: Chunk the invoiceNumbers to avoid URI Too Long error
+        const chunkSize = 50
+        const nowUploadedSet = new Set()
+        
+        for (let i = 0; i < invoiceNumbers.length; i += chunkSize) {
+          const chunk = invoiceNumbers.slice(i, i + chunkSize)
+          
+          const { data: nowUploaded, error: uploadCheckErr } = await supabase
+            .from('invoices')
+            .select('bizonylatsorszam')
+            .eq('company_id', compId)
+            .in('bizonylatsorszam', chunk)
+            
+          if (uploadCheckErr) {
+            console.error(`[accounty-detect-missing] Error checking uploaded for ${compId} (chunk ${i}):`, uploadCheckErr)
+            continue
+          }
+          
+          if (nowUploaded) {
+            nowUploaded.forEach((u: any) => nowUploadedSet.add(u.bizonylatsorszam))
+          }
+        }
 
-        const nowUploadedSet = new Set((nowUploaded || []).map((u: any) => u.bizonylatsorszam))
         const toResolve = items.filter(i => nowUploadedSet.has(i.invoice_number))
 
         if (toResolve.length > 0) {
-          await supabase
-            .from('accounty_missing_items')
-            .update({ status: 'resolved', resolved_at: new Date().toISOString() })
-            .in('id', toResolve.map(i => i.id))
-
+          for (let i = 0; i < toResolve.length; i += chunkSize) {
+            const updateChunk = toResolve.slice(i, i + chunkSize)
+            await supabase
+              .from('accounty_missing_items')
+              .update({ status: 'resolved', resolved_at: new Date().toISOString() })
+              .in('id', updateChunk.map(i => i.id))
+          }
           totalResolved += toResolve.length
         }
       }

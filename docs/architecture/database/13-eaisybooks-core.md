@@ -2,7 +2,7 @@
 
 > Könyvelő-ügyfél hozzárendelések, adóprofil, határidők, hiányzó dokumentumok, portál tokenek, kommunikáció.
 
-**Táblák ebben a csoportban:** 14
+**Táblák ebben a csoportban:** 15
 
 ---
 
@@ -92,7 +92,7 @@
 
 > Az Accounty modul központi entitása: detektált hiányzó dokumentumok és tételek. Minden detektor (NAV, Bank, Bér) ide ír.
 
-**RLS:** ✅ | **Sorok:** ~20784
+**RLS:** ✅ | **Sorok:** ~5893
 
 | Oszlop | Típus | Null | Default |
 |--------|-------|------|---------|
@@ -394,5 +394,29 @@
 **Indexek:** `accounty_push_preferences_pkey`, `accounty_push_preferences_user_id_key` (UNIQUE)
 
 **Trigger:** `set_accounty_push_prefs_updated_at` → custom plpgsql function
+
+---
+
+### `accounty_push_subscriptions`
+
+> A böngészős Web Push értesítések feliratkozási adatait tárolja felhasználónként. Egy felhasználónak több eszköze (böngészője) is lehet.
+
+**RLS:** ✅ | **Sorok:** Dinamikus
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| user_id | uuid | — |  |
+| endpoint | text | — |  |
+| auth_key | text | — |  |
+| p256dh_key | text | — |  |
+| created_at | timestamptz | — | `now()` |
+| updated_at | timestamptz | — | `now()` |
+
+**FK:** `user_id` → `auth.users.id` ON DELETE CASCADE
+
+**Indexek:** `accounty_push_subscriptions_pkey`, `accounty_push_subscriptions_endpoint_key` (UNIQUE)
+
+**Trigger:** `set_accounty_push_subs_updated_at` → custom plpgsql function
 
 ---

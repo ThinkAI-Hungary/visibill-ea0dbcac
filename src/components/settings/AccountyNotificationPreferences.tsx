@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import { reportError } from '@/lib/errorReporter';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { urlBase64ToUint8Array, unsubscribeFromPush } from '@/hooks/usePushNotifications';
 import {
   Mail,
   Bell,
@@ -271,6 +272,12 @@ export function AccountyNotificationPreferences() {
         );
 
       if (error) throw error;
+      
+      // Ha globálisan kikapcsolja a push-t ezen a kliensen, leiratkozunk
+      if (key === 'enabled' && value === false) {
+        await unsubscribeFromPush(user.id);
+      }
+
       toast({ title: 'Beállítás frissítve' });
     } catch (err) {
       setPushPrefs(pushPrefs);
@@ -287,6 +294,7 @@ export function AccountyNotificationPreferences() {
   };
 
   const requestPushPermission = async () => {
+    if (!user) return;
     if (typeof Notification === 'undefined') {
       toast({ title: 'Push értesítések nem támogatottak', description: 'Ez a böngésző nem támogatja a push értesítéseket.', variant: 'destructive' });
       return;
@@ -294,8 +302,42 @@ export function AccountyNotificationPreferences() {
     const result = await Notification.requestPermission();
     setPushPermission(result as any);
     if (result === 'granted') {
-      await updatePush('enabled', true);
-      toast({ title: 'Push értesítések engedélyezve', description: 'Mostantól böngésző értesítéseket is kapsz.' });
+      try {
+        setSaving(true);
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          const publicVapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+          const registration = await navigator.serviceWorker.ready;
+          
+          let subscription = await registration.pushManager.getSubscription();
+          if (!subscription && publicVapidKey) {
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+            });
+          }
+          
+          if (subscription) {
+            const subJson = subscription.toJSON();
+            if (subJson.endpoint && subJson.keys?.auth && subJson.keys?.p256dh) {
+              await supabase
+                .from('accounty_push_subscriptions' as any)
+                .upsert({
+                  user_id: user.id,
+                  endpoint: subJson.endpoint,
+                  auth_key: subJson.keys.auth,
+                  p256dh_key: subJson.keys.p256dh,
+                }, { onConflict: 'endpoint' });
+            }
+          }
+        }
+        await updatePush('enabled', true);
+        toast({ title: 'Push értesítések engedélyezve', description: 'Mostantól böngésző értesítéseket is kapsz.' });
+      } catch (err) {
+        console.error('Hiba a feliratkozás során:', err);
+        toast({ title: 'Hiba történt', description: 'Nem sikerült feliratkozni az értesítésekre.', variant: 'destructive' });
+      } finally {
+        setSaving(false);
+      }
     } else if (result === 'denied') {
       toast({ title: 'Push értesítések tiltva', description: 'A böngésző beállításaiban engedélyezheted újra.', variant: 'destructive' });
     }

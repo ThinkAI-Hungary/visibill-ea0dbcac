@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -13,6 +14,19 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+    VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.js',
+      registerType: 'autoUpdate',
+      injectManifest: {
+        injectionPoint: undefined // We just want the SW for push, no precaching
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      }
+    }),
   ].filter(Boolean),
   resolve: {
     alias: {

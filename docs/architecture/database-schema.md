@@ -81,7 +81,7 @@ Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáj
 | `accounty_leaves` | 📘 eaisyBooks — Bérszámfejtés | 0 | Szabadság/távollét nyilvántartás foglalkoztatottanként. Támogatja a betegszab... |
 | `accounty_legal_updates` | 📘 eaisyBooks — Adó & Jogi | 17 |  |
 | `accounty_messages` | 📘 eaisyBooks — Alap | 3 |  |
-| `accounty_missing_items` | 📘 eaisyBooks — Alap | 20784 | Az Accounty modul központi entitása: detektált hiányzó dokumentumok és tétele... |
+| `accounty_missing_items` | 📘 eaisyBooks — Alap | 5893 | Az Accounty modul központi entitása: detektált hiányzó dokumentumok és tétele... |
 | `accounty_module_permissions` | 🔑 Jogosultságok & Hozzáférés | 2 | Modulonkénti testreszabható jogosultságok. Az iroda admin állítja be, hogy me... |
 | `accounty_nav_representations` | 📘 eaisyBooks — Adó & Jogi | 1 |  |
 | `accounty_office_settings` | 📘 eaisyBooks — Szervezet | 0 |  |

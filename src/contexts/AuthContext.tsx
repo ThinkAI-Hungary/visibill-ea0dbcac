@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { STORAGE_KEYS, SIGNOUT_DELETE_KEYS } from '@/lib/constants';
 import { useSessionGuard, type SessionGuardState } from '@/hooks/useSessionGuard';
 import { reportError } from '@/lib/errorReporter';
+import { usePushNotifications, unsubscribeFromPush } from '@/hooks/usePushNotifications';
 
 const ABSOLUTE_LIMIT_MS = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -55,6 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const queryClient = useQueryClient();
   const gateCheckedRef = useRef(false);
   const expiredRef = useRef(false);
+
+  // Auto-restore push subscription on login
+  usePushNotifications(user?.id);
 
   useEffect(() => {
     // ── PRE-FLIGHT: Absolute 4h gate ──
@@ -211,6 +215,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await new Promise((r) => setTimeout(r, 100));
 
     try {
+      // Unsubscribe from push BEFORE signing out in supabase
+      // so we still have a valid RLS session to delete the row
+      if (user?.id) {
+        await unsubscribeFromPush(user.id);
+      }
+
       // Use 'local' scope to avoid 403 when the server-side session is already
       // invalid/expired (global scope tries to revoke all sessions and fails).
       const { error } = await supabase.auth.signOut({ scope: 'local' });

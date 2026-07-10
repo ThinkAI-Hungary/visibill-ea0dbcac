@@ -145,6 +145,25 @@ Deno.serve(async (req: Request) => {
     }
 
     // ══════════════════════════════════════════════
+    // PUSH NOTIFICATION (Non-blocking invoke)
+    // ══════════════════════════════════════════════
+    if (user_id && type && title) {
+      // Create a plain text excerpt from HTML
+      const plainBody = (body_html || '').replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim().substring(0, 150);
+      const targetUrl = company_id ? `/accounty/client/${company_id}` : '/accounty/dashboard';
+      
+      supabase.functions.invoke('send-web-push', {
+        body: {
+          user_id,
+          type,
+          title,
+          body: plainBody,
+          url: targetUrl
+        }
+      }).catch(err => console.error('[accounty-notify] Failed to invoke send-web-push:', err))
+    }
+
+    // ══════════════════════════════════════════════
     // MODE B: Accountant — existing flow (user lookup + pref check)
     // ══════════════════════════════════════════════
     if (!user_id || !type || !title || !body_html) {
