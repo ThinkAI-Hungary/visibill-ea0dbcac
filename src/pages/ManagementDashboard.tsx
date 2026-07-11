@@ -1227,7 +1227,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
             {/* Date range */}
             <Input
               type="date"
-              value={dateFrom}
+              value={dateFrom.includes('T') ? dateFrom.split('T')[0] : dateFrom}
               onChange={e => { updateParams({ err_from: e.target.value, err_page: null }); }}
               className="h-8 text-xs bg-background w-36"
               id="errors-date-from"
@@ -1235,7 +1235,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
             <span className="text-xs text-muted-foreground">–</span>
             <Input
               type="date"
-              value={dateTo}
+              value={dateTo.includes('T') ? dateTo.split('T')[0] : dateTo}
               onChange={e => { updateParams({ err_to: e.target.value, err_page: null }); }}
               className="h-8 text-xs bg-background w-36"
               id="errors-date-to"
@@ -6334,7 +6334,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
             {/* Date range */}
             <Input
               type="date"
-              value={dateFrom}
+              value={dateFrom.includes('T') ? dateFrom.split('T')[0] : dateFrom}
               onChange={e => { updateParams({ file_from: e.target.value, file_page: null }); }}
               className="h-8 text-xs bg-background w-36"
               id="files-date-from"
@@ -6342,7 +6342,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
             <span className="text-xs text-muted-foreground">–</span>
             <Input
               type="date"
-              value={dateTo}
+              value={dateTo.includes('T') ? dateTo.split('T')[0] : dateTo}
               onChange={e => { updateParams({ file_to: e.target.value, file_page: null }); }}
               className="h-8 text-xs bg-background w-36"
               id="files-date-to"
