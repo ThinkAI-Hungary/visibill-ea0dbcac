@@ -1,0 +1,19 @@
+---
+source_file: "src/lib/evCalculations.ts"
+type: "code"
+community: "Accounty Generaterequestemail Updatemessagebody"
+location: "L236"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Accounty_Generaterequestemail_Updatemessagebody
+---
+
+# EmploymentStatus
+
+## Connections
+- [[EvComparePage.tsx]] - `imports` [EXTRACTED]
+- [[EvContributionsPage.tsx]] - `imports` [EXTRACTED]
+- [[evCalculations.ts]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Accounty_Generaterequestemail_Updatemessagebody

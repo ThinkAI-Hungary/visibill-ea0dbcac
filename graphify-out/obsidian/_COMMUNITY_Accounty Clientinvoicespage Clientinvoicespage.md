@@ -1,0 +1,216 @@
+---
+type: community
+cohesion: 0.15
+members: 100
+---
+
+# Accounty Clientinvoicespage Clientinvoicespage
+
+**Cohesion:** 0.15 - loosely connected
+**Members:** 100 nodes
+
+## Members
+- [[AddEmployeeDialog.tsx]] - code - src/components/working-time/AddEmployeeDialog.tsx
+- [[AddEmployeeDialogProps]] - code - src/components/working-time/AddEmployeeDialog.tsx
+- [[AddMode]] - code - src/components/working-time/AddEmployeeDialog.tsx
+- [[AnimatedNumber()_2]] - code - src/pages/Accounty/MissingInvoicesPage.tsx
+- [[COLORS_1]] - code - src/pages/Accounty/MissingInvoicesReportPage.tsx
+- [[CafeteriaSettingsTab()]] - code - src/pages/Accounty/settings/CafeteriaSettingsTab.tsx
+- [[CafeteriaSettingsTab.tsx]] - code - src/pages/Accounty/settings/CafeteriaSettingsTab.tsx
+- [[CafeteriaSettingsTabProps]] - code - src/pages/Accounty/settings/CafeteriaSettingsTab.tsx
+- [[Category_1]] - code - src/components/InvoiceFullEditDialog.tsx
+- [[ClientDetailsStep.tsx]] - code - src/pages/Accounty/new-client/ClientDetailsStep.tsx
+- [[ClientDetailsStepProps]] - code - src/pages/Accounty/new-client/ClientDetailsStep.tsx
+- [[ClientInvoicesPage]] - code - src/App.tsx
+- [[ClientInvoicesPage.tsx]] - code - src/pages/Accounty/ClientInvoicesPage.tsx
+- [[Company_1]] - code - src/contexts/CompanyContext.tsx
+- [[CompanyMemberProfile]] - code - src/components/working-time/AddEmployeeDialog.tsx
+- [[CompanySelector.tsx]] - code - src/components/CompanySelector.tsx
+- [[DropdownMenuContent]] - code - src/components/ui/dropdown-menu.tsx
+- [[DropdownMenuItem]] - code - src/components/ui/dropdown-menu.tsx
+- [[EditableLineItem]] - code - src/components/InvoiceFullEditDialog.tsx
+- [[EmployeeListHeader()]] - code - src/components/working-time/EmployeeListPanel.tsx
+- [[EmployeeListPanel.tsx]] - code - src/components/working-time/EmployeeListPanel.tsx
+- [[EmptyStateDashboard.tsx]] - code - src/components/dashboard/EmptyStateDashboard.tsx
+- [[EmptyStateDashboardProps]] - code - src/components/dashboard/EmptyStateDashboard.tsx
+- [[EntryMode]] - code - src/components/working-time/TimeEntryForm.tsx
+- [[FormRow]] - code - src/components/vat/VatCodeConfigTab.tsx
+- [[GeneralLedgerPage.tsx]] - code - src/pages/GeneralLedgerPage.tsx
+- [[HistoryProps]] - code - src/components/vat/ReturnHistoryTable.tsx
+- [[Input]] - code - src/components/ui/input.tsx
+- [[InviteMode]] - code - src/components/settings/InviteUserDialog.tsx
+- [[InviteUserDialog.tsx]] - code - src/components/settings/InviteUserDialog.tsx
+- [[InviteUserDialogProps]] - code - src/components/settings/InviteUserDialog.tsx
+- [[InvoiceFullEditDialog.tsx]] - code - src/components/InvoiceFullEditDialog.tsx
+- [[InvoiceFullEditDialogProps]] - code - src/components/InvoiceFullEditDialog.tsx
+- [[InvoiceLineItem]] - code - src/components/InvoiceFullEditDialog.tsx
+- [[JournalEntry]] - code - src/components/general-ledger/JournalView.tsx
+- [[JournalView.tsx]] - code - src/components/general-ledger/JournalView.tsx
+- [[JournalViewProps]] - code - src/components/general-ledger/JournalView.tsx
+- [[KpiModalType]] - code - src/pages/Accounty/MissingInvoicesPage.tsx
+- [[Label]] - code - src/components/ui/label.tsx
+- [[MLine_1]] - code - src/pages/VatReturnPage.tsx
+- [[MONTHS_9]] - code - src/pages/VatReturnPage.tsx
+- [[MONTH_NAMES_HU]] - code - src/pages/Accounty/MissingInvoicesReportPage.tsx
+- [[ManagePresetsModal()]] - code - src/components/general-ledger/ManagePresetsModal.tsx
+- [[MissingInvoicesPage]] - code - src/App.tsx
+- [[MissingInvoicesPage.tsx]] - code - src/pages/Accounty/MissingInvoicesPage.tsx
+- [[MissingInvoicesReportPage]] - code - src/App.tsx
+- [[MissingInvoicesReportPage.tsx]] - code - src/pages/Accounty/MissingInvoicesReportPage.tsx
+- [[NavChannelTab()]] - code - src/pages/Accounty/settings/NavChannelTab.tsx
+- [[NavChannelTab.tsx]] - code - src/pages/Accounty/settings/NavChannelTab.tsx
+- [[NavChannelTabProps]] - code - src/pages/Accounty/settings/NavChannelTab.tsx
+- [[NavCredentialsData]] - code - src/components/dashboard/EmptyStateDashboard.tsx
+- [[OnboardingCategory]] - code - src/components/dashboard/EmptyStateDashboard.tsx
+- [[OnboardingProject]] - code - src/components/dashboard/EmptyStateDashboard.tsx
+- [[PasswordStrength]] - code - src/components/settings/InviteUserDialog.tsx
+- [[Project_1]] - code - src/components/InvoiceFullEditDialog.tsx
+- [[ReportsPage]] - code - src/App.tsx
+- [[ReturnHistoryTable()]] - code - src/components/vat/ReturnHistoryTable.tsx
+- [[ReturnHistoryTable.tsx]] - code - src/components/vat/ReturnHistoryTable.tsx
+- [[ReturnLine_1]] - code - src/pages/VatReturnPage.tsx
+- [[SelectContent]] - code - src/components/ui/select.tsx
+- [[SelectItem]] - code - src/components/ui/select.tsx
+- [[SelectLabel]] - code - src/components/ui/select.tsx
+- [[SelectScrollDownButton]] - code - src/components/ui/select.tsx
+- [[SelectScrollUpButton]] - code - src/components/ui/select.tsx
+- [[SelectSeparator]] - code - src/components/ui/select.tsx
+- [[SelectTrigger]] - code - src/components/ui/select.tsx
+- [[StepIndicator()_1]] - code - src/components/dashboard/EmptyStateDashboard.tsx
+- [[SubmittedInvoice]] - code - src/components/InvoiceFullEditDialog.tsx
+- [[Switch]] - code - src/components/ui/switch.tsx
+- [[TYPE_LABELS]] - code - src/components/general-ledger/JournalView.tsx
+- [[TabsContent]] - code - src/components/ui/tabs.tsx
+- [[TabsList]] - code - src/components/ui/tabs.tsx
+- [[TabsTrigger]] - code - src/components/ui/tabs.tsx
+- [[TaoBusinessYearPage()]] - code - src/pages/Accounty/Tao/TaoBusinessYearPage.tsx
+- [[TaoBusinessYearPage.tsx]] - code - src/pages/Accounty/Tao/TaoBusinessYearPage.tsx
+- [[TaoCurrencyPage()]] - code - src/pages/Accounty/Tao/TaoCurrencyPage.tsx
+- [[TaoCurrencyPage.tsx]] - code - src/pages/Accounty/Tao/TaoCurrencyPage.tsx
+- [[TaoLifecyclePage()]] - code - src/pages/Accounty/Tao/TaoLifecyclePage.tsx
+- [[TaoLifecyclePage.tsx]] - code - src/pages/Accounty/Tao/TaoLifecyclePage.tsx
+- [[TimeEntryForm.tsx]] - code - src/components/working-time/TimeEntryForm.tsx
+- [[TimeEntryFormProps]] - code - src/components/working-time/TimeEntryForm.tsx
+- [[TransactionFilters]] - code - src/components/transactions/TransactionFilters.tsx
+- [[TransactionFilters_1]] - code - src/hooks/useTransactionData.ts
+- [[TransactionFilters.tsx]] - code - src/components/transactions/TransactionFilters.tsx
+- [[TransactionFiltersProps]] - code - src/components/transactions/TransactionFilters.tsx
+- [[UploadAuditXmlModal.tsx]] - code - src/components/general-ledger/UploadAuditXmlModal.tsx
+- [[UploadAuditXmlModalProps]] - code - src/components/general-ledger/UploadAuditXmlModal.tsx
+- [[VatCode]] - code - src/components/vat/VatCodeConfigTab.tsx
+- [[VatCodeConfigTab.tsx]] - code - src/components/vat/VatCodeConfigTab.tsx
+- [[VatCodeDialog()]] - code - src/components/vat/VatCodeConfigTab.tsx
+- [[VatReturnPage.tsx]] - code - src/pages/VatReturnPage.tsx
+- [[evaluatePassword()]] - code - src/components/settings/InviteUserDialog.tsx
+- [[fmtEft()]] - code - src/components/vat/ReturnHistoryTable.tsx
+- [[input.tsx]] - code - src/components/ui/input.tsx
+- [[label.tsx]] - code - src/components/ui/label.tsx
+- [[labelVariants]] - code - src/components/ui/label.tsx
+- [[select.tsx]] - code - src/components/ui/select.tsx
+- [[switch.tsx]] - code - src/components/ui/switch.tsx
+- [[tabs.tsx]] - code - src/components/ui/tabs.tsx
+- [[utils.ts]] - code - src/lib/utils.ts
+
+## Live Query (requires Dataview plugin)
+
+```dataview
+TABLE source_file, type FROM #community/Accounty_Clientinvoicespage_Clientinvoicespage
+SORT file.name ASC
+```
+
+## Connections to other communities
+- 214 edges to [[_COMMUNITY_Components Emailpreferences Emailpreferences]]
+- 139 edges to [[_COMMUNITY_Hooks Useaccountydata Useaccountyportalstats]]
+- 131 edges to [[_COMMUNITY_Hooks Useaccountydata Monthlytrendpoint]]
+- 88 edges to [[_COMMUNITY_Community 457]]
+- 57 edges to [[_COMMUNITY_Community 391]]
+- 57 edges to [[_COMMUNITY_Accounty Types Blockingitem]]
+- 50 edges to [[_COMMUNITY_Hooks Useaccountydata Useresolvemissingitem]]
+- 47 edges to [[_COMMUNITY_Community 171]]
+- 26 edges to [[_COMMUNITY_Community 478]]
+- 26 edges to [[_COMMUNITY_Hooks Useaccountydata Auditlogentry]]
+- 25 edges to [[_COMMUNITY_Accounty Generaterequestemail Updatemessagebody]]
+- 24 edges to [[_COMMUNITY_Hooks Usepayrolldata Batchpayrollinput]]
+- 24 edges to [[_COMMUNITY_Community 443]]
+- 23 edges to [[_COMMUNITY_Accounty Generaterequestemail Missingitemforemail]]
+- 18 edges to [[_COMMUNITY_Accounty Generaterequestemail Generatedemail]]
+- 16 edges to [[_COMMUNITY_Community 242]]
+- 16 edges to [[_COMMUNITY_Hooks Usedashboarddata Monthlydata]]
+- 14 edges to [[_COMMUNITY_Accounty Generaterequestemail Messagecategory]]
+- 11 edges to [[_COMMUNITY_Fixed Assets Depreciationcards Depreciationcards]]
+- 10 edges to [[_COMMUNITY_Community 364]]
+- 10 edges to [[_COMMUNITY_Hooks Useappready Redirecttarget]]
+- 10 edges to [[_COMMUNITY_Community 445]]
+- 10 edges to [[_COMMUNITY_Hooks Usepayrolldata Batchpayrollresult]]
+- 9 edges to [[_COMMUNITY_Eaisybill Prod Readme]]
+- 9 edges to [[_COMMUNITY_Community 407]]
+- 8 edges to [[_COMMUNITY_Email Processing Ecosystem]]
+- 8 edges to [[_COMMUNITY_Dashboard Useractivitydialog Useractivitydialog]]
+- 8 edges to [[_COMMUNITY_Community 415]]
+- 8 edges to [[_COMMUNITY_Hooks Useaccountydata Companyinvoice]]
+- 7 edges to [[_COMMUNITY_Components Producttour Producttour]]
+- 7 edges to [[_COMMUNITY_Hooks Useaccountydata Accountyaccountant]]
+- 7 edges to [[_COMMUNITY_Community 448]]
+- 7 edges to [[_COMMUNITY_Community 328]]
+- 7 edges to [[_COMMUNITY_Invoice Type Definitions]]
+- 6 edges to [[_COMMUNITY_Accounty Generaterequestemail Updatemessagestatus]]
+- 6 edges to [[_COMMUNITY_Community 439]]
+- 6 edges to [[_COMMUNITY_Community 343]]
+- 5 edges to [[_COMMUNITY_Community 351]]
+- 5 edges to [[_COMMUNITY_Hooks Use Mobile Useismobile]]
+- 5 edges to [[_COMMUNITY_Hooks Useidletimeout Useidletimeout]]
+- 5 edges to [[_COMMUNITY_Community 216]]
+- 4 edges to [[_COMMUNITY_Contexts Themecontext Usetheme]]
+- 4 edges to [[_COMMUNITY_Community 441]]
+- 4 edges to [[_COMMUNITY_Accounty Employeedetailspage Employeedetailspage]]
+- 4 edges to [[_COMMUNITY_Hooks Useaccountydata Useupsertcommunicationprefs]]
+- 4 edges to [[_COMMUNITY_Community 374]]
+- 3 edges to [[_COMMUNITY_Accounty Accountyrolecontext Useaccountyrole]]
+- 3 edges to [[_COMMUNITY_Hooks Usecompanysettings Usecompanysettings]]
+- 3 edges to [[_COMMUNITY_Community 339]]
+- 3 edges to [[_COMMUNITY_Accounty Generaterequestemail Generaterequestemail]]
+- 3 edges to [[_COMMUNITY_Components Feedbackfab Feedbackfab]]
+- 3 edges to [[_COMMUNITY_Community 421]]
+- 3 edges to [[_COMMUNITY_Community 327]]
+- 3 edges to [[_COMMUNITY_Hooks Useaccountydata Useupserttaxprofile]]
+- 3 edges to [[_COMMUNITY_Community 460]]
+- 3 edges to [[_COMMUNITY_Community 323]]
+- 3 edges to [[_COMMUNITY_Accounty Generaterequestemail Addtoapprovalqueue]]
+- 3 edges to [[_COMMUNITY_Accounty Types Blockingcategory]]
+- 3 edges to [[_COMMUNITY_Community 177]]
+- 2 edges to [[_COMMUNITY_Hooks Useaccountydata Accountykpis]]
+- 2 edges to [[_COMMUNITY_Community 431]]
+- 2 edges to [[_COMMUNITY_Community 462]]
+- 2 edges to [[_COMMUNITY_Hooks Usefixedassets Generateinventorynumber]]
+- 2 edges to [[_COMMUNITY_Accounty Generaterequestemail Saveapprovalqueue]]
+- 1 edge to [[_COMMUNITY_Hooks Useaccountydata Useaccountyreportdata]]
+- 1 edge to [[_COMMUNITY_Hooks Useleaverequests Leavestatus]]
+- 1 edge to [[_COMMUNITY_Contexts Companycontext Company]]
+- 1 edge to [[_COMMUNITY_Accounty Generaterequestemail Getapprovalqueue]]
+- 1 edge to [[_COMMUNITY_Hooks Useaccountydata Useupdatekanbanstatus]]
+- 1 edge to [[_COMMUNITY_Hooks Useaccountydata Accountyclient]]
+- 1 edge to [[_COMMUNITY_Hooks Useaccountydata Colleaguestat]]
+- 1 edge to [[_COMMUNITY_Hooks Useaccountydata Useaccountyauditlog]]
+- 1 edge to [[_COMMUNITY_Community 332]]
+- 1 edge to [[_COMMUNITY_Community 444]]
+- 1 edge to [[_COMMUNITY_Community 358]]
+- 1 edge to [[_COMMUNITY_General Ledger Uploadchartofaccountsmodal Uploadch]]
+- 1 edge to [[_COMMUNITY_Community 482]]
+- 1 edge to [[_COMMUNITY_Community 411]]
+- 1 edge to [[_COMMUNITY_Community 175]]
+- 1 edge to [[_COMMUNITY_Community 419]]
+- 1 edge to [[_COMMUNITY_Community 433]]
+- 1 edge to [[_COMMUNITY_Community 446]]
+- 1 edge to [[_COMMUNITY_Community 174]]
+- 1 edge to [[_COMMUNITY_Community 453]]
+- 1 edge to [[_COMMUNITY_Community 386]]
+- 1 edge to [[_COMMUNITY_Community 449]]
+- 1 edge to [[_COMMUNITY_Community 212]]
+- 1 edge to [[_COMMUNITY_Community 184]]
+
+## Top bridge nodes
+- [[utils.ts]] - degree 308, connects to 77 communities
+- [[input.tsx]] - degree 134, connects to 38 communities
+- [[Input]] - degree 132, connects to 38 communities
+- [[VatReturnPage.tsx]] - degree 79, connects to 15 communities
+- [[label.tsx]] - degree 62, connects to 15 communities

@@ -1505,8 +1505,8 @@
     "semantic_hash": ""
   },
   "src/pages/ManagementDashboard.tsx": {
-    "mtime": 1783726574.9096527,
-    "ast_hash": "40797fb848ca78dd77615a64fadb14dc",
+    "mtime": 1783771835.9066136,
+    "ast_hash": "b848e459e1b01c191c0fb28474e457c1",
     "semantic_hash": ""
   },
   "src/pages/ManualUpload.tsx": {
@@ -1700,8 +1700,8 @@
     "semantic_hash": "ff7983437ae5d07804815e4662ebd916"
   },
   "supabase/functions/management-stats/index.ts": {
-    "mtime": 1783725945.922164,
-    "ast_hash": "268f1524d3f3e298795545847da91e76",
+    "mtime": 1783775248.4627385,
+    "ast_hash": "c4fe322a7b3de4a3d9a3ffdf5a0d01c0",
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
@@ -3040,8 +3040,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/visibill-spec-lookup/SKILL.md": {
-    "mtime": 1783210835.1611533,
-    "ast_hash": "2045a110f514cfd23e6b8b02418e59ab",
+    "mtime": 1783772501.5743587,
+    "ast_hash": "13e8273d4f81897260dd980b1970a10b",
     "semantic_hash": ""
   },
   "supabase/migrations/20260609_fix_subscription_trigger_security_definer.sql": {
@@ -3120,8 +3120,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-014-react-query-cache.md": {
-    "mtime": 1781158226.5245454,
-    "ast_hash": "e591f1cbcaab632054b34d153b5f5926",
+    "mtime": 1783769853.2184162,
+    "ast_hash": "474735c65576c824a62aeacd7ac62eba",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-015-stripe-removal.md": {
@@ -3145,8 +3145,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
-    "mtime": 1783690409.1878505,
-    "ast_hash": "07af7034106b976989a837a7f2b6c938",
+    "mtime": 1783775521.9712546,
+    "ast_hash": "6fe1d79ae20060052ca4abdb2bc0f761",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-020-auth-trigger-chain-incident.md": {
@@ -6025,7 +6025,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1783704870.6626298,
+    "mtime": 1783769046.208652,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },

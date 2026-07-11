@@ -1,0 +1,19 @@
+---
+source_file: "src/lib/payroll/cafeteriaCalculator.ts"
+type: "code"
+community: "Community 373"
+location: "L20"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_373
+---
+
+# DEFAULT_2026_SZEP_LIMITS
+
+## Connections
+- [[cafeteriaCalculator.test.ts]] - `imports` [EXTRACTED]
+- [[cafeteriaCalculator.ts]] - `imports` [EXTRACTED]
+- [[index.ts_2]] - `re_exports` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_373

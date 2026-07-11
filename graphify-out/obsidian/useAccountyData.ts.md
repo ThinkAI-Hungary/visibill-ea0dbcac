@@ -1,0 +1,88 @@
+---
+source_file: "src/hooks/useAccountyData.ts"
+type: "code"
+community: "Community 171"
+location: "L1"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_171
+---
+
+# useAccountyData.ts
+
+## Connections
+- [[AccountyApp]] - `imports_from` [EXTRACTED]
+- [[AccountyApp.tsx]] - `imports_from` [EXTRACTED]
+- [[AccountyLayout.tsx]] - `imports_from` [EXTRACTED]
+- [[AiAnomalyReportPage.tsx]] - `imports_from` [EXTRACTED]
+- [[AlertsCenterPage.tsx]] - `imports_from` [EXTRACTED]
+- [[AuthContext.tsx]] - `imports_from` [EXTRACTED]
+- [[CegkapuSettingsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ClientDetailsPage]] - `imports_from` [EXTRACTED]
+- [[ClientDetailsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ClientInvoicesPage]] - `imports_from` [EXTRACTED]
+- [[ClientInvoicesPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ClientMissingInvoicesPage]] - `imports_from` [EXTRACTED]
+- [[ClientMissingInvoicesPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ClientMissingInvoicesReportPage]] - `imports_from` [EXTRACTED]
+- [[ClientMissingInvoicesReportPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ClientPortalPage]] - `imports_from` [EXTRACTED]
+- [[ClientPortalPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ClientReportsPage]] - `imports_from` [EXTRACTED]
+- [[ClientReportsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ClientTaoMainPage.tsx]] - `imports_from` [EXTRACTED]
+- [[CompanyPayrollSettingsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[CompanyStructurePage.tsx]] - `imports_from` [EXTRACTED]
+- [[CompanySwitcher.tsx]] - `imports_from` [EXTRACTED]
+- [[DataRetentionPage.tsx]] - `imports_from` [EXTRACTED]
+- [[DeclarationArchivePage.tsx]] - `imports_from` [EXTRACTED]
+- [[DeclarationsOverviewPage.tsx]] - `imports_from` [EXTRACTED]
+- [[DocumentCenterPage.tsx]] - `imports_from` [EXTRACTED]
+- [[EPayslipPortalPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ExitDocumentsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[Filing08EPage.tsx]] - `imports_from` [EXTRACTED]
+- [[Filing2608Page.tsx]] - `imports_from` [EXTRACTED]
+- [[FilingWorkflowPage.tsx]] - `imports_from` [EXTRACTED]
+- [[FilingsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[GdprPage.tsx]] - `imports_from` [EXTRACTED]
+- [[GenericFilingPage.tsx]] - `imports_from` [EXTRACTED]
+- [[JobModificationPage.tsx]] - `imports_from` [EXTRACTED]
+- [[KivaCalculatorPage.tsx]] - `imports_from` [EXTRACTED]
+- [[MissingInvoicesPage]] - `imports_from` [EXTRACTED]
+- [[MissingInvoicesPage.tsx]] - `imports_from` [EXTRACTED]
+- [[MissingInvoicesReportPage]] - `imports_from` [EXTRACTED]
+- [[MissingInvoicesReportPage.tsx]] - `imports_from` [EXTRACTED]
+- [[MultiJobPage.tsx]] - `imports_from` [EXTRACTED]
+- [[OfficeSettingsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[OutputDocumentsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[PayrollCyclePage]] - `imports_from` [EXTRACTED]
+- [[PayrollCyclePage.tsx]] - `imports_from` [EXTRACTED]
+- [[PayrollDashboardPage]] - `imports_from` [EXTRACTED]
+- [[PayrollDashboardPage.tsx]] - `imports_from` [EXTRACTED]
+- [[PayrollPortfolioPage.tsx]] - `imports_from` [EXTRACTED]
+- [[PayrollReportsPage]] - `imports_from` [EXTRACTED]
+- [[PayrollReportsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[PayslipGeneratorPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ReportsPage]] - `imports_from` [EXTRACTED]
+- [[ReportsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[RepresentationPage.tsx]] - `imports_from` [EXTRACTED]
+- [[SettingsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[TaoKivaComparePage.tsx]] - `imports_from` [EXTRACTED]
+- [[TaoMasterDataPage.tsx]] - `imports_from` [EXTRACTED]
+- [[TaoPortfolioPage.tsx]] - `imports_from` [EXTRACTED]
+- [[TaoTaxpayerTypesPage.tsx]] - `imports_from` [EXTRACTED]
+- [[TaoYearEndWizardPage.tsx]] - `imports_from` [EXTRACTED]
+- [[TaxCalendarPage]] - `imports_from` [EXTRACTED]
+- [[TaxCalendarPage.tsx]] - `imports_from` [EXTRACTED]
+- [[TransferListPage.tsx]] - `imports_from` [EXTRACTED]
+- [[YearEndDashboardPage.tsx]] - `imports_from` [EXTRACTED]
+- [[client.ts]] - `imports_from` [EXTRACTED]
+- [[dataModels.test.ts]] - `imports_from` [EXTRACTED]
+- [[index.ts]] - `re_exports` [EXTRACTED]
+- [[queryKeys]] - `imports` [EXTRACTED]
+- [[queryKeys.ts]] - `imports_from` [EXTRACTED]
+- [[supabase_1]] - `imports` [EXTRACTED]
+- [[useAuth()]] - `imports` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_171

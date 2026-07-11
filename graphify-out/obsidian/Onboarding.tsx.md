@@ -1,0 +1,86 @@
+---
+source_file: "src/pages/Onboarding.tsx"
+type: "code"
+community: "Community 457"
+location: "L1"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_457
+---
+
+# Onboarding.tsx
+
+## Connections
+- [[AlertDialogAction]] - `imports` [EXTRACTED]
+- [[AlertDialogCancel]] - `imports` [EXTRACTED]
+- [[AlertDialogContent]] - `imports` [EXTRACTED]
+- [[AlertDialogDescription]] - `imports` [EXTRACTED]
+- [[AlertDialogFooter()]] - `imports` [EXTRACTED]
+- [[AlertDialogHeader()]] - `imports` [EXTRACTED]
+- [[AlertDialogTitle]] - `imports` [EXTRACTED]
+- [[AuthContext.tsx]] - `imports_from` [EXTRACTED]
+- [[Badge()]] - `imports` [EXTRACTED]
+- [[Button]] - `imports` [EXTRACTED]
+- [[Card]] - `imports` [EXTRACTED]
+- [[CardContent]] - `imports` [EXTRACTED]
+- [[CardDescription]] - `imports` [EXTRACTED]
+- [[CardHeader]] - `imports` [EXTRACTED]
+- [[CardTitle]] - `imports` [EXTRACTED]
+- [[Category_5]] - `contains` [EXTRACTED]
+- [[CategoryAccordionItem()]] - `imports` [EXTRACTED]
+- [[CategoryAccordionItem.tsx]] - `imports_from` [EXTRACTED]
+- [[CategoryAmountSummary()]] - `imports` [EXTRACTED]
+- [[CategoryAmountSummary.tsx]] - `imports_from` [EXTRACTED]
+- [[CategoryCard()]] - `imports` [EXTRACTED]
+- [[CategoryCard.tsx]] - `imports_from` [EXTRACTED]
+- [[CategoryDonutChart()]] - `imports` [EXTRACTED]
+- [[CategoryDonutChart.tsx]] - `imports_from` [EXTRACTED]
+- [[CategoryInvoice]] - `imports` [EXTRACTED]
+- [[CategoryPageSkeleton()]] - `contains` [EXTRACTED]
+- [[CategoryStats]] - `contains` [EXTRACTED]
+- [[ColorPicker()]] - `imports` [EXTRACTED]
+- [[CompanyContext.tsx]] - `imports_from` [EXTRACTED]
+- [[ContentSkeleton()]] - `imports` [EXTRACTED]
+- [[DialogContent]] - `imports` [EXTRACTED]
+- [[DialogFooter()]] - `imports` [EXTRACTED]
+- [[DialogHeader()]] - `imports` [EXTRACTED]
+- [[DialogTitle]] - `imports` [EXTRACTED]
+- [[IconPicker()]] - `imports` [EXTRACTED]
+- [[IconPicker.tsx]] - `imports_from` [EXTRACTED]
+- [[Input]] - `imports` [EXTRACTED]
+- [[Label]] - `imports` [EXTRACTED]
+- [[Onboarding()]] - `contains` [EXTRACTED]
+- [[Table]] - `imports` [EXTRACTED]
+- [[TableBody]] - `imports` [EXTRACTED]
+- [[TableCell]] - `imports` [EXTRACTED]
+- [[TableHead]] - `imports` [EXTRACTED]
+- [[TableHeader]] - `imports` [EXTRACTED]
+- [[TableRow]] - `imports` [EXTRACTED]
+- [[UnsavedChangesDialog()]] - `imports` [EXTRACTED]
+- [[UnsavedChangesDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[alert-dialog.tsx]] - `imports_from` [EXTRACTED]
+- [[badge.tsx]] - `imports_from` [EXTRACTED]
+- [[button.tsx]] - `imports_from` [EXTRACTED]
+- [[card.tsx]] - `imports_from` [EXTRACTED]
+- [[client.ts]] - `imports_from` [EXTRACTED]
+- [[content-skeleton.tsx]] - `imports_from` [EXTRACTED]
+- [[dialog.tsx]] - `imports_from` [EXTRACTED]
+- [[errorReporter.ts]] - `imports_from` [EXTRACTED]
+- [[formatCurrencyTotals()]] - `imports` [EXTRACTED]
+- [[input.tsx]] - `imports_from` [EXTRACTED]
+- [[label.tsx]] - `imports_from` [EXTRACTED]
+- [[reportError()]] - `imports` [EXTRACTED]
+- [[resolveIcon()]] - `imports` [EXTRACTED]
+- [[supabase_1]] - `imports` [EXTRACTED]
+- [[table.tsx]] - `imports_from` [EXTRACTED]
+- [[use-toast.ts]] - `imports_from` [EXTRACTED]
+- [[useAuth()]] - `imports` [EXTRACTED]
+- [[useCompany()]] - `imports` [EXTRACTED]
+- [[useEaisybillPermissions()]] - `imports` [EXTRACTED]
+- [[useEaisybillPermissions.ts]] - `imports_from` [EXTRACTED]
+- [[useToast()]] - `imports` [EXTRACTED]
+- [[useUnsavedChanges()]] - `imports` [EXTRACTED]
+- [[useUnsavedChanges.ts]] - `imports_from` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_457

@@ -30,8 +30,8 @@
     "semantic_hash": "b6fd1b3049065ccb1081335d010ab75f"
   },
   "package.json": {
-    "mtime": 1783238393.628747,
-    "ast_hash": "3dc6e984f3730f90877a7f23788f7f57",
+    "mtime": 1783704240.8512464,
+    "ast_hash": "0480ae7b47f71323d89611bfbe4057ff",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -240,8 +240,8 @@
     "semantic_hash": "6a5760ad34aa992bdbe33ac5b59b419a"
   },
   "src/components/UploadHistory.tsx": {
-    "mtime": 1783202722.9349997,
-    "ast_hash": "9d0bfc2c20b8619b2db28103b633b4bb",
+    "mtime": 1783726969.366753,
+    "ast_hash": "eb3c6e5e1f4b9ab8339db6c1cce94439",
     "semantic_hash": ""
   },
   "src/components/accounty/SharedComponents.tsx": {
@@ -865,8 +865,8 @@
     "semantic_hash": "4654e802312f195f3e9e836f4ecab978"
   },
   "src/contexts/AuthContext.tsx": {
-    "mtime": 1783539256.2053163,
-    "ast_hash": "e57b66d4cf4f581b5b49f026d4a5dc38",
+    "mtime": 1783704240.8522482,
+    "ast_hash": "3fec331a2c1fefae7d2b052d74b4bb63",
     "semantic_hash": ""
   },
   "src/contexts/CompanyContext.tsx": {
@@ -1505,8 +1505,8 @@
     "semantic_hash": ""
   },
   "src/pages/ManagementDashboard.tsx": {
-    "mtime": 1783690389.6686037,
-    "ast_hash": "890c172c0353993e98520f322dcabaf0",
+    "mtime": 1783771037.8163493,
+    "ast_hash": "9bea5acad7f65b178e3485f0d30e9f1c",
     "semantic_hash": ""
   },
   "src/pages/ManualUpload.tsx": {
@@ -1640,8 +1640,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/accounty-detect-missing/index.ts": {
-    "mtime": 1783413875.6161668,
-    "ast_hash": "3002e6ec214677e394c40a2abb5ef573",
+    "mtime": 1783704240.8533287,
+    "ast_hash": "c0c4f411c6c2dc308af16fd29301d1d3",
     "semantic_hash": ""
   },
   "supabase/functions/accounty-generate-deadlines/index.ts": {
@@ -1700,8 +1700,8 @@
     "semantic_hash": "ff7983437ae5d07804815e4662ebd916"
   },
   "supabase/functions/management-stats/index.ts": {
-    "mtime": 1783687725.3174002,
-    "ast_hash": "58229a78d23b214c175781e8769fca93",
+    "mtime": 1783770304.7688806,
+    "ast_hash": "d884df1913468b0f48a9b443be2de3c0",
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
@@ -1745,8 +1745,8 @@
     "semantic_hash": "2ed9bed8400139c714d50da0c2ae1269"
   },
   "supabase/functions/process-mailgun-webhook/index.ts": {
-    "mtime": 1783537550.2380426,
-    "ast_hash": "7a466cf10441780163391f08596eb73a",
+    "mtime": 1783704240.8533287,
+    "ast_hash": "c3522e27c7e2ccb6b8a44f2d52081905",
     "semantic_hash": ""
   },
   "supabase/functions/query-nav-invoices/index.ts": {
@@ -2740,8 +2740,8 @@
     "semantic_hash": "ea3b5c2d9c1cc5d2b3fb3af706f2ca1a"
   },
   "vite.config.ts": {
-    "mtime": 1782466876.7269864,
-    "ast_hash": "c766c972c75db236e7a0fd29a8552888",
+    "mtime": 1783704240.855463,
+    "ast_hash": "4ac61a2c1f3a102803148f69742fce21",
     "semantic_hash": ""
   },
   "vsweb_cron_jobs.sql": {
@@ -3075,8 +3075,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1783478552.2881424,
-    "ast_hash": "8526b0404e6fcb95f21210a713179baa",
+    "mtime": 1783723826.4446757,
+    "ast_hash": "3af197d4bf08befd73598ef047ce57e1",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -3120,8 +3120,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-014-react-query-cache.md": {
-    "mtime": 1781158226.5245454,
-    "ast_hash": "e591f1cbcaab632054b34d153b5f5926",
+    "mtime": 1783769853.2184162,
+    "ast_hash": "474735c65576c824a62aeacd7ac62eba",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-015-stripe-removal.md": {
@@ -3145,8 +3145,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
-    "mtime": 1783690409.1878505,
-    "ast_hash": "07af7034106b976989a837a7f2b6c938",
+    "mtime": 1783771066.4147549,
+    "ast_hash": "e15892ac30943154ee773ece2053eb5d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-020-auth-trigger-chain-incident.md": {
@@ -3155,8 +3155,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1783606389.2631538,
-    "ast_hash": "58f3a7f973d16bbd6398c34bfe4f73b2",
+    "mtime": 1783726396.294868,
+    "ast_hash": "d8298df71147a89d15dbe5b4a5addbfc",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3510,8 +3510,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-013-upload-ux.md": {
-    "mtime": 1783203153.7778468,
-    "ast_hash": "783f814fdd04353f403e97d61667063f",
+    "mtime": 1783727052.5056176,
+    "ast_hash": "ac3862c8466283925537fba3b113f8bc",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-015-bulk-actions.md": {
@@ -3855,8 +3855,8 @@
     "semantic_hash": ""
   },
   "src/components/settings/AccountyNotificationPreferences.tsx": {
-    "mtime": 1783602354.4618316,
-    "ast_hash": "b0a5c6eb89580a92aebc01eca4d38dc0",
+    "mtime": 1783723826.44716,
+    "ast_hash": "c6d7ce639a8da76b81a028b94aad5468",
     "semantic_hash": ""
   },
   "src/components/settings/EaisybillPermissionPanel.tsx": {
@@ -5360,8 +5360,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database-schema.md": {
-    "mtime": 1782621606.9330492,
-    "ast_hash": "51f16a2a8b7fd2ae6edf064222902f11",
+    "mtime": 1783704240.8466496,
+    "ast_hash": "a6c87589c01a2c1f2c62c88be21d6f52",
     "semantic_hash": ""
   },
   "docs/architecture/database/01-auth-users.md": {
@@ -5425,8 +5425,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/13-eaisybooks-core.md": {
-    "mtime": 1783602354.4570735,
-    "ast_hash": "43a38fec7202eeaaaaa951f22560adfd",
+    "mtime": 1783723826.4446757,
+    "ast_hash": "95856859b9ca4a95ba368e76e4aff35f",
     "semantic_hash": ""
   },
   "docs/architecture/database/14-eaisybooks-payroll.md": {
@@ -5890,8 +5890,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/send-accounty-notification/index.ts": {
-    "mtime": 1783413875.6182623,
-    "ast_hash": "6c7e8e5ab006a1aee1ae5f7205ed8761",
+    "mtime": 1783704240.8543315,
+    "ast_hash": "3248a73d9dd9d37d61c64051dc651e32",
     "semantic_hash": ""
   },
   "supabase/functions/send-accounty-weekly-report/index.ts": {
@@ -5920,8 +5920,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260706_eaisybooks_cron_jobs.sql": {
-    "mtime": 1783413875.6203341,
-    "ast_hash": "e7ad6694858b87df4f81ca2a4cdba42c",
+    "mtime": 1783723826.4492147,
+    "ast_hash": "3f141375d5a58818aa7b599497ea9cb9",
     "semantic_hash": ""
   },
   "supabase/migrations/20260706_fx_gl_account_mapping.sql": {
@@ -6010,8 +6010,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-032-accounty-push-notifications.md": {
-    "mtime": 1783602354.4570735,
-    "ast_hash": "6e1246897b84cdc5d7b13c5e4fcb3a23",
+    "mtime": 1783704240.8480363,
+    "ast_hash": "65f61d2ae1c42d0428ad07685003a04c",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-033-exclude-service-role-from-audit.md": {
@@ -6022,6 +6022,61 @@
   "mockups.html": {
     "mtime": 1783610126.140864,
     "ast_hash": "7d898954034cdda19927055c1e85fb44",
+    "semantic_hash": ""
+  },
+  "dev-dist/registerSW.js": {
+    "mtime": 1783769046.208652,
+    "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
+    "semantic_hash": ""
+  },
+  "public/sw.js": {
+    "mtime": 1783704240.8512464,
+    "ast_hash": "0170c1cbc53d8c962298d7f04361df14",
+    "semantic_hash": ""
+  },
+  "src/hooks/usePushNotifications.ts": {
+    "mtime": 1783704240.8522482,
+    "ast_hash": "95cf416a2c9b55f53c6b6947e5a53fb2",
+    "semantic_hash": ""
+  },
+  "supabase/functions/send-accounty-digest/index.ts": {
+    "mtime": 1783723826.44716,
+    "ast_hash": "4335d4e7c0f95889931b18d14831128d",
+    "semantic_hash": ""
+  },
+  "supabase/functions/send-web-push/index.ts": {
+    "mtime": 1783704240.8543315,
+    "ast_hash": "ba9cbacf8a027ece3bf4d8861ed2f108",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260710182500_cleanup_missing_items.sql": {
+    "mtime": 1783704240.8543315,
+    "ast_hash": "c035203ca20786837b2ddfaae68ca1d2",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260710_add_accounty_push_subscriptions.sql": {
+    "mtime": 1783704240.855463,
+    "ast_hash": "154050ec780e3e10c5dc761d3eb7a422",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260710_add_digest_preferences.sql": {
+    "mtime": 1783723826.4492147,
+    "ast_hash": "b97a9598d48b8d6c9ce2e55f9211c426",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260710_fix_transactions_unique_constraint.sql": {
+    "mtime": 1783704240.855463,
+    "ast_hash": "8724813eeb99f9ad8db319a04a78484e",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-034-accounty-digest-emails.md": {
+    "mtime": 1783723826.4461489,
+    "ast_hash": "6bf7d17e0afac01971970488501303eb",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-035-three-way-fallback-redirection.md": {
+    "mtime": 1783768821.1556306,
+    "ast_hash": "2eb3120879ae34487a290249405b131b",
     "semantic_hash": ""
   }
 }

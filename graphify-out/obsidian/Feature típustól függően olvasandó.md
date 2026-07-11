@@ -1,0 +1,17 @@
+---
+source_file: ".agents/skills/visibill-feature-planner/SKILL.md"
+type: "document"
+community: "Components Livenotificationprovider Livenotificati"
+location: "L148"
+tags:
+  - graphify/document
+  - graphify/EXTRACTED
+  - community/Components_Livenotificationprovider_Livenotificati
+---
+
+# Feature típustól függően olvasandó:
+
+## Connections
+- [[1.4 KÖTELEZŐ Design Pattern Kontextus Betöltése]] - `contains` [EXTRACTED]
+
+#graphify/document #graphify/EXTRACTED #community/Components_Livenotificationprovider_Livenotificati

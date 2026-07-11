@@ -796,10 +796,7 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
     admin.from("profiles").select("id, user_id, name, role, created_at"),
     // ── Single RPC replaces 4 × select("id,company_id") — avoids the PostgREST 1000-row limit ──
     admin.rpc("get_company_counts"),
-    admin
-      .from("llm_koltsegek")
-      .select("company_id, input_tokens, output_tokens, total_tokens, estimated_cost_usd, llm_calls, created_at")
-      .gte("created_at", monthStart),
+    fetchMultiProjectMonthlyLlm(admin, monthStart),
     listAllAuthUsers(admin),
     // Fetch error references for company/user aggregation
     admin.from("invoice_uploads").select("company_id, user_id").eq("processing_status", "error"),
@@ -844,10 +841,10 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
   }
 
 
-  const monthlyCostsByCompany = new Map<string, { cost: number; input: number; output: number }>();
+  const monthlyCostsByCompany = new Map<string, { cost: number; input: number; output: number; name?: string; project?: string }>();
   for (const row of monthlyLlm) {
     if (!row.company_id) continue;
-    const current = monthlyCostsByCompany.get(row.company_id) || { cost: 0, input: 0, output: 0 };
+    const current = monthlyCostsByCompany.get(row.company_id) || { cost: 0, input: 0, output: 0, name: row.company_name_override, project: row.project };
     current.cost += Number(row.estimated_cost_usd || 0);
     current.input += Number(row.input_tokens || 0);
     current.output += Number(row.output_tokens || 0);
@@ -885,10 +882,32 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
   const totalMonthlyCostUsd = [...monthlyCostsByCompany.values()].reduce((sum, item) => sum + item.cost, 0);
   const totalMonthlyInputTokens = [...monthlyCostsByCompany.values()].reduce((sum, item) => sum + item.input, 0);
   const totalMonthlyOutputTokens = [...monthlyCostsByCompany.values()].reduce((sum, item) => sum + item.output, 0);
-  const mostExpensiveCompany = companySummaries.reduce<typeof companySummaries[number] | null>(
-    (winner, company) => (!winner || company.monthlyCostUsd > winner.monthlyCostUsd ? company : winner),
-    null,
-  );
+  let mostExpensiveCompany = null;
+  let maxCompanyCost = 0;
+  
+  for (const c of companySummaries) {
+    if (c.monthlyCostUsd > maxCompanyCost) {
+      maxCompanyCost = c.monthlyCostUsd;
+      mostExpensiveCompany = {
+        id: c.id,
+        name: c.name,
+        totalCostUsd: c.monthlyCostUsd,
+        monthlyCostUsd: c.monthlyCostUsd,
+      };
+    }
+  }
+
+  for (const [companyId, val] of monthlyCostsByCompany.entries()) {
+    if (val.project !== "PROD" && val.cost > maxCompanyCost) {
+      maxCompanyCost = val.cost;
+      mostExpensiveCompany = {
+        id: companyId,
+        name: val.name || "N/A",
+        totalCostUsd: val.cost,
+        monthlyCostUsd: val.cost,
+      };
+    }
+  }
 
   const invoiceErrors = errInvoicesRes.data || [];
   const txErrors = errTxRes.data || [];
@@ -1216,6 +1235,7 @@ function appLogSubSource(errorType: string): string {
 type ErrorRow = {
   id: string;
   created_at: string;
+  error_timestamp: string;
   source: string;
   source_label: string;
   error_category: string;
@@ -1249,22 +1269,22 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
     admin.from("profiles").select("user_id, name"),
     // 6 upload error source queries — include file_url where available
     admin.from("invoice_uploads")
-      .select("id, created_at, error_message, file_name, file_url, company_id, user_id, metadata")
+      .select("id, created_at, updated_at, error_message, file_name, file_url, company_id, user_id, metadata")
       .eq("processing_status", "error"),
     admin.from("transaction_uploads")
-      .select("id, created_at, error_message, file_name, file_url, company_id, user_id, metadata")
+      .select("id, created_at, updated_at, error_message, file_name, file_url, company_id, user_id, metadata")
       .eq("processing_status", "error"),
     admin.from("report_uploads")
-      .select("id, created_at, error_message, file_name, file_url, company_id, user_id")
+      .select("id, created_at, updated_at, error_message, file_name, file_url, company_id, user_id")
       .eq("processing_status", "error"),
     admin.from("gl_upload_notifications")
-      .select("id, created_at, error_message, company_id")
+      .select("id, created_at, processed_at, error_message, company_id")
       .eq("processing_status", "error"),
     admin.from("nav_sync_logs")
-      .select("id, created_at, error_message, company_id")
+      .select("id, started_at, completed_at, error_message, company_id")
       .eq("status", "error"),
     admin.from("bank_statement_uploads")
-      .select("id, created_at, error_message, file_name, file_url, company_id, user_id, metadata")
+      .select("id, created_at, updated_at, error_message, file_name, file_url, company_id, user_id, metadata")
       .eq("processing_status", "error"),
     // 7th source: frontend app error logs
     admin.from("app_error_logs")
@@ -1309,9 +1329,20 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
       const effectiveSource = isMailgunComponent
         ? 'app_error_logs:mailgun'
         : isAppLog ? appLogSubSource(row.error_type || "") : source;
+
+      let errorTimestamp = row.created_at;
+      if (source === "nav_sync_logs") {
+        errorTimestamp = row.completed_at || row.started_at;
+      } else if (source === "gl_upload_notifications") {
+        errorTimestamp = row.processed_at || row.created_at;
+      } else if (!isAppLog) {
+        errorTimestamp = row.updated_at || row.created_at;
+      }
+
       allErrors.push({
         id: row.id,
-        created_at: row.created_at,
+        created_at: source === "nav_sync_logs" ? row.started_at : row.created_at,
+        error_timestamp: errorTimestamp,
         source: effectiveSource,
         source_label: SOURCE_LABELS[effectiveSource] || SOURCE_LABELS[source] || source,
         error_category: cat,
@@ -1335,7 +1366,7 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
   // KPI: compute before filtering
   const totalErrors = allErrors.length;
   const now = Date.now();
-  const last24hErrors = allErrors.filter(e => now - new Date(e.created_at).getTime() < 86400_000).length;
+  const last24hErrors = allErrors.filter(e => now - new Date(e.error_timestamp).getTime() < 86400_000).length;
 
   // Most affected company
   const companyErrorCounts = new Map<string, { id: string; name: string; count: number }>();
@@ -1393,12 +1424,16 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
   // filterCategory a 3 fő csoport egyike: 'Application' | 'Mailgun' | 'Worker'
   if (filterCategory) allErrors = allErrors.filter(e => e.error_category_label === filterCategory);
   if (dateFrom) {
-    const d = new Date(`${dateFrom}T00:00:00.000Z`).getTime();
-    allErrors = allErrors.filter(e => new Date(e.created_at).getTime() >= d);
+    const d = dateFrom.includes('T') ? new Date(dateFrom).getTime() : new Date(`${dateFrom}T00:00:00.000Z`).getTime();
+    if (!isNaN(d)) {
+      allErrors = allErrors.filter(e => new Date(e.error_timestamp).getTime() >= d);
+    }
   }
   if (dateTo) {
-    const d = new Date(`${dateTo}T23:59:59.999Z`).getTime();
-    allErrors = allErrors.filter(e => new Date(e.created_at).getTime() <= d);
+    const d = dateTo.includes('T') ? new Date(dateTo).getTime() : new Date(`${dateTo}T23:59:59.999Z`).getTime();
+    if (!isNaN(d)) {
+      allErrors = allErrors.filter(e => new Date(e.error_timestamp).getTime() <= d);
+    }
   }
   if (search) {
     allErrors = allErrors.filter(e =>
@@ -1415,7 +1450,7 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
   const dir = sortDir === "asc" ? 1 : -1;
   allErrors.sort((a, b) => {
     if (key === "created_at") {
-      return (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) * dir;
+      return (new Date(a.error_timestamp).getTime() - new Date(b.error_timestamp).getTime()) * dir;
     }
     return ((a as any)[key] || "").localeCompare((b as any)[key] || "") * dir;
   });
@@ -3142,4 +3177,55 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
     by_model,
     period,
   };
+}
+
+async function fetchMultiProjectMonthlyLlm(admin: ReturnType<typeof createClient>, monthStart: string) {
+  interface PC { name: string; client: ReturnType<typeof createClient> }
+  const projectClients: PC[] = [{ name: "PROD", client: admin }];
+  const vswebUrl = Deno.env.get("VSWEB_SUPABASE_URL");
+  const vswebKey = Deno.env.get("VSWEB_SERVICE_ROLE_KEY");
+  if (vswebUrl && vswebKey) {
+    try { projectClients.push({ name: "VSWEB", client: createClient(vswebUrl, vswebKey) }); } catch {}
+  }
+  const thinkUrl = Deno.env.get("THINKERMAN_SUPABASE_URL");
+  const thinkKey = Deno.env.get("THINKERMAN_SERVICE_ROLE_KEY");
+  if (thinkUrl && thinkKey) {
+    try { projectClients.push({ name: "THINKERMAN", client: createClient(thinkUrl, thinkKey) }); } catch {}
+  }
+
+  const fetches = projectClients.map(async (pc) => {
+    try {
+      const { data, error } = await pc.client
+        .from("llm_koltsegek")
+        .select("company_id, input_tokens, output_tokens, total_tokens, estimated_cost_usd, llm_calls, created_at")
+        .gte("created_at", monthStart);
+      if (error) throw error;
+
+      let companyMap = new Map<string, string>();
+      if (pc.name !== "PROD" && data && data.length > 0) {
+        const cIds = [...new Set(data.map((r: any) => r.company_id).filter(Boolean))];
+        if (cIds.length > 0) {
+          const { data: companies } = await pc.client
+            .from("companies")
+            .select("id, name")
+            .in("id", cIds);
+          for (const c of (companies || [])) {
+            companyMap.set(c.id, c.name);
+          }
+        }
+      }
+
+      return (data || []).map((row: any) => ({
+        ...row,
+        project: pc.name,
+        company_name_override: pc.name !== "PROD" ? companyMap.get(row.company_id) : undefined,
+      }));
+    } catch (e) {
+      console.warn(`[overview-llm] fetch failed for ${pc.name}:`, e);
+      return [];
+    }
+  });
+
+  const results = await Promise.all(fetches);
+  return { data: results.flat(), error: null };
 }

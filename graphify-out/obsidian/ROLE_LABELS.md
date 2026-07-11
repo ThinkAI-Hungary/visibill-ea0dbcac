@@ -1,0 +1,17 @@
+---
+source_file: "src/components/settings/EaisybillPermissionPanel.tsx"
+type: "code"
+community: "Hooks Useaccountydata Useaccountyportalstats"
+location: "L34"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Hooks_Useaccountydata_Useaccountyportalstats
+---
+
+# ROLE_LABELS
+
+## Connections
+- [[EaisybillPermissionPanel.tsx]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Hooks_Useaccountydata_Useaccountyportalstats

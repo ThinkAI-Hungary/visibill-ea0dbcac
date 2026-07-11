@@ -1,0 +1,20 @@
+---
+source_file: "src/lib/payroll/validators.ts"
+type: "code"
+community: "Community 445"
+location: "L113"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_445
+---
+
+# validateBankAccount()
+
+## Connections
+- [[EmployeeWizardPage.tsx]] - `imports` [EXTRACTED]
+- [[index.ts_2]] - `re_exports` [EXTRACTED]
+- [[validators.test.ts]] - `imports` [EXTRACTED]
+- [[validators.ts]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_445

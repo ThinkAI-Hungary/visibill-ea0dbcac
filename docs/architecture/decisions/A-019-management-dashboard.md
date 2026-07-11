@@ -334,6 +334,16 @@ A Hibák panel és az Overview "Összes hiba" KPI **csak `severity='error'`** be
 
 Részletek: [error-logging-system.md — Severity diszciplína](../error-logging-system.md#severity-diszciplína)
 
+### Hibák Panel Dátum Kezelés & Szűrés Szinkron (2026-07-11)
+
+A többszörösen újraindított/újraküldött feldolgozásoknál (amelyeknél a `created_at` az eredeti feltöltési idő, de a legfrissebb hiba az `updated_at` időpontban lépett fel) a dashboardon a rendezettség és a dátumszűrés az alábbiak szerint lett szinkronizálva:
+
+1. **`error_timestamp` mező**: Az Edge Function `buildErrors` metódusa a lekérdezéseknél lekéri az `updated_at` (vagy `nav_sync_logs` esetén `completed_at`, `gl_upload_notifications` esetén `processed_at`) mezőt is. Ezt egy új `error_timestamp` tulajdonságban tároljuk el.
+2. **Kijelzés vs. Rendezés**: 
+   - A listában a kijelzett dátum (`created_at`) az eredeti futás/feltöltés dátuma marad (a felhasználó kérésének megfelelően: "a fájl eredeti dátummal van megjelenítve").
+   - A szűrések (`dateFrom`/`dateTo`) és az időrendi rendezés (sortBy: `created_at`) az `error_timestamp` mezőt használják. Ezzel a legfrissebb hiba (újraindított sor) mindig a lista legtetejére kerül, nem duplikálódik, és a helyes relatív időablakba esik.
+3. **Relatív 24h szűrés szinkron**: A "Utolsó 24h" kártya kattintásakor a frontend relatív ISO formátumú időt küld (`new Date(Date.now() - 24 * 3600 * 1000).toISOString()`) a korábbi sima `today` dátumsztring helyett. Ez biztosítja, hogy a KPI kártya (amely az `error_timestamp` alapján számolódik) és a lista találatai megegyezzenek.
+
 ## Consequences
 
 **Pozitív:**
@@ -439,7 +449,7 @@ A badge (`queue_length`) fix szélességű (`min-w-[24px]`) és a chevron mindig
 
 ### Cross-Project Monitoring
 
-A `worker-status` és `llm-costs` action-ök **3 Supabase projektet** kérdeznek le párhuzamosan:
+A `overview`, `worker-status` és `llm-costs` action-ök **3 Supabase projektet** kérdeznek le párhuzamosan:
 
 | Projekt | Env vars | Cél |
 |---------|----------|-----|
@@ -489,6 +499,14 @@ A dashboard és a WorkerPanel állapota URL-query paramétereken keresztül szin
   * `wrk_show_queues` (`true` / `null`): A globális queue várakozó panel megjelenítése.
   * `wrk_err_page` (szám): A Worker hibatábla aktív oldalszáma.
 * **Időszak váltás szűrő:** A `wrk_err_page` értéke csak a monitoring időszak (`workerPeriod`) megváltozásakor áll vissza az első oldalra, megakadályozva a lapozási állapot elvesztését sima frissítések során.
+
+### Worker Hibás Feldolgozások Kereső & Layout Stabilizáció
+
+A "Worker hibák" panelen (`wrk_show_errors=true`) a felhasználó keresést is végezhet a hibás feldolgozások között (szűrés fájlnévre, cégre, pipeline-ra, vagy konkrét hibaüzenetre):
+* **Kliens-oldali szűrés**: A `workerErrorSearch` state alapján a `filteredErrorJobs` hook reaktívan szűri a letöltött hibás jobokat. Keresés megadásakor a lapozás automatikusan visszaáll az 1. oldalra (`wrk_err_page=1`).
+* **Layout Shift elleni védelem (Table & Footer height stabilization)**: A kereső sáv bevitele és szűrés közbeni sor-változás nem tolja el a felületet:
+  - A táblázat soraiból hiányzó helyek üres helyőrző sorokkal (`placeholder-${index}`) vannak kitöltve, így a táblázat magassága mindig pontosan 10 sornyi marad, akár 0 találat esetén is.
+  - A paginációs footer wrapper fix minimális magassággal (`min-h-[53px]`) rendelkezik, így a táblázat alatti sáv sem ugrál akkor sem, ha a keresés miatt a lapozó gombok eltűnnek.
 
 ### Virtuális Fallback Átirányítás Státusz (REDIRECTED)
 

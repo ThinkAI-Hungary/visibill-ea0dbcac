@@ -896,8 +896,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
 
         {/* 24h errors */}
         {(() => {
-          const today = new Date().toISOString().slice(0, 10);
-          const is24hActive = dateFrom === today && !dateTo;
+          const is24hActive = dateFrom.includes('T');
           return (
             <Card
               className={cn("cursor-pointer transition-all duration-150 hover:bg-accent/30",
@@ -907,7 +906,8 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                 if (is24hActive) {
                   updateParams({ err_from: '', err_to: '', err_page: null });
                 } else {
-                  updateParams({ err_from: today, err_to: '', err_page: null });
+                  const relative24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+                  updateParams({ err_from: relative24h, err_to: '', err_page: null });
                 }
               }}
               role="button" tabIndex={0}
@@ -4366,6 +4366,7 @@ function WorkerPanel() {
   const showProcessing = searchParams.get('wrk_show_processing') === 'true';
   const showWorkerErrors = searchParams.get('wrk_show_errors') === 'true';
   const [expandedErrorRowId, setExpandedErrorRowId] = useState<string | null>(null);
+  const [workerErrorSearch, setWorkerErrorSearch] = useState('');
   const ERROR_PAGE_SIZE = 10;
 
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
@@ -4491,8 +4492,15 @@ function WorkerPanel() {
   }, [data]);
 
   const filteredErrorJobs = useMemo(() => {
-    return errorJobs;
-  }, [errorJobs]);
+    if (!workerErrorSearch) return errorJobs;
+    const term = workerErrorSearch.toLowerCase().trim();
+    return errorJobs.filter((j: any) =>
+      (j.file_name || '').toLowerCase().includes(term) ||
+      (j.company_name || '').toLowerCase().includes(term) ||
+      (j.pipeline || '').toLowerCase().includes(term) ||
+      (j.error_message || '').toLowerCase().includes(term)
+    );
+  }, [errorJobs, workerErrorSearch]);
 
   const errorTotalPages = Math.max(1, Math.ceil(filteredErrorJobs.length / ERROR_PAGE_SIZE));
 
@@ -4874,7 +4882,7 @@ function WorkerPanel() {
           {showWorkerErrors ? (
             <Card className="border-red-500/30 bg-red-500/5">
               <CardHeader className="pb-2 pt-3 px-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-red-500" />
                     Hibás feldolgozások (Összes projekt)
@@ -4882,13 +4890,24 @@ function WorkerPanel() {
                       {filteredErrorJobs.length} hiba
                     </Badge>
                   </CardTitle>
-                  <button onClick={() => updateParams({ wrk_show_errors: null, wrk_err_page: null })} className="text-muted-foreground hover:text-foreground">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        value={workerErrorSearch}
+                        onChange={e => { setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('wrk_err_page', '1'); return n; }); setWorkerErrorSearch(e.target.value); }}
+                        placeholder="Keresés (fájl, cég, hiba)..."
+                        className="pl-8 h-7 text-xs w-64 bg-background/50 border-border/30 focus-visible:bg-background"
+                      />
+                    </div>
+                    <button onClick={() => { updateParams({ wrk_show_errors: null, wrk_err_page: null }); setWorkerErrorSearch(''); }} className="text-muted-foreground hover:text-foreground p-1">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="px-0 pb-2">
-                {filteredErrorJobs.length > 0 ? (
+                {errorJobs.length > 0 ? (
                   <>
                     <table className="w-full text-xs table-fixed">
                       <thead>
@@ -4903,7 +4922,14 @@ function WorkerPanel() {
                         </tr>
                       </thead>
                       <tbody>
-                        {paginatedErrorJobs.map((j: any) => {
+                        {filteredErrorJobs.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                              Nincs találat a keresésre: <span className="font-semibold text-foreground">"{workerErrorSearch}"</span>
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedErrorJobs.map((j: any) => {
                           const time = new Date(j.created_at);
                           const dateStr = `${(time.getMonth() + 1).toString().padStart(2, '0')}.${time.getDate().toString().padStart(2, '0')}`;
                           const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
@@ -4972,9 +4998,11 @@ function WorkerPanel() {
                               )}
                             </React.Fragment>
                           );
-                        })}
+                        })
+                        )}
                         {(() => {
-                          const emptyRowsCount = ERROR_PAGE_SIZE - paginatedErrorJobs.length;
+                          const renderedCount = filteredErrorJobs.length === 0 ? 1 : paginatedErrorJobs.length;
+                          const emptyRowsCount = ERROR_PAGE_SIZE - renderedCount;
                           if (emptyRowsCount <= 0) return null;
                           return Array.from({ length: emptyRowsCount }).map((_, index) => (
                             <tr key={`placeholder-${index}`} className="border-b border-transparent">
@@ -4985,43 +5013,49 @@ function WorkerPanel() {
                       </tbody>
                     </table>
 
-                    {errorTotalPages > 1 && (
-                      <div className="flex items-center justify-between px-4 py-3 border-t border-border/10">
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {((errorPage - 1) * ERROR_PAGE_SIZE) + 1}–{Math.min(errorPage * ERROR_PAGE_SIZE, filteredErrorJobs.length)} / {filteredErrorJobs.length} hiba
-                        </span>
-                        <div className="flex gap-1">
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: 1 })} disabled={errorPage === 1} aria-label="Első">
-                            <ChevronLeft className="h-3.5 w-3.5" /><ChevronLeft className="h-3.5 w-3.5 -ml-2" />
-                          </Button>
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: Math.max(1, errorPage - 1) })} disabled={errorPage === 1} aria-label="Előző">
-                            <ChevronLeft className="h-3.5 w-3.5" />
-                          </Button>
-                          {Array.from({ length: Math.min(5, errorTotalPages) }, (_, i) => {
-                            const pNum = Math.max(1, Math.min(errorTotalPages - 4, errorPage - 2)) + i;
-                            return pNum <= errorTotalPages ? (
-                              <Button
-                                key={pNum}
-                                variant={pNum === errorPage ? 'default' : 'outline'}
-                                size="icon"
-                                className="h-7 w-7 text-xs"
-                                onClick={() => updateParams({ wrk_err_page: pNum })}
-                                aria-label={`${pNum}. oldal`}
-                                aria-current={pNum === errorPage ? 'page' : undefined}
-                              >
-                                {pNum}
+                    <div className="flex items-center justify-between px-4 py-3 border-t border-border/10 min-h-[53px]">
+                      {filteredErrorJobs.length > 0 ? (
+                        <>
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {((errorPage - 1) * ERROR_PAGE_SIZE) + 1}–{Math.min(errorPage * ERROR_PAGE_SIZE, filteredErrorJobs.length)} / {filteredErrorJobs.length} hiba
+                          </span>
+                          {errorTotalPages > 1 && (
+                            <div className="flex gap-1">
+                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: 1 })} disabled={errorPage === 1} aria-label="Első">
+                                <ChevronLeft className="h-3.5 w-3.5" /><ChevronLeft className="h-3.5 w-3.5 -ml-2" />
                               </Button>
-                            ) : null;
-                          })}
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: Math.min(errorTotalPages, errorPage + 1) })} disabled={errorPage === errorTotalPages} aria-label="Következő">
-                            <ChevronRight className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: errorTotalPages })} disabled={errorPage === errorTotalPages} aria-label="Utolsó">
-                            <ChevronRight className="h-3.5 w-3.5" /><ChevronRight className="h-3.5 w-3.5 -ml-2" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: Math.max(1, errorPage - 1) })} disabled={errorPage === 1} aria-label="Előző">
+                                <ChevronLeft className="h-3.5 w-3.5" />
+                              </Button>
+                              {Array.from({ length: Math.min(5, errorTotalPages) }, (_, i) => {
+                                const pNum = Math.max(1, Math.min(errorTotalPages - 4, errorPage - 2)) + i;
+                                return pNum <= errorTotalPages ? (
+                                  <Button
+                                    key={pNum}
+                                    variant={pNum === errorPage ? 'default' : 'outline'}
+                                    size="icon"
+                                    className="h-7 w-7 text-xs"
+                                    onClick={() => updateParams({ wrk_err_page: pNum })}
+                                    aria-label={`${pNum}. oldal`}
+                                    aria-current={pNum === errorPage ? 'page' : undefined}
+                                  >
+                                    {pNum}
+                                  </Button>
+                                ) : null;
+                              })}
+                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: Math.min(errorTotalPages, errorPage + 1) })} disabled={errorPage === errorTotalPages} aria-label="Következő">
+                                <ChevronRight className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_err_page: errorTotalPages })} disabled={errorPage === errorTotalPages} aria-label="Utolsó">
+                                <ChevronRight className="h-3.5 w-3.5" /><ChevronRight className="h-3.5 w-3.5 -ml-2" />
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Nincs találat a keresésre</span>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <div className="text-center py-8 space-y-2">

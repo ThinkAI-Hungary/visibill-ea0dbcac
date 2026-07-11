@@ -1,0 +1,21 @@
+---
+source_file: "src/lib/payroll/taxEngine.ts"
+type: "code"
+community: "Accounty Generaterequestemail Generateemailparams"
+location: "L141"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Accounty_Generaterequestemail_Generateemailparams
+---
+
+# calculatePayroll()
+
+## Connections
+- [[calculateGross()]] - `calls` [EXTRACTED]
+- [[index.ts_2]] - `re_exports` [EXTRACTED]
+- [[taxEngine.test.ts]] - `imports` [EXTRACTED]
+- [[taxEngine.ts]] - `contains` [EXTRACTED]
+- [[usePayrollData.ts]] - `imports` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Accounty_Generaterequestemail_Generateemailparams

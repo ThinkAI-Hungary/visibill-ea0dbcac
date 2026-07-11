@@ -141,6 +141,11 @@ graphify path "<ComponentA>" "<ComponentB>"
 graphify explain "<fogalom>"
 ```
 
+### Munkakönyvtár és elérési útvonal szabályok:
+- **Aktuális munkakönyvtár (CWD):** Az ágens mindig az éppen kiválasztott projekt könyvtárában (pl. `eaisybill-prod/` vagy `worker/`) lévő `graphify-out/graph.json` fájlt keresi és használja.
+- **Gráf gyökér ellenőrzése:** A `graphify-out/.graphify_root` fájlból olvasható ki, hogy a mentett gráf pontosan melyik könyvtárra lett generálva.
+- **Lekérdezés:** Ha a kért feladat kód-kapcsolatokat, modulok közti függőséget vagy architektúra-szintű hívásokat érint, az ágens köteles a `graphify query`, `graphify path` vagy `graphify explain` parancsokkal vizsgálni a gráfot a kód közvetlen greppelése előtt.
+
 ---
 
 ## 4. Összefoglaló a Usernek

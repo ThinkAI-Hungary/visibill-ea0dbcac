@@ -1,0 +1,85 @@
+---
+source_file: "src/hooks/accounty/useAccountyClients.ts"
+type: "code"
+community: "Accounty Generaterequestemail Updatemessagebody"
+location: "L167"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Accounty_Generaterequestemail_Updatemessagebody
+---
+
+# useAccountyClient()
+
+## Connections
+- [[CashbookCloseWizard()]] - `calls` [EXTRACTED]
+- [[CashbookCloseWizard.tsx]] - `imports` [EXTRACTED]
+- [[CashbookLedgerView()]] - `calls` [EXTRACTED]
+- [[CashbookLedgerView.tsx]] - `imports` [EXTRACTED]
+- [[CashbookMainPage()]] - `calls` [EXTRACTED]
+- [[CashbookMainPage.tsx]] - `imports` [EXTRACTED]
+- [[ClientEvMainPage()]] - `calls` [EXTRACTED]
+- [[ClientEvMainPage.tsx]] - `imports` [EXTRACTED]
+- [[EvChamberPage()]] - `calls` [EXTRACTED]
+- [[EvChamberPage.tsx]] - `imports` [EXTRACTED]
+- [[EvCompanyCarTaxPage()]] - `calls` [EXTRACTED]
+- [[EvCompanyCarTaxPage.tsx]] - `imports` [EXTRACTED]
+- [[EvComparePage()]] - `calls` [EXTRACTED]
+- [[EvComparePage.tsx]] - `imports` [EXTRACTED]
+- [[EvContribReturnPage()]] - `calls` [EXTRACTED]
+- [[EvContribReturnPage.tsx]] - `imports` [EXTRACTED]
+- [[EvContributionsPage()]] - `calls` [EXTRACTED]
+- [[EvContributionsPage.tsx]] - `imports` [EXTRACTED]
+- [[EvDepreciationPage()]] - `calls` [EXTRACTED]
+- [[EvDepreciationPage.tsx]] - `imports` [EXTRACTED]
+- [[EvEntrepreneurialBasePage()]] - `calls` [EXTRACTED]
+- [[EvEntrepreneurialBasePage.tsx]] - `imports` [EXTRACTED]
+- [[EvEntrepreneurialDividendPage()]] - `calls` [EXTRACTED]
+- [[EvEntrepreneurialDividendPage.tsx]] - `imports` [EXTRACTED]
+- [[EvFlatRatePage()]] - `calls` [EXTRACTED]
+- [[EvFlatRatePage.tsx]] - `imports` [EXTRACTED]
+- [[EvHipaPage()]] - `calls` [EXTRACTED]
+- [[EvHipaPage.tsx]] - `imports` [EXTRACTED]
+- [[EvHipaReturnPage()]] - `calls` [EXTRACTED]
+- [[EvHipaReturnPage.tsx]] - `imports` [EXTRACTED]
+- [[EvIncomeReportPage()]] - `calls` [EXTRACTED]
+- [[EvIncomeReportPage.tsx]] - `imports` [EXTRACTED]
+- [[EvInnovationLevyPage()]] - `calls` [EXTRACTED]
+- [[EvInnovationLevyPage.tsx]] - `imports` [EXTRACTED]
+- [[EvKataPage()]] - `calls` [EXTRACTED]
+- [[EvKataPage.tsx]] - `imports` [EXTRACTED]
+- [[EvKataReturnPage()]] - `calls` [EXTRACTED]
+- [[EvKataReturnPage.tsx]] - `imports` [EXTRACTED]
+- [[EvLifecyclePage()]] - `calls` [EXTRACTED]
+- [[EvLifecyclePage.tsx]] - `imports` [EXTRACTED]
+- [[EvMasterDataPage()]] - `calls` [EXTRACTED]
+- [[EvMasterDataPage.tsx]] - `imports` [EXTRACTED]
+- [[EvOptimizationPage()]] - `calls` [EXTRACTED]
+- [[EvOptimizationPage.tsx]] - `imports` [EXTRACTED]
+- [[EvRecordDetailPage()]] - `calls` [EXTRACTED]
+- [[EvRecordDetailPage.tsx]] - `imports` [EXTRACTED]
+- [[EvRecordsOverviewPage()]] - `calls` [EXTRACTED]
+- [[EvRecordsOverviewPage.tsx]] - `imports` [EXTRACTED]
+- [[EvSetupWizardPage()]] - `calls` [EXTRACTED]
+- [[EvSetupWizardPage.tsx]] - `imports` [EXTRACTED]
+- [[EvSzjaReturnPage()]] - `calls` [EXTRACTED]
+- [[EvSzjaReturnPage.tsx]] - `imports` [EXTRACTED]
+- [[EvVatCarReturnPage()]] - `calls` [EXTRACTED]
+- [[EvVatCarReturnPage.tsx]] - `imports` [EXTRACTED]
+- [[EvVatPage()]] - `calls` [EXTRACTED]
+- [[EvVatPage.tsx]] - `imports` [EXTRACTED]
+- [[OrgBookkeepingModePage()]] - `calls` [EXTRACTED]
+- [[OrgBookkeepingModePage.tsx]] - `imports` [EXTRACTED]
+- [[OrgCivilPage()]] - `calls` [EXTRACTED]
+- [[OrgCivilPage.tsx]] - `imports` [EXTRACTED]
+- [[OrgCondominiumPage()]] - `calls` [EXTRACTED]
+- [[OrgCondominiumPage.tsx]] - `imports` [EXTRACTED]
+- [[OrgOtherPage()]] - `calls` [EXTRACTED]
+- [[OrgOtherPage.tsx]] - `imports` [EXTRACTED]
+- [[OrgSimplifiedReportPage()]] - `calls` [EXTRACTED]
+- [[OrgSimplifiedReportPage.tsx]] - `imports` [EXTRACTED]
+- [[index.ts]] - `re_exports` [EXTRACTED]
+- [[useAccountyClients()]] - `calls` [EXTRACTED]
+- [[useAccountyClients.ts]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Accounty_Generaterequestemail_Updatemessagebody

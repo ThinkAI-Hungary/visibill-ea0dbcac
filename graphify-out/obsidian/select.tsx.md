@@ -1,0 +1,85 @@
+---
+source_file: "src/components/ui/select.tsx"
+type: "code"
+community: "Accounty Clientinvoicespage Clientinvoicespage"
+location: "L1"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Accounty_Clientinvoicespage_Clientinvoicespage
+---
+
+# select.tsx
+
+## Connections
+- [[AccountyApp]] - `imports_from` [EXTRACTED]
+- [[AccountyApp.tsx]] - `imports_from` [EXTRACTED]
+- [[AccountyNotificationPreferences.tsx]] - `imports_from` [EXTRACTED]
+- [[AddEmployeeDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[Analytics.tsx]] - `imports_from` [EXTRACTED]
+- [[AssetActivationDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[BalanceSheet.tsx]] - `imports_from` [EXTRACTED]
+- [[CashClosingDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[ClientInvoicesPage]] - `imports_from` [EXTRACTED]
+- [[ClientInvoicesPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ClientMissingInvoicesReportPage]] - `imports_from` [EXTRACTED]
+- [[ClientMissingInvoicesReportPage.tsx]] - `imports_from` [EXTRACTED]
+- [[CompanySelector.tsx]] - `imports_from` [EXTRACTED]
+- [[CourierReportTab.tsx]] - `imports_from` [EXTRACTED]
+- [[DashboardWelcome.tsx]] - `imports_from` [EXTRACTED]
+- [[DisposalDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[EmployeeListPanel.tsx]] - `imports_from` [EXTRACTED]
+- [[EmployeeWizardPage.tsx]] - `imports_from` [EXTRACTED]
+- [[EmployeesPage.tsx]] - `imports_from` [EXTRACTED]
+- [[EmptyStateDashboard.tsx]] - `imports_from` [EXTRACTED]
+- [[EntriesTab.tsx]] - `imports_from` [EXTRACTED]
+- [[ExchangeRates.tsx]] - `imports_from` [EXTRACTED]
+- [[FeedbackDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[FxDifferencesSection.tsx]] - `imports_from` [EXTRACTED]
+- [[GeneralLedgerPage.tsx]] - `imports_from` [EXTRACTED]
+- [[GeneralLedgerTable.tsx]] - `imports_from` [EXTRACTED]
+- [[InviteUserDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[InvoiceEditDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[InvoiceFilesDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[InvoiceFullEditDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[InvoicesPage.tsx]] - `imports_from` [EXTRACTED]
+- [[JournalView.tsx]] - `imports_from` [EXTRACTED]
+- [[LeavePanel.tsx]] - `imports_from` [EXTRACTED]
+- [[ManualPaymentDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[ManualUpload.tsx]] - `imports_from` [EXTRACTED]
+- [[MissingInvoicesPage]] - `imports_from` [EXTRACTED]
+- [[MissingInvoicesPage.tsx]] - `imports_from` [EXTRACTED]
+- [[MissingInvoicesReportPage]] - `imports_from` [EXTRACTED]
+- [[MissingInvoicesReportPage.tsx]] - `imports_from` [EXTRACTED]
+- [[PartnersPage.tsx]] - `imports_from` [EXTRACTED]
+- [[ProfitAndLoss.tsx]] - `imports_from` [EXTRACTED]
+- [[Projects.tsx]] - `imports_from` [EXTRACTED]
+- [[ReportFilesDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[RoutingRulesTab.tsx]] - `imports_from` [EXTRACTED]
+- [[SalaryFilesTable.tsx]] - `imports_from` [EXTRACTED]
+- [[SelectContent]] - `contains` [EXTRACTED]
+- [[SelectItem]] - `contains` [EXTRACTED]
+- [[SelectLabel]] - `contains` [EXTRACTED]
+- [[SelectScrollDownButton]] - `contains` [EXTRACTED]
+- [[SelectScrollUpButton]] - `contains` [EXTRACTED]
+- [[SelectSeparator]] - `contains` [EXTRACTED]
+- [[SelectTrigger]] - `contains` [EXTRACTED]
+- [[Settings.tsx]] - `imports_from` [EXTRACTED]
+- [[SystemSection.tsx]] - `imports_from` [EXTRACTED]
+- [[SzepCardTab.tsx]] - `imports_from` [EXTRACTED]
+- [[TaxCalendarPage]] - `imports_from` [EXTRACTED]
+- [[TaxCalendarPage.tsx]] - `imports_from` [EXTRACTED]
+- [[TicketDetailView.tsx]] - `imports_from` [EXTRACTED]
+- [[TicketsPage.tsx]] - `imports_from` [EXTRACTED]
+- [[TimeEntryForm.tsx]] - `imports_from` [EXTRACTED]
+- [[TransactionFilters.tsx]] - `imports_from` [EXTRACTED]
+- [[TransferDialog.tsx]] - `imports_from` [EXTRACTED]
+- [[UploadAuditXmlModal.tsx]] - `imports_from` [EXTRACTED]
+- [[VatCodeConfigTab.tsx]] - `imports_from` [EXTRACTED]
+- [[VatReturnPage.tsx]] - `imports_from` [EXTRACTED]
+- [[WeeklyTimesheetView.tsx]] - `imports_from` [EXTRACTED]
+- [[cn()]] - `imports` [EXTRACTED]
+- [[unified-pagination.tsx]] - `imports_from` [EXTRACTED]
+- [[utils.ts]] - `imports_from` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Accounty_Clientinvoicespage_Clientinvoicespage
