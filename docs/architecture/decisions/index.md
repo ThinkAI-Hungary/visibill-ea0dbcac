@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-07-10  
-> **Összesen:** 34 döntés | ✅ Decided: 33 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-07-11  
+> **Összesen:** 35 döntés | ✅ Decided: 34 | ⛔ Superseded: 1
 
 ---
 
@@ -43,6 +43,7 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | A-024 | Partner Upsert Strategy (prefix match, foreign partners, both upgrade) | âś… Decided | [A-024](./A-024-partner-upsert-strategy.md) |
 | A-025 | Cross-company Invoice Routing (multi-company adĂłszĂˇm-alapĂş ĂˇtirĂˇnyĂ­tĂˇs) | âś… Decided | [A-025](./A-025-cross-company-routing.md) |
 | A-028 | PDF Export Workflow & Lifecycle (PGMQ, Realtime, 24h cleanup) | ✅ Decided | [A-028](./A-028-pdf-export-lifecycle.md) |
+| A-035 | Háromirányú Szekvenciális Pipeline Átirányítás (Invoice ↔ Transaction ↔ Report) és Hibakezelés | ✅ Decided | [A-035](./A-035-three-way-fallback-redirection.md) |
 
 ## đź”  BiztonsĂˇg & Auth
 
