@@ -471,6 +471,18 @@ serve(async (req) => {
           return { classification: 'report', bankHint: null, reportType: 'gls', reason: 'GLS filename pattern detected (no GLS sender)' };
         }
 
+        // 2g. Other courier keywords in forwarded tabular filename
+        const fnNormReport = fn.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (fnNormReport.includes('gls')) {
+          return { classification: 'report', bankHint: null, reportType: 'gls', reason: 'GLS keyword in forwarded tabular filename' };
+        }
+        if (fnNormReport.includes('mpl') || fnNormReport.includes('posta')) {
+          return { classification: 'report', bankHint: null, reportType: 'mpl', reason: 'MPL/Posta keyword in forwarded tabular filename' };
+        }
+        if (fnNormReport.includes('mixpack')) {
+          return { classification: 'report', bankHint: null, reportType: 'mixpack', reason: 'Mixpack keyword in forwarded tabular filename' };
+        }
+
         // No bank signal -> default tabular files to transaction (invoices cannot be csv/xlsx)
         return { classification: 'transaction', bankHint: null, reportType: null, reason: 'xlsx/csv without bank signal -> transaction default' };
       }
