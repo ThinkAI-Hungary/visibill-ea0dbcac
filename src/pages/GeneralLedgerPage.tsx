@@ -375,7 +375,7 @@ export default function GeneralLedgerPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print:hidden">
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-primary/10 text-primary p-2 rounded-lg"><Database className="w-4 h-4" /></div>
-              <div><div className="text-lg font-bold tabular-nums">{glStats.accountCount}</div><div className="text-[11px] text-muted-foreground">Összes számla</div></div>
+              <div><div className="text-lg font-bold tabular-nums">{glStats.accountCount}</div><div className="text-[11px] text-muted-foreground">Főkönyvi számok</div></div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-blue-500/10 text-blue-600 p-2 rounded-lg"><FileText className="w-4 h-4" /></div>

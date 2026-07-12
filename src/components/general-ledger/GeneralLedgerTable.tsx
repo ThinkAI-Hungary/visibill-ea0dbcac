@@ -408,14 +408,15 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   // ── Fire stats callback when tableData changes ──
   useEffect(() => {
     if (!onStatsChange || tableData.length === 0) return;
-    const leaves = tableData.filter(d => !d.hasChildren);
+    const glAccountsOnly = tableData.filter(d => !d.isItem);
+    const leaves = glAccountsOnly.filter(d => !d.hasChildren);
     const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
     const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
     const aiItems = dbItems?.filter(i => i.source_table !== 'journal_entry') || [];
     const totalItemCount = aiItems.length;
     const aiOrphanCount = aiItems.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000' && !i.is_excluded).length;
     const classifiedItemCount = totalItemCount - aiOrphanCount;
-    onStatsChange({ accountCount: tableData.length, leafCount: leaves.length, totalDebit, totalCredit, classifiedItems: classifiedItemCount, totalItems: totalItemCount });
+    onStatsChange({ accountCount: glAccountsOnly.length, leafCount: leaves.length, totalDebit, totalCredit, classifiedItems: classifiedItemCount, totalItems: totalItemCount });
   }, [tableData, onStatsChange, dbItems, orphanCount]);
   
   // Parse localStorage to check if banner was dismissed for this preset
@@ -490,10 +491,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       await exportGlAnalyticalExcel(processedRows, companyName, footerTotals);
     },
     getStats: () => {
-      const leaves = tableData.filter(d => !d.hasChildren);
+      const glAccountsOnly = tableData.filter(d => !d.isItem);
+      const leaves = glAccountsOnly.filter(d => !d.hasChildren);
       const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
       const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
-      return { accountCount: tableData.length, leafCount: leaves.length, totalDebit, totalCredit };
+      return { accountCount: glAccountsOnly.length, leafCount: leaves.length, totalDebit, totalCredit };
     },
     expandAll: handleExpandAll,
     collapseAll: handleCollapseAll

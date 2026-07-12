@@ -163,13 +163,18 @@ const TransactionsPage = () => {
       if (error || !data) return new Set<string>();
 
       // Extract a "partner fingerprint" from description:
-      // Strip leading account numbers (digits, dashes), normalize, take first 20 chars
+      // Strip leading account numbers (digits, dashes), normalize, take first 250 chars
       const fingerprint = (desc: string | null): string => {
         if (!desc) return '';
         // Remove leading bank account number patterns (sequences of digits/dashes)
         const stripped = desc.replace(/^[\d\s-]+/, '').trim();
-        // Normalize: lowercase, collapse whitespace
-        return stripped.toLowerCase().replace(/\s+/g, ' ').slice(0, 20);
+        // Normalize: lowercase, collapse whitespace, remove accents/diacritics
+        return stripped
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/\s+/g, ' ')
+          .slice(0, 250);
       };
 
       // Group by date + amount + description fingerprint
