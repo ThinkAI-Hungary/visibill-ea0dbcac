@@ -344,7 +344,7 @@ serve(async (req) => {
         'text/csv',
       ];
       
-      const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.xlsx', '.xls', '.csv'];
+      const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.xlsx', '.xls', '.csv', '.sta', '.mt940'];
       
       const hasAllowedType = allowedTypes.includes(fileType);
       const hasAllowedExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
@@ -406,7 +406,7 @@ serve(async (req) => {
       senderDom: string | null,
     ): { classification: 'invoice' | 'transaction' | 'report'; bankHint: string | null; reportType: string | null; reason: string } => {
       const fn = attachmentName.toLowerCase();
-      const ext = fn.substring(fn.lastIndexOf('.'));
+      const ext = fn.includes('.') ? fn.substring(fn.lastIndexOf('.')) : '';
 
       // Sender-based bank hint (available for all file types)
       const senderBank = getBankFromDomain(senderDom);
