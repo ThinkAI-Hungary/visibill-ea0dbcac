@@ -558,22 +558,26 @@ serve(async (req) => {
         // If we have a Message-Id, check if this exact attachment from this
         // email has already been processed. Prevents duplicate processing
         // when Mailgun retries the webhook (e.g. due to timeout).
+        // Checks all three tables because fallback redirection moves/deletes original records.
         if (messageId) {
-          const idempotencyTable = classification === 'transaction'
-            ? 'transaction_uploads'
-            : classification === 'report'
-              ? 'report_uploads'
-              : 'invoice_uploads';
+          let hasBeenProcessed = false;
+          const tablesToCheck = ['transaction_uploads', 'invoice_uploads', 'report_uploads'];
+          for (const table of tablesToCheck) {
+            const { data: existingUpload } = await supabase
+              .from(table)
+              .select('id')
+              .eq('company_id', alias.company_id)
+              .eq('file_name', attachment.name)
+              .contains('metadata', { mailgun_message_id: messageId })
+              .limit(1);
 
-          const { data: existingUpload } = await supabase
-            .from(idempotencyTable)
-            .select('id')
-            .eq('company_id', alias.company_id)
-            .eq('file_name', attachment.name)
-            .contains('metadata', { mailgun_message_id: messageId })
-            .limit(1);
+            if (existingUpload && existingUpload.length > 0) {
+              hasBeenProcessed = true;
+              break;
+            }
+          }
 
-          if (existingUpload && existingUpload.length > 0) {
+          if (hasBeenProcessed) {
             console.log(`[IDEMPOTENCY] Skipping duplicate attachment: ${attachment.name} ` +
               `(Message-Id already processed: ${messageId})`);
             continue;
