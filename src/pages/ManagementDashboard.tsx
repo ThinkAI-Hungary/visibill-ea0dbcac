@@ -700,12 +700,12 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
     handleDelete(ids);
   };
 
-  const RETRYABLE_SOURCES = new Set(['invoice_uploads', 'transaction_uploads', 'gl_upload_notifications']);
+  const RETRYABLE_SOURCES = new Set(['invoice_uploads', 'transaction_uploads', 'gl_upload_notifications', 'report_uploads']);
 
   // Retry modal state
   const [retryModalOpen, setRetryModalOpen] = useState(false);
   const [retryTargets, setRetryTargets] = useState<Array<{ source: string; id: string; project?: string }>>([]);
-  const [retryPipeline, setRetryPipeline] = useState('same'); // 'same' | 'invoice' | 'payroll' | 'transaction' | 'gl'
+  const [retryPipeline, setRetryPipeline] = useState('same'); // 'same' | 'invoice' | 'payroll' | 'transaction' | 'gl' | 'report'
 
   const PIPELINE_OPTIONS: Array<{ value: string; label: string; icon: React.ReactNode; queue?: string; category?: string | null }> = [
     { value: 'same', label: 'Eredeti pipeline (változatlan)', icon: <RotateCcw className="h-4 w-4 text-muted-foreground" /> },
@@ -713,11 +713,12 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
     { value: 'payroll', label: 'Bérjegyzék feldolgozás', icon: <Wallet className="h-4 w-4 text-amber-500" />, queue: 'invoice_jobs', category: 'payroll' },
     { value: 'transaction', label: 'Tranzakció feldolgozás', icon: <Landmark className="h-4 w-4 text-blue-500" />, queue: 'transaction_jobs', category: null },
     { value: 'gl', label: 'Főkönyvi besorolás', icon: <BarChart3 className="h-4 w-4 text-purple-500" />, queue: 'gl_classification_jobs', category: null },
+    { value: 'report', label: 'Futár riport feldolgozás', icon: <Truck className="h-4 w-4 text-orange-500" />, queue: 'report_jobs', category: null },
   ];
 
   // All retryable sources can target any pipeline (the whole point is re-routing mistakes)
   const getPipelineOptionsForSource = (_source: string) => {
-    return ['same', 'invoice', 'payroll', 'transaction', 'gl'];
+    return ['same', 'invoice', 'payroll', 'transaction', 'gl', 'report'];
   };
 
   // For mixed selections, find the intersection of available pipelines
@@ -4381,7 +4382,7 @@ function WorkerPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const RETRYABLE_SOURCES = new Set(['invoice_uploads', 'transaction_uploads', 'gl_upload_notifications']);
+  const RETRYABLE_SOURCES = new Set(['invoice_uploads', 'transaction_uploads', 'gl_upload_notifications', 'report_uploads']);
 
   const PIPELINE_OPTIONS: Array<{ value: string; label: string; icon: React.ReactNode; queue?: string; category?: string | null }> = [
     { value: 'same', label: 'Eredeti pipeline (változatlan)', icon: <RotateCcw className="h-4 w-4 text-muted-foreground" /> },
@@ -4389,6 +4390,7 @@ function WorkerPanel() {
     { value: 'payroll', label: 'Bérjegyzék feldolgozás', icon: <Wallet className="h-4 w-4 text-amber-500" />, queue: 'invoice_jobs', category: 'payroll' },
     { value: 'transaction', label: 'Tranzakció feldolgozás', icon: <Landmark className="h-4 w-4 text-blue-500" />, queue: 'transaction_jobs', category: null },
     { value: 'gl', label: 'Főkönyvi besorolás', icon: <BarChart3 className="h-4 w-4 text-purple-500" />, queue: 'gl_classification_jobs', category: null },
+    { value: 'report', label: 'Futár riport feldolgozás', icon: <Truck className="h-4 w-4 text-orange-500" />, queue: 'report_jobs', category: null },
   ];
 
   const openRetryModal = (ids: Array<{ source: string; id: string; project?: string }>) => {

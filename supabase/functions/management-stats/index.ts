@@ -1646,12 +1646,21 @@ const QUEUE_MAP: Record<string, string> = {
   invoice_uploads: "invoice_jobs",
   transaction_uploads: "transaction_jobs",
   gl_upload_notifications: "gl_classification_jobs",
+  report_uploads: "report_jobs",
+};
+
+const QUEUE_TABLE_MAP: Record<string, string> = {
+  invoice_jobs: "invoice_uploads",
+  transaction_jobs: "transaction_uploads",
+  gl_classification_jobs: "gl_upload_notifications",
+  report_jobs: "report_uploads",
 };
 
 const RETRY_SELECT: Record<string, string> = {
   invoice_uploads: "id, user_id, company_id, file_url, file_name, document_category",
   transaction_uploads: "id, user_id, company_id, file_url, file_name",
   gl_upload_notifications: "id, company_id",
+  report_uploads: "id, user_id, company_id, file_url, file_name",
 };
 
 function buildQueuePayload(source: string, row: any): Record<string, unknown> {
@@ -1683,7 +1692,79 @@ function buildQueuePayload(source: string, row: any): Record<string, unknown> {
       source: "gl_upload_notifications",
     };
   }
+  if (source === "report_uploads") {
+    return {
+      id: row.id,
+      user_id: row.user_id,
+      company_id: row.company_id,
+      file_url: row.file_url,
+      file_name: row.file_name,
+      source: "report_uploads",
+    };
+  }
   return { id: row.id, source };
+}
+
+async function migrateRowToTable(
+  client: any,
+  sourceTable: string,
+  targetTable: string,
+  rowId: string,
+) {
+  // 1. Fetch the full row from sourceTable
+  const { data: row, error: fetchErr } = await client
+    .from(sourceTable)
+    .select("*")
+    .eq("id", rowId)
+    .maybeSingle();
+
+  if (fetchErr || !row) {
+    throw new Error(`Failed to fetch source row: ${fetchErr?.message || "Not found"}`);
+  }
+
+  // 2. Prepare target row by copying common fields
+  const targetRow: Record<string, any> = {
+    id: row.id,
+    user_id: row.user_id,
+    company_id: row.company_id,
+    file_name: row.file_name,
+    file_type: row.file_type,
+    file_size: row.file_size,
+    file_url: row.file_url,
+    upload_status: row.upload_status || "uploaded",
+    processing_status: "pending",
+    error_message: null,
+    metadata: row.metadata || {},
+    notes: row.notes || [],
+  };
+
+  // Add table-specific fields
+  if (targetTable === "invoice_uploads") {
+    targetRow.document_category = row.document_category || "invoice";
+  }
+
+  // 3. Delete from source table first (to prevent primary key conflict)
+  const { error: delErr } = await client
+    .from(sourceTable)
+    .delete()
+    .eq("id", rowId);
+
+  if (delErr) {
+    throw new Error(`Failed to delete source row: ${delErr.message}`);
+  }
+
+  // 4. Insert into target table
+  const { error: insErr } = await client
+    .from(targetTable)
+    .insert(targetRow);
+
+  if (insErr) {
+    // Attempt rollback: put it back in sourceTable!
+    await client.from(sourceTable).insert(row);
+    throw new Error(`Failed to insert target row: ${insErr.message}`);
+  }
+
+  return targetRow;
 }
 
 async function retryErrors(
@@ -1750,44 +1831,59 @@ async function retryErrors(
         continue;
       }
 
-      // 2. Reset status to pending + clear error + optionally update document_category
-      const statusField = "processing_status";
-      const updatePayload: Record<string, unknown> = {
-        [statusField]: "pending",
-        error_message: null,
-      };
+      // 2. Reset status / migrate row and send PGMQ messages
+      for (const rawRow of rows) {
+        let row = rawRow;
+        let activeSource = source;
+        const targetTable = QUEUE_TABLE_MAP[queueName];
 
-      // If targetCategory is provided and source supports it, update document_category
-      if (body.targetCategory !== undefined && body.targetCategory !== null && source === "invoice_uploads") {
-        updatePayload.document_category = body.targetCategory;
-      }
+        if (targetTable && targetTable !== source) {
+          // Cross-pipeline retry: migrate the row first
+          try {
+            const migrated = await migrateRowToTable(projectClient, source, targetTable, row.id);
+            row = migrated;
+            activeSource = targetTable;
+            console.log(`[MANAGEMENT-STATS] [${project}] Migrated row ${row.id} from ${source} to ${targetTable}`);
+          } catch (migrateErr: any) {
+            console.error(`[MANAGEMENT-STATS] [${project}] Migration failed for ${row.id}:`, migrateErr.message);
+            errors.push(`[${project}] ${row.id}: migration failed — ${migrateErr.message}`);
+            continue;
+          }
+        } else {
+          // Same-pipeline retry: just reset status in source table
+          const statusField = activeSource === "nav_sync_logs" ? "status" : "processing_status";
+          const updatePayload: Record<string, unknown> = {
+            [statusField]: "pending",
+            error_message: null,
+          };
+          if (body.targetCategory !== undefined && body.targetCategory !== null && activeSource === "invoice_uploads") {
+            updatePayload.document_category = body.targetCategory;
+          }
+          const { error: updateErr } = await projectClient
+            .from(activeSource)
+            .update(updatePayload as any)
+            .eq("id", row.id);
 
-      const { error: updateErr } = await projectClient
-        .from(source)
-        .update(updatePayload as any)
-        .in("id", ids);
-
-      if (updateErr) {
-        errors.push(`[${project}] ${source} update: ${updateErr.message}`);
-        continue;
-      }
-
-      // 3. Send each row to the PGMQ queue via RPC
-      for (const row of rows) {
-        const payload = buildQueuePayload(source, row);
-        // Override document_category in the payload if changed
-        if (body.targetCategory !== undefined && body.targetCategory !== null && source === "invoice_uploads") {
-          payload.document_category = body.targetCategory;
+          if (updateErr) {
+            errors.push(`[${project}] ${activeSource}/${row.id} update: ${updateErr.message}`);
+            continue;
+          }
+          // Update local row document_category if modified
+          if (body.targetCategory !== undefined && body.targetCategory !== null && activeSource === "invoice_uploads") {
+            row.document_category = body.targetCategory;
+          }
         }
 
+        // Send to queue
+        const payload = buildQueuePayload(activeSource, row);
         const { error: rpcErr } = await projectClient.rpc("pgmq_send_retry", {
           queue_name: queueName,
           msg: payload,
         });
 
         if (rpcErr) {
-          console.error(`[MANAGEMENT-STATS] [${project}] pgmq_send_retry failed for ${source}/${row.id}:`, rpcErr.message);
-          errors.push(`[${project}] ${source}/${row.id}: queue send failed — ${rpcErr.message}`);
+          console.error(`[MANAGEMENT-STATS] [${project}] pgmq_send_retry failed for ${activeSource}/${row.id}:`, rpcErr.message);
+          errors.push(`[${project}] ${activeSource}/${row.id}: queue send failed — ${rpcErr.message}`);
         } else {
           totalRetried++;
         }

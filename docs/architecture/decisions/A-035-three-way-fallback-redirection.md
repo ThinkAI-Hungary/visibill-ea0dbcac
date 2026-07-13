@@ -2,7 +2,7 @@
 
 **Status:** Decided
 **Date:** 2026-07-11
-**Utoljára frissítve:** 2026-07-11
+**Utoljára frissítve:** 2026-07-13
 
 ## Context
 Az e-mail aliasokról (webhookon keresztül) érkező dokumentumok besorolása a webhook / edge function szinten időnként pontatlan (pl. táblázatos futárjelentések vagy bankszámlakivonatok számlaként futnak be). Emiatt a workernek képesnek kell lennie a rossz pipeline-on elindult dokumentumok azonnali átirányítására a megfelelő cél-pipeline-ra.
@@ -10,6 +10,7 @@ Az e-mail aliasokról (webhookon keresztül) érkező dokumentumok besorolása a
 Két fontos technikai kihívást kellett megoldani:
 1. **Háromirányú skálázódás:** A korábbi kétirányú (Invoice ↔ Transaction) fallback helyett támogatni kellett a futár Riport (Report) pipeline-t is, illetve proaktív és szekvenciális (próba-szerencse) módszerrel kellett kiválasztani a helyes parsert a struktúrálatlan fájlokhoz.
 2. **Duplikáció & Beragadás megelőzése:** A fallback során a sikertelen kísérletek nem hagyhatnak hátra inkonzisztens/duplikált rekordokat, és a sikeresen lefutott bizonylatok `job completed` bejegyzései nem jelenhetnek meg hibaként a felületen.
+3. **Kézi újraküldés (Retry) inkonzisztencia:** Ha a felhasználó egy hibás fájlt egy másik pipeline-ba küldött vissza (pl. számlából tranzakcióba), a worker nem találta a rekordot a céltáblában (ValueError: transaction_upload record not found), mert a fájl rekordja még a forrástáblában (`invoice_uploads`) szerepelt.
 
 ## Decision
 
@@ -27,11 +28,22 @@ A sikeresen feldolgozott bizonylatok `error_message` oszlopa a naplózás miatt 
 **4. Memóriabeli (in-memory) fallback loop-védelem:**
 A fallback hívások során a worker szekvenciálisan futtatja a többi pipeline-t in-memory létrehozott `new_job` paraméterekkel. Annak érdekében, hogy a többi handler felismerje, hogy már egy fallback lánc része (és ne indítson újabb felesleges fallback köröket, ami rekord-duplikációt eredményezne), a `new_job` szótárban kötelező továbbítani az eredeti szülő objektum fallback azonosítóját (`fallback_from_invoice_upload_id`, `fallback_from_transaction_upload_id`, vagy `fallback_from_report_upload_id`).
 
+**5. Kézi újraküldés cross-pipeline tábla-migrációval (Manual Cross-Pipeline Retry):**
+A Management Dashboard felületén lehetőség van a sikertelen / hibás bizonylatok kézi újraküldésére tetszőleges cél-pipeline-ba (Invoice, Transaction, Report).
+Ha a cél-pipeline eltér a bizonylat jelenlegi forrástáblájától (pl. egy `invoice_uploads`-ban lévő hibás GLS fájlt a felhasználó `report_jobs` (Report) queue-ba küld vissza), a Deno Edge Function (`retryErrors`) egy atomi migrációs folyamatot hajt végre:
+- Lekéri a teljes rekordot a forrástáblából.
+- Beszúrja a céltáblába (`transaction_uploads` vagy `report_uploads`), megtartva az eredeti UUID azonosítót.
+- Kitörli a rekordot a forrástáblából.
+- Ha a beszúrás vagy törlés hibára fut, a folyamat automatikusan visszaállítja (insert vissza a forrásba) az adatvesztés elkerülésére.
+- Enqueue-olja a PGMQ üzenetet a cél-queue-ba a megváltoztatott forrás megjelöléssel.
+Ez biztosítja, hogy a worker a megfelelő céltáblában keresse és megtalálja a rekordot, és megmaradjon a kliens oldali UUID folytonosság.
+
 ## Consequences
 **Pozitív:**
 - Teljesen automata típusfelismerés és átirányítás a 3 legfontosabb pipeline (Invoice, Transaction, Report) között.
 - Zero duplikált vagy beragadt rekord a Supabase-ben sikertelen fallback esetén.
 - Pontos és tiszta frontend visszajelzés: a sikeres bizonylatok valóban zöld "Feldolgozva" állapotban jelennek meg.
+- A kézi újraküldések zökkenőmentesek és nem okoznak "record not found" hibákat a Python workerben.
 
 **Negatív:**
 - A szekvenciális próbálkozás (amikor 3-4 parser is lefut egymás után egy hibás fájlon) több másodperccel megnövelheti az egyedi fájl feldolgozási idejét. Ez a pontosság érdekében elfogadható trade-off.

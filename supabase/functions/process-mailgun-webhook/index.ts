@@ -64,6 +64,10 @@ const KNOWN_SHIPMENT_DOMAINS = [
   'sprinter.hu', 'trans-o-flex.com',
 ];
 
+const KNOWN_REPORT_SENDERS = [
+  'reports@gls-hungary.com',
+];
+
 const KNOWN_BANK_DOMAINS: Record<string, string> = {
   'otpbank.hu': 'otp', 'cib.hu': 'cib',
   'erstebank.hu': 'erste', 'raiffeisen.hu': 'raiffeisen',
@@ -444,9 +448,16 @@ serve(async (req) => {
       attachmentName: string,
       emailSubject: string | null,
       senderDom: string | null,
+      senderEmail: string | null = null,
     ): { classification: 'invoice' | 'transaction' | 'report'; bankHint: string | null; reportType: string | null; reason: string } => {
       const fn = attachmentName.toLowerCase();
       const ext = fn.includes('.') ? fn.substring(fn.lastIndexOf('.')) : '';
+
+      // 00. Specific sender override -> REPORT (courier report pipeline)
+      if (senderEmail && KNOWN_REPORT_SENDERS.includes(senderEmail.toLowerCase())) {
+        const reportType = detectCourierReportType(senderDom);
+        return { classification: 'report', bankHint: null, reportType: reportType || 'gls', reason: `Known report sender: ${senderEmail}` };
+      }
 
       // Sender-based bank hint (available for all file types)
       const senderBank = getBankFromDomain(senderDom);
@@ -603,7 +614,7 @@ serve(async (req) => {
           continue;
         }
         
-        const { classification, bankHint, reportType, reason } = classifyAttachment(attachment.name, subject, senderDomain);
+        const { classification, bankHint, reportType, reason } = classifyAttachment(attachment.name, subject, senderDomain, sender);
         console.log(`Processing attachment: ${attachment.name} → ${classification} (reason: ${reason})${bankHint ? ` (bank: ${bankHint})` : ''}${reportType ? ` (report: ${reportType})` : ''}`);
 
         // ── Mailgun retry idempotency check ──
