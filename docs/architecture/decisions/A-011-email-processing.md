@@ -143,8 +143,39 @@ Ha egy email érkezik egy nem létező alias-ra (pl. `think-ai@in.visibill.hu` �
 ```typescript
 if (aliasError || !alias) {
   console.warn(`[lookup_alias] Alias not found for: ${recipient}. Skipping.`);
-  return new Response(JSON.stringify({ skipped: true, reason: 'alias_not_found' }), {
+  return new Response(JSON.stringify({ skipped: true, reason: 'alias_not_found', recipient }), {
     status: 200, // ← NOT 404
   });
 }
 ```
+
+## Null Message-Id Fallback Dedup (2026-07-13)
+
+**Probléma:** Egyes feladók (pl. Canon szkenner firmware) **nem küldenek `Message-Id` headert**. Ilyenkor a fenti idempotency check (`if (messageId)`) skippelődik, és minden Mailgun újrakézbesítés **új upload sort + új pipeline ciklust** hoz létre ugyanahhoz a fájlhoz — ami a worker fallback lánc miatt több hibasort generált (pl. `SKM_C250i26071012000.pdf` → 8 db `transaction_uploads` hibasor).
+
+**Megoldás:** Ha `messageId` hiányzik, a webhook egy **fallback cross-tábla dedupot** futtat INSERT előtt:
+
+```typescript
+// else ág (nincs Message-Id)
+const sinceIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+for (const table of ['transaction_uploads', 'invoice_uploads', 'report_uploads']) {
+  const { data: recentUpload } = await supabase
+    .from(table)
+    .select('id, processing_status')
+    .eq('company_id', alias.company_id)
+    .eq('file_name', attachment.name)
+    .eq('metadata->>source', 'email_alias')   // csak email-forrású
+    .gt('created_at', sinceIso)                // 24h ablak
+    .limit(1);
+  if (recentUpload?.length > 0) { skip = true; break; }
+}
+```
+
+**Kulcs pontok:**
+- **Cross-tábla:** mindhárom upload táblában keres, mert a worker fallback a sort áthelyezheti másik táblába (vagy törli az eredetit). A 24h-nál frissebb `email_alias` sor bármelyik táblában blokkolja az új INSERT-et.
+- **Csak email-forrású:** a `metadata->>source = 'email_alias'` szűrés garantálja, hogy manuális feltöltéseket sosem blokkol.
+- **Él-eset:** két különböző tartalmú, azonos nevű legit email 24h-n belül → a második drop-olódik. Elfogadható kompromisszum, és a worker oldali sibling-cleanup (ld. lent) amúgy is konvergál 1 sorra.
+
+> **Megjegyzés a `messageId`-ághez:** az eredeti egy-táblás check már **cross-táblára** van bővítve, így ha a fallback másik táblába tette a sort, a `messageId`-vel történő újrakézbesítés is felismeri és skip-eli.
+
+**Kapcsolódó:** [A-019 Management Dashboard — Email-fájl sibling cleanup](./A-019-management-dashboard.md#email-fájl-sibling-cleanup-2026-07-13) — a worker oldali garancia, hogy még párhuzamos/redelivery esetén is max 1 hibasor maradjon.

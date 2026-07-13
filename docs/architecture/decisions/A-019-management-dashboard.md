@@ -184,23 +184,24 @@ A pending számolás **nem explicit listával** történik, hanem exklúzióval.
 
 #### Error message elsőbbség
 
-> **Ha egy fájlnak van `error_message` mezője, és nem sikeresen átirányított (`redirected`) → automatikusan "Hiba" kategóriába kerül**, függetlenül a `processing_status` értékétől.
+> **Ha egy fájlnak van `error_message` mezője, és nem sikeresen átirányított (`redirected`) vagy nem sikeres visszajelzés ("Job completed") → automatikusan "Hiba" kategóriába kerül**, függetlenül a `processing_status` értékétől.
 
 ```typescript
 // EF (management-stats/index.ts)
 const isError = (r) => {
   if (r.processing_status === "redirected") return false;
-  return ERROR_STATUSES.has(r.processing_status) || !!r.error_message;
+  return ERROR_STATUSES.has(r.processing_status) || (!!r.error_message && !isCompletedMessage(r.error_message));
 };
-const isSuccess = (r) => !r.error_message && (SUCCESS_STATUSES.has(r.processing_status) || r.processing_status === "redirected");
+const isSuccess = (r) => isCompletedMessage(r.error_message) && (SUCCESS_STATUSES.has(r.processing_status) || r.processing_status === "redirected");
 
 // FE (ManagementDashboard.tsx)
 function normalizeStatus(status, errorMessage?) {
   if (status === 'redirected') return 'redirected';
-  if (errorMessage) return 'error';     // error_message wins
+  if (errorMessage && !isCompletedMessage(errorMessage)) return 'error'; // non-success error_message wins
   if (!status) return 'pending';
   switch (status) { /* ... */ }
 }
+```
 ```
 
 ### Filter UX: Command Combobox Pattern (2026-07-07)
@@ -511,6 +512,58 @@ A "Worker hibák" panelen (`wrk_show_errors=true`) a felhasználó keresést is 
 ### Virtuális Fallback Átirányítás Státusz (REDIRECTED)
 
 Amikor egy fájl feldolgozása elbukik egy pipeline-ban (pl. a `transaction` pipeline-ban a K&H bankkivonat koordináta-alapú parsolása), de a rendszer sikeresen átirányítja és feldolgozza egy fallback gyermek pipeline-ban (pl. `invoice`), a szülő upload rekord státusza a dashboardon virtuálisan `REDIRECTED` (REDIRECT badge) lesz a korábbi zavaró `ERROR` helyett.
+
+
+## Email-fájl Sibling Cleanup (2026-07-13)
+
+> **Cél:** 1 Mailgun-fájlból legfeljebb **1 hibasor** legyen a Hibák/Fájlok panelen, függetlenül attól, hányszor futott át a pipeline-okon vagy hányszor kézbesítette újra a Mailgun.
+
+### Probléma
+
+A worker fallback lánc (`fallback_from_invoice/transaction/report` + 3 inline redirect a `process_*_job`-ban) email-forrású (`metadata.source='email_alias'`) fájloknál több pipeline-t is próbál. **Egy cikluson belül** ez rendben van: az intermediate sikertelen sorok törlődnek, és 1 végső hibasor marad. De **ciklusok között** (Mailgun újrakézbesítés, manual retry) minden ciklus **új** eredeti sort + új végső hibasort hoz létre, anélkül hogy tudna a korábbi testvér-sorokról. Pl. `SKM_C250i26071012000.pdf` → **8 db** `transaction_uploads` hibasor 15 perc alatt.
+
+Különösen erős a probléma, amikor a feladó nem küld `Message-Id` headert (pl. Canon szkenner) — ilyenkor a webhook idempotency check-je is skippelődik (ld. [A-011 — Null Message-Id Fallback Dedup](./A-011-email-processing.md#null-message-id-fallback-dedup-2026-07-13)).
+
+### Megoldás — két réteg
+
+**1. Webhook keményítés (A-011):** null-Message-Id esetén cross-tábla dedup `(company_id, file_name, email_alias)` alapján 24h ablakban — megelőzi a felesleges újrafeldolgozást/LLM költséget.
+
+**2. Worker sibling cleanup (fő garancia):** mielőtt a fallback **bármelyik** végső hibasort kiírná, törli a testvér-sorokat.
+
+#### `cleanup_email_file_siblings()` helper (`worker/db.py`)
+
+```python
+async def cleanup_email_file_siblings(company_id, file_name, keep_ids):
+    """Delete sibling email_alias upload rows for the same (company_id, file_name)
+    across all upload tables, except those in keep_ids. Best-effort, never raises."""
+    for tbl in ("invoice_uploads", "transaction_uploads", "report_uploads"):
+        client.table(tbl).delete() \
+            .eq("company_id", company_id) \
+            .eq("file_name", file_name) \
+            .eq("metadata->>source", "email_alias") \
+            .not_in("id", keep_ids).execute()
+```
+
+#### Behívási helyek (7 call site a `worker.py`-ban, 6 kódlocation)
+
+| Függvény | Mit csinál |
+|---|---|
+| `fallback_from_invoice` | invoice→report/transaction fallback végső hiba |
+| `fallback_from_transaction` | transaction→report/invoice fallback végső hiba |
+| `fallback_from_report` | report→invoice/transaction fallback végső hiba |
+| `process_single_job` (inline) | korai invoice→report redirect hiba |
+| `process_transaction_job` (inline) | korai transaction→report redirect hiba |
+| `process_report_job` (inline, 2 ág) | korai report→transaction és report→invoice redirect hiba |
+
+Minden helyen **miután** a végső hibasor (`new_id`) létrejött és az `error_message` ki van írva: `await cleanup_email_file_siblings(company_id, file_name, keep_ids=[new_id])`.
+
+#### Garanciák
+
+- **≤1 hibasor email-fájlonként** bármely stabil időpillanatban, bármennyi redelivery/retry esetén.
+- **Csak `metadata.source='email_alias'`** sorokat érinti — manuális feltöltések sosem érintettek.
+- **Best-effort:** a helper hibája nem tör meg fallback folyamatot (csak logol).
+
+> **Megjegyzés:** a management-stats EF (`buildErrors`/`buildFiles`) **nem** módosult — nincs szükség megjelenítés-oldali dedupra, mert a sibling cleanup után nem keletkezik duplikátum. A histórikus duplikátumok manuálisan törölhetők (pl. a `delete-all-errors` actionnel vagy SQL-lel).
 
 
 

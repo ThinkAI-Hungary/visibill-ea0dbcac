@@ -130,6 +130,12 @@ function roleLabel(role: string | null | undefined) {
   return role || "MEMBER";
 }
 
+function isCompletedMessage(msg: string | null | undefined): boolean {
+  if (!msg) return true;
+  const lower = msg.toLowerCase();
+  return lower === "job completed" || lower.includes("job completed");
+}
+
 function startOfMonthIso() {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
@@ -1469,20 +1475,72 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
   };
 }
 
+interface ProjectClient {
+  name: string;
+  client: ReturnType<typeof createClient>;
+}
+
+let _cachedProjectClients: ProjectClient[] | null = null;
+
+function getProjectClients(admin: ReturnType<typeof createClient>): ProjectClient[] {
+  if (_cachedProjectClients) {
+    return _cachedProjectClients;
+  }
+  const clients: ProjectClient[] = [
+    { name: "PROD", client: admin },
+  ];
+
+  const vswebUrl = Deno.env.get("VSWEB_SUPABASE_URL");
+  const vswebKey = Deno.env.get("VSWEB_SERVICE_ROLE_KEY");
+  if (vswebUrl && vswebKey) {
+    try {
+      clients.push({ name: "VSWEB", client: createClient(vswebUrl, vswebKey) });
+    } catch (e) {
+      console.warn("[project-clients] VSWEB client creation failed:", e);
+    }
+  }
+
+  const thinkUrl = Deno.env.get("THINKERMAN_SUPABASE_URL");
+  const thinkKey = Deno.env.get("THINKERMAN_SERVICE_ROLE_KEY");
+  if (thinkUrl && thinkKey) {
+    try {
+      clients.push({ name: "THINKERMAN", client: createClient(thinkUrl, thinkKey) });
+    } catch (e) {
+      console.warn("[project-clients] THINKERMAN client creation failed:", e);
+    }
+  }
+
+  _cachedProjectClients = clients;
+  return clients;
+}
+
+function getClientForProject(admin: ReturnType<typeof createClient>, projectName: string): ReturnType<typeof createClient> {
+  const clients = getProjectClients(admin);
+  const pc = clients.find(p => p.name.toUpperCase() === projectName.toUpperCase());
+  return pc?.client || admin;
+}
+
 async function deleteErrors(
   admin: ReturnType<typeof createClient>,
-  body: { ids?: Array<{ source: string; id: string }> },
+  body: { ids?: Array<{ source: string; id: string; project?: string }> },
 ) {
   if (!body.ids || !Array.isArray(body.ids) || body.ids.length === 0) {
     return { deleted: 0, error: null };
   }
 
-  // Group by source table
-  const bySource = new Map<string, string[]>();
+  // Group by project AND source table
+  const byProjectAndSource = new Map<string, Map<string, string[]>>();
   for (const item of body.ids) {
     if (!item.source || !item.id) continue;
-    if (!bySource.has(item.source)) bySource.set(item.source, []);
-    bySource.get(item.source)!.push(item.id);
+    const project = item.project || "PROD";
+    if (!byProjectAndSource.has(project)) {
+      byProjectAndSource.set(project, new Map<string, string[]>());
+    }
+    const sourceMap = byProjectAndSource.get(project)!;
+    if (!sourceMap.has(item.source)) {
+      sourceMap.set(item.source, []);
+    }
+    sourceMap.get(item.source)!.push(item.id);
   }
 
   const validTables = new Set([
@@ -1494,42 +1552,46 @@ async function deleteErrors(
   let totalDeleted = 0;
   const errors: string[] = [];
 
-  for (const [rawSource, ids] of bySource) {
-    // Normalize sub-sources: 'app_error_logs:frontend' → 'app_error_logs'
-    const source = rawSource.includes(':') ? rawSource.split(':')[0] : rawSource;
-    if (!validTables.has(source)) {
-      errors.push(`Invalid source: ${rawSource}`);
-      continue;
-    }
+  for (const [project, sourceMap] of byProjectAndSource) {
+    const projectClient = getClientForProject(admin, project);
 
-    if (source === "app_error_logs") {
-      // Frontend logs: actually DELETE (no processing_status to dismiss)
-      const { error, count } = await admin
-        .from("app_error_logs")
-        .delete()
-        .in("id", ids);
-
-      if (error) {
-        errors.push(`${source}: ${error.message}`);
-      } else {
-        totalDeleted += count || 0;
+    for (const [rawSource, ids] of sourceMap) {
+      // Normalize sub-sources: 'app_error_logs:frontend' → 'app_error_logs'
+      const source = rawSource.includes(':') ? rawSource.split(':')[0] : rawSource;
+      if (!validTables.has(source)) {
+        errors.push(`[${project}] Invalid source: ${rawSource}`);
+        continue;
       }
-    } else {
-      // Upload tables: set status to "dismissed" (preserve the record)
-      const statusField = source === "nav_sync_logs" ? "status" : "processing_status";
-      const { error, count } = await admin
-        .from(source)
-        .update({
-          [statusField]: "dismissed",
-          error_message: null,
-        } as any)
-        .in("id", ids)
-        .eq(statusField, "error");
 
-      if (error) {
-        errors.push(`${source}: ${error.message}`);
+      if (source === "app_error_logs") {
+        // Frontend logs: actually DELETE (no processing_status to dismiss)
+        const { error, count } = await projectClient
+          .from("app_error_logs")
+          .delete()
+          .in("id", ids);
+
+        if (error) {
+          errors.push(`[${project}] ${source}: ${error.message}`);
+        } else {
+          totalDeleted += count || 0;
+        }
       } else {
-        totalDeleted += count || 0;
+        // Upload tables: set status to "dismissed" (preserve the record)
+        const statusField = source === "nav_sync_logs" ? "status" : "processing_status";
+        const { error, count } = await projectClient
+          .from(source)
+          .update({
+            [statusField]: "dismissed",
+            error_message: null,
+          } as any)
+          .in("id", ids)
+          .eq(statusField, "error");
+
+        if (error) {
+          errors.push(`[${project}] ${source}: ${error.message}`);
+        } else {
+          totalDeleted += count || 0;
+        }
       }
     }
   }
@@ -1627,7 +1689,7 @@ function buildQueuePayload(source: string, row: any): Record<string, unknown> {
 async function retryErrors(
   admin: ReturnType<typeof createClient>,
   body: {
-    ids?: Array<{ source: string; id: string }>;
+    ids?: Array<{ source: string; id: string; project?: string }>;
     targetQueue?: string;
     targetCategory?: string | null;
   },
@@ -1641,83 +1703,94 @@ async function retryErrors(
     ? body.targetQueue
     : null;
 
-  // Group by source table
-  const bySource = new Map<string, string[]>();
+  // Group by project AND source table
+  const byProjectAndSource = new Map<string, Map<string, string[]>>();
   for (const item of body.ids) {
     if (!item.source || !item.id) continue;
-    if (!bySource.has(item.source)) bySource.set(item.source, []);
-    bySource.get(item.source)!.push(item.id);
+    const project = item.project || "PROD";
+    if (!byProjectAndSource.has(project)) {
+      byProjectAndSource.set(project, new Map<string, string[]>());
+    }
+    const sourceMap = byProjectAndSource.get(project)!;
+    if (!sourceMap.has(item.source)) {
+      sourceMap.set(item.source, []);
+    }
+    sourceMap.get(item.source)!.push(item.id);
   }
 
   let totalRetried = 0;
   const errors: string[] = [];
 
-  for (const [rawSource, ids] of bySource) {
-    // Normalize sub-sources: 'app_error_logs:frontend' → 'app_error_logs'
-    const source = rawSource.includes(':') ? rawSource.split(':')[0] : rawSource;
-    const queueName = effectiveQueue || QUEUE_MAP[source];
-    if (!queueName) {
-      errors.push(`Retry not supported for ${rawSource}`);
-      continue;
-    }
+  for (const [project, sourceMap] of byProjectAndSource) {
+    const projectClient = getClientForProject(admin, project);
 
-    // 1. Fetch the row data needed for PGMQ payload
-    const selectCols = RETRY_SELECT[source] || "id";
-    const { data: rows, error: fetchErr } = await admin
-      .from(source)
-      .select(selectCols)
-      .in("id", ids);
-
-    if (fetchErr) {
-      errors.push(`${source} fetch: ${fetchErr.message}`);
-      continue;
-    }
-
-    if (!rows || rows.length === 0) {
-      errors.push(`${source}: no rows found`);
-      continue;
-    }
-
-    // 2. Reset status to pending + clear error + optionally update document_category
-    const statusField = "processing_status";
-    const updatePayload: Record<string, unknown> = {
-      [statusField]: "pending",
-      error_message: null,
-    };
-
-    // If targetCategory is provided and source supports it, update document_category
-    if (body.targetCategory !== undefined && body.targetCategory !== null && source === "invoice_uploads") {
-      updatePayload.document_category = body.targetCategory;
-    }
-
-    const { error: updateErr } = await admin
-      .from(source)
-      .update(updatePayload as any)
-      .in("id", ids);
-
-    if (updateErr) {
-      errors.push(`${source} update: ${updateErr.message}`);
-      continue;
-    }
-
-    // 3. Send each row to the PGMQ queue via RPC
-    for (const row of rows) {
-      const payload = buildQueuePayload(source, row);
-      // Override document_category in the payload if changed
-      if (body.targetCategory !== undefined && body.targetCategory !== null && source === "invoice_uploads") {
-        payload.document_category = body.targetCategory;
+    for (const [rawSource, ids] of sourceMap) {
+      // Normalize sub-sources: 'app_error_logs:frontend' → 'app_error_logs'
+      const source = rawSource.includes(':') ? rawSource.split(':')[0] : rawSource;
+      const queueName = effectiveQueue || QUEUE_MAP[source];
+      if (!queueName) {
+        errors.push(`[${project}] Retry not supported for ${rawSource}`);
+        continue;
       }
 
-      const { error: rpcErr } = await admin.rpc("pgmq_send_retry", {
-        queue_name: queueName,
-        msg: payload,
-      });
+      // 1. Fetch the row data needed for PGMQ payload
+      const selectCols = RETRY_SELECT[source] || "id";
+      const { data: rows, error: fetchErr } = await projectClient
+        .from(source)
+        .select(selectCols)
+        .in("id", ids);
 
-      if (rpcErr) {
-        console.error(`[MANAGEMENT-STATS] pgmq_send_retry failed for ${source}/${row.id}:`, rpcErr.message);
-        errors.push(`${source}/${row.id}: queue send failed — ${rpcErr.message}`);
-      } else {
-        totalRetried++;
+      if (fetchErr) {
+        errors.push(`[${project}] ${source} fetch: ${fetchErr.message}`);
+        continue;
+      }
+
+      if (!rows || rows.length === 0) {
+        errors.push(`[${project}] ${source}: no rows found`);
+        continue;
+      }
+
+      // 2. Reset status to pending + clear error + optionally update document_category
+      const statusField = "processing_status";
+      const updatePayload: Record<string, unknown> = {
+        [statusField]: "pending",
+        error_message: null,
+      };
+
+      // If targetCategory is provided and source supports it, update document_category
+      if (body.targetCategory !== undefined && body.targetCategory !== null && source === "invoice_uploads") {
+        updatePayload.document_category = body.targetCategory;
+      }
+
+      const { error: updateErr } = await projectClient
+        .from(source)
+        .update(updatePayload as any)
+        .in("id", ids);
+
+      if (updateErr) {
+        errors.push(`[${project}] ${source} update: ${updateErr.message}`);
+        continue;
+      }
+
+      // 3. Send each row to the PGMQ queue via RPC
+      for (const row of rows) {
+        const payload = buildQueuePayload(source, row);
+        // Override document_category in the payload if changed
+        if (body.targetCategory !== undefined && body.targetCategory !== null && source === "invoice_uploads") {
+          payload.document_category = body.targetCategory;
+        }
+
+        const { error: rpcErr } = await projectClient.rpc("pgmq_send_retry", {
+          queue_name: queueName,
+          msg: payload,
+        });
+
+        if (rpcErr) {
+          console.error(`[MANAGEMENT-STATS] [${project}] pgmq_send_retry failed for ${source}/${row.id}:`, rpcErr.message);
+          errors.push(`[${project}] ${source}/${row.id}: queue send failed — ${rpcErr.message}`);
+        } else {
+          totalRetried++;
+        }
       }
     }
   }
@@ -2112,12 +2185,7 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
 
   // Stats are computed from ALL rows (before status filter) so KPI cards always show global counts
 
-  // Helper: check if the error message is actually a success message
-  const isCompletedMessage = (msg: string | null | undefined) => {
-    if (!msg) return true;
-    const lower = msg.toLowerCase();
-    return lower === "job completed" || lower.includes("job completed");
-  };
+
 
   // Helper: a row is an error if its status is in ERROR_STATUSES OR it has an error_message (excluding success messages)
   const isError = (r: typeof mappedRows[0]) => ERROR_STATUSES.has(r.processing_status || "") || (!!r.error_message && !isCompletedMessage(r.error_message));
@@ -2720,7 +2788,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
             .select("id, processing_status, error_message, file_url")
             .in("id", uploadIds);
           for (const u of (invUploads || [])) {
-            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
             uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "invoice_uploads");
@@ -2734,7 +2802,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
             .select("id, processing_status, error_message, file_url")
             .in("id", uploadIds);
           for (const u of (txUploads || [])) {
-            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
             uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "transaction_uploads");
@@ -2748,7 +2816,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
             .select("id, processing_status, error_message, file_url")
             .in("id", uploadIds);
           for (const u of (bankUploads || [])) {
-            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
             uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "bank_statement_uploads");
@@ -2762,7 +2830,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
             .select("id, processing_status, error_message, file_url")
             .in("id", uploadIds);
           for (const u of (reportUploads || [])) {
-            const hasError = u.processing_status === "error" || u.processing_status === "failed" || !!u.error_message;
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
             uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "report_uploads");

@@ -128,6 +128,7 @@ interface ErrorRow {
   user_id: string | null;
   user_name: string | null;
   context: Record<string, unknown> | null;
+  project?: string;
 }
 
 interface ErrorsData {
@@ -564,7 +565,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteTargets, setDeleteTargets] = useState<Array<{ source: string; id: string }>>([]);
+  const [deleteTargets, setDeleteTargets] = useState<Array<{ source: string; id: string; project?: string }>>([]);
   const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -664,7 +665,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
     setSelected(next);
   };
 
-  const handleDelete = async (ids: Array<{ source: string; id: string }>) => {
+  const handleDelete = async (ids: Array<{ source: string; id: string; project?: string }>) => {
     if (ids.length === 0) return;
     setDeleteTargets(ids);
     setDeleteModalOpen(true);
@@ -703,7 +704,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
 
   // Retry modal state
   const [retryModalOpen, setRetryModalOpen] = useState(false);
-  const [retryTargets, setRetryTargets] = useState<Array<{ source: string; id: string }>>([]);
+  const [retryTargets, setRetryTargets] = useState<Array<{ source: string; id: string; project?: string }>>([]);
   const [retryPipeline, setRetryPipeline] = useState('same'); // 'same' | 'invoice' | 'payroll' | 'transaction' | 'gl'
 
   const PIPELINE_OPTIONS: Array<{ value: string; label: string; icon: React.ReactNode; queue?: string; category?: string | null }> = [
@@ -732,7 +733,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
 
   const { toast } = useToast();
 
-  const openRetryModal = (ids: Array<{ source: string; id: string }>) => {
+  const openRetryModal = (ids: Array<{ source: string; id: string; project?: string }>) => {
     const retryable = ids.filter(i => RETRYABLE_SOURCES.has(i.source));
     if (retryable.length === 0) {
       toast({ title: 'Nem támogatott', description: 'A kijelölt hibák forrása nem támogatja az újraküldést.', variant: 'destructive' });
@@ -1427,7 +1428,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                               <button className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
                                 title="Újraküldés feldolgozásra"
                                 disabled={retrying}
-                                onClick={() => openRetryModal([{ source: r.source, id: r.id }])}>
+                                onClick={() => openRetryModal([{ source: r.source, id: r.id, project: r.project }])}>
                                 <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />
                               </button>
                             ) : (
@@ -1435,7 +1436,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                             )}
                             <button className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                               title="Hiba törlése"
-                              onClick={() => handleDelete([{ source: r.source, id: r.id }])}>
+                              onClick={() => handleDelete([{ source: r.source, id: r.id, project: r.project }])}>
                               <Trash2 className="h-3 w-3" />
                             </button>
                           </div>
@@ -4371,7 +4372,7 @@ function WorkerPanel() {
 
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
   const [retryModalOpen, setRetryModalOpen] = useState(false);
-  const [retryTargets, setRetryTargets] = useState<Array<{ source: string; id: string }>>([]);
+  const [retryTargets, setRetryTargets] = useState<Array<{ source: string; id: string; project?: string }>>([]);
   const [retryPipeline, setRetryPipeline] = useState('same');
   const [retrying, setRetrying] = useState(false);
 
@@ -4388,7 +4389,7 @@ function WorkerPanel() {
     { value: 'gl', label: 'Főkönyvi besorolás', icon: <BarChart3 className="h-4 w-4 text-purple-500" />, queue: 'gl_classification_jobs', category: null },
   ];
 
-  const openRetryModal = (ids: Array<{ source: string; id: string }>) => {
+  const openRetryModal = (ids: Array<{ source: string; id: string; project?: string }>) => {
     const retryable = ids.filter(i => RETRYABLE_SOURCES.has(i.source));
     if (retryable.length === 0) {
       toast({ title: 'Nem támogatott', description: 'A kijelölt fájl nem támogatja az újraküldést.', variant: 'destructive' });
@@ -4978,7 +4979,7 @@ function WorkerPanel() {
                                       disabled={retrying}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        openRetryModal([{ source: j.source, id: j.upload_id }]);
+                                        openRetryModal([{ source: j.source, id: j.upload_id, project: j.project }]);
                                       }}
                                     >
                                       <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />
@@ -5536,7 +5537,7 @@ function WorkerPanel() {
                               disabled={retrying}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                openRetryModal([{ source: j.source, id: j.upload_id }]);
+                                openRetryModal([{ source: j.source, id: j.upload_id, project: j.project }]);
                               }}
                             >
                               <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />

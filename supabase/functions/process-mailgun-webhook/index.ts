@@ -1,6 +1,40 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { logError } from "../_shared/error-logger.ts";
+
+// ── Inline error logger (self-contained, no _shared dependency) ──
+// Mirrors supabase/functions/_shared/error-logger.ts. Writes to app_error_logs
+// via service_role; non-blocking (never disrupts the main flow).
+interface ErrorLogEntry {
+  error_type: string;
+  severity?: string;
+  component: string;
+  action: string;
+  message: string;
+  user_id?: string | null;
+  company_id?: string | null;
+  stack_trace?: string;
+  context?: Record<string, unknown>;
+}
+
+async function logError(supabase: any, entry: ErrorLogEntry): Promise<void> {
+  try {
+    await supabase.from("app_error_logs").insert({
+      error_type: entry.error_type,
+      severity: entry.severity || "error",
+      component: entry.component,
+      action: entry.action,
+      message: entry.message.substring(0, 2000),
+      stack_trace: entry.stack_trace?.substring(0, 5000),
+      user_id: entry.user_id || null,
+      company_id: entry.company_id || null,
+      context: entry.context || {},
+      url: null,
+      user_agent: null,
+    });
+  } catch (err) {
+    console.error("[error-logger] Failed to write to app_error_logs:", err);
+  }
+}
 
 // Helper function to verify Mailgun webhook signature using Web Crypto API
 async function verifySignature(timestamp: string, token: string, signature: string, signingKey: string): Promise<boolean> {
@@ -314,6 +348,12 @@ serve(async (req) => {
         'badge', 'visa', 'mastercard', 'paypal', 'amex', 'diners',
         'header', 'button', 'social', 'branding', 'template',
         'unsubscribe', 'emailbg', 'bg_', 'divider', 'receipt',
+        // Hungarian equivalents (accent-sensitive — fileName is lowercased but not normalized)
+        'aláírás', 'alairas', 'szignó', 'szigno',        // signature
+        'fejléc', 'fejlec', 'lábléc', 'lablec',           // header / footer
+        'arculat',                                          // branding/corporate identity
+        'szórólap', 'szorolap', 'plakát', 'plakat',        // flyer / poster
+        'hírlevél', 'hirlevel',                            // newsletter
       ];
       if (junkKeywords.some(keyword => fileName.includes(keyword))) {
         console.log(`Skipping file with junk keyword in name: ${file.name}`);
@@ -592,6 +632,37 @@ serve(async (req) => {
           if (hasBeenProcessed) {
             console.log(`[IDEMPOTENCY] Skipping duplicate attachment: ${attachment.name} ` +
               `(Message-Id already processed: ${messageId})`);
+            continue;
+          }
+        } else {
+          // ── Fallback idempotency (no Message-Id available) ──
+          // Some senders (e.g. Canon scanner firmware) omit the Message-Id header,
+          // so the per-email check above cannot run. To avoid duplicate processing
+          // on Mailgun redelivery, dedup on (company_id, file_name, email_alias)
+          // across all three upload tables within a 24h window. Any existing row
+          // (any status) means the file is already tracked / was already attempted.
+          const sinceIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+          let hasRecentEmailUpload = false;
+          const tablesToCheckNoMsgId = ['transaction_uploads', 'invoice_uploads', 'report_uploads'];
+          for (const table of tablesToCheckNoMsgId) {
+            const { data: recentUpload } = await supabase
+              .from(table)
+              .select('id, processing_status')
+              .eq('company_id', alias.company_id)
+              .eq('file_name', attachment.name)
+              .eq('metadata->>source', 'email_alias')
+              .gt('created_at', sinceIso)
+              .limit(1);
+
+            if (recentUpload && recentUpload.length > 0) {
+              hasRecentEmailUpload = true;
+              break;
+            }
+          }
+
+          if (hasRecentEmailUpload) {
+            console.log(`[IDEMPOTENCY] Skipping duplicate attachment (no Message-Id): ${attachment.name} ` +
+              `(email_alias row already exists within 24h for company ${alias.company_id})`);
             continue;
           }
         }

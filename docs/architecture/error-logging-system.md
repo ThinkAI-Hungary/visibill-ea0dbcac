@@ -182,6 +182,8 @@ A Python worker PGMQ-n vagy DB közvetlen insert-tel logol az `app_error_logs` t
 
 **Fájl:** `supabase/functions/_shared/error-logger.ts`
 
+> **Megjegyzés (2026-07-13):** a `process-mailgun-webhook` EF saját inline `logError` másolatot használ (önálló funkció, `_shared` bundler-függőség nélkül). A többi EF továbbra is a shared `_shared/error-logger.ts`-t importálja. A két implementáció funkcionálisan azonos.
+
 Edge Function-ökben használt shared utility:
 
 ```typescript
