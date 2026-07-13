@@ -3391,6 +3391,7 @@ export default function ManagementDashboard() {
                               if (cat === "success") return "text-emerald-600 dark:text-emerald-400";
                               if (cat === "error") return "text-red-500 dark:text-red-400";
                               if (cat === "redirected") return "text-blue-500 dark:text-blue-400";
+                              if (cat === "dismissed") return "text-zinc-500 dark:text-zinc-400";
                               return "text-teal-600 dark:text-teal-400 animate-pulse";
                             })()
                           )}>
@@ -3399,6 +3400,7 @@ export default function ManagementDashboard() {
                               if (cat === "success") return "Kész";
                               if (cat === "error") return "Hiba";
                               if (cat === "redirected") return "Átirányítva";
+                              if (cat === "dismissed") return "Mellőzve";
                               return "Feldolgozás";
                             })()}
                           </span>
@@ -5702,7 +5704,7 @@ function fileExtBadge(fileName: string) {
 }
 
 /** Normalize raw processing_status to one of 4 display categories */
-type StatusCategory = 'success' | 'pending' | 'error' | 'redirected';
+type StatusCategory = 'success' | 'pending' | 'error' | 'redirected' | 'dismissed';
 
 function normalizeStatus(status: string | null, errorMessage?: string | null): StatusCategory {
   if (status === 'redirected') return 'redirected';
@@ -5712,7 +5714,9 @@ function normalizeStatus(status: string | null, errorMessage?: string | null): S
   if (!status) return 'pending';
   switch (status) {
     case 'done': case 'completed': case 'processed': return 'success';
-    case 'error': case 'failed': case 'ignored': case 'dismissed': case 'webhook_failed': return 'error';
+    case 'dismissed': return 'dismissed';
+    case 'ignored': return 'dismissed';
+    case 'error': case 'failed': case 'webhook_failed': return 'error';
     default: return 'pending';
   }
 }
@@ -5722,6 +5726,7 @@ const STATUS_DISPLAY: Record<StatusCategory, { label: string; cls: string }> = {
   pending:  { label: 'Folyamatban', cls: 'bg-warning/10 text-warning border-warning/25' },
   error:   { label: 'Hiba',        cls: 'bg-destructive/10 text-destructive border-destructive/25' },
   redirected: { label: 'Átirányítva', cls: 'bg-info/10 text-info border-info/25' },
+  dismissed: { label: 'Mellőzve',    cls: 'bg-muted text-muted-foreground border-border' },
 };
 
 /** Comma-separated DB values for each filter category (sent to EF) */
