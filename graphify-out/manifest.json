@@ -1505,8 +1505,8 @@
     "semantic_hash": ""
   },
   "src/pages/ManagementDashboard.tsx": {
-    "mtime": 1783929754.022535,
-    "ast_hash": "c9a2c8cdaed47a63aef2965795523205",
+    "mtime": 1783937163.2961676,
+    "ast_hash": "c155fcbc59398d7e5c699b8be32a1042",
     "semantic_hash": ""
   },
   "src/pages/ManualUpload.tsx": {
@@ -6025,7 +6025,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1783769046.208652,
+    "mtime": 1783933254.1958103,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },

@@ -1700,8 +1700,8 @@
     "semantic_hash": "ff7983437ae5d07804815e4662ebd916"
   },
   "supabase/functions/management-stats/index.ts": {
-    "mtime": 1783930355.3192613,
-    "ast_hash": "87fda32fc972ef184b822fd127c4cc6d",
+    "mtime": 1783932961.397309,
+    "ast_hash": "19fc694dd1be0d07f5538f6ba18a0e03",
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
@@ -3145,8 +3145,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
-    "mtime": 1783920539.8206666,
-    "ast_hash": "247f5824bf2271f3c1a534b5089a9044",
+    "mtime": 1783933134.7259655,
+    "ast_hash": "97527824f3bd37a22cd4390ac5926397",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-020-auth-trigger-chain-incident.md": {

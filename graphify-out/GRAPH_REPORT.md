@@ -1,7 +1,7 @@
 # Graph Report - eaisybill-prod  (2026-07-13)
 
 ## Corpus Check
-- 1151 files · ~1,802,603 words
+- 1151 files · ~1,802,631 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `dd9249e2`
+- Built from commit: `21f827b4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -531,8 +531,8 @@ Cohesion: 0.53
 Nodes (5): COLORS, MissingInvoicesReportPage(), MONTH_NAMES_HU, useAccountyAllMissingItems(), MissingInvoicesReportPage
 
 ### Community 11 - "Accounty Employeedetailspage Employeedetailspage"
-Cohesion: 0.09
-Nodes (30): ClientDetailsPage(), ClientInvoicesPage(), ClientMissingInvoicesPage(), useAccountyCommunicationPrefs(), useCompanyInvoices(), useGeneratePortalToken(), useAccountyMissingCounts(), useAccountyMissingItems() (+22 more)
+Cohesion: 0.12
+Nodes (19): AddMissingInvoiceModal(), getPriorityBadge(), getStatusBadge(), HistoryViewProps, InvoiceDetailModal(), InvoiceDetailModalProps, InvoiceItem, BulkBarProps (+11 more)
 
 ### Community 12 - "Accounty Generaterequestemail Addtoapprovalqueue"
 Cohesion: 0.09
@@ -555,8 +555,8 @@ Cohesion: 0.08
 Nodes (28): FUND_TYPES, Props, CATEGORIES, PRIORITIES, Props, STATUSES, Props, UNIT_TYPES (+20 more)
 
 ### Community 17 - "Accounty Generaterequestemail Messagecategory"
-Cohesion: 0.06
-Nodes (35): AssignmentRow, CompanyInvoice, CompanyRow, DeadlineRow, InvoiceStatus, kanbanStatusMap, kanbanStatusReverse, MissingItemRow (+27 more)
+Cohesion: 0.09
+Nodes (22): CompanyInvoice, AccountyClient, AccountyCommunicationPrefs, AccountyCompanySummary, AccountyDeadline, AccountyKpis, AccountyMissingItem, AccountyTaxProfile (+14 more)
 
 ### Community 18 - "Accounty Generaterequestemail Messagestatus"
 Cohesion: 0.04
@@ -1447,8 +1447,8 @@ Cohesion: 0.25
 Nodes (6): AccountyModule, AccountyRole, ADMIN_ONLY_MODULES, ALL_MODULES, ALWAYS_ACCESSIBLE, SENIOR_AND_ADMIN_MODULES
 
 ### Community 346 - "Community 346"
-Cohesion: 0.25
-Nodes (7): AccountyClient, EnrichedTaoClient, FILING_STATUS, FilterMode, TaoFilingStatus, TaoPortfolioPage(), TP_STATUS
+Cohesion: 0.09
+Nodes (21): ClientInvoicesPage(), AssignmentRow, CompanyRow, DeadlineRow, InvoiceStatus, kanbanStatusMap, kanbanStatusReverse, MissingItemRow (+13 more)
 
 ### Community 347 - "Community 347"
 Cohesion: 0.18
@@ -1675,8 +1675,8 @@ Cohesion: 0.50
 Nodes (4): CompanyAccessCard(), formatTime(), IdleWarningModal(), CompanyAccessCard()
 
 ### Community 421 - "Community 421"
-Cohesion: 0.67
-Nodes (3): TaxCalendarPage(), useAccountyDeadlines(), useCompleteDeadline()
+Cohesion: 0.20
+Nodes (13): ClientDetailsPage(), ClientMissingInvoicesPage(), TaxCalendarPage(), useAccountyCommunicationPrefs(), useGeneratePortalToken(), useAccountyDeadlines(), useCompleteDeadline(), invalidateAccountyCache() (+5 more)
 
 ### Community 422 - "Community 422"
 Cohesion: 0.20
@@ -1782,7 +1782,7 @@ Nodes (8): useDeclarations(), DeclarationArchivePage(), STATUS_BADGE, TYPE_COLOR
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `Hooks Useaccountydata Useresolvemissingitem` to `Community 386`, `Email Processing Ecosystem`, `Invoice Type Definitions`, `Community 391`, `Accounty Accountyrolecontext Useaccountyrole`, `Accounty Employeedetailspage Employeedetailspage`, `Accounty Generaterequestemail Addtoapprovalqueue`, `Accounty Generaterequestemail Generaterequestemail`, `Accounty Generaterequestemail Getapprovalqueue`, `Accounty Generaterequestemail Messagecategory`, `Accounty Generaterequestemail Messagestatus`, `Accounty Generaterequestemail Missingitemforemail`, `Accounty Generaterequestemail Updatemessagebody`, `Hooks Usepayrolldata Batchpayrollinput`, `Community 407`, `Hooks Usepayrolldata Batchpayrollresult`, `Community 411`, `Accounty Types Blockingcategory`, `Accounty Types Blockingitem`, `Community 415`, `Components Emailpreferences Emailpreferences`, `Components Feedbackfab Feedbackfab`, `Community 418`, `Components Producttour Producttour`, `Community 421`, `Components Scopedlayout Scopedlayout`, `Contexts Companycontext Company`, `Contexts Themecontext Usetheme`, `Community 171`, `Community 174`, `Dashboard Useractivitydialog Useractivitydialog`, `Eaisybill Prod Readme`, `Community 177`, `Fixed Assets Depreciationcards Depreciationcards`, `General Ledger Uploadchartofaccountsmodal Uploadch`, `Hooks Useaccountydata Accountyaccountant`, `Community 439`, `Community 184`, `Hooks Useaccountydata Accountydeadline`, `Community 443`, `Community 444`, `Community 445`, `Hooks Useaccountydata Auditlogentry`, `Hooks Useaccountydata Colleaguestat`, `Hooks Useaccountydata Companyinvoice`, `Community 323`, `Hooks Useaccountydata Monthlytrendpoint`, `Community 327`, `Hooks Useaccountydata Useaccountyauditlog`, `Community 332`, `Community 462`, `Hooks Useaccountydata Useaccountyportalstats`, `Community 339`, `Community 212`, `Hooks Useaccountydata Useaccountyreportdata`, `Community 343`, `Community 216`, `Community 346`, `Hooks Useaccountydata Useupdatekanbanstatus`, `Hooks Useaccountydata Useupsertcommunicationprefs`, `Hooks Useaccountydata Useupserttaxprofile`, `Community 351`, `Hooks Useappready Redirecttarget`, `Community 358`, `Community 364`, `Hooks Usedashboarddata Monthlydata`, `Community 242`, `Community 373`, `Community 374`?**
+- **Why does `cn()` connect `Hooks Useaccountydata Useresolvemissingitem` to `Community 386`, `Email Processing Ecosystem`, `Invoice Type Definitions`, `Community 391`, `Accounty Accountyrolecontext Useaccountyrole`, `Accounty Generaterequestemail Addtoapprovalqueue`, `Accounty Generaterequestemail Generaterequestemail`, `Accounty Generaterequestemail Getapprovalqueue`, `Accounty Generaterequestemail Messagecategory`, `Accounty Generaterequestemail Messagestatus`, `Accounty Generaterequestemail Missingitemforemail`, `Accounty Generaterequestemail Updatemessagebody`, `Hooks Usepayrolldata Batchpayrollinput`, `Community 407`, `Hooks Usepayrolldata Batchpayrollresult`, `Community 411`, `Accounty Types Blockingcategory`, `Accounty Types Blockingitem`, `Community 415`, `Components Emailpreferences Emailpreferences`, `Components Feedbackfab Feedbackfab`, `Community 418`, `Components Producttour Producttour`, `Community 421`, `Components Scopedlayout Scopedlayout`, `Contexts Companycontext Company`, `Contexts Themecontext Usetheme`, `Community 171`, `Community 174`, `Dashboard Useractivitydialog Useractivitydialog`, `Eaisybill Prod Readme`, `Community 177`, `Fixed Assets Depreciationcards Depreciationcards`, `General Ledger Uploadchartofaccountsmodal Uploadch`, `Hooks Useaccountydata Accountyaccountant`, `Community 439`, `Community 184`, `Hooks Useaccountydata Accountydeadline`, `Community 443`, `Community 444`, `Community 445`, `Hooks Useaccountydata Auditlogentry`, `Hooks Useaccountydata Colleaguestat`, `Hooks Useaccountydata Companyinvoice`, `Community 323`, `Hooks Useaccountydata Monthlytrendpoint`, `Community 327`, `Hooks Useaccountydata Useaccountyauditlog`, `Community 332`, `Community 462`, `Hooks Useaccountydata Useaccountyportalstats`, `Community 339`, `Community 212`, `Hooks Useaccountydata Useaccountyreportdata`, `Community 343`, `Community 216`, `Community 346`, `Hooks Useaccountydata Useupdatekanbanstatus`, `Hooks Useaccountydata Useupsertcommunicationprefs`, `Hooks Useaccountydata Useupserttaxprofile`, `Community 351`, `Hooks Useappready Redirecttarget`, `Community 358`, `Community 364`, `Hooks Usedashboarddata Monthlydata`, `Community 242`, `Community 373`, `Community 374`?**
   _High betweenness centrality (0.054) - this node is a cross-community bridge._
 - **Why does `VisiBill - Project Documentation` connect `Accounty Sharedcomponents Animatednumber` to `Hooks Useaccountydata Invoicereportrow`, `Community 417`, `Community 455`, `Dashboard Dashboardskeleton Metriccardskeleton`, `Fixed Assets Inventorycheckdialog Inventorycheckdi`, `Hooks Useaccountydata Useaccountytaxprofile`, `Community 437`, `Hooks Useaccountydata Accountycommunicationprefs`, `Accounty Mockdata Blockingcategory`?**
   _High betweenness centrality (0.030) - this node is a cross-community bridge._
