@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Note } from '@/types/notes';
+import type { Note } from '../../types/notes';
 import { Loader2, Lock, Users, Search, FileText, X, Link, Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';

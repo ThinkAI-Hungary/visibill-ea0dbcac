@@ -6,7 +6,7 @@ import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Note } from '@/types/notes';
+import type { Note } from '../types/notes';
 import {
   Search,
   Plus,
