@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -6,10 +6,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
-import { FileText, ExternalLink } from 'lucide-react';
+import { FileText, ExternalLink, Lock, Users, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { INVOICE_TYPE_LABELS } from '@/types/invoices';
 import { reportError } from '@/lib/errorReporter';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 interface InvoiceDetailPopupProps {
   open: boolean;
@@ -93,14 +96,95 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
   const [invoice, setInvoice] = useState<FullInvoice | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Notes state
+  const [notes, setNotes] = useState<any[]>([]);
+  const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [newNoteText, setNewNoteText] = useState('');
+  const [newNotePrivate, setNewNotePrivate] = useState(true);
+  const [addingNote, setAddingNote] = useState(false);
+
   useEffect(() => {
     if (open && invoiceId) {
       fetchInvoice();
+      fetchNotes();
     }
     if (!open) {
       setInvoice(null);
+      setNotes([]);
+      setNewNoteTitle('');
+      setNewNoteText('');
+      setNewNotePrivate(true);
     }
   }, [open, invoiceId]);
+
+  const fetchNotes = async () => {
+    if (!invoiceId) return;
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .or(`invoice_id.eq.${invoiceId},invoice_ids.cs.{${invoiceId}}`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const userIds = Array.from(new Set(data.map((n) => n.user_id)));
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', userIds);
+
+        const nameMap: Record<string, string> = {};
+        (profiles || []).forEach((p) => {
+          nameMap[p.user_id] = p.name || 'Névtelen';
+        });
+
+        setNotes(
+          data.map((n) => ({
+            ...n,
+            profile_name: nameMap[n.user_id] || 'Ismeretlen',
+          }))
+        );
+      } else {
+        setNotes([]);
+      }
+    } catch (err) {
+      console.error('Error fetching notes for invoice:', err);
+    }
+  };
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoteText.trim() || !invoice) return;
+    setAddingNote(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (!userId) throw new Error('Unauthenticated');
+
+      const { error } = await supabase
+        .from('notes')
+        .insert({
+          company_id: invoice.company_id,
+          user_id: userId,
+          title: newNoteTitle.trim() || 'Számla feljegyzés',
+          content: newNoteText.trim(),
+          is_private: newNotePrivate,
+          invoice_id: invoiceId,
+        });
+
+      if (error) throw error;
+      setNewNoteText('');
+      setNewNoteTitle('');
+      setNewNotePrivate(true);
+      fetchNotes();
+    } catch (err) {
+      console.error('Error adding note:', err);
+    } finally {
+      setAddingNote(false);
+    }
+  };
 
   const fetchInvoice = async () => {
     if (!invoiceId) return;
@@ -263,6 +347,102 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                 )}
               </div>
             )}
+
+            {/* Jegyzetek (Notes) Section */}
+            <Separator />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Jegyzetek / Megjegyzések ({notes.length})
+                </h4>
+              </div>
+
+              {/* Notes List */}
+              {notes.length > 0 ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {notes.map((note) => (
+                    <div
+                      key={note.id}
+                      className="bg-muted/40 border border-border/30 rounded-lg p-3 space-y-1.5 text-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-foreground">{note.title}</span>
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-0.5">
+                            {note.is_private ? (
+                              <Lock className="h-2.5 w-2.5" />
+                            ) : (
+                              <Users className="h-2.5 w-2.5 text-primary" />
+                            )}
+                            {note.is_private ? 'Privát' : 'Közös'}
+                          </span>
+                          <span>•</span>
+                          <span>{formatDateTime(note.created_at)}</span>
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                        {note.content}
+                      </p>
+                      <div className="text-[10px] text-muted-foreground/80 flex items-center gap-1 pt-1 border-t border-border/10">
+                        <span>Szerző: {note.profile_name}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">Nincs még feljegyzés ehhez a számlához.</p>
+              )}
+
+              {/* Add Note Form */}
+              <form onSubmit={handleAddNote} className="space-y-2 pt-2 border-t border-border/20">
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="Jegyzet címe (opcionális)..."
+                    value={newNoteTitle}
+                    onChange={(e) => setNewNoteTitle(e.target.value)}
+                    className="h-8 text-xs bg-background/50"
+                  />
+                  <div className="flex items-center gap-2 px-1">
+                    <input
+                      type="checkbox"
+                      id="popup-note-private"
+                      checked={!newNotePrivate}
+                      onChange={(e) => setNewNotePrivate(!e.target.checked)}
+                      className="rounded border-border bg-background text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+                    />
+                    <label
+                      htmlFor="popup-note-private"
+                      className="text-xs text-muted-foreground select-none cursor-pointer"
+                    >
+                      Közös jegyzet (cégtagok látják)
+                    </label>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Textarea
+                    placeholder="Írd ide a megjegyzésedet..."
+                    value={newNoteText}
+                    onChange={(e) => setNewNoteText(e.target.value)}
+                    required
+                    rows={2}
+                    className="text-xs bg-background/50 resize-none flex-1 min-h-[48px]"
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="self-end h-9 px-3 gap-1 shrink-0"
+                    disabled={addingNote || !newNoteText.trim()}
+                  >
+                    {addingNote ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5" />
+                    )}
+                    Hozzáadás
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </DialogContent>

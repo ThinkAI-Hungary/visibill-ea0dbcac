@@ -152,6 +152,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations", moduleKey: 'integrations' },
       { title: "Árfolyamok", url: "/exchange-rates", icon: TrendingUp, tourId: "exchange-rates", moduleKey: 'exchange_rates' },
+      { title: "Jegyzetek", url: "/notes", icon: ClipboardCheck, tourId: "notes", moduleKey: 'notes' },
     ],
   },
 ];
@@ -181,6 +182,7 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/teny": () => import("@/pages/FixedAssetsPage"),
   "/integrations": () => import("@/pages/Integrations"),
   "/exchange-rates": () => import("@/pages/ExchangeRates"),
+  "/notes": () => import("@/pages/NotesPage"),
 
   "/tickets": () => import("@/pages/TicketsPage"),
   "/shipments": () => import("@/pages/ShipmentMatchingDashboard"),

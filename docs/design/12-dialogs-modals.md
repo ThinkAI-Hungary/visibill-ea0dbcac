@@ -372,3 +372,30 @@ A két globális komponens a `ManagementDashboard.tsx` fájlban:
 
 * **Kattinthatóság & Színezés**: Ha egy fájlnév vagy dokumentum link kattintható (vagyis elérhető hozzá letöltési vagy előnézeti URL), a szövegszíne **MINDIG** a felület elsődleges színe kell legyen (`text-teal-600 dark:text-teal-400`). Ez a design token garantálja a vizuális konzisztenciát.
 * **Hover állapot**: A link fölé víve a kurzort a színnek finoman változnia kell (`hover:text-teal-700 dark:hover:text-teal-300`), a konténernek pedig jeleznie kell az interaktivitást (pl. `hover:bg-zinc-200/85` / `dark:hover:bg-zinc-900/85` és `cursor-pointer`).
+
+---
+
+## Kiválasztási és Kereső Dialógusok (Selection & Search Modals) Irányelvei (2026-07-14)
+
+Ha új modalt vagy dialógust hozunk létre keresési, szűrési és kijelölési funkciókkal (pl. számla csatolás jegyzethez), az alábbi UX/UI szabályokat **kötelező** betartani:
+
+### 1. Layout Shift Védelem (Fix Listamagasság)
+* A dinamikusan betöltődő elemek listáját (eredmények konténerét) **mindig fix magasságú** flex boxként kell definiálni (pl. `h-[320px] flex flex-col overflow-y-auto`).
+* A töltőállapot (spinner) és az üres lista üzenet (empty state) a konténeren belül függőlegesen középre igazítandó (`my-auto flex flex-col items-center justify-center`).
+* **Miért:** Így a dialógus magassága teljesen stabil marad, nem ugrál a betöltés közben vagy üres keresési eredményeknél.
+
+### 2. Akció Gombok Pozíció-Stabilitása
+* A kijelölést megerősítő főgombnak a footerben **fix szélességet** kell adni (pl. `w-[220px] shrink-0 justify-center`).
+* **Miért:** A gomb szövegében szereplő darabszám változásakor (pl. `(1 db)` -> `(12 db)`) a gomb szélessége nem nyúlhat meg, különben eltolja a mellette lévő gombokat (pl. a *"Mégse"* gombot), ami rontja a felhasználói élményt és layout shiftet okoz a footerben.
+
+### 3. Tisztított Kijelölési Stílus (Dupla Ring Elkerülése)
+* A kijelölt kártyás elemek vagy láthatósági választógombok aktív állapotánál **tilos** egyszerre használni a szegélyt és a focus ringet (pl. `border-primary ring-1 ring-primary`).
+* A kijelölt állapotot **kizárólag** az elsődleges szegéllyel és egy finom háttérszínnel jelezzük (pl. `border-primary bg-primary/5 text-primary`), elhagyva a `ring-1 ring-primary` stílust.
+* **Miért:** A dupla kerethatás szükségtelenül vastagítja és durvítja a kijelölési szegélyt, rontva a prémium design finomságát.
+
+### 4. Tömeges Kijelölés (Bulk Selection) és Checkboxok
+* Kereső dialógusoknál a gombra kattintásos azonnali bezáródás helyett **tömeges kijelölést** kell támogatni.
+* Minden sor elejére egy jelölőnégyzetet (checkbox) kell tenni, amellyel az elemek állapota külön-külön kapcsolgatható.
+* A lista fejlécében elhelyezendő egy *"Összes kijelölése"* / *"Kijelölések megszüntetése"* gyorsgomb a tömeges műveletek megkönnyítésére.
+* A dialog footerében lévő confirm gomb mutatja a kijelölt elemek számát, és csak kattintásra menti el azokat a szülő formba.
+

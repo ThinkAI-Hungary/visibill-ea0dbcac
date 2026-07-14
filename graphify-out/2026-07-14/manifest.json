@@ -3830,8 +3830,8 @@
     "semantic_hash": ""
   },
   "src/components/petty-cash/EntriesTab.tsx": {
-    "mtime": 1784036273.7076006,
-    "ast_hash": "c1781069cf83d55128310020c4cd1341",
+    "mtime": 1784041231.0807436,
+    "ast_hash": "4a73e7286d57c319e7b6a7f93bcd3651",
     "semantic_hash": ""
   },
   "src/components/petty-cash/RegistersTab.tsx": {

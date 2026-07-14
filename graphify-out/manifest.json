@@ -55,8 +55,8 @@
     "semantic_hash": "776b0ac81256e0da4d6748f1fe84e130"
   },
   "src/App.tsx": {
-    "mtime": 1783092189.4053838,
-    "ast_hash": "5a2c99897478b900cd82f8c6daa3d13f",
+    "mtime": 1784042155.9797509,
+    "ast_hash": "baebf317d2aeac94bb4bc35abb498c87",
     "semantic_hash": ""
   },
   "src/__tests__/accounty-features.test.ts": {
@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "src/components/AppSidebar.tsx": {
-    "mtime": 1782254747.8586924,
-    "ast_hash": "ffcf846af0a769fc2aa34a0de27e8901",
+    "mtime": 1784042133.0153632,
+    "ast_hash": "f1e9dbce765679b05151335dc04d7ff9",
     "semantic_hash": ""
   },
   "src/components/AssetActivationDialog.tsx": {
@@ -120,8 +120,8 @@
     "semantic_hash": ""
   },
   "src/components/ExpandedInvoiceRow.tsx": {
-    "mtime": 1783413875.6073413,
-    "ast_hash": "a264625f924f46e89679566afb5cf809",
+    "mtime": 1784045440.4354665,
+    "ast_hash": "6451257d221430807ddf2370f67e0471",
     "semantic_hash": ""
   },
   "src/components/FeedbackDialog.tsx": {
@@ -145,8 +145,8 @@
     "semantic_hash": "b8f51d9471278890881bf55b4ba7b23b"
   },
   "src/components/InvoiceDetailPopup.tsx": {
-    "mtime": 1781445891.2656195,
-    "ast_hash": "a9e61b3a511f88ea7c0523d45f303533",
+    "mtime": 1784045127.3200977,
+    "ast_hash": "19f5b09a8007bf37408edf5a092cc096",
     "semantic_hash": ""
   },
   "src/components/InvoiceEditDialog.tsx": {
@@ -3155,8 +3155,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1784037340.8380208,
-    "ast_hash": "44fa708dad734878884e2618ca7a41fa",
+    "mtime": 1784042303.1612918,
+    "ast_hash": "5a789df567aa016670913c799b607be1",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3450,8 +3450,8 @@
     "semantic_hash": ""
   },
   "docs/design/12-dialogs-modals.md": {
-    "mtime": 1783684485.7285993,
-    "ast_hash": "9ebccf5ef81ef7896a8cf751696181f2",
+    "mtime": 1784044387.2573123,
+    "ast_hash": "919c4147ff55eac3db417d9d81048456",
     "semantic_hash": ""
   },
   "docs/design/design_opcio/DESIGN.md": {
@@ -3630,13 +3630,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1784040010.4968553,
-    "ast_hash": "a31ad47c073b9380bd62f4009d651ebb",
+    "mtime": 1784042291.1386302,
+    "ast_hash": "94692f2012507fdd9ba2b693b40f6fa9",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1783613487.8294399,
-    "ast_hash": "73ea65b33751db1b7e2d2f3e50156dcc",
+    "mtime": 1784043474.283079,
+    "ast_hash": "2ab04d1b52ccd7e16ce2a0cf33d2d871",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -3910,8 +3910,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useEaisybillPermissions.ts": {
-    "mtime": 1782621606.7852392,
-    "ast_hash": "03898cd83cc18ac853266227d086e9d8",
+    "mtime": 1784042122.3359458,
+    "ast_hash": "fd6e89ad01c1c358388837c619d35db4",
     "semantic_hash": ""
   },
   "src/hooks/useHasEaisybillAccess.ts": {
@@ -6122,6 +6122,41 @@
   "supabase/migrations/20260714164500_auto_sync_petty_cash_trigger.sql": {
     "mtime": 1784040214.622564,
     "ast_hash": "43addc01bf795875bd5ba38d05909237",
+    "semantic_hash": ""
+  },
+  "src/components/notes/NoteModal.tsx": {
+    "mtime": 1784044912.2952223,
+    "ast_hash": "4aa74ebe4ded286e250b63a1e09c859f",
+    "semantic_hash": ""
+  },
+  "src/hooks/useNotesData.ts": {
+    "mtime": 1784043950.342543,
+    "ast_hash": "80809d032fe9a6a754579d5907d74cc8",
+    "semantic_hash": ""
+  },
+  "src/pages/NotesPage.tsx": {
+    "mtime": 1784044113.718194,
+    "ast_hash": "f004a02472e0fa4a3169231f095182a1",
+    "semantic_hash": ""
+  },
+  "src/types/notes.ts": {
+    "mtime": 1784043938.0402033,
+    "ast_hash": "9345c0a79874e619da1ebbca20e350d4",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260714171500_create_notes_table.sql": {
+    "mtime": 1784042079.436205,
+    "ast_hash": "e4b3273c4f7291791d656241d1c261ea",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-037-notes-architecture.md": {
+    "mtime": 1784044268.0408647,
+    "ast_hash": "ceb54fabcfd0883512bdc90d6d66d13d",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-047-notes-management-ux.md": {
+    "mtime": 1784045638.5603566,
+    "ast_hash": "033ea665c939f6b6aeaf72edc2276bb9",
     "semantic_hash": ""
   }
 }

@@ -125,6 +125,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GeneralLedgerPage = lazy(() => import("./pages/GeneralLedgerPage"));
 const WorkingTimePage = lazy(() => import("./pages/WorkingTimePage"));
 const FixedAssetsPage = lazy(() => import("./pages/FixedAssetsPage"));
+const NotesPage = lazy(() => import("./pages/NotesPage"));
 const ProfitAndLoss = lazy(() => import("./pages/ProfitAndLoss"));
 const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
 const AnnualReportPage = lazy(() => import("./pages/AnnualReportPage"));
@@ -763,6 +764,7 @@ const App = () => (
                         <Route path="kintlevo/:tab?" element={<ProtectedPage><KintlevoPage /></ProtectedPage>} />
                         <Route path="petty-cash/:tab?" element={<ProtectedPage><PettyCashPage /></ProtectedPage>} />
                         <Route path="teny/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />
+                        <Route path="notes" element={<ProtectedPage><NotesPage /></ProtectedPage>} />
 
                         <Route path="exchange-rates" element={<ProtectedPage><ExchangeRates /></ProtectedPage>} />
                         <Route path="salaries/:tab?" element={<ProtectedPage><SalariesPage /></ProtectedPage>} />
@@ -776,6 +778,7 @@ const App = () => (
                       {/* ═══ Legacy Redirects — old flat paths → scoped ═══ */}
                       <Route path="/invoices" element={<LegacyRedirect page="invoices" />} />
                       <Route path="/upload" element={<LegacyRedirect page="upload" />} />
+                      <Route path="/notes" element={<LegacyRedirect page="notes" />} />
                       <Route path="/integrations" element={<LegacyRedirect page="integrations" />} />
                       <Route path="/settings" element={<LegacyRedirect page="settings" />} />
                       <Route path="/projects" element={<LegacyRedirect page="projects" />} />

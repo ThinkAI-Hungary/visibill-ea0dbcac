@@ -32,7 +32,8 @@ export type EaisybillModule =
   | 'settings'
   | 'shipments'
   | 'shipment_matching'
-  | 'shipment_import';
+  | 'shipment_import'
+  | 'notes';
 
 interface ModulePermission {
   canRead: boolean;
@@ -85,6 +86,7 @@ const ASSISTANT_MODULES: EaisybillModule[] = [
   'tickets',
   'exchange_rates',
   'settings',
+  'notes',
 ];
 
 /**
@@ -102,6 +104,7 @@ const VIEWER_MODULES: EaisybillModule[] = [
   'exchange_rates',
   'tickets',
   'settings',
+  'notes',
 ];
 
 /**
@@ -117,7 +120,7 @@ const ALL_MODULES: EaisybillModule[] = [
   'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
   'salaries', 'working_time', 'fixed_assets',
   'integrations', 'exchange_rates', 'upload', 'tickets', 'settings',
-  'shipments', 'shipment_matching', 'shipment_import',
+  'shipments', 'shipment_matching', 'shipment_import', 'notes',
 ];
 
 /**
@@ -145,6 +148,7 @@ export const URL_TO_MODULE: Record<string, EaisybillModule> = {
   '/upload': 'upload',
   '/tickets': 'tickets',
   '/settings': 'settings',
+  '/notes': 'notes',
   '/shipments': 'shipment_matching',
   '/shipments/import': 'shipment_import',
   '/shipments/escalated': 'shipment_matching',
@@ -178,6 +182,7 @@ export const CONFIGURABLE_MODULES: { key: EaisybillModule; label: string; group:
   { key: 'tickets', label: 'Hibajegyek', group: 'Rendszer' },
   { key: 'integrations', label: 'Integrációk', group: 'Rendszer' },
   { key: 'settings', label: 'Beállítások', group: 'Rendszer' },
+  { key: 'notes', label: 'Jegyzetek', group: 'Rendszer' },
   { key: 'shipment_matching', label: 'Fuvarok', group: 'Szállítmányozás' },
   { key: 'shipment_import', label: 'Excel Import', group: 'Szállítmányozás' },
 ];

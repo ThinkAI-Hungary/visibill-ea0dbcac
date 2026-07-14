@@ -87,7 +87,7 @@ Visibill
 │   ├── /teny/:tab?                Tárgyi eszközök (TENY)
 │   ├── /integrations              Integrációk (NAV, bank)
 │   ├── /exchange-rates            Árfolyamok (MNB)
-
+│   ├── /notes                     Jegyzetek (osztott kétpaneles)
 │   ├── /settings/:tab?            Beállítások
 │   ├── /analytics/:tab?           Analitika
 │   └── /vat-return/:tab?          ÁFA bevallás
@@ -222,6 +222,7 @@ Sidebar
 │
 └── ⚙️ Rendszer
     ├── Integrációk
+    ├── Jegyzetek
     └── Beállítások
 ```
 

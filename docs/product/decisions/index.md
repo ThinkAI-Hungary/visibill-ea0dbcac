@@ -1,7 +1,7 @@
 # Visibill — Product Requirements: Döntések
 
 > **Utoljára frissítve:** 2026-07-14  
-> **Összesen:** 40 döntés | ✅ Decided: 37 | ⛔ Superseded: 2 | 🔴 Open: 1
+> **Összesen:** 41 döntés | ✅ Decided: 38 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
 
@@ -120,3 +120,9 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 |---|--------|---------|------|
 | P-041 | Kategóriák multi-currency összeg + arány konzisztencia + összeg kimutatás | ✅ Decided | [P-041](./P-041-categories-multicurrency-search.md) |
 | P-042 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [P-042](./P-042-categories-projects-sync.md) |
+
+## 📋 Jegyzetek
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-047 | Jegyzetek Kezelése (Notes Management) UX | ✅ Decided | [P-047](./P-047-notes-management-ux.md) |

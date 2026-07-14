@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-07-14  
-> **Összesen:** 36 döntés | ✅ Decided: 35 | ⛔ Superseded: 1
+> **Összesen:** 37 döntés | ✅ Decided: 36 | ⛔ Superseded: 1
 
 ---
 
@@ -73,6 +73,7 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | A-016 | PostgreSQL query stratégia — 79 RPC function teljes katalógus | ✅ Decided | [A-016](./A-016-postgresql-query-strategy.md) |
 | A-022 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [A-022](./A-022-categories-projects-sync.md) |
 | A-036 | Pénztárbizonylat (Cash Voucher) Processing | ✅ Decided | [A-036](./A-036-penztarbizonylat-processing.md) |
+| A-037 | Jegyzetek Rendszer Architektúra (Notes System Architecture) | ✅ Decided | [A-037](./A-037-notes-architecture.md) |
 
 ## đź–Ąď¸Ź Frontend
 

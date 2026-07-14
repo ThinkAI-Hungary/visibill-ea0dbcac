@@ -2,8 +2,10 @@ import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useState } from 'react';
-import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet, CreditCard, Scale, RefreshCw } from 'lucide-react';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet, CreditCard, Scale, RefreshCw, Lock, Users, ClipboardCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -222,6 +224,51 @@ const ExpandedInvoiceRow = ({
   tiCalculationMethod,
 }: ExpandedInvoiceRowProps) => {
   const [showManualPayment, setShowManualPayment] = useState(false);
+  
+  // Fetch linked notes (supporting single/multi-linked notes and matched submitted/NAV invoice IDs)
+  const { data: notes = [], isLoading: notesLoading } = useQuery({
+    queryKey: ['invoice-notes', invoiceId, matchedSubmittedInvoices, matchedNavInvoices],
+    queryFn: async () => {
+      if (!invoiceId) return [];
+
+      const allRelatedInvoiceIds = [
+        invoiceId,
+        ...matchedSubmittedInvoices.map(inv => inv.id),
+        ...matchedNavInvoices.map(inv => inv.id)
+      ].filter(Boolean);
+
+      if (allRelatedInvoiceIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .or(`invoice_id.in.(${allRelatedInvoiceIds.join(',')}),invoice_ids.ov.{${allRelatedInvoiceIds.join(',')}}`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const userIds = Array.from(new Set(data.map((n) => n.user_id)));
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', userIds);
+
+        const nameMap: Record<string, string> = {};
+        (profiles || []).forEach((p) => {
+          nameMap[p.user_id] = p.name || 'Névtelen';
+        });
+
+        return data.map((n) => ({
+          ...n,
+          profile_name: nameMap[n.user_id] || 'Ismeretlen',
+        }));
+      }
+      return [];
+    },
+    enabled: !!invoiceId,
+  });
+
   // Invoice-side matching is enabled when all required props are provided
   const matchingEnabled = !!(invoiceId && companyId && invoiceDate && !hideStandaloneTransactions);
 
@@ -427,6 +474,60 @@ const ExpandedInvoiceRow = ({
                 </CardContent>
               </Card>
             )}
+
+            {/* Notes Section */}
+            <div className="space-y-4 max-w-lg">
+              <div className="flex items-center justify-between mb-2 expand-animate">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
+                  Kapcsolódó feljegyzések
+                </div>
+              </div>
+
+              {notes && notes.length > 0 ? (
+                <div className="space-y-3">
+                  {notes.map((note: any) => (
+                    <Card key={note.id} className="bg-primary/[0.02] border-primary/20 expand-animate">
+                      <CardHeader className="py-2.5 px-3 border-b border-border/10">
+                        <CardTitle className="text-xs font-semibold flex items-center justify-between text-foreground">
+                          <span className="font-semibold text-foreground truncate max-w-[200px]">{note.title || 'Névtelen jegyzet'}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {note.is_private ? (
+                              <Badge variant="outline" className="text-[9px] h-4.5 px-1.5 gap-1 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">
+                                <Lock className="h-2.5 w-2.5" />
+                                Privát
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[9px] h-4.5 px-1.5 gap-1 bg-primary/10 text-primary border-primary/20">
+                                <Users className="h-2.5 w-2.5" />
+                                Közös cégjegyzet
+                              </Badge>
+                            )}
+                            <span className="text-[9px] text-muted-foreground font-mono">
+                              {format(new Date(note.created_at), 'yyyy.MM.dd', { locale: hu })}
+                            </span>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-3 space-y-1">
+                        <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-normal font-sans pl-0.5">{note.content}</p>
+                        <div className="text-[9px] text-muted-foreground/80 pl-0.5 pt-1">
+                          Rögzítette: {note.profile_name}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="bg-muted/30 border-border/50 expand-animate">
+                  <CardContent className="p-4 flex flex-col items-center justify-center">
+                    <p className="text-xs text-muted-foreground italic">Nincs kapcsolódó feljegyzés ehhez a számlához.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <Separator className="my-4 max-w-lg" />
 
             {/* Header */}
             <div className="flex items-center justify-between mb-4 expand-animate">
