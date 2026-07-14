@@ -6110,13 +6110,18 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-036-penztarbizonylat-processing.md": {
-    "mtime": 1784037320.6913671,
-    "ast_hash": "97726f341d10f941b2b8933875ef08a4",
+    "mtime": 1784040278.3281474,
+    "ast_hash": "1aca730f6c9129a448d7d10cd408d99b",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-046-penztarbizonylat-upload-ux.md": {
     "mtime": 1784040020.702893,
     "ast_hash": "db833ff08bcdf473152b77eafa990170",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260714164500_auto_sync_petty_cash_trigger.sql": {
+    "mtime": 1784040214.622564,
+    "ast_hash": "43addc01bf795875bd5ba38d05909237",
     "semantic_hash": ""
   }
 }

@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import {
   Save, Plus, ArrowRightLeft, Loader2, Filter, AlertTriangle, BookOpen, FileDown,
-  ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check
+  ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check, Eye
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
@@ -26,6 +26,7 @@ import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice } from './types';
 import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf } from './types';
 import CashClosingDialog from './CashClosingDialog';
+import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 
 // Add display label for opening balance source type
 const DISPLAY_SOURCE_LABELS: Record<string, string> = {
@@ -452,6 +453,7 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
   const sourceTable = entry.source_table;
   const sourceId = entry.source_id;
 
+  const [previewOpen, setPreviewOpen] = useState(false);
   const { data: sourceData, isLoading, error } = useQuery({
     queryKey: ['petty-cash-entry-source', sourceTable, sourceId],
     queryFn: async () => {
@@ -518,11 +520,29 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
                     <span className="text-muted-foreground">Vevő:</span>
                     <span className="ml-1 font-medium">{sourceData.vevo_nev || '-'}</span>
                   </div>
-                  {sourceData.image_url && (
-                    <div className="col-span-2 mt-2 pt-2 border-t border-border/20">
-                      <a href={sourceData.image_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline font-medium">
-                        <BookOpen className="w-3.5 h-3.5" /> Bizonylat megtekintése új lapon
+                  {(sourceData.image_url || sourceData.melleklet_url) && (
+                    <div className="col-span-2 mt-2 pt-2 border-t border-border/20 flex gap-4">
+                      <button
+                        onClick={() => setPreviewOpen(true)}
+                        className="inline-flex items-center gap-1 text-primary hover:underline font-medium cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Bizonylat előnézete
+                      </button>
+                      <a
+                        href={sourceData.image_url || sourceData.melleklet_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline font-medium"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" /> Megnyitás új lapon
                       </a>
+                      {previewOpen && (
+                        <InvoiceImageDialog
+                          invoice={sourceData}
+                          open={previewOpen}
+                          onClose={() => setPreviewOpen(false)}
+                        />
+                      )}
                     </div>
                   )}
                 </>

@@ -1,7 +1,7 @@
 # Graph Report - eaisybill-prod  (2026-07-14)
 
 ## Corpus Check
-- 1157 files · ~1,806,951 words
+- 1158 files · ~1,807,288 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -560,8 +560,8 @@ Cohesion: 0.19
 Nodes (11): CustomTooltip(), fmtHuf(), fmtMonth(), FxDifferenceRow, FxDifferencesSection, FxDifferencesSectionProps, FxGlSettings, FxMonthlySummary (+3 more)
 
 ### Community 19 - "Accounty Generaterequestemail Missingitemforemail"
-Cohesion: 0.08
-Nodes (24): ExpandedInvoiceRow(), LinkedInvoice, MatchedCourierReport, MatchedNavInvoice, MatchedSubmittedInvoice, MatchedTransaction, formatDate(), formatDateTime() (+16 more)
+Cohesion: 0.05
+Nodes (50): ExpandedInvoiceRow(), LinkedInvoice, MatchedCourierReport, MatchedNavInvoice, MatchedSubmittedInvoice, MatchedTransaction, ColorPicker(), formatDate() (+42 more)
 
 ### Community 20 - "Accounty Generaterequestemail Outgoingmessage"
 Cohesion: 0.07
@@ -617,7 +617,7 @@ Nodes (37): 11 — Adatmegjelenítés & Táblázatok, 1. `table-layout: auto` (n
 
 ### Community 33 - "Components Emailpreferences Emailpreferences"
 Cohesion: 0.05
-Nodes (77): DOCUMENT_TEMPLATES, ExitDocument, STATUS_BADGE, Filter, PrivacyConsent, sections, SettingsTab, AssetActivationDialogProps (+69 more)
+Nodes (74): DOCUMENT_TEMPLATES, ExitDocument, STATUS_BADGE, Filter, PrivacyConsent, sections, SettingsTab, AssetActivationDialogProps (+66 more)
 
 ### Community 34 - "Components Feedbackfab Feedbackfab"
 Cohesion: 0.19
@@ -812,8 +812,8 @@ Cohesion: 0.25
 Nodes (8): InvoiceEditDialogProps, BaseInvoice, EgyszerusitettInvoice, Invoice, InvoiceType, ProformaInvoice, SimaInvoice, VegszamlaInvoice
 
 ### Community 82 - "Hooks Useaccountydata Useaccountyportalstats"
-Cohesion: 0.05
-Nodes (76): CategoryCard(), CourierReportTabProps, MatchDetails, REPORT_LABELS, STATUS_CONFIG, ColorPicker(), TransactionReasonCell(), TransactionReasonCellProps (+68 more)
+Cohesion: 0.06
+Nodes (66): CategoryCard(), CourierReportTabProps, MatchDetails, REPORT_LABELS, STATUS_CONFIG, UnsavedChangesDialog(), UnsavedChangesDialogProps, TAB_CONFIG (+58 more)
 
 ### Community 83 - "Hooks Useaccountydata Useaccountyportaltokens"
 Cohesion: 0.25
@@ -925,7 +925,7 @@ Nodes (4): name, organization_id, organization_slug, ref
 
 ### Community 112 - "Hooks Usedashboarddata Monthlydata"
 Cohesion: 0.04
-Nodes (77): EmailAlias, ALLOWED_IMAGE_TYPES, FeedbackDialogProps, InvoiceImagePreview(), InvoiceImagePreviewProps, signedUrlCache, isUploadNotified(), _notifiedUploadIds (+69 more)
+Nodes (66): EmailAlias, ALLOWED_IMAGE_TYPES, FeedbackDialogProps, InvoiceImagePreview(), InvoiceImagePreviewProps, signedUrlCache, isUploadNotified(), _notifiedUploadIds (+58 more)
 
 ### Community 113 - "Hooks Usedashboarddata Navvatdata"
 Cohesion: 0.36
@@ -1501,7 +1501,7 @@ Nodes (5): Brand Nevek, eaisybill Glossary & Terminológia, EV (Egyéni Vállalk
 
 ### Community 364 - "Community 364"
 Cohesion: 0.04
-Nodes (93): Profile, SystemSettings, ChangePasswordDialog(), EmailPreferences, Props, State, NylasEmailConnectProps, NylasToken (+85 more)
+Nodes (98): Profile, SystemSettings, ChangePasswordDialog(), EmailPreferences, Props, State, NylasEmailConnectProps, NylasToken (+90 more)
 
 ### Community 365 - "Community 365"
 Cohesion: 0.40
@@ -1720,8 +1720,8 @@ Cohesion: 0.25
 Nodes (7): NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle, NavigationMenuViewport
 
 ### Community 446 - "Community 446"
-Cohesion: 0.05
-Nodes (69): ReportType, reportTypes, AnimatedNumber(), KpiModalType, NewClientPage(), Category, EditableLineItem, InvoiceFullEditDialogProps (+61 more)
+Cohesion: 0.06
+Nodes (62): ReportType, reportTypes, AnimatedNumber(), KpiModalType, NewClientPage(), Category, EditableLineItem, InvoiceFullEditDialogProps (+54 more)
 
 ### Community 448 - "Community 448"
 Cohesion: 0.67
