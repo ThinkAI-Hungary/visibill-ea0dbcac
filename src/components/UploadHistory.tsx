@@ -10,7 +10,7 @@ import { formatFileSize } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
-import { History, FileText, Landmark, Banknote, CreditCard, Loader2, Package, ExternalLink, AlertCircle } from 'lucide-react';
+import { History, FileText, Landmark, Banknote, CreditCard, Loader2, Package, ExternalLink, AlertCircle, Coins } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
@@ -129,22 +129,25 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const uploadDateTo = format(new Date(), 'yyyy-MM-dd');
   // BUG #3 FIX: Added bank-statements tab support
   const tableName = activeTab === 'invoices' ? 'invoice_uploads'
+    : activeTab === 'vouchers' ? 'invoice_uploads'
     : activeTab === 'salaries' ? 'salary_files'
     : activeTab === 'bank-statements' ? 'bank_statement_uploads'
     : activeTab === 'reports' ? 'report_uploads'
     : 'transaction_uploads';
   const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" />
+    : activeTab === 'vouchers' ? <Coins className="h-5 w-5" />
     : activeTab === 'salaries' ? <Banknote className="h-5 w-5" />
     : activeTab === 'bank-statements' ? <CreditCard className="h-5 w-5" />
     : activeTab === 'reports' ? <Package className="h-5 w-5" />
     : <Landmark className="h-5 w-5" />;
   const title = activeTab === 'invoices' ? 'Számla feltöltési'
+    : activeTab === 'vouchers' ? 'Pénztárbizonylat feltöltési'
     : activeTab === 'salaries' ? 'Bér/járulék feltöltési'
     : activeTab === 'bank-statements' ? 'Bankkivonat feltöltési'
     : activeTab === 'reports' ? 'Riport feltöltési'
     : 'Tranzakció feltöltési';
 
-  const isValidTab = activeTab === 'invoices' || activeTab === 'transactions' || activeTab === 'salaries' || activeTab === 'bank-statements' || activeTab === 'reports';
+  const isValidTab = activeTab === 'invoices' || activeTab === 'vouchers' || activeTab === 'transactions' || activeTab === 'salaries' || activeTab === 'bank-statements' || activeTab === 'reports';
 
   // ── Main data query (records + processed IDs + user names) ──
   const { data, isLoading: loading } = useQuery({
@@ -158,6 +161,22 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           .from('invoice_uploads')
           .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message, metadata')
           .eq('document_category', 'payroll')
+          .gte('created_at', uploadDateFrom)
+          .lte('created_at', uploadDateTo + 'T23:59:59')
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .limit(50);
+
+        const companyQuery = companyId ? query.eq('company_id', companyId) : query;
+        const res = await companyQuery;
+        if (res.error) throw res.error;
+        records = (res.data as unknown as UploadRecord[]) || [];
+      } else if (activeTab === 'vouchers') {
+        // Cash vouchers are stored in invoice_uploads with document_category = 'penztarbizonylat'
+        const query = supabase
+          .from('invoice_uploads')
+          .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message, metadata')
+          .eq('document_category', 'penztarbizonylat')
           .gte('created_at', uploadDateFrom)
           .lte('created_at', uploadDateTo + 'T23:59:59')
           .order('created_at', { ascending: false })
@@ -182,9 +201,9 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           query = query.eq('company_id', companyId);
         }
 
-        // Exclude payroll uploads from invoice history
+        // Exclude payroll and voucher uploads from invoice history
         if (activeTab === 'invoices') {
-          query = query.neq('document_category', 'payroll');
+          query = query.neq('document_category', 'payroll').neq('document_category', 'penztarbizonylat');
         }
 
         const res = await query;
@@ -306,6 +325,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
         if (!isUploadNotified(rec.id)) {
           // Tab-aware toast title
           const toastTitle = activeTab === 'invoices' ? 'Számlák feldolgozva!'
+            : activeTab === 'vouchers' ? 'Pénztárbizonylatok feldolgozva!'
             : activeTab === 'salaries' ? 'Bér/járulékok feldolgozva!'
             : activeTab === 'bank-statements' ? 'Bankkivonat feldolgozva!'
             : activeTab === 'reports' ? 'Riport feldolgozva!'
@@ -326,6 +346,8 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
           queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
           queryClient.invalidateQueries({ queryKey: ['recentInvoices'] });
+        } else if (activeTab === 'vouchers') {
+          queryClient.invalidateQueries({ queryKey: ['pettyCashEntries'] });
         } else if (activeTab === 'salaries') {
           queryClient.invalidateQueries({ queryKey: ['salaries'] });
           queryClient.invalidateQueries({ queryKey: ['salary_files'] });

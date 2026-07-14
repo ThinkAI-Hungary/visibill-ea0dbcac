@@ -40,13 +40,14 @@ import {
   ChevronRight,
   Loader2,
   ExternalLink,
+  Coins,
 } from 'lucide-react';
 
 interface UploadedFilesModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Which tab is active — determines which table to query */
-  activeTab: 'invoices' | 'transactions' | 'salaries' | 'reports';
+  activeTab: 'invoices' | 'vouchers' | 'transactions' | 'salaries' | 'reports';
 }
 
 interface UploadRecord {
@@ -66,7 +67,15 @@ const TAB_CONFIG = {
     uploadType: 'invoice',
     label: 'Számlák',
     icon: FileText,
-    filter: (q: any) => q.or('document_category.is.null,document_category.neq.payroll'),
+    filter: (q: any) => q.not('document_category', 'in', '("payroll","penztarbizonylat")'),
+  },
+  vouchers: {
+    table: 'invoice_uploads',
+    bucket: 'invoice-uploads',
+    uploadType: 'invoice',
+    label: 'Pénztárbizonylatok',
+    icon: Coins,
+    filter: (q: any) => q.eq('document_category', 'penztarbizonylat'),
   },
   transactions: {
     table: 'transaction_uploads',
@@ -122,8 +131,8 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
     queryFn: async () => {
       if (!companyId) return [];
 
-      let query = supabase
-        .from(config.table as any)
+      let query = (supabase as any)
+        .from(config.table)
         .select('id, file_name, file_size, file_url, processing_status, created_at, document_category')
         .eq('company_id', companyId)
         .order('created_at', { ascending: false })

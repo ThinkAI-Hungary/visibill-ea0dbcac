@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, FileText, X, Building2, CreditCard, Wallet, Info, Landmark, Package, FolderOpen } from 'lucide-react';
+import { Upload, FileText, X, Building2, CreditCard, Wallet, Info, Landmark, Package, FolderOpen, Coins } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,6 +31,7 @@ import UploadedFilesModal from '@/components/UploadedFilesModal';
 
 const ManualUpload = () => {
   const [selectedInvoiceFiles, setSelectedInvoiceFiles] = useState<File[]>([]);
+  const [selectedVoucherFiles, setSelectedVoucherFiles] = useState<File[]>([]);
   const [selectedBankFiles, setSelectedBankFiles] = useState<File[]>([]);
   const [selectedSalaryFiles, setSelectedSalaryFiles] = useState<File[]>([]);
   const [selectedTransactionFiles, setSelectedTransactionFiles] = useState<File[]>([]);
@@ -127,6 +128,51 @@ const ManualUpload = () => {
       setSelectedInvoiceFiles(prev => [...prev, ...newFiles]);
     }
     event.target.value = '';
+  };
+
+  const handleVoucherFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+
+    // Filter for common voucher file types
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp'
+    ];
+
+    const validFiles = files.filter(file => {
+      if (allowedTypes.includes(file.type)) {
+        return true;
+      }
+      toast({
+        variant: "destructive",
+        title: "Érvénytelen fájltípus",
+        description: `${file.name} nem támogatott fájltípus. Kérlek tölts fel PDF vagy kép fájlokat.`
+      });
+      return false;
+    });
+
+    const currentFiles = selectedVoucherFiles;
+    const existingNames = new Set(currentFiles.map(f => f.name));
+    const newFiles = validFiles.filter(f => !existingNames.has(f.name));
+    const dupeFiles = validFiles.filter(f => existingNames.has(f.name));
+    if (dupeFiles.length > 0) {
+      setListDuplicateFileNames(dupeFiles.map(f => f.name));
+      pendingListAddRef.current = {
+        skipDupes: () => setSelectedVoucherFiles(prev => [...prev, ...newFiles]),
+        addAll: () => setSelectedVoucherFiles(prev => [...prev, ...validFiles]),
+      };
+      setListDuplicateDialogOpen(true);
+    } else {
+      setSelectedVoucherFiles(prev => [...prev, ...newFiles]);
+    }
+    event.target.value = '';
+  };
+
+  const removeVoucherFile = (index: number) => {
+    setSelectedVoucherFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleBankStatementFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -462,6 +508,110 @@ const ManualUpload = () => {
 
       toast({ title: "Feltöltés sikeres!", description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.", duration: 3000 });
       setSelectedInvoiceFiles([]);
+      delayedUploadHistoryInvalidation();
+    } catch (error) {
+      reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Upload error:', error: error });
+      toast({
+        variant: "destructive", title: "Feltöltés sikertelen",
+        description: error instanceof Error ? error.message : "Hiba történt a fájlok feltöltése során. Kérlek próbáld újra."
+      });
+    } finally {
+      uploadMutexRef.current = false;
+      setUploading(false);
+    }
+  };
+
+  const handleVoucherUpload = async () => {
+    if (selectedVoucherFiles.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Nincs kiválasztott fájl",
+        description: "Kérlek válassz ki legalább egy pénztárbizonylat fájlt a feltöltéshez."
+      });
+      return;
+    }
+
+    const duplicates: string[] = [];
+    for (const file of selectedVoucherFiles) {
+      const isDuplicate = await checkDuplicateFile(file.name, 'invoice_uploads');
+      if (isDuplicate) {
+        duplicates.push(file.name);
+      }
+    }
+
+    if (duplicates.length > 0) {
+      setDuplicateFileNames(duplicates);
+      setDuplicateUploadType('invoice');
+      pendingUploadRef.current = () => proceedWithVoucherUpload(true);
+      setDuplicateDialogOpen(true);
+      return;
+    }
+
+    proceedWithVoucherUpload(false);
+  };
+
+  const proceedWithVoucherUpload = async (isConfirmedReupload = false) => {
+    if (uploadMutexRef.current) return;
+    uploadMutexRef.current = true;
+    setUploading(true);
+
+    try {
+      const storageResults: { file: File; fileUrl: string; storagePath: string }[] = [];
+      for (const file of selectedVoucherFiles) {
+        try {
+          const fileUrl = await uploadFileToInvoiceStorage(file, user?.id!);
+          const storagePath = extractStoragePath(fileUrl, 'invoice-uploads') || '';
+          storageResults.push({ file, fileUrl, storagePath });
+        } catch (fileError) {
+          reportError({ type: 'upload', component: 'ManualUpload', action: 'storage_upload', message: `Storage upload failed for ${file.name}`, error: fileError, context: { fileName: file.name } });
+        }
+      }
+
+      if (storageResults.length === 0) {
+        toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Nem sikerült egyetlen fájlt sem feltölteni." });
+        return;
+      }
+
+      const insertRows = storageResults.map(r => ({
+        user_id: user?.id!,
+        company_id: selectedCompany?.id || null,
+        file_name: r.file.name,
+        file_size: r.file.size,
+        file_type: r.file.type,
+        file_url: r.fileUrl,
+        upload_status: 'uploaded' as const,
+        processing_status: 'pending' as const,
+        document_category: 'penztarbizonylat',
+        metadata: {
+          source: isConfirmedReupload ? 'manual_reupload' : 'manual_upload',
+        },
+      }));
+
+      const { data: uploadRecords, error: batchError } = await supabase
+        .from('invoice_uploads')
+        .insert(insertRows)
+        .select();
+
+      if (batchError) {
+        reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Batch insert error:', error: batchError });
+        if (handleRateLimitError(batchError)) { setUploading(false); return; }
+        const paths = storageResults.map(r => r.storagePath).filter(Boolean);
+        if (paths.length > 0) await supabase.storage.from('invoice-uploads').remove(paths);
+        throw new Error(`Adatbázis hiba: ${batchError.message}`);
+      }
+
+      for (const rec of uploadRecords!) {
+        addToUploadHistoryCache({
+          id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
+          file_type: rec.file_type, file_url: rec.file_url, user_id: user?.id!,
+          upload_status: 'uploaded', processing_status: 'pending',
+          created_at: new Date().toISOString(), error_message: null,
+        });
+        registerPendingUpload(rec.id);
+      }
+
+      toast({ title: "Feltöltés sikeres!", description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.", duration: 3000 });
+      setSelectedVoucherFiles([]);
       delayedUploadHistoryInvalidation();
     } catch (error) {
       reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Upload error:', error: error });
@@ -890,10 +1040,14 @@ const ManualUpload = () => {
       <div className="space-y-6">
         <div>
           <Tabs defaultValue="invoices" className="space-y-6" onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="invoices" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Számlák
+              </TabsTrigger>
+              <TabsTrigger value="vouchers" className="flex items-center gap-2">
+                <Coins className="h-4 w-4" />
+                Pénztárbizonylatok
               </TabsTrigger>
               <TabsTrigger value="transactions" className="flex items-center gap-2">
                 <Landmark className="h-4 w-4" />
@@ -1015,6 +1169,120 @@ const ManualUpload = () => {
                           <>
                             <Upload className="h-4 w-4 mr-2" />
                             {selectedInvoiceFiles.length} számlafájl feltöltése
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Cash Voucher Upload Tab */}
+            <TabsContent value="vouchers">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    Pénztárbizonylat fájlok feltöltése
+                  </CardTitle>
+                  <CardDescription>
+                    Válassz PDF vagy kép fájlokat, amelyek kiadási vagy bevételi pénztárbizonylatokat tartalmaznak. Támogatott formátumok: PDF, JPG, PNG, WebP
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div
+                    className={cn(
+                      "flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200",
+                      dragOver === 'vouchers'
+                        ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                        : "border-muted-foreground/25 hover:border-muted-foreground/40"
+                    )}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver('vouchers'); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
+                    onDrop={(e) => {
+                      e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      if (!writable) return;
+                      const files = Array.from(e.dataTransfer.files);
+                      const allowed = ['application/pdf','image/jpeg','image/jpg','image/png','image/webp'];
+                      const valid = files.filter(f => allowed.includes(f.type));
+                      if (valid.length > 0) setSelectedVoucherFiles(prev => [...prev, ...valid]);
+                    }}
+                  >
+                    <Coins className={cn("h-12 w-12 mb-4 transition-colors", dragOver === 'vouchers' ? "text-primary" : "text-muted-foreground")} />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">{dragOver === 'vouchers' ? 'Engedd el a fájlokat a feltöltéshez' : 'Húzd ide a fájlokat, vagy kattints a tallózáshoz'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Több fájlt is kiválaszthatsz egyszerre vagy egyenként is feltöltheted
+                      </p>
+                    </div>
+                    <Button
+                      className="mt-4"
+                      onClick={() => document.getElementById('voucher-file-input')?.click()}
+                      disabled={!writable}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Fájlok tallózása
+                    </Button>
+                    <input
+                      id="voucher-file-input"
+                      type="file"
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      onChange={handleVoucherFileSelect}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {selectedVoucherFiles.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Kiválasztott fájlok ({selectedVoucherFiles.length})</h3>
+                      <div className="space-y-2">
+                        {selectedVoucherFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Coins className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium text-sm">{file.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {file.type.split('/')[1].toUpperCase()}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatFileSize(file.size)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeVoucherFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <Button
+                        onClick={handleVoucherUpload}
+                        disabled={uploading || !writable}
+                        className="w-full"
+                      >
+                        {uploading ? (
+                          <>
+                            <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
+                            Feldolgozás...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            {selectedVoucherFiles.length} pénztárbizonylat feltöltése
                           </>
                         )}
                       </Button>
@@ -1726,7 +1994,7 @@ const ManualUpload = () => {
       <UploadedFilesModal
         open={filesModalOpen}
         onOpenChange={setFilesModalOpen}
-        activeTab={activeTab as 'invoices' | 'transactions' | 'salaries' | 'reports'}
+        activeTab={activeTab as 'invoices' | 'vouchers' | 'transactions' | 'salaries' | 'reports'}
       />
     </div>
   );

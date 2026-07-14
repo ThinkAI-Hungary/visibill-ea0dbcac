@@ -239,7 +239,7 @@ export function LiveNotificationProvider() {
               'invoiceStatusPayable', 'invoiceStatusMissing',
               'recentInvoices', 'uploadHistory',
               'analyticsRaw', 'analyticsVat',
-              'dashboardPettyCash',
+              'dashboardPettyCash', 'pettyCashEntries',
             );
             if (payload.eventType === 'INSERT') {
               const row = payload.new as any;
