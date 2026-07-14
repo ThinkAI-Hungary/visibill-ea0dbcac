@@ -276,14 +276,14 @@ export default function EntriesTab() {
         </div>
         <div className="flex gap-2">
           {/* F4: Cash closing button */}
-          <Button size="sm" variant="outline" onClick={() => setShowClosingDialog(true)} disabled={entries.length === 0}>
-            <BookOpen className="w-4 h-4 mr-1" /> Pénztárzárás
+          <Button size="sm" variant="outline" onClick={() => setShowClosingDialog(true)} disabled={entries.length === 0} className="border-indigo-500/20 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <BookOpen className="w-4 h-4 mr-1 text-indigo-500" /> Pénztárzárás
           </Button>
-          <Button size="sm" variant="outline" onClick={() => syncEntries.mutate()} disabled={syncEntries.isPending}>
-            {syncEntries.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ArrowRightLeft className="w-4 h-4 mr-1" />}
+          <Button size="sm" variant="outline" onClick={() => syncEntries.mutate()} disabled={syncEntries.isPending} className="border-emerald-500/20 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            {syncEntries.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin text-emerald-500" /> : <ArrowRightLeft className="w-4 h-4 mr-1 text-emerald-500" />}
             Szinkronizálás
           </Button>
-          <Button size="sm" onClick={() => { setEditingEntry(null); setShowManualDialog(true); }} disabled={!writable}>
+          <Button size="sm" onClick={() => { setEditingEntry(null); setShowManualDialog(true); }} disabled={!writable} className="bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm">
             <Plus className="w-4 h-4 mr-1" /> Manuális tétel
           </Button>
         </div>

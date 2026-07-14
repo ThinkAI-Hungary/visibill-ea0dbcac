@@ -29,6 +29,38 @@ import { reportError } from '@/lib/errorReporter';
 import PnlChart from '@/components/pnl/PnlChart'; // F9
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
+const renderYoYBadge = (curr: number, prev: number, textClass: string = "text-[9px]") => {
+  // Round to 2 decimal places to filter out floating-point database noise (e.g. 0.00000000001)
+  const roundedCurr = Math.round(curr * 100) / 100;
+  const roundedPrev = Math.round(prev * 100) / 100;
+
+  if (roundedPrev === 0 || roundedCurr === roundedPrev) return null;
+  
+  if (roundedPrev < 0 && roundedCurr >= 0) {
+    return (
+      <span className={cn("ml-1.5 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-bold whitespace-nowrap", textClass)}>
+        Nyereségbe fordult
+      </span>
+    );
+  }
+  if (roundedPrev > 0 && roundedCurr < 0) {
+    return (
+      <span className={cn("ml-1.5 px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 font-bold whitespace-nowrap", textClass)}>
+        Veszteségbe fordult
+      </span>
+    );
+  }
+  
+  const pctChange = Math.round(((roundedCurr - roundedPrev) / Math.abs(roundedPrev)) * 100);
+  if (pctChange === 0) return null;
+  const isUp = pctChange > 0;
+  return (
+    <span className={cn("ml-1.5 font-semibold", isUp ? "text-emerald-500" : "text-red-400", textClass)}>
+      {isUp ? '▲' : '▼'}{Math.abs(pctChange)}%
+    </span>
+  );
+};
+
 
 // ── Default PnL mapping rules based on Hungarian Sztv. "A" variant ──
 const DEFAULT_PNL_RULES: Array<{ prefix: string; pnlId: string; label: string }> = [
@@ -564,16 +596,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                 )}>
                   {isPositive ? '+' : ''}{formatValue(val)} <span className="text-xs font-normal text-muted-foreground">{inThousands ? 'E Ft' : 'Ft'}</span>
                   {/* U8: Only show % change badge if previous year data exists */}
-                  {hasPreviousYear && prev !== 0 && (() => {
-                    const pctChange = Math.round(((val - prev) / Math.abs(prev)) * 100);
-                    if (pctChange === 0) return null;
-                    const isUp = pctChange > 0;
-                    return (
-                      <span className={cn("ml-1.5 text-[10px] font-semibold", isUp ? "text-emerald-500" : "text-red-400")}>
-                        {isUp ? '▲' : '▼'}{Math.abs(pctChange)}%
-                      </span>
-                    );
-                  })()}
+                  {hasPreviousYear && renderYoYBadge(val, prev, "text-[10px]")}
                 </div>
                 {hasPreviousYear && prev !== 0 && (
                   <div className="text-[10px] text-muted-foreground mt-0.5">Előző év: {formatValue(prev)}</div>
@@ -708,18 +731,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                     )}>
                       {formatValue(row.displayBalance)}
                       {/* U8: Only show ▲/▼ badge if previous year data exists and is non-zero */}
-                      {hasPreviousYear && row.previousYear !== 0 && (() => {
-                        const prev = row.previousYear;
-                        const curr = row.displayBalance;
-                        if (curr === prev) return null;
-                        const pctChange = Math.round(((curr - prev) / Math.abs(prev)) * 100);
-                        const isUp = pctChange > 0;
-                        return (
-                          <span className={cn("ml-1 text-[9px] font-medium", isUp ? "text-emerald-500" : "text-red-400")}>
-                            {isUp ? '▲' : '▼'}{Math.abs(pctChange)}%
-                          </span>
-                        );
-                      })()}
+                      {hasPreviousYear && renderYoYBadge(row.displayBalance, row.previousYear, "text-[9px]")}
                     </div>
                   </div>
 

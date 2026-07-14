@@ -25,79 +25,20 @@ const PettyCashPage = () => {
   const { selectedCompany } = useCompany();
   const companyId = selectedCompany?.id || '';
 
-  // P3: Summary computed from raw tables (RPC get_petty_cash_summary not deployed yet)
-  // K1: Removed all console.log/console.warn calls
+  // P3: Summary computed from DB RPC get_petty_cash_summary
   // P3: Added staleTime: 30s to avoid unnecessary re-fetches (mutations invalidate)
   const { data: summary = [], isLoading } = useQuery({
     queryKey: queryKeys.pettyCashSummary(companyId),
     queryFn: async () => {
-      const [regRes, obRes, entRes] = await Promise.all([
-        supabase.from('petty_cash_registers').select('*').eq('company_id', companyId),
-        // P3: Only fetch opening balances for registers belonging to this company (via join-like filter)
-        supabase.from('petty_cash_opening_balances').select('*'),
-        supabase.from('petty_cash_entries').select('register_id, currency, amount').eq('company_id', companyId),
-      ]);
-
-      const registers = (regRes.data || []) as any[];
-      const openingBalances = (obRes.data || []) as any[];
-      const entries = (entRes.data || []) as any[];
-
-      if (registers.length === 0) return [];
-
-      const regIds = new Set(registers.map((r: any) => r.id));
-      // P3: Filter opening balances to only include this company's registers
-      const filteredOB = openingBalances.filter((ob: any) => regIds.has(ob.register_id));
-
-      const summaryMap: Record<string, SummaryRow> = {};
-
-      // Seed from opening balances
-      filteredOB.forEach((ob: any) => {
-        const reg = registers.find((r: any) => r.id === ob.register_id);
-        if (!reg) return;
-        const key = `${ob.register_id}::${ob.currency}`;
-        summaryMap[key] = {
-          register_id: ob.register_id,
-          register_name: reg.name,
-          is_default: reg.is_default,
-          currency: ob.currency,
-          opening_balance: Number(ob.amount || 0),
-          start_date: ob.start_date,
-          total_income: 0,
-          total_expense: 0,
-          current_balance: 0,
-        };
+      const { data, error } = await supabase.rpc('get_petty_cash_summary', {
+        p_company_id: companyId
       });
 
-      // Aggregate entries
-      entries.forEach((e: any) => {
-        const key = `${e.register_id}::${e.currency}`;
-        if (!summaryMap[key]) {
-          const reg = registers.find((r: any) => r.id === e.register_id);
-          if (!reg) return;
-          summaryMap[key] = {
-            register_id: e.register_id,
-            register_name: reg.name,
-            is_default: reg.is_default,
-            currency: e.currency,
-            opening_balance: 0,
-            start_date: null,
-            total_income: 0,
-            total_expense: 0,
-            current_balance: 0,
-          };
-        }
-        const amount = Number(e.amount || 0);
-        if (amount > 0) summaryMap[key].total_income += amount;
-        else summaryMap[key].total_expense += amount;
-      });
+      if (error) {
+        throw error;
+      }
 
-      // Compute current_balance
-      Object.values(summaryMap).forEach(row => {
-        const raw = row.opening_balance + row.total_income + row.total_expense;
-        row.current_balance = row.currency === 'HUF' ? Math.round(raw / 5) * 5 : raw;
-      });
-
-      return Object.values(summaryMap).sort((a, b) =>
+      return ((data || []) as SummaryRow[]).sort((a, b) =>
         (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0) || a.register_name.localeCompare(b.register_name) || a.currency.localeCompare(b.currency)
       );
     },
@@ -147,10 +88,10 @@ const PettyCashPage = () => {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="flex flex-wrap gap-3">
+        {/* Summary Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {/* Total card */}
-          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent min-w-[200px]">
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="p-4">
               <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">Összesítés</div>
               {totalByCurrency.length === 0 ? (
@@ -170,17 +111,24 @@ const PettyCashPage = () => {
           {/* Per-register cards */}
           {registerSummaries.map(([regId, reg]) => (
             <Card key={regId} className={cn(
-              'min-w-[160px] transition-all',
-              reg.is_default && 'border-primary/30'
+              'transition-all hover:shadow-md duration-300',
+              reg.is_default && 'border-primary/30 bg-primary/5'
             )}>
               <CardContent className="p-4">
-                <div className="flex items-center gap-1.5 mb-2">
-                  {reg.is_default && <Star className="w-3 h-3 text-primary fill-primary" />}
-                  <span className="text-xs font-medium text-muted-foreground">{reg.name}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {reg.is_default && <Star className="w-3.5 h-3.5 text-primary fill-primary shrink-0" />}
+                    <span className="text-xs font-semibold text-muted-foreground truncate" title={reg.name}>{reg.name}</span>
+                  </div>
+                  {reg.is_default && (
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-primary/20 text-primary bg-primary/5 font-semibold shrink-0">
+                      Alapértelmezett
+                    </Badge>
+                  )}
                 </div>
                 <div className="space-y-0.5">
                   {reg.currencies.map(c => (
-                    <div key={c.currency} className={cn('text-base font-semibold tabular-nums', c.balance >= 0 ? 'text-foreground' : 'text-destructive')}>
+                    <div key={c.currency} className={cn('text-base font-bold tabular-nums', c.balance >= 0 ? 'text-foreground' : 'text-destructive')}>
                       {fmtBalance(c.balance, c.currency)}
                     </div>
                   ))}

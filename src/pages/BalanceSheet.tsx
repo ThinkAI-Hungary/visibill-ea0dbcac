@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy, Wand2, RefreshCw, Columns } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy, Wand2, RefreshCw, Columns, TrendingUp } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
@@ -642,7 +642,9 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
   };
 
   const renderRowContent = (row: any, isLetter: boolean, isRoman: boolean, isArabic: boolean, isTotal: boolean, glAccounts: any[], hasGl: boolean, isExpanded: boolean, isClickable: boolean) => {
-    const indent = isRoman ? 'pl-6' : isArabic ? 'pl-12' : '';
+    const indent = sideBySide ? (isRoman ? 'pl-3' : isArabic ? 'pl-6' : '') : (isRoman ? 'pl-6' : isArabic ? 'pl-12' : '');
+    const containerPadding = sideBySide ? "p-1.5 gap-2" : "p-3 gap-4";
+    const textClass = sideBySide ? "text-[11px]" : "text-sm";
 
     // F12: Highlight rows with >50% year-over-year change
     const prevYearBal = Number(row.prior_year_balance) || 0;
@@ -653,26 +655,27 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
       <>
         <div
           className={cn(
-            "grid grid-cols-12 gap-4 p-3 items-center transition-colors hover:bg-muted/30",
+            "grid grid-cols-12 items-center transition-colors hover:bg-muted/30",
+            containerPadding,
             isTotal ? "bg-primary/10 font-bold border-t-2 border-b-2 border-border/80 text-base" : "",
             isLetter ? "bg-primary/5 font-bold border-t border-border/60" : "",
             isRoman ? "font-semibold" : "",
             isClickable ? "cursor-pointer" : "",
             // F12: significant change highlight
-            hasSignificantChange ? "bg-amber-500/5 border-l-2 border-l-amber-500/40" : ""
+            hasSignificantChange ? "bg-blue-500/5 border-l-2 border-l-blue-500/40" : ""
           )}
           onClick={() => isClickable && toggleRow(row.bs_structure_id)}
         >
-          <div className={cn("col-span-1 text-center font-bold text-muted-foreground text-sm", indent)}>
+          <div className={cn("col-span-1 text-center font-bold text-muted-foreground", textClass, indent)}>
             {row.row_code}
           </div>
-          <div className={cn("col-span-5 flex items-center gap-2", indent)}>
+          <div className={cn("col-span-5 flex items-center gap-2", textClass, indent)}>
             {isClickable && (
               <div className="w-4 h-4 shrink-0 text-muted-foreground/70">
                 {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </div>
             )}
-            <span className={cn(isTotal && "uppercase tracking-wide", isLetter && "uppercase")}>
+            <span className={cn(isTotal && "uppercase tracking-wide text-sm sm:text-base", isLetter && "uppercase font-bold text-xs sm:text-sm")}>
               {row.name}
             </span>
             {row.is_pnl_bridge && <span title="Automatikusan az Eredménykimutatásból"><Lock className="w-3.5 h-3.5 text-amber-500 ml-1" /></span>}
@@ -681,20 +684,20 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
               <TooltipProvider delayDuration={0}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <TrendingUp className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                   </TooltipTrigger>
                   <TooltipContent>Előző évhez képest &gt;50% változás</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
           </div>
-          <div className="col-span-2 text-right tabular-nums text-muted-foreground/50">
+          <div className={cn("col-span-2 text-right tabular-nums text-muted-foreground/50", textClass)}>
             {formatValue(prevYearBal)}
           </div>
-          <div className="col-span-2 text-right tabular-nums text-muted-foreground/50">
+          <div className={cn("col-span-2 text-right tabular-nums text-muted-foreground/50", textClass)}>
             {formatValue(Number(row.prior_year_adjustment) || 0)}
           </div>
-          <div className={cn("col-span-2 text-right tabular-nums", isTotal ? "text-primary text-base" : "", isLetter ? "font-bold" : "")}>
+          <div className={cn("col-span-2 text-right tabular-nums", isTotal ? "text-primary text-base" : "", isLetter ? "font-bold" : "", textClass)}>
             {formatValue(row.computedBalance)}
             {(() => {
               const prev = prevYearBal;

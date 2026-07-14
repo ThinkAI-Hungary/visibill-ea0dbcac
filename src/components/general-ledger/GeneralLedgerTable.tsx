@@ -98,6 +98,7 @@ interface GeneralLedgerTableProps {
 
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
   const { presetId, dateFrom, dateTo, globalSearch, isPolling, onStatsChange } = props;
+  const deferredSearch = useDeferredValue(globalSearch);
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
   const { toast } = useToast();
@@ -131,6 +132,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   // By default, expanded top-level items (length 1) to show some data, 
   // but users can expand/collapse freely. Let's expand '1' to show the tree.
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set(['1', '13', '14']));
+  const [savedExpandedRowIds, setSavedExpandedRowIds] = useState<Set<string> | null>(null);
+  const lastSearchRef = useRef('');
   
   const [hideBannerNextTime, setHideBannerNextTime] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -418,6 +421,23 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     const classifiedItemCount = totalItemCount - aiOrphanCount;
     onStatsChange({ accountCount: glAccountsOnly.length, leafCount: leaves.length, totalDebit, totalCredit, classifiedItems: classifiedItemCount, totalItems: totalItemCount });
   }, [tableData, onStatsChange, dbItems, orphanCount]);
+
+  useEffect(() => {
+    const currentSearch = (deferredSearch || '').trim();
+    const lastSearch = lastSearchRef.current;
+    
+    if (currentSearch && !lastSearch) {
+      // Search started: save current state and expand all parent nodes
+      setSavedExpandedRowIds(new Set(expandedRowIds));
+      const allParentIds = tableData.filter(d => d.hasChildren).map(d => d.id);
+      setExpandedRowIds(new Set(allParentIds));
+    } else if (!currentSearch && lastSearch && savedExpandedRowIds !== null) {
+      // Search cleared: restore saved expansion state
+      setExpandedRowIds(savedExpandedRowIds);
+      setSavedExpandedRowIds(null);
+    }
+    lastSearchRef.current = currentSearch;
+  }, [deferredSearch, tableData]);
   
   // Parse localStorage to check if banner was dismissed for this preset
   const localBannerState = useMemo(() => {
@@ -523,7 +543,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     });
   };
 
-  const deferredSearch = useDeferredValue(globalSearch);
+
 
   // Pre-calculate which categories contain items so we know what to expand during print
   const categoriesWithItems = useMemo(() => {

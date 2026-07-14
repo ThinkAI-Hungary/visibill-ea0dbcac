@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { computeMatchStatus, getPaymentStatusBadge } from '@/hooks/useComputedStatus';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -798,17 +798,17 @@ export const TransactionDetailsDialog = ({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="flex items-center gap-2 text-base">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="sm:max-w-[540px] max-h-screen overflow-y-auto flex flex-col p-6">
+        <SheetHeader className="pb-2 text-left">
+          <SheetTitle className="flex items-center gap-2 text-base justify-start">
             <FileText className="h-4 w-4" />
             Tranzakció részletei
-          </DialogTitle>
-          <DialogDescription className="text-xs">
+          </SheetTitle>
+          <SheetDescription className="text-xs text-left">
             Tranzakció és párosított számla adatai
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
         {/* Transaction Details - Compact */}
@@ -1382,7 +1382,7 @@ export const TransactionDetailsDialog = ({
               </div>
             </div>
 
-            <DialogFooter className="pt-2 flex-col gap-2">
+            <SheetFooter className="pt-2 flex-col gap-2">
               {/* Status marking buttons */}
               <div className="flex items-center gap-2 w-full">
                 <Button
@@ -1424,7 +1424,7 @@ export const TransactionDetailsDialog = ({
                   {saving ? 'Mentés...' : 'Párosítás mentése'}
                 </Button>
               </div>
-            </DialogFooter>
+            </SheetFooter>
           </>
         )}
 
@@ -1505,7 +1505,7 @@ export const TransactionDetailsDialog = ({
               </div>
             </div>
 
-            <DialogFooter className="pt-2">
+            <SheetFooter className="pt-2">
               <Button
                 size="sm"
                 disabled={!selectedInvoiceId || saving}
@@ -1515,12 +1515,12 @@ export const TransactionDetailsDialog = ({
                 <Check className="h-3 w-3 mr-1" />
                 {saving ? 'Mentés...' : 'Hozzáadás'}
               </Button>
-            </DialogFooter>
+            </SheetFooter>
           </>
         )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
 
     <InvoiceDetailPopup
       open={invoiceDetailOpen}

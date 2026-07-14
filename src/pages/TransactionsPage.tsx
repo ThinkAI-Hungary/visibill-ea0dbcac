@@ -24,6 +24,7 @@ import { Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { reportError } from '@/lib/errorReporter';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
+import { useScopedNavigate } from '@/lib/navigation';
 import { toast } from '@/hooks/use-toast';
 
 
@@ -344,7 +345,7 @@ const TransactionsPage = () => {
 
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>
-          <TabsList className="mb-4 flex-wrap h-auto gap-1">
+          <TabsList className="mb-4 flex-nowrap overflow-x-auto justify-start h-auto gap-1 max-w-full scrollbar-none pb-1">
             {/* Fixed tabs */}
             <TabsTrigger value="general" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -676,6 +677,7 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
   onOpenDetails: (tx: Transaction) => void;
 }) {
   const { data: exchangeRates } = useExchangeRates();
+  const scopedNavigate = useScopedNavigate();
 
   // Main transactions query for this bank tab
   const { data: transactions = [], isLoading } = useQuery({
@@ -744,13 +746,19 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
       <Card>
         <CardContent className="py-16 flex flex-col items-center justify-center gap-4">
           <div className={cn("p-4 rounded-2xl", bgClass)}>
-            <Upload className="w-8 h-8" />
+            <Landmark className="w-8 h-8" />
           </div>
-          <div className="text-center">
+          <div className="text-center flex flex-col items-center">
             <h3 className="font-semibold text-base">Nincs feldolgozott bankkivonat</h3>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
-              A <strong>{bankLabel}</strong> bankhoz még nincs feldolgozott kivonat feltöltve. Töltsd fel a bankkivonatot a Feltöltés oldalon.
+              A(z) <strong>{bankLabel}</strong> bankhoz még nem került feldolgozásra bankkivonat. Tölts fel egy újat a manuális feltöltő felületen.
             </p>
+            <Button
+              className="mt-4 gap-2 text-xs font-semibold h-9"
+              onClick={() => scopedNavigate('/upload')}
+            >
+              <Upload className="w-4 h-4" /> Bankkivonat feltöltése
+            </Button>
           </div>
         </CardContent>
       </Card>

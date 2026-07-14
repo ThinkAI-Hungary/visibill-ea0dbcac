@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, FileSpreadsheet, Calculator, Save, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Download, Pencil, Shield, Settings2 } from 'lucide-react';
+import { Loader2, FileSpreadsheet, Calculator, Save, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Download, Pencil, Shield, Settings2, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -350,6 +350,17 @@ function VatReturnViewTab() {
   // Auto-open sections that have data
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
   const [showAllRows, setShowAllRows] = useState(false);
+  const [partnerSearch, setPartnerSearch] = useState('');
+  const [isSavingLine, setIsSavingLine] = useState(false);
+
+  const filteredMLines = useMemo(() => {
+    const q = partnerSearch.toLowerCase().trim();
+    if (!q) return mLines;
+    return mLines.filter(ml =>
+      ml.partner_name?.toLowerCase().includes(q) ||
+      ml.partner_tax_number?.includes(q)
+    );
+  }, [mLines, partnerSearch]);
 
   // ── Inline editing for detail rows ──
   const [editDrafts, setEditDrafts] = useState<Record<string, { base?: number; tax?: number }>>({}); 
@@ -357,6 +368,7 @@ function VatReturnViewTab() {
 
   const saveDetailRow = React.useCallback(async (rowNumber: string, base: number, tax: number) => {
     if (!vatReturn?.id) return;
+    setIsSavingLine(true);
     const { error } = await supabase
       .from('vat_return_lines')
       .upsert({
@@ -373,8 +385,10 @@ function VatReturnViewTab() {
       toast({ title: 'Mentési hiba', description: error.message, variant: 'destructive' });
     } else {
       qc.invalidateQueries({ queryKey: ['vat_return_lines', (vatReturn as any).id] });
+      qc.invalidateQueries({ queryKey: ['vat_return', selectedCompany?.id, year, month, frequency] });
     }
-  }, [vatReturn, qc, toast]);
+    setIsSavingLine(false);
+  }, [vatReturn, qc, toast, selectedCompany?.id, year, month, frequency]);
 
   const handleDetailEdit = React.useCallback((rowNumber: string, field: 'base' | 'tax', value: string) => {
     const numVal = value === '' ? 0 : parseInt(value, 10) || 0;
@@ -597,34 +611,44 @@ function VatReturnViewTab() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" style={{ animationDelay: '100ms' }}>
-        {[
-          { label: 'Fizetendő ÁFA (36.)', value: getVal('36','tax'), prev: getPrevVal('36','tax'), color: 'text-red-500', bg: 'bg-red-500/10', borderColor: 'border-red-500/20', unpaidHint: unpaidVatEft > 0 ? `ebből kintlévőség: ${fmtEft(unpaidVatEft)}` : null },
-          { label: 'Levonható ÁFA (76.)', value: getVal('76','tax'), prev: getPrevVal('76','tax'), color: 'text-emerald-600', bg: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20', unpaidHint: null },
-          { label: 'Egyenleg (83.)', value: getVal('83','tax'), prev: getPrevVal('83','tax'), color: getVal('83','tax') > 0 ? 'text-red-500' : 'text-emerald-600', bg: getVal('83','tax') > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10', borderColor: getVal('83','tax') > 0 ? 'border-red-500/20' : 'border-emerald-500/20', unpaidHint: unpaidVatEft > 0 ? `kintlévőség nélkül: ${fmtEft(getVal('83','tax') - unpaidVatEft)}` : null },
-          { label: getVal('84','tax') ? 'Befizetendő (84.)' : 'Visszaigénylés (85.)', value: getVal('84','tax') || getVal('85','tax'), prev: getPrevVal('84','tax') || getPrevVal('85','tax'), color: getVal('84','tax') ? 'text-red-500' : 'text-emerald-600', bg: getVal('84','tax') ? 'bg-red-500/10' : 'bg-emerald-500/10', borderColor: getVal('84','tax') ? 'border-red-500/20' : 'border-emerald-500/20', unpaidHint: null },
-        ].map((kpi, idx) => (
-          <Card key={kpi.label} className={cn("border transition-all hover:shadow-md animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-both", kpi.borderColor)} style={{ animationDelay: `${(idx * 75 + 50)}ms` }}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={cn("p-2.5 rounded-xl", kpi.bg)}>
-                <FileSpreadsheet className={cn("w-5 h-5", kpi.color)} />
-              </div>
-              <div className="min-w-0">
-                <div className={cn("text-2xl font-bold tabular-nums leading-tight", kpi.color)}>
-                  {vatReturn ? fmtEft(kpi.value) : '—'}
-                  <DeltaBadge current={kpi.value} prev={kpi.prev} />
+      <div className="relative">
+        <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 transition-opacity duration-200", isSavingLine && "opacity-60 pointer-events-none")} style={{ animationDelay: '100ms' }}>
+          {[
+            { label: 'Fizetendő ÁFA (36.)', value: getVal('36','tax'), prev: getPrevVal('36','tax'), color: 'text-red-500', bg: 'bg-red-500/10', borderColor: 'border-red-500/20', unpaidHint: unpaidVatEft > 0 ? `ebből kintlévőség: ${fmtEft(unpaidVatEft)}` : null },
+            { label: 'Levonható ÁFA (76.)', value: getVal('76','tax'), prev: getPrevVal('76','tax'), color: 'text-emerald-600', bg: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20', unpaidHint: null },
+            { label: 'Egyenleg (83.)', value: getVal('83','tax'), prev: getPrevVal('83','tax'), color: getVal('83','tax') > 0 ? 'text-red-500' : 'text-emerald-600', bg: getVal('83','tax') > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10', borderColor: getVal('83','tax') > 0 ? 'border-red-500/20' : 'border-emerald-500/20', unpaidHint: unpaidVatEft > 0 ? `kintlévőség nélkül: ${fmtEft(getVal('83','tax') - unpaidVatEft)}` : null },
+            { label: getVal('84','tax') ? 'Befizetendő (84.)' : 'Visszaigénylés (85.)', value: getVal('84','tax') || getVal('85','tax'), prev: getPrevVal('84','tax') || getPrevVal('85','tax'), color: getVal('84','tax') ? 'text-red-500' : 'text-emerald-600', bg: getVal('84','tax') ? 'bg-red-500/10' : 'bg-emerald-500/10', borderColor: getVal('84','tax') ? 'border-red-500/20' : 'border-emerald-500/20', unpaidHint: null },
+          ].map((kpi, idx) => (
+            <Card key={kpi.label} className={cn("border transition-all hover:shadow-md animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-both", kpi.borderColor)} style={{ animationDelay: `${(idx * 75 + 50)}ms` }}>
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className={cn("p-2.5 rounded-xl", kpi.bg)}>
+                  <FileSpreadsheet className={cn("w-5 h-5", kpi.color)} />
                 </div>
-                <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{kpi.label}</div>
-                {vatReturn && kpi.unpaidHint && (
-                  <div className="text-[10px] text-amber-500 dark:text-amber-400 mt-0.5 font-medium flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3 shrink-0" />
-                    <span>{kpi.unpaidHint}</span>
+                <div className="min-w-0">
+                  <div className={cn("text-2xl font-bold tabular-nums leading-tight", kpi.color)}>
+                    {vatReturn ? fmtEft(kpi.value) : '—'}
+                    <DeltaBadge current={kpi.value} prev={kpi.prev} />
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{kpi.label}</div>
+                  {vatReturn && kpi.unpaidHint && (
+                    <div className="text-[10px] text-amber-500 dark:text-amber-400 mt-0.5 font-medium flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 shrink-0" />
+                      <span>{kpi.unpaidHint}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {isSavingLine && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/10 backdrop-blur-[1px] rounded-xl z-20">
+            <div className="flex items-center gap-2 bg-card border px-4 py-2 rounded-lg shadow-md animate-in zoom-in-95 duration-150">
+              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <span className="text-xs font-semibold text-foreground/80">Kalkuláció mentése...</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* V6: ÁFA Trend Chart (12 hónap) */}
@@ -896,15 +920,40 @@ function VatReturnViewTab() {
 
           {/* M-Lap Partner Table */}
           <Card className="border-border/60">
-            <CardHeader className="pb-3 border-b border-border/40">
+            <CardHeader className="pb-3 border-b border-border/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="text-base flex items-center gap-2">
                 M-Lap - Belföldi összesítő
-                <Badge variant="secondary" className="text-xs">{mLines.length} partner</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {filteredMLines.length === mLines.length ? `${mLines.length} partner` : `${filteredMLines.length} / ${mLines.length} találat`}
+                </Badge>
               </CardTitle>
+              {mLines.length > 0 && (
+                <div className="relative w-full sm:w-64 print:hidden">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Partner keresése adószám/név..."
+                    value={partnerSearch}
+                    onChange={(e) => setPartnerSearch(e.target.value)}
+                    className="pl-8 h-8 text-xs bg-muted/30 focus:bg-background transition-colors"
+                  />
+                  {partnerSearch && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground hover:text-foreground"
+                      onClick={() => setPartnerSearch('')}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              )}
             </CardHeader>
             <CardContent className="p-0">
-              {mLines.length === 0 ? (
-                <p className="text-sm text-muted-foreground p-4">Nincs belföldi levonható számla az időszakban</p>
+              {filteredMLines.length === 0 ? (
+                <p className="text-sm text-muted-foreground p-4">
+                  {mLines.length === 0 ? 'Nincs belföldi levonható számla az időszakban' : 'Nincs találat a keresési feltételekre'}
+                </p>
               ) : (
                 <div className="divide-y divide-border/30">
                   <div className="grid grid-cols-12 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/20">
@@ -915,7 +964,7 @@ function VatReturnViewTab() {
                     <div className="col-span-2 text-right">Adó (eFt)</div>
                     <div className="col-span-2 text-right">27% / 18% / 5%</div>
                   </div>
-                  {mLines.map(ml => (
+                  {filteredMLines.map(ml => (
                     <React.Fragment key={ml.id}>
                       <div
                         className="grid grid-cols-12 gap-2 px-4 py-2.5 text-sm items-center hover:bg-muted/20 cursor-pointer transition-colors"

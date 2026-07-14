@@ -527,7 +527,7 @@ export default function AnnualReportPage() {
             ))}
           </div>
         )}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none flex-nowrap pb-1">
           {STEPS.map((step, idx) => {
             const StepIcon = step.icon;
             const isActive = currentStep === step.id;
@@ -953,57 +953,56 @@ export default function AnnualReportPage() {
                         </div>
                       )}
 
-                      <RichTextEditor
-                        key={`rte_${tmpl.section_key}_${saved?.text?.length ?? 0}_${!saved ? 'default' : 'saved'}`}
-                        initialContent={saved?.text || tmpl.default_text}
-                        onChange={(newText) => {
-                          // Debounce the DB write — no local draft needed since editor is uncontrolled
-                          if (debounceRef.current) clearTimeout(debounceRef.current);
-                          debounceRef.current = setTimeout(() => {
-                            const sections = [...((report.notes_sections as any[]) || [])];
-                            const idx = sections.findIndex((s: any) => s.section_key === tmpl.section_key);
-                            const entry = { section_key: tmpl.section_key, text: newText };
-                            if (idx >= 0) sections[idx] = entry; else sections.push(entry);
-                            updateReport.mutate({ notes_sections: sections });
-                          }, 1200);
-                        }}
-                        placeholder={tmpl.section_title}
-                        variables={[
-                          { key: '[Cégnév]', label: 'Cég neve' },
-                          { key: '[Székhely]', label: 'Székhely' },
-                          { key: '[Adószám]', label: 'Adószám' },
-                          { key: '[Tárgyév]', label: 'Tárgyév' },
-                          { key: '[Tárgyév+1]', label: 'Tárgyév+1' },
-                          { key: '[Képviselő neve]', label: 'Képviselő' },
-                          { key: '[Képviselő beosztása]', label: 'Beosztás' },
-                          { key: '[Saját tőke]', label: 'Saját tőke (E Ft)' },
-                          { key: '[Saját tőke változás]', label: 'Tőke változás iránya' },
-                          { key: '[Mérlegfőösszeg]', label: 'Mérlegfőösszeg (E Ft)' },
-                          { key: '[ROE]', label: 'ROE %' },
-                          { key: '[Likviditás]', label: 'Likviditási mutató' },
-                          { key: '[Likviditás értékelés]', label: 'Likviditás szöveges értékelés' },
-                          { key: '[Adózott eredmény]', label: 'Adózott eredmény (E Ft)' },
-                          { key: '[Osztalék]', label: 'Osztalék (E Ft)' },
-                          { key: '[Eredménytartalék]', label: 'Eredménytartalék (E Ft)' },
-                        ]}
-                      />
+                      {/* Editor and Preview Side-by-side */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Szerkesztés</p>
+                          <RichTextEditor
+                            key={`rte_${tmpl.section_key}_${saved?.text?.length ?? 0}_${!saved ? 'default' : 'saved'}`}
+                            initialContent={saved?.text || tmpl.default_text}
+                            onChange={(newText) => {
+                              // Debounce the DB write — no local draft needed since editor is uncontrolled
+                              if (debounceRef.current) clearTimeout(debounceRef.current);
+                              debounceRef.current = setTimeout(() => {
+                                const sections = [...((report.notes_sections as any[]) || [])];
+                                const idx = sections.findIndex((s: any) => s.section_key === tmpl.section_key);
+                                const entry = { section_key: tmpl.section_key, text: newText };
+                                if (idx >= 0) sections[idx] = entry; else sections.push(entry);
+                                updateReport.mutate({ notes_sections: sections });
+                              }, 1200);
+                            }}
+                            placeholder={tmpl.section_title}
+                            variables={[
+                              { key: '[Cégnév]', label: 'Cég neve' },
+                              { key: '[Székhely]', label: 'Székhely' },
+                              { key: '[Adószám]', label: 'Adószám' },
+                              { key: '[Tárgyév]', label: 'Tárgyév' },
+                              { key: '[Tárgyév+1]', label: 'Tárgyév+1' },
+                              { key: '[Képviselő neve]', label: 'Képviselő' },
+                              { key: '[Képviselő beosztása]', label: 'Beosztás' },
+                              { key: '[Saját tőke]', label: 'Saját tőke (E Ft)' },
+                              { key: '[Saját tőke változás]', label: 'Tőke változás iránya' },
+                              { key: '[Mérlegfőösszeg]', label: 'Mérlegfőösszeg (E Ft)' },
+                              { key: '[ROE]', label: 'ROE %' },
+                              { key: '[Likviditás]', label: 'Likviditási mutató' },
+                              { key: '[Likviditás értékelés]', label: 'Likviditás szöveges értékelés' },
+                              { key: '[Adózott eredmény]', label: 'Adózott eredmény (E Ft)' },
+                              { key: '[Osztalék]', label: 'Osztalék (E Ft)' },
+                              { key: '[Eredménytartalék]', label: 'Eredménytartalék (E Ft)' },
+                            ]}
+                          />
+                        </div>
 
-                      {/* Live preview with variables replaced */}
-                      {(() => {
-                        const currentText = saved?.text || tmpl.default_text;
-                        const hasVars = /\[.+?\]/.test(currentText);
-                        if (!hasVars) return null;
-                        return (
-                          <div className="bg-muted/20 border border-border/30 rounded-lg p-3 mt-2">
-                            <p className="text-[10px] font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
-                              <Info className="w-3 h-3" /> Előnézet (behelyettesített változókkal)
-                            </p>
-                            <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
-                              {replaceVariables(currentText)}
-                            </p>
+                        {/* Live preview with variables replaced */}
+                        <div className="space-y-2 flex flex-col h-full">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                            <Info className="w-3.5 h-3.5 text-blue-500" /> Előnézet (behelyettesített változókkal)
+                          </p>
+                          <div className="flex-1 bg-muted/15 border border-border/40 rounded-lg p-4 min-h-[220px] overflow-y-auto max-h-[350px] text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                            {replaceVariables(saved?.text || tmpl.default_text)}
                           </div>
-                        );
-                      })()}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
