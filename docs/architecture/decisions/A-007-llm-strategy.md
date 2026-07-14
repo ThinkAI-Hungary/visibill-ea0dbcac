@@ -79,9 +79,24 @@ retry(
 | Kontextus | Limit | Miért |
 |-----------|-------|-------|
 | Invoice AI (multi-PDF) | `Semaphore(5)` | Max 5 párhuzamos LLM hívás nagy PDF feldolgozásnál |
-| Vision OCR | `Semaphore(3)` | GPT-4o Vision drága, korlátozni kell |
-| GL batch classification | `BATCH_SIZE=10` | 10 item/API call — számlatükör egyszer elküldve, nem 10× |
+| GL batch classification | `BATCH_SIZE=30` | 30 tétel/API hívás — A számlatükör egyszer elküldve. A limit optimalizált a válaszcsonkítás ellen, DeepSeek prompt caching (85%+) és okos caching deduplikáció támogatással. |
 | Transaction categorization | `Semaphore(5)` | AI kategorizálás párhuzamosítás |
+| GL classification safeguards | Caching, Circuit Breaker, JSON Repair | A főkönyvi besorolást védő és optimalizáló háromlépcsős biztonsági rendszer. |
+
+---
+
+### GL Besorolási Védelmi Rendszerek (Safeguards)
+
+A főkönyvi besorolások megbízhatóságát és költséghatékonyságát az alábbi háromlépcsős beépített védelmi rendszer garantálja:
+
+1. **Okos Caching / Deduplikáció (Exact Match Cache):**
+   A bejövő tételeket a `(direction, partner_name, description)` hármas alapján egyedi csoportokba rendezzük a futás előtt. Az API-nak csak az egyedi tételeket küldjük el, majd a visszakapott besorolásokat átmásoljuk a duplikátumokra (arányosan elosztva a tokenköltséget). A Supabase-be való mentési callbackeket viszont minden tételnél külön-külön lefuttatjuk, így az adatbázisban minden sor megfelelően rögzül. Ez ismétlődő adatoknál **akár 90% feletti token- és költségmegtakarítást** eredményez.
+
+2. **Áramkör-megszakító (Circuit Breaker):**
+   A `CircuitBreakerTracker` nyomon követi a teljesített batch-ek hibáit. Ha egy feladat futása során **3 batch teljesen meghiúsul** (azaz a batch hívás és az egyedi fallback hívások is hibát dobnak), az áramkör leold. Minden futó és függőben lévő hívás azonnal leáll, megvédve a rendszert a végtelen hiba-ciklusoktól és a felesleges API költségektől.
+
+3. **JSON-repair (Automatikus válasz-javítás):**
+   Ha a DeepSeek válasza hálózati okok vagy határértékek miatt megsérül vagy csonkolódik (pl. hiányzó zárójelek/idézőjelek a JSON végén), a rendszer másodlagos mentőövként a `json_repair` csomag segítségével megpróbálja helyreállítani a struktúrát. Ha a javítás sikeres, a batch feldolgozása folytatódik, elkerülve az egyesével futó drága fallback hívásokat.
 
 ---
 

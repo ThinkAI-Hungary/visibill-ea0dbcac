@@ -29,21 +29,21 @@ import { reportError } from '@/lib/errorReporter';
 import PnlChart from '@/components/pnl/PnlChart'; // F9
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
-const renderYoYBadge = (curr: number, prev: number, textClass: string = "text-[9px]") => {
-  // Round to 2 decimal places to filter out floating-point database noise (e.g. 0.00000000001)
-  const roundedCurr = Math.round(curr * 100) / 100;
-  const roundedPrev = Math.round(prev * 100) / 100;
+export const renderYoYBadge = (curr: number, prev: number, inThousands: boolean, textClass: string = "text-[9px]") => {
+  // Use the actual values displayed on screen (rounded to integer in thousands, or kept as raw integers)
+  const displayCurr = inThousands ? Math.round(curr / 1000) : Math.round(curr);
+  const displayPrev = inThousands ? Math.round(prev / 1000) : Math.round(prev);
 
-  if (roundedPrev === 0 || roundedCurr === roundedPrev) return null;
+  if (displayPrev === 0 || displayCurr === displayPrev) return null;
   
-  if (roundedPrev < 0 && roundedCurr >= 0) {
+  if (displayPrev < 0 && displayCurr >= 0) {
     return (
       <span className={cn("ml-1.5 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-bold whitespace-nowrap", textClass)}>
         Nyereségbe fordult
       </span>
     );
   }
-  if (roundedPrev > 0 && roundedCurr < 0) {
+  if (displayPrev > 0 && displayCurr < 0) {
     return (
       <span className={cn("ml-1.5 px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 font-bold whitespace-nowrap", textClass)}>
         Veszteségbe fordult
@@ -51,7 +51,7 @@ const renderYoYBadge = (curr: number, prev: number, textClass: string = "text-[9
     );
   }
   
-  const pctChange = Math.round(((roundedCurr - roundedPrev) / Math.abs(roundedPrev)) * 100);
+  const pctChange = Math.round(((displayCurr - displayPrev) / Math.abs(displayPrev)) * 100);
   if (pctChange === 0) return null;
   const isUp = pctChange > 0;
   return (
@@ -596,7 +596,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                 )}>
                   {isPositive ? '+' : ''}{formatValue(val)} <span className="text-xs font-normal text-muted-foreground">{inThousands ? 'E Ft' : 'Ft'}</span>
                   {/* U8: Only show % change badge if previous year data exists */}
-                  {hasPreviousYear && renderYoYBadge(val, prev, "text-[10px]")}
+                  {hasPreviousYear && renderYoYBadge(val, prev, inThousands, "text-[10px]")}
                 </div>
                 {hasPreviousYear && prev !== 0 && (
                   <div className="text-[10px] text-muted-foreground mt-0.5">Előző év: {formatValue(prev)}</div>
@@ -731,7 +731,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                     )}>
                       {formatValue(row.displayBalance)}
                       {/* U8: Only show ▲/▼ badge if previous year data exists and is non-zero */}
-                      {hasPreviousYear && renderYoYBadge(row.displayBalance, row.previousYear, "text-[9px]")}
+                      {hasPreviousYear && renderYoYBadge(row.displayBalance, row.previousYear, inThousands, "text-[9px]")}
                     </div>
                   </div>
 

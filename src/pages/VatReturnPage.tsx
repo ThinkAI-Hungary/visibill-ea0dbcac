@@ -354,12 +354,13 @@ function VatReturnViewTab() {
   const [isSavingLine, setIsSavingLine] = useState(false);
 
   const filteredMLines = useMemo(() => {
-    const q = partnerSearch.toLowerCase().trim();
+    const q = partnerSearch.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     if (!q) return mLines;
-    return mLines.filter(ml =>
-      ml.partner_name?.toLowerCase().includes(q) ||
-      ml.partner_tax_number?.includes(q)
-    );
+    return mLines.filter(ml => {
+      const partnerNameNormalized = (ml.partner_name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const partnerTaxNormalized = ml.partner_tax_number || '';
+      return partnerNameNormalized.includes(q) || partnerTaxNormalized.includes(q);
+    });
   }, [mLines, partnerSearch]);
 
   // ── Inline editing for detail rows ──
