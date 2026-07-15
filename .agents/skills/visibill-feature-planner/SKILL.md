@@ -134,6 +134,11 @@ Keresd végig mind a 4 döntési réteget (BRD, PRD, ADR, Worker docs).
 
 ### 1.4 KÖTELEZŐ: Design Pattern Kontextus Betöltése
 
+> [!IMPORTANT]
+> **UI ELEM GENERÁLÁS / MÓDOSÍTÁS KORLÁTOZÁS:**
+> Ha a funkció új felületi elemet (pl. új dialógus, táblázat, modal, gomb, badge, input, skeleton, sidebar menüpont, stb.) vezet be vagy módosít, az AI **KÖTELES** a tervezési szakaszban betölteni és részletesen áttanulmányozni a megfelelő `docs/design/` dokumentációt!
+> Az ad-hoc, egyéni vizuális vagy interakciós minták használata TILOS. Minden komponensnek tökéletesen illeszkednie kell a meglévő design tokens, typography és component library elvekhez.
+
 Az AI **köteles** a meglévő design pattern-eket betölteni és követni.
 
 #### Mindig olvasandó (minden feature-nél):

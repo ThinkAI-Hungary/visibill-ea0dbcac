@@ -125,6 +125,11 @@ Ha a user leírja hogyan működik valami → **ellenőrizd a kódban** mielőtt
 
 ### 1.4c KÖTELEZŐ: Design Pattern Kontextus Betöltése
 
+> [!IMPORTANT]
+> **UI ELEM GENERÁLÁS / MÓDOSÍTÁS KORLÁTOZÁS:**
+> Ha a fejlesztés új felületi elemet (pl. új dialógus, táblázat, modal, gomb, badge, input, skeleton, sidebar menüpont, stb.) vezet be vagy módosít, az Agent **KÖTELES** a tervezési és implementációs szakasz megkezdése előtt megnyitni és részletesen áttanulmányozni a megfelelő `docs/design/` dokumentációt!
+> Az ad-hoc, egyéni vizuális vagy interakciós minták használata TILOS. Minden komponensnek tökéletesen illeszkednie kell a meglévő design tokens, typography és component library elvekhez.
+
 > **Új UI elem létrehozásakor vagy módosításakor az Agent KÖTELES a meglévő Visibill design dokumentációt betölteni és követni.**
 > Ad-hoc megoldás TILOS ha a design docs-ban van létező minta.
 
