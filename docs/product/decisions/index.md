@@ -1,7 +1,7 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-07-14  
-> **Összesen:** 41 döntés | ✅ Decided: 38 | ⛔ Superseded: 2 | 🔴 Open: 1
+> **Utoljára frissítve:** 2026-07-15  
+> **Összesen:** 42 döntés | ✅ Decided: 39 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
 
@@ -71,6 +71,7 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | P-025 | Settings oldal struktúra (5 szekció + FX beállítások) | ✅ Decided | [P-025](./P-025-settings-structure.md) |
 | P-026 | Cégprofil adatok (alap + alias + telephely) | ✅ Decided | [P-026](./P-026-company-profile.md) |
 | P-027 | Csapattagok kezelés (share token) | ✅ Decided | [P-027](./P-027-team-management.md) |
+| P-048 | IMAP/SMTP Levelező Beállítások és Tabs UX | ✅ Decided | [P-048](./P-048-imap-smtp-settings-tabs-ux.md) |
 
 ## 💳 Előfizetés & Pricing
 

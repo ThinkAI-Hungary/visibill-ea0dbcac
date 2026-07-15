@@ -3075,8 +3075,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1784107244.4454548,
-    "ast_hash": "bcaafe7b3130608ad7150a0bc5ac0c14",
+    "mtime": 1783723826.4446757,
+    "ast_hash": "3af197d4bf08befd73598ef047ce57e1",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -5360,8 +5360,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database-schema.md": {
-    "mtime": 1784107266.821281,
-    "ast_hash": "7abbcca6a87ba59477c56f47d116bd73",
+    "mtime": 1783704240.8466496,
+    "ast_hash": "a6c87589c01a2c1f2c62c88be21d6f52",
     "semantic_hash": ""
   },
   "docs/architecture/database/01-auth-users.md": {
@@ -5370,8 +5370,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/02-companies.md": {
-    "mtime": 1784107254.340328,
-    "ast_hash": "0a396ce9780b4cdca9710ea209ecc229",
+    "mtime": 1782621606.9335632,
+    "ast_hash": "51fe1230c5ae7988d4b9a71daa0c3a4b",
     "semantic_hash": ""
   },
   "docs/architecture/database/03-permissions.md": {
@@ -6185,8 +6185,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260715112000_add_get_email_settings_rpc.sql": {
-    "mtime": 1784107159.535972,
-    "ast_hash": "26390755fab38843c00ac694767ce423",
+    "mtime": 1784106459.1020129,
+    "ast_hash": "87bce5708c348b39d7d204e502955475",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-038-imap-smtp-credentials-vault-integration.md": {

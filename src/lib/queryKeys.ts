@@ -100,6 +100,8 @@ export const queryKeys = {
   // ── Integrations ──
   integrations: (companyId: string) =>
     ['integrations', companyId] as const,
+  emailSettings: (companyId: string) =>
+    ['emailSettings', companyId] as const,
 
   // ── Analytics ──
   analyticsRaw: (companyId: string, dateFrom: string, dateTo: string) =>

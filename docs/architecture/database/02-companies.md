@@ -2,7 +2,7 @@
 
 > Cégek, tagságok, beállítások, telephely.
 
-**Táblák ebben a csoportban:** 5
+**Táblák ebben a csoportban:** 6
 
 ---
 
@@ -103,6 +103,41 @@
 **FK:** `company_id` → `companies.id`
 
 **Indexek:** `company_fx_settings_company_id_key`
+
+---
+
+### `company_email_settings`
+
+**RLS:** ✅ | **Sorok:** ~0
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — |  |
+| user_id | uuid | — |  |
+| imap_host | text | ✓ |  |
+| imap_port | integer | ✓ |  |
+| imap_username | text | ✓ |  |
+| imap_password_secret_id | uuid | ✓ |  |
+| imap_encryption | text | — | `'SSL/TLS'::text` |
+| imap_status | text | — | `'pending'::text` |
+| imap_last_validated_at | timestamp with time zone | ✓ |  |
+| imap_validation_error | text | ✓ |  |
+| smtp_host | text | ✓ |  |
+| smtp_port | integer | ✓ |  |
+| smtp_username | text | ✓ |  |
+| smtp_password_secret_id | uuid | ✓ |  |
+| smtp_encryption | text | — | `'SSL/TLS'::text` |
+| smtp_status | text | — | `'pending'::text` |
+| smtp_last_validated_at | timestamp with time zone | ✓ |  |
+| smtp_validation_error | text | ✓ |  |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`
+
+**Indexek:** `company_email_settings_company_id_key`
+
 
 ---
 

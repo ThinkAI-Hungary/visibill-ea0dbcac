@@ -10,7 +10,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — 52 deployed function + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — 54 deployed function + `_shared/` közös kód.
 
 **Közös kód:** `_shared/` mappa — CORS headers, Supabase client, utility-k.
 
@@ -50,6 +50,13 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `process-mailgun-webhook` | ❌ | Bejövő email feldolgozás (Mailgun webhook → attachment → Storage → DB) |
 | `create-email-alias` | ✅ | Email alias létrehozása (cegnev@inbox.visibill.hu) |
 | `delete-email-alias` | ✅ | Email alias törlése |
+
+#### 📧 Saját Levelező Integráció (2 db)
+
+| Function | JWT | Leírás |
+|----------|-----|--------|
+| `test-email-connection` | ✅ | IMAP/SMTP kapcsolat tesztelése és hitelesítése Vault feloldással |
+| `delete-email-settings` | ✅ | Saját levelező beállítások és Vault titkok biztonságos törlése / leválasztása |
 
 #### ⚡ Trigger / Queue (6 db)
 

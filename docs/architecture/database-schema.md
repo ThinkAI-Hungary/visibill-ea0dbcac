@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
 > **Utoljára frissítve:** 2026-06-28
-> **Összesen:** ~153 tábla | **RLS:** mind engedélyezve | **Supabase PostgreSQL**
+> **Összesen:** ~154 tábla | **RLS:** mind engedélyezve | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 
@@ -10,7 +10,7 @@ Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáj
 ## Tartalomjegyzék
 
 - [🔐 Auth & Felhasználók](./database/01-auth-users.md) — 6 tábla, ~187 sor
-- [🏢 Cégek & Tagság](./database/02-companies.md) — 5 tábla, ~87 sor
+- [🏢 Cégek & Tagság](./database/02-companies.md) — 6 tábla, ~87 sor
 - [🔑 Jogosultságok & Hozzáférés](./database/03-permissions.md) — 3 tábla, ~128 sor
 - [📄 Számlák](./database/04-invoices.md) — 7 tábla, ~6194 sor
 - [🏛️ NAV Integráció](./database/05-nav.md) — 3 tábla, ~53816 sor
@@ -119,6 +119,7 @@ Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáj
 | `chart_of_accounts_presets` | 📊 Főkönyv (General Ledger) | 5 |  |
 | `cmr_documents` | ❓ Uncategorized | ? |  |
 | `companies` | 🏢 Cégek & Tagság | 31 |  |
+| `company_email_settings` | 🏢 Cégek & Tagság | 0 | Saját SMTP/IMAP levelezési beállítások (kiszolgálók, Vault titok UUID-k, státuszok) |
 | `company_fx_settings` | 🏢 Cégek & Tagság | 0 |  |
 | `company_locations` | 🏢 Cégek & Tagság | 6 |  |
 | `company_members` | 🏢 Cégek & Tagság | 49 |  |

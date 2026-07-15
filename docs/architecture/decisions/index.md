@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-07-14  
-> **Összesen:** 37 döntés | ✅ Decided: 36 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-07-15  
+> **Összesen:** 38 döntés | ✅ Decided: 37 | ⛔ Superseded: 1
 
 ---
 
@@ -65,6 +65,7 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | A-031 | Mailgun Webhook Robustness (silent missing alias, legacy skip) | ✅ Decided | [A-031](./A-031-mailgun-webhook-robustness.md) |
 | A-032 | Accounty Push Notification Preferences (Service Worker, VAPID, EF) | ✅ Decided | [A-032](./A-032-accounty-push-notifications.md) |
 | A-034 | Accounty Digest Emails (dedikált oszlopok JSONB helyett, óránkénti Cron) | ✅ Decided | [A-034](./A-034-accounty-digest-emails.md) |
+| A-038 | IMAP/SMTP Hitelesítő Adatok és Vault Integráció | ✅ Decided | [A-038](./A-038-imap-smtp-credentials-vault-integration.md) |
 
 ## đź—„ď¸Ź AdatbĂˇzis
 

@@ -1,5 +1,6 @@
-﻿import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { Resend } from 'npm:resend@4.0.0'
+import nodemailer from 'https://esm.sh/nodemailer@6.9.13'
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
 
@@ -169,27 +170,99 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const emailPayload: Record<string, unknown> = {
-      from: `${body.senderCompanyName} (Visibill) <noreply@mail.visibill.hu>`,
-      reply_to: user.email,
-      to: [debtorEmail],
-      subject,
-      html,
-    }
-    if (attachments.length > 0) {
-      emailPayload.attachments = attachments
-    }
-
-    const { error: resendError } = await resend.emails.send(emailPayload as any)
-
-    const status = resendError ? 'error' : 'sent'
-    const errorMessage = resendError ? JSON.stringify(resendError) : null
-
-    // Log to dunning_sends
+    // Check if custom SMTP is configured
     const serviceSupabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
+
+    const { data: decSettings, error: decryptError } = await serviceSupabase
+      .rpc('get_company_email_settings', { p_company_id: companyId })
+      .maybeSingle()
+
+    let sentWithCustomSmtp = false
+    let smtpError: any = null
+
+    if (!decryptError && decSettings?.smtp_host && decSettings?.smtp_status === 'valid') {
+      console.log(`[dunning] Attempting custom SMTP send via: ${decSettings.smtp_host}`)
+      try {
+        const secure = decSettings.smtp_encryption === 'SSL/TLS' || decSettings.smtp_port === 465;
+        const transporter = nodemailer.createTransport({
+          host: decSettings.smtp_host,
+          port: decSettings.smtp_port,
+          secure,
+          auth: {
+            user: decSettings.smtp_username,
+            pass: decSettings.smtp_password
+          },
+          tls: {
+            rejectUnauthorized: false
+          },
+          connectionTimeout: 10000
+        })
+
+        const mailOptions: Record<string, any> = {
+          from: `"${body.senderCompanyName}" <${decSettings.smtp_username}>`,
+          to: debtorEmail,
+          subject,
+          html,
+        }
+
+        if (user.email) {
+          mailOptions.replyTo = user.email
+        }
+
+        if (attachments.length > 0) {
+          mailOptions.attachments = attachments
+        }
+
+        await transporter.sendMail(mailOptions)
+        sentWithCustomSmtp = true
+        console.log('[dunning] Custom SMTP send succeeded.')
+      } catch (err: any) {
+        console.error('[dunning] Custom SMTP send failed, will fallback to Resend:', err)
+        smtpError = err
+        
+        // Update SMTP settings status to error in background
+        try {
+          await serviceSupabase
+            .from('company_email_settings')
+            .update({
+              smtp_status: 'error',
+              smtp_validation_error: `SMTP küldési hiba: ${err.message || err}`,
+              smtp_last_validated_at: new Date().toISOString()
+            })
+            .eq('company_id', companyId)
+        } catch (updateErr) {
+          console.error('[dunning] Failed to update SMTP status to error:', updateErr)
+        }
+      }
+    }
+
+    let resendError = null
+    if (!sentWithCustomSmtp) {
+      console.log('[dunning] Sending via default Resend service...')
+      const emailPayload: Record<string, unknown> = {
+        from: `${body.senderCompanyName} (Visibill) <noreply@mail.visibill.hu>`,
+        reply_to: user.email,
+        to: [debtorEmail],
+        subject,
+        html,
+      }
+      if (attachments.length > 0) {
+        emailPayload.attachments = attachments
+      }
+
+      const { error } = await resend.emails.send(emailPayload as any)
+      resendError = error
+    }
+
+    const status = (sentWithCustomSmtp || !resendError) ? 'sent' : 'error'
+    const errorMessage = sentWithCustomSmtp 
+      ? null 
+      : (resendError ? JSON.stringify(resendError) : (smtpError ? `SMTP error fallback: ${smtpError.message || smtpError}` : null))
+
+    // Log to dunning_sends
     await serviceSupabase.from('dunning_sends').insert({
       user_id: user.id,
       company_id: companyId,
@@ -203,15 +276,15 @@ Deno.serve(async (req: Request) => {
       error_message: errorMessage,
     })
 
-    if (resendError) {
+    if (!sentWithCustomSmtp && resendError) {
       console.error('[dunning] Resend error:', resendError)
       return new Response(JSON.stringify({ error: resendError }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    console.log(`[dunning] Success for ${debtorEmail}`)
-    return new Response(JSON.stringify({ success: true }), {
+    console.log(`[dunning] Success for ${debtorEmail} (SMTP: ${sentWithCustomSmtp})`)
+    return new Response(JSON.stringify({ success: true, customSmtp: sentWithCustomSmtp }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 

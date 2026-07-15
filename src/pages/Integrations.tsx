@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mail, Zap, Shield, AtSign, Info, Activity, CheckCircle, XCircle, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import EmailAliasManager from '@/components/EmailAliasManager';
+import EmailSettingsForm from '@/components/integrations/EmailSettingsForm';
 import NavCredentialsForm from '@/components/nav/NavCredentialsForm';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -112,27 +113,27 @@ const Integrations = () => {
 
         {/* Two Column Grid */}
         <div className="grid lg:grid-cols-2 gap-6 items-start">
-          {/* Email Alias Section */}
+          {/* Email Services Section */}
           <Card className="border-primary/10 hover:border-primary/20 transition-colors">
             <CardHeader>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
                   <AtSign className="w-6 h-6 text-primary" />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg">Email Alias-ok</CardTitle>
+                    <CardTitle className="text-lg">E-mail Integráció</CardTitle>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p>Hozz létre dedikált email címeket minden céghez. Add meg ezeket a címeket a számlázóknak, és a számlák automatikusan feldolgozásra kerülnek.</p>
+                        <p>Fogadj számlákat a Visibill által generált e-mail aliasszal, vagy kapcsold össze saját levelező szerveredet (IMAP/SMTP) a bejövő és kimenő levelek automatizálásához.</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
                   <CardDescription className="text-sm">
-                    Automatikus számla fogadás
+                    Automatikus számlafogadás és kézbesítés
                   </CardDescription>
                   {/* Feature Pills */}
                   <div className="flex flex-wrap gap-2 pt-1">
@@ -146,14 +147,25 @@ const Integrations = () => {
                     </div>
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium">
                       <Shield className="h-3 w-3" />
-                      Biztonságos
+                      Saját SMTP/IMAP
                     </div>
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-4">
-              <EmailAliasManager />
+              <Tabs defaultValue="alias" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="alias">Generált Alias</TabsTrigger>
+                  <TabsTrigger value="custom-mail">Saját Levelező</TabsTrigger>
+                </TabsList>
+                <TabsContent value="alias" className="mt-0">
+                  <EmailAliasManager />
+                </TabsContent>
+                <TabsContent value="custom-mail" className="mt-0">
+                  <EmailSettingsForm />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
 
