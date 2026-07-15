@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, FileSpreadsheet, Calculator, Save, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Download, Pencil, Shield, Settings2, Search, X } from 'lucide-react';
+import { Loader2, FileSpreadsheet, Calculator, Save, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Download, Pencil, Shield, Settings2, Search, X, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -184,6 +184,52 @@ function VatReturnViewTab() {
     },
     enabled: !!selectedCompany?.id && !!vatReturn,
   });
+
+  // Deadline countdown (deadline is the 20th of the following month)
+  const deadlineCountdown = React.useMemo(() => {
+    const today = new Date();
+    let deadlineMonth = month + 1;
+    let deadlineYear = year;
+    if (frequency === 'N') {
+      const endMonth = month * 3;
+      deadlineMonth = endMonth + 1;
+    }
+    if (deadlineMonth > 12) {
+      deadlineMonth = 1;
+      deadlineYear += 1;
+    }
+    const deadlineDate = new Date(deadlineYear, deadlineMonth - 1, 20);
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return {
+      daysLeft: diffDays,
+      dateFormatted: deadlineDate.toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    };
+  }, [year, month, frequency]);
+
+  // Reverse-Charge suspicious invoices auditor audit helper
+  const reverseChargeSuspiciousInvoices = React.useMemo(() => {
+    const suspicious: { partnerName: string; invoiceNumber: string; net: number; vat: number }[] = [];
+    const keywords = ['épít', 'szerel', 'kivitelez', 'fém', 'hulladék', 'bontás', 'generál'];
+    mLines.forEach(ml => {
+      const partnerName = ml.partner_name || '';
+      const matchesKeyword = keywords.some(k => partnerName.toLowerCase().includes(k));
+      if (matchesKeyword && ml.invoice_details) {
+        (ml.invoice_details as any[]).forEach(inv => {
+          const vatRate = parseFloat(inv.vat_rate) || 0;
+          if (vatRate > 0) {
+            suspicious.push({
+              partnerName,
+              invoiceNumber: inv.invoice_number,
+              net: inv.net || 0,
+              vat: inv.vat || 0
+            });
+          }
+        });
+      }
+    });
+    return suspicious;
+  }, [mLines]);
 
   const calculate = useMutation({
     mutationFn: async () => {
@@ -539,6 +585,31 @@ function VatReturnViewTab() {
         </div>
       </div>
 
+      {/* ── VAT Filing Countdown Timer Banner ── */}
+      {vatReturn && (
+        deadlineCountdown.daysLeft > 0 ? (
+          <div className="bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 p-3 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-200 print:hidden">
+            <span className="flex items-center gap-1.5 font-medium">
+              <Clock className="w-4 h-4 text-blue-500" />
+              Következő ÁFA bevallási határidő: <strong>{deadlineCountdown.dateFormatted}</strong>
+            </span>
+            <span className="font-bold bg-blue-500/20 px-2 py-0.5 rounded text-blue-600 dark:text-blue-300">
+              {deadlineCountdown.daysLeft} nap van hátra
+            </span>
+          </div>
+        ) : (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 p-3 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-200 print:hidden">
+            <span className="flex items-center gap-1.5 font-medium">
+              <Clock className="w-4 h-4 text-red-500" />
+              A bevallási határidő ({deadlineCountdown.dateFormatted}) <strong>LEJÁRT</strong>!
+            </span>
+            <span className="font-bold bg-red-500/20 px-2 py-0.5 rounded text-red-600 dark:text-red-300 animate-pulse">
+              {Math.abs(deadlineCountdown.daysLeft)} nappal elmaradva
+            </span>
+          </div>
+        )
+      )}
+
       {/* Status Bar */}
       {vatReturn && (
         <div className="flex items-center gap-3 bg-card px-4 py-2.5 rounded-xl border border-border shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
@@ -609,6 +680,33 @@ function VatReturnViewTab() {
             Ez a cég alanyi adómentességet alkalmaz (Áfa tv. XIII. fejezet) — ÁFA felszámítási és bevallási kötelezettség nem áll fenn.
           </span>
         </div>
+      )}
+
+      {/* Reverse-Charge Auditing Warnings */}
+      {reverseChargeSuspiciousInvoices.length > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/5 print:hidden rounded-xl">
+          <CardContent className="p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="space-y-1 w-full">
+              <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-400">
+                Fordított adózás (Reverse Charge) ellenőrzés ({reverseChargeSuspiciousInvoices.length})
+              </h4>
+              <p className="text-xs text-muted-foreground leading-normal">
+                Az alábbi partnereknél felszámított ÁFA szerepel, de a cég/partner neve vagy tevékenysége alapján építőipari/fémkereskedelmi tevékenység gyanúja merül fel. Ellenőrizd, hogy nem fordított adózást (Áfa tv. 142. §) kellene-e alkalmazni:
+              </p>
+              <div className="pt-2 space-y-1.5 max-h-32 overflow-y-auto w-full">
+                {reverseChargeSuspiciousInvoices.map((inv, idx) => (
+                  <div key={idx} className="text-xs flex justify-between items-center border-b pb-1 last:border-0 border-amber-500/10 w-full">
+                    <span className="font-semibold text-foreground/80">{inv.partnerName} ({inv.invoiceNumber})</span>
+                    <span className="text-muted-foreground font-mono">
+                      Nettó: {Math.round(inv.net / 1000).toLocaleString('hu-HU')} eFt — ÁFA: {Math.round(inv.vat / 1000).toLocaleString('hu-HU')} eFt
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* KPI Cards */}

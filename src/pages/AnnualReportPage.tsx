@@ -538,10 +538,10 @@ export default function AnnualReportPage() {
                 <button
                   onClick={() => setCurrentStep(step.id)}
                   className={cn(
-                    "flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all flex-1 min-w-0",
-                    isActive ? "bg-primary text-primary-foreground shadow-lg" :
-                    isCompleted ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20" :
-                    "bg-muted/50 text-muted-foreground hover:bg-muted"
+                    "flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all flex-1 min-w-0 border",
+                    isActive ? "bg-primary text-primary-foreground border-primary shadow-lg" :
+                    isCompleted ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20" :
+                    "bg-muted/20 text-muted-foreground/60 border-dashed border-border/60 hover:bg-muted/40 hover:text-foreground"
                   )}
                 >
                   <div className={cn(
@@ -562,29 +562,76 @@ export default function AnnualReportPage() {
             );
           })}
         </div>
-        {/* ── Progress Bar (B1) ── */}
+        {/* ── Circular Progress Ring & Step Checklist ── */}
         {(() => {
           const stepsDone = [
-            !!(report.representative_name && report.report_date), // step 1
-            !!report.frozen_at, // step 2
-            !!report.validated_at, // step 3
-            ((report.notes_sections as any[]) || []).length > 0 || (notesTemplates && notesTemplates.length > 0), // step 4
-            report.net_income <= 0 || (report.dividend_amount >= 0), // step 5
-            report.status === 'finalized', // step 6
+            isStepCompleted(1), // step 1
+            isStepCompleted(2), // step 2
+            isStepCompleted(3), // step 3
+            isStepCompleted(4), // step 4
+            isStepCompleted(5), // step 5
+            isStepCompleted(6), // step 6
           ];
           const completedCount = stepsDone.filter(Boolean).length;
           const pct = Math.round((completedCount / 6) * 100);
           return (
-            <div className="mt-2 print:hidden">
-              <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                <span>{completedCount}/6 lépés kész</span>
-                <span>{pct}%</span>
+            <div className="mt-3 pt-3 border-t border-border/30 flex flex-col md:flex-row items-center justify-between gap-4 print:hidden">
+              <div className="flex items-center gap-3">
+                {/* SVG Circular Progress Ring */}
+                <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle
+                      className="text-muted/20"
+                      strokeWidth="4"
+                      stroke="currentColor"
+                      fill="transparent"
+                      r="20"
+                      cx="24"
+                      cy="24"
+                    />
+                    <circle
+                      className="text-primary transition-all duration-500 ease-out"
+                      strokeWidth="4"
+                      strokeDasharray={`${2 * Math.PI * 20}`}
+                      strokeDashoffset={`${2 * Math.PI * 20 * (1 - pct / 100)}`}
+                      strokeLinecap="round"
+                      stroke="currentColor"
+                      fill="transparent"
+                      r="20"
+                      cx="24"
+                      cy="24"
+                    />
+                  </svg>
+                  <span className="absolute text-[10px] font-extrabold tabular-nums text-foreground">{pct}%</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">{completedCount} a 6-ból lépés befejezve</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {pct === 100 ? "Beszámoló kész a lezárásra!" : "Folytasd a lépések kitöltését a véglegesítéshez."}
+                  </p>
+                </div>
               </div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-emerald-500 rounded-full transition-all duration-500"
-                  style={{ width: `${pct}%` }}
-                />
+              
+              {/* Horizontal steps checklist */}
+              <div className="flex items-center gap-4 flex-wrap text-[10px] font-medium print:hidden">
+                {STEPS.map(s => {
+                  const done = isStepCompleted(s.id);
+                  return (
+                    <div key={s.id} className="flex items-center gap-1.5 transition-all select-none">
+                      {done ? (
+                        <>
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20 shadow-[0_0_6px_rgba(16,185,129,0.3)] shrink-0" />
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold">{s.title}</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-2 h-2 rounded-full border border-dashed border-muted-foreground/60 bg-muted/20 shrink-0" />
+                          <span className="text-muted-foreground/45 font-normal italic">{s.title}</span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

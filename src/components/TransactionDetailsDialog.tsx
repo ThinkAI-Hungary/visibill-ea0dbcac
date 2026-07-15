@@ -1149,25 +1149,50 @@ export const TransactionDetailsDialog = ({
               </CardContent>
             </Card>
 
-            <DialogFooter className="flex-row gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={handleUnmatch} disabled={saving} className="text-xs h-8">
-                Párosítás megszüntetése
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleShowManualMatch} className="text-xs h-8">
-                <Link2 className="h-3 w-3 mr-1" />
-                Másik számla
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => { setShowAddExtraMatch(true); fetchAvailableInvoices(); }} className="text-xs h-8">
-                <FileText className="h-3 w-3 mr-1" />
-                További számla
-              </Button>
+            <div className="flex flex-col gap-2 pt-4 w-full mt-4 border-t border-border/40 bg-background sticky bottom-0">
               {matchStatus === 'suggested' && (
-                <Button size="sm" onClick={handleVerify} disabled={saving} className="text-xs h-8">
-                  <Check className="h-3 w-3 mr-1" />
-                  {saving ? 'Mentés...' : 'Rendben'}
+                <Button 
+                  size="sm" 
+                  onClick={handleVerify} 
+                  disabled={saving} 
+                  className="text-xs h-10 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center justify-center gap-1.5"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  {saving ? 'Mentés...' : 'Elfogadás (Rendben)'}
                 </Button>
               )}
-            </DialogFooter>
+              
+              <div className="grid grid-cols-2 gap-2 w-full">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleShowManualMatch} 
+                  className="text-xs h-10 w-full flex items-center justify-center gap-1"
+                >
+                  <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  Másik számla
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => { setShowAddExtraMatch(true); fetchAvailableInvoices(); }} 
+                  className="text-xs h-10 w-full flex items-center justify-center gap-1"
+                >
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                  További számla
+                </Button>
+              </div>
+
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleUnmatch} 
+                disabled={saving} 
+                className="text-xs h-10 w-full text-red-500 hover:text-red-600 border-red-500/30 hover:border-red-500/50 hover:bg-red-500/10 mt-1 flex items-center justify-center"
+              >
+                Párosítás bontása
+              </Button>
+            </div>
 
             {/* Extra matches from join table */}
             {extraMatches.length > 0 && (
@@ -1382,7 +1407,7 @@ export const TransactionDetailsDialog = ({
               </div>
             </div>
 
-            <SheetFooter className="pt-2 flex-col gap-2">
+            <div className="flex flex-col gap-2 pt-4 w-full mt-4 border-t border-border/40 bg-background sticky bottom-0">
               {/* Status marking buttons */}
               <div className="flex items-center gap-2 w-full">
                 <Button
@@ -1391,7 +1416,7 @@ export const TransactionDetailsDialog = ({
                   disabled={saving}
                   onClick={handleMarkNoInvoice}
                   className={cn(
-                    "text-xs h-8 flex-1 border-purple-500/30 hover:bg-purple-500/10",
+                    "text-xs h-10 flex-1 border-purple-500/30 hover:bg-purple-500/10",
                     matchStatus === 'no_invoice' && "bg-purple-500/15 border-purple-500/50"
                   )}
                 >
@@ -1404,7 +1429,7 @@ export const TransactionDetailsDialog = ({
                   disabled={saving}
                   onClick={handleMarkInvoiceMissing}
                   className={cn(
-                    "text-xs h-8 flex-1 border-sky-500/30 hover:bg-sky-500/10",
+                    "text-xs h-10 flex-1 border-sky-500/30 hover:bg-sky-500/10",
                     matchStatus === 'invoice_missing' && "bg-sky-500/15 border-sky-500/50"
                   )}
                 >
@@ -1418,13 +1443,13 @@ export const TransactionDetailsDialog = ({
                   size="sm"
                   disabled={!selectedInvoiceId || saving}
                   onClick={handleMatch}
-                  className="text-xs h-8"
+                  className="text-xs h-10 w-full"
                 >
                   <Check className="h-3 w-3 mr-1" />
                   {saving ? 'Mentés...' : 'Párosítás mentése'}
                 </Button>
               </div>
-            </SheetFooter>
+            </div>
           </>
         )}
 
@@ -1505,17 +1530,17 @@ export const TransactionDetailsDialog = ({
               </div>
             </div>
 
-            <SheetFooter className="pt-2">
+            <div className="flex justify-end w-full pt-4 mt-4 border-t border-border/40 bg-background sticky bottom-0">
               <Button
                 size="sm"
                 disabled={!selectedInvoiceId || saving}
                 onClick={handleAddExtraMatch}
-                className="text-xs h-8"
+                className="text-xs h-10 w-full"
               >
                 <Check className="h-3 w-3 mr-1" />
                 {saving ? 'Mentés...' : 'Hozzáadás'}
               </Button>
-            </SheetFooter>
+            </div>
           </>
         )}
         </div>

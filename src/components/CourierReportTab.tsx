@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
+import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, Trash2, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -656,6 +656,55 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
 
   return (
     <>
+      {/* KPI Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-4 print:hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+          <div className="bg-primary/10 text-primary p-2 rounded-lg">
+            <FileText className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-lg font-bold tabular-nums">{totalCount.toLocaleString('hu-HU')}</div>
+            <div className="text-[11px] text-muted-foreground">Összes tétel</div>
+          </div>
+        </div>
+        <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+          <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-lg font-bold tabular-nums text-emerald-600">{stats.matched.toLocaleString('hu-HU')}</div>
+            <div className="text-[11px] text-muted-foreground">Párosított</div>
+          </div>
+        </div>
+        <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+          <div className="bg-amber-500/10 text-amber-600 p-2 rounded-lg">
+            <AlertCircle className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-lg font-bold tabular-nums text-amber-600">{stats.partial.toLocaleString('hu-HU')}</div>
+            <div className="text-[11px] text-muted-foreground">Részleges</div>
+          </div>
+        </div>
+        <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+          <div className="bg-red-500/10 text-red-500 p-2 rounded-lg">
+            <MinusCircle className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-lg font-bold tabular-nums text-red-500">{stats.unmatched.toLocaleString('hu-HU')}</div>
+            <div className="text-[11px] text-muted-foreground">Párosítatlan</div>
+          </div>
+        </div>
+        <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+          <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg">
+            <TrendingUp className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-lg font-bold tabular-nums text-emerald-600">{formatAmount(stats.total)}</div>
+            <div className="text-[11px] text-muted-foreground">Összes utánvét (Ft)</div>
+          </div>
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

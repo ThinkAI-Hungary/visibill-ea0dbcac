@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle, Wand2, BarChart3 } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle, Wand2, BarChart3, Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
@@ -389,6 +389,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   const [inThousands, setInThousands] = useState(true);
   const [hideZeroRows, setHideZeroRows] = useState(false);
   const [showChart, setShowChart] = useState(false); // F9
+  const [revenueScale, setRevenueScale] = useState(100);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -508,12 +509,20 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   const processedData = React.useMemo(() => {
     if (!pnlData) return [];
 
+    const getRowBalance = (r: any) => {
+      const bal = Number(r.balance) || 0;
+      if (r.row_code === 'I.' || r.row_code === 'I') {
+        return bal * (revenueScale / 100);
+      }
+      return bal;
+    };
+
     const rawBalances: Record<string, number> = {};
 
     // First pass: store raw balances for roman rows
     pnlData.forEach(row => {
       if (row.type === 'roman') {
-        rawBalances[row.row_code] = Number(row.balance) || 0;
+        rawBalances[row.row_code] = getRowBalance(row);
       }
     });
 
@@ -521,14 +530,14 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     const sumRaw = (min: number, max: number) => {
       return pnlData
         .filter(r => r.type === 'roman' && r.order_num >= min && r.order_num < max)
-        .reduce((sum, r) => sum + (Number(r.balance) || 0), 0);
+        .reduce((sum, r) => sum + getRowBalance(r), 0);
     };
 
     return pnlData.map(row => {
       let rawBalance = 0;
 
       if (row.type === 'roman') {
-        rawBalance = Number(row.balance) || 0;
+        rawBalance = getRowBalance(row);
       } else if (row.row_code === 'A.') {
         rawBalance = sumRaw(0, 80);
       } else if (row.row_code === 'B.') {
@@ -547,7 +556,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
 
       return { ...row, displayBalance, previousYear };
     });
-  }, [pnlData, prevYearMap]);
+  }, [pnlData, prevYearMap, revenueScale]);
 
   if (isLoading) {
     return <div className="p-12 flex justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
@@ -605,6 +614,53 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             );
           })}
         </div>
+      )}
+
+      {/* ── What-If Scenario Simulator Panel ── */}
+      {processedData.length > 0 && (
+        <Card className="border border-border/60 bg-card/50 backdrop-blur-sm p-4 flex flex-col md:flex-row items-center justify-between gap-4 print:hidden rounded-xl">
+          <div className="space-y-1 max-w-md">
+            <h4 className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
+              <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
+              "What-If" Árbevétel Szimuláció
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Szimuláld az értékesítés nettó árbevételének (I. sor) változását, és nézd meg annak hatását az üzemi és adózott eredményre.
+            </p>
+          </div>
+          <div className="flex items-center gap-4 w-full md:w-[350px] shrink-0">
+            <span className="text-xs font-semibold text-red-500">-50%</span>
+            <div className="flex-1 flex flex-col items-center gap-1">
+              <input 
+                type="range" 
+                min="50" 
+                max="150" 
+                value={revenueScale} 
+                onChange={(e) => setRevenueScale(Number(e.target.value))} 
+                className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" 
+              />
+              <span className={cn(
+                "text-[10px] font-bold px-2 py-0.5 rounded",
+                revenueScale === 100 ? "bg-muted text-muted-foreground"
+                : revenueScale > 100 ? "bg-emerald-500/10 text-emerald-600"
+                : "bg-red-500/10 text-red-500"
+              )}>
+                {revenueScale === 100 ? "Alapértelmezett" : `${revenueScale > 100 ? '+' : ''}${revenueScale - 100}%`}
+              </span>
+            </div>
+            <span className="text-xs font-semibold text-emerald-500">+50%</span>
+            {revenueScale !== 100 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 px-2 text-xs shrink-0 text-muted-foreground hover:text-foreground"
+                onClick={() => setRevenueScale(100)}
+              >
+                Visszaállít
+              </Button>
+            )}
+          </div>
+        </Card>
       )}
 
       {/* F9: Waterfall chart (toggle) */}

@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Banknote, Settings2, Star, Zap } from 'lucide-react';
+import { AlertTriangle, Banknote, Settings2, Star, Zap } from 'lucide-react';
 import { fmtBalance } from '@/components/petty-cash/types';
 import type { SummaryRow } from '@/components/petty-cash/types';
 import RegistersTab from '@/components/petty-cash/RegistersTab';
@@ -66,6 +66,10 @@ const PettyCashPage = () => {
       .sort(([, a], [, b]) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0) || a.name.localeCompare(b.name));
   }, [summary]);
 
+  const registersExceedingLimit = useMemo(() => {
+    return summary.filter(r => r.currency === 'HUF' && r.current_balance > 1500000);
+  }, [summary]);
+
   if (!selectedCompany) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
@@ -87,6 +91,23 @@ const PettyCashPage = () => {
             <p className="text-muted-foreground text-sm">Többpénztáras készpénzforgalom nyilvántartás</p>
           </div>
         </div>
+
+        {registersExceedingLimit.length > 0 && (
+          <div className="bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 p-3.5 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300 print:hidden">
+            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-sm text-amber-900 dark:text-amber-300">Jogszabályi készpénzlimit figyelmeztetés</p>
+              <div className="text-xs opacity-90 mt-1 space-y-1">
+                <p>Az alábbi házipénztárak egyenlege meghaladja a megengedett 1.5M Ft-os napi készpénzállományt:</p>
+                {registersExceedingLimit.map(r => (
+                  <div key={r.register_id} className="font-semibold pl-2 border-l border-amber-500/30">
+                    {r.register_name}: {fmtBalance(r.current_balance, 'HUF')}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Summary Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -132,6 +153,32 @@ const PettyCashPage = () => {
                       {fmtBalance(c.balance, c.currency)}
                     </div>
                   ))}
+                </div>
+
+                {/* Cash Limit Utilization Progress Bar */}
+                <div className="space-y-2 mt-3 pt-3 border-t border-border/40">
+                  {reg.currencies.map(c => {
+                    const limit = c.currency === 'HUF' ? 1500000 : 4000;
+                    const pct = Math.min((Math.max(0, c.balance) / limit) * 100, 100);
+                    const isHigh = pct >= 80;
+                    return (
+                      <div key={c.currency} className="space-y-1">
+                        <div className="flex justify-between text-[10px] text-muted-foreground">
+                          <span>Limit kihasználtság ({c.currency})</span>
+                          <span className={cn("font-medium", isHigh && "text-amber-500 font-bold")}>{Math.round(pct)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                          <div 
+                            className={cn(
+                              "h-full rounded-full transition-all duration-300", 
+                              isHigh ? "bg-amber-500" : "bg-primary"
+                            )}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

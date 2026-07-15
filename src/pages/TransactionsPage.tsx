@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { RefreshCw, Download, ChevronDown, FileText, Package, Truck, Mail, ArrowDownRight, ArrowUpRight, Link2, Link2Off, Loader2, Settings, CreditCard, AlertTriangle, Upload, TrendingUp, TrendingDown, Wallet, Copy } from 'lucide-react';
+import { RefreshCw, Download, ChevronDown, FileText, Package, Truck, Mail, ArrowDownRight, ArrowUpRight, Link2, Link2Off, Loader2, Settings, CreditCard, AlertTriangle, Upload, TrendingUp, TrendingDown, Wallet, Copy, X } from 'lucide-react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as ChartTooltip, CartesianGrid } from 'recharts';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import TransactionFilters from '@/components/transactions/TransactionFilters';
@@ -99,6 +100,34 @@ const TransactionsPage = () => {
   const dateToStr = dateTo ? format(dateTo, 'yyyy-MM-dd') : '';
 
   const { data: exchangeRates } = useExchangeRates();
+
+  const chartData = useMemo(() => {
+    if (!filteredTransactions || filteredTransactions.length === 0) return [];
+    const groups: Record<string, { date: string; dateParsed: Date; inflow: number; outflow: number }> = {};
+    for (const t of filteredTransactions) {
+      if (!t.transaction_date) continue;
+      const dateStr = format(new Date(t.transaction_date), 'yyyy-MM-dd');
+      const amount = t.amount;
+      const currency = t.currency || 'HUF';
+      const rate = exchangeRates?.[currency] ?? 1;
+      const hufAmount = amount * rate;
+
+      if (!groups[dateStr]) {
+        groups[dateStr] = {
+          date: format(new Date(t.transaction_date), 'MM.dd'),
+          dateParsed: new Date(t.transaction_date),
+          inflow: 0,
+          outflow: 0,
+        };
+      }
+      if (hufAmount > 0) {
+        groups[dateStr].inflow += hufAmount;
+      } else {
+        groups[dateStr].outflow += Math.abs(hufAmount);
+      }
+    }
+    return Object.values(groups).sort((a, b) => a.dateParsed.getTime() - b.dateParsed.getTime());
+  }, [filteredTransactions, exchangeRates]);
 
   // ── P1: Unified bank uploads query (consolidates 3 queries into 1) ──
   const { data: bankUploads = [] } = useQuery({
@@ -467,6 +496,47 @@ const TransactionsPage = () => {
             </div>
           )}
 
+          {/* ── Transaction Timeline Chart ── */}
+          {activeTab === 'general' && chartData.length > 0 && (
+            <Card className="mb-4 overflow-hidden border border-border/60 bg-card/60 backdrop-blur-sm print:hidden">
+              <CardHeader className="py-2.5">
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                  Tranzakciós Volumen Idővonal (HUF / Deviza átváltva)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="h-[120px] py-1 px-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="colorInflow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorOutflow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border)/0.2)" />
+                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                    <ChartTooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                      labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold', fontSize: '11px' }}
+                      itemStyle={{ fontSize: '11px' }}
+                      formatter={(value: any, name: any) => {
+                        const labelName = name === 'inflow' ? 'Bevétel' : 'Kiadás';
+                        return [`${fmtHuf(Number(value))} Ft`, labelName];
+                      }}
+                    />
+                    <Area type="monotone" dataKey="inflow" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorInflow)" name="inflow" />
+                    <Area type="monotone" dataKey="outflow" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorOutflow)" name="outflow" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Általános tranzakciók (default tab) */}
           <TabsContent value="general" className="mt-0 content-animate">
             <Card>
@@ -533,6 +603,57 @@ const TransactionsPage = () => {
                   uniqueCurrencies={uniqueCurrencies}
                   uniqueTypes={uniqueTypes}
                 />
+
+                {hasActiveFilters && (
+                  <div className="flex flex-wrap items-center gap-1.5 -mt-3 mb-2 animate-in fade-in duration-200">
+                    <span className="text-[11px] font-medium text-muted-foreground mr-1">Aktív szűrők:</span>
+                    {filters.search && (
+                      <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
+                        Keresés: {filters.search}
+                        <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, search: '' }))} />
+                      </Badge>
+                    )}
+                    {filters.currency !== 'all' && (
+                      <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
+                        Pénznem: {filters.currency.toUpperCase()}
+                        <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, currency: 'all' }))} />
+                      </Badge>
+                    )}
+                    {filters.type !== 'all' && (
+                      <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
+                        Típus: {filters.type}
+                        <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, type: 'all' }))} />
+                      </Badge>
+                    )}
+                    {filters.matchStatus !== 'all' && (
+                      <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
+                        Státusz: {
+                          filters.matchStatus === 'matched' ? 'Párosított'
+                          : filters.matchStatus === 'suggested' ? 'Javasolt'
+                          : filters.matchStatus === 'auto_settled' ? 'Rendezett'
+                          : filters.matchStatus === 'no_invoice' ? 'Nincs számla'
+                          : 'Számla hiányzik'
+                        }
+                        <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, matchStatus: 'all' }))} />
+                      </Badge>
+                    )}
+                    {filters.amountMin && (
+                      <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
+                        Min. összeg: {fmtHuf(Number(filters.amountMin))} Ft
+                        <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, amountMin: '' }))} />
+                      </Badge>
+                    )}
+                    {filters.amountMax && (
+                      <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
+                        Max. összeg: {fmtHuf(Number(filters.amountMax))} Ft
+                        <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, amountMax: '' }))} />
+                      </Badge>
+                    )}
+                    <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground" onClick={clearFilters}>
+                      Összes törlése
+                    </Button>
+                  </div>
+                )}
 
                 <UnifiedPagination
                   currentPage={currentPage}
@@ -679,63 +800,91 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
   const { data: exchangeRates } = useExchangeRates();
   const scopedNavigate = useScopedNavigate();
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateFromStr, dateToStr, uploadIds.length]);
+
   // Main transactions query for this bank tab
-  const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ['bank-transactions', companyId, bankKey, dateFromStr, dateToStr, uploadIds],
+  const { data: queryResult, isLoading } = useQuery({
+    queryKey: ['bank-transactions', companyId, bankKey, dateFromStr, dateToStr, uploadIds, currentPage, pageSize],
     queryFn: async () => {
-      if (uploadIds.length === 0) return [];
-      const { data, error } = await supabase
+      if (uploadIds.length === 0) return { rows: [], totalCount: 0 };
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      let query = supabase
         .from('transactions')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('company_id', companyId)
         .in('upload_id', uploadIds)
-        .gte('transaction_date', dateFromStr)
-        .lte('transaction_date', dateToStr)
         .order('transaction_date', { ascending: false });
-      if (error) { reportError({ type: 'db_query', component: 'TransactionsPage', action: 'error', message: 'bank-tx error:', error }); return []; }
-      return (data || []) as unknown as Transaction[];
+
+      if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
+      if (dateToStr) query = query.lte('transaction_date', dateToStr);
+
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
+      if (error) { reportError({ type: 'db_query', component: 'TransactionsPage', action: 'error', message: 'bank-tx error:', error }); return { rows: [], totalCount: 0 }; }
+      return { rows: (data || []) as unknown as Transaction[], totalCount: count ?? 0 };
     },
     enabled: uploadIds.length > 0 && !!companyId,
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 
-  // F3: Opening balance query (sum of all transactions BEFORE the date range)
-  const { data: openingBalance = 0 } = useQuery({
-    queryKey: ['bank-opening-balance', companyId, bankKey, dateFromStr, uploadIds],
+  const transactions = queryResult?.rows ?? [];
+  const totalCount = queryResult?.totalCount ?? 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  // Query to fetch statistics for all transactions in the period
+  const { data: statsData } = useQuery({
+    queryKey: ['bank-transactions-stats', companyId, bankKey, dateFromStr, dateToStr, uploadIds, exchangeRates],
     queryFn: async () => {
-      if (uploadIds.length === 0 || !dateFromStr) return 0;
-      const { data, error } = await supabase
+      if (uploadIds.length === 0) return { inflow: 0, outflow: 0, count: 0 };
+      let query = supabase
         .from('transactions')
         .select('amount, currency')
         .eq('company_id', companyId)
-        .in('upload_id', uploadIds)
-        .lt('transaction_date', dateFromStr);
-      if (error || !data) return 0;
-      let total = 0;
-      for (const row of data) {
-        const rate = exchangeRates?.[(row as any).currency || 'HUF'] ?? 1;
-        total += (row as any).amount * rate;
+        .in('upload_id', uploadIds);
+
+      if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
+      if (dateToStr) query = query.lte('transaction_date', dateToStr);
+
+      const { data, error } = await query;
+      if (error) return { inflow: 0, outflow: 0, count: 0 };
+
+      let inflow = 0, outflow = 0;
+      for (const t of data || []) {
+        const currency = (t as any).currency || 'HUF';
+        const rate = exchangeRates?.[currency] ?? 1;
+        const hufAmount = t.amount * rate;
+        if (hufAmount > 0) inflow += hufAmount;
+        else outflow += Math.abs(hufAmount);
       }
-      return total;
+      return { inflow, outflow, count: (data || []).length };
     },
-    enabled: uploadIds.length > 0 && !!companyId && !!dateFromStr && !!exchangeRates,
-    staleTime: 60_000,
+    enabled: uploadIds.length > 0 && !!companyId && !!exchangeRates,
+    staleTime: 30_000,
   });
 
-  // U1: Compute KPIs from loaded transactions
+  // U1: Compute KPIs from period stats
   const bankKpis = useMemo(() => {
-    let inflow = 0, outflow = 0;
-    for (const t of transactions) {
-      const currency = (t as any).currency || 'HUF';
-      const rate = exchangeRates?.[currency] ?? 1;
-      const hufAmount = t.amount * rate;
-      if (hufAmount > 0) inflow += hufAmount;
-      else outflow += Math.abs(hufAmount);
-    }
-    const periodNet = inflow - outflow;
-    const closingBalance = openingBalance + periodNet;
-    return { count: transactions.length, inflow, outflow, periodNet, closingBalance };
-  }, [transactions, exchangeRates, openingBalance]);
+    const stats = statsData || { inflow: 0, outflow: 0, count: 0 };
+    return {
+      count: stats.count,
+      inflow: stats.inflow,
+      outflow: stats.outflow
+    };
+  }, [statsData]);
 
   const cfg = BANK_CONFIG[bankKey];
   const bgClass = cfg?.bgClass || 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
@@ -768,8 +917,8 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
   return (
     <div className="space-y-4">
       {/* U1: KPI Summary Cards */}
-      {!isLoading && transactions.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+      {!isLoading && totalCount > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
             <div className={cn("p-2 rounded-lg", bgClass)}>
               <FileText className="w-4 h-4" />
@@ -793,27 +942,6 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
               <div className="text-[11px] text-muted-foreground">Kiadás (Ft)</div>
             </div>
           </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3 cursor-help">
-                <div className="bg-blue-500/10 text-blue-500 p-2 rounded-lg"><Wallet className="w-4 h-4" /></div>
-                <div>
-                  <div className={cn("text-lg font-bold tabular-nums", openingBalance >= 0 ? 'text-foreground' : 'text-red-500')}>{fmtHuf(openingBalance)}</div>
-                  <div className="text-[11px] text-muted-foreground">Nyitó egyenleg</div>
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent><p>Az időszak előtti összes tranzakció összege<br/>Megbízhatóság a feltöltött adatok teljességétől függ</p></TooltipContent>
-          </Tooltip>
-          <div className={cn("bg-card border-2 rounded-xl p-3.5 flex items-center gap-3", bankKpis.closingBalance >= 0 ? 'border-emerald-500/30' : 'border-red-500/30')}>
-            <div className={cn("p-2 rounded-lg", bankKpis.closingBalance >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500')}>
-              <Wallet className="w-4 h-4" />
-            </div>
-            <div>
-              <div className={cn("text-lg font-bold tabular-nums", bankKpis.closingBalance >= 0 ? 'text-emerald-600' : 'text-red-500')}>{fmtHuf(bankKpis.closingBalance)}</div>
-              <div className="text-[11px] text-muted-foreground">Záró egyenleg</div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -827,9 +955,9 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
               <div>
                 <CardTitle className="text-xl font-bold">{bankLabel} tranzakciók</CardTitle>
                 <CardDescription>
-                  {isLoading ? 'Betöltés...' : transactions.length === 0
+                  {isLoading ? 'Betöltés...' : totalCount === 0
                     ? 'Nincs tranzakció a kiválasztott időszakban — próbáld meg módosítani a dátumszűrőt'
-                    : `${transactions.length} tranzakció a kiválasztott időszakban`
+                    : `${totalCount} tranzakció a kiválasztott időszakban`
                   }
                 </CardDescription>
               </div>
@@ -839,16 +967,27 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <TransactionTable
             transactions={transactions}
             loading={isLoading}
-            pageSize={50}
+            pageSize={pageSize}
             hasActiveFilters={false}
             onClearFilters={() => {}}
             onSort={() => {}}
             onOpenDetails={onOpenDetails}
           />
+          {totalCount > pageSize && (
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalCount}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={handlePageSizeChange}
+              className="mt-3"
+            />
+          )}
         </CardContent>
       </Card>
     </div>

@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy, Wand2, RefreshCw, Columns, TrendingUp } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy, Wand2, RefreshCw, Columns, TrendingUp, Scale } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
@@ -542,6 +542,16 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
   const isBalanced = Math.abs(totalAssets - totalLiabilities) < 0.01;
   const difference = totalAssets - totalLiabilities;
 
+  // Liquidity ratios calculations
+  const currentAssets = assets?.find(r => r.row_code === 'B.')?.computedBalance || 0;
+  const rawShortTermLiabilities = liabilities?.find(r => r.row_code === 'F/III.' || r.row_code === 'F/III' || r.name?.toLowerCase().includes('rövid lejáratú'))?.computedBalance || 0;
+  const shortTermLiabilities = Math.abs(rawShortTermLiabilities);
+  const inventories = assets?.find(r => r.row_code === 'B/I.' || r.row_code === 'B/I' || r.name?.toLowerCase().includes('készletek'))?.computedBalance || 0;
+  
+  const quickAssets = currentAssets - inventories;
+  const currentRatio = shortTermLiabilities > 0 ? (currentAssets / shortTermLiabilities) : 0;
+  const quickRatio = shortTermLiabilities > 0 ? (quickAssets / shortTermLiabilities) : 0;
+
   React.useEffect(() => {
     onBalanceComputed?.(isBalanced);
   }, [isBalanced, onBalanceComputed]);
@@ -794,29 +804,124 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
     <div className="space-y-4 content-animate">
       {/* U9: Single balance equality indicator (removed duplicate banner) */}
       {totalAssets !== undefined && totalLiabilities !== undefined && (
-        <div className={cn(
-          "flex items-center justify-center gap-4 p-3 rounded-xl border-2 text-sm",
-          isBalanced
-            ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
-            : "bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-400"
-        )}>
-          <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wider opacity-80">Eszközök</div>
-            <div className="font-bold tabular-nums">{new Intl.NumberFormat('hu-HU').format(Math.round(totalAssets))}</div>
-          </div>
-          <div className="text-lg font-bold">
-            {isBalanced ? '⚖️ =' : '⚖️ ≠'}
-          </div>
-          <div className="text-left">
-            <div className="text-[10px] uppercase tracking-wider opacity-80">Források</div>
-            <div className="font-bold tabular-nums">{new Intl.NumberFormat('hu-HU').format(Math.round(totalLiabilities))}</div>
-          </div>
-          {isBalanced ? <CheckCircle2 className="w-4 h-4 ml-2" /> : <AlertTriangle className="w-4 h-4 ml-2" />}
-          {!isBalanced && (
-            <span className="text-xs font-semibold ml-2">
-              Eltérés: {formatValue(difference)} {inThousands ? 'E Ft' : 'Ft'}
-            </span>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 print:hidden">
+          {/* Balance Scale Card */}
+          <Card className={cn(
+            "border-2 transition-all duration-300 relative overflow-hidden",
+            isBalanced 
+              ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/10" 
+              : "border-red-500/30 bg-red-500/5 dark:bg-red-950/10"
+          )}>
+            <CardContent className="p-4 flex items-center justify-between gap-4 h-full">
+              <div className="space-y-1">
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mérleg Egyezőség</div>
+                <div className={cn("text-lg font-extrabold flex items-center gap-1.5", isBalanced ? "text-emerald-600" : "text-red-500")}>
+                  {isBalanced ? "Egyensúlyban" : "Eltérés van"}
+                  {isBalanced ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+                </div>
+                {!isBalanced && (
+                  <div className="text-xs font-semibold tabular-nums text-red-500">
+                    Eltérés: {formatValue(difference)} {inThousands ? 'E Ft' : 'Ft'}
+                  </div>
+                )}
+                <div className="text-[10px] text-muted-foreground flex gap-3 mt-1.5">
+                  <span>Eszköz: <strong className="text-foreground">{formatValue(totalAssets)}</strong></span>
+                  <span>Forrás: <strong className="text-foreground">{formatValue(totalLiabilities)}</strong></span>
+                </div>
+              </div>
+
+              {/* Dynamic CSS balance beam scale */}
+              <div className="flex flex-col items-center justify-center shrink-0 w-[80px] h-[60px] relative select-none">
+                {/* Scale beam */}
+                <div 
+                  className="w-14 h-1 bg-foreground/60 dark:bg-foreground/40 rounded relative transition-transform duration-500"
+                  style={{ transform: `rotate(${isBalanced ? 0 : difference > 0 ? -12 : 12}deg)` }}
+                >
+                  {/* Left plate (Assets) */}
+                  <div className="absolute -left-1 -bottom-5 flex flex-col items-center">
+                    <div className="w-[1px] h-4 bg-foreground/30" />
+                    <div className="w-4 h-1 bg-foreground/60 dark:bg-foreground/40 rounded-t" />
+                  </div>
+                  {/* Right plate (Liabilities) */}
+                  <div className="absolute -right-1 -bottom-5 flex flex-col items-center">
+                    <div className="w-[1px] h-4 bg-foreground/30" />
+                    <div className="w-4 h-1 bg-foreground/60 dark:bg-foreground/40 rounded-t" />
+                  </div>
+                </div>
+                {/* Scale stand */}
+                <div className="w-1 h-8 bg-foreground/50 dark:bg-foreground/30 mt-1" />
+                <div className="w-8 h-1.5 bg-foreground/60 dark:bg-foreground/40 rounded-t" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Current Ratio Card */}
+          <Card className="border border-border/60 bg-card/60 backdrop-blur-sm">
+            <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
+              <div>
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Likviditási Ráta</div>
+                <div className="flex items-baseline gap-2">
+                  <span className={cn(
+                    "text-2xl font-extrabold tabular-nums",
+                    currentRatio >= 1.5 ? "text-emerald-600" : currentRatio >= 1.0 ? "text-amber-500" : "text-red-500"
+                  )}>
+                    {currentRatio.toFixed(2)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-medium">
+                    (Cél: &gt;1.5)
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full rounded-full transition-all duration-300", 
+                      currentRatio >= 1.5 ? "bg-emerald-500" : currentRatio >= 1.0 ? "bg-amber-500" : "bg-red-500"
+                    )}
+                    style={{ width: `${Math.min((currentRatio / 2.5) * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[9px] text-muted-foreground font-medium">
+                  <span>Forgóeszközök / Rövid kötelezettségek</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Ratio Card */}
+          <Card className="border border-border/60 bg-card/60 backdrop-blur-sm">
+            <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
+              <div>
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Likviditási Gyorsráta</div>
+                <div className="flex items-baseline gap-2">
+                  <span className={cn(
+                    "text-2xl font-extrabold tabular-nums",
+                    quickRatio >= 1.0 ? "text-emerald-600" : quickRatio >= 0.8 ? "text-amber-500" : "text-red-500"
+                  )}>
+                    {quickRatio.toFixed(2)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-medium">
+                    (Cél: &gt;1.0)
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full rounded-full transition-all duration-300", 
+                      quickRatio >= 1.0 ? "bg-emerald-500" : quickRatio >= 0.8 ? "bg-amber-500" : "bg-red-500"
+                    )}
+                    style={{ width: `${Math.min((quickRatio / 2.0) * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[9px] text-muted-foreground font-medium">
+                  <span>(Forgóeszközök - Készletek) / Rövid kötelezettségek</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 

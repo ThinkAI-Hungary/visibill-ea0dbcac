@@ -731,6 +731,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   const indentPadding = `${0.75 + (row.depth * 1.5)}rem`;
                   
                   const hiddenClass = !row.isVisibleOnScreen && isPrinting ? "hidden print:grid" : "grid";
+                  const classChar = !row.isItem && row.id ? row.id[0] : '';
+                  const classBorderColor = 
+                    row.isItem ? ''
+                    : ['1', '2', '3'].includes(classChar) ? 'border-l-4 border-l-blue-500 dark:border-l-blue-400'
+                    : classChar === '4' ? 'border-l-4 border-l-purple-500 dark:border-l-purple-400'
+                    : ['5', '8'].includes(classChar) ? 'border-l-4 border-l-red-500 dark:border-l-red-400'
+                    : classChar === '9' ? 'border-l-4 border-l-emerald-500 dark:border-l-emerald-400'
+                    : '';
 
                   return (
                     <div 
@@ -743,7 +751,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                       )}
                       onClick={() => toggleRow(row.id, row.hasChildren)}
                     >
-                      <div className="col-span-2 p-3 text-sm flex items-center justify-center font-mono text-muted-foreground border-r border-border/20 gap-3">
+                      <div className={cn(
+                        "col-span-2 p-3 text-sm flex items-center justify-center font-mono text-muted-foreground border-r border-border/20 gap-3",
+                        classBorderColor
+                      )}>
                         {row.isItem ? (
                            <>
                              <div className="print:hidden h-full flex items-center" onClick={e => e.stopPropagation()}>
@@ -755,14 +766,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                              <span className="text-xs truncate">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : ''}</span>
                            </>
                         ) : (
-                           <span className={cn(
-                             "font-semibold",
-                             (row.tempBalance && row.tempBalance !== 0 && (!row.finalBalance || row.finalBalance === 0)) 
-                               ? "text-orange-500 dark:text-orange-400" 
-                               : (row.finalBalance && row.finalBalance !== 0 && (!row.tempBalance || row.tempBalance === 0))
-                               ? "text-emerald-600 dark:text-emerald-400"
-                               : "text-foreground"
-                           )}>
+                            <span className={cn(
+                              "font-semibold",
+                              (row.tempBalance && row.tempBalance !== 0 && (!row.finalBalance || row.finalBalance === 0)) 
+                                ? "text-orange-500 dark:text-orange-400" 
+                                : "text-foreground"
+                            )}>
                              {highlightMatch(row.id, deferredSearch)}
                            </span>
                         )}
@@ -795,35 +804,49 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                         )}
                       </div>
                       
-                      <div className={cn("col-span-3 p-3 flex justify-end items-center gap-4 text-sm tabular-nums font-medium", isNegative ? "text-destructive" : "")}>
-                        <div className="flex flex-col items-end">
-                          {row.isItem ? (
-                            row.isTemporary ? (
-                              <span className="text-orange-500 dark:text-orange-400 font-semibold">
-                                {row.balance !== 0 ? formatCurrency(row.balance) : ""}
-                              </span>
-                            ) : (
-                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                                {row.balance !== 0 ? formatCurrency(row.balance) : ""}
-                              </span>
-                            )
-                          ) : (
-                            <div className="flex flex-col items-end gap-0.5">
-                              {row.finalBalance !== 0 && (
-                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold" title="Végleges egyenleg">
-                                  {formatCurrency(row.finalBalance || 0)}
-                                </span>
-                              )}
-                              {row.tempBalance !== 0 && (
-                                <span className="text-orange-500 dark:text-orange-400 font-semibold text-xs" title="Ideiglenes egyenleg">
-                                  {formatCurrency(row.tempBalance || 0)} <span className="text-[10px] opacity-80">(Ideigl.)</span>
-                                </span>
-                              )}
-                              {(!row.finalBalance || row.finalBalance === 0) && (!row.tempBalance || row.tempBalance === 0) && row.balance !== 0 && (
-                                <span>{formatCurrency(row.balance)}</span>
-                              )}
-                            </div>
-                          )}
+                      <div className={cn("col-span-3 p-3 flex justify-end items-center gap-4 text-sm tabular-nums font-medium")}>
+                         <div className="flex flex-col items-end">
+                           {row.isItem ? (
+                             row.isTemporary ? (
+                               <span className="text-orange-500 dark:text-orange-400 font-semibold">
+                                 {row.balance !== 0 ? formatCurrency(row.balance) : ""}
+                               </span>
+                             ) : (
+                               <span className={cn(
+                                 "font-semibold",
+                                 row.balance > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                               )}>
+                                 {row.balance !== 0 ? formatCurrency(row.balance) : ""}
+                               </span>
+                             )
+                           ) : (
+                             <div className="flex flex-col items-end gap-0.5">
+                               {row.finalBalance !== 0 && (
+                                 <span 
+                                   className={cn(
+                                     "font-semibold",
+                                     row.finalBalance > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                                   )} 
+                                   title="Végleges egyenleg"
+                                 >
+                                   {formatCurrency(row.finalBalance || 0)}
+                                 </span>
+                               )}
+                               {row.tempBalance !== 0 && (
+                                 <span className="text-orange-500 dark:text-orange-400 font-semibold text-xs" title="Ideiglenes egyenleg">
+                                   {formatCurrency(row.tempBalance || 0)} <span className="text-[10px] opacity-80">(Ideigl.)</span>
+                                 </span>
+                               )}
+                               {(!row.finalBalance || row.finalBalance === 0) && (!row.tempBalance || row.tempBalance === 0) && row.balance !== 0 && (
+                                 <span className={cn(
+                                   "font-semibold",
+                                   row.balance > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                                 )}>
+                                   {formatCurrency(row.balance)}
+                                 </span>
+                               )}
+                             </div>
+                           )}
                           {row.originalCurrency && row.originalCurrency !== 'HUF' && (
                             <span className="text-[10px] text-muted-foreground font-normal leading-tight">
                               ({formatCurrency(row.originalAmount || 0).replace(',00', '')} {row.originalCurrency})

@@ -715,10 +715,9 @@ npm run preview      # Preview production build
 - [ ] Bulk invoice export (Excel/CSV)
 - [ ] Multi-language support (EN, HU)
 - [ ] Mobile app (React Native)
-- [ ] AI-powered invoice categorization
-- [ ] Bank account reconciliation
-- [ ] Tax report generation
-- [ ] Multi-tenant workspace support
+- [x] AI-powered invoice categorization (Implemented via `category_classifier.py`)
+- [x] Tax report generation (Pénzforgalmi ÁFA & 65-M PDF/Excel generation)
+- [x] Multi-tenant workspace support (Implemented via `company_members` tenant routing)
 
 ### Technical Debt
 - [ ] Improve NAV XML parsing (currently simplified)
@@ -752,7 +751,18 @@ npm run preview      # Preview production build
 
 ## Changelog
 
-### Version 1.0.0 (Current)
+### Version 1.1.0 (Current - 2026-07-15)
+- **Database Fixes:** Resolved G/L balances double counting and balance sheet sign issues by correcting the `get_bs_report` RPC algorithm.
+- **Visual Progress Checklist:** Redesigned the Annual Report progress checklist to make uncompleted/pending steps visually distinct (dashed hollow dots, italic muted text) and completed ones green-glowing.
+- **Premium Financial Modules:**
+  - *General Ledger:* State Keep-Alive (0ms delay tab switching) and auto-expansion on search.
+  - *Profit & Loss:* Interactive "What-If" Revenue simulator slide bar (-50% to +50%).
+  - *Balance Sheet:* CSS Balance Beam ⚖️ visual widget and HSL colored Current/Quick Ratio gauges.
+  - *Annual Report:* SVG circular progress ring, visual pending nodes checklist, and auto-generated data grids in the notes editor.
+  - *VAT Return:* statutory deadline countdown banner and Reverse Charge Auditor.
+  - *Petty Cash:* RPC-driven cash totals aggregation and read-only rate limiter bypass (`check_request`).
+
+### Version 1.0.0
 - Initial release
 - NAV integration
 - Email processing
@@ -762,5 +772,5 @@ npm run preview      # Preview production build
 
 ---
 
-**Last Updated:** 2026-07-03  
+**Last Updated:** 2026-07-15  
 **Maintained By:** VisiBill Development Team

@@ -84,6 +84,7 @@ export function useCourierReportData(
         .select('*', { count: 'exact' })
         .eq('company_id', selectedCompany!.id)
         .eq('report_type', reportType)
+        .neq('row_type', 'total')
         .order(sortField, { ascending: sortDirection === 'asc' })
         .order('created_at', { ascending: true });
 
@@ -123,10 +124,7 @@ export function useCourierReportData(
       const max = parseFloat(filters.amountMax);
       if (!isNaN(max)) result = result.filter(r => (r.cod_amount ?? 0) <= max);
     }
-    // Always pin total/summary rows to the bottom
-    const regularRows = result.filter(r => r.row_type !== 'total' && r.match_status !== 'total');
-    const totalRows = result.filter(r => r.row_type === 'total' || r.match_status === 'total');
-    return [...regularRows, ...totalRows];
+    return result;
   }, [reports, filters.amountMin, filters.amountMax]);
 
   const totalPages = Math.ceil(totalCount / pageSize);
