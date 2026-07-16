@@ -751,7 +751,23 @@ npm run preview      # Preview production build
 
 ## Changelog
 
-### Version 1.1.0 (Current - 2026-07-15)
+### Version 1.2.0 (Current - 2026-07-16)
+- **Transaction Files Upload & Deletion:**
+  - Integrated a premium file uploading dialog for bank transactions.
+  - Allowed deletion of transaction records directly based on the uploaded files, similar to the invoice upload flow.
+- **Transaction Notes (Inline & Details):**
+  - Integrated inline note-taking and note lists for both matched and unmatched transaction rows.
+  - Embedded note lists and creations in `TransactionDetailsDialog.tsx` sheet.
+  - Introduced premium card-based visibility selector (Private vs Common/Shared) with Emerald lock and User icons.
+  - Resolved database foreign key violations (`notes_invoice_id_fkey`) when adding notes to NAV-only invoices or unmatched transactions by routing the ID through the non-constraint `invoice_ids` array column.
+- **Two-Column Side-by-Side Row Layouts:**
+  - Re-designed the expanded row interface (`ExpandedInvoiceRow.tsx` and unmatched `TransactionTable.tsx` rows) to place the related items list on the left and the notes section on the right, maximizing screen space efficiency.
+- **Notes Page Sync & Navigation:**
+  - Enabled multi-select transaction lookup and linkage inside the Note editor modal (`NoteModal.tsx`).
+  - Rendered linked transaction count badge on note list cards, and detailed transaction rows under the note details on the Notes page.
+  - Enabled direct transaction details lookup popups right from the Notes page.
+
+### Version 1.1.0 (2026-07-15)
 - **Database Fixes:** Resolved G/L balances double counting and balance sheet sign issues by correcting the `get_bs_report` RPC algorithm.
 - **Visual Progress Checklist:** Redesigned the Annual Report progress checklist to make uncompleted/pending steps visually distinct (dashed hollow dots, italic muted text) and completed ones green-glowing.
 - **Premium Financial Modules:**
@@ -772,5 +788,5 @@ npm run preview      # Preview production build
 
 ---
 
-**Last Updated:** 2026-07-15  
+**Last Updated:** 2026-07-16  
 **Maintained By:** VisiBill Development Team

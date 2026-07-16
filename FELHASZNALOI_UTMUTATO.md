@@ -403,12 +403,34 @@ Ha nem kívánja tovább használni az email szinkronizálást:
 
 ---
 
-## Bankkivonatok és Binx
+## Bankkivonatok és Tranzakciók
 
-A VisiBill nemcsak számlákat, hanem bankkivonatokat is képes feldolgozni:
+A VisiBill nemcsak számlákat, hanem bankkivonatokat és banki tranzakciókat is képes feldolgozni és kezelni:
 - **Támogatott formátumok**: OTP, CIB, Raiffeisen PDF/XLS.
 - **Binx e-pénz**: Speciális támogatás a Binx PDF kivonatokhoz. Ezeket a rendszer natív módon dolgozza fel, így az adatok kinyerése 100%-os pontosságú.
 - **Párosítás**: A feltöltött banki tranzakciókat a rendszer automatikusan megpróbálja hozzárendelni a nyitott számlákhoz.
+
+### Tranzakciós fájlok feltöltése és törlése
+
+A számlákhoz hasonlóan a banki tranzakciókhoz is csatolhat bizonylatokat vagy egyéb kísérő fájlokat:
+1. Kattintson egy tranzakció sorára a tranzakciók táblázatában.
+2. A lenyíló panelen vagy a részletek popupban keresse meg a **Tranzakciós fájlok** részt.
+3. Itt feltölthet új fájlokat (pl. utalási bizonylat, egyéb igazolás).
+4. A tranzakciók oldalon a feltöltött fájlok alapján a tranzakciós sorokat is törölheti, vagy magát a feltöltött fájlt is eltávolíthatja.
+
+### Tranzakciós feljegyzések (Jegyzetek) készítése
+
+Bármely banki tranzakcióhoz közvetlenül rögzíthet feljegyzést, függetlenül attól, hogy az párosítva van-e már számlával:
+- **Párosítatlan tranzakciók**: A tranzakciós sor lenyitásakor a jobb oldalon azonnal megjelenik a jegyzetelő panel a kísérő tételek adatai mellett.
+- **Párosított tranzakciók**: A lenyitott számlarészletezőben a kapcsolódó számlaadatok mellett érhető el a jegyzet szekció.
+- **Láthatósági beállítások**: A feljegyzés rögzítésekor megadhatja annak láthatóságát:
+  * **Privát**: A jegyzetet kizárólag Ön fogja látni.
+  * **Közös**: A jegyzetet a cég többi tagja is megtekintheti.
+
+### Jegyzetek oldal integrációja
+
+A **Jegyzetek** menüpont alatt a meglévő feljegyzéseihez közvetlenül is hozzárendelhet banki tranzakciókat a jegyzet szerkesztőben a számlák mellett. A jegyzet részleteinél kilistázott tranzakciók mellett elhelyezett külső linkre kattintva a helyszínen megnyithatja a tranzakció teljes részletező popupját.
+
 
 ---
 
@@ -698,5 +720,5 @@ Magyar és angol nyelven is.
 
 ---
 
-*Utolsó frissítés: 2026. augusztus*  
-*Verzió: 1.2 (Binx & Cash VAT Support)*
+*Utolsó frissítés: 2026. július*  
+*Verzió: 1.3 (Tranzakciós fájlok és feljegyzések)*
