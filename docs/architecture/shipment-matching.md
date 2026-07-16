@@ -60,7 +60,7 @@ Az upload history polling logikája biztosítja, hogy a transport dokumentumok m
 #### Status badge mapping:
 | `processing_status` | Badge | Szín |
 |---------------------|-------|------|
-| `pending`, `uploaded` | Feltöltve | szürke |
+| `pending`, `uploaded` | Feldolgozás alatt | outline |
 | `processing`, `webhook_sent` | Feldolgozás alatt | fekete |
 | `processed`, `completed` | Feldolgozva | zöld |
 | `cmr_attached` | Dokumentum párosítva | zöld |

@@ -27,7 +27,7 @@
 
 | `processing_status` | Badge label | Variant | Szín | Megjegyzés |
 |---|---|---|---|---|
-| `pending`, `uploaded` | „Feltöltve" | `secondary` | Szürke | Várakozik feldolgozásra |
+| `pending`, `uploaded` | „Feldolgozás alatt" | `outline` | Outline | Várakozik feldolgozásra (azonnali visszajelzés a felhasználónak) |
 | `processing`, `webhook_sent` | „Feldolgozás alatt" | `outline` | Outline | Worker dolgozik rajta |
 | `processed`, `completed` | „Feldolgozva" | `default` | Zöld | Sikeresen kész |
 | `error`, `webhook_failed` | **„Feldolgozási hiba"** | `destructive` | Piros | A feltöltés sikerült, de a feldolgozás hibára futott |

@@ -38,6 +38,7 @@ interface UploadRecord {
     invoice_count_processed?: number;
     invoice_count_errors?: number;
     invoice_count_ignored?: number;
+    source?: string;
   } | null;
 }
 
@@ -70,16 +71,17 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
     return { label: 'A feltöltés sikertelen', variant: 'destructive' };
   }
   if (processingErrorStatuses.has(record.processing_status)) {
-    const multiInfo = isMulti ? `${processed}/${total} feldolgozva, ${errors} hiba` : undefined;
-    return { label: 'Feldolgozási hiba', variant: 'destructive', multiProgress: multiInfo };
+    const label = isMulti ? `Feldolgozási hiba ${processed}/${total}` : 'Feldolgozási hiba';
+    const multiInfo = isMulti && errors > 0 ? `${errors} hiba` : undefined;
+    return { label, variant: 'destructive', multiProgress: multiInfo };
   }
   // Check processing_status FIRST — worker sets this to 'processing' while
   // actively working on the file (extraction, categorization, matching).
   // Transactions may already be inserted in DB before matching completes,
   // so processedIds check must come AFTER this.
-  if (processingStatuses.has(record.processing_status)) {
-    const multiInfo = isMulti ? `${processed}/${total} számla` : undefined;
-    return { label: 'Feldolgozás alatt', variant: 'outline', multiProgress: multiInfo };
+  if (activeStatuses.has(record.processing_status)) {
+    const label = isMulti ? `Feldolgozás alatt ${processed}/${total}` : 'Feldolgozás alatt';
+    return { label, variant: 'outline' };
   }
   // Transport document statuses (CMR, nalog, etc.)
   if (cmrStatuses.has(record.processing_status)) {
@@ -99,8 +101,8 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
     return { label: 'Elutasítva', variant: 'secondary' };
   }
   if (doneStatuses.has(record.processing_status) || processedIds.has(record.id)) {
-    const multiInfo = isMulti ? `${total} számla` : undefined;
-    return { label: 'Feldolgozva', variant: 'default', multiProgress: multiInfo };
+    const label = isMulti ? `Feldolgozva ${total}/${total}` : 'Feldolgozva';
+    return { label, variant: 'default' };
   }
   return { label: 'Feltöltve', variant: 'secondary' };
 }
@@ -410,29 +412,33 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                   const status = getStatus(record, processedUrls);
                   return (
                     <TableRow key={record.id}>
-                      <TableCell className="font-medium text-sm max-w-[250px] truncate" title={record.file_name}>
-                        {record.file_url ? (
-                          <button
-                            type="button"
-                            className="text-primary hover:underline cursor-pointer text-left truncate max-w-full"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewFile({ name: record.file_name, url: record.file_url });
-                              setPreviewLoading(true);
-                              setPreviewError(false);
-                            }}
-                          >
-                            {record.file_name}
-                          </button>
-                        ) : (
-                          record.file_name
-                        )}
-                      </TableCell>
+                       <TableCell className="font-medium text-sm max-w-[250px]" title={record.file_name}>
+                         <div className="truncate max-w-full">
+                           {record.file_url ? (
+                             <button
+                               type="button"
+                               className="text-primary hover:underline cursor-pointer text-left truncate max-w-full"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 setPreviewFile({ name: record.file_name, url: record.file_url });
+                                 setPreviewLoading(true);
+                                 setPreviewError(false);
+                               }}
+                             >
+                               {record.file_name}
+                             </button>
+                           ) : (
+                             record.file_name
+                           )}
+                         </div>
+                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {formatFileSize(record.file_size || 0)}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {userNames[record.user_id] || 'Ismeretlen felhasználó'}
+                        {record.metadata?.source?.startsWith('email')
+                          ? 'E-mail'
+                          : userNames[record.user_id] || 'Ismeretlen felhasználó'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {format(new Date(record.created_at), 'yyyy.MM.dd HH:mm', { locale: hu })}
@@ -442,7 +448,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                           <div className="flex items-center gap-1.5">
                             <Badge
                               variant={status.variant}
-                              className={`text-xs${record.processing_status === 'cmr_escalated' ? ' cursor-pointer hover:ring-2 hover:ring-orange-400/50' : ''}`}
+                              className={`text-xs w-[160px] justify-center text-center${record.processing_status === 'cmr_escalated' ? ' cursor-pointer hover:ring-2 hover:ring-orange-400/50' : ''}`}
                               onClick={record.processing_status === 'cmr_escalated' ? (e: React.MouseEvent) => { e.stopPropagation(); setEscalationUpload(record); } : undefined}
                             >
                               {status.label}
