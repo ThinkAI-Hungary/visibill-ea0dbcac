@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Banknote, Settings2, Star, Zap } from 'lucide-react';
+import { AlertTriangle, Banknote, Settings2, Star, Zap, ClipboardCheck } from 'lucide-react';
 import { fmtBalance } from '@/components/petty-cash/types';
 import type { SummaryRow } from '@/components/petty-cash/types';
 import RegistersTab from '@/components/petty-cash/RegistersTab';

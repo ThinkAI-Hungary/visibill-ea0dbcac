@@ -21,6 +21,8 @@ export function useNotesData(companyId: string | undefined) {
           is_private,
           invoice_id,
           invoice_ids,
+          transaction_id,
+          transaction_ids,
           created_at,
           updated_at
         `)
@@ -70,17 +72,55 @@ export function useNotesData(companyId: string | undefined) {
         }
       }
 
-      return notesData.map((note: any) => {
-        const linkedIds = [...(note.invoice_ids || [])];
-        if (note.invoice_id && !linkedIds.includes(note.invoice_id)) {
-          linkedIds.push(note.invoice_id);
+      // Collect all linked transaction IDs across all notes
+      const allTransactionIds = Array.from(
+        new Set(
+          notesData.flatMap((n: any) => {
+            const ids = [...(n.transaction_ids || [])];
+            if (n.transaction_id) ids.push(n.transaction_id);
+            return ids;
+          })
+        )
+      ).filter(Boolean) as string[];
+
+      const transactionsMap = new Map<string, any>();
+      if (allTransactionIds.length > 0) {
+        const { data: transactionsData } = await supabase
+          .from('transactions')
+          .select('id, transaction_date, description, amount, currency')
+          .in('id', allTransactionIds);
+
+        if (transactionsData) {
+          transactionsData.forEach(tx => {
+            transactionsMap.set(tx.id, {
+              id: tx.id,
+              transaction_date: tx.transaction_date,
+              description: tx.description || '',
+              amount: tx.amount,
+              currency: tx.currency || 'HUF',
+              bank_name: ''
+            });
+          });
         }
-        
-        const linkedInvoices = linkedIds.map((id: string) => invoicesMap.get(id)).filter(Boolean);
+      }
+
+      return notesData.map((note: any) => {
+        const linkedInvIds = [...(note.invoice_ids || [])];
+        if (note.invoice_id && !linkedInvIds.includes(note.invoice_id)) {
+          linkedInvIds.push(note.invoice_id);
+        }
+        const linkedInvoices = linkedInvIds.map((id: string) => invoicesMap.get(id)).filter(Boolean);
+
+        const linkedTxIds = [...(note.transaction_ids || [])];
+        if (note.transaction_id && !linkedTxIds.includes(note.transaction_id)) {
+          linkedTxIds.push(note.transaction_id);
+        }
+        const linkedTransactions = linkedTxIds.map((id: string) => transactionsMap.get(id)).filter(Boolean);
 
         return {
           ...note,
           invoices: linkedInvoices,
+          transactions: linkedTransactions,
           profiles: {
             full_name: profileMap.get(note.user_id) || 'Ismeretlen felhasználó',
             email: null
@@ -98,6 +138,8 @@ export function useNotesData(companyId: string | undefined) {
       is_private: boolean;
       invoice_id: string | null;
       invoice_ids?: string[] | null;
+      transaction_id?: string | null;
+      transaction_ids?: string[] | null;
     }) => {
       if (!companyId) throw new Error('Cég nincs kiválasztva');
 
@@ -115,6 +157,8 @@ export function useNotesData(companyId: string | undefined) {
           is_private: params.is_private,
           invoice_id: params.invoice_id,
           invoice_ids: params.invoice_ids || [],
+          transaction_id: params.transaction_id || null,
+          transaction_ids: params.transaction_ids || [],
         })
         .select()
         .single();
@@ -135,6 +179,8 @@ export function useNotesData(companyId: string | undefined) {
       is_private: boolean;
       invoice_id: string | null;
       invoice_ids?: string[] | null;
+      transaction_id?: string | null;
+      transaction_ids?: string[] | null;
     }) => {
       const { data, error } = await supabase
         .from('notes')
@@ -144,6 +190,8 @@ export function useNotesData(companyId: string | undefined) {
           is_private: params.is_private,
           invoice_id: params.invoice_id,
           invoice_ids: params.invoice_ids || [],
+          transaction_id: params.transaction_id || null,
+          transaction_ids: params.transaction_ids || [],
           updated_at: new Date().toISOString(),
         })
         .eq('id', params.id)

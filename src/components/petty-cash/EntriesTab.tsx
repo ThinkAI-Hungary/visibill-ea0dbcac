@@ -14,10 +14,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import {
   Save, Plus, ArrowRightLeft, Loader2, Filter, AlertTriangle, BookOpen, FileDown,
-  ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check, Eye
+  ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check, Eye, Search, ExternalLink, X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
@@ -50,12 +51,14 @@ export default function EntriesTab() {
   const [filterCurrency, setFilterCurrency] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showManualDialog, setShowManualDialog] = useState(false);
   const [showClosingDialog, setShowClosingDialog] = useState(false); // F4
   const [moveEntry, setMoveEntry] = useState<PettyCashEntry | null>(null);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [editingEntry, setEditingEntry] = useState<PettyCashEntry | null>(null);
-  const pageSize = 25;
+  const [previewInvoicePending, setPreviewInvoicePending] = useState<any | null>(null);
 
   const toggleRow = (id: string) => {
     setExpandedEntries(prev => {
@@ -96,6 +99,126 @@ export default function EntriesTab() {
     enabled: !!companyId,
   });
 
+  // Fetch pending invoices
+  const { data: pendingInvoices = [], refetch: refetchPending } = useQuery({
+    queryKey: ['pettyCashPendingInvoices', companyId],
+    queryFn: async () => {
+      console.log("[EntriesTab] Fetching pending invoices for company:", companyId);
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('statusz', 'jovahagyasra_var')
+        .in('invoice_type', ['penztarbizonylat', 'egyszerusitett_szla'])
+        .order('kibocsatas_datuma', { ascending: false })
+        .order('letrehozva', { ascending: false });
+
+      if (error) {
+        console.error("[EntriesTab] Error fetching pending invoices:", error);
+        throw error;
+      }
+      console.log("[EntriesTab] Pending invoices successfully fetched:", data);
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ statusz: 'feldolgozott' })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pettyCashPendingInvoices', companyId] });
+      qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
+      qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
+      toast({
+        title: 'Bizonylat jóváhagyva!',
+        description: 'A tétel bekerült az éles házipénztár sorok közé.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Hiba a jóváhagyás során',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const [editingPendingInvoice, setEditingPendingInvoice] = useState<any | null>(null);
+  const [editPendingForm, setEditPendingForm] = useState({
+    bizonylatsorszam: '',
+    kibocsatas_datuma: '',
+    elado_nev: '',
+    vevo_nev: '',
+    brutto_vegosszeg: 0,
+    penznem: 'HUF',
+    adojogi_megjegyzes: '',
+    invoice_direction: 'INBOUND',
+  });
+
+  const handleStartEditPending = (inv: any) => {
+    setEditingPendingInvoice(inv);
+    setEditPendingForm({
+      bizonylatsorszam: inv.bizonylatsorszam || '',
+      kibocsatas_datuma: inv.kibocsatas_datuma || '',
+      elado_nev: inv.elado_nev || '',
+      vevo_nev: inv.vevo_nev || '',
+      brutto_vegosszeg: inv.brutto_vegosszeg || 0,
+      penznem: inv.penznem || 'HUF',
+      adojogi_megjegyzes: inv.adojogi_megjegyzes || '',
+      invoice_direction: inv.invoice_direction || 'INBOUND',
+    });
+  };
+
+  const savePendingMutation = useMutation({
+    mutationFn: async ({ id, data, approveAfterSave }: { id: string; data: any; approveAfterSave?: boolean }) => {
+      const updatePayload: any = {
+        bizonylatsorszam: data.bizonylatsorszam,
+        kibocsatas_datuma: data.kibocsatas_datuma,
+        elado_nev: data.elado_nev,
+        vevo_nev: data.vevo_nev,
+        brutto_vegosszeg: data.brutto_vegosszeg,
+        adoalap_osszesen: data.brutto_vegosszeg,
+        penznem: data.penznem,
+        adojogi_megjegyzes: data.adojogi_megjegyzes,
+        invoice_direction: data.invoice_direction,
+      };
+
+      if (approveAfterSave) {
+        updatePayload.statusz = 'feldolgozott';
+      }
+
+      const { error } = await supabase
+        .from('invoices')
+        .update(updatePayload)
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['pettyCashPendingInvoices', companyId] });
+      qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
+      qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
+      setEditingPendingInvoice(null);
+      toast({
+        title: variables.approveAfterSave ? 'Tétel mentve és jóváhagyva' : 'Változtatások elmentve',
+        description: variables.approveAfterSave ? 'A bizonylat élesítve lett.' : 'A tétel továbbra is jóváhagyásra vár.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Mentési hiba',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Load opening balances for registers
   const { data: openingBalances = [] } = useQuery({
     queryKey: ['petty-cash-entries-opening-balances', companyId],
@@ -134,29 +257,37 @@ export default function EntriesTab() {
     return m;
   }, [registers]);
 
-  // Combine real entries and active opening balances
+  // Combine real entries, active opening balances, and pending invoices
   const allEntriesWithOpening = useMemo(() => {
     const activeOpenings = virtualOpeningEntries.filter(v => v.amount !== 0);
-    return [...entries, ...activeOpenings];
-  }, [entries, virtualOpeningEntries]);
+    const virtualPending = pendingInvoices.map(inv => ({
+      id: `pending-${inv.id}`,
+      real_invoice_id: inv.id,
+      company_id: companyId,
+      register_id: registers.find(r => r.is_default)?.id || registers[0]?.id || '',
+      entry_date: inv.kibocsatas_datuma,
+      description: inv.invoice_direction === 'OUTBOUND' 
+        ? `Pénztári bevétel - ${inv.vevo_nev || 'Ismeretlen'}`
+        : `Pénztári kiadás - ${inv.elado_nev || 'Ismeretlen'}`,
+      amount: inv.invoice_direction === 'OUTBOUND' ? inv.brutto_vegosszeg : -inv.brutto_vegosszeg,
+      currency: inv.penznem || 'HUF',
+      source_type: inv.invoice_direction === 'OUTBOUND' ? 'cash_sale' : 'cash_expense',
+      source_id: inv.id,
+      source_table: 'invoices',
+      created_at: inv.letrehozva,
+      is_pending: true,
+      raw_invoice: inv
+    })) as unknown as PettyCashEntry[];
 
-  const filtered = useMemo(() => {
-    let result = allEntriesWithOpening;
-
-    // Filter by global date range
-    result = result.filter(e => e.entry_date >= dateFromFormatted && e.entry_date <= dateToFormatted);
-
-    if (filterRegister !== 'all') result = result.filter(e => e.register_id === filterRegister);
-    if (filterCurrency !== 'all') result = result.filter(e => e.currency === filterCurrency);
-    if (filterType !== 'all') result = result.filter(e => e.source_type === filterType);
-    return result;
-  }, [allEntriesWithOpening, dateFromFormatted, dateToFormatted, filterRegister, filterCurrency, filterType]);
-
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  const paginated = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, currentPage]);
+    return [...virtualPending, ...entries, ...activeOpenings].sort((a, b) => {
+      const dateCompare = b.entry_date.localeCompare(a.entry_date);
+      if (dateCompare !== 0) return dateCompare;
+      const aIsOpening = (a as any).is_opening ? 1 : 0;
+      const bIsOpening = (b as any).is_opening ? 1 : 0;
+      if (aIsOpening !== bIsOpening) return aIsOpening - bIsOpening;
+      return (b.created_at || '').localeCompare(a.created_at || '');
+    });
+  }, [entries, virtualOpeningEntries, pendingInvoices, companyId, registers]);
 
   // F5: Receipt numbering — B-001 (income) / K-001 (expense), sequential within the date range
   const receiptNumbers = useMemo(() => {
@@ -179,6 +310,36 @@ export default function EntriesTab() {
     });
     return numMap;
   }, [entries]);
+
+  const filtered = useMemo(() => {
+    let result = allEntriesWithOpening;
+
+    // Filter by global date range
+    result = result.filter(e => e.entry_date >= dateFromFormatted && e.entry_date <= dateToFormatted);
+
+    if (filterRegister !== 'all') result = result.filter(e => e.register_id === filterRegister);
+    if (filterCurrency !== 'all') result = result.filter(e => e.currency === filterCurrency);
+    if (filterType !== 'all') result = result.filter(e => e.source_type === filterType);
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(e => {
+        const desc = (e.description || '').toLowerCase();
+        const amt = Math.abs(e.amount).toString();
+        const receiptNo = (receiptNumbers[e.id] || '').toLowerCase();
+        
+        return desc.includes(term) || amt.includes(term) || receiptNo.includes(term);
+      });
+    }
+
+    return result;
+  }, [allEntriesWithOpening, dateFromFormatted, dateToFormatted, filterRegister, filterCurrency, filterType, searchTerm, receiptNumbers]);
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   // Running balance per register+currency (calculated from entries + opening balances)
   const runningBalances = useMemo(() => {
@@ -238,6 +399,7 @@ export default function EntriesTab() {
       return data as any;
     },
     onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['pettyCashPendingInvoices', companyId] });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
       const row = Array.isArray(data) ? data[0] : data;
@@ -251,10 +413,10 @@ export default function EntriesTab() {
     <div className="space-y-4">
       {/* Filters + Actions */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap flex-1 max-w-2xl">
           <Filter className="w-4 h-4 text-muted-foreground" />
           <Select value={filterRegister} onValueChange={v => { setFilterRegister(v); setCurrentPage(1); }}>
-            <SelectTrigger className="w-40 h-8 text-xs"><SelectValue placeholder="Pénztár" /></SelectTrigger>
+            <SelectTrigger className="w-32 h-8 text-xs"><SelectValue placeholder="Pénztár" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Összes pénztár</SelectItem>
               {registers.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
@@ -268,12 +430,22 @@ export default function EntriesTab() {
             </SelectContent>
           </Select>
           <Select value={filterType} onValueChange={v => { setFilterType(v); setCurrentPage(1); }}>
-            <SelectTrigger className="w-36 h-8 text-xs"><SelectValue placeholder="Típus" /></SelectTrigger>
+            <SelectTrigger className="w-32 h-8 text-xs"><SelectValue placeholder="Típus" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Összes típus</SelectItem>
               {allSourceTypes.map(t => <SelectItem key={t} value={t}>{DISPLAY_SOURCE_LABELS[t] || t}</SelectItem>)}
             </SelectContent>
           </Select>
+          <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Keresés..."
+              value={searchTerm}
+              onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              className="pl-8 h-8 text-xs bg-background w-full"
+            />
+          </div>
         </div>
         <div className="flex gap-2">
           {/* F4: Cash closing button */}
@@ -319,12 +491,19 @@ export default function EntriesTab() {
                   const bal = runningBalances[entry.id] ?? 0;
                   const receiptNo = receiptNumbers[entry.id] || '';
                   const isOpening = (entry as any).is_opening;
+                  const isPending = (entry as any).is_pending;
                   const isExpanded = expandedEntries.has(entry.id);
 
                   const mainRow = (
-                    <TableRow key={entry.id} className="group">
+                    <TableRow 
+                      key={entry.id} 
+                      className={cn(
+                        "group transition-colors",
+                        isPending && "bg-amber-500/5 dark:bg-amber-500/5 hover:bg-amber-500/10 dark:hover:bg-amber-500/10 border-l-4 border-l-amber-500"
+                      )}
+                    >
                       <TableCell>
-                        {!isOpening && (
+                        {!isOpening && !isPending && (
                           <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => toggleRow(entry.id)}>
                             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                           </Button>
@@ -335,6 +514,10 @@ export default function EntriesTab() {
                         {isOpening ? (
                           <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 text-[10px]">
                             NYITÓ
+                          </Badge>
+                        ) : isPending ? (
+                          <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[9px] font-semibold tracking-wider uppercase animate-pulse whitespace-nowrap">
+                            Jóváhagyásra vár
                           </Badge>
                         ) : (
                           <Badge variant="outline" className={cn(
@@ -352,8 +535,10 @@ export default function EntriesTab() {
                         <span className="text-xs font-medium">{regName}</span>
                       </TableCell>
                       <TableCell>
-                        <span className={cn('px-2 py-0.5 rounded text-[10px] font-medium', SOURCE_COLORS[entry.source_type] || 'bg-muted text-muted-foreground')}>
-                          {DISPLAY_SOURCE_LABELS[entry.source_type] || entry.source_type}
+                        <span className={cn('px-2 py-0.5 rounded text-[10px] font-medium', 
+                          isPending ? 'bg-amber-500/10 text-amber-500' : (SOURCE_COLORS[entry.source_type] || 'bg-muted text-muted-foreground')
+                        )}>
+                          {isPending ? 'Pénztárbizonylat' : (DISPLAY_SOURCE_LABELS[entry.source_type] || entry.source_type)}
                         </span>
                       </TableCell>
                       <TableCell className="max-w-[250px] truncate text-sm">{entry.description || '—'}</TableCell>
@@ -361,23 +546,64 @@ export default function EntriesTab() {
                         {fmtAmount(entry.amount, entry.currency)}
                       </TableCell>
                       <TableCell className="text-right text-sm tabular-nums whitespace-nowrap">
-                        {fmtBalance(bal, entry.currency)}
+                        {isPending ? (
+                          <span className="text-muted-foreground/40 text-xs">—</span>
+                        ) : (
+                          fmtBalance(bal, entry.currency)
+                        )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 justify-end">
-                          {entry.source_type === 'manual' && writable && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => { setEditingEntry(entry); setShowManualDialog(true); }} title="Szerkesztés">
-                              <Edit2 className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                        {isPending ? (
+                          <div className="flex items-center gap-1 justify-end">
+                            {(entry as any).raw_invoice?.image_url || (entry as any).raw_invoice?.melleklet_url ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-primary hover:bg-primary/10"
+                                onClick={() => setPreviewInvoicePending((entry as any).raw_invoice)}
+                                title="Bizonylat megtekintése"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </Button>
+                            ) : null}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
+                              onClick={() => handleStartEditPending((entry as any).raw_invoice)}
+                              title="Módosítás és Jóváhagyás"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
                             </Button>
-                          )}
-                          {registers.length > 1 && !isOpening && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => setMoveEntry(entry)} title="Áthelyezés másik pénztárba">
-                              <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
-                            </Button>
-                          )}
-                        </div>
+                            {writable && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10"
+                                disabled={approveMutation.isPending}
+                                onClick={() => approveMutation.mutate((entry as any).real_invoice_id)}
+                                title="Jóváhagyás"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 justify-end">
+                            {entry.source_type === 'manual' && writable && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => { setEditingEntry(entry); setShowManualDialog(true); }} title="Szerkesztés">
+                                <Edit2 className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                              </Button>
+                            )}
+                            {registers.length > 1 && !isOpening && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => setMoveEntry(entry)} title="Áthelyezés másik pénztárba">
+                                <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -397,8 +623,16 @@ export default function EntriesTab() {
         </CardContent>
       </Card>
 
-      {totalPages > 1 && (
-        <UnifiedPagination currentPage={currentPage} totalPages={totalPages} totalItems={filtered.length} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={() => {}} />
+      {totalPages > 0 && (
+        <UnifiedPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={v => { setPageSize(v); setCurrentPage(1); }}
+          pageSizeOptions={[25, 50, 100]}
+        />
       )}
 
       {/* Manual Entry Dialog */}
@@ -438,6 +672,224 @@ export default function EntriesTab() {
                 </Button>
               ))}
             </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Pending Invoice Preview */}
+      {previewInvoicePending && (
+        <InvoiceImageDialog
+          invoice={previewInvoicePending}
+          open={!!previewInvoicePending}
+          onClose={() => setPreviewInvoicePending(null)}
+        />
+      )}
+
+      {/* Side-by-Side Edit Dialog for Pending Invoices */}
+      {editingPendingInvoice && (
+        <Dialog open={!!editingPendingInvoice} onOpenChange={() => setEditingPendingInvoice(null)}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col transition-all duration-200">
+            <DialogHeader className="border-b border-border/20 pb-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <DialogTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary" />
+                    Bizonylat ellenőrzése és javítása
+                  </DialogTitle>
+                  <DialogDescription className="mt-1">
+                    Hasonlítsd össze az AI által kinyert adatokat a bal oldali bizonylatképpel, majd mentsd vagy élesítsd a javított tétel adatokat.
+                  </DialogDescription>
+                </div>
+                <div className="mr-8">
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 font-medium">
+                    {editingPendingInvoice.confidence_score ? `${Math.round(editingPendingInvoice.confidence_score * 100)}% - AI Bizonyosság` : 'AI Bizonyosság'}
+                  </Badge>
+                </div>
+              </div>
+            </DialogHeader>
+
+            {/* Content: Side-by-Side layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden flex-1 py-4">
+              
+              {/* Left Side: Document Preview */}
+              <div className="overflow-hidden border border-border/40 rounded-lg bg-muted/10 flex flex-col justify-center items-center relative h-[35vh] md:h-full min-h-[300px]">
+                {editingPendingInvoice.image_url || editingPendingInvoice.melleklet_url ? (
+                  <>
+                    {editingPendingInvoice.image_url?.toLowerCase().endsWith('.pdf') || editingPendingInvoice.melleklet_url?.toLowerCase().endsWith('.pdf') ? (
+                      <iframe
+                        src={editingPendingInvoice.image_url || editingPendingInvoice.melleklet_url}
+                        className="w-full h-full border-0"
+                        title="Bizonylat kép"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex justify-center items-center p-2">
+                        <img
+                          src={editingPendingInvoice.image_url || editingPendingInvoice.melleklet_url}
+                          alt="Bizonylat kép"
+                          className="max-w-full max-h-full object-contain rounded shadow-md"
+                        />
+                      </div>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="absolute bottom-3 right-3 bg-background/90 backdrop-blur-sm shadow hover:bg-background"
+                      onClick={() => window.open(editingPendingInvoice.image_url || editingPendingInvoice.melleklet_url, '_blank')}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Megnyitás új lapon
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-center p-6 text-muted-foreground flex flex-col items-center gap-2">
+                    <HelpCircle className="w-10 h-10 text-muted-foreground/30" />
+                    <p className="text-sm font-medium">Nincs elérhető kép ehhez a bizonylathoz</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Side: Form */}
+              <div className="overflow-y-auto pr-1 flex flex-col gap-4 max-h-[45vh] md:max-h-full">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pending-direction">Tranzakció Iránya</Label>
+                    <Select
+                      value={editPendingForm.invoice_direction}
+                      onValueChange={(val) => setEditPendingForm(prev => ({ ...prev, invoice_direction: val }))}
+                    >
+                      <SelectTrigger id="pending-direction" className="h-9">
+                        <SelectValue placeholder="Válassz irányt" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="INBOUND">Kiadás (Befizetés partnernek)</SelectItem>
+                        <SelectItem value="OUTBOUND">Bevétel (Partner befizetése)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pending-sorszam">Bizonylatszám / Sorszám</Label>
+                    <Input
+                      id="pending-sorszam"
+                      className="h-9 font-mono"
+                      value={editPendingForm.bizonylatsorszam}
+                      onChange={(e) => setEditPendingForm(prev => ({ ...prev, bizonylatsorszam: e.target.value }))}
+                      placeholder="pl. KK-2026-0001"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pending-datum">Kibocsátás Dátuma</Label>
+                    <Input
+                      id="pending-datum"
+                      type="date"
+                      className="h-9"
+                      value={editPendingForm.kibocsatas_datuma}
+                      onChange={(e) => setEditPendingForm(prev => ({ ...prev, kibocsatas_datuma: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="pending-brutto">Bruttó Összeg</Label>
+                      <span className="text-[10px] text-muted-foreground">Készpénzes ÁFA: 0% / mentes</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        id="pending-brutto"
+                        type="number"
+                        className="h-9 font-mono flex-1"
+                        value={editPendingForm.brutto_vegosszeg}
+                        onChange={(e) => setEditPendingForm(prev => ({ ...prev, brutto_vegosszeg: parseFloat(e.target.value) || 0 }))}
+                      />
+                      <Select
+                        value={editPendingForm.penznem}
+                        onValueChange={(val) => setEditPendingForm(prev => ({ ...prev, penznem: val }))}
+                      >
+                        <SelectTrigger className="w-24 h-9">
+                          <SelectValue placeholder="Pénznem" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="HUF">HUF</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                          <SelectItem value="USD">USD</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pending-elado">Eladó (Pénzt kiadó vagy Számlát adó)</Label>
+                  <Input
+                    id="pending-elado"
+                    className="h-9"
+                    value={editPendingForm.elado_nev}
+                    onChange={(e) => setEditPendingForm(prev => ({ ...prev, elado_nev: e.target.value }))}
+                    placeholder="Eladó teljes neve..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pending-vevo">Vevő (Pénzt átvevő vagy Befizető cég)</Label>
+                  <Input
+                    id="pending-vevo"
+                    className="h-9"
+                    value={editPendingForm.vevo_nev}
+                    onChange={(e) => setEditPendingForm(prev => ({ ...prev, vevo_nev: e.target.value }))}
+                    placeholder="Vevő teljes neve..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pending-leiras">Megjegyzés / Jogcím leírása</Label>
+                  <Textarea
+                    id="pending-leiras"
+                    rows={3}
+                    className="resize-none text-sm"
+                    value={editPendingForm.adojogi_megjegyzes}
+                    onChange={(e) => setEditPendingForm(prev => ({ ...prev, adojogi_megjegyzes: e.target.value }))}
+                    placeholder="Írd le a pénztári tranzakció gazdasági eseményét vagy célját..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="border-t border-border/20 pt-4 flex sm:justify-between items-center gap-2">
+              <div className="text-xs text-muted-foreground flex items-center gap-1.5 shrink-0">
+                <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground" />
+                A mentett értékek azonnal frissülnek az adatbázisban.
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setEditingPendingInvoice(null)} 
+                  disabled={savePendingMutation.isPending}
+                  className="h-9"
+                >
+                  <X className="h-4 w-4 mr-1.5" /> Mégse
+                </Button>
+                <Button 
+                  variant="secondary"
+                  onClick={() => savePendingMutation.mutate({ id: editingPendingInvoice.id, data: editPendingForm, approveAfterSave: false })} 
+                  disabled={savePendingMutation.isPending}
+                  className="h-9"
+                >
+                  <Save className="h-4 w-4 mr-1.5" /> Csak mentés
+                </Button>
+                {writable && (
+                  <Button 
+                    variant="default"
+                    onClick={() => savePendingMutation.mutate({ id: editingPendingInvoice.id, data: editPendingForm, approveAfterSave: true })} 
+                    disabled={savePendingMutation.isPending}
+                    className="h-9 bg-emerald-600 hover:bg-emerald-500 text-white"
+                  >
+                    <Check className="h-4 w-4 mr-1.5" /> Mentés és Élesítés
+                  </Button>
+                )}
+              </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

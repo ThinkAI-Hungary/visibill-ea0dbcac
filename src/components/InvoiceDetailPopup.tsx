@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency } from '@/lib/utils';
@@ -93,6 +94,7 @@ const DetailRow = ({ label, value, mono }: { label: string; value: React.ReactNo
 );
 
 export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDetailPopupProps) => {
+  const queryClient = useQueryClient();
   const [invoice, setInvoice] = useState<FullInvoice | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -179,6 +181,8 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
       setNewNoteTitle('');
       setNewNotePrivate(true);
       fetchNotes();
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });
     } catch (err) {
       console.error('Error adding note:', err);
     } finally {

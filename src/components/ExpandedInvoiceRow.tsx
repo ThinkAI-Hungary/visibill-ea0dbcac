@@ -2,12 +2,14 @@ import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useState } from 'react';
-import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet, CreditCard, Scale, RefreshCw, Lock, Users, ClipboardCheck } from 'lucide-react';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet, CreditCard, Scale, RefreshCw, Lock, Users, ClipboardCheck, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -137,6 +139,8 @@ interface ExpandedInvoiceRowProps {
   calculatedTi?: string | null;
   tiOverride?: string | null;
   tiCalculationMethod?: string | null;
+  transactionId?: string;
+  invoiceSource?: 'submitted' | 'nav';
 }
 
 // Compact collapsible transaction list inside invoice cards
@@ -222,8 +226,66 @@ const ExpandedInvoiceRow = ({
   calculatedTi,
   tiOverride,
   tiCalculationMethod,
+  transactionId,
+  invoiceSource,
 }: ExpandedInvoiceRowProps) => {
+  const queryClient = useQueryClient();
   const [showManualPayment, setShowManualPayment] = useState(false);
+  const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [newNoteText, setNewNoteText] = useState('');
+  const [newNotePrivate, setNewNotePrivate] = useState(true);
+  const [addingNote, setAddingNote] = useState(false);
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoteText.trim() || !invoiceId || !companyId) return;
+    setAddingNote(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (!userId) throw new Error('Unauthenticated');
+
+      let finalInvoiceId: string | null = null;
+      let finalInvoiceIds: string[] | null = null;
+
+      if (matchedSubmittedInvoices && matchedSubmittedInvoices.length > 0) {
+        finalInvoiceId = matchedSubmittedInvoices[0].id;
+      } else if (invoiceSource === 'submitted') {
+        finalInvoiceId = invoiceId;
+      } else {
+        finalInvoiceIds = [invoiceId];
+      }
+
+      const { error } = await supabase
+        .from('notes')
+        .insert({
+          company_id: companyId,
+          user_id: userId,
+          title: newNoteTitle.trim() || 'Számla feljegyzés',
+          content: newNoteText.trim(),
+          is_private: newNotePrivate,
+          invoice_id: finalInvoiceId,
+          invoice_ids: finalInvoiceIds,
+          transaction_id: transactionId || undefined,
+        });
+
+      if (error) throw error;
+      setNewNoteText('');
+      setNewNoteTitle('');
+      setNewNotePrivate(true);
+      toast({ title: 'Sikeres mentés', description: 'Új jegyzet sikeresen rögzítve.', duration: 3000 });
+      queryClient.invalidateQueries({ queryKey: ['invoice-notes', invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      if (transactionId) {
+        queryClient.invalidateQueries({ queryKey: ['transaction-notes', transactionId] });
+      }
+    } catch (err: any) {
+      toast({ title: 'Hiba', description: err.message || 'Nem sikerült elmenteni a jegyzetet.', variant: 'destructive' });
+    } finally {
+      setAddingNote(false);
+    }
+  };
   
   // Fetch linked notes (supporting single/multi-linked notes and matched submitted/NAV invoice IDs)
   const { data: notes = [], isLoading: notesLoading } = useQuery({
@@ -326,7 +388,7 @@ const ExpandedInvoiceRow = ({
           `}</style>
           <div className="accordion-grid-animate">
             <div className="accordion-overflow">
-              <div className="py-6 px-8 space-y-4 max-w-3xl ml-4">
+              <div className="py-6 px-8 space-y-4 max-w-5xl ml-4">
             {/* General Ledger numbers */}
             {glNumbers && (
               <div className="mb-4 expand-animate bg-card border border-border/40 p-3 rounded-lg flex flex-col gap-2 max-w-lg">
@@ -475,61 +537,11 @@ const ExpandedInvoiceRow = ({
               </Card>
             )}
 
-            {/* Notes Section */}
-            <div className="space-y-4 max-w-lg">
-              <div className="flex items-center justify-between mb-2 expand-animate">
-                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
-                  Kapcsolódó feljegyzések
-                </div>
-              </div>
-
-              {notes && notes.length > 0 ? (
-                <div className="space-y-3">
-                  {notes.map((note: any) => (
-                    <Card key={note.id} className="bg-primary/[0.02] border-primary/20 expand-animate">
-                      <CardHeader className="py-2.5 px-3 border-b border-border/10">
-                        <CardTitle className="text-xs font-semibold flex items-center justify-between text-foreground">
-                          <span className="font-semibold text-foreground truncate max-w-[200px]">{note.title || 'Névtelen jegyzet'}</span>
-                          <div className="flex items-center gap-2 shrink-0">
-                            {note.is_private ? (
-                              <Badge variant="outline" className="text-[9px] h-4.5 px-1.5 gap-1 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">
-                                <Lock className="h-2.5 w-2.5" />
-                                Privát
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-[9px] h-4.5 px-1.5 gap-1 bg-primary/10 text-primary border-primary/20">
-                                <Users className="h-2.5 w-2.5" />
-                                Közös cégjegyzet
-                              </Badge>
-                            )}
-                            <span className="text-[9px] text-muted-foreground font-mono">
-                              {format(new Date(note.created_at), 'yyyy.MM.dd', { locale: hu })}
-                            </span>
-                          </div>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-3 space-y-1">
-                        <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-normal font-sans pl-0.5">{note.content}</p>
-                        <div className="text-[9px] text-muted-foreground/80 pl-0.5 pt-1">
-                          Rögzítette: {note.profile_name}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <Card className="bg-muted/30 border-border/50 expand-animate">
-                  <CardContent className="p-4 flex flex-col items-center justify-center">
-                    <p className="text-xs text-muted-foreground italic">Nincs kapcsolódó feljegyzés ehhez a számlához.</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            <Separator className="my-4 max-w-lg" />
-
-            {/* Header */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start pt-2">
+              
+              {/* Left Column: Related Items */}
+              <div className="space-y-4">
+                {/* Header */}
             <div className="flex items-center justify-between mb-4 expand-animate">
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <Link2 className="h-3.5 w-3.5" />
@@ -1154,6 +1166,141 @@ const ExpandedInvoiceRow = ({
                 </CardContent>
               </Card>
             ))}
+              </div>
+
+              {/* Right Column: Notes Section */}
+              <div className="space-y-4 max-w-md">
+                {/* Notes Section */}
+            <div className="space-y-4 max-w-lg">
+              <div className="flex items-center justify-between mb-2 expand-animate">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
+                  Kapcsolódó feljegyzések
+                </div>
+              </div>
+
+              {notes && notes.length > 0 && (
+                <div className="space-y-3">
+                  {notes.map((note: any) => (
+                    <Card key={note.id} className="bg-primary/[0.02] border-primary/20 expand-animate">
+                      <CardHeader className="py-2.5 px-3 border-b border-border/10">
+                        <CardTitle className="text-xs font-semibold flex items-center justify-between text-foreground">
+                          <span className="font-semibold text-foreground truncate max-w-[200px]">{note.title || 'Névtelen jegyzet'}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {note.is_private ? (
+                              <Badge variant="outline" className="text-[9px] h-4.5 px-1.5 gap-1 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">
+                                <Lock className="h-2.5 w-2.5" />
+                                Privát
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[9px] h-4.5 px-1.5 gap-1 bg-primary/10 text-primary border-primary/20">
+                                <Users className="h-2.5 w-2.5" />
+                                Közös cégjegyzet
+                              </Badge>
+                            )}
+                            <span className="text-[9px] text-muted-foreground font-mono">
+                              {format(new Date(note.created_at), 'yyyy.MM.dd', { locale: hu })}
+                            </span>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-3 space-y-1">
+                        <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-normal font-sans pl-0.5">{note.content}</p>
+                        <div className="text-[9px] text-muted-foreground/80 pl-0.5 pt-1">
+                          Rögzítette: {note.profile_name}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Note Form */}
+              <form onSubmit={handleAddNote} className="space-y-3 pt-3 border-t border-border/20">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Jegyzet címe</span>
+                  <Input
+                    placeholder="pl. Határidő, Hiányzó papír..."
+                    value={newNoteTitle}
+                    onChange={(e) => setNewNoteTitle(e.target.value)}
+                    className="h-9 text-xs bg-background/30 border-border/50"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Tartalom</span>
+                  <Textarea
+                    placeholder="Írd ide a jegyzet szöveges tartalmát..."
+                    value={newNoteText}
+                    onChange={(e) => setNewNoteText(e.target.value)}
+                    required
+                    rows={2}
+                    className="text-xs bg-background/30 border-border/50 resize-none min-h-[56px]"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Láthatóság</span>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* Private Card Button */}
+                    <button
+                      type="button"
+                      onClick={() => setNewNotePrivate(true)}
+                      className={cn(
+                        "flex items-start gap-2.5 p-2 rounded-lg border text-left transition-all",
+                        newNotePrivate
+                          ? "border-primary/60 bg-primary/5 dark:bg-primary/10 shadow-sm"
+                          : "border-border bg-transparent hover:bg-muted/30"
+                      )}
+                    >
+                      <Lock className={cn("h-4 w-4 mt-0.5 shrink-0", newNotePrivate ? "text-primary" : "text-muted-foreground")} />
+                      <div>
+                        <p className="text-[11px] font-semibold">Privát</p>
+                        <p className="text-[9px] text-muted-foreground">Csak te látod</p>
+                      </div>
+                    </button>
+
+                    {/* Public Card Button */}
+                    <button
+                      type="button"
+                      onClick={() => setNewNotePrivate(false)}
+                      className={cn(
+                        "flex items-start gap-2.5 p-2 rounded-lg border text-left transition-all",
+                        !newNotePrivate
+                          ? "border-primary/60 bg-primary/5 dark:bg-primary/10 shadow-sm"
+                          : "border-border bg-transparent hover:bg-muted/30"
+                      )}
+                    >
+                      <Users className={cn("h-4 w-4 mt-0.5 shrink-0", !newNotePrivate ? "text-primary" : "text-muted-foreground")} />
+                      <div>
+                        <p className="text-[11px] font-semibold">Közös</p>
+                        <p className="text-[9px] text-muted-foreground">Cégtagok látják</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="h-8 px-4 gap-1.5"
+                    disabled={addingNote || !newNoteText.trim()}
+                  >
+                    {addingNote ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5" />
+                    )}
+                    Mentés
+                  </Button>
+                </div>
+              </form>
+            </div>
+              </div>
+
+            </div>
+
             {/* Manual Payment Dialog */}
             {matchingEnabled && (
               <ManualPaymentDialog

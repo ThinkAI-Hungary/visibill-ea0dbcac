@@ -1612,6 +1612,7 @@ const InvoicesPage = () => {
                                       invoiceCurrency={invoice.currency || 'HUF'}
                                       invoiceDate={invoice.invoice_issue_date || ''}
                                       companyId={companyId}
+                                      invoiceSource="nav"
                                       onMatchUpdate={invalidateInvoiceData}
                                       glNumbers={invoice.gl_numbers}
                                       hasSubmittedMatch={submittedMatches.length > 0}
@@ -1971,6 +1972,7 @@ const InvoicesPage = () => {
                                     invoiceCurrency={invoice.penznem || 'HUF'}
                                     invoiceDate={invoice.kibocsatas_datuma || ''}
                                     companyId={companyId}
+                                    invoiceSource="submitted"
                                     onMatchUpdate={invalidateInvoiceData}
                                     categories={categories}
                                     projects={projects}

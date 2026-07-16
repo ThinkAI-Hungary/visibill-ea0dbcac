@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Note } from '../../types/notes';
-import { Loader2, Lock, Users, Search, FileText, X, Link, Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Lock, Users, Search, FileText, X, Link, Plus, Trash2, Calendar as CalendarIcon, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -34,6 +34,8 @@ interface NoteModalProps {
     is_private: boolean;
     invoice_id: string | null;
     invoice_ids: string[];
+    transaction_id: string | null;
+    transaction_ids: string[];
   }) => void;
   isSaving: boolean;
 }
@@ -52,16 +54,23 @@ export function NoteModal({
   const [invoiceIds, setInvoiceIds] = useState<string[]>([]);
   const [selectedInvoices, setSelectedInvoices] = useState<any[]>([]);
 
-  // Search Modal States
+  // Transactions linkage states
+  const [transactionIds, setTransactionIds] = useState<string[]>([]);
+  const [selectedTransactions, setSelectedTransactions] = useState<any[]>([]);
+
+  // Search Modal States for Invoices
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
-
-  // Bulk Selection State inside Search Modal
   const [tempSelectedInvoices, setTempSelectedInvoices] = useState<any[]>([]);
+
+  // Search Modal States for Transactions
+  const [txSearchOpen, setTxSearchOpen] = useState(false);
+  const [txSearchTerm, setTxSearchTerm] = useState('');
+  const [tempSelectedTransactions, setTempSelectedTransactions] = useState<any[]>([]);
 
   // Discard Confirmation Dialog State
   const [showConfirmClose, setShowConfirmClose] = useState(false);
@@ -81,12 +90,22 @@ export function NoteModal({
         }
         setInvoiceIds(initialIds);
         setSelectedInvoices(note.invoices || []);
+
+        // Populate transaction IDs
+        const initialTxIds = [...(note.transaction_ids || [])];
+        if (note.transaction_id && !initialTxIds.includes(note.transaction_id)) {
+          initialTxIds.push(note.transaction_id);
+        }
+        setTransactionIds(initialTxIds);
+        setSelectedTransactions(note.transactions || []);
       } else {
         setTitle('');
         setContent('');
         setIsPrivate(true);
         setInvoiceIds([]);
         setSelectedInvoices([]);
+        setTransactionIds([]);
+        setSelectedTransactions([]);
       }
     }
   }, [open, note]);
@@ -97,6 +116,12 @@ export function NoteModal({
       setTempSelectedInvoices(selectedInvoices);
     }
   }, [searchOpen, selectedInvoices]);
+
+  useEffect(() => {
+    if (txSearchOpen) {
+      setTempSelectedTransactions(selectedTransactions);
+    }
+  }, [txSearchOpen, selectedTransactions]);
 
   const hasChanges = () => {
     if (note) {
@@ -109,14 +134,24 @@ export function NoteModal({
         invoiceIds.length !== originalInvoiceIds.length ||
         !invoiceIds.every(id => originalInvoiceIds.includes(id));
 
+      const originalTxIds = [...(note.transaction_ids || [])];
+      if (note.transaction_id && !originalTxIds.includes(note.transaction_id)) {
+        originalTxIds.push(note.transaction_id);
+      }
+
+      const hasTxChanges =
+        transactionIds.length !== originalTxIds.length ||
+        !transactionIds.every(id => originalTxIds.includes(id));
+
       return (
         title !== note.title ||
         content !== note.content ||
         isPrivate !== note.is_private ||
-        hasInvoiceChanges
+        hasInvoiceChanges ||
+        hasTxChanges
       );
     } else {
-      return title.trim() !== '' || content.trim() !== '' || invoiceIds.length > 0;
+      return title.trim() !== '' || content.trim() !== '' || invoiceIds.length > 0 || transactionIds.length > 0;
     }
   };
 
@@ -160,6 +195,30 @@ export function NoteModal({
     enabled: searchOpen && !!companyId,
   });
 
+  // Query transactions based on user search in the sub-modal
+  const { data: searchTransactions = [], isLoading: searchTransactionsLoading } = useQuery({
+    queryKey: ['notes-transactions-search', companyId, txSearchTerm],
+    queryFn: async () => {
+      if (!companyId) return [];
+      let queryBuilder = supabase
+        .from('transactions')
+        .select('id, transaction_date, description, amount, currency')
+        .eq('company_id', companyId);
+
+      if (txSearchTerm.trim()) {
+        queryBuilder = queryBuilder.or(`description.ilike.%${txSearchTerm}%`);
+      }
+
+      const { data, error } = await queryBuilder
+        .order('transaction_date', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: txSearchOpen && !!companyId,
+  });
+
   const handleToggleTempInvoice = (inv: any) => {
     const exists = tempSelectedInvoices.some((item) => item.id === inv.id);
     if (exists) {
@@ -174,6 +233,24 @@ export function NoteModal({
           net_amount: inv.net_amount,
           currency: inv.currency,
           invoice_date: inv.invoice_date,
+        },
+      ]);
+    }
+  };
+
+  const handleToggleTempTransaction = (tx: any) => {
+    const exists = tempSelectedTransactions.some((item) => item.id === tx.id);
+    if (exists) {
+      setTempSelectedTransactions((prev) => prev.filter((item) => item.id !== tx.id));
+    } else {
+      setTempSelectedTransactions((prev) => [
+        ...prev,
+        {
+          id: tx.id,
+          transaction_date: tx.transaction_date,
+          description: tx.description,
+          amount: tx.amount,
+          currency: tx.currency,
         },
       ]);
     }
@@ -207,9 +284,41 @@ export function NoteModal({
     }
   };
 
+  const handleSelectAllVisibleTx = () => {
+    const allVisibleSelected = searchTransactions.every((tx) =>
+      tempSelectedTransactions.some((temp) => temp.id === tx.id)
+    );
+
+    if (allVisibleSelected) {
+      const visibleIds = searchTransactions.map((tx) => tx.id);
+      setTempSelectedTransactions((prev) => prev.filter((item) => !visibleIds.includes(item.id)));
+    } else {
+      setTempSelectedTransactions((prev) => {
+        const next = [...prev];
+        searchTransactions.forEach((tx) => {
+          if (!next.some((item) => item.id === tx.id)) {
+            next.push({
+              id: tx.id,
+              transaction_date: tx.transaction_date,
+              description: tx.description,
+              amount: tx.amount,
+              currency: tx.currency,
+            });
+          }
+        });
+        return next;
+      });
+    }
+  };
+
   const handleRemoveInvoice = (id: string) => {
     setInvoiceIds((prev) => prev.filter((item) => item !== id));
     setSelectedInvoices((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleRemoveTransaction = (id: string) => {
+    setTransactionIds((prev) => prev.filter((item) => item !== id));
+    setSelectedTransactions((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -222,13 +331,15 @@ export function NoteModal({
       is_private: isPrivate,
       invoice_id: invoiceIds[0] || null,
       invoice_ids: invoiceIds,
+      transaction_id: transactionIds[0] || null,
+      transaction_ids: transactionIds,
     });
   };
 
   return (
     <>
       <Dialog open={open} onOpenChange={handleCloseAttempt}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-md border-border/50">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-md border-border/50 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{note ? 'Jegyzet szerkesztése' : 'Új jegyzet rögzítése'}</DialogTitle>
             <DialogDescription>
@@ -327,10 +438,10 @@ export function NoteModal({
                         key={inv.id}
                         className="flex items-center justify-between p-2 rounded-lg border border-primary/30 bg-primary/5"
                       >
-                        <div className="flex items-center gap-2.5 text-xs">
+                        <div className="flex items-center gap-2.5 text-xs min-w-0 flex-1">
                           <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <div>
-                            <div className="font-semibold text-foreground font-mono leading-tight">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-foreground font-mono leading-tight truncate">
                               {inv.invoice_number || 'Nincs sorszám'}
                             </div>
                             <div className="text-[10px] text-muted-foreground leading-none">
@@ -338,7 +449,7 @@ export function NoteModal({
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
                           <span className="text-[11px] font-semibold text-foreground font-mono pr-2">
                             {inv.net_amount?.toLocaleString('hu-HU')} {inv.currency || 'HUF'}
                           </span>
@@ -356,7 +467,6 @@ export function NoteModal({
                     ))}
                   </div>
 
-                  {/* Mindent eltávolít button below list on the left side */}
                   <div className="flex justify-start">
                     <Button
                       type="button"
@@ -385,6 +495,88 @@ export function NoteModal({
               )}
             </div>
 
+            {/* Linked Transactions Selector */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label>Kapcsolódó tranzakciók ({selectedTransactions.length})</Label>
+                {selectedTransactions.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-6 text-[10px] px-2 text-primary hover:bg-primary/10 gap-1 font-semibold"
+                    onClick={() => setTxSearchOpen(true)}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Tranzakció hozzáadása
+                  </Button>
+                )}
+              </div>
+
+              {selectedTransactions.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                    {selectedTransactions.map((tx) => (
+                      <div
+                        key={tx.id}
+                        className="flex items-center justify-between p-2 rounded-lg border border-primary/30 bg-primary/5"
+                      >
+                        <div className="flex items-center gap-2.5 text-xs min-w-0 flex-1">
+                          <Wallet className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-foreground truncate leading-tight">
+                              {tx.description || 'Nincs leírás'}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground leading-none">
+                              {tx.transaction_date}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <span className="text-[11px] font-semibold text-foreground font-mono pr-2">
+                            {tx.amount?.toLocaleString('hu-HU')} {tx.currency || 'HUF'}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleRemoveTransaction(tx.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-start">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-6 text-[10px] px-2 text-destructive hover:bg-destructive/10 gap-1 font-semibold"
+                      onClick={() => {
+                        setTransactionIds([]);
+                        setSelectedTransactions([]);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Összes csatolás megszüntetése
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start text-xs text-muted-foreground font-normal bg-background/50 h-10 border-dashed hover:bg-muted/30"
+                  onClick={() => setTxSearchOpen(true)}
+                >
+                  <Link className="h-3.5 w-3.5 mr-2" />
+                  Tranzakció összekapcsolása...
+                </Button>
+              )}
+            </div>
+
             <DialogFooter className="pt-4 border-t border-border/30">
               <Button
                 type="button"
@@ -403,7 +595,7 @@ export function NoteModal({
         </DialogContent>
       </Dialog>
 
-      {/* Invoice Search Dialog (Nested with Bulk Selection & Fixed h-[320px]) */}
+      {/* Invoice Search Dialog */}
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
         <DialogContent className="sm:max-w-lg bg-card/95 backdrop-blur-md border-border/50 max-h-[85vh] flex flex-col p-6">
           <DialogHeader className="pb-4 border-b border-border/20">
@@ -537,7 +729,7 @@ export function NoteModal({
             </div>
           )}
 
-          {/* Results List - Fixed Height h-[320px] to prevent layout shifts */}
+          {/* Results List */}
           <div className="flex-1 overflow-y-auto h-[320px] pr-1 space-y-2 flex flex-col">
             {searchInvoicesLoading ? (
               <div className="flex flex-col items-center justify-center my-auto text-muted-foreground text-xs gap-2 py-12">
@@ -563,7 +755,7 @@ export function NoteModal({
                           : 'border-border/45 hover:border-primary/50 hover:bg-primary/5 bg-background/30'
                       }`}
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 min-w-0 flex-1 mr-4">
                         <div className="mt-1" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
@@ -572,16 +764,16 @@ export function NoteModal({
                             className="rounded border-border bg-background text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
                           />
                         </div>
-                        <div>
-                          <span className="font-mono font-semibold text-foreground block">
+                        <div className="min-w-0 flex-1">
+                          <span className="font-mono font-semibold text-foreground block truncate">
                             {inv.invoice_number || 'Nincs sorszám'}
                           </span>
-                          <span className="text-[10px] text-muted-foreground block">
+                          <span className="text-[10px] text-muted-foreground block truncate">
                             {inv.supplier_name || 'Ismeretlen partner'}
                           </span>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <span className="font-semibold text-foreground block font-mono">
                           {inv.net_amount?.toLocaleString('hu-HU')} {inv.currency || 'HUF'}
                         </span>
@@ -616,6 +808,133 @@ export function NoteModal({
               }}
             >
               Kijelöltek hozzáadása ({tempSelectedInvoices.length} db)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transaction Search Dialog */}
+      <Dialog open={txSearchOpen} onOpenChange={setTxSearchOpen}>
+        <DialogContent className="sm:max-w-lg bg-card/95 backdrop-blur-md border-border/50 max-h-[85vh] flex flex-col p-6">
+          <DialogHeader className="pb-4 border-b border-border/20">
+            <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Search className="h-4 w-4" />
+              Tranzakciók keresése és tömeges csatolása
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Jelölj ki egy vagy több tranzakciót a listából a csatoláshoz.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Search Inputs */}
+          <div className="space-y-3 py-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Leírás vagy típus alapján..."
+                value={txSearchTerm}
+                onChange={(e) => setTxSearchTerm(e.target.value)}
+                className="pl-9 bg-background/50 text-xs h-9"
+              />
+            </div>
+          </div>
+
+          {/* Bulk select / deselect action bar */}
+          {searchTransactions.length > 0 && (
+            <div className="flex items-center justify-between px-1 pb-2">
+              <span className="text-[10px] text-muted-foreground">
+                Keresési találatok ({searchTransactions.length} db)
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 text-[10px] text-primary hover:bg-primary/10 px-2"
+                onClick={handleSelectAllVisibleTx}
+              >
+                {searchTransactions.every((tx) => tempSelectedTransactions.some((temp) => temp.id === tx.id))
+                  ? 'Kijelölések megszüntetése'
+                  : 'Összes kijelölése ezen az oldalon'}
+              </Button>
+            </div>
+          )}
+
+          {/* Results List */}
+          <div className="flex-1 overflow-y-auto h-[320px] pr-1 space-y-2 flex flex-col">
+            {searchTransactionsLoading ? (
+              <div className="flex flex-col items-center justify-center my-auto text-muted-foreground text-xs gap-2 py-12">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span>Tranzakciók betöltése...</span>
+              </div>
+            ) : searchTransactions.length === 0 ? (
+              <div className="text-center my-auto text-muted-foreground text-xs py-12">
+                Nem található tranzakció a megadott szűrő alapján.
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {searchTransactions.map((tx: any) => {
+                  const isChecked = tempSelectedTransactions.some((temp) => temp.id === tx.id);
+                  return (
+                    <button
+                      key={tx.id}
+                      type="button"
+                      onClick={() => handleToggleTempTransaction(tx)}
+                      className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left text-xs ${
+                        isChecked
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border/45 hover:border-primary/50 hover:bg-primary/5 bg-background/30'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 min-w-0 flex-1 mr-4 text-left">
+                        <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleTempTransaction(tx)}
+                            className="rounded border-border bg-background text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="font-semibold text-foreground block truncate">
+                            {tx.description || 'Nincs leírás'}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground block font-mono">
+                            {tx.transaction_date}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="font-semibold text-foreground block font-mono">
+                          {tx.amount?.toLocaleString('hu-HU')} {tx.currency || 'HUF'}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="pt-4 border-t border-border/20 mt-auto flex items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setTxSearchOpen(false)}
+            >
+              Mégse
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="w-[220px] justify-center shrink-0"
+              onClick={() => {
+                setTransactionIds(tempSelectedTransactions.map((item) => item.id));
+                setSelectedTransactions(tempSelectedTransactions);
+                setTxSearchOpen(false);
+              }}
+            >
+              Kijelöltek hozzáadása ({tempSelectedTransactions.length} db)
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useNotesData } from '@/hooks/useNotesData';
 import { NoteModal } from '@/components/notes/NoteModal';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
+import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ import {
   Calendar,
   AlertCircle,
   ClipboardEdit,
+  Wallet,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,6 +38,7 @@ export default function NotesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
+  const [viewTransaction, setViewTransaction] = useState<any | null>(null);
 
   // Filtered Notes
   const filteredNotes = useMemo(() => {
@@ -59,7 +62,11 @@ export default function NotesPage() {
         inv.supplier_name?.toLowerCase().includes(query)
       ) ?? false;
 
-      return titleMatch || contentMatch || invoiceNumberMatch || supplierNameMatch;
+      const txDescMatch = note.transactions?.some((tx: any) => 
+        tx.description?.toLowerCase().includes(query)
+      ) ?? false;
+
+      return titleMatch || contentMatch || invoiceNumberMatch || supplierNameMatch || txDescMatch;
     });
   }, [notes, activeTab, searchQuery]);
 
@@ -109,6 +116,8 @@ export default function NotesPage() {
     is_private: boolean;
     invoice_id: string | null;
     invoice_ids: string[];
+    transaction_id: string | null;
+    transaction_ids: string[];
   }) => {
     try {
       if (editingNote) {
@@ -277,6 +286,17 @@ export default function NotesPage() {
                         </span>
                       </div>
                     )}
+
+                    {note.transactions && note.transactions.length > 0 && (
+                      <div className="mt-1 flex items-center gap-1 text-[10px] text-teal-600/80 dark:text-teal-400/80 font-medium">
+                        <Wallet className="h-3 w-3" />
+                        <span>
+                          {note.transactions.length === 1
+                            ? `Tranzakció: ${note.transactions[0].description || 'Nincs leírás'}`
+                            : `${note.transactions.length} db tranzakció csatolva`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -402,6 +422,60 @@ export default function NotesPage() {
                 </div>
               )}
 
+              {/* Attached Transactions Details */}
+              {selectedNote.transactions && selectedNote.transactions.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Kapcsolódó tranzakciók ({selectedNote.transactions.length})
+                  </h4>
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {selectedNote.transactions.map((tx: any) => (
+                      <div
+                        key={tx.id}
+                        className="border border-border/50 rounded-xl bg-card/40 p-4 shadow-sm flex items-start gap-4"
+                      >
+                        <div className="p-2.5 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5">
+                          <Wallet className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                          <div className="col-span-2">
+                            <span className="text-muted-foreground block text-[10px]">Leírás / Partner</span>
+                            <span className="font-semibold text-foreground truncate block">
+                              {tx.description || '—'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-[10px]">Összeg</span>
+                            <span className="font-semibold text-foreground font-mono">
+                              {tx.amount?.toLocaleString('hu-HU') || '—'}{' '}
+                              {tx.currency || 'HUF'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-[10px]">Dátum</span>
+                            <span className="font-semibold text-foreground">
+                              {tx.transaction_date || '—'}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => setViewTransaction({
+                            ...tx,
+                            company_id: companyId
+                          })}
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0 self-center"
+                          title="Tranzakció megnyitása"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Metadata / Owner Info */}
               <div className="border-t border-border/30 pt-4 flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -438,6 +512,17 @@ export default function NotesPage() {
           open={!!viewInvoiceId}
           onOpenChange={(open) => !open && setViewInvoiceId(null)}
           invoiceId={viewInvoiceId}
+        />
+      )}
+
+      {/* Transaction Details Dialog */}
+      {viewTransaction && (
+        <TransactionDetailsDialog
+          open={!!viewTransaction}
+          onOpenChange={(open) => !open && setViewTransaction(null)}
+          transaction={viewTransaction}
+          companyId={companyId!}
+          onUpdate={() => {}}
         />
       )}
     </div>

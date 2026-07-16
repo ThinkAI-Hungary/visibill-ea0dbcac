@@ -7,6 +7,8 @@ export interface Note {
   is_private: boolean;
   invoice_id: string | null;
   invoice_ids?: string[];
+  transaction_id?: string | null;
+  transaction_ids?: string[];
   created_at: string;
   updated_at: string;
   // Joined fields
@@ -21,5 +23,13 @@ export interface Note {
     net_amount: number;
     currency: string;
     invoice_date: string;
+  }>;
+  transactions?: Array<{
+    id: string;
+    transaction_date: string;
+    description: string;
+    amount: number;
+    currency: string;
+    bank_name: string;
   }>;
 }

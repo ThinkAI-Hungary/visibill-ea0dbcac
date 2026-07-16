@@ -3,18 +3,20 @@ import { computeMatchStatus, getPaymentStatusBadge } from '@/hooks/useComputedSt
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet, Package, Ban, UploadCloud, Undo2 } from 'lucide-react';
+import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet, Package, Ban, UploadCloud, Undo2, Lock, Users, Loader2, Plus, ClipboardCheck } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useScopedNavigate } from '@/lib/navigation';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 import { reportError } from '@/lib/errorReporter';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Transaction {
   id: string;
@@ -113,6 +115,7 @@ export const TransactionDetailsDialog = ({
   onUpdate
 }: TransactionDetailsDialogProps) => {
   const scopedNavigate = useScopedNavigate();
+  const queryClient = useQueryClient();
   const [matchedInvoice, setMatchedInvoice] = useState<MatchedInvoice | null>(null);
   const [matchedNavInvoice, setMatchedNavInvoice] = useState<MatchedNavInvoice | null>(null);
   const [matchedSalary, setMatchedSalary] = useState<MatchedSalary | null>(null);
@@ -129,6 +132,87 @@ export const TransactionDetailsDialog = ({
   const [extraMatches, setExtraMatches] = useState<Array<{id: string; invoice_id: string; invoice_source: string; invoice?: MatchedInvoice | null; navInvoice?: MatchedNavInvoice | null}>>([]);
   const [showAddExtraMatch, setShowAddExtraMatch] = useState(false);
 
+  // Notes state
+  const [notes, setNotes] = useState<any[]>([]);
+  const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [newNoteText, setNewNoteText] = useState('');
+  const [newNotePrivate, setNewNotePrivate] = useState(true);
+  const [addingNote, setAddingNote] = useState(false);
+  const [loadingNotes, setLoadingNotes] = useState(false);
+
+  const fetchNotes = async () => {
+    if (!transaction) return;
+    setLoadingNotes(true);
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .or(`transaction_id.eq.${transaction.id},transaction_ids.ov.{${transaction.id}}`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Fetch profile names
+      if (data && data.length > 0) {
+        const userIds = Array.from(new Set(data.map((n: any) => n.user_id)));
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', userIds);
+        
+        const profileMap = new Map<string, string>();
+        if (profiles) {
+          profiles.forEach(p => profileMap.set(p.user_id, p.name || 'Névtelen'));
+        }
+
+        const enriched = data.map(n => ({
+          ...n,
+          profile_name: profileMap.get(n.user_id) || 'Ismeretlen'
+        }));
+        setNotes(enriched);
+      } else {
+        setNotes([]);
+      }
+    } catch (err) {
+      console.error('Error fetching transaction notes:', err);
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoteText.trim() || !transaction) return;
+    setAddingNote(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (!userId) throw new Error('Unauthenticated');
+
+      const { error } = await supabase
+        .from('notes')
+        .insert({
+          company_id: companyId,
+          user_id: userId,
+          title: newNoteTitle.trim() || 'Tranzakció feljegyzés',
+          content: newNoteText.trim(),
+          is_private: newNotePrivate,
+          transaction_id: transaction.id,
+        });
+
+      if (error) throw error;
+      setNewNoteText('');
+      setNewNoteTitle('');
+      setNewNotePrivate(true);
+      fetchNotes();
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    } catch (err) {
+      console.error('Error adding note:', err);
+    } finally {
+      setAddingNote(false);
+    }
+  };
+
   useEffect(() => {
     if (open && transaction) {
       setShowManualMatch(false);
@@ -140,6 +224,8 @@ export const TransactionDetailsDialog = ({
       fetchCourierReports();
       // Always fetch extra matches from join table
       fetchExtraMatches();
+      // Always fetch notes
+      fetchNotes();
       
       if (transaction.matched_invoice_id) {
         fetchMatchedInvoice();
@@ -1540,6 +1626,142 @@ export const TransactionDetailsDialog = ({
                 <Check className="h-3 w-3 mr-1" />
                 {saving ? 'Mentés...' : 'Hozzáadás'}
               </Button>
+            </div>
+          </>
+        )}
+        {/* Transaction Notes Section */}
+        {!showManualMatch && !showAddExtraMatch && (
+          <>
+            <Separator className="my-2" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
+                Kapcsolódó feljegyzések
+              </div>
+
+              {loadingNotes ? (
+                <div className="flex items-center justify-center py-2">
+                  <LoadingSpinner />
+                </div>
+              ) : notes.length > 0 ? (
+                <div className="space-y-2">
+                  {notes.map((note: any) => (
+                    <Card key={note.id} className="bg-primary/[0.01] border-primary/10">
+                      <CardHeader className="py-2 px-3 border-b border-border/10">
+                        <CardTitle className="text-xs font-semibold flex items-center justify-between text-foreground">
+                          <span className="truncate max-w-[200px]">{note.title || 'Névtelen jegyzet'}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {note.is_private ? (
+                              <Badge variant="outline" className="text-[9px] h-4.5 px-1.5 gap-1 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">
+                                <Lock className="h-2.5 w-2.5" />
+                                Privát
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[9px] h-4.5 px-1.5 gap-1 bg-primary/10 text-primary border-primary/20">
+                                <Users className="h-2.5 w-2.5" />
+                                Közös
+                              </Badge>
+                            )}
+                            <span className="text-[9px] text-muted-foreground font-mono">
+                              {format(new Date(note.created_at), 'yyyy.MM.dd')}
+                            </span>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-3 space-y-1">
+                        <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-normal font-sans">{note.content}</p>
+                        <div className="text-[9px] text-muted-foreground/80 pt-1">
+                          Rögzítette: {note.profile_name}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic pl-1">Nincs kapcsolódó feljegyzés ehhez a tranzakcióhoz.</p>
+              )}
+
+              {/* Add Note Form */}
+              <form onSubmit={handleAddNote} className="space-y-3 pt-3 border-t border-border/10">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Jegyzet címe</span>
+                  <Input
+                    placeholder="pl. Határidő, Megjegyzés..."
+                    value={newNoteTitle}
+                    onChange={(e) => setNewNoteTitle(e.target.value)}
+                    className="h-8 text-xs bg-background/30 border-border/50"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Tartalom</span>
+                  <Textarea
+                    placeholder="Írd ide a jegyzet szöveges tartalmát..."
+                    value={newNoteText}
+                    onChange={(e) => setNewNoteText(e.target.value)}
+                    required
+                    rows={2}
+                    className="text-xs bg-background/30 border-border/50 resize-none min-h-[56px]"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Láthatóság</span>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* Private Card Button */}
+                    <button
+                      type="button"
+                      onClick={() => setNewNotePrivate(true)}
+                      className={cn(
+                        "flex items-start gap-2.5 p-2 rounded-lg border text-left transition-all",
+                        newNotePrivate
+                          ? "border-primary/60 bg-primary/5 dark:bg-primary/10 shadow-sm"
+                          : "border-border bg-transparent hover:bg-muted/30"
+                      )}
+                    >
+                      <Lock className={cn("h-4 w-4 mt-0.5 shrink-0", newNotePrivate ? "text-primary" : "text-muted-foreground")} />
+                      <div>
+                        <p className="text-[11px] font-semibold">Privát</p>
+                        <p className="text-[9px] text-muted-foreground">Csak te látod</p>
+                      </div>
+                    </button>
+
+                    {/* Public Card Button */}
+                    <button
+                      type="button"
+                      onClick={() => setNewNotePrivate(false)}
+                      className={cn(
+                        "flex items-start gap-2.5 p-2 rounded-lg border text-left transition-all",
+                        !newNotePrivate
+                          ? "border-primary/60 bg-primary/5 dark:bg-primary/10 shadow-sm"
+                          : "border-border bg-transparent hover:bg-muted/30"
+                      )}
+                    >
+                      <Users className={cn("h-4 w-4 mt-0.5 shrink-0", !newNotePrivate ? "text-primary" : "text-muted-foreground")} />
+                      <div>
+                        <p className="text-[11px] font-semibold">Közös</p>
+                        <p className="text-[9px] text-muted-foreground">Cégtagok látják</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="h-8 px-4 gap-1.5"
+                    disabled={addingNote || !newNoteText.trim()}
+                  >
+                    {addingNote ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5" />
+                    )}
+                    Mentés
+                  </Button>
+                </div>
+              </form>
             </div>
           </>
         )}

@@ -16,6 +16,7 @@ import TransactionTable from '@/components/transactions/TransactionTable';
 import { useTransactionData, type Transaction } from '@/hooks/useTransactionData';
 import SzepCardTab from '@/components/SzepCardTab';
 import { supabase } from '@/integrations/supabase/client';
+import { TransactionFilesDialog } from '@/components/transactions/TransactionFilesDialog';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import CourierReportTab from '@/components/CourierReportTab';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
@@ -54,6 +55,7 @@ const fmtHuf = (val: number) => new Intl.NumberFormat('hu-HU').format(Math.round
 const TransactionsPage = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
+  const [filesDialogOpen, setFilesDialogOpen] = useState(false);
 
   const {
     selectedCompany,
@@ -135,11 +137,11 @@ const TransactionsPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transaction_uploads')
-        .select('id, detected_bank, processing_status')
+        .select('id, detected_bank, processing_status, transactions(id)')
         .eq('company_id', selectedCompany!.id)
         .not('detected_bank', 'is', null);
       if (error) { reportError({ type: 'db_query', component: 'TransactionsPage', action: 'error', message: 'bank-uploads query error:', error }); return []; }
-      return (data || []) as { id: string; detected_bank: string; processing_status: string }[];
+      return (data || []) as { id: string; detected_bank: string; processing_status: string; transactions?: { id: string }[] }[];
     },
     enabled: !!selectedCompany?.id,
     staleTime: 60_000,
@@ -149,7 +151,13 @@ const TransactionsPage = () => {
   const detectedBanks = useMemo(() => {
     const bankSet = new Set<string>();
     for (const row of bankUploads) {
-      if (row.processing_status === 'completed') bankSet.add(row.detected_bank);
+      if (
+        row.processing_status === 'completed' &&
+        row.transactions &&
+        row.transactions.length > 0
+      ) {
+        bankSet.add(row.detected_bank);
+      }
     }
     // Exclude 'gls' and 'szep' — handled by dedicated tabs, not bank tabs
     bankSet.delete('gls');
@@ -567,6 +575,11 @@ const TransactionsPage = () => {
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
+                    <Button variant="outline" size="sm" onClick={() => setFilesDialogOpen(true)}>
+                      <Landmark className="h-4 w-4 mr-2" />
+                      Feltöltött fájlok
+                    </Button>
+                    <TransactionFilesDialog open={filesDialogOpen} onOpenChange={setFilesDialogOpen} />
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" disabled={exporting}>

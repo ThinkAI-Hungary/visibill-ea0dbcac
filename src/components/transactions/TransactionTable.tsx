@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TableBody, TableRow, TableCell, TableHead, TableHeader } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Settings, Ban, UploadCloud, ChevronDown, Link2, Link2Off, Copy, Download, FileText, X, Trash2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Settings, Ban, UploadCloud, ChevronDown, Link2, Link2Off, Copy, Download, FileText, X, Trash2, Lock, Users, Loader2, Plus, ClipboardCheck } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
@@ -17,6 +18,10 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { hu } from 'date-fns/locale';
 
 
 // ── Row styling helpers (static, outside component) ──
@@ -77,10 +82,17 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
   transaction: Transaction;
   onOpenDetails: (transaction: Transaction) => void;
 }) {
+  const queryClient = useQueryClient();
   const [matchedSubmitted, setMatchedSubmitted] = useState<any[]>([]);
   const [matchedNav, setMatchedNav] = useState<any[]>([]);
   const [siblingTransactions, setSiblingTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Notes state
+  const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [newNoteText, setNewNoteText] = useState('');
+  const [newNotePrivate, setNewNotePrivate] = useState(true);
+  const [addingNote, setAddingNote] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -174,6 +186,75 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
     return () => { cancelled = true; };
   }, [matchedInvoiceId, transaction.id]);
 
+  // Fetch notes for this unmatched transaction
+  const { data: notes = [], refetch: refetchNotes } = useQuery({
+    queryKey: ['transaction-notes', transaction.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .or(`transaction_id.eq.${transaction.id},transaction_ids.ov.{${transaction.id}}`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const userIds = Array.from(new Set(data.map((n) => n.user_id)));
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', userIds);
+
+        const nameMap: Record<string, string> = {};
+        (profiles || []).forEach((p) => {
+          nameMap[p.user_id] = p.name || 'Névtelen';
+        });
+
+        return data.map((n) => ({
+          ...n,
+          profile_name: nameMap[n.user_id] || 'Ismeretlen',
+        }));
+      }
+      return [];
+    },
+    enabled: !matchedInvoiceId && !!transaction.id,
+  });
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoteText.trim() || !transaction.id) return;
+    setAddingNote(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (!userId) throw new Error('Unauthenticated');
+
+      const { error } = await supabase
+        .from('notes')
+        .insert({
+          company_id: transaction.company_id || '',
+          user_id: userId,
+          title: newNoteTitle.trim() || 'Tranzakció feljegyzés',
+          content: newNoteText.trim(),
+          is_private: newNotePrivate,
+          transaction_id: transaction.id,
+        });
+
+      if (error) throw error;
+      setNewNoteText('');
+      setNewNoteTitle('');
+      setNewNotePrivate(true);
+      
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['transaction-notes', transaction.id] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    } catch (err: any) {
+      console.error('Error adding note:', err);
+    } finally {
+      setAddingNote(false);
+    }
+  };
+
   if (loading) {
     return (
       <TableRow>
@@ -196,26 +277,161 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
         </TableRow>
         <TableRow className="bg-muted/40 dark:bg-card hover:bg-muted/40 dark:hover:bg-card border-t border-b border-border/30">
           <TableCell colSpan={8} className="p-0">
-            <div className="py-6 px-8 space-y-4 max-w-3xl ml-4">
-              {/* Header */}
-              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <Link2Off className="h-3.5 w-3.5" />
-                Kapcsolódó tételek
+            <div className="py-6 px-8 space-y-4 max-w-4xl ml-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                
+                {/* Left column: Related items (unmatched card) */}
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <Link2Off className="h-3.5 w-3.5" />
+                    Kapcsolódó tételek
+                  </div>
+                  <Card className="bg-muted/30 border-border/50">
+                    <CardContent className="p-4 flex flex-col items-center justify-center gap-3">
+                      <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a tranzakcióhoz.</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); onOpenDetails(transaction); }}
+                        className="h-8 text-xs gap-1.5"
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
+                        Számla hozzárendelése
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Right column: Notes */}
+                <div className="space-y-4 max-w-md">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
+                    Kapcsolódó feljegyzések
+                  </div>
+
+                  {notes && notes.length > 0 ? (
+                    <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                      {notes.map((note: any) => (
+                        <Card key={note.id} className="bg-primary/[0.02] border-primary/20">
+                          <CardHeader className="py-1.5 px-2.5 border-b border-border/10">
+                            <CardTitle className="text-[11px] font-semibold flex items-center justify-between text-foreground">
+                              <span className="truncate max-w-[150px]">{note.title || 'Névtelen jegyzet'}</span>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {note.is_private ? (
+                                  <Badge variant="outline" className="text-[8px] h-4 px-1 gap-0.5 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">
+                                    <Lock className="h-2 w-2" />
+                                    Privát
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-[8px] h-4 px-1 gap-0.5 bg-primary/10 text-primary border-primary/20">
+                                    <Users className="h-2 w-2" />
+                                    Közös
+                                  </Badge>
+                                )}
+                                <span className="text-[8px] text-muted-foreground font-mono">
+                                  {format(new Date(note.created_at), 'yyyy.MM.dd', { locale: hu })}
+                                </span>
+                              </div>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-2.5 space-y-1">
+                            <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-normal font-sans pl-0.5">{note.content}</p>
+                            <div className="text-[9px] text-muted-foreground/80 pl-0.5 pt-0.5">
+                              Rögzítette: {note.profile_name}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic pl-1">Nincs kapcsolódó feljegyzés ehhez a tranzakcióhoz.</p>
+                  )}
+
+                  {/* Add Note Form */}
+                  <form onSubmit={handleAddNote} className="space-y-3 pt-3 border-t border-border/20">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Jegyzet címe</span>
+                      <Input
+                        placeholder="pl. Emlékeztető..."
+                        value={newNoteTitle}
+                        onChange={(e) => setNewNoteTitle(e.target.value)}
+                        className="h-8 text-xs bg-background/30 border-border/50"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Tartalom</span>
+                      <Textarea
+                        placeholder="Írd ide a jegyzet szöveges tartalmát..."
+                        value={newNoteText}
+                        onChange={(e) => setNewNoteText(e.target.value)}
+                        required
+                        rows={2}
+                        className="text-xs bg-background/30 border-border/50 resize-none min-h-[56px]"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Láthatóság</span>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {/* Private Card Button */}
+                        <button
+                          type="button"
+                          onClick={() => setNewNotePrivate(true)}
+                          className={cn(
+                            "flex items-start gap-2 p-1.5 rounded-lg border text-left transition-all",
+                            newNotePrivate
+                              ? "border-primary/60 bg-primary/5 dark:bg-primary/10 shadow-sm"
+                              : "border-border bg-transparent hover:bg-muted/30"
+                          )}
+                        >
+                          <Lock className={cn("h-3.5 w-3.5 mt-0.5 shrink-0", newNotePrivate ? "text-primary" : "text-muted-foreground")} />
+                          <div>
+                            <p className="text-[10px] font-semibold">Privát</p>
+                            <p className="text-[8px] text-muted-foreground">Csak te látod</p>
+                          </div>
+                        </button>
+
+                        {/* Public Card Button */}
+                        <button
+                          type="button"
+                          onClick={() => setNewNotePrivate(false)}
+                          className={cn(
+                            "flex items-start gap-2 p-1.5 rounded-lg border text-left transition-all",
+                            !newNotePrivate
+                              ? "border-primary/60 bg-primary/5 dark:bg-primary/10 shadow-sm"
+                              : "border-border bg-transparent hover:bg-muted/30"
+                          )}
+                        >
+                          <Users className={cn("h-3.5 w-3.5 mt-0.5 shrink-0", !newNotePrivate ? "text-primary" : "text-muted-foreground")} />
+                          <div>
+                            <p className="text-[10px] font-semibold">Közös</p>
+                            <p className="text-[8px] text-muted-foreground">Cégtagok látják</p>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-1">
+                      <Button
+                        type="submit"
+                        size="sm"
+                        className="h-8 px-4 gap-1.5"
+                        disabled={addingNote || !newNoteText.trim()}
+                      >
+                        {addingNote ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Plus className="h-3.5 w-3.5" />
+                        )}
+                        Mentés
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+
               </div>
-              <Card className="bg-muted/30 border-border/50">
-                <CardContent className="p-4 flex flex-col items-center justify-center gap-3">
-                  <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a tranzakcióhoz.</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => { e.stopPropagation(); onOpenDetails(transaction); }}
-                    className="h-8 text-xs gap-1.5"
-                  >
-                    <Link2 className="h-3.5 w-3.5" />
-                    Számla hozzárendelése
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
           </TableCell>
         </TableRow>
@@ -231,6 +447,10 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
       matchedTransactions={siblingTransactions}
       linkedInvoices={[]}
       hideStandaloneTransactions
+      invoiceId={matchedInvoiceId || undefined}
+      companyId={transaction.company_id || undefined}
+      transactionId={transaction.id}
+      invoiceSource={matchedSubmitted.length > 0 ? 'submitted' : 'nav'}
     />
   );
 });
