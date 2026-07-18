@@ -29,7 +29,7 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { isPasswordRecovery } = useAuth();
+  const { isPasswordRecovery, completeRecovery } = useAuth();
 
   // consumeResetPwState() MUST run only once (on mount), via lazy useState initializer.
   // If called on every render, it returns null after the first render (sessionStorage
@@ -86,12 +86,12 @@ const ResetPassword = () => {
 
       if (error) throw error;
 
-      try {
-        localStorage.removeItem('visibill_recovery_in_progress');
-      } catch {}
+      completeRecovery();
 
       toast({ title: 'Jelszó sikeresen megváltoztatva!' });
-      navigate('/');
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
     } catch (error: any) {
       reportAuthError('ResetPassword', 'update_password', error.message || 'Password reset error', error);
       toast({ title: error.message || 'Hiba történt a jelszó visszaállítása során', variant: 'destructive' });

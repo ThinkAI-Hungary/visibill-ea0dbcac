@@ -594,6 +594,22 @@ const Auth = () => {
     // Don't auto-navigate when user explicitly came to request a password reset link.
     // ?forgot=1 is set by ResetPassword.tsx when the link is expired/invalid.
     if (authSearchParams.get('forgot') === '1') return;
+    // Don't auto-navigate if password recovery was completed on another tab
+    const isRecoveryCompletedElsewhere = (() => {
+      try {
+        const globalCompleted = localStorage.getItem('visibill_recovery_completed') === 'true';
+        const localCompleted = sessionStorage.getItem('visibill_recovery_completed_here') === 'true';
+        return globalCompleted && !localCompleted;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (isRecoveryCompletedElsewhere) {
+      console.log('[Auth] Ignored auto-navigation because password recovery was completed on another tab.');
+      return;
+    }
+
     if (user && !isRecoverySession && hasEaisybillAccess !== undefined) {
       // Respect the eaisybooks toggle for routing
       const target = returnTo && returnTo !== '/'

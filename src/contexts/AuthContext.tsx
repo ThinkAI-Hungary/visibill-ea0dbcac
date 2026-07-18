@@ -18,6 +18,7 @@ interface AuthContextType {
   isPasswordRecovery: boolean;
   isRecoverySession: boolean;
   clearPasswordRecovery: () => void;
+  completeRecovery: () => void;
   sessionGuard: SessionGuardState;
   signUp: (email: string, password: string, name?: string, source?: 'eaisybill' | 'eaisybooks') => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -389,6 +390,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearPasswordRecovery = () => setIsPasswordRecovery(false);
 
+  const completeRecovery = () => {
+    try {
+      localStorage.removeItem('visibill_recovery_in_progress');
+      localStorage.setItem('visibill_recovery_completed', 'true');
+      sessionStorage.setItem('visibill_recovery_completed_here', 'true');
+      setTimeout(() => {
+        try {
+          localStorage.removeItem('visibill_recovery_completed');
+        } catch {}
+      }, 2000);
+    } catch {}
+    setIsRecoverySession(false);
+    setIsPasswordRecovery(false);
+  };
+
   const value = {
     user,
     session,
@@ -397,6 +413,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isPasswordRecovery,
     isRecoverySession,
     clearPasswordRecovery,
+    completeRecovery,
     sessionGuard,
     signUp,
     signIn,
