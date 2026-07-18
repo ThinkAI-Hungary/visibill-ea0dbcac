@@ -597,16 +597,7 @@ const Auth = () => {
     // Don't auto-navigate if password recovery was completed on another tab
     const isRecoveryCompletedElsewhere = (() => {
       try {
-        const elsewhere = sessionStorage.getItem('visibill_recovery_completed_elsewhere') === 'true';
-        if (elsewhere) {
-          // Only clear the flag if recovery mode is fully finished, ensuring that intermediate
-          // renders triggered while isRecoverySession is still true do not consume the flag early.
-          if (!isRecoverySession) {
-            sessionStorage.removeItem('visibill_recovery_completed_elsewhere');
-          }
-          return true;
-        }
-        return false;
+        return sessionStorage.getItem('visibill_recovery_completed_elsewhere') === 'true';
       } catch {
         return false;
       }

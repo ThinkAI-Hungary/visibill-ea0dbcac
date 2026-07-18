@@ -102,6 +102,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const completedHere = sessionStorage.getItem('visibill_recovery_completed_here') === 'true';
             if (recoveryActive && !completedHere) {
               sessionStorage.setItem('visibill_recovery_completed_elsewhere', 'true');
+              // Clear the flag after 5 seconds to allow normal logins/F5 refreshes later,
+              // but keep it long enough to survive all background tab rendering/profile query cycles.
+              setTimeout(() => {
+                try {
+                  sessionStorage.removeItem('visibill_recovery_completed_elsewhere');
+                } catch {}
+              }, 5000);
             }
           } catch {}
         }
