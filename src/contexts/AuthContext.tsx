@@ -51,9 +51,29 @@ function isSessionExpired(): boolean {
 function checkIsRecoverySession(session: Session | null): boolean {
   if (!session) return false;
   try {
-    const payload = JSON.parse(atob(session.access_token.split('.')[1]));
-    return (payload.amr || []).includes('recovery');
-  } catch {
+    const base64Url = session.access_token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64.length % 4;
+    const paddedBase64 = pad ? base64 + '='.repeat(4 - pad) : base64;
+    const jsonPayload = decodeURIComponent(
+      atob(paddedBase64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload = JSON.parse(jsonPayload);
+    const amr = payload.amr || [];
+    return amr.some((item: any) => {
+      if (typeof item === 'string') {
+        return item === 'recovery';
+      }
+      if (item && typeof item === 'object') {
+        return item.method === 'recovery';
+      }
+      return false;
+    });
+  } catch (e) {
+    console.error('[AuthContext] Failed to parse JWT payload:', e);
     return false;
   }
 }
