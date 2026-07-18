@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-10
-**Utoljára frissítve:** 2026-06-29
+**Utoljára frissítve:** 2026-07-18
 
 ## Context
 
@@ -30,6 +30,10 @@ A magyar adórendszer megköveteli a NAV Online Számla rendszer használatát. 
 
 **Adatfolyam:**
 - NAV-ból kapott számlák → `nav_invoices` tábla (+ `nav_invoice_items`)
+- **Egyszerűsített számlák kezelése (2026-07-18):** Az egyszerűsített számláknál (`SIMPLIFIED`) a NAV XML-ben hiányzó tételszintű nettó és ÁFA összegeket, valamint a fő bizonylatszintű nettó/ÁFA összegeket az Edge Function automatikusan kiszámítja a bruttó összegekből (`lineGrossAmountSimplified`) és a hozzájuk tartozó adókulcs-tartalomból (`vatContent`). A `vatContent` értéke (pl. `0.2126`, `0.1525`, `0.0476`) leképezésre kerül a standard ÁFA kulcsoknak megfelelően (pl. `0.27`, `0.18`, `0.05`).
+- **Negatív és helyesbítő számlák támogatása:** A negatív és storno számlák (pl. jóváírások, sztornók) kezelése érdekében a főösszegek vizsgálata a korábbi `totalGross > 0` helyett `totalGross !== 0` alapon történik, így a negatív összegek is helyesen mentésre kerülnek.
+- **Bruttó összeg fallback számítása:** Ha a számlázó szoftver a NAV XML-ben nem adta meg a felső szintű `<invoiceGrossAmount>` (vagy `<invoiceGrossAmountHUF>`) elemet, az Edge Function automatikusan visszalép a `<invoiceNetAmount>` és `<invoiceVatAmount>` összeadására a bruttó összeg kiszámításához.
+- **Többfelhasználós cégek szinkronizációja:** A NAV számlák részleteinek lekérdezésekor a lekérdezés kizárólag a `company_id`-re szűr, a `user_id` szűrése elhagyásra került. Ezzel biztosított, hogy ha a cégen belül egy másik felhasználó kezdeményezte a számlák beolvasását, a részletek lekérése és mentése akkor is sikeres legyen a cég érvényes NAV hitelesítő adataival.
 - A számlák automatikusan GL kategorizálást kapnak (PGMQ → Worker)
 
 **Partner caching (2026-06-29):**

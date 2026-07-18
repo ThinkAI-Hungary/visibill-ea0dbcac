@@ -421,7 +421,6 @@ async function syncInvoices(
         currentPage++;
         await delay(100); // Small delay between pages
       }
-
       if (currentPage > MAX_SAFETY_PAGES) {
         console.warn(`⚠️ Hit safety page limit (${MAX_SAFETY_PAGES}) for chunk ${chunk.from}-${chunk.to} ${direction}`);
       }
@@ -434,26 +433,54 @@ async function syncInvoices(
 
     // Upsert invoices to database (details_fetched defaults to false for new records)
     if (allInvoices.length > 0) {
-      const invoicesToInsertRaw = allInvoices.map(inv => ({
-        user_id: userId,
-        company_id: companyId,
-        invoice_number: inv.invoiceNumber,
-        invoice_direction: direction,
-        invoice_issue_date: inv.invoiceIssueDate,
-        invoice_delivery_date: inv.invoiceDeliveryDate,
-        supplier_tax_number: inv.supplierTaxNumber,
-        customer_tax_number: inv.customerTaxNumber,
-        invoice_operation: inv.invoiceOperation,
-        invoice_net_amount: inv.invoiceNetAmount,
-        invoice_vat_amount: inv.invoiceVatAmount,
-        invoice_gross_amount: inv.invoiceGrossAmount,
-        payment_method: inv.paymentMethod,
-        currency: inv.currency || 'HUF',
-        fetched_at: new Date().toISOString(),
-        // Include names from digest if available
-        supplier_name: inv.supplierName || null,
-        customer_name: inv.customerName || null
-      }));
+      // Fetch existing invoices to preserve details_fetched = true values
+      const { data: existingInvoices } = await supabase
+        .from('nav_invoices')
+        .select('invoice_number, details_fetched, invoice_net_amount, invoice_vat_amount, invoice_gross_amount')
+        .eq('company_id', companyId);
+
+      const existingMap = new Map<string, any>();
+      if (existingInvoices) {
+        for (const ext of existingInvoices) {
+          existingMap.set(ext.invoice_number, ext);
+        }
+      }
+
+      const invoicesToInsertRaw = allInvoices.map(inv => {
+        const existing = existingMap.get(inv.invoiceNumber);
+        
+        let net = inv.invoiceNetAmount;
+        let vat = inv.invoiceVatAmount;
+        let gross = inv.invoiceGrossAmount;
+
+        if (existing && existing.details_fetched) {
+          // Preserve previously parsed values
+          net = existing.invoice_net_amount;
+          vat = existing.invoice_vat_amount;
+          gross = existing.invoice_gross_amount;
+        }
+
+        return {
+          user_id: userId,
+          company_id: companyId,
+          invoice_number: inv.invoiceNumber,
+          invoice_direction: direction,
+          invoice_issue_date: inv.invoiceIssueDate,
+          invoice_delivery_date: inv.invoiceDeliveryDate,
+          supplier_tax_number: inv.supplierTaxNumber,
+          customer_tax_number: inv.customerTaxNumber,
+          invoice_operation: inv.invoiceOperation,
+          invoice_net_amount: net,
+          invoice_vat_amount: vat,
+          invoice_gross_amount: gross,
+          payment_method: inv.paymentMethod,
+          currency: inv.currency || 'HUF',
+          fetched_at: new Date().toISOString(),
+          // Include names from digest if available
+          supplier_name: inv.supplierName || null,
+          customer_name: inv.customerName || null
+        };
+      });
 
       // Deduplicate by invoice_number to prevent
       // "ON CONFLICT DO UPDATE command cannot affect row a second time" error.
@@ -567,8 +594,7 @@ async function fetchInvoiceDetails(
   // Get ALL invoices that need details fetched (no limit - required for VAT breakdown)
   const { data: invoicesNeedingDetails, error: fetchError } = await supabase
     .from('nav_invoices')
-    .select('id, invoice_number')
-    .eq('user_id', userId)
+    .select('id, invoice_number, invoice_net_amount, invoice_vat_amount, invoice_gross_amount')
     .eq('company_id', companyId)
     .eq('invoice_direction', direction)
     .or('details_fetched.is.null,details_fetched.eq.false');
@@ -624,11 +650,35 @@ async function fetchInvoiceDetails(
           if (details.customerName) updateData.customer_name = details.customerName;
           if (details.customerAddress) updateData.customer_address = details.customerAddress;
           if (details.paymentDate) updateData.payment_date = details.paymentDate;
-          if (details.invoiceGrossAmount && details.invoiceGrossAmount > 0) {
+          if (details.invoiceGrossAmount !== undefined && details.invoiceGrossAmount !== null && details.invoiceGrossAmount !== 0) {
             updateData.invoice_gross_amount = details.invoiceGrossAmount;
           }
           if (details.isCashAccounting) {
             updateData.is_cash_accounting = true;
+          }
+
+          // Calculate total net, vat, gross from items if main invoice values are missing/zero
+          if (details.lineItems && details.lineItems.length > 0) {
+            let totalNet = 0;
+            let totalVat = 0;
+            let totalGross = 0;
+            details.lineItems.forEach(item => {
+              totalNet += item.netAmount || 0;
+              totalVat += item.vatAmount || 0;
+              totalGross += item.grossAmount || 0;
+            });
+
+            if (totalGross !== 0) {
+              if (!invoice.invoice_gross_amount || parseFloat(invoice.invoice_gross_amount) === 0) {
+                updateData.invoice_gross_amount = totalGross;
+              }
+              if (!invoice.invoice_net_amount || parseFloat(invoice.invoice_net_amount) === 0) {
+                updateData.invoice_net_amount = totalNet;
+              }
+              if (!invoice.invoice_vat_amount || parseFloat(invoice.invoice_vat_amount) === 0) {
+                updateData.invoice_vat_amount = totalVat;
+              }
+            }
           }
 
           const { error: updateError } = await supabase
@@ -751,7 +801,7 @@ async function queryInvoiceData(
     throw new Error(`NAV queryInvoiceData failed: ${errorCode || 'UNKNOWN'} - ${errorMessage || 'No details'}`);
   }
 
-  return parseInvoiceDataFromXML(responseText);
+  return await parseInvoiceDataFromXML(responseText);
 }
 
 function buildQueryInvoiceDataXML(
@@ -798,7 +848,7 @@ function buildQueryInvoiceDataXML(
 }
 
 // Parse detailed invoice data from queryInvoiceData response
-function parseInvoiceDataFromXML(xml: string): InvoiceDetails | null {
+async function parseInvoiceDataFromXML(xml: string): Promise<InvoiceDetails | null> {
   // The invoiceData is Base64 encoded in the response
   const invoiceDataMatch = xml.match(/<(?:\w+:)?invoiceData>([^<]+)<\/(?:\w+:)?invoiceData>/);
   
@@ -811,7 +861,19 @@ function parseInvoiceDataFromXML(xml: string): InvoiceDetails | null {
     // Decode Base64 with proper UTF-8 handling
     const base64Data = invoiceDataMatch[1];
     const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-    const decodedData = new TextDecoder('utf-8').decode(binaryData);
+    
+    // Check if NAV payload is compressed (Gzipped)
+    const compressionMatch = xml.match(/<(?:\w+:)?compressedContentIndicator>([^<]+)<\/(?:\w+:)?compressedContentIndicator>/);
+    const isCompressed = compressionMatch && compressionMatch[1] === 'true';
+
+    let decodedData: string;
+    if (isCompressed) {
+      const gzipStream = new Response(binaryData).body!.pipeThrough(new DecompressionStream('gzip'));
+      const decompressedBuffer = await new Response(gzipStream).arrayBuffer();
+      decodedData = new TextDecoder('utf-8').decode(decompressedBuffer);
+    } else {
+      decodedData = new TextDecoder('utf-8').decode(binaryData);
+    }
     
     // Parse the decoded invoice XML
     const details: InvoiceDetails = {};
@@ -837,9 +899,16 @@ function parseInvoiceDataFromXML(xml: string): InvoiceDetails | null {
     if (paymentDate) details.paymentDate = paymentDate;
 
     // Extract gross amount from summary
-    const invoiceGrossAmount = extractTag(decodedData, 'invoiceGrossAmount');
+    let invoiceGrossAmount = extractTag(decodedData, 'invoiceGrossAmount') || extractTag(decodedData, 'invoiceGrossAmountHUF');
     if (invoiceGrossAmount) {
       details.invoiceGrossAmount = parseFloat(invoiceGrossAmount);
+    } else {
+      // Fallback: sum invoiceNetAmount + invoiceVatAmount
+      const net = extractTag(decodedData, 'invoiceNetAmount') || extractTag(decodedData, 'invoiceNetAmountHUF');
+      const vat = extractTag(decodedData, 'invoiceVatAmount') || extractTag(decodedData, 'invoiceVatAmountHUF');
+      if (net) {
+        details.invoiceGrossAmount = parseFloat(net) + (vat ? parseFloat(vat) : 0);
+      }
     }
 
     // Extract invoice line items
@@ -913,20 +982,58 @@ function parseInvoiceLines(xml: string): InvoiceLineItem[] {
     const unitPrice = extractTag(lineXml, 'unitPrice') || extractTag(lineXml, 'unitPriceHUF');
     if (unitPrice) item.unitPrice = parseFloat(unitPrice);
 
-    // Extract net amount
-    const netAmount = extractTag(lineXml, 'lineNetAmount') || extractTag(lineXml, 'lineNetAmountData');
-    if (netAmount) item.netAmount = parseFloat(netAmount);
-
-    // Extract VAT rate
-    const vatRate = extractTag(lineXml, 'vatPercentage') || extractTag(lineXml, 'vatRate') || extractTag(lineXml, 'vatExemption');
+    // Extract VAT rate, handling simplified vatContent mapping
+    let vatRate = extractTag(lineXml, 'vatPercentage') || extractTag(lineXml, 'vatRate') || extractTag(lineXml, 'vatExemption');
+    if (!vatRate) {
+      const vatContentStr = extractTag(lineXml, 'vatContent');
+      if (vatContentStr) {
+        const vatContentVal = parseFloat(vatContentStr);
+        if (!isNaN(vatContentVal)) {
+          if (Math.abs(vatContentVal - 0.2126) < 0.005) {
+            vatRate = "0.27";
+          } else if (Math.abs(vatContentVal - 0.1525) < 0.005) {
+            vatRate = "0.18";
+          } else if (Math.abs(vatContentVal - 0.0476) < 0.005) {
+            vatRate = "0.05";
+          } else {
+            vatRate = vatContentStr; // Fallback
+          }
+        }
+      }
+    }
     if (vatRate) item.vatRate = vatRate;
 
-    // Extract VAT amount
-    const vatAmount = extractTag(lineXml, 'lineVatAmount') || extractTag(lineXml, 'lineVatAmountHUF');
-    if (vatAmount) item.vatAmount = parseFloat(vatAmount);
+    // Extract net/vat/gross, falling back to simplified elements
+    let netAmount = extractTag(lineXml, 'lineNetAmount') || extractTag(lineXml, 'lineNetAmountData');
+    let vatAmount = extractTag(lineXml, 'lineVatAmount') || extractTag(lineXml, 'lineVatAmountHUF');
+    let grossAmount = extractTag(lineXml, 'lineGrossAmount') || extractTag(lineXml, 'lineGrossAmountData') || extractTag(lineXml, 'lineGrossAmountNormal') || extractTag(lineXml, 'lineGrossAmountNormalHUF') || extractTag(lineXml, 'lineGrossAmountSimplified') || extractTag(lineXml, 'lineGrossAmountSimplifiedHUF');
 
-    // Extract gross amount
-    const grossAmount = extractTag(lineXml, 'lineGrossAmount') || extractTag(lineXml, 'lineGrossAmountData');
+    // Calculate net and vat if missing (common in simplified invoices)
+    if (grossAmount && (!netAmount || !vatAmount)) {
+      const grossVal = parseFloat(grossAmount);
+      if (!isNaN(grossVal)) {
+        if (vatRate) {
+          const vatRateVal = parseFloat(vatRate);
+          if (!isNaN(vatRateVal) && vatRateVal > 0) {
+            const calculatedNet = grossVal / (1 + vatRateVal);
+            const calculatedVat = grossVal - calculatedNet;
+            
+            if (!netAmount) netAmount = calculatedNet.toFixed(2);
+            if (!vatAmount) vatAmount = calculatedVat.toFixed(2);
+          } else {
+            // zero vat or non-numeric exemption
+            if (!netAmount) netAmount = grossAmount;
+            if (!vatAmount) vatAmount = "0";
+          }
+        } else {
+          if (!netAmount) netAmount = grossAmount;
+          if (!vatAmount) vatAmount = "0";
+        }
+      }
+    }
+
+    if (netAmount) item.netAmount = parseFloat(netAmount);
+    if (vatAmount) item.vatAmount = parseFloat(vatAmount);
     if (grossAmount) item.grossAmount = parseFloat(grossAmount);
 
     // Extract product code

@@ -22,13 +22,19 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn } from '@/lib/utils';
-import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil } from 'lucide-react';
+import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { useToast } from '@/hooks/use-toast';
 import { AssetActivationDialog } from '@/components/AssetActivationDialog';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface InvoiceLineItem {
   id: string;
@@ -263,7 +269,7 @@ export function InvoiceItemsDialog({
 
       // Try with exclude_from_accounting first; fallback to without if column doesn't exist
       const { data, error } = await supabase
-        .from(fromTable)
+        .from(fromTable as any)
         .select(fullCols)
         .eq(fkCol, invoiceId)
         .order('line_number', { ascending: true });
@@ -272,16 +278,16 @@ export function InvoiceItemsDialog({
         // Column doesn't exist yet (42703) — retry without it
         if (error.code === '42703' || error.message?.includes('does not exist')) {
           const { data: fallbackData, error: fallbackError } = await supabase
-            .from(fromTable)
+            .from(fromTable as any)
             .select(baseCols)
             .eq(fkCol, invoiceId)
             .order('line_number', { ascending: true });
           if (fallbackError) throw fallbackError;
-          return (fallbackData || []) as InvoiceLineItem[];
+          return (fallbackData || []) as unknown as InvoiceLineItem[];
         }
         throw error;
       }
-      return (data || []) as InvoiceLineItem[];
+      return (data || []) as unknown as InvoiceLineItem[];
     },
     enabled: open && !!invoiceId,
     placeholderData: keepPreviousData,
@@ -344,6 +350,37 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
     }
   }, [source, invoiceId, queryClient]);
+
+  // Bulk toggle exclude_from_accounting for selected items
+  const handleBulkToggleExclude = useCallback(async (exclude: boolean) => {
+    if (selectedIds.size === 0) return;
+
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const idsArray = Array.from(selectedIds);
+
+    const { error } = await supabase
+      .from(table)
+      .update({ exclude_from_accounting: exclude })
+      .in('id', idsArray);
+
+    if (error) {
+      toast({
+        title: 'Hiba a tömeges módosítás során',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Sikeres tömeges módosítás',
+        description: exclude
+          ? `${selectedIds.size} tétel kizárva a könyvelésből.`
+          : `${selectedIds.size} tétel beemelve a könyvelésbe.`,
+        className: 'bg-green-50 text-green-900 border-green-200',
+      });
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+    }
+  }, [selectedIds, source, invoiceId, queryClient, toast]);
 
   const formatAmount = (amount: number | null) => {
     if (amount === null || amount === undefined) return '-';
@@ -620,7 +657,7 @@ export function InvoiceItemsDialog({
             <div className="border-t border-border/50 pt-5 mt-4">
               <div className="flex justify-between items-end">
                 {/* Activation button — always rendered to prevent layout shift */}
-                <div>
+                <div className="flex items-center gap-2">
                   <Button
                     className={cn("gap-2", !someSelected && "invisible pointer-events-none")}
                     onClick={() => setActivationDialogOpen(true)}
@@ -628,6 +665,26 @@ export function InvoiceItemsDialog({
                     <Package2 className="h-4 w-4" />
                     Aktiválás ({selectedIds.size || 0} tétel)
                   </Button>
+                  <div className={cn(!someSelected && "invisible pointer-events-none")}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="gap-2">
+                          <FileSpreadsheet className="h-4 w-4" />
+                          Könyvelés Ki/Be ({selectedIds.size || 0} tétel)
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem onClick={() => handleBulkToggleExclude(false)} className="cursor-pointer">
+                          <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
+                          Beemelés a könyvelésbe
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleBulkToggleExclude(true)} className="cursor-pointer">
+                          <X className="h-4 w-4 text-red-500 mr-2" />
+                          Kizárás a könyvelésből
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
 
                 {/* Totals */}

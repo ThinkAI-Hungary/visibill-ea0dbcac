@@ -3155,8 +3155,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1784413167.3609319,
-    "ast_hash": "2b3de109f19a042d2490c8c9ac4569c9",
+    "mtime": 1784403303.627144,
+    "ast_hash": "4ea621fa57ed758b7ba84e715febe9a3",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3515,8 +3515,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-015-bulk-actions.md": {
-    "mtime": 1784413181.961504,
-    "ast_hash": "c587043132b793ef4da5c7838646f323",
+    "mtime": 1782259893.515601,
+    "ast_hash": "5328169b68189be465d74f6142292d18",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-016-transaction-list.md": {
@@ -3630,8 +3630,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1784413186.6963053,
-    "ast_hash": "901e592fa7ec22ad4a368f7b1d3a58cf",
+    "mtime": 1784106733.3075118,
+    "ast_hash": "3cd226dc901a55706c5e4dc7b99f0d98",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {

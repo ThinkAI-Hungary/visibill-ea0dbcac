@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Category:** Számla Kezelés  
-**Utoljára frissítve:** 2026-06-24
+**Utoljára frissítve:** 2026-07-19
 
 **Question:** Lehet-e több számlát/tranzakciót/feltöltést egyszerre kezelni?
 
@@ -81,6 +81,23 @@ Returns: `{ deleted_invoices, deleted_transactions, deleted_transport_docs }`
 <AlertDialog open={isOpen && !!deleteTarget} ...>
 <AlertDialog open={isOpen && batchDeleteOpen} ...>
 ```
+
+---
+
+## Számlatétel Könyvelési Státusz Tömeges Kezelése (2026-07-18)
+
+A számlarészletező (tételek) dialógusban a felhasználók tömegesen be- és kivehetik a tételeket a könyvelésből.
+
+### UX Flow
+1. A tételek táblázatában a sorok kijelölése a checkboxok segítségével.
+2. A táblázat láblécében megjelenik a `Könyvelés Ki/Be (x tétel)` akciógomb.
+3. A gombra kattintva egy DropdownMenu nyílik meg két opcióval:
+   * **Beemelés a könyvelésbe:** a kijelölt tételek `exclude_from_accounting` értékét `false`-ra állítja.
+   * **Kizárás a könyvelésből:** a kijelölt tételek `exclude_from_accounting` értékét `true`-ra állítja.
+4. Mentéskor egyetlen batch Supabase frissítés fut le (`.in('id', selectedIds)`), majd a táblázat adatai és a kijelölések frissülnek.
+
+### Komponensek ahol implementálva van
+* `InvoiceItemsDialog` (`src/components/InvoiceItemsDialog.tsx`)
 
 ---
 
