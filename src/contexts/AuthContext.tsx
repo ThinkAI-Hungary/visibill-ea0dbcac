@@ -86,7 +86,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           expiredRef.current = false;
         }
         if (event === 'PASSWORD_RECOVERY') {
-          setIsPasswordRecovery(true);
+          // Only enable password recovery mode if this tab actually initiated it
+          // (detected by recovery hash in URL or sessionStorage recovery state).
+          // Otherwise, it was synced from another tab via localStorage.
+          const hasHash = window.location.hash.includes('type=recovery');
+          const hasSessionState = (() => {
+            try {
+              return sessionStorage.getItem('visibill_reset_pw_state') === 'recovery';
+            } catch {
+              return false;
+            }
+          })();
+
+          if (hasHash || hasSessionState) {
+            setIsPasswordRecovery(true);
+          } else {
+            console.log('[AuthContext] Ignored PASSWORD_RECOVERY event synced from another tab');
+          }
         }
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
