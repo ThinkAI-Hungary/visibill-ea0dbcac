@@ -32,33 +32,44 @@ export const PasswordReset = ({
       <Container style={container}>
         <Heading style={h1}>Jelszó visszaállítás</Heading>
         <Text style={text}>
-          Jelszó visszaállítást kértél. Kattints az alábbi gombra új jelszó beállításához:
+          Jelszó visszaállítást kértél. Kérjük, másold be az alábbi egyszer használatos biztonsági kódot a weboldalon megnyílt felületre:
         </Text>
+        
+        <div style={{ margin: '24px 0', textAlign: 'center' }}>
+          <code style={code}>{token}</code>
+        </div>
+
+        <Text style={{ ...text, marginTop: '32px', marginBottom: '8px', fontWeight: 'bold' }}>
+          Biztonsági kapcsolat (Fallback link):
+        </Text>
+        <Text style={{ ...text, marginTop: '0px', color: '#666666', fontSize: '13px' }}>
+          Ha az egyszer használatos kód nem működik, vagy a böngészőablakot véletlenül bezártad, kattints az alábbi linkre a közvetlen visszaállításhoz:
+        </Text>
+
         <Link
           href={`${supabase_url}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`}
           target="_blank"
           style={{
             ...link,
             display: 'inline-block',
-            padding: '12px 24px',
-            backgroundColor: '#0070f3',
-            color: '#ffffff',
+            padding: '10px 20px',
+            backgroundColor: '#f4f4f4',
+            border: '1px solid #dcdcdc',
+            color: '#333333',
             textDecoration: 'none',
             borderRadius: '5px',
-            marginBottom: '16px',
+            fontSize: '13px',
+            marginBottom: '24px',
           }}
         >
-          Új jelszó beállítása
+          Közvetlen jelszó visszaállítás (Link)
         </Link>
-        <Text style={{ ...text, marginTop: '24px', marginBottom: '14px' }}>
-          Vagy másold be ezt az egyszer használatos kódot:
-        </Text>
-        <code style={code}>{token}</code>
+
         <Text
           style={{
             ...text,
             color: '#ababab',
-            marginTop: '14px',
+            marginTop: '24px',
             marginBottom: '16px',
           }}
         >

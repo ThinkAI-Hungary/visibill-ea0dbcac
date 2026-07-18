@@ -130,6 +130,28 @@ await supabase.auth.admin.updateUserById(profile.user_id, { email_confirm: true 
 
 Ez teszi lehetővé, hogy a Supabase "Confirm email" setting BE legyen kapcsolva, miközben csak a welcome email megy ki.
 
+### 7. Jelszó Komplexitás Kiterjesztése a Jelszó-visszaállításra
+
+**Döntés:** Bevezettük ugyanazt a szigorú jelszókomplexitási szabályt (nagybetű, kisbetű, szám, speciális karakter `[._?@>]`, minimum 6 karakter) a jelszó-visszaállító felületen (`ResetPassword.tsx`), amelyet regisztrációkor is megkövetelünk.
+
+**Implementáció:**
+- Valós idejű komplexitási indikátor pöttyöket biztosítunk a jelszómező alatt.
+- Szigorú kliens oldali validációval blokkoljuk az elküldést, ha a jelszó nem felel meg a követelményeknek.
+
+### 8. Jelszó-visszaállító Email Átalakítása (OTP Elsődlegesség & Fallback Link)
+
+**Döntés:** A jelszóvisszaállítás során kiküldött emailben az egyszer használatos biztonsági kódot (OTP) tettük az elsődleges hitelesítési formává, a visszaállító linket pedig másodlagos fallback opcióvá.
+
+**Implementáció:**
+- Az OTP kód felkerült az email tetejére a főszöveg alá, kiemelt, jól olvasható fekete kóddobozba helyezve.
+- A közvetlen visszaállító link lekerült az email aljára, egy diszkrétebb szürke gomb formájában, jelezve, hogy az csak egy biztonsági fallback link arra az esetre, ha a felhasználó bezárta az ablakot, vagy az OTP valamiért nem működne.
+
+### 9. TypeScript / Deno Edge Function Elszigetelés
+
+**Döntés:** Kizártuk a `"supabase"` és a `"node_modules"` mappákat a frontend tsconfig konfigurációjából (`tsconfig.app.json` és `tsconfig.json`).
+
+**Indok:** A frontend Node.js TypeScript fordítója tévesen próbálta meg elemezni a Deno-specifikus Edge Function TS/TSX fájlokat és a `npm:...` / `https://esm.sh/...` importokat, ami hamis hibaüzeneteket és figyelmeztetéseket okozott az IDE-ben.
+
 ---
 
 ## Érintett Fájlok
@@ -137,11 +159,15 @@ Ez teszi lehetővé, hogy a Supabase "Confirm email" setting BE legyen kapcsolva
 | Fájl | Változás |
 |------|---------|
 | `src/App.tsx` | AuthHashInterceptor → szinkron IIFE; sessionStorage type flag |
+| `src/pages/Auth.tsx` | Elfelejtett jelszó modal sötét módú, mélyzöld-fekete glassmorphic stylingja |
 | `src/pages/AuthCallback.tsx` | sessionStorage-ból olvassa a type-ot; email_change → signOut + confirmation; otp_expired kezelés |
-| `src/pages/ResetPassword.tsx` | Lejárt jelszó-reset token → redirect `?forgot=1`-gyel |
-| `supabase/functions/send-email/index.ts` | signup type → skip (200 OK, no email) |
+| `src/pages/ResetPassword.tsx` | Lejárt token redirect, regisztrációs szintű jelszókomplexitás indikátorral és validációval, mélyzöld-fekete glassmorphic styling |
+| `supabase/functions/send-email/index.ts` | signup type → skip; `buildRecoveryHtml` átalakítása (OTP felülre, link alulra fallbackként) |
+| `supabase/functions/send-email/_templates/password-reset.tsx` | React email sablon átalakítása (OTP felülre, link alulra fallbackként) |
 | `supabase/functions/verify-email/index.ts` | auth.admin.updateUserById(email_confirm) hozzáadva |
 | `src/components/dashboard/EmptyStateDashboard.tsx` | Logout button tabIndex={-1}; "Első lépések" autoFocus |
+| `tsconfig.app.json` | `supabase` és `node_modules` hozzáadása az `exclude` tömbhöz |
+| `tsconfig.json` | `supabase` és `node_modules` hozzáadása az `exclude` tömbhöz |
 
 ---
 

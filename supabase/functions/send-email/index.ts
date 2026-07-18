@@ -45,16 +45,24 @@ function buildRecoveryHtml(
 <div style="max-width:600px;margin:0 auto;padding:0 12px;">
   <h1 style="color:#333;font-size:24px;font-weight:bold;margin:40px 0;">Jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1s</h1>
   <p style="color:#333;font-size:14px;line-height:1.5;margin:24px 0;">
-    Jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1st k\u00e9rt\u00e9l. Kattints az al\u00e1bbi gombra \u00faj jelsz\u00f3 be\u00e1ll\u00edt\u00e1s\u00e1hoz:
+    Jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1st k\u00e9rt\u00e9l. K\u00e9rj\u00fck, m\u00e1sold be az al\u00e1bbi egyszer haszn\u00e1latos biztons\u00e1gi k\u00f3dot a weboldalon megny\u00edlt fel\u00fcletre:
   </p>
-  <a href="${verifyUrl}" target="_blank" style="display:inline-block;padding:12px 24px;background-color:#0070f3;color:#ffffff;text-decoration:none;border-radius:5px;font-size:14px;margin-bottom:16px;">
-    \u00daj jelsz\u00f3 be\u00e1ll\u00edt\u00e1sa
+  
+  <div style="margin:24px 0;text-align:center;">
+    <code style="display:inline-block;padding:16px 4.5%;width:90.5%;background-color:#f4f4f4;border-radius:5px;border:1px solid #eee;color:#333;font-size:18px;font-weight:bold;letter-spacing:4px;text-align:center;">${token}</code>
+  </div>
+
+  <p style="color:#333;font-size:14px;font-weight:bold;margin-top:32px;margin-bottom:8px;">
+    Biztons\u00e1gi kapcsolat (Fallback link):
+  </p>
+  <p style="color:#666666;font-size:13px;line-height:1.5;margin-bottom:16px;">
+    Ha az egyszer haszn\u00e1latos k\u00f3d nem m\u0171k\u00f6dik, vagy a b\u00f6ng\u00e9sz\u0151ablakot v\u00e9letlen\u00fcl bez\u00e1rtad, kattints az al\u00e1bbi linkre a k\u00f6zvetlen vissza\u00e1ll\u00edt\u00e1shoz:
+  </p>
+  <a href="${verifyUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background-color:#f4f4f4;border:1px solid #dcdcdc;color:#333333;text-decoration:none;border-radius:5px;font-size:13px;margin-bottom:24px;">
+    K\u00f6zvetlen jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1s (Link)
   </a>
-  <p style="color:#333;font-size:14px;line-height:1.5;margin-top:24px;margin-bottom:14px;">
-    Vagy m\u00e1sold be ezt az egyszer haszn\u00e1latos k\u00f3dot:
-  </p>
-  <code style="display:inline-block;padding:16px 4.5%;width:90.5%;background-color:#f4f4f4;border-radius:5px;border:1px solid #eee;color:#333;font-size:16px;font-weight:bold;letter-spacing:2px;text-align:center;">${token}</code>
-  <p style="color:#ababab;font-size:14px;line-height:1.5;margin-top:14px;margin-bottom:16px;">
+
+  <p style="color:#ababab;font-size:14px;line-height:1.5;margin-top:24px;margin-bottom:16px;">
     Ha nem te k\u00e9rted a jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1st, nyugodtan figyelmen k\u00edv\u00fcl hagyhatod ezt az emailt.
   </p>
   <p style="color:#898989;font-size:12px;line-height:22px;margin-top:12px;margin-bottom:24px;">

@@ -4,10 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock } from 'lucide-react';
+import { Lock, ArrowLeft, X, LogOut } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { reportAuthError } from '@/lib/errorReporter';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/utils';
 
 // Read + clear the synchronously-captured hash state set by the App.tsx IIFE.
 // The IIFE runs before Supabase SDK init wipes window.location.hash via replaceState,
@@ -57,6 +59,15 @@ const ResetPassword = () => {
 
   useEffect(() => {
     if (isValidRecovery) return; // already confirmed, nothing to do
+
+    // If recovery state is invalid and we are done checking (e.g. on page reload or link expired),
+    // immediately sign out of Supabase to invalidate any residual recovery session locally.
+    if (!isValidRecovery && !checking) {
+      console.log('[ResetPassword] Invalid recovery state on load. Invalidate local session.');
+      supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      return;
+    }
+
     if (isPasswordRecovery) {
       setIsValidRecovery(true);
       setChecking(false);
@@ -77,6 +88,20 @@ const ResetPassword = () => {
 
     if (password.length < 6) {
       toast({ title: 'A jelszónak legalább 6 karakter hosszúnak kell lennie', variant: 'destructive' });
+      return;
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[._?@>]/.test(password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      toast({
+        title: 'Gyenge jelszó',
+        description: 'A jelszónak tartalmaznia kell kisbetűt, nagybetűt, számot és speciális karaktert (._?@>).',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -109,65 +134,122 @@ const ResetPassword = () => {
     navigate('/auth?forgot=1');
   };
 
-  if (isExpired) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-sm text-center space-y-4">
-          <h1 className="text-2xl font-bold text-foreground">A link lejárt</h1>
-          <p className="text-muted-foreground">
-            Ez a jelszó-visszaállító link már nem érvényes (lejárt vagy már felhasználták).
-            Kérj egy új linket az email címedre.
-          </p>
-          <Button className="w-full" onClick={handleNewLinkRequest}>
-            Új link kérése
+  const handleBackToLogin = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {}
+    navigate('/auth');
+  };
+
+  const { theme } = useTheme();
+
+  const renderContent = () => {
+    if (isExpired) {
+      return (
+        <div className="w-full max-w-md bg-white/80 dark:bg-[#07100e]/90 border border-slate-200/50 dark:border-primary/20 rounded-2xl p-8 shadow-2xl backdrop-blur-md relative z-10 mx-4 text-center space-y-5 animate-fade-in">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors z-20"
+            onClick={handleBackToLogin}
+            title="Vissza a bejelentkezéshez"
+          >
+            <LogOut className="h-4 w-4" />
           </Button>
-        </div>
-      </div>
-    );
-  }
 
-  if (checking && !isValidRecovery) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-sm text-center space-y-2">
-          <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-muted-foreground">Ellenőrzés...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isValidRecovery) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-sm text-center space-y-4">
           <h1 className="text-2xl font-bold text-foreground">Jelszó visszaállítás</h1>
-          <p className="text-muted-foreground">
-            Érvénytelen visszaállítási link. Kérj új linket az email címedre.
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            A link érvénytelen vagy lejárt. Kérjük, próbálj meg egy újat kérni.
           </p>
-          <Button onClick={handleNewLinkRequest} className="w-full">
-            Új link kérése
+          <Button
+            className="w-full h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 dark:bg-[#0d2321] dark:text-primary dark:border dark:border-primary/30 dark:hover:bg-[#112d2a] dark:shadow-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
+            onClick={handleNewLinkRequest}
+          >
+            Jelszóemlékeztető újraküldése
           </Button>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-6">
+    if (checking && !isValidRecovery) {
+      return (
+        <div className="w-full max-w-md bg-white/80 dark:bg-[#07100e]/90 border border-slate-200/50 dark:border-primary/20 rounded-2xl p-8 shadow-2xl backdrop-blur-md relative z-10 mx-4 text-center space-y-4 animate-fade-in py-12">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors z-20"
+            onClick={handleBackToLogin}
+            title="Vissza a bejelentkezéshez"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+
+          <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Biztonsági kapcsolat ellenőrzése...</p>
+        </div>
+      );
+    }
+
+    if (!isValidRecovery) {
+      return (
+        <div className="w-full max-w-md bg-white/80 dark:bg-[#07100e]/90 border border-slate-200/50 dark:border-primary/20 rounded-2xl p-8 shadow-2xl backdrop-blur-md relative z-10 mx-4 text-center space-y-5 animate-fade-in">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors z-20"
+            onClick={handleBackToLogin}
+            title="Vissza a bejelentkezéshez"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+
+          <h1 className="text-2xl font-bold text-foreground">Jelszó visszaállítás</h1>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            A link érvénytelen vagy lejárt. Kérjük, próbálj meg egy újat kérni.
+          </p>
+          <Button
+            onClick={handleNewLinkRequest}
+            className="w-full h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 dark:bg-[#0d2321] dark:text-primary dark:border dark:border-primary/30 dark:hover:bg-[#112d2a] dark:shadow-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
+          >
+            Jelszóemlékeztető újraküldése
+          </Button>
+        </div>
+      );
+    }
+
+    if (loading) {
+      return (
+        <div className="w-full max-w-md bg-white/80 dark:bg-[#07100e]/90 border border-slate-200/50 dark:border-primary/20 rounded-2xl p-8 shadow-2xl backdrop-blur-md relative z-10 mx-4 text-center space-y-4 animate-fade-in py-12">
+          <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground font-medium">Jelszó mentése...</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-full max-w-md bg-white/80 dark:bg-[#07100e]/90 border border-slate-200/50 dark:border-primary/20 rounded-2xl p-8 shadow-2xl backdrop-blur-md relative z-10 mx-4 space-y-6 animate-fade-in">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-4 right-4 h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors z-20"
+          onClick={handleBackToLogin}
+          title="Vissza a bejelentkezéshez"
+        >
+          <LogOut className="h-4 w-4" />
+        </Button>
+
         <div>
-          <span className="text-4xl tracking-tight select-none">
+          <span className="text-3xl tracking-tight select-none">
             <span className="font-medium text-foreground/80">e</span>
             <span className="font-bold text-primary">ai</span>
             <span className="font-medium text-foreground/80">sy</span>
             <span className="font-medium text-primary">bill</span>
           </span>
           <h1 className="text-2xl font-bold text-foreground mt-4">Új jelszó beállítása</h1>
-          <p className="text-muted-foreground mt-1">Add meg az új jelszavadat</p>
+          <p className="text-muted-foreground text-sm mt-1">Add meg az új jelszavadat</p>
         </div>
 
-        <form onSubmit={handleResetPassword} className="space-y-4">
+        <form onSubmit={handleResetPassword} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="password">Új jelszó</Label>
             <div className="relative">
@@ -178,11 +260,41 @@ const ResetPassword = () => {
                 placeholder="Legalább 6 karakter"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 bg-secondary/30 border-0 focus:bg-secondary/50"
+                className={cn(
+                  "pl-10 h-11 bg-white/80 dark:bg-[#0a1512] border focus:ring-2 focus:ring-primary/20 rounded-xl transition-colors",
+                  password.length > 0 && !(/[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[._?@>]/.test(password))
+                    ? "border-amber-400 dark:border-amber-500"
+                    : "border-slate-200 dark:border-border focus:border-primary"
+                )}
                 required
                 minLength={6}
               />
             </div>
+            
+            {/* Password strength indicators */}
+            {password.length > 0 && (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1 animate-fade-in">
+                {[
+                  { label: 'Nagybetű (A-Z)', valid: /[A-Z]/.test(password) },
+                  { label: 'Kisbetű (a-z)', valid: /[a-z]/.test(password) },
+                  { label: 'Szám (0-9)', valid: /\d/.test(password) },
+                  { label: 'Speciális (._?@>)', valid: /[._?@>]/.test(password) },
+                ].map((rule) => (
+                  <div key={rule.label} className="flex items-center gap-1.5">
+                    <div className={cn(
+                      "w-1.5 h-1.5 rounded-full transition-colors duration-300",
+                      rule.valid ? "bg-primary" : "bg-muted-foreground/30"
+                    )} />
+                    <span className={cn(
+                      "text-[10px] transition-colors duration-300",
+                      rule.valid ? "text-primary font-medium" : "text-muted-foreground"
+                    )}>
+                      {rule.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -195,18 +307,35 @@ const ResetPassword = () => {
                 placeholder="Jelszó ismétlése"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="pl-10 bg-secondary/30 border-0 focus:bg-secondary/50"
+                className="pl-10 h-11 bg-white/80 dark:bg-[#0a1512] border border-slate-200 dark:border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl"
                 required
                 minLength={6}
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-11" disabled={loading}>
-            {loading ? 'Mentés...' : 'Jelszó mentése'}
+          <Button
+            type="submit"
+            className="w-full h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 dark:bg-[#0d2321] dark:text-primary dark:border dark:border-primary/30 dark:hover:bg-[#112d2a] dark:shadow-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
+            disabled={loading}
+          >
+            Jelszó mentése
           </Button>
         </form>
       </div>
+    );
+  };
+
+  return (
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-4 overflow-hidden">
+      {/* Full-screen wave background */}
+      <img
+        src={theme === 'dark' ? '/eaisybill_wave_dark.webp' : '/eaisybill_wave_bright.webp'}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none z-0 transition-all duration-500"
+      />
+      {renderContent()}
     </div>
   );
 };

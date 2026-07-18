@@ -6,7 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sun, Moon, Mail, Lock, User, TrendingUp, PieChart, BarChart3, ArrowUpRight, ArrowDownRight, FileText, CheckCircle2, Clock, AlertTriangle, Users, Wallet, Landmark, ArrowLeftRight } from 'lucide-react';
+import { Sun, Moon, Mail, Lock, User, TrendingUp, PieChart, BarChart3, ArrowUpRight, ArrowDownRight, FileText, CheckCircle2, Clock, AlertTriangle, Users, Wallet, Landmark, ArrowLeftRight, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -382,6 +382,9 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotStep, setForgotStep] = useState<'email' | 'otp'>('email');
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [signUpSuccess, setSignUpSuccess] = useState(false);
   const [signedUpEmail, setSignedUpEmail] = useState('');
@@ -931,19 +934,58 @@ const Auth = () => {
       toast({ title: 'Kérlek add meg az email címed', variant: 'destructive' });
       return;
     }
-    setLoading(true);
+    setForgotLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
         redirectTo: PASSWORD_RESET_REDIRECT_URL,
       });
       if (error) throw error;
-      toast({ title: 'Jelszó visszaállító email elküldve! Ellenőrizd a postaládádat.' });
-      setShowForgotPassword(false);
+      if (forgotStep === 'otp') {
+        toast({ title: 'A kódot újra elküldtük!' });
+      } else {
+        setForgotStep('otp');
+      }
     } catch (error: any) {
       reportAuthError('Auth', 'password_reset', error.message || 'Password reset error', error);
       toast({ title: error.message || 'Hiba történt', variant: 'destructive' });
     } finally {
-      setLoading(false);
+      setForgotLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotOtp || forgotOtp.length !== 6) {
+      toast({ title: 'Kérlek add meg a 6 számjegyű kódot', variant: 'destructive' });
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: forgotEmail,
+        token: forgotOtp,
+        type: 'recovery',
+      });
+      if (error) throw error;
+
+      // Successful OTP validation logs the user in via a recovery session.
+      // Persist the state in sessionStorage so that ResetPassword.tsx verifies it.
+      sessionStorage.setItem('visibill_reset_pw_state', 'recovery');
+
+      toast({ title: 'Kód sikeresen ellenőrizve!' });
+      setShowForgotPassword(false);
+      setForgotStep('email');
+      setForgotOtp('');
+      navigate('/reset-password');
+    } catch (error: any) {
+      reportAuthError('Auth', 'verify_otp', error.message || 'OTP verification error', error);
+      toast({
+        title: 'Érvénytelen vagy lejárt kód',
+        description: 'Kérlek ellenőrizd a beírt kódot, vagy kérj újat.',
+        variant: 'destructive',
+      });
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -1422,49 +1464,6 @@ const Auth = () => {
           */}
           </>
           )}
-
-          {/* Forgot Password Overlay */}
-          {showForgotPassword && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-              <div className="w-full max-w-sm bg-background border border-border rounded-xl p-6 shadow-lg mx-4">
-                <h2 className="text-xl font-bold text-foreground mb-2">Elfelejtett jelszó</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Add meg az email címedet és küldünk egy jelszó visszaállító linket.
-                </p>
-                <form onSubmit={handleForgotPassword} noValidate className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="forgot-email">Email cím</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="forgot-email"
-                        type="email"
-                        placeholder="pelda@email.com"
-                        value={forgotEmail}
-                        onChange={(e) => setForgotEmail(e.target.value)}
-                        className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                        required
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setShowForgotPassword(false)}
-                    >
-                      Mégse
-                    </Button>
-                    <Button type="submit" className="flex-1" disabled={loading}>
-                      {loading ? 'Küldés...' : 'Link küldése'}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
         </div>
         </div>
       </div>
@@ -1583,6 +1582,156 @@ const Auth = () => {
         </div>
 
       </div>
+      
+      {/* Forgot Password Overlay — outside the container at root level to prevent overflow clipping */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 dark:bg-[#030908]/85 backdrop-blur-md px-4">
+          <div className="w-full max-w-md bg-white/80 dark:bg-[#07100e]/90 border border-slate-200/50 dark:border-primary/20 rounded-2xl p-8 shadow-2xl backdrop-blur-md relative z-10 transition-all duration-300">
+            
+            {/* Step 1: Email Request */}
+            {forgotStep === 'email' && (
+              <>
+                <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
+                  <KeyRound className="h-6 w-6 text-primary animate-pulse" />
+                  Elfelejtett jelszó
+                </h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Add meg a fiókodhoz tartozó email címet, és küldünk egy jelszó visszaállító kódot és linket.
+                </p>
+                <form onSubmit={handleForgotPassword} noValidate className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="forgot-email">Email cím</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        placeholder="pelda@email.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="pl-10 h-11 bg-white/80 dark:bg-[#0a1512] border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors rounded-xl"
+                        required
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1 h-11 rounded-xl"
+                      onClick={() => {
+                        setShowForgotPassword(false);
+                        setForgotEmail('');
+                      }}
+                    >
+                      Mégse
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 h-11 rounded-xl font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 dark:bg-[#0d2321] dark:text-primary dark:border dark:border-primary/30 dark:hover:bg-[#112d2a] dark:shadow-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
+                      disabled={forgotLoading}
+                    >
+                      {forgotLoading ? 'Küldés...' : 'Kód küldése'}
+                    </Button>
+                  </div>
+                </form>
+              </>
+            )}
+
+            {/* Step 2: OTP Verification */}
+            {forgotStep === 'otp' && (
+              <>
+                {forgotLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
+                    <div className="relative mb-6">
+                      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                        <svg className="h-8 w-8 text-primary animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-1">Kód ellenőrzése...</h3>
+                    <p className="text-xs text-muted-foreground">Kérjük, várj, amíg hitelesítjük a kódodat.</p>
+                  </div>
+                ) : (
+                  <>
+                    <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
+                      <Lock className="h-6 w-6 text-primary" />
+                      Kód ellenőrzése
+                    </h2>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Küldtünk egy egyszer használatos biztonsági kódot az email címedre (<span className="font-semibold text-foreground">{forgotEmail}</span>). Kérjük, másold be alább.
+                    </p>
+                    <form onSubmit={handleVerifyOtp} noValidate className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="forgot-otp" className="text-center block">Egyszer használatos kód (OTP)</Label>
+                        <div className="relative flex justify-center">
+                          <Input
+                            id="forgot-otp"
+                            type="text"
+                            maxLength={6}
+                            pattern="[0-9]*"
+                            placeholder="123456"
+                            value={forgotOtp}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, '');
+                              setForgotOtp(val);
+                            }}
+                            className="h-14 text-center text-2xl font-mono tracking-[0.75em] pl-[0.75em] bg-white/80 dark:bg-[#0a1512] border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors rounded-xl max-w-[200px]"
+                            required
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="text-center text-xs space-y-2 text-muted-foreground pt-1">
+                        <p>
+                          Nem kaptad meg a kódot?{' '}
+                          <button
+                            type="button"
+                            onClick={handleForgotPassword}
+                            disabled={forgotLoading}
+                            className="text-primary hover:underline font-medium focus:outline-none disabled:opacity-50"
+                          >
+                            Újraküldés
+                          </button>
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/80 leading-relaxed border-t border-border/40 pt-2 px-4">
+                          Ha a kód beírása nem működik, az emailben kapott <strong>"Új jelszó beállítása"</strong> gombra kattintva is közvetlenül beállíthatod az új jelszavad.
+                        </p>
+                      </div>
+
+                      <div className="flex gap-3 pt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1 h-11 rounded-xl"
+                          onClick={() => {
+                            setForgotStep('email');
+                            setForgotOtp('');
+                          }}
+                        >
+                          Vissza
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="flex-1 h-11 rounded-xl font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 dark:bg-[#0d2321] dark:text-primary dark:border dark:border-primary/30 dark:hover:bg-[#112d2a] dark:shadow-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
+                          disabled={forgotLoading || forgotOtp.length !== 6}
+                        >
+                          {forgotLoading ? 'Ellenőrzés...' : 'Megerősítés'}
+                        </Button>
+                      </div>
+                    </form>
+                  </>
+                )}
+              </>
+            )}
+            
+          </div>
+        </div>
+      )}
     </div>
   );
 };
