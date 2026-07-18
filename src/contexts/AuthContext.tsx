@@ -180,6 +180,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (e.key === 'visibill_recovery_in_progress') {
         setIsRecoverySession(e.newValue === 'true');
       }
+      if (e.key === 'visibill_recovery_completed' && e.newValue === 'true') {
+        try {
+          const completedHere = sessionStorage.getItem('visibill_recovery_completed_here') === 'true';
+          if (!completedHere) {
+            sessionStorage.setItem('visibill_recovery_completed_elsewhere', 'true');
+          }
+        } catch {}
+      }
     };
     window.addEventListener('storage', handleStorageChange);
 

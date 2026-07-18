@@ -597,9 +597,12 @@ const Auth = () => {
     // Don't auto-navigate if password recovery was completed on another tab
     const isRecoveryCompletedElsewhere = (() => {
       try {
-        const globalCompleted = localStorage.getItem('visibill_recovery_completed') === 'true';
-        const localCompleted = sessionStorage.getItem('visibill_recovery_completed_here') === 'true';
-        return globalCompleted && !localCompleted;
+        const elsewhere = sessionStorage.getItem('visibill_recovery_completed_elsewhere') === 'true';
+        if (elsewhere) {
+          sessionStorage.removeItem('visibill_recovery_completed_elsewhere');
+          return true;
+        }
+        return false;
       } catch {
         return false;
       }
