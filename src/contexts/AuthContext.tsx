@@ -96,6 +96,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') {
           expiredRef.current = false;
         }
+        if (event === 'SIGNED_IN') {
+          try {
+            const recoveryActive = localStorage.getItem('visibill_recovery_in_progress') === 'true';
+            const completedHere = sessionStorage.getItem('visibill_recovery_completed_here') === 'true';
+            if (recoveryActive && !completedHere) {
+              sessionStorage.setItem('visibill_recovery_completed_elsewhere', 'true');
+            }
+          } catch {}
+        }
         if (event === 'PASSWORD_RECOVERY') {
           // Only enable password recovery mode if this tab actually initiated it
           // (detected by recovery hash in URL or sessionStorage recovery state).
@@ -401,13 +410,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const completeRecovery = () => {
     try {
       localStorage.removeItem('visibill_recovery_in_progress');
-      localStorage.setItem('visibill_recovery_completed', 'true');
       sessionStorage.setItem('visibill_recovery_completed_here', 'true');
-      setTimeout(() => {
-        try {
-          localStorage.removeItem('visibill_recovery_completed');
-        } catch {}
-      }, 2000);
     } catch {}
     setIsRecoverySession(false);
     setIsPasswordRecovery(false);
