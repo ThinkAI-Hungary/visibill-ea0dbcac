@@ -409,8 +409,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const completeRecovery = () => {
     try {
-      localStorage.removeItem('visibill_recovery_in_progress');
       sessionStorage.setItem('visibill_recovery_completed_here', 'true');
+      setTimeout(() => {
+        try {
+          localStorage.removeItem('visibill_recovery_in_progress');
+        } catch {}
+      }, 2000);
     } catch {}
     setIsRecoverySession(false);
     setIsPasswordRecovery(false);
