@@ -62,6 +62,7 @@ function checkIsRecoverySession(session: Session | null): boolean {
         .join('')
     );
     const payload = JSON.parse(jsonPayload);
+    console.log('[AuthContext] JWT Payload for session:', payload); // DEBUG LOG
     const amr = payload.amr || [];
     return amr.some((item: any) => {
       if (typeof item === 'string') {
