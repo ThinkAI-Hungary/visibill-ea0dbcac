@@ -81,6 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // any synchronous INITIAL_SESSION event from bypassing the gate.
     gateCheckedRef.current = true;
 
+    // Clean up session synced flag on mount (e.g. F5 or initial load)
+    try {
+      sessionStorage.removeItem('visibill_session_synced_from_elsewhere');
+    } catch {}
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
@@ -95,22 +100,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // A fresh SIGNED_IN or PASSWORD_RECOVERY resets the expired flag so subsequent events work
         if (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') {
           expiredRef.current = false;
-        }
-        if (event === 'SIGNED_IN') {
-          try {
-            const recoveryActive = localStorage.getItem('visibill_recovery_in_progress') === 'true';
-            const completedHere = sessionStorage.getItem('visibill_recovery_completed_here') === 'true';
-            if (recoveryActive && !completedHere) {
-              sessionStorage.setItem('visibill_recovery_completed_elsewhere', 'true');
-              // Clear the flag after 5 seconds to allow normal logins/F5 refreshes later,
-              // but keep it long enough to survive all background tab rendering/profile query cycles.
-              setTimeout(() => {
-                try {
-                  sessionStorage.removeItem('visibill_recovery_completed_elsewhere');
-                } catch {}
-              }, 5000);
-            }
-          } catch {}
         }
         if (event === 'PASSWORD_RECOVERY') {
           // Only enable password recovery mode if this tab actually initiated it
@@ -196,13 +185,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (e.key === 'visibill_recovery_in_progress') {
         setIsRecoverySession(e.newValue === 'true');
       }
-      if (e.key === 'visibill_recovery_completed' && e.newValue === 'true') {
-        try {
-          const completedHere = sessionStorage.getItem('visibill_recovery_completed_here') === 'true';
-          if (!completedHere) {
-            sessionStorage.setItem('visibill_recovery_completed_elsewhere', 'true');
-          }
-        } catch {}
+      // Detect if auth token was modified from another tab
+      if (e.key && e.key.includes('-auth-token')) {
+        if (e.newValue) {
+          try {
+            sessionStorage.setItem('visibill_session_synced_from_elsewhere', 'true');
+          } catch {}
+        }
       }
     };
     window.addEventListener('storage', handleStorageChange);

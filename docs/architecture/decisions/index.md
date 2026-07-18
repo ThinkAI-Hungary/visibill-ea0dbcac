@@ -77,13 +77,14 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | A-036 | Pénztárbizonylat (Cash Voucher) Processing | ✅ Decided | [A-036](./A-036-penztarbizonylat-processing.md) |
 | A-037 | Jegyzetek Rendszer Architektúra (Notes System Architecture) | ✅ Decided | [A-037](./A-037-notes-architecture.md) |
 
-## đź–Ąď¸Ź Frontend
+## 🖥️ Frontend
 
-| # | DĂ¶ntĂ©s | StĂˇtusz | FĂˇjl |
+| # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-013 | Scoped URL routing + invoice filter query params | âś… Decided | [A-013](./A-013-scoped-routing.md) |
-| A-014 | React Query cache stratĂ©gia | âś… Decided | [A-014](./A-014-react-query-cache.md) |
+| A-013 | Scoped URL routing + invoice filter query params | ✅ Decided | [A-013](./A-013-scoped-routing.md) |
+| A-014 | React Query cache stratégia | ✅ Decided | [A-014](./A-014-react-query-cache.md) |
 | A-029 | Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció (ref lock + delay) | ✅ Decided | [A-029](./A-029-syncing-url-dialog-state.md) |
+| A-040 | Multi-Tab Auth Flow Isolation (sessionStorage és auth-token storage detektálás) | ✅ Decided | [A-040](./A-040-multi-tab-auth-flow-isolation.md) |
 
 ## đź’ł FizetĂ©s
 

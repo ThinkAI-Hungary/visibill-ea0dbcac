@@ -594,17 +594,17 @@ const Auth = () => {
     // Don't auto-navigate when user explicitly came to request a password reset link.
     // ?forgot=1 is set by ResetPassword.tsx when the link is expired/invalid.
     if (authSearchParams.get('forgot') === '1') return;
-    // Don't auto-navigate if password recovery was completed on another tab
-    const isRecoveryCompletedElsewhere = (() => {
+    // Don't auto-navigate if the session was synced from another tab (cross-tab sync isolation)
+    const isSessionSyncedFromElsewhere = (() => {
       try {
-        return sessionStorage.getItem('visibill_recovery_completed_elsewhere') === 'true';
+        return sessionStorage.getItem('visibill_session_synced_from_elsewhere') === 'true';
       } catch {
         return false;
       }
     })();
 
-    if (isRecoveryCompletedElsewhere) {
-      console.log('[Auth] Ignored auto-navigation because password recovery was completed on another tab.');
+    if (isSessionSyncedFromElsewhere) {
+      console.log('[Auth] Ignored auto-navigation because session was synced from another tab.');
       return;
     }
 
