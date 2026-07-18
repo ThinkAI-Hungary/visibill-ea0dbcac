@@ -17,7 +17,7 @@ export type RedirectTarget = 'auth' | 'unverified' | 'onboarding' | 'management'
  * <Navigate/> instead of mounting routes that will then redirect.
  */
 export function useAppReady() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isRecoverySession } = useAuth();
   const { selectedCompany, companies, isInitialLoading: companyLoading } = useCompany();
   const { role, isLoading: roleLoading, isEmployee } = useUserRole();
 
@@ -68,8 +68,8 @@ export function useAppReady() {
     return { isReady: false, user: null, redirectTarget: null as RedirectTarget };
   }
 
-  // Not logged in → ready (so ProtectedLayout can redirect to /auth).
-  if (!user) {
+  // Not logged in OR in a recovery session → ready (so ProtectedLayout can redirect to /auth).
+  if (!user || isRecoverySession) {
     return { isReady: true, user: null, redirectTarget: 'auth' as RedirectTarget };
   }
 

@@ -385,7 +385,7 @@ const Auth = () => {
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [signUpSuccess, setSignUpSuccess] = useState(false);
   const [signedUpEmail, setSignedUpEmail] = useState('');
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, isRecoverySession } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [authSearchParams, setAuthSearchParams] = useSearchParams();
@@ -594,14 +594,14 @@ const Auth = () => {
     // Don't auto-navigate when user explicitly came to request a password reset link.
     // ?forgot=1 is set by ResetPassword.tsx when the link is expired/invalid.
     if (authSearchParams.get('forgot') === '1') return;
-    if (user && hasEaisybillAccess !== undefined) {
+    if (user && !isRecoverySession && hasEaisybillAccess !== undefined) {
       // Respect the eaisybooks toggle for routing
       const target = returnTo && returnTo !== '/'
         ? returnTo
         : isEaisybooks ? '/accounty' : '/';
       navigate(target);
     }
-  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess, authSearchParams]);
+  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess, authSearchParams, isRecoverySession]);
 
   // Non-passive wheel listener — adds to scroll velocity for smooth momentum
   useEffect(() => {

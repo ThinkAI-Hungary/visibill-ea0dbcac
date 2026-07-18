@@ -16,6 +16,7 @@ interface AuthContextType {
   loading: boolean;
   isSigningOut: boolean;
   isPasswordRecovery: boolean;
+  isRecoverySession: boolean;
   clearPasswordRecovery: () => void;
   sessionGuard: SessionGuardState;
   signUp: (email: string, password: string, name?: string, source?: 'eaisybill' | 'eaisybooks') => Promise<{ error: any }>;
@@ -46,12 +47,24 @@ function isSessionExpired(): boolean {
   }
 }
 
+/** Check if JWT token belongs to a password recovery session */
+function checkIsRecoverySession(session: Session | null): boolean {
+  if (!session) return false;
+  try {
+    const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+    return (payload.amr || []).includes('recovery');
+  } catch {
+    return false;
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [isRecoverySession, setIsRecoverySession] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const gateCheckedRef = useRef(false);
@@ -106,6 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
+        setIsRecoverySession(checkIsRecoverySession(currentSession));
         setLoading(false);
       }
     );
@@ -119,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch {}
       setSession(null);
       setUser(null);
+      setIsRecoverySession(false);
       setLoading(false);
     } else {
       // Normal path — check for existing session
@@ -131,10 +146,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch {}
             setSession(null);
             setUser(null);
+            setIsRecoverySession(false);
           }
         } else {
           setSession(existingSession);
           setUser(existingSession?.user ?? null);
+          setIsRecoverySession(checkIsRecoverySession(existingSession));
         }
         setLoading(false);
       }).catch((err) => {
@@ -352,6 +369,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     isSigningOut,
     isPasswordRecovery,
+    isRecoverySession,
     clearPasswordRecovery,
     sessionGuard,
     signUp,
