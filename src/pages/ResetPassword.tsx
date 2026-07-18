@@ -86,6 +86,10 @@ const ResetPassword = () => {
 
       if (error) throw error;
 
+      try {
+        localStorage.removeItem('visibill_recovery_in_progress');
+      } catch {}
+
       toast({ title: 'Jelszó sikeresen megváltoztatva!' });
       navigate('/');
     } catch (error: any) {

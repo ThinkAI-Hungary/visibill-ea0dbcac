@@ -47,38 +47,7 @@ function isSessionExpired(): boolean {
   }
 }
 
-/** Check if JWT token belongs to a password recovery session */
-function checkIsRecoverySession(session: Session | null): boolean {
-  if (!session) return false;
-  try {
-    const base64Url = session.access_token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const pad = base64.length % 4;
-    const paddedBase64 = pad ? base64 + '='.repeat(4 - pad) : base64;
-    const jsonPayload = decodeURIComponent(
-      atob(paddedBase64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    const payload = JSON.parse(jsonPayload);
-    console.log('[AuthContext] JWT Payload for session:', payload); // DEBUG LOG
-    console.log('[AuthContext] AMR list:', JSON.stringify(payload.amr)); // DEBUG LOG
-    const amr = payload.amr || [];
-    return amr.some((item: any) => {
-      if (typeof item === 'string') {
-        return item === 'recovery';
-      }
-      if (item && typeof item === 'object') {
-        return item.method === 'recovery';
-      }
-      return false;
-    });
-  } catch (e) {
-    console.error('[AuthContext] Failed to parse JWT payload:', e);
-    return false;
-  }
-}
+
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -86,7 +55,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
-  const [isRecoverySession, setIsRecoverySession] = useState(false);
+  const [isRecoverySession, setIsRecoverySession] = useState(() => {
+    try {
+      return localStorage.getItem('visibill_recovery_in_progress') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const gateCheckedRef = useRef(false);
@@ -135,13 +110,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (hasHash || hasSessionState) {
             setIsPasswordRecovery(true);
+            try {
+              localStorage.setItem('visibill_recovery_in_progress', 'true');
+            } catch {}
+            setIsRecoverySession(true);
           } else {
             console.log('[AuthContext] Ignored PASSWORD_RECOVERY event synced from another tab');
           }
         }
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-        setIsRecoverySession(checkIsRecoverySession(currentSession));
+        const recoveryActive = (() => {
+          try {
+            return localStorage.getItem('visibill_recovery_in_progress') === 'true';
+          } catch {
+            return false;
+          }
+        })();
+        setIsRecoverySession(recoveryActive);
         setLoading(false);
       }
     );
@@ -173,7 +159,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setSession(existingSession);
           setUser(existingSession?.user ?? null);
-          setIsRecoverySession(checkIsRecoverySession(existingSession));
+          const recoveryActive = (() => {
+            try {
+              return localStorage.getItem('visibill_recovery_in_progress') === 'true';
+            } catch {
+              return false;
+            }
+          })();
+          setIsRecoverySession(recoveryActive);
         }
         setLoading(false);
       }).catch((err) => {
@@ -182,7 +175,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
 
-    return () => subscription.unsubscribe();
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'visibill_recovery_in_progress') {
+        setIsRecoverySession(e.newValue === 'true');
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const signUp = async (email: string, password: string, name?: string, source?: 'eaisybill' | 'eaisybooks') => {
@@ -256,6 +259,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // ── Login success: reset lastActive so gate won't block ──
       try {
         localStorage.setItem(STORAGE_KEYS.LAST_ACTIVE, Date.now().toString());
+        localStorage.removeItem('visibill_recovery_in_progress');
       } catch {}
     }
     
