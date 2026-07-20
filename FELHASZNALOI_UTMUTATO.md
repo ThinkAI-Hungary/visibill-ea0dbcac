@@ -409,6 +409,8 @@ A VisiBill nemcsak számlákat, hanem bankkivonatokat és banki tranzakciókat i
 - **Támogatott formátumok**: OTP, CIB, Raiffeisen PDF/XLS.
 - **Binx e-pénz**: Speciális támogatás a Binx PDF kivonatokhoz. Ezeket a rendszer natív módon dolgozza fel, így az adatok kinyerése 100%-os pontosságú.
 - **Párosítás**: A feltöltött banki tranzakciókat a rendszer automatikusan megpróbálja hozzárendelni a nyitott számlákhoz.
+- **Automatikus könyvelési szabályok**: A tranzakciók oldalon saját szabályokat (szablonokat) hozhat létre az ismétlődő banki tételek (pl. kamatok, kezelési költségek, jutalékok) automatikus besorolására. A szabályokban meghatározható a tranzakció iránya (bejövetel/kiadás), összeghatára, és a leírásban keresett szövegminta (akár egyszerű egyezéssel, akár reguláris kifejezésekkel). A rendszer a szabályoknak megfelelő tételeket automatikusan a kívánt főkönyvi számhoz rendeli.
+- **Intelligens Hozzárendelési Javaslatok**: A rendszer az Eredménykimutatás lap Hozzárendelési Mátrix fülén automatikusan elemzi a besorolatlan főkönyvi számokat. Az Sztv. "A" variáns szerinti kódok alapján felismert tételekre javaslatokat tesz, amelyeket a kék színű információs sávban található **"Javaslatok ellenőrzése"** gombbal nyithatunk meg. A javaslatok listáján a megnevezések és a javasolt sorok teljes hosszukban kiíródnak, így könnyen és biztonságosan jóváhagyhatóak.
 
 ### Tranzakciós fájlok feltöltése és törlése
 

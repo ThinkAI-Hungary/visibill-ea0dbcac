@@ -751,7 +751,25 @@ npm run preview      # Preview production build
 
 ## Changelog
 
-### Version 1.2.0 (Current - 2026-07-16)
+### Version 1.3.0 (Current - 2026-07-20)
+- **Transaction Rules & Auto-Categorization:**
+  - Integrated an in-memory auto-categorization rules engine (`apply_transaction_rules`) in the Python worker.
+  - Automatically matches unmatched transactions using direction, amount boundaries, and text description patterns (substring/regex).
+  - Assigns target GL account IDs, logs rules application, and optionally auto-verifies transactions.
+  - Fixed database query column mapping in the frontend rule testing simulation dialog (switched `date` to `transaction_date` and removed `direction` since it is computed client-side).
+- **SAF-T XML (Audit File) Dry Run:**
+  - Supported a `dry_run` flag during SAF-T XML import processing in the worker.
+  - Parses and validates the file, increments counts, but skips inserting accounts, partners, and journal entries into the database to save writes.
+- **Suggestions Dialog Layout & Spacing:**
+  - Widened the "Javasolt Hozzárendelések Elfogadása" suggestions dialog in `ProfitAndLoss.tsx` to `max-w-4xl` for a cleaner UI layout.
+  - Removed cell truncation (`truncate max-w-[150px]` and `truncate max-w-[180px]`) from the "Megnevezés" and "Javasolt Sor" table columns to let names wrap and fit fully.
+- **Bug Fixes & Code Correctness:**
+  - *suggest_gl_mappings RPC:* Fixed database type mismatches (`character varying(50)` vs expected `text`) by explicitly casting return values in the SQL function definition via a new migration.
+  - *Missing Imports:* Resolved runtime reference errors by importing `FileText` in `GeneralLedgerTable.tsx` and the Radix `Dialog` components in `ProfitAndLoss.tsx`.
+  - *Annual Report PDF:* Closed the unclosed braces block inside the helper function in `annualReportPdf.ts` which was causing esbuild compilation failure.
+  - *Petty Cash:* Clean-deleted the redundant clipboard copy button and its assets from the denomination calculator.
+
+### Version 1.2.0 (2026-07-16)
 - **Transaction Files Upload & Deletion:**
   - Integrated a premium file uploading dialog for bank transactions.
   - Allowed deletion of transaction records directly based on the uploaded files, similar to the invoice upload flow.
