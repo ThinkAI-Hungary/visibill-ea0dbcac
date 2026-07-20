@@ -288,35 +288,45 @@ export default function PartnersPage() {
     if (!rankingRaw) return { topSuppliers: [], topCustomers: [], totalSupplier: 0, totalCustomer: 0 };
 
     // Normalize tax_number: strip HU prefix, take first 8 digits for grouping
-    // HU275532 → 275532, 27553202 → 27553202 — use min 6 chars for matching
+    // FOREIGN: partners keep their full key — each is unique, must not be truncated
     const normalize = (tax: string) => {
+      if (tax.startsWith('FOREIGN:')) return tax; // keep full key — truncating would merge all FOREIGN: partners
       const stripped = tax.replace(/^HU/i, '');
-      // Use first 8 chars, but for matching purposes use first 6 as the key
-      // because HU-prefixed versions often have fewer digits
       return stripped.substring(0, 8);
     };
-    // Build a secondary lookup: first 6 chars → canonical key (for merging HU duplicates)
-    const canonicalKeys = new Map<string, string>();
+
+    // Determine the merge key for grouping:
+    // - FOREIGN: → full key (each is unique)
+    // - Pure numeric (HU-style): first 6 digits — handles HU27553202 vs 27553202 variants
+    // - Prefixed foreign VAT (EU, GB, DE, etc.): full 8-char key — must NOT truncate,
+    //   because EU372041 (OpenAI) and EU372088 (Ynoox) would falsely merge under "EU3720"
+    const getMergeKey = (normTax: string): string => {
+      if (normTax.startsWith('FOREIGN:')) return normTax;
+      // Purely numeric → truncate to 6 for HU-prefix dedup
+      if (/^\d+$/.test(normTax)) return normTax.substring(0, 6);
+      // Has letter prefix (EU, GB, ATU, etc.) → keep full 8 chars — different companies!
+      return normTax;
+    };
 
     // Find partner custom avatar data from partners list
     const partnersByTax = new Map<string, { custom_monogram?: string | null; custom_color?: string | null; custom_bg_color?: string | null }>();
     if (partners) {
       (partners as Partner[]).forEach(p => {
         if (p.tax_number) {
-          const clean = p.tax_number.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+          // FOREIGN: partners use full tax_number as key to match the RPC output
+          const clean = p.tax_number.startsWith('FOREIGN:')
+            ? p.tax_number
+            : p.tax_number.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
           partnersByTax.set(clean, { custom_monogram: p.custom_monogram, custom_color: p.custom_color, custom_bg_color: p.custom_bg_color });
         }
       });
     }
 
     // Aggregate by normalized tax + direction
-    // Phase 1: collect all entries and build canonical key mapping
     const agg = new Map<string, { tax: string; name: string; dir: string; count: number; gross: number }>();
     rankingRaw.forEach(r => {
       const normTax = normalize(r.partner_tax_number);
-      // Use first 6 chars as merge key to handle HU-prefix variants
-      // e.g., "27553202" and "275532" both have prefix "275532"
-      const mergeKey = normTax.substring(0, 6);
+      const mergeKey = getMergeKey(normTax);
       const fullKey = `${mergeKey}__${r.direction}`;
 
       const existing = agg.get(fullKey);
@@ -743,8 +753,11 @@ export default function PartnersPage() {
               isLoading={isRankingLoading}
               onPartnerClick={(taxNumber) => {
                 // Find partner by tax_number and select it
+                // FOREIGN: partners: taxNumber is the full FOREIGN:xxx key, match directly
                 const match = (partners as Partner[] | undefined)?.find(p => {
-                  const clean = p.tax_number?.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+                  const clean = p.tax_number?.startsWith('FOREIGN:')
+                    ? p.tax_number
+                    : p.tax_number?.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
                   return clean === taxNumber;
                 });
                 if (match) {
@@ -760,8 +773,11 @@ export default function PartnersPage() {
               totalAll={totalCustomer}
               isLoading={isRankingLoading}
               onPartnerClick={(taxNumber) => {
+                // FOREIGN: partners: taxNumber is the full FOREIGN:xxx key, match directly
                 const match = (partners as Partner[] | undefined)?.find(p => {
-                  const clean = p.tax_number?.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
+                  const clean = p.tax_number?.startsWith('FOREIGN:')
+                    ? p.tax_number
+                    : p.tax_number?.replace(/-/g, '').replace(/^HU/i, '').substring(0, 8);
                   return clean === taxNumber;
                 });
                 if (match) {
