@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy, Wand2, RefreshCw, Columns, TrendingUp, Scale } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy, Wand2, RefreshCw, Columns, TrendingUp, Scale, Sparkles, Check } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
@@ -24,6 +24,9 @@ import { exportBsExcel } from '@/lib/bsExport';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 // ── Default BS mapping rules based on Hungarian Sztv. "A" variant ──
 // Maps GL account prefixes (class 1-4) to bs_structure arabic/roman leaf rows
@@ -159,6 +162,31 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
+  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
+  const [selectedSuggestionIds, setSelectedSuggestionIds] = useState<Set<string>>(new Set());
+  const [isSavingSuggestions, setIsSavingSuggestions] = useState(false);
+
+  // Fetch BS suggestions
+  const { data: suggestions, refetch: refetchSuggestions } = useQuery({
+    queryKey: ['bs_mappings_suggestions', selectedCompany?.id, presetId],
+    queryFn: async () => {
+      if (!selectedCompany?.id || !presetId) return [];
+      const { data, error } = await supabase.rpc('suggest_gl_mappings', {
+        p_company_id: selectedCompany.id,
+        p_preset_id: presetId
+      });
+      if (error) return [];
+      return (data || []).filter((s: any) => s.bs_structure_id);
+    },
+    enabled: !!selectedCompany?.id && !!presetId
+  });
+
+  // Set selected suggestion IDs once loaded
+  useEffect(() => {
+    if (suggestions) {
+      setSelectedSuggestionIds(new Set(suggestions.map(s => s.gl_account_id)));
+    }
+  }, [suggestions]);
 
   const { data: bsStructure, isLoading: isLoadingStructure } = useQuery({
     queryKey: ['bs_structure'],
@@ -213,9 +241,52 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ['bs_mapping'] });
       queryClient.invalidateQueries({ queryKey: ['bs_report'] });
+      refetchSuggestions();
     },
     onError: (err: any) => { toast({ title: 'Hiba', description: err.message, variant: 'destructive' }); }
   });
+
+  const handleAcceptSuggestions = async () => {
+    if (!suggestions || suggestions.length === 0 || !selectedCompany?.id || !presetId) return;
+    setIsSavingSuggestions(true);
+    try {
+      const acceptedList = suggestions.filter(s => selectedSuggestionIds.has(s.gl_account_id));
+      if (acceptedList.length === 0) return;
+
+      const updatedMappings = { ...mappings };
+      acceptedList.forEach(s => {
+        updatedMappings[s.gl_account_id] = s.bs_structure_id;
+      });
+
+      const payload = Object.entries(updatedMappings).map(([gl_account_id, bs_structure_id]) => ({
+        gl_account_id,
+        bs_structure_id
+      }));
+
+      const { error } = await supabase.rpc('save_bs_mappings', {
+        p_company_id: selectedCompany.id,
+        p_preset_id: presetId,
+        p_mappings: payload
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sikeres hozzárendelés',
+        description: `${acceptedList.length} hozzárendelés sikeresen elfogadva és mentve.`,
+        className: 'bg-green-50 text-green-900 border-green-200',
+      });
+      
+      setIsSuggestionOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['bs_mapping'] });
+      queryClient.invalidateQueries({ queryKey: ['bs_report'] });
+      refetchSuggestions();
+    } catch (err: any) {
+      toast({ title: 'Hiba a mentés során', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsSavingSuggestions(false);
+    }
+  };
 
   const handleSelectChange = (glAccountId: string, structureId: string) => {
     setMappings(prev => {
@@ -323,6 +394,29 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
 
   return (
     <div className="space-y-4">
+      {suggestions && suggestions.length > 0 && (
+        <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in-50 duration-300">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-indigo-500 shrink-0 animate-pulse" />
+            <div>
+              <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">
+                Intelligens Hozzárendelési Javaslatok ({suggestions.length} db)
+              </p>
+              <p className="text-xs text-indigo-700/80 dark:text-indigo-400/80 mt-0.5">
+                Az Sztv. "A" variáns szerinti kódok alapján javaslataink vannak a besorolatlan főkönyvi számokhoz.
+              </p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => setIsSuggestionOpen(true)} 
+            size="sm" 
+            className="bg-indigo-600 hover:bg-indigo-700 text-white shrink-0 gap-1.5 font-semibold text-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> Javaslatok ellenőrzése
+          </Button>
+        </div>
+      )}
+
       <div className="flex items-center gap-2 justify-end mb-4">
         {isGenericPreset && (
           <Button variant="outline" onClick={handleAutoAssign} className="gap-2">
@@ -404,6 +498,84 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
           <ContextMenuItem onClick={collapseAll} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
+
+      <Dialog open={isSuggestionOpen} onOpenChange={setIsSuggestionOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden bg-background">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
+              Javasolt Hozzárendelések Elfogadása
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Az Sztv. kódolás szerint az alábbi számlákat tudjuk automatikusan besorolni a Mérlegbe.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto py-2 -mx-6 px-6">
+            <table className="w-full border-collapse text-xs">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground bg-muted/30">
+                  <th className="py-2 px-1 text-center w-8">
+                    <Checkbox
+                      checked={suggestions ? selectedSuggestionIds.size === suggestions.length : false}
+                      onCheckedChange={(checked) => {
+                        if (checked && suggestions) {
+                          setSelectedSuggestionIds(new Set(suggestions.map(s => s.gl_account_id)));
+                        } else {
+                          setSelectedSuggestionIds(new Set());
+                        }
+                      }}
+                    />
+                  </th>
+                  <th className="py-2 px-2">Számlaszám</th>
+                  <th className="py-2 px-2">Megnevezés</th>
+                  <th className="py-2 px-2">Javasolt Sor</th>
+                  <th className="py-2 px-2">Indoklás</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {suggestions?.map((s) => (
+                  <tr key={s.gl_account_id} className="hover:bg-muted/10">
+                    <td className="py-2.5 px-1 text-center">
+                      <Checkbox
+                        checked={selectedSuggestionIds.has(s.gl_account_id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedSuggestionIds(prev => {
+                            const next = new Set(prev);
+                            if (checked) next.add(s.gl_account_id);
+                            else next.delete(s.gl_account_id);
+                            return next;
+                          });
+                        }}
+                      />
+                    </td>
+                    <td className="py-2.5 px-2 font-mono font-semibold">{s.gl_number}</td>
+                    <td className="py-2.5 px-2 truncate max-w-[150px]" title={s.short_name}>{s.short_name}</td>
+                    <td className="py-2.5 px-2 text-indigo-600 dark:text-indigo-400 font-semibold truncate max-w-[180px]" title={s.bs_row_name}>
+                      {s.bs_row_code} {s.bs_row_name}
+                    </td>
+                    <td className="py-2.5 px-2 text-[10px] text-muted-foreground">{s.reasoning}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <DialogFooter className="border-t pt-4">
+            <Button variant="outline" onClick={() => setIsSuggestionOpen(false)} disabled={isSavingSuggestions}>
+              Mégse
+            </Button>
+            <Button 
+              onClick={handleAcceptSuggestions} 
+              disabled={selectedSuggestionIds.size === 0 || isSavingSuggestions}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 font-semibold"
+            >
+              {isSavingSuggestions ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              Kijelöltek elfogadása ({selectedSuggestionIds.size} db)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -422,6 +594,8 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
   const [sideBySide, setSideBySide] = useState(false); // F11
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
+  const [activeDialogInvoice, setActiveDialogInvoice] = useState<any | null>(null);
+  const [isDialogInvoiceOpen, setIsDialogInvoiceOpen] = useState(false);
   const { data: exchangeRates } = useExchangeRates();
 
   // Derive fiscal year from the global date picker
@@ -771,6 +945,25 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
                           <div className="col-span-6 flex items-center gap-2 truncate" title={item.description || item.partner}>
                             {item.partner && <span className="font-medium text-foreground/80 mr-2">{item.partner}</span>}
                             <span className="truncate">{item.description}</span>
+                            {item.document_url && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveDialogInvoice({
+                                    image_url: item.document_url,
+                                    bizonylatsorszam: item.description || 'Bizonylat',
+                                    elado_nev: item.partner || '-',
+                                    vevo_nev: '-'
+                                  });
+                                  setIsDialogInvoiceOpen(true);
+                                }} 
+                                className="ml-auto flex shrink-0 items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors text-[10px] font-medium cursor-pointer"
+                                title="Eredeti bizonylat megtekintése"
+                              >
+                                <FileText className="w-3 h-3" />
+                                PDF
+                              </button>
+                            )}
                           </div>
                           <div className="col-span-2"></div>
                           <div className="col-span-2 text-right tabular-nums">
@@ -1039,6 +1232,15 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
           </ContextMenuContent>
         </ContextMenu>
       )}
+
+      <InvoiceImageDialog
+        invoice={activeDialogInvoice}
+        open={isDialogInvoiceOpen}
+        onClose={() => {
+          setIsDialogInvoiceOpen(false);
+          setActiveDialogInvoice(null);
+        }}
+      />
     </div>
   );
 }
@@ -1053,12 +1255,33 @@ export default function BalanceSheet() {
   const activeTab = searchParams.get('tab') || 'view';
   const setActiveTab = (val: string) => { setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('tab', val); return next; }, { replace: true }); };
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
+  const { dateToFormatted: dateTo } = useDateRange();
 
   // P7: isBalanced comes from BsViewTab callback instead of a duplicate query
   const [isBalanced, setIsBalanced] = useState(true);
   const handleBalanceComputed = useCallback((balanced: boolean) => {
     setIsBalanced(balanced);
   }, []);
+
+  // Fetch reconciliation status (381 vs cash, 384 vs bank)
+  const { data: reconStatus } = useQuery({
+    queryKey: ['reconciliation_status', selectedCompany?.id, activePresetId, dateTo],
+    queryFn: async () => {
+      if (!selectedCompany?.id || !activePresetId) return [];
+      const { data, error } = await supabase.rpc('get_reconciliation_status', {
+        p_company_id: selectedCompany.id,
+        p_preset_id: activePresetId,
+        p_date_to: dateTo || new Date().toISOString().slice(0, 10)
+      });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCompany?.id && !!activePresetId
+  });
+
+  const hasReconDiscrepancy = React.useMemo(() => {
+    return reconStatus?.some(r => Math.abs(Number(r.difference)) > 0.01) || false;
+  }, [reconStatus]);
 
   // GL accounts query for unassigned count
   const { data: glAccounts } = useQuery({
@@ -1125,16 +1348,26 @@ export default function BalanceSheet() {
         description="Sztv. 'A' változat szerinti mérleg és beállítások"
       />
 
-      {(!isBalanced || unassignedCount > 0) && (
+      {(!isBalanced || unassignedCount > 0 || hasReconDiscrepancy) && (
         <div className="bg-amber-500/10 border-2 border-amber-500/30 text-amber-800 dark:text-amber-400 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm print:hidden">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-sm">Figyelmeztetés a Mérleg összeállításában</p>
-              <p className="text-xs mt-1 opacity-90">
-                {!isBalanced && 'A mérleg nem egyezik (Eszközök ≠ Források). '}
-                {unassignedCount > 0 && `Jelenleg ${unassignedCount} db nem besorolt főkönyvi szám található az 1-4. számlaosztályban.`}
-              </p>
+              <div className="text-xs mt-1 opacity-90 space-y-1">
+                {!isBalanced && <p>• A mérleg nem egyezik (Eszközök ≠ Források).</p>}
+                {unassignedCount > 0 && <p>• Jelenleg {unassignedCount} db nem besorolt főkönyvi szám található az 1-4. számlaosztályban.</p>}
+                {reconStatus?.map(r => {
+                  const diff = Number(r.difference) || 0;
+                  if (Math.abs(diff) <= 0.01) return null;
+                  return (
+                    <p key={r.account_type} className="text-red-700 dark:text-red-400 font-medium flex items-center gap-1">
+                      • {r.account_name} egyeztetési eltérés: {new Intl.NumberFormat('hu-HU').format(diff)} HUF 
+                      <span className="opacity-80 font-normal"> (Rendszer: {new Intl.NumberFormat('hu-HU').format(Number(r.system_balance))} vs Főkönyv: {new Intl.NumberFormat('hu-HU').format(Number(r.ledger_balance))})</span>
+                    </p>
+                  );
+                })}
+              </div>
             </div>
           </div>
           <Button 
@@ -1151,7 +1384,15 @@ export default function BalanceSheet() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 h-12 w-full md:w-auto p-1 bg-muted/50">
-          <TabsTrigger value="view" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">Mérleg</TabsTrigger>
+          <TabsTrigger value="view" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 relative">
+            Mérleg
+            {hasReconDiscrepancy && (
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="mapping" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">Hozzárendelési Mátrix</TabsTrigger>
         </TabsList>
         <TabsContent value="view" className="mt-0 outline-none">

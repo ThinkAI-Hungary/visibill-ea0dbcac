@@ -21,6 +21,7 @@ import { generateVatReturnPdf } from '@/lib/vatReturnPdf';
 import { generateVatReturnXml } from '@/lib/vatReturnXml';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { reportError } from '@/lib/errorReporter';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 // V5: Extracted components
 import { VatCodeConfigTab } from '@/components/vat/VatCodeConfigTab';
@@ -31,6 +32,91 @@ import { ReturnHistoryTable } from '@/components/vat/ReturnHistoryTable';
 /* ────────────────────────────────────────── */
 /*  VAT Return View Tab                       */
 /* ────────────────────────────────────────── */
+
+export interface TaxValidationResult {
+  isValid: boolean;
+  isForeign?: boolean;
+  vatCode?: string;
+  reason: string;
+  severity: 'success' | 'warning' | 'error' | 'info';
+  status?: 'active' | 'exempt' | 'invalid';
+}
+
+export function validateHungarianTaxNumber(taxNumber: string): TaxValidationResult {
+  if (!taxNumber) return { isValid: false, reason: 'Nincs adószám', severity: 'error', status: 'invalid' };
+  
+  const trimmed = taxNumber.trim();
+  if (trimmed.startsWith('FOREIGN:') || trimmed.startsWith('TEST-')) {
+    return { isValid: true, isForeign: true, reason: 'Külföldi partner (EU-s/egyéb)', severity: 'info', status: 'active' };
+  }
+
+  // Hungarian tax number format check: 8 digits, hyphen, 1 digit, hyphen, 2 digits
+  const pattern = /^\d{8}-\d-\d{2}$/;
+  if (!pattern.test(trimmed)) {
+    return { isValid: false, reason: 'Hibás formátum (helyes: XXXXXXXX-X-XX)', severity: 'warning', status: 'invalid' };
+  }
+
+  const parts = trimmed.split('-');
+  const base = parts[0];
+  const vatCode = parts[1];
+  
+  // CDV check (modulo 10 of weighted 8 digits)
+  const digits = base.split('').map(Number);
+  const weights = [9, 7, 3, 1, 9, 7, 3, 1];
+  let sum = 0;
+  for (let i = 0; i < 8; i++) {
+    sum += digits[i] * weights[i];
+  }
+  
+  const isCdvValid = sum % 10 === 0;
+  if (!isCdvValid) {
+    return { isValid: false, reason: 'NAV CDV ellenőrzőösszeg hiba (adószám nem létezik)', severity: 'error', status: 'invalid' };
+  }
+
+  if (vatCode === '1') {
+    return { 
+      isValid: true, 
+      vatCode, 
+      reason: 'Alanyi adómentes / áfamentes adóalany (Áfa tv. XIII. fejezet)', 
+      severity: 'warning', 
+      status: 'exempt' 
+    };
+  } else if (vatCode === '2') {
+    return { 
+      isValid: true, 
+      vatCode, 
+      reason: 'Általános szabályok szerinti ÁFA-alany', 
+      severity: 'success', 
+      status: 'active' 
+    };
+  } else if (vatCode === '3') {
+    return { 
+      isValid: true, 
+      vatCode, 
+      reason: 'Egyszerűsített adózású adóalany (EVA/KATA/KIVA)', 
+      severity: 'success', 
+      status: 'active' 
+    };
+  } else if (vatCode === '4') {
+    return { 
+      isValid: true, 
+      vatCode, 
+      reason: 'Speciális adóalany (ÁFA tv. 4. kód)', 
+      severity: 'success', 
+      status: 'active' 
+    };
+  } else if (vatCode === '5') {
+    return { 
+      isValid: true, 
+      vatCode, 
+      reason: 'Csoportos adóalanyiság tagja', 
+      severity: 'success', 
+      status: 'active' 
+    };
+  }
+
+  return { isValid: true, vatCode, reason: 'Érvényes adószám', severity: 'success', status: 'active' };
+}
 
 interface ReturnLine { row_number: string; base_amount: number; tax_amount: number; base_amount_rounded: number; tax_amount_rounded: number; is_calculated: boolean; source_vat_codes: string[] | null; }
 interface MLine { id: string; partner_name: string; partner_tax_number: string; invoice_count: number; base_amount_rounded: number; tax_amount_rounded: number; tax_5_amount: number; tax_18_amount: number; tax_27_amount: number; invoice_details: any[]; }
@@ -95,6 +181,25 @@ function VatReturnViewTab() {
     },
     enabled: !!vatReturn?.id,
   });
+
+  const partnerValidations = useMemo(() => {
+    const validations: Record<string, TaxValidationResult> = {};
+    let hasErrors = false;
+    let hasConflicts = false;
+    
+    mLines.forEach(ml => {
+      const v = validateHungarianTaxNumber(ml.partner_tax_number);
+      validations[ml.id] = v;
+      if (!v.isValid) {
+        hasErrors = true;
+      }
+      if (v.status === 'exempt' && ml.tax_amount_rounded > 0) {
+        hasConflicts = true;
+      }
+    });
+    
+    return { validations, hasErrors, hasConflicts };
+  }, [mLines]);
 
   const { data: formRows = [] } = useQuery({
     queryKey: ['vat_form_rows'],
@@ -1049,6 +1154,19 @@ function VatReturnViewTab() {
               )}
             </CardHeader>
             <CardContent className="p-0">
+              {partnerValidations.hasConflicts && (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 p-3 rounded-lg flex items-start gap-2 text-xs mx-4 my-3">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <span><strong>ÁFA Konfliktus Figyelmeztetés:</strong> A partnerek között olyan vállalkozás szerepel adóalap/adó összeggel, amely az adószáma alapján alanyi adómentes (ÁFA-kód: 1). Ellenőrizd a számlák helyességét!</span>
+                </div>
+              )}
+              {partnerValidations.hasErrors && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 p-3 rounded-lg flex items-start gap-2 text-xs mx-4 my-3">
+                  <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                  <span><strong>Adószám Validációs Hiba:</strong> Érvénytelen formátumú vagy CDV-hibás adószámok találhatók az M-lapon! Kérjük, javítsd a partner törzsadatait.</span>
+                </div>
+              )}
+
               {filteredMLines.length === 0 ? (
                 <p className="text-sm text-muted-foreground p-4">
                   {mLines.length === 0 ? 'Nincs belföldi levonható számla az időszakban' : 'Nincs találat a keresési feltételekre'}
@@ -1073,7 +1191,75 @@ function VatReturnViewTab() {
                           {expandedPartners.has(ml.id) ? <ChevronDown className="w-3 h-3 shrink-0" /> : <ChevronRight className="w-3 h-3 shrink-0" />}
                           <span className="truncate">{ml.partner_name}</span>
                         </div>
-                        <div className="col-span-2 font-mono text-xs">{ml.partner_tax_number}</div>
+                        <div className="col-span-2 font-mono text-xs flex items-center gap-1.5">
+                          <span>{ml.partner_tax_number}</span>
+                          {(() => {
+                            const val = partnerValidations.validations[ml.id];
+                            if (!val) return null;
+                            if (val.status === 'exempt' && ml.tax_amount_rounded > 0) {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 px-1 py-0 text-[9px] cursor-help shrink-0">
+                                        mentes ⚠️
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {val.reason} (ÁFA konfliktus!)
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            if (!val.isValid) {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30 px-1 py-0 text-[9px] cursor-help shrink-0">
+                                        hibás
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {val.reason}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            if (val.isForeign) {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 px-1 py-0 text-[9px] cursor-help shrink-0">
+                                        külföldi
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {val.reason}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 px-1 py-0 text-[9px] cursor-help shrink-0">
+                                      aktív
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {val.reason}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </div>
                         <div className="col-span-1 text-center">{ml.invoice_count}</div>
                         <div className="col-span-2 text-right tabular-nums">{fmtEft(ml.base_amount_rounded)}</div>
                         <div className="col-span-2 text-right tabular-nums">{fmtEft(ml.tax_amount_rounded)}</div>

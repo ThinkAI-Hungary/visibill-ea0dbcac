@@ -17,6 +17,8 @@ import { useTransactionData, type Transaction } from '@/hooks/useTransactionData
 import SzepCardTab from '@/components/SzepCardTab';
 import { supabase } from '@/integrations/supabase/client';
 import { TransactionFilesDialog } from '@/components/transactions/TransactionFilesDialog';
+import { TransactionRulesDialog } from '@/components/transactions/TransactionRulesDialog';
+import { Sliders } from 'lucide-react';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import CourierReportTab from '@/components/CourierReportTab';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
@@ -56,6 +58,7 @@ const TransactionsPage = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [filesDialogOpen, setFilesDialogOpen] = useState(false);
+  const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
 
   const {
     selectedCompany,
@@ -580,6 +583,11 @@ const TransactionsPage = () => {
                       Feltöltött fájlok
                     </Button>
                     <TransactionFilesDialog open={filesDialogOpen} onOpenChange={setFilesDialogOpen} />
+                    <Button variant="outline" size="sm" onClick={() => setRulesDialogOpen(true)}>
+                      <Sliders className="h-4 w-4 mr-2" />
+                      Könyvelési szabályok
+                    </Button>
+                    <TransactionRulesDialog open={rulesDialogOpen} onOpenChange={setRulesDialogOpen} />
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" disabled={exporting}>

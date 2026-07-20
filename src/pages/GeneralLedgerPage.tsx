@@ -53,7 +53,7 @@ export default function GeneralLedgerPage() {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
         .from('gl_audit_imports')
-        .select('id, file_name, period_start, period_end, processing_status, entry_count, source_program, imported_at, error_message')
+        .select('id, file_name, period_start, period_end, processing_status, entry_count, source_program, imported_at, error_message, dry_run')
         .eq('company_id', selectedCompany.id)
         .order('imported_at', { ascending: false });
       if (error) return [];
@@ -68,7 +68,7 @@ export default function GeneralLedgerPage() {
   });
 
   // Auto-use the latest completed import (no toggle needed)
-  const activeAuditImport = auditImports?.find(i => i.processing_status === 'completed') || null;
+  const activeAuditImport = auditImports?.find(i => i.processing_status === 'completed' && !i.dry_run) || null;
 
   // ── URL deep-linking for modals ──
   const [searchParams, setSearchParams] = useSearchParams();

@@ -47,6 +47,22 @@ export default function EntriesTab() {
   const companyId = selectedCompany?.id || '';
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('petty_cash');
+
+  // Fetch partners list for manual entry selection and limit checks
+  const { data: partners = [] } = useQuery({
+    queryKey: ['partners', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from('partners')
+        .select('id, name, tax_number, related_party')
+        .eq('company_id', companyId)
+        .order('name');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
   const [filterRegister, setFilterRegister] = useState<string>('all');
   const [filterCurrency, setFilterCurrency] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
@@ -160,6 +176,39 @@ export default function EntriesTab() {
     adojogi_megjegyzes: '',
     invoice_direction: 'INBOUND',
   });
+
+  // Calculate monthly total and warnings for pending invoices
+  const pendingPartnerName = editPendingForm.invoice_direction === 'OUTBOUND' 
+    ? editPendingForm.vevo_nev 
+    : editPendingForm.elado_nev;
+  
+  const matchedPartner = useMemo(() => {
+    if (!pendingPartnerName) return null;
+    const nameLower = pendingPartnerName.toLowerCase().trim();
+    return partners.find(p => p.name.toLowerCase().trim() === nameLower) || null;
+  }, [partners, pendingPartnerName]);
+
+  const isPendingRelated = matchedPartner?.related_party || false;
+  const pendingDate = editPendingForm.kibocsatas_datuma || format(new Date(), 'yyyy-MM-dd');
+  
+  const { data: pendingMonthlyTotal = 0 } = useQuery({
+    queryKey: ['partner-monthly-cash-total', companyId, matchedPartner?.id, pendingDate],
+    queryFn: async () => {
+      if (!matchedPartner?.id || !companyId) return 0;
+      const { data, error } = await supabase.rpc('get_partner_monthly_cash_total', {
+        p_company_id: companyId,
+        p_partner_id: matchedPartner.id,
+        p_partner_name: matchedPartner.name,
+        p_date: pendingDate
+      });
+      if (error) return 0;
+      return Number(data) || 0;
+    },
+    enabled: !!matchedPartner?.id && !!companyId && !!editingPendingInvoice,
+  });
+
+  const pendingParsedAmount = Number(editPendingForm.brutto_vegosszeg) || 0;
+  const pendingTotalWithCurrent = pendingMonthlyTotal + pendingParsedAmount;
 
   const handleStartEditPending = (inv: any) => {
     setEditingPendingInvoice(inv);
@@ -541,7 +590,25 @@ export default function EntriesTab() {
                           {isPending ? 'Pénztárbizonylat' : (DISPLAY_SOURCE_LABELS[entry.source_type] || entry.source_type)}
                         </span>
                       </TableCell>
-                      <TableCell className="max-w-[250px] truncate text-sm">{entry.description || '—'}</TableCell>
+                      <TableCell className="max-w-[250px] truncate text-sm">
+                        {(() => {
+                          const isEntryRelated = entry.partner_id
+                            ? partners.find(p => p.id === entry.partner_id)?.related_party || false
+                            : (entry.description || '').toLowerCase().includes('kapcsolt') ||
+                              partners.some(p => p.related_party && (entry.description || '').toLowerCase().includes(p.name.toLowerCase().trim()));
+                          
+                          return (
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="truncate" title={entry.description || '—'}>{entry.description || '—'}</span>
+                              {isEntryRelated && (
+                                <Badge variant="outline" className="text-[8px] h-3.5 px-1 bg-amber-500/10 text-amber-600 border-amber-500/20 font-semibold shrink-0">
+                                  Kapcsolt
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </TableCell>
                       <TableCell className={cn('text-right font-medium text-sm tabular-nums whitespace-nowrap', entry.amount >= 0 ? 'text-emerald-500' : 'text-destructive')}>
                         {fmtAmount(entry.amount, entry.currency)}
                       </TableCell>
@@ -644,6 +711,7 @@ export default function EntriesTab() {
         userId={user?.id || ''}
         editingEntry={editingEntry}
         onCancelEditing={() => setEditingEntry(null)}
+        partners={partners}
       />
 
       {/* F4: Cash Closing Dialog */}
@@ -840,6 +908,30 @@ export default function EntriesTab() {
                     onChange={(e) => setEditPendingForm(prev => ({ ...prev, vevo_nev: e.target.value }))}
                     placeholder="Vevő teljes neve..."
                   />
+                  {isPendingRelated && editPendingForm.penznem === 'HUF' && pendingTotalWithCurrent >= 1200000 && (
+                    <div className={cn(
+                      "flex items-start gap-2 p-2.5 rounded-lg text-xs leading-normal animate-in fade-in slide-in-from-top-2 duration-200 mt-2",
+                      pendingTotalWithCurrent >= 1500000 
+                        ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20" 
+                        : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                    )}>
+                      <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", pendingTotalWithCurrent >= 1500000 ? "text-red-500" : "text-amber-500")} />
+                      <div className="space-y-0.5">
+                        <p className="font-bold">
+                          {pendingTotalWithCurrent >= 1500000 
+                            ? "Kapcsolt vállalkozási limit túllépés!" 
+                            : "Kapcsolt vállalkozási limit figyelmeztetés!"}
+                        </p>
+                        <p className="opacity-90">
+                          A partner havi halmozott készpénzforgalma ezzel a számlával együtt:{" "}
+                          <strong className="font-mono">{pendingTotalWithCurrent.toLocaleString('hu-HU')} Ft</strong>.
+                          {pendingTotalWithCurrent >= 1500000 
+                            ? " Ez meghaladja a törvényileg megengedett 1.5 millió Ft-os havi limitet!" 
+                            : " Ez eléri a figyelmeztetési sávot (1.2 millió Ft)."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1059,7 +1151,7 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
 //  MANUAL ENTRY DIALOG  (U5: amount validation + editing/deleting)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, editingEntry, onCancelEditing }: {
+function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, editingEntry, onCancelEditing, partners }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   registers: PettyCashRegister[];
@@ -1067,6 +1159,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   userId: string;
   editingEntry?: PettyCashEntry | null;
   onCancelEditing?: () => void;
+  partners: any[];
 }) {
   const qc = useQueryClient();
   const defaultReg = registers.find(r => r.is_default) || registers[0];
@@ -1077,6 +1170,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     amount: '',
     currency: 'HUF',
     isExpense: false,
+    partner_id: '',
   });
 
   // ─── Invoice settlement mode ────────────────────────────────────────────
@@ -1116,6 +1210,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           amount: String(Math.abs(editingEntry.amount)),
           currency: editingEntry.currency,
           isExpense: editingEntry.amount < 0,
+          partner_id: editingEntry.partner_id || '',
         });
       } else if (defaultReg) {
         setForm({
@@ -1125,6 +1220,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           amount: '',
           currency: defaultReg.currencies[0] || 'HUF',
           isExpense: false,
+          partner_id: '',
         });
       }
     }
@@ -1132,8 +1228,41 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
 
   const selectedReg = registers.find(r => r.id === form.register_id);
 
+  // Fetch monthly total for selected partner to run RPT prepared limit checks
+  const selectedDate = form.entry_date || format(new Date(), 'yyyy-MM-dd');
+  const selectedPartnerId = form.partner_id;
+  const selectedPartnerObj = partners.find(p => p.id === selectedPartnerId);
+  const selectedPartnerName = selectedPartnerObj?.name || '';
+  const isRelated = selectedPartnerObj?.related_party || false;
+
+  const { data: monthlyTotal = 0 } = useQuery({
+    queryKey: ['partner-monthly-cash-total', companyId, selectedPartnerId, selectedDate],
+    queryFn: async () => {
+      if (!selectedPartnerId || !companyId || selectedPartnerId === 'none') return 0;
+      const { data, error } = await supabase.rpc('get_partner_monthly_cash_total', {
+        p_company_id: companyId,
+        p_partner_id: selectedPartnerId,
+        p_partner_name: selectedPartnerName,
+        p_date: selectedDate
+      });
+      if (error) {
+        console.error("Error querying monthly total:", error);
+        return 0;
+      }
+      return Number(data) || 0;
+    },
+    enabled: !!selectedPartnerId && selectedPartnerId !== 'none' && !!companyId && open,
+  });
+
   // U5: Amount validation
   const parsedAmount = parseFloat(form.amount) || 0;
+  const databaseTotalExcludingCurrent = useMemo(() => {
+    if (!editingEntry) return monthlyTotal;
+    return Math.max(0, monthlyTotal - Math.abs(editingEntry.amount));
+  }, [monthlyTotal, editingEntry]);
+
+  const totalWithCurrent = databaseTotalExcludingCurrent + parsedAmount;
+
   const isAmountValid = parsedAmount > 0;
   const isLargeAmount = form.currency === 'HUF'
     ? parsedAmount > 1_000_000
@@ -1191,6 +1320,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       const rawAmount = parseFloat(form.amount) || 0;
       const signed = form.isExpense ? -Math.abs(rawAmount) : Math.abs(rawAmount);
       const rounded = roundHuf(signed, form.currency);
+      const finalPartnerId = form.partner_id && form.partner_id !== 'none' ? form.partner_id : null;
       
       if (editingEntry) {
         // UPDATE
@@ -1201,6 +1331,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             description: form.description,
             amount: rounded,
             currency: form.currency,
+            partner_id: finalPartnerId,
           })
           .eq('id', editingEntry.id);
         if (error) throw error;
@@ -1217,6 +1348,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             source_type: 'manual',
             routed_by: 'manual',
             created_by: userId,
+            partner_id: finalPartnerId,
           });
         if (error) throw error;
       }
@@ -1414,6 +1546,38 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             </div>
           </div>
           <div>
+            <Label htmlFor="manual-partner">Partner (opcionális)</Label>
+            <Select 
+              value={form.partner_id || 'none'} 
+              onValueChange={v => {
+                const nextVal = v === 'none' ? '' : v;
+                setForm(f => {
+                  const selected = partners.find(p => p.id === nextVal);
+                  const updatedDesc = selected && !f.description
+                    ? (f.isExpense ? `Kiadás - ${selected.name}` : `Bevétel - ${selected.name}`)
+                    : f.description;
+                  return {
+                    ...f,
+                    partner_id: nextVal,
+                    description: updatedDesc
+                  };
+                });
+              }}
+            >
+              <SelectTrigger id="manual-partner" className="h-9">
+                <SelectValue placeholder="Válassz partnert" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nincs partner</SelectItem>
+                {partners.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name} {p.related_party ? ' (Kapcsolt)' : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <Label>Leírás</Label>
             <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Pl. Irodaszer vásárlás" />
           </div>
@@ -1456,6 +1620,32 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 text-amber-600 text-xs">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               Szokatlanul nagy összeg — biztosan helyes?
+            </div>
+          )}
+
+          {/* Related party prepared limit warning */}
+          {isRelated && form.currency === 'HUF' && totalWithCurrent >= 1200000 && (
+            <div className={cn(
+              "flex items-start gap-2 p-2.5 rounded-lg text-xs leading-normal animate-in fade-in slide-in-from-top-2 duration-200",
+              totalWithCurrent >= 1500000 
+                ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20" 
+                : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+            )}>
+              <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", totalWithCurrent >= 1500000 ? "text-red-500" : "text-amber-500")} />
+              <div className="space-y-0.5">
+                <p className="font-bold">
+                  {totalWithCurrent >= 1500000 
+                    ? "Kapcsolt vállalkozási limit túllépés!" 
+                    : "Kapcsolt vállalkozási limit figyelmeztetés!"}
+                </p>
+                <p className="opacity-90">
+                  A partner havi halmozott készpénzforgalma ezzel a tétellel együtt:{" "}
+                  <strong className="font-mono">{totalWithCurrent.toLocaleString('hu-HU')} Ft</strong>.
+                  {totalWithCurrent >= 1500000 
+                    ? " Ez meghaladja a törvényileg megengedett 1.5 millió Ft-os havi limitet!" 
+                    : " Ez eléri a figyelmeztetési sávot (1.2 millió Ft)."}
+                </p>
+              </div>
             </div>
           )}
             </>

@@ -626,13 +626,20 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
                 )}
               </div>
             </TooltipTrigger>
-            <TooltipContent>
-              {matchStatus === 'matched' && 'Párosított és jóváhagyott'}
-              {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
-              {matchStatus === 'auto_settled' && 'Rendezett — nem igényel számlát (bankköltség, ATM, stb.)'}
-              {matchStatus === 'unmatched' && 'Nincs párosítva'}
-              {matchStatus === 'no_invoice' && 'Nincs hozzá számla — könyvelő feladata'}
-              {matchStatus === 'invoice_missing' && 'Számla nincs feltöltve — fel kell tölteni'}
+            <TooltipContent className="max-w-xs space-y-1">
+              <p className="font-semibold text-xs">
+                {matchStatus === 'matched' && 'Párosított és jóváhagyott'}
+                {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
+                {matchStatus === 'auto_settled' && 'Rendezett — nem igényel számlát (bankköltség, ATM, stb.)'}
+                {matchStatus === 'unmatched' && 'Nincs párosítva'}
+                {matchStatus === 'no_invoice' && 'Nincs hozzá számla — könyvelő feladata'}
+                {matchStatus === 'invoice_missing' && 'Számla nincs feltöltve — fel kell tölteni'}
+              </p>
+              {transaction.reason && (
+                <p className="text-[11px] text-muted-foreground border-t border-border/30 pt-1 mt-1 font-normal leading-normal">
+                  Indok: {transaction.reason}
+                </p>
+              )}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

@@ -153,6 +153,55 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
     const liquidity = shortTermLiab > 0 ? (currentAssetsVal / shortTermLiab).toFixed(2) : 'N/A';
     const liquidityEval = Number(liquidity) >= 1.3 ? 'biztonsággal fedezik' : Number(liquidity) >= 1.0 ? 'éppen fedezik' : 'nem fedezik';
 
+    const assetTable = data.assetMovement ? `
+      <table style="width:80%;border-collapse:collapse;font-size:9.5px;margin:10px 0 6px 11px;">
+        <thead><tr style="background:#f0fdf4;border-bottom:2px solid #d1d5db;">
+          <th style="padding:5px 8px;text-align:left;font-size:9px;color:#6b7280;">Mutató</th>
+          <th style="padding:5px 8px;text-align:right;font-size:9px;color:#6b7280;">Érték</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">Összes eszköz (db)</td><td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${data.assetMovement.total}</td></tr>
+          <tr><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">Aktív eszközök</td><td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${data.assetMovement.active}</td></tr>
+          <tr><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">Kivezetett eszközök</td><td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${data.assetMovement.disposed}</td></tr>
+          <tr style="font-weight:600;"><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">Bruttó érték összesen</td><td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${fmtFull(data.assetMovement.totalAcquisition)} Ft</td></tr>
+          <tr><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">Aktív eszközök bruttó értéke</td><td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${fmtFull(data.assetMovement.activeAcquisition)} Ft</td></tr>
+        </tbody>
+      </table>` : '<p style="font-size:9.5px;color:#999;font-style:italic;">Tárgyi eszköz adatok nem érhetők el.</p>';
+
+    const equityTable = data.equityRows && data.equityRows.length > 0 ? `
+      <table style="width:90%;border-collapse:collapse;font-size:9.5px;margin:10px 0 6px 11px;">
+        <thead><tr style="background:#f0fdf4;border-bottom:2px solid #d1d5db;">
+          <th style="padding:5px 8px;text-align:left;font-size:9px;color:#6b7280;">Sor</th>
+          <th style="padding:5px 8px;text-align:left;font-size:9px;color:#6b7280;">Megnevezés</th>
+          <th style="padding:5px 8px;text-align:right;font-size:9px;color:#6b7280;">Előző év</th>
+          <th style="padding:5px 8px;text-align:right;font-size:9px;color:#6b7280;">Tárgyév</th>
+        </tr></thead>
+        <tbody>
+          ${data.equityRows.map((r: any) => `
+            <tr>
+              <td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;font-family:monospace;font-size:8px;">${r.row_code || ''}</td>
+              <td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">${r.name || ''}</td>
+              <td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;font-variant-numeric:tabular-nums;">${fmt(Number(r.prior_year_balance) || 0)} E</td>
+              <td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;font-variant-numeric:tabular-nums;">${fmt(Number(r.current_balance) || 0)} E</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>` : '<p style="font-size:9.5px;color:#999;font-style:italic;">Saját tőke adatok nem érhetők el.</p>';
+
+    const salaryTable = data.salaryMetrics ? `
+      <table style="width:80%;border-collapse:collapse;font-size:9.5px;margin:10px 0 6px 11px;">
+        <thead><tr style="background:#f0fdf4;border-bottom:2px solid #d1d5db;">
+          <th style="padding:5px 8px;text-align:left;font-size:9px;color:#6b7280;">Mutató</th>
+          <th style="padding:5px 8px;text-align:right;font-size:9px;color:#6b7280;">Érték</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">Átlagos létszám</td><td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${data.salaryMetrics.headcount} fő</td></tr>
+          <tr><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">Bérköltség</td><td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${fmtFull(data.salaryMetrics.totalWages)} Ft</td></tr>
+          <tr><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">Bérjárulékok</td><td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${fmtFull(data.salaryMetrics.totalContrib)} Ft</td></tr>
+          <tr style="font-weight:600;"><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">Összes személyi jellegű ráfordítás</td><td style="padding:4px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${fmtFull(data.salaryMetrics.total)} Ft</td></tr>
+        </tbody>
+      </table>` : '<p style="font-size:9.5px;color:#999;font-style:italic;">Foglalkoztatotti adatok nem érhetők el.</p>';
+
     const vars: Record<string, string> = {
       '[Cégnév]': esc(data.companyName || '___'),
       '[Székhely]': esc(data.companyAddress || '___'),
@@ -170,6 +219,9 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
       '[Adózott eredmény]': fmt(data.netIncome || 0),
       '[Osztalék]': fmt(data.dividendAmount || 0),
       '[Eredménytartalék]': fmt(data.retainedEarnings || 0),
+      '[AUTOMATIKUS TÁBLÁZAT - TENY MODULBÓL]': assetTable,
+      '[AUTOMATIKUS TÁBLÁZAT - MÉRLEG D. SOROKBÓL]': equityTable,
+      '[AUTOMATIKUS TÁBLÁZAT - FOGLALKOZTATOTTI ADATOK]': salaryTable,
     };
     // B10 FIX: Don't esc() the text body — it may contain intentional HTML from
     // the Rich Text Editor (<b>, <i>, <ul>, <li>, <br>, <p>, etc.).
@@ -193,11 +245,11 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
       const rawText = saved?.text || tmpl.default_text || '';
       const text = replaceVars(rawText).replace(/\n/g, '<br>');
 
-      // Build dynamic table HTML for specific sections
+      // Build dynamic table HTML for specific sections (fallback - only if not already replaced inline!)
       let dynamicTableHtml = '';
 
       // TENY asset movement table
-      if (tmpl.section_key === 'asset_movement' && data.assetMovement) {
+      if (tmpl.section_key === 'asset_movement' && data.assetMovement && !rawText.includes('[AUTOMATIKUS TÁBLÁZAT - TENY MODULBÓL]')) {
         const am = data.assetMovement;
         dynamicTableHtml = `
           <table style="width:80%;border-collapse:collapse;font-size:9.5px;margin:10px 0 6px 11px;">
@@ -216,7 +268,7 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
       }
 
       // Equity changes table
-      if (tmpl.section_key === 'equity_changes' && data.equityRows && data.equityRows.length > 0) {
+      if (tmpl.section_key === 'equity_changes' && data.equityRows && data.equityRows.length > 0 && !rawText.includes('[AUTOMATIKUS TÁBLÁZAT - MÉRLEG D. SOROKBÓL]')) {
         const eqRows = data.equityRows.map((r: any) => `
           <tr>
             <td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;font-family:monospace;font-size:8px;">${r.row_code || ''}</td>
@@ -237,7 +289,7 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
       }
 
       // Salary/headcount table
-      if (tmpl.section_key === 'employee_info' && data.salaryMetrics) {
+      if (tmpl.section_key === 'employee_info' && data.salaryMetrics && !rawText.includes('[AUTOMATIKUS TÁBLÁZAT - FOGLALKOZTATOTTI ADATOK]')) {
         const sm = data.salaryMetrics;
         dynamicTableHtml = `
           <table style="width:80%;border-collapse:collapse;font-size:9.5px;margin:10px 0 6px 11px;">
@@ -254,7 +306,7 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
           </table>`;
       }
 
-      // Remove placeholder markers like [AUTOMATIKUS TÁBLÁZAT...] from text
+      // Remove placeholder markers like [AUTOMATIKUS TÁBLÁZAT...] from text if they weren't replaced (should be none, but just in case)
       const cleanText = text.replace(/\[AUTOMATIKUS TÁBLÁZAT[^\]]*\]/g, '');
 
       // B10: Use the RTE HTML directly (don't wrap in <p> — it may contain <p>, <ul>, <ol> etc.)

@@ -27,12 +27,12 @@ const MEMBER_MODULES: EaisybillModule[] = [
 const ASSISTANT_MODULES: EaisybillModule[] = [
   'dashboard', 'categories', 'projects', 'partners', 'invoices',
   'receivables', 'transactions', 'petty_cash', 'upload', 'tickets',
-  'exchange_rates', 'settings',
+  'exchange_rates', 'settings', 'notes',
 ];
 
 const VIEWER_MODULES: EaisybillModule[] = [
   'dashboard', 'categories', 'projects', 'partners', 'invoices',
-  'receivables', 'transactions', 'petty_cash', 'exchange_rates', 'tickets', 'settings',
+  'receivables', 'transactions', 'petty_cash', 'exchange_rates', 'tickets', 'settings', 'notes',
 ];
 
 const EMPLOYEE_MODULES: EaisybillModule[] = ['working_time'];
@@ -45,7 +45,7 @@ const ALL_MODULES: EaisybillModule[] = [
   'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
   'salaries', 'working_time', 'fixed_assets',
   'integrations', 'exchange_rates', 'upload', 'tickets', 'settings',
-  'shipments', 'shipment_matching', 'shipment_import',
+  'shipments', 'shipment_matching', 'shipment_import', 'notes',
 ];
 
 // ═══════════════════════════════════════════════════════════════

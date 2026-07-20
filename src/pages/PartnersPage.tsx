@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { cn, formatCurrency } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { cn, formatCurrency } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -84,6 +85,7 @@ interface Partner {
   custom_monogram?: string | null;
   custom_color?: string | null;
   custom_bg_color?: string | null;
+  related_party?: boolean;
 }
 
 // Import shared helpers
@@ -117,6 +119,7 @@ export default function PartnersPage() {
     custom_monogram: "",
     custom_color: "",
     custom_bg_color: "",
+    related_party: false,
   });
   const [emailError, setEmailError] = useState("");
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
@@ -168,7 +171,7 @@ export default function PartnersPage() {
       const [{ data: partnerData, error: partnerError }, { data: supplierCounts }, { data: customerCounts }, { data: uploadedCounts }] = await Promise.all([
         supabase
           .from("partners")
-          .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting, custom_monogram, custom_color, custom_bg_color")
+          .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting, custom_monogram, custom_color, custom_bg_color, related_party")
           .eq("company_id", selectedCompany.id)
           .order("name", { ascending: true }),
         supabase.from("nav_invoices").select("supplier_tax_number").eq("company_id", selectedCompany.id),
@@ -455,6 +458,7 @@ export default function PartnersPage() {
         custom_bg_color: data.custom_bg_color || null,
         user_id: user.id,
         company_id: selectedCompany?.id || null,
+        related_party: data.related_party || false,
       };
 
       if (data.id) {
@@ -579,6 +583,7 @@ export default function PartnersPage() {
         custom_monogram: partner.custom_monogram || "",
         custom_color: partner.custom_color || "",
         custom_bg_color: partner.custom_bg_color || "",
+        related_party: partner.related_party || false,
       });
     } else {
       setEditingPartner(null);
@@ -591,6 +596,7 @@ export default function PartnersPage() {
         custom_monogram: "",
         custom_color: "",
         custom_bg_color: "",
+        related_party: false,
       });
     }
     setEmailError("");
@@ -610,6 +616,7 @@ export default function PartnersPage() {
       custom_monogram: "",
       custom_color: "",
       custom_bg_color: "",
+      related_party: false,
     });
   };
 
@@ -855,10 +862,17 @@ export default function PartnersPage() {
                                     </AvatarFallback>
                                   )}
                                 </Avatar>
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-sm truncate text-foreground leading-tight">
-                                    {decodedName}
-                                  </p>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 leading-tight">
+                                    <p className="font-semibold text-sm truncate text-foreground">
+                                      {decodedName}
+                                    </p>
+                                    {partner.related_party && (
+                                      <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400 font-semibold shrink-0">
+                                        Kapcsolt
+                                      </Badge>
+                                    )}
+                                  </div>
                                   {partner.address && (
                                     <p className="text-xs text-muted-foreground truncate max-w-[200px]">
                                       {decodeHtmlEntities(partner.address)}
@@ -1271,21 +1285,24 @@ export default function PartnersPage() {
                 <p className="text-xs text-destructive">{emailError}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="partner_type">Típus</Label>
-              <Select
-                value={formData.partner_type}
-                onValueChange={(value) => setFormData({ ...formData, partner_type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="both">Mindkettő (Vevő és Szállító)</SelectItem>
-                  <SelectItem value="customer">Vevő</SelectItem>
-                  <SelectItem value="supplier">Szállító</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="related_party"
+                checked={formData.related_party}
+                onCheckedChange={(checked) => setFormData({ ...formData, related_party: !!checked })}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="related_party"
+                  className="text-xs font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Kapcsolt vállalkozás
+                </Label>
+                <p className="text-[10px] text-muted-foreground">
+                  A céggel kapcsolt vállalkozási viszonyban álló partner (limit ellenőrzéshez).
+                </p>
+              </div>
             </div>
 
             {/* ── Avatar customization ── */}

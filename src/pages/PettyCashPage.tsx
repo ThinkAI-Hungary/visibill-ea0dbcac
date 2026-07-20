@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,12 +9,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Banknote, Settings2, Star, Zap, ClipboardCheck } from 'lucide-react';
+import { AlertTriangle, Banknote, Settings2, Star, Zap, ClipboardCheck, Calculator } from 'lucide-react';
 import { fmtBalance } from '@/components/petty-cash/types';
 import type { SummaryRow } from '@/components/petty-cash/types';
 import RegistersTab from '@/components/petty-cash/RegistersTab';
 import EntriesTab from '@/components/petty-cash/EntriesTab';
 import RoutingRulesTab from '@/components/petty-cash/RoutingRulesTab';
+import DenominationCalculatorDialog from '@/components/petty-cash/DenominationCalculatorDialog';
+import { Button } from '@/components/ui/button';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  MAIN PAGE
@@ -24,6 +26,14 @@ const PettyCashPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const companyId = selectedCompany?.id || '';
+
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [calcRegister, setCalcRegister] = useState<{ id: string; name: string; balance: number; currency: string } | null>(null);
+
+  const handleOpenCalc = (regId: string, regName: string, balance: number, currency: string) => {
+    setCalcRegister({ id: regId, name: regName, balance, currency });
+    setCalcOpen(true);
+  };
 
   // P3: Summary computed from DB RPC get_petty_cash_summary
   // P3: Added staleTime: 30s to avoid unnecessary re-fetches (mutations invalidate)
@@ -180,6 +190,22 @@ const PettyCashPage = () => {
                     );
                   })}
                 </div>
+
+                {/* Cash Denomination Calculator Button */}
+                <div className="mt-3.5 pt-3 border-t border-border/40 flex items-center justify-end gap-2 flex-wrap">
+                  {reg.currencies.map(c => (
+                    <Button
+                      key={c.currency}
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[10px] px-2 gap-1 text-primary hover:text-primary hover:bg-primary/5 select-none"
+                      onClick={() => handleOpenCalc(regId, reg.name, c.balance, c.currency)}
+                    >
+                      <Calculator className="h-3 w-3" />
+                      Címletszámoló ({c.currency})
+                    </Button>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -209,6 +235,16 @@ const PettyCashPage = () => {
             <RoutingRulesTab />
           </TabsContent>
         </Tabs>
+        
+        {calcRegister && (
+          <DenominationCalculatorDialog
+            open={calcOpen}
+            onOpenChange={setCalcOpen}
+            registerName={calcRegister.name}
+            currency={calcRegister.currency}
+            theoreticalBalance={calcRegister.balance}
+          />
+        )}
       </main>
     </div>
   );

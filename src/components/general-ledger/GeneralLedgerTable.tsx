@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown } from 'lucide-react';
+import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -15,6 +15,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Select, 
@@ -188,6 +195,41 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
     refetchInterval: isPolling ? 3000 : false, // P4: conditional polling
     placeholderData: (prev: any) => prev,
+  });
+
+  const [selectedLeafAccount, setSelectedLeafAccount] = useState<{ code: string; name: string } | null>(null);
+
+  const { data: journalEntries, isLoading: isLoadingEntries } = useQuery({
+    queryKey: ['glJournalEntries', selectedCompany?.id, presetId, selectedLeafAccount?.code],
+    queryFn: async () => {
+      if (!selectedCompany?.id || !presetId || !selectedLeafAccount?.code) return [];
+
+      // Find active import first
+      const { data: importData } = await supabase
+        .from('gl_audit_imports')
+        .select('id')
+        .eq('company_id', selectedCompany.id)
+        .eq('preset_id', presetId)
+        .eq('processing_status', 'completed')
+        .eq('dry_run', false)
+        .order('imported_at', { ascending: false })
+        .limit(1);
+
+      const activeImportId = importData?.[0]?.id;
+      if (!activeImportId) return [];
+
+      // Fetch entries for this account and import
+      const { data, error } = await supabase
+        .from('gl_journal_entries')
+        .select('*')
+        .eq('import_id', activeImportId)
+        .or(`debit_account.eq.${selectedLeafAccount.code},credit_account.eq.${selectedLeafAccount.code}`)
+        .order('voucher_date', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedLeafAccount && !!selectedCompany?.id && !!presetId,
   });
 
   const handleRefetchAll = () => {
@@ -766,14 +808,31 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                              <span className="text-xs truncate">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : ''}</span>
                            </>
                         ) : (
-                            <span className={cn(
-                              "font-semibold",
-                              (row.tempBalance && row.tempBalance !== 0 && (!row.finalBalance || row.finalBalance === 0)) 
-                                ? "text-orange-500 dark:text-orange-400" 
-                                : "text-foreground"
-                            )}>
-                             {highlightMatch(row.id, deferredSearch)}
-                           </span>
+                           !row.hasChildren ? (
+                             <span 
+                               className={cn(
+                                 "font-semibold cursor-pointer hover:underline text-primary transition-colors",
+                                 (row.tempBalance && row.tempBalance !== 0 && (!row.finalBalance || row.finalBalance === 0)) 
+                                   ? "text-orange-500 dark:text-orange-400 hover:text-orange-600" 
+                                   : ""
+                               )}
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 setSelectedLeafAccount({ code: row.id, name: row.name });
+                               }}
+                             >
+                              {highlightMatch(row.id, deferredSearch)}
+                             </span>
+                           ) : (
+                             <span className={cn(
+                               "font-semibold",
+                               (row.tempBalance && row.tempBalance !== 0 && (!row.finalBalance || row.finalBalance === 0)) 
+                                 ? "text-orange-500 dark:text-orange-400" 
+                                 : "text-foreground"
+                             )}>
+                              {highlightMatch(row.id, deferredSearch)}
+                             </span>
+                           )
                         )}
                       </div>
                       <div className="col-span-7 py-3 pr-3 text-sm flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
@@ -1049,6 +1108,89 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Sheet open={!!selectedLeafAccount} onOpenChange={(open) => { if (!open) setSelectedLeafAccount(null); }}>
+        <SheetContent className="sm:max-w-[720px] w-[90vw] overflow-y-auto flex flex-col h-full bg-background border-l">
+          <SheetHeader className="pb-4 border-b">
+            <SheetTitle className="text-lg font-bold flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Naplóbejegyzések: {selectedLeafAccount?.code}
+            </SheetTitle>
+            <SheetDescription className="text-xs">
+              {selectedLeafAccount?.name} – Könyvelési tételek részletes listája az aktív főkönyvből.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto py-4">
+            {isLoadingEntries ? (
+              <div className="flex justify-center items-center h-48 text-muted-foreground">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <span className="ml-2 text-sm">Tételek betöltése...</span>
+              </div>
+            ) : !journalEntries?.length ? (
+              <div className="text-center py-12 text-muted-foreground text-xs">
+                Nincs könyvelési tétel ehhez a számlaszámhoz az aktív importban.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {journalEntries.map((entry: any) => {
+                  const isDebit = entry.debit_account === selectedLeafAccount?.code;
+                  return (
+                    <div 
+                      key={entry.id} 
+                      className="border rounded-xl p-4 bg-card hover:bg-muted/30 transition-all text-xs space-y-2.5 relative overflow-hidden"
+                    >
+                      <div className={cn(
+                        "absolute top-0 left-0 bottom-0 w-1",
+                        isDebit ? "bg-emerald-500" : "bg-rose-500"
+                      )} />
+                      
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-semibold text-foreground">{entry.description || 'Névtelen tétel'}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            Bizonylatszám: <span className="font-medium text-foreground">{entry.voucher_number || '-'}</span>
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-foreground tabular-nums">
+                            {formatCurrency(entry.amount)} Ft
+                          </p>
+                          <p className={cn(
+                            "text-[10px] font-semibold mt-0.5",
+                            isDebit ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                          )}>
+                            {isDebit ? 'Tartozik (Debet)' : 'Követel (Kredit)'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-border/40 text-[10px] text-muted-foreground">
+                        <div>
+                          <span className="block opacity-75">Partner</span>
+                          <span className="font-medium text-foreground truncate block">{entry.partner_name || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="block opacity-75">Ellenszámla</span>
+                          <span className="font-medium text-foreground block font-mono">
+                            {isDebit ? entry.credit_account : entry.debit_account}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block opacity-75">Kelt / Teljesítés</span>
+                          <span className="font-medium text-foreground block">
+                            {entry.voucher_date?.replace(/-/g, '.')} / {entry.service_date?.replace(/-/g, '.')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

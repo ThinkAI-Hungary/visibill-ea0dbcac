@@ -11,13 +11,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle, Wand2, BarChart3, Sparkles } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle, Wand2, BarChart3, Sparkles, Check } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { exportPnlExcel } from '@/lib/pnlExport';
 import { isSameDay, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
@@ -27,7 +28,9 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
 import PnlChart from '@/components/pnl/PnlChart'; // F9
+import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 export const renderYoYBadge = (curr: number, prev: number, inThousands: boolean, textClass: string = "text-[9px]") => {
   // Use the actual values displayed on screen (rounded to integer in thousands, or kept as raw integers)
@@ -112,6 +115,31 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
+  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
+  const [selectedSuggestionIds, setSelectedSuggestionIds] = useState<Set<string>>(new Set());
+  const [isSavingSuggestions, setIsSavingSuggestions] = useState(false);
+
+  // Fetch PnL suggestions
+  const { data: suggestions, refetch: refetchSuggestions } = useQuery({
+    queryKey: ['pnl_mappings_suggestions', selectedCompany?.id, presetId],
+    queryFn: async () => {
+      if (!selectedCompany?.id || !presetId) return [];
+      const { data, error } = await supabase.rpc('suggest_gl_mappings', {
+        p_company_id: selectedCompany.id,
+        p_preset_id: presetId
+      });
+      if (error) return [];
+      return (data || []).filter((s: any) => s.pnl_structure_id);
+    },
+    enabled: !!selectedCompany?.id && !!presetId
+  });
+
+  // Set selected suggestion IDs once loaded
+  useEffect(() => {
+    if (suggestions) {
+      setSelectedSuggestionIds(new Set(suggestions.map(s => s.gl_account_id)));
+    }
+  }, [suggestions]);
 
   // Fetch PnL Structure
   const { data: pnlStructure, isLoading: isLoadingStructure } = useQuery({
@@ -171,11 +199,54 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ['pnl_mapping'] });
       queryClient.invalidateQueries({ queryKey: ['pnl_report'] });
+      refetchSuggestions();
     },
     onError: (err: any) => {
       toast({ title: 'Hiba a mentés során', description: err.message, variant: 'destructive' });
     }
   });
+
+  const handleAcceptSuggestions = async () => {
+    if (!suggestions || suggestions.length === 0 || !selectedCompany?.id || !presetId) return;
+    setIsSavingSuggestions(true);
+    try {
+      const acceptedList = suggestions.filter(s => selectedSuggestionIds.has(s.gl_account_id));
+      if (acceptedList.length === 0) return;
+
+      const updatedMappings = { ...mappings };
+      acceptedList.forEach(s => {
+        updatedMappings[s.gl_account_id] = s.pnl_structure_id;
+      });
+
+      const payload = Object.entries(updatedMappings).map(([gl_account_id, pnl_structure_id]) => ({
+        gl_account_id,
+        pnl_structure_id
+      }));
+
+      const { error } = await supabase.rpc('save_pnl_mappings', {
+        p_company_id: selectedCompany.id,
+        p_preset_id: presetId,
+        p_mappings: payload
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sikeres hozzárendelés',
+        description: `${acceptedList.length} hozzárendelés sikeresen elfogadva és mentve.`,
+        className: 'bg-green-50 text-green-900 border-green-200',
+      });
+      
+      setIsSuggestionOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['pnl_mapping'] });
+      queryClient.invalidateQueries({ queryKey: ['pnl_report'] });
+      refetchSuggestions();
+    } catch (err: any) {
+      toast({ title: 'Hiba a mentés során', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsSavingSuggestions(false);
+    }
+  };
 
   const handleSelectChange = (glAccountId: string, structureId: string) => {
     setMappings(prev => {
@@ -280,6 +351,29 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
 
   return (
     <div className="space-y-4">
+      {suggestions && suggestions.length > 0 && (
+        <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in-50 duration-300">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-indigo-500 shrink-0 animate-pulse" />
+            <div>
+              <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">
+                Intelligens Hozzárendelési Javaslatok ({suggestions.length} db)
+              </p>
+              <p className="text-xs text-indigo-700/80 dark:text-indigo-400/80 mt-0.5">
+                Az Sztv. "A" variáns szerinti kódok alapján javaslataink vannak a besorolatlan főkönyvi számokhoz.
+              </p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => setIsSuggestionOpen(true)} 
+            size="sm" 
+            className="bg-indigo-600 hover:bg-indigo-700 text-white shrink-0 gap-1.5 font-semibold text-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> Javaslatok ellenőrzése
+          </Button>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-4">
         <div>
           <h3 className="text-lg font-medium">Főkönyvi számok párosítása</h3>
@@ -375,6 +469,84 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
           )}
         </ScrollArea>
       </div>
+
+      <Dialog open={isSuggestionOpen} onOpenChange={setIsSuggestionOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col overflow-hidden bg-background">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
+              Javasolt Hozzárendelések Elfogadása
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Az Sztv. kódolás szerint az alábbi számlákat tudjuk automatikusan besorolni az Eredménykimutatásba.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto py-2 -mx-6 px-6">
+            <table className="w-full border-collapse text-xs">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground bg-muted/30">
+                  <th className="py-2 px-1 text-center w-8">
+                    <Checkbox
+                      checked={suggestions ? selectedSuggestionIds.size === suggestions.length : false}
+                      onCheckedChange={(checked) => {
+                        if (checked && suggestions) {
+                          setSelectedSuggestionIds(new Set(suggestions.map(s => s.gl_account_id)));
+                        } else {
+                          setSelectedSuggestionIds(new Set());
+                        }
+                      }}
+                    />
+                  </th>
+                  <th className="py-2 px-2">Számlaszám</th>
+                  <th className="py-2 px-2">Megnevezés</th>
+                  <th className="py-2 px-2">Javasolt Sor</th>
+                  <th className="py-2 px-2">Indoklás</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {suggestions?.map((s) => (
+                  <tr key={s.gl_account_id} className="hover:bg-muted/10">
+                    <td className="py-2.5 px-1 text-center">
+                      <Checkbox
+                        checked={selectedSuggestionIds.has(s.gl_account_id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedSuggestionIds(prev => {
+                            const next = new Set(prev);
+                            if (checked) next.add(s.gl_account_id);
+                            else next.delete(s.gl_account_id);
+                            return next;
+                          });
+                        }}
+                      />
+                    </td>
+                    <td className="py-2.5 px-2 font-mono font-semibold">{s.gl_number}</td>
+                    <td className="py-2.5 px-2 font-medium" title={s.short_name}>{s.short_name}</td>
+                    <td className="py-2.5 px-2 text-indigo-600 dark:text-indigo-400 font-semibold" title={s.pnl_row_name}>
+                      {s.pnl_row_code} {s.pnl_row_name}
+                    </td>
+                    <td className="py-2.5 px-2 text-[10px] text-muted-foreground">{s.reasoning}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <DialogFooter className="border-t pt-4">
+            <Button variant="outline" onClick={() => setIsSuggestionOpen(false)} disabled={isSavingSuggestions}>
+              Mégse
+            </Button>
+            <Button 
+              onClick={handleAcceptSuggestions} 
+              disabled={selectedSuggestionIds.size === 0 || isSavingSuggestions}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 font-semibold"
+            >
+              {isSavingSuggestions ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              Kijelöltek elfogadása ({selectedSuggestionIds.size} db)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -392,6 +564,8 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   const [revenueScale, setRevenueScale] = useState(100);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
+  const [activeDialogInvoice, setActiveDialogInvoice] = useState<any | null>(null);
+  const [isDialogInvoiceOpen, setIsDialogInvoiceOpen] = useState(false);
   const { toast } = useToast();
   const scopedNavigate = useScopedNavigate();
   const { data: exchangeRates } = useExchangeRates();
@@ -432,6 +606,70 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
       return data;
     },
     enabled: !!selectedCompany?.id && !!presetId
+  });
+
+  // Fetch monthly P&L trend data
+  const { data: trendData } = useQuery({
+    queryKey: ['pnl_trend', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRates],
+    queryFn: async () => {
+      if (!selectedCompany?.id || !presetId || !dateFrom || !dateTo) return [];
+      
+      const start = new Date(dateFrom);
+      const end = new Date(dateTo);
+      
+      // Generate monthly intervals
+      const periods: Array<{ label: string; start: string; end: string }> = [];
+      let current = new Date(start.getFullYear(), start.getMonth(), 1);
+      
+      while (current <= end) {
+        const periodStart = new Date(Math.max(start.getTime(), current.getTime()));
+        const nextMonth = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+        const periodEnd = new Date(Math.min(end.getTime(), nextMonth.getTime() - 86400000));
+        
+        const monthLabel = periodStart.toLocaleDateString('hu-HU', { year: 'numeric', month: 'short' });
+        periods.push({
+          label: monthLabel,
+          start: periodStart.toISOString().substring(0, 10),
+          end: periodEnd.toISOString().substring(0, 10),
+        });
+        
+        current = nextMonth;
+      }
+
+      // Query in parallel
+      const results = await Promise.all(
+        periods.map(async (p) => {
+          const { data, error } = await supabase.rpc('get_pnl_report', {
+            p_company_id: selectedCompany.id,
+            p_preset_id: presetId,
+            p_date_from: p.start,
+            p_date_to: p.end,
+            p_exchange_rates: exchangeRates || {}
+          });
+          
+          if (error || !data) return { label: p.label, revenue: 0, cost: 0, profit: 0 };
+          
+          const revRow = data.find((r: any) => r.row_code === 'I.');
+          const operatingProfitRow = data.find((r: any) => r.row_code === 'A.');
+          const materialRow = data.find((r: any) => r.row_code === 'IV.');
+          const personnelRow = data.find((r: any) => r.row_code === 'V.');
+          
+          const revenue = Number(revRow?.balance) || 0;
+          const profit = Number(operatingProfitRow?.balance) || 0;
+          const cost = (Number(materialRow?.balance) || 0) + (Number(personnelRow?.balance) || 0);
+          
+          return {
+            label: p.label,
+            revenue,
+            cost,
+            profit,
+          };
+        })
+      );
+      
+      return results;
+    },
+    enabled: !!selectedCompany?.id && !!presetId && !!dateFrom && !!dateTo
   });
 
   // U7+F10: Load previous year frozen data from annual_reports
@@ -665,7 +903,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
 
       {/* F9: Waterfall chart (toggle) */}
       {showChart && processedData.length > 0 && (
-        <PnlChart processedData={processedData} inThousands={inThousands} />
+        <PnlChart processedData={processedData} inThousands={inThousands} trendData={trendData} />
       )}
 
       <div className="flex justify-between items-center mb-6 bg-muted/30 p-4 rounded-xl border border-border/50 print:hidden">
@@ -851,17 +1089,23 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                                       )}
                                       <span className="truncate">{item.description}</span>
                                       {item.document_url && (
-                                        <a 
-                                          href={item.document_url} 
-                                          target="_blank" 
-                                          rel="noreferrer" 
-                                          onClick={(e) => e.stopPropagation()} 
-                                          className="ml-auto flex shrink-0 items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors text-[10px] font-medium"
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveDialogInvoice({
+                                              image_url: item.document_url,
+                                              bizonylatsorszam: item.description || 'Bizonylat',
+                                              elado_nev: item.partner || '-',
+                                              vevo_nev: '-'
+                                            });
+                                            setIsDialogInvoiceOpen(true);
+                                          }} 
+                                          className="ml-auto flex shrink-0 items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors text-[10px] font-medium cursor-pointer"
                                           title="Eredeti bizonylat megtekintése"
                                         >
                                           <FileText className="w-3 h-3" />
                                           PDF
-                                        </a>
+                                        </button>
                                       )}
                                     </div>
                                     <div className="col-span-2 text-right opacity-70">
@@ -896,6 +1140,15 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
           }}><ClipboardCopy className="w-4 h-4" /> Másolás CSV-ként</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
+
+      <InvoiceImageDialog
+        invoice={activeDialogInvoice}
+        open={isDialogInvoiceOpen}
+        onClose={() => {
+          setIsDialogInvoiceOpen(false);
+          setActiveDialogInvoice(null);
+        }}
+      />
     </div>
   );
 }

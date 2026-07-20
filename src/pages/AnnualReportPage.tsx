@@ -22,6 +22,7 @@ import {
   Lock, Unlock, Plus, Trash2, RotateCcw, ExternalLink, Eye
 } from 'lucide-react';
 import { generateAnnualReportPdf, generateAnnualReportPreviewUrl } from '@/lib/annualReportPdf';
+import { downloadAnnualReportXml } from '@/lib/annualReportXml';
 import { downloadEBeszamoloCsv, E_BESZAMOLO_PORTAL_URL } from '@/lib/annualReportCsv';
 import { useFixedAssets } from '@/hooks/useFixedAssets';
 import { useScopedNavigate } from '@/lib/navigation';
@@ -359,6 +360,79 @@ export default function AnnualReportPage() {
 
   // ── Dynamic variable replacement for notes templates ──
   const replaceVariables = (text: string): string => {
+    const toHtml = (txt: string) => {
+      if (!txt) return '';
+      if (txt.includes('<p>') || txt.includes('<div>') || txt.includes('<br>')) return txt;
+      return txt.split('\n').map(line => `<p>${line || '&nbsp;'}</p>`).join('');
+    };
+
+    const fmtK = (v: number) => new Intl.NumberFormat('hu-HU').format(Math.round(v / 1000));
+    const fmtF = (v: number) => new Intl.NumberFormat('hu-HU').format(v);
+
+    const assetTable = assetMovement ? `
+      <div class="my-3 overflow-x-auto">
+        <table class="w-full text-[11px] border-collapse border border-border">
+          <thead>
+            <tr class="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold border-b border-border">
+              <th class="p-2 text-left border-r border-border">Mutató</th>
+              <th class="p-2 text-right">Érték</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <tr><td class="p-2 border-r border-border font-medium">Összes eszköz</td><td class="p-2 text-right">${assetMovement.total} db</td></tr>
+            <tr><td class="p-2 border-r border-border font-medium">Aktív eszközök</td><td class="p-2 text-right">${assetMovement.active} db</td></tr>
+            <tr><td class="p-2 border-r border-border font-medium">Kivezetett eszközök</td><td class="p-2 text-right">${assetMovement.disposed} db</td></tr>
+            <tr class="bg-muted/40 font-bold"><td class="p-2 border-r border-border">Bruttó érték összesen</td><td class="p-2 text-right">${fmtF(assetMovement.totalAcquisition)} Ft</td></tr>
+            <tr><td class="p-2 border-r border-border font-medium">Aktív eszközök bruttó értéke</td><td class="p-2 text-right">${fmtF(assetMovement.activeAcquisition)} Ft</td></tr>
+          </tbody>
+        </table>
+      </div>
+    ` : `<p class="text-xs text-muted-foreground italic my-2">Tárgyi eszköz adatok nem érhetők el.</p>`;
+
+    const equityTable = equityRows && equityRows.length > 0 ? `
+      <div class="my-3 overflow-x-auto">
+        <table class="w-full text-[11px] border-collapse border border-border">
+          <thead>
+            <tr class="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold border-b border-border">
+              <th class="p-2 text-left border-r border-border">Sor</th>
+              <th class="p-2 text-left border-r border-border">Megnevezés</th>
+              <th class="p-2 text-right border-r border-border">Előző év</th>
+              <th class="p-2 text-right">Tárgyév</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            ${equityRows.map((r: any) => `
+              <tr>
+                <td class="p-2 border-r border-border font-mono text-[10px]">${r.row_code || ''}</td>
+                <td class="p-2 border-r border-border">${r.name || ''}</td>
+                <td class="p-2 border-r border-border text-right font-mono">${fmtK(Number(r.prior_year_balance) || 0)} E Ft</td>
+                <td class="p-2 text-right font-mono">${fmtK(Number(r.current_balance) || 0)} E Ft</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : `<p class="text-xs text-muted-foreground italic my-2">Saját tőke adatok nem érhetők el.</p>`;
+
+    const salaryTable = salaryMetrics ? `
+      <div class="my-3 overflow-x-auto">
+        <table class="w-full text-[11px] border-collapse border border-border">
+          <thead>
+            <tr class="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold border-b border-border">
+              <th class="p-2 text-left border-r border-border">Mutató</th>
+              <th class="p-2 text-right">Érték</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <tr><td class="p-2 border-r border-border font-medium">Átlagos statisztikai létszám</td><td class="p-2 text-right">${salaryMetrics.headcount} fő</td></tr>
+            <tr><td class="p-2 border-r border-border font-medium">Bérköltség</td><td class="p-2 text-right">${fmtF(salaryMetrics.totalWages)} Ft</td></tr>
+            <tr><td class="p-2 border-r border-border font-medium">Bérjárulékok</td><td class="p-2 text-right">${fmtF(salaryMetrics.totalContrib)} Ft</td></tr>
+            <tr class="bg-muted/40 font-bold"><td class="p-2 border-r border-border">Összes személyi jellegű ráfordítás</td><td class="p-2 text-right">${fmtF(salaryMetrics.total)} Ft</td></tr>
+          </tbody>
+        </table>
+      </div>
+    ` : `<p class="text-xs text-muted-foreground italic my-2">Foglalkoztatotti adatok nem érhetők el.</p>`;
+
     const vars: Record<string, string> = {
       '[Cégnév]': selectedCompany?.name || '___',
       '[Székhely]': selectedCompany?.address || '___',
@@ -376,8 +450,11 @@ export default function AnnualReportPage() {
       '[Adózott eredmény]': new Intl.NumberFormat('hu-HU').format(Math.round(financialMetrics.netIncome / 1000)),
       '[Osztalék]': new Intl.NumberFormat('hu-HU').format(Math.round((report?.dividend_amount || 0) / 1000)),
       '[Eredménytartalék]': new Intl.NumberFormat('hu-HU').format(Math.round((report?.retained_earnings || 0) / 1000)),
+      '[AUTOMATIKUS TÁBLÁZAT - TENY MODULBÓL]': assetTable,
+      '[AUTOMATIKUS TÁBLÁZAT - MÉRLEG D. SOROKBÓL]': equityTable,
+      '[AUTOMATIKUS TÁBLÁZAT - FOGLALKOZTATOTTI ADATOK]': salaryTable,
     };
-    let result = text;
+    let result = toHtml(text);
     for (const [key, val] of Object.entries(vars)) {
       result = result.split(key).join(val);
     }
@@ -1019,7 +1096,7 @@ export default function AnnualReportPage() {
                               }, 1200);
                             }}
                             placeholder={tmpl.section_title}
-                            variables={[
+                             variables={[
                               { key: '[Cégnév]', label: 'Cég neve' },
                               { key: '[Székhely]', label: 'Székhely' },
                               { key: '[Adószám]', label: 'Adószám' },
@@ -1036,18 +1113,22 @@ export default function AnnualReportPage() {
                               { key: '[Adózott eredmény]', label: 'Adózott eredmény (E Ft)' },
                               { key: '[Osztalék]', label: 'Osztalék (E Ft)' },
                               { key: '[Eredménytartalék]', label: 'Eredménytartalék (E Ft)' },
+                              { key: '[AUTOMATIKUS TÁBLÁZAT - TENY MODULBÓL]', label: 'Tárgyi Eszköz Táblázat' },
+                              { key: '[AUTOMATIKUS TÁBLÁZAT - MÉRLEG D. SOROKBÓL]', label: 'Saját Tőke Táblázat' },
+                              { key: '[AUTOMATIKUS TÁBLÁZAT - FOGLALKOZTATOTTI ADATOK]', label: 'Létszám/Bér Táblázat' },
                             ]}
                           />
                         </div>
-
+ 
                         {/* Live preview with variables replaced */}
                         <div className="space-y-2 flex flex-col h-full">
                           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                             <Info className="w-3.5 h-3.5 text-blue-500" /> Előnézet (behelyettesített változókkal)
                           </p>
-                          <div className="flex-1 bg-muted/15 border border-border/40 rounded-lg p-4 min-h-[220px] overflow-y-auto max-h-[350px] text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
-                            {replaceVariables(saved?.text || tmpl.default_text)}
-                          </div>
+                          <div 
+                            className="flex-1 bg-muted/15 border border-border/40 rounded-lg p-4 min-h-[220px] overflow-y-auto max-h-[350px] text-xs text-foreground/80 leading-relaxed prose prose-sm dark:prose-invert"
+                            dangerouslySetInnerHTML={{ __html: replaceVariables(saved?.text || tmpl.default_text) }}
+                          />
                         </div>
                       </div>
                     </div>
@@ -1322,7 +1403,7 @@ export default function AnnualReportPage() {
               })()}
 
               {/* ── Export & Finalize Grid ── */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* PDF Export Card */}
                 <Card className={cn(
                   "border-border/50 transition-colors",
@@ -1450,16 +1531,65 @@ export default function AnnualReportPage() {
                           }
                         }}
                       >
-                        <Download className="w-4 h-4" /> CSV letöltés
+                        <Download className="w-4 h-4" /> Letöltés
                       </Button>
                       <Button
                         variant="outline"
                         className="flex-1 gap-2"
                         onClick={() => window.open(E_BESZAMOLO_PORTAL_URL, '_blank')}
                       >
-                        <ExternalLink className="w-4 h-4" /> e-Beszámoló portál
+                        <ExternalLink className="w-4 h-4" /> Portál
                       </Button>
                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* OBR XML Export Card */}
+                <Card className={cn(
+                  "border-border/50 transition-colors",
+                  report.frozen_at ? "hover:border-primary/40" : "opacity-60"
+                )}>
+                  <CardContent className="p-5 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-indigo-500/10 text-indigo-600 p-2.5 rounded-xl">
+                        <Database className="w-6 h-6" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-sm">OBR XML Export</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">Online Beszámoló Rendszer (OBR) sémának megfelelő hivatalos XML fájl letöltése</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 border-indigo-500/20 hover:bg-indigo-500/5 hover:text-indigo-600"
+                      disabled={!report.frozen_at}
+                      onClick={() => {
+                        try {
+                          downloadAnnualReportXml({
+                            companyName: selectedCompany?.name || '',
+                            companyAddress: selectedCompany?.address || '',
+                            companyTaxNumber: selectedCompany?.tax_number || '',
+                            fiscalYear: report.fiscal_year,
+                            representativeName: report.representative_name || '',
+                            representativeRole: report.representative_role || 'ügyvezető',
+                            reportDate: report.report_date || new Date().toISOString().slice(0, 10),
+                            frozenBsData: report.frozen_bs_data || [],
+                            frozenPnlData: report.frozen_pnl_data || [],
+                            notesSections: (report.notes_sections as any[]) || [],
+                            notesTemplates: notesTemplates || [],
+                            netIncome: report.net_income || 0,
+                            dividendAmount: report.dividend_amount || 0,
+                            retainedEarnings: report.retained_earnings || 0,
+                            dividendResolutionDate: report.dividend_resolution_date || '',
+                          });
+                          toast({ title: 'XML letöltve', description: 'Az OBR kompatibilis beszámoló fájl mentésre került.' });
+                        } catch (err) {
+                          toast({ title: 'Hiba', description: 'XML generálás sikertelen.', variant: 'destructive' });
+                        }
+                      }}
+                    >
+                      <Download className="w-4 h-4" /> XML Letöltés
+                    </Button>
                   </CardContent>
                 </Card>
 

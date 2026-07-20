@@ -23,7 +23,7 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
         .from('gl_audit_imports')
-        .select('id, file_name, period_start, period_end, processing_status, entry_count, account_count, partner_count, voucher_count, source_program, imported_at, imported_by, error_message')
+        .select('id, file_name, period_start, period_end, processing_status, entry_count, account_count, partner_count, voucher_count, source_program, imported_at, imported_by, error_message, dry_run')
         .eq('company_id', selectedCompany.id)
         .order('imported_at', { ascending: false });
       if (error) return [];
@@ -136,8 +136,15 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       {statusIcon(imp.processing_status)}
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{imp.file_name}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          <p className="font-medium text-sm truncate max-w-[280px]" title={imp.file_name}>{imp.file_name}</p>
+                          {imp.dry_run && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
+                              Előnézet (Dry Run)
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-muted-foreground mt-0.5">
                           {statusLabel(imp.processing_status)}
                           {imp.source_program && ` • ${imp.source_program}`}
