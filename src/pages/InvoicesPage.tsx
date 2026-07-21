@@ -808,7 +808,7 @@ const InvoicesPage = () => {
       const linked = getLinkedInvoices(sub);
       return linked.some(l => submittedIdToTransactionsMap.has(l.id));
     });
-    const isPaid = invoice.paid === true || !!invoice.transaction_id || directlyMatched || indirectlyMatched || linkedChainMatched;
+    const isPaid = invoice.paid === true || !!invoice.transaction_id || !!invoice.is_manual_payment || directlyMatched || indirectlyMatched || linkedChainMatched;
     if (isPaid) return 'matched';
     return 'unmatched';
   }, [matchedInvoiceIds, suggestedOnlyIds, navToSubmittedMap, submittedIdToTransactionsMap, getLinkedInvoices]);
@@ -1412,7 +1412,7 @@ const InvoicesPage = () => {
                               const linked = getLinkedInvoices(sub);
                               return linked.some(l => submittedIdToTransactionsMap.has(l.id));
                             });
-                            const isPaid = invoice.paid === true || !!invoice.transaction_id || directlyMatched || indirectlyMatched || linkedChainMatched;
+                            const isPaid = invoice.paid === true || !!invoice.transaction_id || !!invoice.is_manual_payment || directlyMatched || indirectlyMatched || linkedChainMatched;
                             const isNettingCandidate = nettingInvoiceIds.has(invoice.id);
                             return (
                               <React.Fragment key={invoice.id}>
@@ -1625,6 +1625,9 @@ const InvoicesPage = () => {
                                       calculatedTi={invoice.calculated_ti}
                                       tiOverride={invoice.ti_override}
                                       tiCalculationMethod={invoice.ti_calculation_method}
+                                      invoiceOperation={invoice.invoice_operation}
+                                      isManualPayment={invoice.is_manual_payment}
+                                      invoiceNumber={invoice.invoice_number}
                                     />
                                   );
                                 })()}

@@ -56,6 +56,8 @@ export interface NavInvoice {
   calculated_ti?: string | null;
   ti_override?: string | null;
   ti_calculation_method?: string | null;
+  is_manual_payment?: boolean | null;
+  manual_payment_type?: string | null;
 }
 
 export interface SubmittedInvoice {

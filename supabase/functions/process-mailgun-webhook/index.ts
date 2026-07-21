@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { unzip } from "npm:fflate@0.8.2";
 
 // ── Inline error logger (self-contained, no _shared dependency) ──
 // Mirrors supabase/functions/_shared/error-logger.ts. Writes to app_error_logs
@@ -35,6 +36,13 @@ async function logError(supabase: any, entry: ErrorLogEntry): Promise<void> {
     console.error("[error-logger] Failed to write to app_error_logs:", err);
   }
 }
+
+// ── Unique-violation helper ──────────────────────────────────────────────────
+// PostgreSQL error code 23505 = unique_violation. When the DB-level UNIQUE index
+// on (company_id, file_name, mailgun_message_id) rejects a concurrent duplicate
+// INSERT, we treat it as a graceful skip (not a real error).
+const isUniqueViolation = (err: any): boolean =>
+  err?.code === '23505' || err?.message?.includes('unique') || err?.message?.includes('duplicate key');
 
 // Helper function to verify Mailgun webhook signature using Web Crypto API
 async function verifySignature(timestamp: string, token: string, signature: string, signingKey: string): Promise<boolean> {
@@ -96,6 +104,117 @@ function sanitizeFileName(fileName: string): string {
     .replace(/[^a-zA-Z0-9.-]/g, '_')
     .replace(/__+/g, '_');
   return clean;
+}
+
+// ── ZIP support ────────────────────────────────────────────────────────────
+// Compressed archive extensions we extract before processing.
+const COMPRESSED_EXTENSIONS = new Set(['.zip']);
+
+interface ExpandedFile {
+  /** The effective filename to classify and upload */
+  name: string;
+  /** Raw bytes of the file */
+  bytes: Uint8Array;
+  /** MIME type (best-effort) */
+  contentType: string;
+  /** Original archive filename this was extracted from (undefined for direct attachments) */
+  extractedFromArchive?: string;
+}
+
+/**
+ * Given a filename and its bytes, returns a flat list of ExpandedFile entries.
+ * - If the file is a ZIP: recurse into its contents (up to maxDepth).
+ * - Otherwise: return the file itself as a single-element list.
+ *
+ * Only files whose extension is in DIRECT_SUPPORTED_EXTS are yielded.
+ */
+const DIRECT_SUPPORTED_EXTS = new Set([
+  '.pdf', '.png', '.jpg', '.jpeg', '.tiff', '.tif',
+  '.xls', '.xlsx', '.csv', '.txt', '.mt940', '.sta',
+]);
+
+function getExt(filename: string): string {
+  const dot = filename.lastIndexOf('.');
+  return dot !== -1 ? filename.slice(dot).toLowerCase() : '';
+}
+
+async function expandAttachments(
+  name: string,
+  bytes: Uint8Array,
+  archiveName?: string,
+  depth = 0,
+): Promise<ExpandedFile[]> {
+  const MAX_DEPTH = 2;
+  const ext = getExt(name);
+
+  if (COMPRESSED_EXTENSIONS.has(ext)) {
+    if (depth >= MAX_DEPTH) {
+      console.warn(`[ZIP] Max depth reached, skipping nested archive: ${name}`);
+      return [];
+    }
+    // Decompress ZIP with fflate (Promise wrapper)
+    let decompressed: Record<string, Uint8Array>;
+    try {
+      decompressed = await new Promise<Record<string, Uint8Array>>((resolve, reject) => {
+        unzip(bytes, (err, data) => {
+          if (err) reject(err); else resolve(data);
+        });
+      });
+    } catch (e) {
+      console.error(`[ZIP] Failed to decompress ${name}:`, e);
+      return [];
+    }
+
+    const results: ExpandedFile[] = [];
+    const topArchive = archiveName ?? name;
+
+    for (const [innerPath, innerBytes] of Object.entries(decompressed)) {
+      // Skip macOS metadata and directory entries (fflate includes empty dirs as 0-byte entries)
+      if (innerPath.includes('__MACOSX') || innerPath.endsWith('/') || innerBytes.length === 0) continue;
+
+      const innerName = innerPath.split('/').pop() ?? innerPath;
+      const innerExt = getExt(innerName);
+
+      if (COMPRESSED_EXTENSIONS.has(innerExt)) {
+        // Recurse into nested archive
+        const nested = await expandAttachments(innerName, innerBytes, topArchive, depth + 1);
+        results.push(...nested);
+      } else if (DIRECT_SUPPORTED_EXTS.has(innerExt)) {
+        const contentType = getMimeType(innerName);
+        results.push({ name: innerName, bytes: innerBytes, contentType, extractedFromArchive: topArchive });
+      } else {
+        console.log(`[ZIP] Skipping unsupported inner file: ${innerName}`);
+      }
+    }
+
+    console.log(`[ZIP] Extracted ${results.length} supported file(s) from ${name}`);
+    return results;
+  }
+
+  // Not a compressed file — return as-is if the extension is supported
+  if (!DIRECT_SUPPORTED_EXTS.has(ext)) return [];
+  const contentType = getMimeType(name);
+  return [{ name, bytes, contentType, extractedFromArchive: archiveName }];
+}
+
+/** Best-effort MIME type from filename extension */
+function getMimeType(filename: string): string {
+  const ext = getExt(filename);
+  const map: Record<string, string> = {
+    '.pdf': 'application/pdf',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.tiff': 'image/tiff',
+    '.tif': 'image/tiff',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.xls': 'application/vnd.ms-excel',
+    '.csv': 'text/csv',
+    '.txt': 'text/plain',
+    '.mt940': 'text/plain',
+    '.sta': 'text/plain',
+  };
+  return map[ext] ?? 'application/octet-stream';
 }
 
 
@@ -609,249 +728,314 @@ serve(async (req) => {
       console.log('Processing', attachments.length, 'attachments');
       
       for (const attachment of attachments) {
-        // Szűrés: csak releváns formátumok és min 1KB méret
-        if (!isValidInvoiceAttachment(attachment)) {
-          continue;
+        // ── ZIP / compressed: expand before any filtering ──────────────────
+        const attachmentExt = getExt(attachment.name);
+        const isArchive = COMPRESSED_EXTENSIONS.has(attachmentExt);
+
+        let expandedFiles: ExpandedFile[];
+        if (isArchive) {
+          // Archives bypass isValidInvoiceAttachment (they are not invoices themselves)
+          const rawBytes = new Uint8Array(await attachment.arrayBuffer());
+          expandedFiles = await expandAttachments(attachment.name, rawBytes);
+          if (expandedFiles.length === 0) {
+            console.log(`[ZIP] Archive has no supported files, skipping: ${attachment.name}`);
+            continue;
+          }
+          console.log(`[ZIP] Archive ${attachment.name} expanded to ${expandedFiles.length} file(s)`);
+        } else {
+          // Regular (non-archive) attachment
+          if (!isValidInvoiceAttachment(attachment)) {
+            continue;
+          }
+          const rawBytes = new Uint8Array(await attachment.arrayBuffer());
+          expandedFiles = [{ name: attachment.name, bytes: rawBytes, contentType: attachment.type || getMimeType(attachment.name) }];
         }
-        
-        const { classification, bankHint, reportType, reason } = classifyAttachment(attachment.name, subject, senderDomain, sender);
-        console.log(`Processing attachment: ${attachment.name} → ${classification} (reason: ${reason})${bankHint ? ` (bank: ${bankHint})` : ''}${reportType ? ` (report: ${reportType})` : ''}`);
 
-        // ── Mailgun retry idempotency check ──
-        // If we have a Message-Id, check if this exact attachment from this
-        // email has already been processed. Prevents duplicate processing
-        // when Mailgun retries the webhook (e.g. due to timeout).
-        // Checks all three tables because fallback redirection moves/deletes original records.
-        if (messageId) {
-          let hasBeenProcessed = false;
-          const tablesToCheck = ['transaction_uploads', 'invoice_uploads', 'report_uploads'];
-          for (const table of tablesToCheck) {
-            const { data: existingUpload } = await supabase
-              .from(table)
-              .select('id')
-              .eq('company_id', alias.company_id)
-              .eq('file_name', attachment.name)
-              .contains('metadata', { mailgun_message_id: messageId })
-              .limit(1);
+        // ── Process each (potentially extracted) file ──────────────────────
+        for (const ef of expandedFiles) {
+          const { classification, bankHint, reportType, reason } = classifyAttachment(ef.name, subject, senderDomain, sender);
+          console.log(`Processing file: ${ef.name} → ${classification} (reason: ${reason})${bankHint ? ` (bank: ${bankHint})` : ''}${reportType ? ` (report: ${reportType})` : ''}${ef.extractedFromArchive ? ` [from: ${ef.extractedFromArchive}]` : ''}`);
 
-            if (existingUpload && existingUpload.length > 0) {
-              hasBeenProcessed = true;
-              break;
+          // ── Mailgun retry idempotency check ──
+          // If we have a Message-Id, check if this exact attachment from this
+          // email has already been processed. Prevents duplicate processing
+          // when Mailgun retries the webhook (e.g. due to timeout).
+          //
+          // Strategy (two-layer):
+          // 1. Check upload tables (invoice/transaction/report_uploads) — covers the common case.
+          // 2. Check llm_koltsegek — NEVER deleted, survives sibling-cleanup. This closes
+          //    the race-condition window where a parallel Mailgun retry fires AFTER
+          //    cleanup_email_file_siblings has already removed the original upload row
+          //    (which made the upload-table check miss it).
+          if (messageId) {
+            let hasBeenProcessed = false;
+
+            // Layer 1: upload tables (fast, most cases)
+            const tablesToCheck = ['transaction_uploads', 'invoice_uploads', 'report_uploads'];
+            for (const table of tablesToCheck) {
+              const { data: existingUpload } = await supabase
+                .from(table)
+                .select('id')
+                .eq('company_id', alias.company_id)
+                .eq('file_name', ef.name)
+                .contains('metadata', { mailgun_message_id: messageId })
+                .limit(1);
+
+              if (existingUpload && existingUpload.length > 0) {
+                hasBeenProcessed = true;
+                break;
+              }
+            }
+
+            // Layer 2: llm_koltsegek — permanent audit log, survives cleanup
+            // Catches the race where uploads were cleaned up between webhook retries.
+            if (!hasBeenProcessed) {
+              const { data: llmRow } = await supabase
+                .from('llm_koltsegek')
+                .select('id')
+                .eq('company_id', alias.company_id)
+                .eq('file_name', ef.name)
+                .contains('metadata', { mailgun_message_id: messageId })
+                .limit(1);
+
+              if (llmRow && llmRow.length > 0) {
+                hasBeenProcessed = true;
+                console.log(`[IDEMPOTENCY-L2] Skipping duplicate attachment: ${ef.name} ` +
+                  `(found in llm_koltsegek after upload rows were cleaned up)`);
+              }
+            }
+
+            if (hasBeenProcessed) {
+              console.log(`[IDEMPOTENCY] Skipping duplicate attachment: ${ef.name} ` +
+                `(Message-Id already processed: ${messageId})`);
+              continue;
+            }
+          } else {
+            // ── Fallback idempotency (no Message-Id available) ──
+            // Some senders (e.g. Canon scanner firmware) omit the Message-Id header,
+            // so the per-email check above cannot run. To avoid duplicate processing
+            // on Mailgun redelivery, dedup on (company_id, file_name, email_alias)
+            // across all three upload tables within a 24h window. Any existing row
+            // (any status) means the file is already tracked / was already attempted.
+            const sinceIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            let hasRecentEmailUpload = false;
+            const tablesToCheckNoMsgId = ['transaction_uploads', 'invoice_uploads', 'report_uploads'];
+            for (const table of tablesToCheckNoMsgId) {
+              const { data: recentUpload } = await supabase
+                .from(table)
+                .select('id, processing_status')
+                .eq('company_id', alias.company_id)
+                .eq('file_name', ef.name)
+                .eq('metadata->>source', 'email_alias')
+                .gt('created_at', sinceIso)
+                .limit(1);
+
+              if (recentUpload && recentUpload.length > 0) {
+                hasRecentEmailUpload = true;
+                break;
+              }
+            }
+
+            if (hasRecentEmailUpload) {
+              console.log(`[IDEMPOTENCY] Skipping duplicate attachment (no Message-Id): ${ef.name} ` +
+                `(email_alias row already exists within 24h for company ${alias.company_id})`);
+              continue;
             }
           }
 
-          if (hasBeenProcessed) {
-            console.log(`[IDEMPOTENCY] Skipping duplicate attachment: ${attachment.name} ` +
-              `(Message-Id already processed: ${messageId})`);
+          // Choose storage bucket based on classification
+          const storageBucket = 
+            classification === 'transaction' 
+              ? 'transactions' 
+              : classification === 'report' 
+                ? 'report-uploads' 
+                : 'invoice-uploads';
+
+          const sanitizedAttachmentName = sanitizeFileName(ef.name);
+          const storagePath = `${alias.user_id}/${Date.now()}-${sanitizedAttachmentName}`;
+
+          // Upload to Supabase storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from(storageBucket)
+            .upload(storagePath, ef.bytes, {
+              contentType: ef.contentType,
+              upsert: false,
+            });
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            await logError(supabase, {
+              error_type: 'upload',
+              severity: 'error',
+              component: 'process-mailgun-webhook',
+              action: 'storage_upload',
+              message: `File upload failed: ${ef.name}`,
+              user_id: alias.user_id,
+              company_id: alias.company_id,
+              context: { fileName: ef.name, fileType: ef.contentType, fileSize: ef.bytes.length, uploadError: uploadError.message, classification, extractedFromArchive: ef.extractedFromArchive },
+            });
             continue;
           }
-        } else {
-          // ── Fallback idempotency (no Message-Id available) ──
-          // Some senders (e.g. Canon scanner firmware) omit the Message-Id header,
-          // so the per-email check above cannot run. To avoid duplicate processing
-          // on Mailgun redelivery, dedup on (company_id, file_name, email_alias)
-          // across all three upload tables within a 24h window. Any existing row
-          // (any status) means the file is already tracked / was already attempted.
-          const sinceIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-          let hasRecentEmailUpload = false;
-          const tablesToCheckNoMsgId = ['transaction_uploads', 'invoice_uploads', 'report_uploads'];
-          for (const table of tablesToCheckNoMsgId) {
-            const { data: recentUpload } = await supabase
-              .from(table)
-              .select('id, processing_status')
-              .eq('company_id', alias.company_id)
-              .eq('file_name', attachment.name)
-              .eq('metadata->>source', 'email_alias')
-              .gt('created_at', sinceIso)
-              .limit(1);
 
-            if (recentUpload && recentUpload.length > 0) {
-              hasRecentEmailUpload = true;
-              break;
+          console.log(`File uploaded to ${storageBucket}:`, storagePath);
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from(storageBucket)
+            .getPublicUrl(storagePath);
+
+          const emailMetadata = {
+            source: 'email_alias',
+            company_name: alias.company_name,
+            sender,
+            subject,
+            received_at: new Date().toISOString(),
+            ...(messageId ? { mailgun_message_id: messageId } : {}),
+            // Track archive source for debugging
+            ...(ef.extractedFromArchive ? { extracted_from_archive: ef.extractedFromArchive } : {}),
+          };
+
+          // Initial note for processing journey tracking
+          const initialNote = [{
+            timestamp: new Date().toISOString(),
+            event: `classified_as_${classification}`,
+            detail: reason,
+            sender_domain: senderDomain,
+            original_from: originalFrom,
+            ...(ef.extractedFromArchive ? { extracted_from_archive: ef.extractedFromArchive } : {}),
+          }];
+
+          if (classification === 'report') {
+            // ── Courier report upload (GLS/MPL/DPD etc.) ──
+            const { data: reportRecord, error: reportError } = await supabase
+              .from('report_uploads')
+              .insert({
+                user_id: alias.user_id,
+                company_id: alias.company_id,
+                file_name: ef.name,
+                file_type: ef.contentType,
+                file_size: ef.bytes.length,
+                file_url: publicUrl,
+                report_type: reportType || 'gls',
+                upload_status: 'uploaded',
+                processing_status: 'pending',
+                metadata: emailMetadata,
+                notes: initialNote,
+                email_sender_domain: senderDomain,
+              })
+              .select()
+              .single();
+
+            if (reportError) {
+              if (isUniqueViolation(reportError)) {
+                // DB-level dedup: concurrent webhook sent the same attachment — graceful skip
+                console.log(`[IDEMPOTENCY-DB] report_uploads duplicate skipped (unique_violation): ${ef.name}`);
+              } else {
+                console.error('Error creating report upload record:', reportError);
+                await logError(supabase, {
+                  error_type: 'db_query',
+                  component: 'process-mailgun-webhook',
+                  action: 'create_report_upload_record',
+                  message: `Failed to create report upload record for: ${ef.name}`,
+                  user_id: alias.user_id,
+                  company_id: alias.company_id,
+                  context: { fileName: ef.name, recordError: reportError.message, reportType },
+                });
+              }
+            } else {
+              console.log('Report upload record created:', reportRecord.id, `(type: ${reportType})`);
+              // Processing is handled automatically by the DB trigger (enqueue_report_job)
+              // which enqueues the job to the PGMQ report_jobs queue on INSERT.
+              console.log('Report job enqueued via DB trigger for PGMQ worker processing.');
+            }
+          } else if (classification === 'transaction') {
+            // ── Transaction upload ──
+            const { data: txRecord, error: txError } = await supabase
+              .from('transaction_uploads')
+              .insert({
+                user_id: alias.user_id,
+                company_id: alias.company_id,
+                file_name: ef.name,
+                file_type: ef.contentType,
+                file_size: ef.bytes.length,
+                file_url: publicUrl,
+                upload_status: 'uploaded',
+                processing_status: 'pending',
+                ...(bankHint ? { bank_hint: bankHint } : {}),
+                metadata: emailMetadata,
+                notes: initialNote,
+                email_sender_domain: senderDomain,
+              })
+              .select()
+              .single();
+
+            if (txError) {
+              if (isUniqueViolation(txError)) {
+                // DB-level dedup: concurrent webhook sent the same attachment — graceful skip
+                console.log(`[IDEMPOTENCY-DB] transaction_uploads duplicate skipped (unique_violation): ${ef.name}`);
+              } else {
+                console.error('Error creating transaction upload record:', txError);
+                await logError(supabase, {
+                  error_type: 'db_query',
+                  component: 'process-mailgun-webhook',
+                  action: 'create_transaction_upload_record',
+                  message: `Failed to create transaction upload record for: ${ef.name}`,
+                  user_id: alias.user_id,
+                  company_id: alias.company_id,
+                  context: { fileName: ef.name, recordError: txError.message, bankHint },
+                });
+              }
+            } else {
+              console.log('Transaction upload record created:', txRecord.id, bankHint ? `(bank: ${bankHint})` : '');
+              // Processing is handled automatically by the DB trigger (trg_enqueue_transaction)
+              // which enqueues the job to the PGMQ transaction_jobs queue on INSERT.
+              console.log('Transaction job enqueued via DB trigger for PGMQ worker processing.');
+            }
+          } else {
+            // ── Invoice upload (original behavior) ──
+            const { data: uploadRecord, error: recordError } = await supabase
+              .from('invoice_uploads')
+              .insert({
+                user_id: alias.user_id,
+                company_id: alias.company_id,
+                file_name: ef.name,
+                file_type: ef.contentType,
+                file_size: ef.bytes.length,
+                file_url: publicUrl,
+                upload_status: 'uploaded',
+                processing_status: 'pending',
+                metadata: emailMetadata,
+                notes: initialNote,
+                email_sender_domain: senderDomain,
+              })
+              .select()
+              .single();
+
+            if (recordError) {
+              if (isUniqueViolation(recordError)) {
+                // DB-level dedup: concurrent webhook sent the same attachment — graceful skip
+                console.log(`[IDEMPOTENCY-DB] invoice_uploads duplicate skipped (unique_violation): ${ef.name}`);
+              } else {
+                console.error('Error creating invoice upload record:', recordError);
+                await logError(supabase, {
+                  error_type: 'db_query',
+                  component: 'process-mailgun-webhook',
+                  action: 'create_upload_record',
+                  message: `Failed to create invoice upload record for: ${ef.name}`,
+                  user_id: alias.user_id,
+                  company_id: alias.company_id,
+                  context: { fileName: ef.name, recordError: recordError.message },
+                });
+              }
+            } else {
+              console.log('Invoice upload record created:', uploadRecord.id);
+              // Processing is handled automatically by the DB trigger (trg_enqueue_invoice)
+              // which enqueues the job to the PGMQ invoice_jobs queue on INSERT.
+              console.log('Job enqueued via DB trigger for PGMQ worker processing.');
             }
           }
-
-          if (hasRecentEmailUpload) {
-            console.log(`[IDEMPOTENCY] Skipping duplicate attachment (no Message-Id): ${attachment.name} ` +
-              `(email_alias row already exists within 24h for company ${alias.company_id})`);
-            continue;
-          }
-        }
-
-        // Choose storage bucket based on classification
-        const storageBucket = 
-          classification === 'transaction' 
-            ? 'transactions' 
-            : classification === 'report' 
-              ? 'report-uploads' 
-              : 'invoice-uploads';
-
-        const sanitizedAttachmentName = sanitizeFileName(attachment.name);
-        const storagePath = `${alias.user_id}/${Date.now()}-${sanitizedAttachmentName}`;
-
-        // Upload to Supabase storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(storageBucket)
-          .upload(storagePath, attachment, {
-            contentType: attachment.type,
-            upsert: false,
-          });
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          await logError(supabase, {
-            error_type: 'upload',
-            severity: 'error',
-            component: 'process-mailgun-webhook',
-            action: 'storage_upload',
-            message: `File upload failed: ${attachment.name}`,
-            user_id: alias.user_id,
-            company_id: alias.company_id,
-            context: { fileName: attachment.name, fileType: attachment.type, fileSize: attachment.size, uploadError: uploadError.message, classification },
-          });
-          continue;
-        }
-
-        console.log(`File uploaded to ${storageBucket}:`, storagePath);
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from(storageBucket)
-          .getPublicUrl(storagePath);
-
-        const emailMetadata = {
-          source: 'email_alias',
-          company_name: alias.company_name,
-          sender,
-          subject,
-          received_at: new Date().toISOString(),
-          ...(messageId ? { mailgun_message_id: messageId } : {}),
-        };
-
-        // Initial note for processing journey tracking
-        const initialNote = [{
-          timestamp: new Date().toISOString(),
-          event: `classified_as_${classification}`,
-          detail: reason,
-          sender_domain: senderDomain,
-          original_from: originalFrom,
-        }];
-
-        if (classification === 'report') {
-          // ── Courier report upload (GLS/MPL/DPD etc.) ──
-          const { data: reportRecord, error: reportError } = await supabase
-            .from('report_uploads')
-            .insert({
-              user_id: alias.user_id,
-              company_id: alias.company_id,
-              file_name: attachment.name,
-              file_type: attachment.type,
-              file_size: attachment.size,
-              file_url: publicUrl,
-              report_type: reportType || 'gls',
-              upload_status: 'uploaded',
-              processing_status: 'pending',
-              metadata: emailMetadata,
-              notes: initialNote,
-              email_sender_domain: senderDomain,
-            })
-            .select()
-            .single();
-
-          if (reportError) {
-            console.error('Error creating report upload record:', reportError);
-            await logError(supabase, {
-              error_type: 'db_query',
-              component: 'process-mailgun-webhook',
-              action: 'create_report_upload_record',
-              message: `Failed to create report upload record for: ${attachment.name}`,
-              user_id: alias.user_id,
-              company_id: alias.company_id,
-              context: { fileName: attachment.name, recordError: reportError.message, reportType },
-            });
-          } else {
-            console.log('Report upload record created:', reportRecord.id, `(type: ${reportType})`);
-            // Processing is handled automatically by the DB trigger (enqueue_report_job)
-            // which enqueues the job to the PGMQ report_jobs queue on INSERT.
-            console.log('Report job enqueued via DB trigger for PGMQ worker processing.');
-          }
-        } else if (classification === 'transaction') {
-          // ── Transaction upload ──
-          const { data: txRecord, error: txError } = await supabase
-            .from('transaction_uploads')
-            .insert({
-              user_id: alias.user_id,
-              company_id: alias.company_id,
-              file_name: attachment.name,
-              file_type: attachment.type,
-              file_size: attachment.size,
-              file_url: publicUrl,
-              upload_status: 'uploaded',
-              processing_status: 'pending',
-              ...(bankHint ? { bank_hint: bankHint } : {}),
-              metadata: emailMetadata,
-              notes: initialNote,
-              email_sender_domain: senderDomain,
-            })
-            .select()
-            .single();
-
-          if (txError) {
-            console.error('Error creating transaction upload record:', txError);
-            await logError(supabase, {
-              error_type: 'db_query',
-              component: 'process-mailgun-webhook',
-              action: 'create_transaction_upload_record',
-              message: `Failed to create transaction upload record for: ${attachment.name}`,
-              user_id: alias.user_id,
-              company_id: alias.company_id,
-              context: { fileName: attachment.name, recordError: txError.message, bankHint },
-            });
-          } else {
-            console.log('Transaction upload record created:', txRecord.id, bankHint ? `(bank: ${bankHint})` : '');
-            // Processing is handled automatically by the DB trigger (trg_enqueue_transaction)
-            // which enqueues the job to the PGMQ transaction_jobs queue on INSERT.
-            console.log('Transaction job enqueued via DB trigger for PGMQ worker processing.');
-          }
-        } else {
-          // ── Invoice upload (original behavior) ──
-          const { data: uploadRecord, error: recordError } = await supabase
-            .from('invoice_uploads')
-            .insert({
-              user_id: alias.user_id,
-              company_id: alias.company_id,
-              file_name: attachment.name,
-              file_type: attachment.type,
-              file_size: attachment.size,
-              file_url: publicUrl,
-              upload_status: 'uploaded',
-              processing_status: 'pending',
-              metadata: emailMetadata,
-              notes: initialNote,
-              email_sender_domain: senderDomain,
-            })
-            .select()
-            .single();
-
-          if (recordError) {
-            console.error('Error creating invoice upload record:', recordError);
-            await logError(supabase, {
-              error_type: 'db_query',
-              component: 'process-mailgun-webhook',
-              action: 'create_upload_record',
-              message: `Failed to create invoice upload record for: ${attachment.name}`,
-              user_id: alias.user_id,
-              company_id: alias.company_id,
-              context: { fileName: attachment.name, recordError: recordError.message },
-            });
-          } else {
-            console.log('Invoice upload record created:', uploadRecord.id);
-            // Processing is handled automatically by the DB trigger (trg_enqueue_invoice)
-            // which enqueues the job to the PGMQ invoice_jobs queue on INSERT.
-            console.log('Job enqueued via DB trigger for PGMQ worker processing.');
-          }
-        }
-      }
+        } // end for (const ef of expandedFiles)
+      } // end for (const attachment of attachments)
     } else {
       console.log('No attachments to process (attachmentCount:', attachmentCount, ')');
       

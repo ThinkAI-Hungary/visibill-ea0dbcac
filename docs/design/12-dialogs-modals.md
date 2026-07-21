@@ -399,3 +399,97 @@ Ha új modalt vagy dialógust hozunk létre keresési, szűrési és kijelölés
 * A lista fejlécében elhelyezendő egy *"Összes kijelölése"* / *"Kijelölések megszüntetése"* gyorsgomb a tömeges műveletek megkönnyítésére.
 * A dialog footerében lévő confirm gomb mutatja a kijelölt elemek számát, és csak kattintásra menti el azokat a szülő formba.
 
+---
+
+## ⭐ Async Modal UX — Általános Kötelező Irányelv (2026-07-20)
+
+> **Ez az irányelv KÖTELEZŐ minden olyan dialógusra, amely adatmódosítást hajt végre (mentés, törlés, újraküldés, státuszváltás, vagy bármilyen backend operation).**
+
+### A probléma: "Early Close" antipattern
+
+❌ **TILOS ez a sorrend:**
+```
+1. Felhasználó: kattint "Mentés"
+2. API hívás elindul (aszinkron)
+3. Modal bezárul → "Sikeres!" toast megjelenik
+4. [1-3 másodperc múlva] A tábla frissül, sorok megváltoznak/eltűnnek
+```
+
+**Miért rossz:**
+- A felhasználó azt látja: a modal bezárt, de a lista nem változott → "Megcsinálta? Nem csinálta?"
+- Inkonzisztens állapot: a UI más adatot mutat mint a backend
+- Darabos, "ugrálós" élmény — csökkenti a rendszerbe vetett bizalmat
+
+### A helyes minta: "Confirmed Close" — modal csak DB-szinkron után záródhat
+
+✅ **KÖTELEZŐ ez a sorrend:**
+```
+1. Felhasználó: kattint "Mentés"
+2. Modal: loading state (spinner, gombok disabled)
+3. API hívás lefut
+4. Frontend refetch/invalidate — await-elve
+5. [Sorok már frissültek/eltűntek]
+6. Modal bezárul
+7. Toast megjelenik
+```
+
+### Implementációs minta: operationPhase állapotgép
+
+Minden async műveletet végző dialógusnál az alábbi pattern kötelező:
+
+```typescript
+// Típus — a konkrét névtől függően (retryPhase, savePhase, deletePhase stb.)
+type OperationPhase = 'idle' | 'submitting' | 'syncing';
+const [phase, setPhase] = useState<OperationPhase>('idle');
+
+const handleConfirm = async () => {
+  setPhase('submitting');          // 1. Gomb disabled, spinner megjelenik
+
+  await performBackendOperation(); // 2. API hívás
+
+  setPhase('syncing');             // 3. "Szinkronizálás..." fázis
+
+  // 4. KÖTELEZŐ: await-elt refetch — ne fire-and-forget!
+  await queryClient.invalidateQueries({ queryKey: ['relevant-key'] });
+  // VAGY: await queryClient.refetchQueries(['relevant-key']);
+
+  // 5. Csak MOST zárul be a modal — az adatok már frissültek
+  setPhase('idle');
+  setOpen(false);
+
+  // 6. Toast az UTOLSÓ lépés
+  toast.success('Sikeres mentés');
+};
+```
+
+### Modal loading state UI szabályok
+
+| Fázis | Gomb állapot | Gomb szöveg | X gomb |
+|---|---|---|---|
+| `idle` | Aktív | "Mentés" / "Küldés" stb. | Kattintható |
+| `submitting` | `disabled` + spinner | _(spinner ikon)_ | `disabled` |
+| `syncing` | `disabled` + spinner | _(spinner ikon)_ | `disabled` |
+
+```tsx
+// Helyes: csak spinner, semmiféle szöveges "Frissítés..." felirat
+<Button disabled={phase !== 'idle'}>
+  {phase !== 'idle'
+    ? <Loader2 className="h-4 w-4 animate-spin" />
+    : 'Mentés'}
+</Button>
+```
+
+> ❌ **TILOS** a "Frissítés...", "Feldolgozás...", "Kérjük várjon..." szöveges felirat — helyette kizárólag a Loading spinner.
+
+### Mikor NEM kell await-elt refetch?
+
+Ha a backend operation **Realtime subscription-on keresztül** automatikusan frissíti a frontendet (pl. `supabase.channel(...).on('postgres_changes', ...)`), az await-elt refetch helyett elegendő megvárni a Realtime event érkezését. Ez azonban csak akkor alkalmazható, ha:
+1. A Realtime feliratkozás biztosan aktív az adott nézetben
+2. A subscription latency ismert és < 500ms
+
+Kétség esetén az await-elt refetch a biztonságos választás.
+
+### Referencia implementáció
+
+- `ManagementDashboard.tsx` — Bulk Retry UX (`retryPhase` állapotgép, 2026-07-20)
+

@@ -35,3 +35,4 @@ To improve system robustness and reduce monitoring noise, we have implemented th
 - [A-011: Mailgun Email Processing](./A-011-email-processing.md)
 - [A-005: Edge Functions](./A-005-edge-functions.md)
 - [A-019: Management Dashboard](./A-019-management-dashboard.md)
+- [A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency](./A-041-mailgun-concurrent-dedup.md)

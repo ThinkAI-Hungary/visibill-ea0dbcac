@@ -706,6 +706,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
   const [retryModalOpen, setRetryModalOpen] = useState(false);
   const [retryTargets, setRetryTargets] = useState<Array<{ source: string; id: string; project?: string }>>([]);
   const [retryPipeline, setRetryPipeline] = useState('same'); // 'same' | 'invoice' | 'payroll' | 'transaction' | 'gl' | 'report'
+  const [retryPhase, setRetryPhase] = useState<'idle' | 'sending' | 'refreshing'>('idle');
 
   const PIPELINE_OPTIONS: Array<{ value: string; label: string; icon: React.ReactNode; queue?: string; category?: string | null }> = [
     { value: 'same', label: 'Eredeti pipeline (változatlan)', icon: <RotateCcw className="h-4 w-4 text-muted-foreground" /> },
@@ -747,7 +748,11 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
 
   const handleRetryConfirm = async () => {
     if (retryTargets.length === 0) return;
+    const targetCount = retryTargets.length; // capture before clearing
     setRetrying(true);
+    setRetryPhase('sending');
+    let apiResult: { retried?: number; error?: string | null } | null = null;
+    let apiError = false;
     try {
       const pipelineOverride = retryPipeline !== 'same'
         ? PIPELINE_OPTIONS.find(p => p.value === retryPipeline)
@@ -760,22 +765,33 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
           targetCategory: pipelineOverride.category,
         }),
       });
-      if (result.error) {
-        reportError({ type: 'api_call', severity: 'warning', component: 'ManagementDashboard', action: 'warning', message: 'Retry partial errors', error: result.error });
-        toast({ title: 'Részleges újraküldés', description: `${result.retried || 0} elem újraküldve, néhány hiba történt.`, variant: 'destructive' });
-      } else {
-        toast({ title: 'Újraküldés sikeres', description: `${result.retried || retryTargets.length} elem újra feldolgozásra küldve.` });
-      }
+      apiResult = result;
       setSelected(new Set());
-      queryClient.invalidateQueries({ queryKey: ['management-errors'] });
-      queryClient.invalidateQueries({ queryKey: ['management-overview'] });
+
+      // Phase 2: wait for UI to update (rows disappear) before closing modal
+      setRetryPhase('refreshing');
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['management-errors'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['management-overview'], type: 'active' }),
+      ]);
     } catch (e) {
+      apiError = true;
       reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Retry errors failed:', error: e });
-      toast({ title: 'Újraküldés sikertelen', description: 'Hiba történt az újraküldés során.', variant: 'destructive' });
     } finally {
       setRetrying(false);
+      setRetryPhase('idle');
       setRetryModalOpen(false);
       setRetryTargets([]);
+    }
+
+    // Toast fires AFTER modal closes (rows are already gone from the list)
+    if (apiError) {
+      toast({ title: 'Újraküldés sikertelen', description: 'Hiba történt az újraküldés során.', variant: 'destructive' });
+    } else if (apiResult?.error) {
+      reportError({ type: 'api_call', severity: 'warning', component: 'ManagementDashboard', action: 'warning', message: 'Retry partial errors', error: apiResult.error });
+      toast({ title: 'Részleges újraküldés', description: `${apiResult.retried || 0} elem újraküldve, néhány hiba történt.`, variant: 'destructive' });
+    } else if (apiResult !== null) {
+      toast({ title: 'Újraküldés sikeres', description: `${apiResult.retried ?? targetCount} elem újra feldolgozásra küldve.` });
     }
   };
 
@@ -1573,7 +1589,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                 </Button>
                 <Button size="sm" className="gap-1.5" onClick={handleRetryConfirm} disabled={retrying}>
                   {retrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-                  {retrying ? 'Küldés…' : <>Újraküldés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{retryTargets.length}</span>)</>}
+                  {retryPhase === 'refreshing' ? null : retrying ? 'Küldés…' : <>Újraküldés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{retryTargets.length}</span>)</>}
                 </Button>
               </div>
             </CardContent>
@@ -4371,6 +4387,7 @@ function WorkerPanel() {
   const showWorkerErrors = searchParams.get('wrk_show_errors') === 'true';
   const [expandedErrorRowId, setExpandedErrorRowId] = useState<string | null>(null);
   const [workerErrorSearch, setWorkerErrorSearch] = useState('');
+  const [selectedErrorIds, setSelectedErrorIds] = useState<Set<string>>(new Set());
   const ERROR_PAGE_SIZE = 10;
 
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
@@ -4378,6 +4395,7 @@ function WorkerPanel() {
   const [retryTargets, setRetryTargets] = useState<Array<{ source: string; id: string; project?: string }>>([]);
   const [retryPipeline, setRetryPipeline] = useState('same');
   const [retrying, setRetrying] = useState(false);
+  const [retryPhase, setRetryPhase] = useState<'idle' | 'sending' | 'refreshing'>('idle');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -4406,7 +4424,11 @@ function WorkerPanel() {
 
   const handleRetryConfirm = async () => {
     if (retryTargets.length === 0) return;
+    const targetCount = retryTargets.length; // capture before clearing
     setRetrying(true);
+    setRetryPhase('sending');
+    let apiResult: { retried?: number; error?: string | null } | null = null;
+    let apiError = false;
     try {
       const pipelineOverride = retryPipeline !== 'same'
         ? PIPELINE_OPTIONS.find(p => p.value === retryPipeline)
@@ -4419,20 +4441,30 @@ function WorkerPanel() {
           targetCategory: pipelineOverride.category,
         }),
       });
-      if (result.error) {
-        reportError({ type: 'api_call', severity: 'warning', component: 'ManagementDashboard', action: 'warning', message: 'Retry partial errors from worker', error: result.error });
-        toast({ title: 'Részleges újraküldés', description: `${result.retried || 0} elem újraküldve, néhány hiba történt.`, variant: 'destructive' });
-      } else {
-        toast({ title: 'Újraküldés sikeres', description: `${result.retried || retryTargets.length} elem újra feldolgozásra küldve.` });
-      }
-      queryClient.invalidateQueries({ queryKey: ['worker-status'] });
+      apiResult = result;
+
+      // Phase 2: wait for UI to update (rows disappear) before closing modal
+      setRetryPhase('refreshing');
+      await queryClient.refetchQueries({ queryKey: ['worker-status'], type: 'active' });
     } catch (e) {
+      apiError = true;
       reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Retry errors from worker failed:', error: e });
-      toast({ title: 'Újraküldés sikertelen', description: 'Hiba történt az újraküldés során.', variant: 'destructive' });
     } finally {
       setRetrying(false);
+      setRetryPhase('idle');
       setRetryModalOpen(false);
       setRetryTargets([]);
+      setSelectedErrorIds(new Set());
+    }
+
+    // Toast fires AFTER modal closes (rows are already gone from the list)
+    if (apiError) {
+      toast({ title: 'Újraküldés sikertelen', description: 'Hiba történt az újraküldés során.', variant: 'destructive' });
+    } else if (apiResult?.error) {
+      reportError({ type: 'api_call', severity: 'warning', component: 'ManagementDashboard', action: 'warning', message: 'Retry partial errors from worker', error: apiResult.error });
+      toast({ title: 'Részleges újraküldés', description: `${apiResult.retried || 0} elem újraküldve, néhány hiba történt.`, variant: 'destructive' });
+    } else if (apiResult !== null) {
+      toast({ title: 'Újraküldés sikeres', description: `${apiResult.retried ?? targetCount} elem újra feldolgozásra küldve.` });
     }
   };
 
@@ -4884,7 +4916,46 @@ function WorkerPanel() {
           )}
 
           {/* ── Worker Errors Panel (replaces pipeline+jobs when active) ── */}
-          {showWorkerErrors ? (
+          {showWorkerErrors ? (() => {
+            // Retryable jobs on the current page (have source + upload_id)
+            const retryableOnPage = paginatedErrorJobs.filter((j: any) => j.source && j.upload_id && RETRYABLE_SOURCES.has(j.source));
+            const allPageSelected = retryableOnPage.length > 0 && retryableOnPage.every((j: any) => selectedErrorIds.has(j.upload_id));
+            const somePageSelected = retryableOnPage.some((j: any) => selectedErrorIds.has(j.upload_id));
+
+            const toggleSelectAll = () => {
+              if (allPageSelected) {
+                setSelectedErrorIds(prev => {
+                  const next = new Set(prev);
+                  retryableOnPage.forEach((j: any) => next.delete(j.upload_id));
+                  return next;
+                });
+              } else {
+                setSelectedErrorIds(prev => {
+                  const next = new Set(prev);
+                  retryableOnPage.forEach((j: any) => next.add(j.upload_id));
+                  return next;
+                });
+              }
+            };
+
+            const toggleRow = (uploadId: string) => {
+              setSelectedErrorIds(prev => {
+                const next = new Set(prev);
+                if (next.has(uploadId)) next.delete(uploadId);
+                else next.add(uploadId);
+                return next;
+              });
+            };
+
+            const handleBulkRetry = () => {
+              const selected = filteredErrorJobs
+                .filter((j: any) => j.upload_id && selectedErrorIds.has(j.upload_id) && j.source && RETRYABLE_SOURCES.has(j.source))
+                .map((j: any) => ({ source: j.source, id: j.upload_id, project: j.project }));
+              if (selected.length === 0) return;
+              openRetryModal(selected);
+            };
+
+            return (
             <Card className="border-red-500/30 bg-red-500/5">
               <CardHeader className="pb-2 pt-3 px-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -4896,6 +4967,31 @@ function WorkerPanel() {
                     </Badge>
                   </CardTitle>
                   <div className="flex items-center gap-2">
+                    {selectedErrorIds.size > 0 && (
+                      <div className="flex items-center gap-1.5 animate-in fade-in-0 slide-in-from-right-2 duration-150">
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {selectedErrorIds.size} kijelölve
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1.5 border-red-500/40 hover:border-red-500/70 hover:bg-red-500/10 text-red-400 hover:text-red-300"
+                          onClick={handleBulkRetry}
+                          disabled={retrying}
+                        >
+                          <RefreshCw className={`h-3 w-3 ${retrying ? 'animate-spin' : ''}`} />
+                          Újraküldés ({selectedErrorIds.size})
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => setSelectedErrorIds(new Set())}
+                        >
+                          Törlés
+                        </Button>
+                      </div>
+                    )}
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                       <Input
@@ -4905,7 +5001,7 @@ function WorkerPanel() {
                         className="pl-8 h-7 text-xs w-64 bg-background/50 border-border/30 focus-visible:bg-background"
                       />
                     </div>
-                    <button onClick={() => { updateParams({ wrk_show_errors: null, wrk_err_page: null }); setWorkerErrorSearch(''); }} className="text-muted-foreground hover:text-foreground p-1">
+                    <button onClick={() => { updateParams({ wrk_show_errors: null, wrk_err_page: null }); setWorkerErrorSearch(''); setSelectedErrorIds(new Set()); }} className="text-muted-foreground hover:text-foreground p-1">
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -4917,7 +5013,18 @@ function WorkerPanel() {
                     <table className="w-full text-xs table-fixed">
                       <thead>
                         <tr className="border-b border-border/30 text-muted-foreground">
-                          <th className="text-left px-4 py-1.5 font-medium w-[110px]">Dátum</th>
+                          <th className="text-left px-4 py-1.5 font-medium w-[36px]">
+                            <input
+                              type="checkbox"
+                              aria-label="Összes kijelölése ezen az oldalon"
+                              checked={allPageSelected}
+                              ref={el => { if (el) el.indeterminate = somePageSelected && !allPageSelected; }}
+                              onChange={toggleSelectAll}
+                              disabled={retryableOnPage.length === 0}
+                              className="h-3.5 w-3.5 rounded accent-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-30"
+                            />
+                          </th>
+                          <th className="text-left px-3 py-1.5 font-medium w-[110px]">Dátum</th>
                           <th className="text-left px-3 py-1.5 font-medium w-[110px]">Pipeline</th>
                           <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
                           <th className="text-left px-3 py-1.5 font-medium w-[160px]">Cég</th>
@@ -4929,7 +5036,7 @@ function WorkerPanel() {
                       <tbody>
                         {filteredErrorJobs.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                            <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                               Nincs találat a keresésre: <span className="font-semibold text-foreground">"{workerErrorSearch}"</span>
                             </td>
                           </tr>
@@ -4938,13 +5045,31 @@ function WorkerPanel() {
                           const time = new Date(j.created_at);
                           const dateStr = `${(time.getMonth() + 1).toString().padStart(2, '0')}.${time.getDate().toString().padStart(2, '0')}`;
                           const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+                          const isRetryable = !!(j.source && j.upload_id && RETRYABLE_SOURCES.has(j.source));
+                          const isRowSelected = isRetryable && selectedErrorIds.has(j.upload_id);
                           return (
                             <React.Fragment key={j.id}>
                               <tr 
-                                className={`border-b border-border/20 hover:bg-muted/30 transition-colors cursor-pointer ${expandedErrorRowId === j.id ? 'bg-red-500/5 hover:bg-red-500/5' : ''}`}
+                                className={`border-b border-border/20 hover:bg-muted/30 transition-colors cursor-pointer ${
+                                  isRowSelected ? 'bg-primary/5 hover:bg-primary/5' :
+                                  expandedErrorRowId === j.id ? 'bg-red-500/5 hover:bg-red-500/5' : ''
+                                }`}
                                 onClick={() => setExpandedErrorRowId(prev => prev === j.id ? null : j.id)}
                               >
-                                <td className="px-4 py-1.5 font-mono text-muted-foreground whitespace-nowrap">{dateStr} - {timeStr}</td>
+                                <td className="px-4 py-1.5" onClick={e => e.stopPropagation()}>
+                                  {isRetryable ? (
+                                    <input
+                                      type="checkbox"
+                                      aria-label={`${j.file_name} kijelölése`}
+                                      checked={isRowSelected}
+                                      onChange={() => toggleRow(j.upload_id)}
+                                      className="h-3.5 w-3.5 rounded accent-primary cursor-pointer"
+                                    />
+                                  ) : (
+                                    <span className="block h-3.5 w-3.5" />
+                                  )}
+                                </td>
+                                <td className="px-3 py-1.5 font-mono text-muted-foreground whitespace-nowrap">{dateStr} - {timeStr}</td>
                                 <td className="px-3 py-1.5">
                                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 w-[75px] justify-center">{j.pipeline}</Badge>
                                 </td>
@@ -4993,7 +5118,7 @@ function WorkerPanel() {
                               </tr>
                               {expandedErrorRowId === j.id && (
                                 <tr className="bg-red-500/5 border-b border-border/20">
-                                  <td colSpan={7} className="px-4 py-2.5 text-xs text-red-400/90 font-mono whitespace-pre-wrap break-all leading-relaxed">
+                                  <td colSpan={8} className="px-4 py-2.5 text-xs text-red-400/90 font-mono whitespace-pre-wrap break-all leading-relaxed">
                                     <div className="flex flex-col gap-1 pl-4 border-l-2 border-red-500/30">
                                       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Részletes hibaüzenet</span>
                                       <span className="text-red-400">{j.error_message || 'Ismeretlen hiba történt a feldolgozás során.'}</span>
@@ -5011,7 +5136,7 @@ function WorkerPanel() {
                           if (emptyRowsCount <= 0) return null;
                           return Array.from({ length: emptyRowsCount }).map((_, index) => (
                             <tr key={`placeholder-${index}`} className="border-b border-transparent">
-                              <td colSpan={7} className="px-3 py-1.5 select-none pointer-events-none">&nbsp;</td>
+                              <td colSpan={8} className="px-3 py-1.5 select-none pointer-events-none">&nbsp;</td>
                             </tr>
                           ));
                         })()}
@@ -5071,7 +5196,8 @@ function WorkerPanel() {
                 )}
               </CardContent>
             </Card>
-          ) : showProcessing ? (
+            );
+          })() : showProcessing ? (
             <Card className="border-cyan-500/30 bg-cyan-500/5">
               <CardHeader className="pb-2 pt-3 px-4">
                 <div className="flex items-center justify-between">
@@ -5636,7 +5762,7 @@ function WorkerPanel() {
                 </Button>
                 <Button size="sm" className="gap-1.5" onClick={handleRetryConfirm} disabled={retrying}>
                   {retrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-                  {retrying ? 'Küldés ' : <>Újraküldés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{retryTargets.length}</span>)</>}
+                  {retryPhase === 'refreshing' ? null : retrying ? 'Küldés…' : <>Újraküldés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{retryTargets.length}</span>)</>}
                 </Button>
               </div>
             </CardContent>

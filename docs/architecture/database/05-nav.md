@@ -48,14 +48,26 @@
 | gl_reasoning | text | ✓ |  |
 | gl_classifications | jsonb | ✓ | `'{}'::jsonb` |
 | exclude_from_accounting | boolean | — | `false` |
-| is_reverse_charge | boolean | ✓ | `false` |
-| reverse_charge_category | text | ✓ |  |
-| rc_confidence | text | ✓ | `'auto'::text` |
-| rc_vat_date | date | ✓ |  |
+| is_cash_accounting | boolean | ✓ | `false` |
+| is_continuous | boolean | ✓ | `false` |
+| service_period_start | date | ✓ |  |
+| service_period_end | date | ✓ |  |
+| calculated_ti | date | ✓ |  |
+| ti_override | date | ✓ |  |
+| ti_calculation_method | text | ✓ |  |
+| is_manual_payment | boolean | ✓ | `false` |
+| manual_payment_date | date | ✓ |  |
+| manual_payment_type | text | ✓ |  | ← `'storno_settled'` sztornó kézi lezárásnál |
+| manual_payment_note | text | ✓ |  |
+| original_invoice_number | text | ✓ |  | ← NAV XML `<originalInvoiceNumber>` — STORNO számlák esetén |
 
 **FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `project_id` → `projects.id`, `supplier_partner_id` → `partners.id`, `transaction_id` → `transactions.id`, `user_id` → `auth.users.id`
 
 **Indexek:** `idx_nav_invoices_cash_payment`, `idx_nav_invoices_category_id`, `idx_nav_invoices_company_date`, `idx_nav_invoices_company_direction_date`, `idx_nav_invoices_company_payment`, `idx_nav_invoices_exclude`, `idx_nav_invoices_gl_account_id`, `idx_nav_invoices_outbound_unpaid`, `idx_nav_invoices_project_id`, `idx_nav_invoices_reverse_charge`, `idx_nav_invoices_supplier_partner`, `idx_nav_invoices_transaction_id`, `idx_nav_invoices_user_id`, `nav_invoices_company_id_invoice_number_key`
+
+**Kézi fizetés logika (`is_manual_payment`):**  
+Ha `manual_payment_type = 'storno_settled'` → a sztornó láncolatot a user manuálisan zárta le (`mark_storno_group_settled` RPC). A sor zöldre vált a frontenden, visszavonható (`unmark_storno_group_settled`).  
+Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-architecture.md)
 
 ---
 

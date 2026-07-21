@@ -1,7 +1,7 @@
 # A-019: Management Dashboard Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12 (last updated 2026-07-08)
+**Date:** 2025-12 (last updated 2026-07-20)
 
 ## Context
 
@@ -565,5 +565,143 @@ Minden helyen **miután** a végső hibasor (`new_id`) létrejött és az `error
 
 > **Megjegyzés:** a management-stats EF (`buildErrors`/`buildFiles`) **nem** módosult — nincs szükség megjelenítés-oldali dedupra, mert a sibling cleanup után nem keletkezik duplikátum. A histórikus duplikátumok manuálisan törölhetők (pl. a `delete-all-errors` actionnel vagy SQL-lel).
 
+---
 
+## Schema Drift Incident — Cross-Pipeline Retry (2026-07-20)
 
+### Probléma
+
+VSWEB projekten díjbekérők véletlenül a `transaction_uploads` táblába kerültek. A Management Dashboardon cross-pipeline retry (`transaction_uploads` → `invoice_uploads`, `invoice_jobs` queue) `0 elem újraküldve` hibát dobott.
+
+**Root cause:** A `migrateRowToTable()` függvény feltételezi, hogy a target tábla (`invoice_uploads`) rendelkezik `notes` oszloppal. A VSWEB DB séma mögött volt a PROD-hoz képest — hiányzott a `notes`, `email_sender_domain` és a cross-pipeline fallback foreign key oszlop:
+
+| Oszlop | PROD `invoice_uploads` | VSWEB `invoice_uploads` (előtte) |
+|--------|----------------------|--------------------------------|
+| `notes` | ✅ jsonb | ❌ hiányzott |
+| `email_sender_domain` | ✅ text | ❌ hiányzott |
+| `fallback_from_transaction_upload_id` | ✅ uuid | ❌ hiányzott |
+
+Ugyanez fennállt a `transaction_uploads` táblánál is (`fallback_from_invoice_upload_id` hiánya).
+
+### Fix (2026-07-20)
+
+**1. EF defensív insert (`management-stats/index.ts`, `migrateRowToTable()`):**
+
+```typescript
+// Korábban (törik ha nincs notes oszlop):
+notes: row.notes || [],
+
+// Javítva (schema-safe):
+...(row.notes !== undefined && { notes: row.notes }),
+...(row.email_sender_domain !== undefined && { email_sender_domain: row.email_sender_domain }),
+```
+
+Az EF most csak azokat az opcionális oszlopokat írja bele a `targetRow`-ba, amelyek a source row-ban ténylegesen megvannak. Ez tolerálja a projekt-közti schema driftet.
+
+**2. VSWEB DB migration:**
+
+```sql
+ALTER TABLE invoice_uploads
+  ADD COLUMN IF NOT EXISTS notes jsonb,
+  ADD COLUMN IF NOT EXISTS email_sender_domain text,
+  ADD COLUMN IF NOT EXISTS fallback_from_transaction_upload_id uuid;
+
+ALTER TABLE transaction_uploads
+  ADD COLUMN IF NOT EXISTS notes jsonb,
+  ADD COLUMN IF NOT EXISTS email_sender_domain text,
+  ADD COLUMN IF NOT EXISTS fallback_from_invoice_upload_id uuid;
+```
+
+**Deployment:** PROD `management-stats` EF újra-deployálva (a PROD EF nyúl a VSWEB DB-hez is `VSWEB_SUPABASE_URL` + `VSWEB_SERVICE_ROLE_KEY` env var-okon keresztül — külön VSWEB EF deploy nem szükséges).
+
+### Tanulság
+
+Ha egy upload tábla új opcionális oszlopot kap PROD-on, azt **minden projekten (VSWEB, Thinkerman) is migrálni kell** — különben a cross-pipeline retry / fallback mechanizmusok schema-cache hibával törik. A jövőben az upload táblákra vonatkozó migrációkat a `visibill-db-sync` skill checklist szerint kell minden projektre alkalmazni.
+
+---
+
+## Duplikált PGMQ Üzenetek — Cross-Pipeline Retry Bug (2026-07-20)
+
+### Probléma
+
+A cross-pipeline retry (`transaction_uploads` → `invoice_uploads`) után a queue-ban minden fájlhoz **2 üzenet** jelent meg ugyanazzal az `upload_id`-val.
+
+### Root cause
+
+A `retryErrors()` függvény mindkét esetben (cross-pipeline ÉS same-pipeline) meghívta a `pgmq_send_retry` RPC-t. Cross-pipeline retry esetén viszont a `migrateRowToTable()` INSERT-je aktiválja az `invoice_uploads`-ra épített **`trg_enqueue_invoice` DB triggert**, amely automatikusan beküldi a PGMQ üzenetet. Ezért:
+
+```
+migrateRowToTable() → INSERT invoice_uploads
+    → trg_enqueue_invoice trigger → pgmq.send()   ← 1. üzenet (automatikus)
+retryErrors() → pgmq_send_retry()                  ← 2. üzenet (felesleges duplikátum)
+```
+
+### Fix (2026-07-20)
+
+A `retryErrors()` logika szétválasztva:
+
+```typescript
+if (isCrossPipeline) {
+  // DB trigger already enqueued on INSERT — skip explicit send
+  totalRetried++;
+} else {
+  // Same-pipeline: trigger doesn't re-fire on UPDATE → explicit send needed
+  await projectClient.rpc("pgmq_send_retry", { queue_name, msg: payload });
+}
+```
+
+**Architekturális szabály (jövőbeli fejlesztők számára):**
+- **DB trigger re-fires on INSERT** (pl. `trg_enqueue_invoice`, `trg_enqueue_transaction`) → cross-pipeline migrate esetén NEM kell explicit `pgmq_send_retry`
+- **DB trigger NEM re-fires on UPDATE** → same-pipeline status reset esetén explicit `pgmq_send_retry` SZÜKSÉGES
+
+**Cleanup:** A 3 duplikált PGMQ üzenet (msg_id 805, 807, 809) manuálisan törölve a VSWEB `pgmq.q_invoice_jobs` táblából `pgmq.delete()` segítségével.
+
+---
+
+## Bulk Retry UX — Atomikus Állapotgép (2026-07-20)
+
+### Motiváció
+
+A Management Dashboard Hibák panelján korábban csak egyenként lehetett újraküldeni a hibás feldolgozásokat. A felhasználók több számlát is ugyanazzal a hibával kezelhetnek egyszerre (pl. véletlenül rossz pipeline-ra küldve), ezért Bulk kijelölés és újraküldés került bevezetésre.
+
+### Implementáció: retryPhase állapotgép
+
+A Bulk Retry egy háromfázisú atomikus UX-et valósít meg:
+
+```
+idle → sending → refreshing → idle
+       ↓              ↓
+   API hívás     await refetch
+   (retry-errors)  (queryClient)
+```
+
+```typescript
+type RetryPhase = 'idle' | 'sending' | 'refreshing';
+const [retryPhase, setRetryPhase] = useState<RetryPhase>('idle');
+
+// Sorrend: sending → API → refreshing → refetch befejez → modal zár → toast
+const handleBulkRetry = async () => {
+  setRetryPhase('sending');
+  await callRetryErrors(selectedIds, targetPipeline);
+  setRetryPhase('refreshing');
+  await queryClient.refetchQueries(['management-errors']);
+  // Sorok eltűntek a DB-ből → modal bezár, toast megjelenik
+  setRetryPhase('idle');
+  setModalOpen(false);
+  toast.success(`Sikeresen újraküldve: ${selectedIds.length} számla`);
+};
+```
+
+**UX döntések:**
+- A modal **nyitva marad** amíg a DB változás meg nem jelenik (refreshing fázis)
+- A toast **csak a modal bezárása után** jelenik meg
+- A modal gombjaiban a refreshing fázisban **csak spinner jelenik meg** (nem szöveges "Frissítés..." felirat)
+- `await queryClient.refetchQueries()` garantálja hogy a sorok eltűntek mielőtt a modal bezár
+
+### Bulk kijelölés UI
+
+- Minden sor előtt checkbox
+- Fejléc checkbox: "Select All" / deselect
+- Ha van kijelölés: lebegő bulk action toolbar jelenik meg a lista felett
+- Pipeline-választó dropdown: melyik queue-ba kerüljön az újraküldés
+- Egyszerre max. 100 hibás feldolgozás jelölhető ki (API limit)
