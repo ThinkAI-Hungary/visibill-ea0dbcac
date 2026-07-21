@@ -44,6 +44,7 @@ const BANK_CONFIG: Record<string, { label: string; fullName: string; color: stri
   granit:     { label: 'Gránit',     fullName: 'Gránit Bank Zrt.',            color: 'bg-stone-500',   bgClass: 'bg-stone-500/10 text-stone-700 dark:text-stone-400 border-stone-500/20' },
   wise:       { label: 'Wise',       fullName: 'Wise Payments Ltd.',           color: 'bg-[#9FE870]',   bgClass: 'bg-lime-500/10 text-lime-700 dark:text-lime-400 border-lime-500/20' },
   revolut:    { label: 'Revolut',    fullName: 'Revolut Bank UAB',             color: 'bg-[#0075EB]',   bgClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
+  paypal:     { label: 'PayPal',     fullName: 'PayPal, Inc.',                 color: 'bg-[#003087]',   bgClass: 'bg-blue-500/10 text-blue-800 dark:text-blue-400 border-blue-500/20' },
   binx:       { label: 'Binx',       fullName: 'Binx Zrt.',                   color: 'bg-orange-500',  bgClass: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20' },
   mbh:        { label: 'MBH',        fullName: 'MBH Bank Nyrt.',              color: 'bg-indigo-500',  bgClass: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20' },
   mkb:        { label: 'MKB',        fullName: 'MKB Bank Nyrt.',              color: 'bg-teal-600',    bgClass: 'bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/20' },

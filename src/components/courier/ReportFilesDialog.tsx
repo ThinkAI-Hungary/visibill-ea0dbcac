@@ -270,14 +270,16 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
             </Button>
           </DialogTrigger>
         )}
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col border-border bg-card">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Feltöltött riport dokumentumok</DialogTitle>
             <DialogDescription>
               Itt tekintheti meg és törölheti a korábban feltöltött futárszolgálat riportokat.
               A törlés eltávolítja a fájlból származó összes riport adatot is.
             </DialogDescription>
           </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-1">
 
           {/* Filters */}
           <div className="flex items-center gap-3">
@@ -365,22 +367,23 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
               </Table>
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
-        <AlertDialogContent className="max-w-md overflow-hidden">
-          <AlertDialogHeader>
+        <AlertDialogContent className="max-w-md border-border bg-card">
+          <AlertDialogHeader className="w-full min-w-0">
             <AlertDialogTitle>Riport dokumentum törlése</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-3">
+              <div className="space-y-3 w-full min-w-0">
                 <p>Válaszd ki a törlés módját:</p>
                 <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="space-y-2 py-1">
+          <div className="space-y-2 py-1 w-full min-w-0">
             {/* Option A: File only */}
             <button
               disabled={deleting}
@@ -391,7 +394,7 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
                 <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground">
                     Csak a fájl törlése
                   </p>
@@ -412,7 +415,7 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
                 <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                   <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-red-600 dark:text-red-400">
                     Fájl és riport adatok törlése
                   </p>
@@ -435,7 +438,7 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
             </div>
           )}
 
-          <AlertDialogFooter>
+          <AlertDialogFooter className="w-full min-w-0">
             <AlertDialogCancel disabled={deleting}>Mégsem</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>

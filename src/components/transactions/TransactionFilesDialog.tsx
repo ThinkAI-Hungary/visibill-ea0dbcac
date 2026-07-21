@@ -53,6 +53,7 @@ const BANK_CONFIG: Record<string, { label: string }> = {
   granit:     { label: 'Gránit' },
   wise:       { label: 'Wise' },
   revolut:    { label: 'Revolut' },
+  paypal:     { label: 'PayPal' },
   binx:       { label: 'Binx' },
   mbh:        { label: 'MBH' },
   mkb:        { label: 'MKB' },
@@ -345,14 +346,16 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
             </Button>
           </DialogTrigger>
         )}
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col border-border bg-card">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Feltöltött tranzakció dokumentumok</DialogTitle>
             <DialogDescription>
               Itt tekintheti meg és törölheti a korábban feltöltött bankkivonatokat.
               A törlés eltávolítja a fájlból származó összes tranzakciós adatot is.
             </DialogDescription>
           </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-1">
 
           {/* Filters + Batch delete button */}
           <div className="flex items-center gap-3">
@@ -481,23 +484,24 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
               />
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Single delete AlertDialog */}
       <AlertDialog open={isOpen && !!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
+        <AlertDialogContent className="max-w-md border-border bg-card">
+          <AlertDialogHeader className="w-full min-w-0">
             <AlertDialogTitle>Dokumentum törlése</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-3">
+              <div className="space-y-3 w-full min-w-0">
                 <p>Válaszd ki a törlés módját:</p>
                 <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="space-y-2 py-1">
+          <div className="space-y-2 py-1 w-full min-w-0">
             <button
               disabled={deleting}
               onClick={() => { if (deleteTarget) handleDeleteFileOnly(deleteTarget); }}
@@ -507,10 +511,10 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                 <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground">Csak a fájl törlése</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A <span className="font-medium text-foreground">{deleteTarget?.file_name}</span> fájl törlődik, de a feldolgozott tranzakció adatok megmaradnak.
+                    A <span className="font-medium text-foreground break-all">{deleteTarget?.file_name}</span> fájl törlődik, de a feldolgozott tranzakció adatok megmaradnak.
                   </p>
                 </div>
               </div>
@@ -525,10 +529,10 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                 <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                   <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-destructive">Fájl és tranzakció adatok törlése</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A <span className="font-medium text-foreground">{deleteTarget?.file_name}</span> fájl és a hozzá tartozó{' '}
+                    A <span className="font-medium text-foreground break-all">{deleteTarget?.file_name}</span> fájl és a hozzá tartozó{' '}
                     <span className="font-medium text-foreground">
                       {deleteTarget?.transactionCount} db
                     </span>{' '}
@@ -546,7 +550,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
             </div>
           )}
 
-          <AlertDialogFooter>
+          <AlertDialogFooter className="w-full min-w-0">
             <AlertDialogCancel disabled={deleting}>Mégsem</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -554,17 +558,17 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
 
       {/* Batch delete AlertDialog */}
       <AlertDialog open={isOpen && batchDeleteOpen} onOpenChange={(open) => { if (!open && !batchDeleting) setBatchDeleteOpen(false); }}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
+        <AlertDialogContent className="max-w-md border-border bg-card">
+          <AlertDialogHeader className="w-full min-w-0">
             <AlertDialogTitle>
               {selectedCount} dokumentum törlése
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-2">
+              <div className="space-y-2 w-full min-w-0">
                 <p>Válaszd ki a törlés módját az összes kijelölt elemre:</p>
-                <div className="max-h-28 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-2 space-y-1">
+                <div className="max-h-28 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-2 space-y-1 w-full min-w-0 overflow-x-hidden">
                   {selectedUploads.map(u => (
-                    <div key={u.id} className="text-xs text-muted-foreground truncate">
+                    <div key={u.id} className="text-xs text-muted-foreground truncate w-full min-w-0" title={u.file_name}>
                       • {u.file_name} ({u.transactionCount} db tranzakció)
                     </div>
                   ))}
@@ -574,7 +578,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="space-y-2 py-1">
+          <div className="space-y-2 py-1 w-full min-w-0">
             <button
               disabled={batchDeleting}
               onClick={() => handleBatchDelete(false)}
@@ -584,7 +588,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                 <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground">Csak a fájlok törlése</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {selectedCount} fájl törlődik, a tranzakció adatok megmaradnak.
@@ -602,7 +606,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                 <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                   <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-destructive">Fájlok és tranzakció adatok törlése</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {selectedCount} fájl és az összes hozzájuk tartozó tranzakció véglegesen törlődik.
@@ -619,7 +623,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
             </div>
           )}
 
-          <AlertDialogFooter>
+          <AlertDialogFooter className="w-full min-w-0">
             <AlertDialogCancel disabled={batchDeleting}>Mégsem</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>

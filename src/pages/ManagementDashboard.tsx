@@ -5838,6 +5838,8 @@ function normalizeStatus(status: string | null, errorMessage?: string | null): S
   if (status === 'redirected') return 'redirected';
   // If there's an error_message, it's an error regardless of processing_status (excluding success messages)
   const isCompleted = errorMessage?.toLowerCase() === 'job completed' || errorMessage?.toLowerCase().includes('job completed');
+  const isDuplicate = errorMessage?.includes('már létezik a rendszerben');
+  if (isDuplicate) return 'dismissed';
   if (errorMessage && !isCompleted) return 'error';
   if (!status) return 'pending';
   switch (status) {
@@ -6821,12 +6823,19 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                                 <div><span className="text-muted-foreground">MIME típus: </span><span className="font-mono truncate">{row.file_type || '—'}</span></div>
                                 <div><span className="text-muted-foreground">Frissítve: </span><span>{row.updated_at ? new Date(row.updated_at).toLocaleString('hu-HU') : '—'}</span></div>
                               </div>
-                              {row.error_message && (
-                                <div className="mt-2 flex items-start gap-2 rounded-md bg-destructive/8 border border-destructive/20 px-3 py-2 overflow-hidden">
-                                  <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
-                                  <span className="text-xs text-destructive break-words min-w-0">{row.error_message}</span>
-                                </div>
-                              )}
+                              {row.error_message && (() => {
+                                const isDuplicate = row.error_message.includes('már létezik a rendszerben');
+                                const bgClass = isDuplicate 
+                                  ? 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400' 
+                                  : 'bg-destructive/8 border border-destructive/20 text-destructive';
+                                const Icon = isDuplicate ? AlertTriangle : AlertCircle;
+                                return (
+                                  <div className={`mt-2 flex items-start gap-2 rounded-md px-3 py-2 border overflow-hidden ${bgClass}`}>
+                                    <Icon className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                                    <span className="text-xs break-words min-w-0">{row.error_message}</span>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </td>
                         </tr>
