@@ -1723,6 +1723,9 @@ async function migrateRowToTable(
   }
 
   // 2. Prepare target row by copying common fields
+  // NOTE: Only include optional columns (notes, email_sender_domain) if they exist on the
+  // source row. This keeps the migration schema-safe across projects where these columns
+  // may not yet have been added (e.g. VSWEB schema drift vs PROD).
   const targetRow: Record<string, any> = {
     id: row.id,
     user_id: row.user_id,
@@ -1735,7 +1738,9 @@ async function migrateRowToTable(
     processing_status: "pending",
     error_message: null,
     metadata: row.metadata || {},
-    notes: row.notes || [],
+    // Conditionally include optional columns to survive schema drift between projects
+    ...(row.notes !== undefined && { notes: row.notes }),
+    ...(row.email_sender_domain !== undefined && { email_sender_domain: row.email_sender_domain }),
   };
 
   // Add table-specific fields
@@ -1836,14 +1841,19 @@ async function retryErrors(
         let row = rawRow;
         let activeSource = source;
         const targetTable = QUEUE_TABLE_MAP[queueName];
+        let isCrossPipeline = false;
 
         if (targetTable && targetTable !== source) {
           // Cross-pipeline retry: migrate the row first
+          // NOTE: The INSERT into targetTable activates the DB trigger (e.g. trg_enqueue_invoice)
+          // which automatically sends the PGMQ message. We must NOT call pgmq_send_retry explicitly
+          // after this, or we'll get duplicate queue entries.
+          isCrossPipeline = true;
           try {
             const migrated = await migrateRowToTable(projectClient, source, targetTable, row.id);
             row = migrated;
             activeSource = targetTable;
-            console.log(`[MANAGEMENT-STATS] [${project}] Migrated row ${row.id} from ${source} to ${targetTable}`);
+            console.log(`[MANAGEMENT-STATS] [${project}] Migrated row ${row.id} from ${source} to ${targetTable} (trigger will enqueue automatically)`);
           } catch (migrateErr: any) {
             console.error(`[MANAGEMENT-STATS] [${project}] Migration failed for ${row.id}:`, migrateErr.message);
             errors.push(`[${project}] ${row.id}: migration failed — ${migrateErr.message}`);
@@ -1874,20 +1884,26 @@ async function retryErrors(
           }
         }
 
-        // Send to queue
-        const payload = buildQueuePayload(activeSource, row);
-        const { error: rpcErr } = await projectClient.rpc("pgmq_send_retry", {
-          queue_name: queueName,
-          msg: payload,
-        });
-
-        if (rpcErr) {
-          console.error(`[MANAGEMENT-STATS] [${project}] pgmq_send_retry failed for ${activeSource}/${row.id}:`, rpcErr.message);
-          errors.push(`[${project}] ${activeSource}/${row.id}: queue send failed — ${rpcErr.message}`);
-        } else {
+        if (isCrossPipeline) {
+          // DB trigger already enqueued the job on INSERT — count as retried, skip explicit send
           totalRetried++;
+        } else {
+          // Same-pipeline retry: explicit send required (status was just reset, trigger doesn't re-fire on UPDATE)
+          const payload = buildQueuePayload(activeSource, row);
+          const { error: rpcErr } = await projectClient.rpc("pgmq_send_retry", {
+            queue_name: queueName,
+            msg: payload,
+          });
+
+          if (rpcErr) {
+            console.error(`[MANAGEMENT-STATS] [${project}] pgmq_send_retry failed for ${activeSource}/${row.id}:`, rpcErr.message);
+            errors.push(`[${project}] ${activeSource}/${row.id}: queue send failed — ${rpcErr.message}`);
+          } else {
+            totalRetried++;
+          }
         }
       }
+
     }
   }
 

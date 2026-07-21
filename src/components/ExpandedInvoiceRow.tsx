@@ -2,7 +2,7 @@ import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useState } from 'react';
-import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet, CreditCard, Scale, RefreshCw, Lock, Users, ClipboardCheck, Loader2 } from 'lucide-react';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet, CreditCard, Scale, RefreshCw, Lock, Users, ClipboardCheck, Loader2, XCircle, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { INVOICE_TYPE_LABELS } from '@/types/invoices';
 import { useTransactionMatcher } from '@/hooks/useTransactionMatcher';
 import { ManualPaymentDialog } from './invoices/ManualPaymentDialog';
+import { StornoSettleDialog } from './invoices/StornoSettleDialog';
 import type { NettingGroup } from '@/hooks/useNettingDetection';
 
 interface MatchedSubmittedInvoice {
@@ -141,6 +142,12 @@ interface ExpandedInvoiceRowProps {
   tiCalculationMethod?: string | null;
   transactionId?: string;
   invoiceSource?: 'submitted' | 'nav';
+  /** invoice_operation mező (NAV sztornó detektálásához) */
+  invoiceOperation?: string | null;
+  /** is_manual_payment flag (sztornó lezárás state-jéhez) */
+  isManualPayment?: boolean | null;
+  /** invoice_number (sztornó dialog szövegéhez) */
+  invoiceNumber?: string;
 }
 
 // Compact collapsible transaction list inside invoice cards
@@ -228,13 +235,22 @@ const ExpandedInvoiceRow = ({
   tiCalculationMethod,
   transactionId,
   invoiceSource,
+  invoiceOperation,
+  isManualPayment,
+  invoiceNumber,
 }: ExpandedInvoiceRowProps) => {
   const queryClient = useQueryClient();
   const [showManualPayment, setShowManualPayment] = useState(false);
+  const [showStornoSettle, setShowStornoSettle] = useState(false);
+
+  // Sztornó lezárás toggle logika
+  const isStornoNav = invoiceOperation === 'STORNO' && invoiceSource === 'nav';
+  const isStornoSettled = !!isManualPayment;
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const [newNoteText, setNewNoteText] = useState('');
   const [newNotePrivate, setNewNotePrivate] = useState(true);
   const [addingNote, setAddingNote] = useState(false);
+  const [showAddNote, setShowAddNote] = useState(false);
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -537,9 +553,9 @@ const ExpandedInvoiceRow = ({
               </Card>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start pt-2">
+            <div className="space-y-6 pt-2">
               
-              {/* Left Column: Related Items */}
+              {/* Section: Related Items */}
               <div className="space-y-4">
                 {/* Header */}
             <div className="flex items-center justify-between mb-4 expand-animate">
@@ -569,6 +585,24 @@ const ExpandedInvoiceRow = ({
                       <CreditCard className="h-3 w-3" />
                       Kézi fizetés
                     </Button>
+                    {isStornoNav && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); setShowStornoSettle(true); }}
+                        className={cn(
+                          "h-7 text-[11px] gap-1.5 px-2.5 border-dashed",
+                          isStornoSettled
+                            ? "border-muted-foreground/30 text-muted-foreground hover:bg-muted/50"
+                            : "border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-500/10"
+                        )}
+                      >
+                        {isStornoSettled
+                          ? <><RotateCcw className="h-3 w-3" /> Lezárás visszavonása</>
+                          : <><XCircle className="h-3 w-3" /> Sztornó lezárása</>
+                        }
+                      </Button>
+                    )}
                   </div>
                 )}
                 {onToggleExclude && (
@@ -622,6 +656,24 @@ const ExpandedInvoiceRow = ({
                         <CreditCard className="h-3.5 w-3.5" />
                         Kézi fizetés
                       </Button>
+                      {isStornoNav && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); setShowStornoSettle(true); }}
+                          className={cn(
+                            "h-8 text-xs gap-1.5 border-dashed",
+                            isStornoSettled
+                              ? "border-muted-foreground/30 text-muted-foreground hover:bg-muted/50"
+                              : "border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-500/10"
+                          )}
+                        >
+                          {isStornoSettled
+                            ? <><RotateCcw className="h-3.5 w-3.5" /> Lezárás visszavonása</>
+                            : <><XCircle className="h-3.5 w-3.5" /> Sztornó lezárása</>
+                          }
+                        </Button>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -1168,16 +1220,15 @@ const ExpandedInvoiceRow = ({
             ))}
               </div>
 
-              {/* Right Column: Notes Section */}
-              <div className="space-y-4 max-w-md">
-                {/* Notes Section */}
-            <div className="space-y-4 max-w-lg">
-              <div className="flex items-center justify-between mb-2 expand-animate">
-                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
-                  Kapcsolódó feljegyzések
-                </div>
+              {/* Section: Notes */}
+              <div className="space-y-4">
+                {/* Header */}
+            <div className="flex items-center justify-between mb-4 expand-animate">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <ClipboardCheck className="h-3.5 w-3.5" />
+                Kapcsolódó feljegyzések
               </div>
+            </div>
 
               {notes && notes.length > 0 && (
                 <div className="space-y-3">
@@ -1215,90 +1266,40 @@ const ExpandedInvoiceRow = ({
                 </div>
               )}
 
-              {/* Add Note Form */}
-              <form onSubmit={handleAddNote} className="space-y-3 pt-3 border-t border-border/20">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Jegyzet címe</span>
-                  <Input
-                    placeholder="pl. Határidő, Hiányzó papír..."
-                    value={newNoteTitle}
-                    onChange={(e) => setNewNoteTitle(e.target.value)}
-                    className="h-9 text-xs bg-background/30 border-border/50"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Tartalom</span>
-                  <Textarea
-                    placeholder="Írd ide a jegyzet szöveges tartalmát..."
-                    value={newNoteText}
-                    onChange={(e) => setNewNoteText(e.target.value)}
-                    required
-                    rows={2}
-                    className="text-xs bg-background/30 border-border/50 resize-none min-h-[56px]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Láthatóság</span>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {/* Private Card Button */}
-                    <button
-                      type="button"
-                      onClick={() => setNewNotePrivate(true)}
-                      className={cn(
-                        "flex items-start gap-2.5 p-2 rounded-lg border text-left transition-all",
-                        newNotePrivate
-                          ? "border-primary/60 bg-primary/5 dark:bg-primary/10 shadow-sm"
-                          : "border-border bg-transparent hover:bg-muted/30"
-                      )}
-                    >
-                      <Lock className={cn("h-4 w-4 mt-0.5 shrink-0", newNotePrivate ? "text-primary" : "text-muted-foreground")} />
-                      <div>
-                        <p className="text-[11px] font-semibold">Privát</p>
-                        <p className="text-[9px] text-muted-foreground">Csak te látod</p>
-                      </div>
-                    </button>
-
-                    {/* Public Card Button */}
-                    <button
-                      type="button"
-                      onClick={() => setNewNotePrivate(false)}
-                      className={cn(
-                        "flex items-start gap-2.5 p-2 rounded-lg border text-left transition-all",
-                        !newNotePrivate
-                          ? "border-primary/60 bg-primary/5 dark:bg-primary/10 shadow-sm"
-                          : "border-border bg-transparent hover:bg-muted/30"
-                      )}
-                    >
-                      <Users className={cn("h-4 w-4 mt-0.5 shrink-0", !newNotePrivate ? "text-primary" : "text-muted-foreground")} />
-                      <div>
-                        <p className="text-[11px] font-semibold">Közös</p>
-                        <p className="text-[9px] text-muted-foreground">Cégtagok látják</p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-1">
+              {/* Notes empty state with Create button */}
+              {(!notes || notes.length === 0) && (
+                <div className="flex flex-col items-center justify-center gap-3 py-6 rounded-lg border border-dashed border-border/50">
+                  <ClipboardCheck className="h-5 w-5 text-muted-foreground/50" />
+                  <p className="text-xs text-muted-foreground">Nincs feljegyezve megjegyzés ehhez a számlához.</p>
                   <Button
-                    type="submit"
+                    variant="outline"
                     size="sm"
-                    className="h-8 px-4 gap-1.5"
-                    disabled={addingNote || !newNoteText.trim()}
+                    onClick={() => setShowAddNote(true)}
+                    className="h-7 text-[11px] gap-1.5 border-dashed"
                   >
-                    {addingNote ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Plus className="h-3.5 w-3.5" />
-                    )}
-                    Mentés
+                    <Plus className="h-3 w-3" />
+                    Feljegyzés létrehozása
                   </Button>
                 </div>
-              </form>
-            </div>
-              </div>
+              )}
 
+              {/* Notes with Add button */}
+              {notes && notes.length > 0 && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddNote(true)}
+                    className="h-7 text-[11px] gap-1.5 border-dashed"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Új feljegyzés
+                  </Button>
+                </div>
+              )}
+
+            </div>
+            {/* end space-y-6 */}
             </div>
 
             {/* Manual Payment Dialog */}
@@ -1312,9 +1313,91 @@ const ExpandedInvoiceRow = ({
                 onSuccess={onMatchUpdate}
               />
             )}
-          </div>
+
+            {/* Add Note Dialog */}
+            <Dialog open={showAddNote} onOpenChange={(open) => {
+              if (!open) {
+                setNewNoteTitle('');
+                setNewNoteText('');
+                setNewNotePrivate(true);
+              }
+              setShowAddNote(open);
+            }}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-base">
+                    <ClipboardCheck className="h-4 w-4 text-primary" />
+                    Új feljegyzés
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={async (e) => { await handleAddNote(e); setShowAddNote(false); }} className="space-y-3 pt-1">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Jegyzet címe</span>
+                    <Input
+                      placeholder="pl. Határidő, Hiányzó papír..."
+                      value={newNoteTitle}
+                      onChange={(e) => setNewNoteTitle(e.target.value)}
+                      className="h-9 text-xs bg-background/30 border-border/50"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Tartalom</span>
+                    <Textarea
+                      placeholder="Írd ide a jegyzet szöveges tartalmát..."
+                      value={newNoteText}
+                      onChange={(e) => setNewNoteText(e.target.value)}
+                      required
+                      rows={3}
+                      className="text-xs bg-background/30 border-border/50 resize-none min-h-[72px]"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Láthatóság</span>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button type="button" onClick={() => setNewNotePrivate(true)}
+                        className={cn("flex items-start gap-2.5 p-2 rounded-lg border text-left transition-all",
+                          newNotePrivate ? "border-primary/60 bg-primary/5 dark:bg-primary/10 shadow-sm" : "border-border bg-transparent hover:bg-muted/30"
+                        )}
+                      >
+                        <Lock className={cn("h-4 w-4 mt-0.5 shrink-0", newNotePrivate ? "text-primary" : "text-muted-foreground")} />
+                        <div><p className="text-[11px] font-semibold">Privát</p><p className="text-[9px] text-muted-foreground">Csak te látod</p></div>
+                      </button>
+                      <button type="button" onClick={() => setNewNotePrivate(false)}
+                        className={cn("flex items-start gap-2.5 p-2 rounded-lg border text-left transition-all",
+                          !newNotePrivate ? "border-primary/60 bg-primary/5 dark:bg-primary/10 shadow-sm" : "border-border bg-transparent hover:bg-muted/30"
+                        )}
+                      >
+                        <Users className={cn("h-4 w-4 mt-0.5 shrink-0", !newNotePrivate ? "text-primary" : "text-muted-foreground")} />
+                        <div><p className="text-[11px] font-semibold">Közös</p><p className="text-[9px] text-muted-foreground">Cégtagok látják</p></div>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setShowAddNote(false)}>Mégse</Button>
+                    <Button type="submit" size="sm" className="h-8 px-4 gap-1.5" disabled={addingNote || !newNoteText.trim()}>
+                      {addingNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                      Mentés
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+            {/* Storno Settle Dialog */}
+            {isStornoNav && invoiceId && (
+              <StornoSettleDialog
+                open={showStornoSettle}
+                onOpenChange={setShowStornoSettle}
+                mode={isStornoSettled ? 'unsettle' : 'settle'}
+                stornoNavId={invoiceId}
+                stornoNumber={invoiceNumber || invoiceId || ''}
+                onSuccess={async () => {
+                  if (onMatchUpdate) onMatchUpdate();
+                }}
+              />
+            )}
               </div>
             </div>
+          </div>
         </TableCell>
       </TableRow>
       {/* Bottom spacer row */}

@@ -47,6 +47,7 @@ interface InvoiceDetails {
   invoiceGrossAmount?: number;
   lineItems?: InvoiceLineItem[];
   isCashAccounting?: boolean;
+  originalInvoiceNumber?: string;  // NAV <invoiceReference><originalInvoiceNumber>
 }
 
 // Rate limiting helper
@@ -656,6 +657,9 @@ async function fetchInvoiceDetails(
           if (details.isCashAccounting) {
             updateData.is_cash_accounting = true;
           }
+          if (details.originalInvoiceNumber) {
+            updateData.original_invoice_number = details.originalInvoiceNumber;
+          }
 
           // Calculate total net, vat, gross from items if main invoice values are missing/zero
           if (details.lineItems && details.lineItems.length > 0) {
@@ -933,6 +937,12 @@ async function parseInvoiceDataFromXML(xml: string): Promise<InvoiceDetails | nu
         }
       } catch { /* silent */ }
     }
+
+    // Extract originalInvoiceNumber from invoiceReference block (STORNO invoices)
+    try {
+      const origInvNum = extractTag(decodedData, 'originalInvoiceNumber');
+      if (origInvNum) details.originalInvoiceNumber = origInvNum.trim();
+    } catch { /* silent */ }
 
     return details;
   } catch (error) {

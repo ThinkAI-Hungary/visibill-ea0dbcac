@@ -36,6 +36,13 @@ async function logError(supabase: any, entry: ErrorLogEntry): Promise<void> {
   }
 }
 
+// ── Unique-violation helper ──────────────────────────────────────────────────
+// PostgreSQL error code 23505 = unique_violation. When the DB-level UNIQUE index
+// on (company_id, file_name, mailgun_message_id) rejects a concurrent duplicate
+// INSERT, we treat it as a graceful skip (not a real error).
+const isUniqueViolation = (err: any): boolean =>
+  err?.code === '23505' || err?.message?.includes('unique') || err?.message?.includes('duplicate key');
+
 // Helper function to verify Mailgun webhook signature using Web Crypto API
 async function verifySignature(timestamp: string, token: string, signature: string, signingKey: string): Promise<boolean> {
   const encoder = new TextEncoder();
@@ -621,9 +628,17 @@ serve(async (req) => {
         // If we have a Message-Id, check if this exact attachment from this
         // email has already been processed. Prevents duplicate processing
         // when Mailgun retries the webhook (e.g. due to timeout).
-        // Checks all three tables because fallback redirection moves/deletes original records.
+        //
+        // Strategy (two-layer):
+        // 1. Check upload tables (invoice/transaction/report_uploads) — covers the common case.
+        // 2. Check llm_koltsegek — NEVER deleted, survives sibling-cleanup. This closes
+        //    the race-condition window where a parallel Mailgun retry fires AFTER
+        //    cleanup_email_file_siblings has already removed the original upload row
+        //    (which made the upload-table check miss it).
         if (messageId) {
           let hasBeenProcessed = false;
+
+          // Layer 1: upload tables (fast, most cases)
           const tablesToCheck = ['transaction_uploads', 'invoice_uploads', 'report_uploads'];
           for (const table of tablesToCheck) {
             const { data: existingUpload } = await supabase
@@ -637,6 +652,24 @@ serve(async (req) => {
             if (existingUpload && existingUpload.length > 0) {
               hasBeenProcessed = true;
               break;
+            }
+          }
+
+          // Layer 2: llm_koltsegek — permanent audit log, survives cleanup
+          // Catches the race where uploads were cleaned up between webhook retries.
+          if (!hasBeenProcessed) {
+            const { data: llmRow } = await supabase
+              .from('llm_koltsegek')
+              .select('id')
+              .eq('company_id', alias.company_id)
+              .eq('file_name', attachment.name)
+              .contains('metadata', { mailgun_message_id: messageId })
+              .limit(1);
+
+            if (llmRow && llmRow.length > 0) {
+              hasBeenProcessed = true;
+              console.log(`[IDEMPOTENCY-L2] Skipping duplicate attachment: ${attachment.name} ` +
+                `(found in llm_koltsegek after upload rows were cleaned up)`);
             }
           }
 
@@ -759,16 +792,21 @@ serve(async (req) => {
             .single();
 
           if (reportError) {
-            console.error('Error creating report upload record:', reportError);
-            await logError(supabase, {
-              error_type: 'db_query',
-              component: 'process-mailgun-webhook',
-              action: 'create_report_upload_record',
-              message: `Failed to create report upload record for: ${attachment.name}`,
-              user_id: alias.user_id,
-              company_id: alias.company_id,
-              context: { fileName: attachment.name, recordError: reportError.message, reportType },
-            });
+            if (isUniqueViolation(reportError)) {
+              // DB-level dedup: concurrent webhook sent the same attachment — graceful skip
+              console.log(`[IDEMPOTENCY-DB] report_uploads duplicate skipped (unique_violation): ${attachment.name}`);
+            } else {
+              console.error('Error creating report upload record:', reportError);
+              await logError(supabase, {
+                error_type: 'db_query',
+                component: 'process-mailgun-webhook',
+                action: 'create_report_upload_record',
+                message: `Failed to create report upload record for: ${attachment.name}`,
+                user_id: alias.user_id,
+                company_id: alias.company_id,
+                context: { fileName: attachment.name, recordError: reportError.message, reportType },
+              });
+            }
           } else {
             console.log('Report upload record created:', reportRecord.id, `(type: ${reportType})`);
             // Processing is handled automatically by the DB trigger (enqueue_report_job)
@@ -797,16 +835,21 @@ serve(async (req) => {
             .single();
 
           if (txError) {
-            console.error('Error creating transaction upload record:', txError);
-            await logError(supabase, {
-              error_type: 'db_query',
-              component: 'process-mailgun-webhook',
-              action: 'create_transaction_upload_record',
-              message: `Failed to create transaction upload record for: ${attachment.name}`,
-              user_id: alias.user_id,
-              company_id: alias.company_id,
-              context: { fileName: attachment.name, recordError: txError.message, bankHint },
-            });
+            if (isUniqueViolation(txError)) {
+              // DB-level dedup: concurrent webhook sent the same attachment — graceful skip
+              console.log(`[IDEMPOTENCY-DB] transaction_uploads duplicate skipped (unique_violation): ${attachment.name}`);
+            } else {
+              console.error('Error creating transaction upload record:', txError);
+              await logError(supabase, {
+                error_type: 'db_query',
+                component: 'process-mailgun-webhook',
+                action: 'create_transaction_upload_record',
+                message: `Failed to create transaction upload record for: ${attachment.name}`,
+                user_id: alias.user_id,
+                company_id: alias.company_id,
+                context: { fileName: attachment.name, recordError: txError.message, bankHint },
+              });
+            }
           } else {
             console.log('Transaction upload record created:', txRecord.id, bankHint ? `(bank: ${bankHint})` : '');
             // Processing is handled automatically by the DB trigger (trg_enqueue_transaction)
@@ -834,16 +877,21 @@ serve(async (req) => {
             .single();
 
           if (recordError) {
-            console.error('Error creating invoice upload record:', recordError);
-            await logError(supabase, {
-              error_type: 'db_query',
-              component: 'process-mailgun-webhook',
-              action: 'create_upload_record',
-              message: `Failed to create invoice upload record for: ${attachment.name}`,
-              user_id: alias.user_id,
-              company_id: alias.company_id,
-              context: { fileName: attachment.name, recordError: recordError.message },
-            });
+            if (isUniqueViolation(recordError)) {
+              // DB-level dedup: concurrent webhook sent the same attachment — graceful skip
+              console.log(`[IDEMPOTENCY-DB] invoice_uploads duplicate skipped (unique_violation): ${attachment.name}`);
+            } else {
+              console.error('Error creating invoice upload record:', recordError);
+              await logError(supabase, {
+                error_type: 'db_query',
+                component: 'process-mailgun-webhook',
+                action: 'create_upload_record',
+                message: `Failed to create invoice upload record for: ${attachment.name}`,
+                user_id: alias.user_id,
+                company_id: alias.company_id,
+                context: { fileName: attachment.name, recordError: recordError.message },
+              });
+            }
           } else {
             console.log('Invoice upload record created:', uploadRecord.id);
             // Processing is handled automatically by the DB trigger (trg_enqueue_invoice)

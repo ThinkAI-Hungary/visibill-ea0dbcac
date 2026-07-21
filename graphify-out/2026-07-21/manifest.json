@@ -120,8 +120,8 @@
     "semantic_hash": ""
   },
   "src/components/ExpandedInvoiceRow.tsx": {
-    "mtime": 1784630587.8471432,
-    "ast_hash": "d8349a3ff57fe8ecbc8e39a6528898fa",
+    "mtime": 1784242642.0570843,
+    "ast_hash": "de390bee12ae1d5e853f588c9d062cf5",
     "semantic_hash": ""
   },
   "src/components/FeedbackDialog.tsx": {
@@ -975,8 +975,8 @@
     "semantic_hash": "f2a60e18bdf9a9d5b884b5b2a805ca4f"
   },
   "src/hooks/useInvoiceData.ts": {
-    "mtime": 1784629807.2690055,
-    "ast_hash": "7818896d86289ad02cfe5710d1cb881e",
+    "mtime": 1783413875.6093447,
+    "ast_hash": "bfb3342873bbe96e91928d47733be98e",
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceFilters.ts": {
@@ -1495,8 +1495,8 @@
     "semantic_hash": ""
   },
   "src/pages/InvoicesPage.tsx": {
-    "mtime": 1784630991.955438,
-    "ast_hash": "9651e726088bda0e79cc5752d60f462e",
+    "mtime": 1784242642.0621746,
+    "ast_hash": "cd804d771dcc5943cc71bfcf4c92efd4",
     "semantic_hash": ""
   },
   "src/pages/KintlevoPage.tsx": {
@@ -1705,8 +1705,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
-    "mtime": 1784631684.3253703,
-    "ast_hash": "e356c38b06e2f56b907a888b035603a3",
+    "mtime": 1784412654.2901175,
+    "ast_hash": "823b8ec3d701c19ba27c6cbc2573efa6",
     "semantic_hash": ""
   },
   "supabase/functions/nav-query-outbound-invoices/index.ts": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1784632238.8789468,
-    "ast_hash": "0e49e8082a2b400decb77259089bee18",
+    "mtime": 1784557746.1169581,
+    "ast_hash": "0d7a242adccecdceb635f4ebbaf0e9a8",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -5045,8 +5045,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {
-    "mtime": 1784632211.6255531,
-    "ast_hash": "89ca4854e9cb0771a4abfeb7c351bda2",
+    "mtime": 1782621606.9345894,
+    "ast_hash": "635f119b998b4cf821680b72e43d023a",
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1784628451.859428,
+    "mtime": 1784554570.259666,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -6027,21 +6027,6 @@
   "docs/architecture/decisions/A-041-mailgun-concurrent-dedup.md": {
     "mtime": 1784557730.000816,
     "ast_hash": "80cf1465dda102d34c6eb39569d8a555",
-    "semantic_hash": ""
-  },
-  "src/components/invoices/StornoSettleDialog.tsx": {
-    "mtime": 1784631327.6906679,
-    "ast_hash": "20a976db08ed91b21453ac99ec6ebe3f",
-    "semantic_hash": ""
-  },
-  "supabase/migrations/20260721_add_storno_group_settle_rpcs.sql": {
-    "mtime": 1784631782.573452,
-    "ast_hash": "9aed418ecbf8fd3acab55b7c5dbc7e50",
-    "semantic_hash": ""
-  },
-  "docs/architecture/decisions/A-042-storno-settle-architecture.md": {
-    "mtime": 1784632188.9111657,
-    "ast_hash": "f18bf5ae23c4d291fc099b46572a691a",
     "semantic_hash": ""
   }
 }

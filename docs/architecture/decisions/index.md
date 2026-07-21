@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-07-19  
-> **Összesen:** 39 döntés | ✅ Decided: 38 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-07-21  
+> **Összesen:** 42 döntés | ✅ Decided: 41 | ⛔ Superseded: 1
 
 ---
 
@@ -67,6 +67,7 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | A-032 | Accounty Push Notification Preferences (Service Worker, VAPID, EF) | ✅ Decided | [A-032](./A-032-accounty-push-notifications.md) |
 | A-034 | Accounty Digest Emails (dedikált oszlopok JSONB helyett, óránkénti Cron) | ✅ Decided | [A-034](./A-034-accounty-digest-emails.md) |
 | A-038 | IMAP/SMTP Hitelesítő Adatok és Vault Integráció | ✅ Decided | [A-038](./A-038-imap-smtp-credentials-vault-integration.md) |
+| A-041 | Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency (L1: upload check, L2: llm_koltsegek, L3: DB UNIQUE index) | ✅ Decided | [A-041](./A-041-mailgun-concurrent-dedup.md) |
 
 ## đź—„ď¸Ź AdatbĂˇzis
 
@@ -102,8 +103,9 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 
 | # | DĂ¶ntĂ©s | StĂˇtusz | FĂˇjl |
 |---|--------|---------|------|
-| A-019 | Management Dashboard architektĂşra (11 action, 27 superadmin modul, 5 rĂ©tegĹ± guard, Edge Function + service_role) | âś… Decided | [A-019](./A-019-management-dashboard.md) |
+| A-019 | Management Dashboard architektúra (11 action, 27 superadmin modul, 5 rétegű guard, Edge Function + service_role) | ✅ Decided | [A-019](./A-019-management-dashboard.md) |
 | A-033 | Service Role kizárása a cég szintű Audit naplóból | ✅ Decided | [A-033](./A-033-exclude-service-role-from-audit.md) |
+| A-042 | Sztornó Számla Kézi Lezárás — 2 lépéses láncolat logika, reversible settle/unsettle toggle | ✅ Decided | [A-042](./A-042-storno-settle-architecture.md) |
 
 ---
 

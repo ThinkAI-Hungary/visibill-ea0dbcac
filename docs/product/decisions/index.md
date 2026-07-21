@@ -1,7 +1,7 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-07-19  
-> **Összesen:** 42 döntés | ✅ Decided: 39 | ⛔ Superseded: 2 | 🔴 Open: 1
+> **Utoljára frissítve:** 2026-07-21  
+> **Összesen:** 43 döntés | ✅ Decided: 40 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
 
@@ -127,3 +127,9 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-047 | Jegyzetek Kezelése (Notes Management) UX | ✅ Decided | [P-047](./P-047-notes-management-ux.md) |
+
+## 🗒️ Számlák
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-048 | Sztornó Számla Kézi Lezárás UX — toggle gomb, confirm dialog, visszavonható | ✅ Decided | [P-048](./P-048-storno-settle-ux.md) |

@@ -1,0 +1,96 @@
+<InvoiceData xmlns="http://schemas.nav.gov.hu/OSA/3.0/data" xmlns:ns2="http://schemas.nav.gov.hu/OSA/3.0/base">
+    <invoiceNumber>SZ/3290006/03957/00016</invoiceNumber>
+    <invoiceIssueDate>2026-03-27</invoiceIssueDate>
+    <completenessIndicator>false</completenessIndicator>
+    <invoiceMain>
+        <invoice>
+            <invoiceHead>
+                <supplierInfo>
+                    <supplierTaxNumber>
+                        <ns2:taxpayerId>17784083</ns2:taxpayerId>
+                        <ns2:vatCode>5</ns2:vatCode>
+                        <ns2:countyCode>44</ns2:countyCode>
+                    </supplierTaxNumber>
+                    <groupMemberTaxNumber>
+                        <ns2:taxpayerId>10901232</ns2:taxpayerId>
+                        <ns2:vatCode>4</ns2:vatCode>
+                        <ns2:countyCode>44</ns2:countyCode>
+                    </groupMemberTaxNumber>
+                    <supplierName>Magyar Posta Zrt.</supplierName>
+                    <supplierAddress>
+                        <ns2:simpleAddress>
+                            <ns2:countryCode>HU</ns2:countryCode>
+                            <ns2:postalCode>1138</ns2:postalCode>
+                            <ns2:city>Budapest</ns2:city>
+                            <ns2:additionalAddressDetail>Dunavirág utca 2-6.</ns2:additionalAddressDetail>
+                        </ns2:simpleAddress>
+                    </supplierAddress>
+                </supplierInfo>
+                <customerInfo>
+                    <customerVatStatus>DOMESTIC</customerVatStatus>
+                    <customerVatData>
+                        <customerTaxNumber>
+                            <ns2:taxpayerId>14160877</ns2:taxpayerId>
+                        </customerTaxNumber>
+                    </customerVatData>
+                    <customerName>TAXOLOGY KORLÁTOLT FELELOSSÉGU TÁRSASÁG</customerName>
+                    <customerAddress>
+                        <ns2:simpleAddress>
+                            <ns2:countryCode>HU</ns2:countryCode>
+                            <ns2:postalCode>1118</ns2:postalCode>
+                            <ns2:city>BUDAPEST</ns2:city>
+                            <ns2:additionalAddressDetail>VILLÁNYI ÚT 107. MFSZT 1.</ns2:additionalAddressDetail>
+                        </ns2:simpleAddress>
+                    </customerAddress>
+                </customerInfo>
+                <invoiceDetail>
+                    <invoiceCategory>SIMPLIFIED</invoiceCategory>
+                    <invoiceDeliveryDate>2026-03-27</invoiceDeliveryDate>
+                    <currencyCode>HUF</currencyCode>
+                    <exchangeRate>1</exchangeRate>
+                    <paymentMethod>CASH</paymentMethod>
+                    <paymentDate>2026-03-27</paymentDate>
+                    <invoiceAppearance>PAPER</invoiceAppearance>
+                </invoiceDetail>
+            </invoiceHead>
+            <invoiceLines>
+                <mergedItemIndicator>false</mergedItemIndicator>
+                <line>
+                    <lineNumber>1</lineNumber>
+                    <lineExpressionIndicator>true</lineExpressionIndicator>
+                    <lineDescription>Levél,vszlt:B,50g-ig,ksz:A,TV</lineDescription>
+                    <quantity>1</quantity>
+                    <unitOfMeasure>PIECE</unitOfMeasure>
+                    <unitPrice>1715</unitPrice>
+                    <unitPriceHUF>1715</unitPriceHUF>
+                    <lineAmountsSimplified>
+                        <lineVatRate>
+                            <vatExemption>
+                                <case>TAM</case>
+                                <reason>Tárgyi adómentes</reason>
+                            </vatExemption>
+                        </lineVatRate>
+                        <lineGrossAmountSimplified>1715</lineGrossAmountSimplified>
+                        <lineGrossAmountSimplifiedHUF>1715</lineGrossAmountSimplifiedHUF>
+                    </lineAmountsSimplified>
+                </line>
+            </invoiceLines>
+            <invoiceSummary>
+                <summarySimplified>
+                    <vatRate>
+                        <vatExemption>
+                            <case>TAM</case>
+                            <reason>Tárgyi adómentes</reason>
+                        </vatExemption>
+                    </vatRate>
+                    <vatContentGrossAmount>1715</vatContentGrossAmount>
+                    <vatContentGrossAmountHUF>1715</vatContentGrossAmountHUF>
+                </summarySimplified>
+                <summaryGrossData>
+                    <invoiceGrossAmount>1715</invoiceGrossAmount>
+                    <invoiceGrossAmountHUF>1715</invoiceGrossAmountHUF>
+                </summaryGrossData>
+            </invoiceSummary>
+        </invoice>
+    </invoiceMain>
+</InvoiceData>
