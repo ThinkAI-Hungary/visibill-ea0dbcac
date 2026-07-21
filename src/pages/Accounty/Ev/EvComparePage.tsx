@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import {
   compareTaxForms, formatHuf, formatPercent, formatMillionHuf,
   DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, type TaxFormComparison,
@@ -30,7 +30,8 @@ export default function EvComparePage() {
   const { data: client } = useAccountyClient(id);
   const [taxYear, setTaxYear] = useState(2026);
 
-  const params = taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS;
+  const { data: dbParams } = useEvTaxParams(taxYear);
+  const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const [revenue, setRevenue] = useState(24_200_000);
   const [costs, setCosts] = useState(8_470_000);

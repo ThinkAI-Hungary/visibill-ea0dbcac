@@ -5,12 +5,12 @@ import {
   CheckCircle2, ArrowRight, Star, Calculator, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import {
   formatHuf, formatPercent,
   compareTaxForms, calculateFlatRateIncome,
   calculateEntrepreneurialTax, calculateKata,
-  DEFAULT_2026_PARAMS, type TaxFormComparison
+  DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, type TaxFormComparison
 } from '@/lib/evCalculations';
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -19,13 +19,16 @@ export default function EvOptimizationPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
 
+  const { data: dbParams } = useEvTaxParams(2026);
+  const params = dbParams || DEFAULT_2026_PARAMS;
+
   const [revenue, setRevenue] = useState(24_000_000);
   const [costs, setCosts] = useState(8_000_000);
   const [kivet, setKivet] = useState(4_800_000);
 
   const comparisons = useMemo(() =>
-    compareTaxForms(revenue, costs, kivet, 'general', 12, DEFAULT_2026_PARAMS),
-    [revenue, costs, kivet]
+    compareTaxForms(revenue, costs, kivet, 'general', 12, params),
+    [revenue, costs, kivet, params]
   );
 
   const best = comparisons.find(c => c.isBest);
@@ -81,14 +84,14 @@ export default function EvOptimizationPage() {
     if (revenue >= 16_000_000 && revenue <= 20_000_000) {
       tips.push({
         title: 'ÁFA alanyi mentesség határ',
-        description: `Bevétel közel az alanyi mentesség határához (${formatHuf(DEFAULT_2026_PARAMS.afaAlanyiHatar)}). Ügyeljen a bevétel-tervezésre.`,
+        description: `Bevétel közel az alanyi mentesség határához (${formatHuf(params.afaAlanyiHatar)}). Ügyeljen a bevétel-tervezésre.`,
         saving: 0,
         priority: 'medium',
       });
     }
 
     return tips;
-  }, [revenue, costs, comparisons]);
+  }, [revenue, costs, comparisons, params]);
 
   const FORM_COLORS: Record<string, string> = {
     atalany: 'from-blue-500 to-indigo-600',

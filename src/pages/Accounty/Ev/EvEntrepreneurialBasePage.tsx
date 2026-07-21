@@ -5,10 +5,10 @@ import {
   FileText, AlertTriangle, Info, ChevronDown, ArrowRight, Send
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import {
   calculateEntrepreneurialTax, formatHuf, formatPercent,
-  DEFAULT_2026_PARAMS
+  DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS
 } from '@/lib/evCalculations';
 import { useUpdateEvTaxReturn } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
@@ -21,6 +21,9 @@ export default function EvEntrepreneurialBasePage() {
   const updateReturn = useUpdateEvTaxReturn();
   const [saving, setSaving] = useState(false);
   const [taxYear, setTaxYear] = useState(2026);
+
+  const { data: dbParams } = useEvTaxParams(taxYear);
+  const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const [revenue, setRevenue] = useState(32_000_000);
   const [costs, setCosts] = useState(14_400_000);
@@ -37,8 +40,8 @@ export default function EvEntrepreneurialBasePage() {
     totalDeductible,
     kivet,
     0,
-    DEFAULT_2026_PARAMS,
-  ), [revenue, otherIncome, totalDeductible, kivet]);
+    params,
+  ), [revenue, otherIncome, totalDeductible, kivet, params]);
 
   const netIncome = revenue - costs;
   const taxableBase = result.taxBase;
@@ -236,15 +239,15 @@ export default function EvEntrepreneurialBasePage() {
           </div>
 
           {/* Info */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4">
             <div className="flex items-start gap-2">
               <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
               <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
-                <p className="font-semibold">Vállalkozói SZJA szabályok (2026)</p>
+                <p className="font-semibold">Vállalkozói SZJA szabályok ({taxYear})</p>
                 <ul className="list-disc list-inside space-y-0.5">
-                  <li>Vállalkozói SZJA mértéke: {formatPercent(DEFAULT_2026_PARAMS.vszjaRate)}</li>
-                  <li>Osztalékalap SZJA: {formatPercent(DEFAULT_2026_PARAMS.szjaRate)}</li>
-                  <li>Szocho mértéke: {formatPercent(DEFAULT_2026_PARAMS.szochoKulcs)}</li>
+                  <li>Vállalkozói SZJA mértéke: {formatPercent(params.vszjaRate)}</li>
+                  <li>Osztalékalap SZJA: {formatPercent(params.szjaRate)}</li>
+                  <li>Szocho mértéke: {formatPercent(params.szochoKulcs)}</li>
                   <li>Költségarány tételesen igazolva</li>
                 </ul>
               </div>
@@ -300,14 +303,15 @@ export default function EvEntrepreneurialBasePage() {
               <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Adószámítás</h2>
             </div>
             <div className="divide-y divide-border">
-              <Row label={`Vállalkozói SZJA (${formatPercent(DEFAULT_2026_PARAMS.vszjaRate)})`} value={formatHuf(result.entrepreneurialTax)} />
+              <Row label={`Vállalkozói SZJA (${formatPercent(params.vszjaRate)})`} value={formatHuf(result.entrepreneurialTax)} />
               <Row label="(-) Vállalkozói kivét" value={formatHuf(kivet)} negative />
               <Row label="(=) Osztalékalap" value={formatHuf(result.dividendBase)} bold />
-              <Row label={`Osztalék-SZJA (${formatPercent(DEFAULT_2026_PARAMS.szjaRate)})`} value={formatHuf(result.dividendSzja)} />
-              <Row label={`Szocho (${formatPercent(DEFAULT_2026_PARAMS.szochoKulcs)})`} value={formatHuf(result.dividendSzocho)} />
+              <Row label={`Osztalék-SZJA (${formatPercent(params.szjaRate)})`} value={formatHuf(result.dividendSzja)} />
+              <Row label={`Szocho (${formatPercent(params.szochoKulcs)})`} value={formatHuf(result.dividendSzocho)} />
               <Row label="Összes adóteher" value={formatHuf(totalTax)} bold highlight />
             </div>
           </div>
+
 
           {/* Dividend base hint */}
           <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-xl p-4">

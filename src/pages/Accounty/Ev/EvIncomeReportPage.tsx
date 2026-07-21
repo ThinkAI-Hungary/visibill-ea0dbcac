@@ -5,8 +5,8 @@ import {
   ArrowUpRight, ArrowDownRight, Calendar, Download, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAccountyClient } from '@/hooks/accounty';
-import { formatHuf, formatPercent, DEFAULT_2026_PARAMS } from '@/lib/evCalculations';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
+import { formatHuf, formatPercent, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS } from '@/lib/evCalculations';
 import { useCashbookEntries, type PenztarkonyvTetel } from '@/hooks/useEvData';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -31,12 +31,15 @@ export default function EvIncomeReportPage() {
   const [year, setYear] = useState(2026);
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
-  const { data: rawEntries, isLoading } = useCashbookEntries(id, year);
+  const { data: rawEntries, isLoading: entriesLoading } = useCashbookEntries(id, year);
+  const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(year);
+  const isLoading = entriesLoading || paramsLoading;
+
+  const params = dbParams || (year === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   // Compute monthly breakdown from cashbook entries
   const monthlyData = useMemo((): MonthlyData[] => {
     const entries = rawEntries || [];
-    const params = DEFAULT_2026_PARAMS;
     const monthMap = new Map<number, { revenue: number; costs: number }>();
 
     entries.forEach((e: PenztarkonyvTetel) => {
@@ -55,7 +58,7 @@ export default function EvIncomeReportPage() {
     const result: MonthlyData[] = [];
     monthMap.forEach((val, monthIdx) => {
       const income = val.revenue - val.costs;
-      const szja = Math.max(0, Math.round(income * (params.szjaKulcs || 0.15)));
+      const szja = Math.max(0, Math.round(income * (params.szjaRate || 0.15)));
       const tb = Math.max(0, Math.round(income * (params.tbJarulekKulcs + params.szochoKulcs)));
       result.push({
         month: MONTHS[monthIdx],
@@ -71,7 +74,7 @@ export default function EvIncomeReportPage() {
     // Sort by month order
     result.sort((a, b) => MONTHS.indexOf(a.month) - MONTHS.indexOf(b.month));
     return result;
-  }, [rawEntries]);
+  }, [rawEntries, params]);
 
   const totals = useMemo(() => ({
     revenue: monthlyData.reduce((s, d) => s + d.revenue, 0),

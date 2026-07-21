@@ -164,3 +164,6 @@ export type {
   Transfer,
   AccountyDocument,
 } from './useAccountyPayroll';
+
+// ── EV Tax Parameters ──
+export { useEvTaxParams } from '../useEvTaxParams';

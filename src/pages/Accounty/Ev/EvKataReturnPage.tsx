@@ -5,9 +5,9 @@ import {
   Clock, AlertTriangle, Send, Download, Calendar, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import { formatHuf, DEFAULT_2026_PARAMS } from '@/lib/evCalculations';
-import { useEvTaxReturns, useEvGlobalTaxParams, useUpdateEvTaxReturn } from '@/hooks/useEvData';
+import { useEvTaxReturns, useUpdateEvTaxReturn } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -35,8 +35,12 @@ export default function EvKataReturnPage() {
   const updateReturn = useUpdateEvTaxReturn();
 
   // Real data
-  const { data: allReturns, isLoading } = useEvTaxReturns(id, 2026);
-  const { data: globalParams } = useEvGlobalTaxParams(2026);
+  const { data: allReturns, isLoading: returnsLoading } = useEvTaxReturns(id, 2026);
+  const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(2026);
+  
+  const isLoading = returnsLoading || paramsLoading;
+
+  const taxParams = dbParams || DEFAULT_2026_PARAMS;
 
   const kataReturns = useMemo(() => {
     const dbReturns = (allReturns || [])
@@ -60,7 +64,7 @@ export default function EvKataReturnPage() {
 
     // Generate expected semi-annual KATA returns and merge with DB records
     const now = new Date();
-    const haviTetel = globalParams?.kata_havi_tetel || DEFAULT_2026_PARAMS.kataHaviTetel;
+    const haviTetel = taxParams.kataHaviTetel;
     const halfYearAmount = haviTetel * 6;
 
     const getStatus = (deadline: string) => {
@@ -98,7 +102,7 @@ export default function EvKataReturnPage() {
         xmlData: null,
       };
     });
-  }, [allReturns, globalParams]);
+  }, [allReturns, taxParams]);
 
   const handlePrepareAndDownload = async (ret: any) => {
     if (!id) return;
@@ -211,9 +215,9 @@ export default function EvKataReturnPage() {
     }
   };
 
-  const kataHaviTetel = globalParams?.kata_havi_tetel || DEFAULT_2026_PARAMS.kataHaviTetel;
-  const kataEvesKeret = globalParams?.kata_eves_keret || DEFAULT_2026_PARAMS.kataEvesKeret;
-  const kataSurtaxRate = globalParams?.kata_surtax_rate || 40;
+  const kataHaviTetel = taxParams.kataHaviTetel;
+  const kataEvesKeret = taxParams.kataEvesKeret;
+  const kataSurtaxRate = taxParams.kataKulonadoKulcs * 100;
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">

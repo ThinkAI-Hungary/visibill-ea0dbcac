@@ -7,12 +7,15 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useAccountyClients, type AccountyClient } from '@/hooks/accounty';
 import { formatMillionHuf, formatPercent, getEvThresholds, type ThresholdStatus } from '@/lib/evCalculations';
 import {
   useAllEvClientSettings, useEvYtdRevenue, useEvYtdTotals,
-  type EvTaxpayerForm, type EvClientSettings,
+  useAllEvTaxReturns, type EvTaxpayerForm, type EvClientSettings,
 } from '@/hooks/useEvData';
+import EvAlertsCenter, { type PortfolioAlert } from '@/components/nav/EvAlertsCenter';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -85,8 +88,38 @@ export default function EvPortfolioDashboard() {
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: allSettings = [], isLoading: settingsLoading } = useAllEvClientSettings(taxYear);
   const { data: ytdTotalsMap, isLoading: totalsLoading } = useEvYtdTotals(taxYear);
+  const { data: allReturns = [], isLoading: returnsLoading } = useAllEvTaxReturns(taxYear);
 
-  const isLoading = clientsLoading || settingsLoading || totalsLoading;
+  const { data: customerTotalsMap, isLoading: customerTotalsLoading } = useQuery({
+    queryKey: ['portfolio-kata-customer-totals', taxYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nav_invoices')
+        .select('company_id, customer_name, invoice_gross_amount')
+        .eq('invoice_direction', 'OUTBOUND')
+        .gte('invoice_issue_date', `${taxYear}-01-01`)
+        .lte('invoice_issue_date', `${taxYear}-12-31`);
+      
+      if (error) throw error;
+      
+      const map = new Map<string, { customerName: string; total: number }[]>();
+      (data || []).forEach(inv => {
+        if (!inv.company_id || !inv.customer_name) return;
+        const list = map.get(inv.company_id) || [];
+        const existing = list.find(item => item.customerName === inv.customer_name);
+        const amount = Number(inv.invoice_gross_amount) || 0;
+        if (existing) {
+          existing.total += amount;
+        } else {
+          list.push({ customerName: inv.customer_name, total: amount });
+        }
+        map.set(inv.company_id, list);
+      });
+      return map;
+    }
+  });
+
+  const isLoading = clientsLoading || settingsLoading || totalsLoading || returnsLoading || customerTotalsLoading;
 
   // Build a lookup: company_id → settings
   const settingsMap = useMemo(() => {
@@ -96,15 +129,6 @@ export default function EvPortfolioDashboard() {
     });
     return map;
   }, [allSettings]);
-
-  // Derive stable ytdRevenueMap from ytdTotalsMap for threshold checking
-  const ytdRevenueMap = useMemo(() => {
-    const map = new Map<string, number>();
-    ytdTotalsMap?.forEach((val, key) => {
-      map.set(key, val.revenue);
-    });
-    return map;
-  }, [ytdTotalsMap]);
 
   // Enrich clients with real DB data
   const enriched = useMemo<EnrichedEvClient[]>(() => {
@@ -124,6 +148,35 @@ export default function EvPortfolioDashboard() {
           if (t.status === 'yellow' && worst !== 'red') return 'yellow';
           return worst;
         }, 'green');
+      }
+
+      // Check KATA customer limits
+      const customerTotals = customerTotalsMap?.get(c.companyId) || [];
+      const hasCustomerDanger = customerTotals.some(cust => cust.total >= 3_000_000);
+      const hasCustomerWarning = customerTotals.some(cust => cust.total >= 2_500_000);
+
+      // Check tax returns for this company
+      const companyReturns = (allReturns || []).filter((ret: any) => ret.company_id === c.companyId);
+      const hasPastDueReturn = companyReturns.some((ret: any) => {
+        if (!ret.deadline) return false;
+        const isPast = new Date(ret.deadline).getTime() < Date.now();
+        const isNotDone = ret.status !== 'submitted' && ret.status !== 'accepted';
+        return isPast && isNotDone;
+      });
+      const hasUpcomingReturn = companyReturns.some((ret: any) => {
+        if (!ret.deadline) return false;
+        const deadlineDate = new Date(ret.deadline);
+        const isPast = deadlineDate.getTime() < Date.now();
+        const isNotDone = ret.status !== 'submitted' && ret.status !== 'accepted';
+        const diffDays = Math.ceil((deadlineDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        return !isPast && isNotDone && diffDays <= 5;
+      });
+
+      // Elevate threshold status if there are critical return or customer limit alerts
+      if (hasPastDueReturn || hasCustomerDanger) {
+        thresholdStatus = 'red';
+      } else if (thresholdStatus !== 'red' && (hasUpcomingReturn || hasCustomerWarning)) {
+        thresholdStatus = 'yellow';
       }
 
       // Derive filing status: if no settings → not_started, if settings exist → data_entry
@@ -146,7 +199,143 @@ export default function EvPortfolioDashboard() {
         orgType: settings?.org_type || undefined,
       };
     });
-  }, [clients, settingsMap, ytdTotalsMap]);
+  }, [clients, settingsMap, ytdTotalsMap, allReturns, customerTotalsMap]);
+
+  // Compute portfolio level warnings / dangers for Alerts Center
+  const portfolioAlerts = useMemo<PortfolioAlert[]>(() => {
+    const list: PortfolioAlert[] = [];
+
+    // 1. Threshold alerts (ÁFA and KATA revenue)
+    enriched.forEach(c => {
+      if (!c.taxpayerForm) return;
+
+      // 1.1 ÁFA alanyi mentesség check
+      if (c.vatStatus === 'Alanyi mentes' || c.vatStatus === 'alanyi_mentes') {
+        const afaLimit = taxYear === 2026 ? 20_000_000 : 18_000_000;
+        if (c.ytdRevenue >= afaLimit) {
+          list.push({
+            id: `afa-danger-${c.companyId}`,
+            companyId: c.companyId,
+            companyName: c.name,
+            type: 'danger',
+            title: 'ÁFA alanyi mentesség határ túllépés',
+            message: `A vállalkozás bevétele (${c.ytdRevenue.toLocaleString('hu-HU')} Ft) átlépte az alanyi ÁFA mentesség ${afaLimit.toLocaleString('hu-HU')} Ft-os határértékét!`,
+            targetUrl: `/accounty/client/${c.companyId}/ev/vat`,
+          });
+        } else if (c.ytdRevenue >= afaLimit * 0.85) {
+          list.push({
+            id: `afa-warning-${c.companyId}`,
+            companyId: c.companyId,
+            companyName: c.name,
+            type: 'warning',
+            title: 'ÁFA alanyi mentesség határ közelít',
+            message: `A vállalkozás bevétele (${c.ytdRevenue.toLocaleString('hu-HU')} Ft) megközelítette az alanyi ÁFA mentességi határt (a limit ${(c.ytdRevenue / afaLimit * 100).toFixed(0)}%-ánál jár).`,
+            targetUrl: `/accounty/client/${c.companyId}/ev/vat`,
+          });
+        }
+      }
+
+      // 1.2 KATA éves limit check
+      if (c.taxpayerForm === 'kata') {
+        const kataLimit = 18_000_000;
+        if (c.ytdRevenue >= kataLimit) {
+          list.push({
+            id: `kata-danger-${c.companyId}`,
+            companyId: c.companyId,
+            companyName: c.name,
+            type: 'danger',
+            title: 'KATA éves keret túllépés',
+            message: `A vállalkozás bevétele (${c.ytdRevenue.toLocaleString('hu-HU')} Ft) átlépte a KATA éves ${kataLimit.toLocaleString('hu-HU')} Ft-os keretét!`,
+            targetUrl: `/accounty/client/${c.companyId}/ev/kata`,
+          });
+        } else if (c.ytdRevenue >= kataLimit * 0.85) {
+          list.push({
+            id: `kata-warning-${c.companyId}`,
+            companyId: c.companyId,
+            companyName: c.name,
+            type: 'warning',
+            title: 'KATA éves keret közelít',
+            message: `A vállalkozás bevétele (${c.ytdRevenue.toLocaleString('hu-HU')} Ft) megközelítette a KATA éves keretet (a limit ${(c.ytdRevenue / kataLimit * 100).toFixed(0)}%-ánál jár).`,
+            targetUrl: `/accounty/client/${c.companyId}/ev/kata`,
+          });
+        }
+
+        // 1.3 KATA 3M Ft-os partner/customer limit check
+        const customerTotals = customerTotalsMap?.get(c.companyId) || [];
+        customerTotals.forEach(cust => {
+          if (cust.total >= 3_000_000) {
+            list.push({
+              id: `kata-cust-danger-${c.companyId}-${cust.customerName}`,
+              companyId: c.companyId,
+              companyName: c.name,
+              type: 'danger',
+              title: 'KATA partner 3M Ft limit túllépés',
+              message: `A(z) "${cust.customerName}" partner felé kiállított számlák összege (${cust.total.toLocaleString('hu-HU')} Ft) átlépte a 3 millió Ft-os KATA limitet (40%-os adófizetési kötelezettség keletkezett).`,
+              targetUrl: `/accounty/client/${c.companyId}/ev/kata`,
+            });
+          } else if (cust.total >= 2_500_000) {
+            list.push({
+              id: `kata-cust-warning-${c.companyId}-${cust.customerName}`,
+              companyId: c.companyId,
+              companyName: c.name,
+              type: 'warning',
+              title: 'KATA partner 3M Ft limit közelít',
+              message: `A(z) "${cust.customerName}" partner felé kiállított számlák összege (${cust.total.toLocaleString('hu-HU')} Ft) megközelítette a 3 millió Ft-os KATA limitet (a limit ${(cust.total / 30000).toFixed(0)}%-ánál jár).`,
+              targetUrl: `/accounty/client/${c.companyId}/ev/kata`,
+            });
+          }
+        });
+      }
+    });
+
+    // 2. Tax returns deadline checks
+    (allReturns || []).forEach((ret: any) => {
+      const compId = ret.company_id;
+      const compName = ret.companies?.name || 'Ismeretlen ügyfél';
+      
+      if (!ret.deadline) return;
+      const deadlineDate = new Date(ret.deadline);
+      const isPastDue = deadlineDate.getTime() < Date.now();
+      const isNotDone = ret.status !== 'submitted' && ret.status !== 'accepted';
+      
+      const diffDays = Math.ceil((deadlineDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      
+      let targetUrl = `/accounty/client/${compId}/ev/returns`;
+      if (ret.form_code === '2658') {
+        targetUrl = `/accounty/client/${compId}/ev/returns/contrib`;
+      } else if (ret.form_code === 'KATA') {
+        targetUrl = `/accounty/client/${compId}/ev/returns/kata`;
+      } else if (ret.form_code === 'HIPAK') {
+        targetUrl = `/accounty/client/${compId}/ev/returns/hipa`;
+      } else if (ret.form_code === '2553') {
+        targetUrl = `/accounty/client/${compId}/ev/returns`;
+      }
+
+      if (isPastDue && isNotDone) {
+        list.push({
+          id: `return-danger-${ret.id}`,
+          companyId: compId,
+          companyName: compName,
+          type: 'danger',
+          title: 'Lejárt bevallási határidő',
+          message: `A(z) ${ret.form_code || 'bevallás'} leadási határideje lejárt! (Határidő: ${new Date(ret.deadline).toLocaleDateString('hu-HU')}, jelenlegi állapot: ${ret.status})`,
+          targetUrl,
+        });
+      } else if (!isPastDue && isNotDone && diffDays <= 5) {
+        list.push({
+          id: `return-warning-${ret.id}`,
+          companyId: compId,
+          companyName: compName,
+          type: 'warning',
+          title: 'Közelgő bevallási határidő',
+          message: `A(z) ${ret.form_code || 'bevallás'} leadási határideje ${diffDays} napon belül van! (Határidő: ${new Date(ret.deadline).toLocaleDateString('hu-HU')})`,
+          targetUrl,
+        });
+      }
+    });
+
+    return list;
+  }, [enriched, allReturns, customerTotalsMap, taxYear]);
 
   const filtered = useMemo(() => {
     let list = enriched;
@@ -204,6 +393,9 @@ export default function EvPortfolioDashboard() {
           </select>
         </div>
       </div>
+
+      {/* Alerts Center */}
+      <EvAlertsCenter alerts={portfolioAlerts} />
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

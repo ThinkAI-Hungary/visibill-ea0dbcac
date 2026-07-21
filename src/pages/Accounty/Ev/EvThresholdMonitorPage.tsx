@@ -11,6 +11,7 @@ import {
   type ThresholdCheck, type ThresholdStatus,
 } from '@/lib/evCalculations';
 import { useAllEvClientSettings, useEvYtdRevenue } from '@/hooks/useEvData';
+import { useEvTaxParams } from '@/hooks/accounty';
 
 // ─── Types & Constants ──────────────────────────────────────────────────────
 
@@ -46,7 +47,10 @@ export default function EvThresholdMonitorPage() {
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawSettings, isLoading: settingsLoading } = useAllEvClientSettings(taxYear);
   const { data: revenueMap, isLoading: revenueLoading } = useEvYtdRevenue(taxYear);
-  const isLoading = settingsLoading || revenueLoading;
+  const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(taxYear);
+  const isLoading = settingsLoading || revenueLoading || paramsLoading;
+
+  const params = dbParams || DEFAULT_2026_PARAMS;
 
   const clients = useMemo((): ClientThresholdRow[] => {
     return (rawSettings || []).map((s: any) => {
@@ -55,7 +59,7 @@ export default function EvThresholdMonitorPage() {
       const form = s.taxpayer_form || 'atalany';
       const isRetail = s.cost_ratio_category === 'retail_90';
       const ytdRevenue = revenueMap?.get(s.company_id) || 0;
-      const thresholds = getEvThresholds(ytdRevenue, form, isRetail, DEFAULT_2026_PARAMS);
+      const thresholds = getEvThresholds(ytdRevenue, form, isRetail, params);
       return {
         clientId: s.company_id,
         clientName: companyName,

@@ -5,7 +5,7 @@ import {
   Calendar, CreditCard, Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import { formatHuf, DEFAULT_2026_PARAMS } from '@/lib/evCalculations';
 import { useEvChamberPayments } from '@/hooks/useEvData';
 
@@ -15,7 +15,9 @@ export default function EvChamberPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
 
-  const annualFee = DEFAULT_2026_PARAMS.kamaraiHozzajarulas;
+  const { data: dbParams } = useEvTaxParams(2026);
+  const params = dbParams || DEFAULT_2026_PARAMS;
+  const annualFee = params.kamaraiHozzajarulas;
 
   // Fetch from DB
   const { data: dbPayments = [] } = useEvChamberPayments(id);

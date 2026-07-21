@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import {
   calculateKata, formatHuf, formatPercent, formatMillionHuf,
   DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS
@@ -30,7 +30,8 @@ export default function EvKataPage() {
   const updateReturn = useUpdateEvTaxReturn();
   const [saving, setSaving] = useState(false);
 
-  const params = taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS;
+  const { data: dbParams } = useEvTaxParams(taxYear);
+  const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const [revenue, setRevenue] = useState(14_500_000);
   const [activeMonths, setActiveMonths] = useState(12);

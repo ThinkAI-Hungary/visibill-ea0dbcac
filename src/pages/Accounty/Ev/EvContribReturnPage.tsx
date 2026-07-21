@@ -5,9 +5,9 @@ import {
   CheckCircle2, Clock, AlertTriangle, Send, Download, Calendar, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import { formatHuf, DEFAULT_2026_PARAMS, calculateQuarterlyContributions } from '@/lib/evCalculations';
-import { useEvTaxReturns, useEvGlobalTaxParams, useEvContributions, useUpdateEvTaxReturn, useEvClientSettings } from '@/hooks/useEvData';
+import { useEvTaxReturns, useEvContributions, useUpdateEvTaxReturn, useEvClientSettings } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -37,22 +37,14 @@ export default function EvContribReturnPage() {
   const updateReturn = useUpdateEvTaxReturn();
 
   // Real data
-  const { data: allReturns, isLoading } = useEvTaxReturns(id, 2026);
-  const { data: globalParams } = useEvGlobalTaxParams(2026);
+  const { data: allReturns, isLoading: returnsLoading } = useEvTaxReturns(id, 2026);
   const { data: contributions } = useEvContributions(id, 2026);
   const { data: settings } = useEvClientSettings(id, 2026);
+  const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(2026);
+  
+  const isLoading = returnsLoading || paramsLoading;
 
-  const taxParams = useMemo(() => {
-    return {
-      ...DEFAULT_2026_PARAMS,
-      ...(globalParams ? {
-        tbJarulekKulcs: (globalParams.tb_rate || 18.5) / 100,
-        szochoKulcs: (globalParams.szocho_rate || 13) / 100,
-        minimalber: globalParams.minimalber || DEFAULT_2026_PARAMS.minimalber,
-        garantaltBerminimum: globalParams.garantalt_berminimum || DEFAULT_2026_PARAMS.garantaltBerminimum,
-      } : {})
-    };
-  }, [globalParams]);
+  const taxParams = dbParams || DEFAULT_2026_PARAMS;
 
   const contribReturns = useMemo(() => {
     const dbReturns = (allReturns || [])
@@ -272,8 +264,8 @@ export default function EvContribReturnPage() {
 
   const totalPaid = contribReturns.filter(r => r.status === 'submitted').reduce((s, r) => s + r.totalAmount, 0);
   const totalExpected = contribReturns.reduce((s, r) => s + r.totalAmount, 0);
-  const tbRate = globalParams?.tb_rate || 18.5;
-  const szochoRate = globalParams?.szocho_rate || 13;
+  const tbRate = taxParams.tbJarulekKulcs * 100;
+  const szochoRate = taxParams.szochoKulcs * 100;
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">

@@ -6,10 +6,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import {
   calculateQuarterlyContributions, formatHuf, formatPercent,
-  DEFAULT_2026_PARAMS, type EmploymentStatus
+  DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, type EmploymentStatus
 } from '@/lib/evCalculations';
 import { useEvContributions, type EvContributionCalc } from '@/hooks/useEvData';
 
@@ -25,7 +25,8 @@ export default function EvContributionsPage() {
   const [employmentStatus, setEmploymentStatus] = useState<EmploymentStatus>('foallasu');
   const [isSkilled, setIsSkilled] = useState(false);
 
-  const params = DEFAULT_2026_PARAMS;
+  const { data: dbParams } = useEvTaxParams(taxYear);
+  const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawContributions, isLoading } = useEvContributions(id, taxYear);

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import {
   calculateFlatRateIncome, formatHuf, formatPercent, formatMillionHuf,
   DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, type EvTaxParams
@@ -21,7 +21,8 @@ export default function EvFlatRatePage() {
   const updateReturn = useUpdateEvTaxReturn();
   const [saving, setSaving] = useState(false);
 
-  const params: EvTaxParams = taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS;
+  const { data: dbParams } = useEvTaxParams(taxYear);
+  const params: EvTaxParams = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const [revenue, setRevenue] = useState(24_200_000);
   const [costCategory, setCostCategory] = useState<'general' | 'high_80' | 'retail_90'>('general');

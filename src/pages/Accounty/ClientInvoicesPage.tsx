@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,6 +9,11 @@ import { useAccountyClients } from '@/hooks/accounty';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import NavSyncSettingsDialog from '@/components/nav/NavSyncSettingsDialog';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function ClientInvoicesPage() {
   const navigate = useNavigate();
@@ -27,7 +32,95 @@ export default function ClientInvoicesPage() {
   const [fadFilter, setFadFilter] = useState(false);
   
   const [isNavSyncOpen, setIsNavSyncOpen] = useState(false);
+  const [isSyncSettingsOpen, setIsSyncSettingsOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [syncDateFrom, setSyncDateFrom] = useState('2024-01-01');
+  const [syncDateTo, setSyncDateTo] = useState('2024-01-31');
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [syncing, setSyncing] = useState(false);
+
+  const handleManualSync = async () => {
+    setSyncing(true);
+    toast({
+      title: 'Szinkronizálás folyamatban',
+      description: 'NAV számlák letöltése a megadott időszakra...',
+    });
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Nem sikerült lekérni a hitelesítést.');
+
+      // 1. Outbound sync
+      const { data: outboundData, error: outboundError } = await supabase.functions.invoke('nav-query-outbound-invoices', {
+        body: {
+          dateFrom: syncDateFrom,
+          dateTo: syncDateTo,
+          invoiceDirection: 'OUTBOUND',
+          companyId: id
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (outboundError) throw outboundError;
+      if (outboundData?.error) throw new Error(outboundData.error);
+      const totalOutbound = outboundData?.totalInvoices || 0;
+
+      // 2. Inbound sync
+      const { data: inboundData, error: inboundError } = await supabase.functions.invoke('nav-query-outbound-invoices', {
+        body: {
+          dateFrom: syncDateFrom,
+          dateTo: syncDateTo,
+          invoiceDirection: 'INBOUND',
+          companyId: id
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (inboundError) throw inboundError;
+      if (inboundData?.error) throw new Error(inboundData.error);
+      const totalInbound = inboundData?.totalInvoices || 0;
+
+      // 3. Webhook/Categorization call (optional)
+      if (totalOutbound > 0 || totalInbound > 0) {
+        await supabase.functions.invoke('trigger-nav-categorization', {
+          body: {
+            companyId: id,
+            syncType: 'manual'
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }).catch(err => console.error('Categorization webhook failed:', err));
+      }
+
+      // 4. Invalidate caches
+      queryClient.invalidateQueries({ queryKey: queryKeys.accountyCompanyInvoices(id || '') });
+      queryClient.invalidateQueries({ queryKey: ['navInvoices', id] });
+      queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', id] });
+
+      toast({
+        title: 'Sikeres szinkronizálás',
+        description: `NAV számlák sikeresen importálva: ${totalOutbound} kimenő, ${totalInbound} bejövő.`,
+      });
+
+      setIsNavSyncOpen(false);
+    } catch (err: any) {
+      console.error('Manual sync failed:', err);
+      toast({
+        title: 'Szinkronizálási hiba',
+        description: err.message || 'Nem sikerült letölteni a számlákat a NAV-tól.',
+        variant: 'destructive'
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const { data: invoicesData, isLoading: invoicesLoading } = useCompanyInvoices(id || '');
 
@@ -130,17 +223,21 @@ export default function ClientInvoicesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Kezdő dátum</label>
-                      <div className="relative">
-                        <Input defaultValue="2024. 01. 01." className="bg-card border-border" />
-                        <Calendar className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
-                      </div>
+                      <Input
+                        type="date"
+                        value={syncDateFrom}
+                        onChange={(e) => setSyncDateFrom(e.target.value)}
+                        className="bg-card border-border"
+                      />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Záró dátum</label>
-                      <div className="relative">
-                        <Input defaultValue="2024. 01. 31." className="bg-card border-border" />
-                        <Calendar className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
-                      </div>
+                      <Input
+                        type="date"
+                        value={syncDateTo}
+                        onChange={(e) => setSyncDateTo(e.target.value)}
+                        className="bg-card border-border"
+                      />
                     </div>
                   </div>
                 </div>
@@ -174,17 +271,43 @@ export default function ClientInvoicesPage() {
                     </Button>
                   </DialogTrigger>
                   <div className="flex items-center gap-3">
-                    <Button variant="outline" className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 h-10">
+                    <Button
+                      variant="outline"
+                      className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 h-10"
+                      onClick={() => {
+                        setIsNavSyncOpen(false);
+                        setIsSyncSettingsOpen(true);
+                      }}
+                    >
                       <Settings className="w-4 h-4" /> Beállítások
                     </Button>
-                    <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-10">
-                      <RefreshCcw className="w-4 h-4" /> Szinkronizálás
+                    <Button
+                      className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-10"
+                      onClick={handleManualSync}
+                      disabled={syncing}
+                    >
+                      {syncing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Szinkronizálás...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCcw className="w-4 h-4" /> Szinkronizálás
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
+
+          <NavSyncSettingsDialog
+            open={isSyncSettingsOpen}
+            onOpenChange={setIsSyncSettingsOpen}
+            companyId={id || ''}
+          />
           
           <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
             <DialogTrigger asChild>

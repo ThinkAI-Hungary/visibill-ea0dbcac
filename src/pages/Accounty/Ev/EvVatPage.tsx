@@ -5,8 +5,8 @@ import {
   AlertTriangle, CheckCircle2, Clock, FileText, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAccountyClient } from '@/hooks/accounty';
-import { formatHuf, formatPercent, DEFAULT_2026_PARAMS } from '@/lib/evCalculations';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
+import { formatHuf, formatPercent, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS } from '@/lib/evCalculations';
 import { useEvClientSettings, useEvYtdRevenue, useEvVatReturns, useUpdateEvSettings } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
 
@@ -21,12 +21,15 @@ export default function EvVatPage() {
   const { data: evSettings } = useEvClientSettings(id, taxYear);
   const { data: ytdRevenueMap } = useEvYtdRevenue(taxYear);
   const { data: dbVatReturns = [] } = useEvVatReturns(id, taxYear);
+  const { data: dbParams } = useEvTaxParams(taxYear);
   const updateSettings = useUpdateEvSettings();
+
+  const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const vatStatus = evSettings?.vat_status ?? 'alanyi_mentes';
   const ytdRevenue = ytdRevenueMap?.get(id || '') ?? 0;
 
-  const afaLimit = DEFAULT_2026_PARAMS.afaAlanyiHatar;
+  const afaLimit = params.afaAlanyiHatar;
   const remaining = Math.max(0, afaLimit - ytdRevenue);
   const percentage = afaLimit > 0 ? (ytdRevenue / afaLimit) * 100 : 0;
   const isWarning = percentage >= 80;

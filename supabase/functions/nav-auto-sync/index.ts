@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
 
     const { data: companiesWithCreds, error: companiesError } = await supabase
       .from('user_nav_credentials')
-      .select('user_id, company_id, nav_username')
+      .select('user_id, company_id, nav_username, auto_sync_enabled, sync_frequency')
       .eq('validation_status', 'valid')
       .not('company_id', 'is', null);
 
@@ -133,17 +133,19 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to fetch companies: ${companiesError.message}`);
     }
 
-    if (!companiesWithCreds || companiesWithCreds.length === 0) {
+    const activeCompanies = (companiesWithCreds || []).filter(c => c.auto_sync_enabled !== false);
+
+    if (activeCompanies.length === 0) {
       return new Response(
         JSON.stringify({ success: true, message: 'No companies to sync', companies_processed: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`📊 Found ${companiesWithCreds.length} companies to sync`);
+    console.log(`📊 Found ${activeCompanies.length} active companies to sync (out of ${companiesWithCreds?.length || 0})`);
 
     const results = {
-      total_companies: companiesWithCreds.length,
+      total_companies: activeCompanies.length,
       successful: 0,
       failed: 0,
       details: [] as any[]
@@ -160,10 +162,48 @@ Deno.serve(async (req) => {
       console.log(`📤 Webhook URL: ${webhookUrl ? `SET (ends: ...${webhookUrl.slice(-30)})` : 'NOT SET'}`);
     }
 
-    for (const company of companiesWithCreds) {
+    for (const company of activeCompanies) {
       console.log(`\n👤 Processing company: ${company.company_id} (user: ${company.user_id})`);
 
       try {
+        // Frequency check (skip if already synced recently)
+        if (!detailsOnly) {
+          const frequency = company.sync_frequency || 'daily';
+          
+          const { data: lastSyncLogs } = await supabase
+            .from('nav_sync_logs')
+            .select('completed_at')
+            .eq('company_id', company.company_id)
+            .eq('status', 'completed')
+            .order('completed_at', { ascending: false })
+            .limit(1);
+            
+          if (lastSyncLogs && lastSyncLogs.length > 0 && lastSyncLogs[0].completed_at) {
+            const lastSyncTime = new Date(lastSyncLogs[0].completed_at).getTime();
+            const hoursSinceLastSync = (Date.now() - lastSyncTime) / (1000 * 60 * 60);
+            
+            if (frequency === 'daily' && hoursSinceLastSync < 20) {
+              console.log(`⏭️ Skipping company ${company.company_id}: already synced ${hoursSinceLastSync.toFixed(1)} hours ago (daily frequency)`);
+              results.details.push({
+                company_id: company.company_id,
+                status: 'skipped',
+                reason: 'daily limit (synced less than 20h ago)'
+              });
+              continue;
+            }
+            
+            if (frequency === 'weekly' && hoursSinceLastSync < 24 * 6) {
+              console.log(`⏭️ Skipping company ${company.company_id}: already synced ${(hoursSinceLastSync / 24).toFixed(1)} days ago (weekly frequency)`);
+              results.details.push({
+                company_id: company.company_id,
+                status: 'skipped',
+                reason: 'weekly limit (synced less than 6d ago)'
+              });
+              continue;
+            }
+          }
+        }
+
         const { data: credsData, error: credsError } = await supabase.rpc('get_nav_credentials', {
           p_user_id: company.user_id,
           p_company_id: company.company_id

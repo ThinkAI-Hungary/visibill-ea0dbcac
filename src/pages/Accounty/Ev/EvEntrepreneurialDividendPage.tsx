@@ -5,7 +5,7 @@ import {
   Info, PieChart, ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import { formatHuf, formatPercent, DEFAULT_2026_PARAMS } from '@/lib/evCalculations';
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -14,6 +14,9 @@ export default function EvEntrepreneurialDividendPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
 
+  const { data: dbParams } = useEvTaxParams(2026);
+  const params = dbParams || DEFAULT_2026_PARAMS;
+
   const [entrepreneurialIncome, setEntrepreneurialIncome] = useState(16_800_000);
   const [entrepreneurialTaxPaid, setEntrepreneurialTaxPaid] = useState(1_512_000);
   const [sochoPaid, setSochoPaid] = useState(2_184_000);
@@ -21,8 +24,8 @@ export default function EvEntrepreneurialDividendPage() {
   const [retainedEarnings, setRetainedEarnings] = useState(1_104_000);
 
   const dividendBase = entrepreneurialIncome - entrepreneurialTaxPaid;
-  const dividendSzja = Math.round(dividendBase * DEFAULT_2026_PARAMS.szjaRate);
-  const dividendSzocho = Math.round(dividendBase * DEFAULT_2026_PARAMS.szochoKulcs);
+  const dividendSzja = Math.round(dividendBase * params.szjaRate);
+  const dividendSzocho = Math.round(dividendBase * params.szochoKulcs);
   const totalDividendTax = dividendSzja + dividendSzocho;
   const netDividend = dividendBase - totalDividendTax;
   const totalTaxBurden = entrepreneurialTaxPaid + sochoPaid + totalDividendTax;
@@ -109,8 +112,8 @@ export default function EvEntrepreneurialDividendPage() {
                 <p className="font-semibold">Osztalékalap szabályok</p>
                 <ul className="list-disc list-inside space-y-0.5">
                   <li>Osztalékalap = Váll. jövedelem – megfizetett SZJA</li>
-                  <li>SZJA: {formatPercent(DEFAULT_2026_PARAMS.szjaRate)}</li>
-                  <li>Szocho: {formatPercent(DEFAULT_2026_PARAMS.szochoKulcs)}</li>
+                  <li>SZJA: {formatPercent(params.szjaRate)}</li>
+                  <li>Szocho: {formatPercent(params.szochoKulcs)}</li>
                   <li>A kivét nem csökkenti az osztalékalapot</li>
                 </ul>
               </div>
@@ -150,8 +153,8 @@ export default function EvEntrepreneurialDividendPage() {
               <Row label="(-) Megfizetett vállalkozói SZJA" value={formatHuf(entrepreneurialTaxPaid)} negative />
               <Row label="(=) Vállalkozói osztalékalap" value={formatHuf(dividendBase)} bold highlight />
               <div className="h-2 bg-slate-50 dark:bg-slate-800/30" />
-              <Row label={`SZJA (${formatPercent(DEFAULT_2026_PARAMS.szjaRate)})`} value={formatHuf(dividendSzja)} />
-              <Row label={`Szocho (${formatPercent(DEFAULT_2026_PARAMS.szochoKulcs)})`} value={formatHuf(dividendSzocho)} />
+              <Row label={`SZJA (${formatPercent(params.szjaRate)})`} value={formatHuf(dividendSzja)} />
+              <Row label={`Szocho (${formatPercent(params.szochoKulcs)})`} value={formatHuf(dividendSzocho)} />
               <Row label="Osztalék adóteher összesen" value={formatHuf(totalDividendTax)} bold />
               <div className="h-2 bg-slate-50 dark:bg-slate-800/30" />
               <Row label="Nettó osztalék" value={formatHuf(netDividend)} bold highlight />
