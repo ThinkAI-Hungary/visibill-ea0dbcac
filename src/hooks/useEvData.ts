@@ -579,7 +579,6 @@ export function useEvFixedAssets(companyId: string | undefined, taxYear: number)
   return useQuery({
     queryKey: ['ev-fixed-assets', companyId, taxYear],
     queryFn: async () => {
-      // 1. Fetch EV fixed asset records
       const { data: evAssets, error } = await supabase
         .from('accounty_ev_records_fixed_assets')
         .select('*')
@@ -587,61 +586,7 @@ export function useEvFixedAssets(companyId: string | undefined, taxYear: number)
         .eq('tax_year', taxYear)
         .order('acquisition_date', { ascending: true });
       if (error) throw error;
-      const assets = (evAssets || []) as EvFixedAsset[];
-
-      // 2. Auto-sync linked assets from TÉNY (name + acquisition cost)
-      const linkedIds = assets
-        .filter(a => a.source_fixed_asset_id)
-        .map(a => a.source_fixed_asset_id!);
-
-      if (linkedIds.length > 0) {
-        const { data: tenyAssets } = await supabase
-          .from('fixed_assets')
-          .select('id, name, acquisition_value, status, disposal_date')
-          .in('id', linkedIds);
-
-        if (tenyAssets && tenyAssets.length > 0) {
-          const tenyMap = new Map(tenyAssets.map((t: any) => [t.id, t]));
-          const updates: Promise<any>[] = [];
-
-          for (const asset of assets) {
-            if (!asset.source_fixed_asset_id) continue;
-            const teny = tenyMap.get(asset.source_fixed_asset_id) as any;
-            if (!teny) continue;
-
-            const needsSync =
-              asset.asset_name !== teny.name ||
-              asset.acquisition_cost !== teny.acquisition_value ||
-              (teny.status === 'disposed' && !asset.disposal_date);
-
-            if (needsSync) {
-              const patch: Record<string, any> = {};
-              if (asset.asset_name !== teny.name) patch.asset_name = teny.name;
-              if (asset.acquisition_cost !== teny.acquisition_value) patch.acquisition_cost = teny.acquisition_value;
-              if (teny.status === 'disposed' && !asset.disposal_date) {
-                patch.disposal_date = teny.disposal_date;
-                patch.disposal_type = 'scrapped';
-              }
-
-              // Update in-memory
-              Object.assign(asset, patch);
-
-              // Persist async (fire-and-forget)
-              updates.push(
-                supabase
-                  .from('accounty_ev_records_fixed_assets')
-                  .update(patch)
-                  .eq('id', asset.id)
-              );
-            }
-          }
-
-          // Fire-and-forget background sync
-          if (updates.length > 0) Promise.all(updates).catch(() => {});
-        }
-      }
-
-      return assets;
+      return (evAssets || []) as EvFixedAsset[];
     },
     enabled: !!companyId,
   });
@@ -727,6 +672,53 @@ export function useEvVehicleLog(companyId: string | undefined, taxYear: number) 
   });
 }
 
+const DEFAULT_TAX_PARAMS: Record<number, Record<string, number>> = {
+  2025: {
+    szja_rate: 0.15,
+    vszja_rate: 0.09,
+    tb_rate: 0.185,
+    szocho_rate: 0.13,
+    minimum_wage: 266800,
+    guaranteed_minimum: 326000,
+    atalany_koltseghanyad_general: 0.40,
+    atalany_koltseghanyad_high: 0.80,
+    atalany_koltseghanyad_retail: 0.90,
+    atalany_bevetel_hatar: 36000000,
+    atalany_kisker_hatar: 180000000,
+    atalany_adomentes_resz: 1600800,
+    kata_monthly_tax: 50000,
+    kata_eves_keret: 18000000,
+    kata_kulonado_kulcs: 0.40,
+    afa_alanyi_hatar: 18000000,
+    hipa_sav_12m: 50000,
+    hipa_sav_18m: 120000,
+    hipa_sav_25m: 170000,
+    chamber_contribution: 5000,
+  },
+  2026: {
+    szja_rate: 0.15,
+    vszja_rate: 0.09,
+    tb_rate: 0.185,
+    szocho_rate: 0.13,
+    minimum_wage: 320000,
+    guaranteed_minimum: 400000,
+    atalany_koltseghanyad_general: 0.45,
+    atalany_koltseghanyad_high: 0.80,
+    atalany_koltseghanyad_retail: 0.90,
+    atalany_bevetel_hatar: 38736000,
+    atalany_kisker_hatar: 193680000,
+    atalany_adomentes_resz: 1936800,
+    kata_monthly_tax: 50000,
+    kata_eves_keret: 18000000,
+    kata_kulonado_kulcs: 0.40,
+    afa_alanyi_hatar: 20000000,
+    hipa_sav_12m: 50000,
+    hipa_sav_18m: 120000,
+    hipa_sav_25m: 170000,
+    chamber_contribution: 5000,
+  }
+};
+
 /**
  * Fetch global tax params for a year
  */
@@ -734,17 +726,40 @@ export function useEvGlobalTaxParams(taxYear: number) {
   return useQuery({
     queryKey: ['ev-global-tax-params', taxYear],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('accounty_global_tax_params')
-        .select('*')
-        .eq('tax_year', taxYear);
-      if (error) throw error;
-      // Convert to a map for easy access
-      const params: Record<string, number> = {};
-      (data || []).forEach((p: any) => {
-        params[p.param_key] = p.param_value;
-      });
-      return params;
+      try {
+        const { data, error } = await supabase
+          .from('accounty_global_tax_params')
+          .select('*')
+          .eq('tax_year', taxYear);
+        
+        if (error) throw error;
+        
+        const params: Record<string, number> = {};
+        (data || []).forEach((p: any) => {
+          params[p.param_key] = p.param_value;
+        });
+
+        if (Object.keys(params).length > 0) {
+          localStorage.setItem(`ev-global-tax-params-${taxYear}`, JSON.stringify(params));
+          return params;
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch global tax params for year ${taxYear} from DB:`, err);
+      }
+
+      // Check LocalStorage cache next
+      const cached = localStorage.getItem(`ev-global-tax-params-${taxYear}`);
+      if (cached) {
+        try {
+          return JSON.parse(cached) as Record<string, number>;
+        } catch (parseErr) {
+          console.warn("Failed to parse cached tax parameters:", parseErr);
+        }
+      }
+
+      // Fallback to defaults
+      console.info(`Using hardcoded defaults for global tax params of year ${taxYear}`);
+      return DEFAULT_TAX_PARAMS[taxYear] || DEFAULT_TAX_PARAMS[2026];
     },
   });
 }

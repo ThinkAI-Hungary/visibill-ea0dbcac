@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
 import { useEvRecords, useCreateEvRecord, useUpdateEvRecord, useDeleteEvRecord } from '@/hooks/useEvData';
@@ -299,13 +300,52 @@ function formatCell(value: any, type: string): React.ReactNode {
 
 // ─── Inline form component ──────────────────────────────────────────────────
 
-function RecordForm({ fields, initialValues, onSave, onCancel, saving }: {
+// Helper to fetch distance using Nominatim and OSRM API
+async function calculateOsrmDistance(departure: string, arrival: string): Promise<number> {
+  const geocode = async (query: string) => {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'eaisybooks-visibill'
+      }
+    });
+    if (!res.ok) throw new Error(`Geokódolás hiba: ${res.statusText}`);
+    const data = await res.json();
+    if (!data || data.length === 0) {
+      throw new Error(`A helyszín nem található: "${query}"`);
+    }
+    return {
+      lat: parseFloat(data[0].lat),
+      lon: parseFloat(data[0].lon)
+    };
+  };
+
+  const startCoords = await geocode(departure);
+  const endCoords = await geocode(arrival);
+
+  const routeUrl = `https://router.project-osrm.org/route/v1/driving/${startCoords.lon},startCoords.lat;${endCoords.lon},${endCoords.lat}?overview=false`;
+  const formattedRouteUrl = `https://router.project-osrm.org/route/v1/driving/${startCoords.lon},${startCoords.lat};${endCoords.lon},${endCoords.lat}?overview=false`;
+  const routeRes = await fetch(formattedRouteUrl);
+  if (!routeRes.ok) throw new Error(`Útvonaltervezés hiba: ${routeRes.statusText}`);
+  const routeData = await routeRes.json();
+  if (!routeData.routes || routeData.routes.length === 0) {
+    throw new Error('Nem található útvonal a megadott helyszínek között.');
+  }
+
+  // distance is in meters, return in km rounded to 1 decimal place
+  return Math.round((routeData.routes[0].distance / 1000) * 10) / 10;
+}
+
+function RecordForm({ fields, initialValues, onSave, onCancel, saving, recordType }: {
   fields: DbField[];
   initialValues?: Record<string, any>;
   onSave: (data: Record<string, any>) => void;
   onCancel: () => void;
   saving: boolean;
+  recordType?: string;
 }) {
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [form, setForm] = useState<Record<string, any>>(() => {
     const init: Record<string, any> = {};
     fields.forEach(f => {
@@ -397,6 +437,53 @@ function RecordForm({ fields, initialValues, onSave, onCancel, saving }: {
                 step={field.type === 'number' ? 'any' : undefined}
                 className="bg-card text-sm"
               />
+            )}
+            {field.key === 'distance_km' && recordType === 'utnyilv' && (
+              <div className="mt-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const dep = form['departure_location'];
+                    const arr = form['arrival_location'];
+                    if (!dep || !arr) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Hiányzó adatok',
+                        description: 'Kérjük, add meg az indulás és érkezés helyét a távolság számításához!'
+                      });
+                      return;
+                    }
+                    setIsCalculatingDistance(true);
+                    try {
+                      const dist = await calculateOsrmDistance(dep, arr);
+                      setForm(f => ({ ...f, distance_km: dist }));
+                      toast({
+                        title: 'Távolság kiszámítva',
+                        description: `Sikeres útvonaltervezés: ${dist} km`
+                      });
+                    } catch (err: any) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Hiba a számítás során',
+                        description: err.message || 'Nem sikerült kiszámítani az útvonalat.'
+                      });
+                    } finally {
+                      setIsCalculatingDistance(false);
+                    }
+                  }}
+                  disabled={isCalculatingDistance}
+                  className="w-full gap-1.5 text-xs font-semibold py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 border-indigo-200"
+                >
+                  {isCalculatingDistance ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Car className="w-3.5 h-3.5" />
+                  )}
+                  Távolság lekérése OSRM-mel
+                </Button>
+              </div>
             )}
           </div>
         ))}
@@ -647,6 +734,7 @@ export default function EvRecordDetailPage() {
           onSave={handleCreate}
           onCancel={() => setShowAddForm(false)}
           saving={createRecord.isPending}
+          recordType={recordType}
         />
       )}
 
@@ -658,6 +746,7 @@ export default function EvRecordDetailPage() {
           onSave={handleUpdate}
           onCancel={() => setEditingRow(null)}
           saving={updateRecord.isPending}
+          recordType={recordType}
         />
       )}
 

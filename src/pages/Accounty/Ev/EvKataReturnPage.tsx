@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import {
   FileText, ArrowLeft, ChevronRight, Info, CheckCircle2,
   Clock, AlertTriangle, Send, Download, Calendar, Loader2
@@ -107,13 +108,12 @@ export default function EvKataReturnPage() {
   const handlePrepareAndDownload = async (ret: any) => {
     if (!id) return;
     try {
-      // 1. Generate XML
+      // 1. Prepare parameters for the Edge Function
       const yearMatch = ret.period.match(/\d{4}/);
       const taxYear = yearMatch ? Number(yearMatch[0]) : 2026;
       const isH1 = ret.period.includes('I.');
       const periodFrom = isH1 ? `${taxYear}-01-01` : `${taxYear}-07-01`;
       const periodTo = isH1 ? `${taxYear}-06-30` : `${taxYear}-12-31`;
-      const currentDate = new Date().toISOString().slice(0, 10);
 
       const taxNum = client?.taxNumber || client?.tax_number || '';
       const taxParts = taxNum.split('-');
@@ -127,54 +127,36 @@ export default function EvKataReturnPage() {
       const clientEmail = client?.email || `${clientName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
       const clientPhone = client?.phone || '+36 30 123 4567';
 
-      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-      xml += `<!-- Nemzeti Adó- és Vámhivatal ÁNYK XML Export -->\n`;
-      xml += `<nyomtatvanyok xmlns="http://www.nav.gov.hu/nyomtatvanyok" verzio="1.0">\n`;
-      xml += `  <nyomtatvany>\n`;
-      xml += `    <nyomtatvanyinformacio>\n`;
-      xml += `      <nyomtatvanyazonosito>${taxYear}KATA</nyomtatvanyazonosito>\n`;
-      xml += `      <verzio>1.0</verzio>\n`;
-      xml += `    </nyomtatvanyinformacio>\n`;
-      xml += `    <mezok>\n`;
-      xml += `      <!-- ========================================== -->\n`;
-      xml += `      <!-- A) FŐLAP - AZONOSÍTÓ ÉS KAPCSOLATTARTÁSI ADATOK -->\n`;
-      xml += `      <!-- ========================================== -->\n`;
-      xml += `      <mezo eazon="01_0001_adoszam_torzs">${taxNum8}</mezo>\n`;
-      xml += `      <mezo eazon="01_0002_adoszam_afa">${taxNumVat}</mezo>\n`;
-      xml += `      <mezo eazon="01_0003_adoszam_megye">${taxNumCounty}</mezo>\n`;
-      xml += `      <mezo eazon="01_0004_adoszam_teljes">${taxNum}</mezo>\n`;
-      xml += `      <mezo eazon="01_0005_adoazonosito">${taxId}</mezo>\n`;
-      xml += `      <mezo eazon="01_0006_adozo_nev">${escapeXml(clientName)}</mezo>\n`;
-      xml += `      <mezo eazon="01_0007_szekhely_cim">${escapeXml(clientAddress)}</mezo>\n`;
-      xml += `      <mezo eazon="01_0008_email">${escapeXml(clientEmail)}</mezo>\n`;
-      xml += `      <mezo eazon="01_0009_telefon">${escapeXml(clientPhone)}</mezo>\n`;
-      xml += `\n`;
-      xml += `      <!-- ========================================== -->\n`;
-      xml += `      <!-- B) IDŐSZAK ÉS NYILATKOZAT TÍPUSA -->\n`;
-      xml += `      <!-- ========================================== -->\n`;
-      xml += `      <mezo eazon="01_0010_adoev">${taxYear}</mezo>\n`;
-      xml += `      <mezo eazon="01_0011_idoszak_tol">${periodFrom}</mezo>\n`;
-      xml += `      <mezo eazon="01_0012_idoszak_ig">${periodTo}</mezo>\n`;
-      xml += `      <mezo eazon="01_0013_bevallastipus">M</mezo>\n`;
-      xml += `      <mezo eazon="01_0014_idoszak_megnevezes">${escapeXml(ret.period)}</mezo>\n`;
-      xml += `\n`;
-      xml += `      <!-- ========================================== -->\n`;
-      xml += `      <!-- C) ADÓKÖTELEZETTSÉG RÉSZLETEZÉSE (BEVÉTEL ÉS ADÓ) -->\n`;
-      xml += `      <!-- ========================================== -->\n`;
-      xml += `      <mezo eazon="02_0001_aktiv_honapok_szama">6</mezo>\n`;
-      xml += `      <mezo eazon="02_0002_fizetendo_ado">${ret.amount}</mezo>\n`;
-      xml += `\n`;
-      xml += `      <!-- ========================================== -->\n`;
-      xml += `      <!-- D) NYILATKOZAT ÉS KELTEZÉS -->\n`;
-      xml += `      <!-- ========================================== -->\n`;
-      xml += `      <mezo eazon="03_0001_nyilatkozat_adat_valos">1</mezo>\n`;
-      xml += `      <mezo eazon="03_0002_kelt_hely">Budapest</mezo>\n`;
-      xml += `      <mezo eazon="03_0003_kelt_datum">${currentDate}</mezo>\n`;
-      xml += `    </mezok>\n`;
-      xml += `  </nyomtatvany>\n`;
-      xml += `</nyomtatvanyok>\n`;
+      // 2. Invoke the Edge Function to generate the XML
+      const { data: responseData, error: invokeError } = await supabase.functions.invoke('accounty-generate-xml', {
+        body: {
+          type: 'kata-anyk',
+          data: {
+            taxYear,
+            periodFrom,
+            periodTo,
+            retPeriod: ret.period,
+            amount: ret.amount,
+            taxNum8,
+            taxNumVat,
+            taxNumCounty,
+            taxNum,
+            taxId,
+            clientName,
+            clientAddress,
+            clientEmail,
+            clientPhone,
+          }
+        }
+      });
 
-      // 2. Save/upsert return to db
+      if (invokeError || !responseData?.xml) {
+        throw invokeError || new Error('Az XML generálás sikertelen volt');
+      }
+
+      const xml = responseData.xml;
+
+      // 3. Save/upsert return to db
       await updateReturn.mutateAsync({
         company_id: id,
         tax_year: 2026,
@@ -193,7 +175,7 @@ export default function EvKataReturnPage() {
         }
       });
 
-      // 3. Download the file
+      // 4. Download the file
       const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

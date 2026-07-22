@@ -80,6 +80,7 @@ export interface SubmittedInvoice {
   fizetesi_mod: string | null;
   invoice_type: string | null;
   exclude_from_accounting?: boolean;
+  elolegszamla_hivatkozas?: string | null;
 }
 
 export interface Partner {
@@ -127,7 +128,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number, fizetesi_mod, invoice_type, exclude_from_accounting')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number, fizetesi_mod, invoice_type, exclude_from_accounting, elolegszamla_hivatkozas')
         .eq('company_id', companyId)
         .or(`and(teljesites_datuma.gte.${dateFromFormatted},teljesites_datuma.lte.${dateToFormatted}),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFromFormatted},kibocsatas_datuma.lte.${dateToFormatted})`)
         .order('kibocsatas_datuma', { ascending: false })

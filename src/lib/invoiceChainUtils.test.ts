@@ -62,6 +62,20 @@ describe("buildInvoiceChain", () => {
     });
   });
 
+  // ─── 2b. Háromtagú számlaláncolat (Díjbekérő → Előlegszámla → Végszámla) ───
+  describe("háromtagú számlaláncolat (Díjbekérő → Előlegszámla → Végszámla)", () => {
+    const proforma: ChainableInvoice = { id: "proforma-1", parent_invoice_id: null };
+    const eloleg: ChainableInvoice = { id: "eloleg-1", parent_invoice_id: "proforma-1" };
+    const veg: ChainableInvoice = { id: "veg-1", parent_invoice_id: "eloleg-1" };
+    const all = [proforma, eloleg, veg];
+
+    it("végszámlából kiindulva a teljes láncot visszaadja szülő -> gyerek sorrendben", () => {
+      const result = buildInvoiceChain(all, veg);
+      const ids = result.chain.map((i) => i.id);
+      expect(ids).toEqual(["proforma-1", "eloleg-1", "veg-1"]);
+    });
+  });
+
   // ─── 3. Megszakadt lánc ────────────────────────────
   describe("megszakadt lánc", () => {
     it("hiányzó szülő esetén jelzi a missingIds-ben", () => {

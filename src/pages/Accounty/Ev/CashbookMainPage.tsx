@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, BookOpen, Plus, Filter,
   Search, Calendar, Download, ChevronDown, Lock,
-  ArrowUpRight, ArrowDownRight, FileText, AlertCircle, Loader2
+  ArrowUpRight, ArrowDownRight, FileText, AlertCircle, Loader2, Import
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -43,29 +43,47 @@ export default function CashbookMainPage() {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const { dateFromFormatted, dateToFormatted } = useDateRange();
 
-  const handleAnykExport = () => {
-    exportEvCashbookAnykXml({
-      companyName: client?.name || 'Egyéni Vállalkozó',
-      companyTaxNumber: client?.taxNumber || client?.tax_number || '',
-      companyAddress: client?.address || '',
-      taxYear,
-      periodFrom: dateFromFormatted || `${taxYear}-01-01`,
-      periodTo: dateToFormatted || `${taxYear}-12-31`,
-      entries: filtered,
-    });
+  const handleAnykExport = async () => {
+    try {
+      await exportEvCashbookAnykXml({
+        companyName: client?.name || 'Egyéni Vállalkozó',
+        companyTaxNumber: client?.taxNumber || client?.tax_number || '',
+        companyAddress: client?.address || '',
+        taxYear,
+        periodFrom: dateFromFormatted || `${taxYear}-01-01`,
+        periodTo: dateToFormatted || `${taxYear}-12-31`,
+        entries: filtered,
+      });
+      toast({ title: 'Siker', description: 'ÁNYK XML sikeresen legenerálva és letöltve.' });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba történt',
+        description: err?.message || 'Nem sikerült generálni az ÁNYK XML-t.',
+        variant: 'destructive',
+      });
+    }
     setShowExportDropdown(false);
   };
 
-  const handleOnyaExport = () => {
-    exportEvCashbookOnyaXml({
-      companyName: client?.name || 'Egyéni Vállalkozó',
-      companyTaxNumber: client?.taxNumber || client?.tax_number || '',
-      companyAddress: client?.address || '',
-      taxYear,
-      periodFrom: dateFromFormatted || `${taxYear}-01-01`,
-      periodTo: dateToFormatted || `${taxYear}-12-31`,
-      entries: filtered,
-    });
+  const handleOnyaExport = async () => {
+    try {
+      await exportEvCashbookOnyaXml({
+        companyName: client?.name || 'Egyéni Vállalkozó',
+        companyTaxNumber: client?.taxNumber || client?.tax_number || '',
+        companyAddress: client?.address || '',
+        taxYear,
+        periodFrom: dateFromFormatted || `${taxYear}-01-01`,
+        periodTo: dateToFormatted || `${taxYear}-12-31`,
+        entries: filtered,
+      });
+      toast({ title: 'Siker', description: 'ONYA XML sikeresen legenerálva és letöltve.' });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba történt',
+        description: err?.message || 'Nem sikerült generálni az ONYA XML-t.',
+        variant: 'destructive',
+      });
+    }
     setShowExportDropdown(false);
   };
 
@@ -196,6 +214,12 @@ export default function CashbookMainPage() {
               </>
             )}
           </div>
+          <Link
+            to={`/accounty/client/${id}/ev/cashbook/import-nav`}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            <Import className="w-3.5 h-3.5" /> NAV számlák
+          </Link>
           <button
             onClick={() => setShowNewEntryForm(!showNewEntryForm)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"

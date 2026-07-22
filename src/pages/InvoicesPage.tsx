@@ -510,10 +510,26 @@ const InvoicesPage = () => {
         byBizonylat.set(key, arr);
       }
       if (inv.reference_number) {
-        const key = normalizeInvNum(inv.reference_number);
-        const arr = byReference.get(key) || [];
-        arr.push(inv);
-        byReference.set(key, arr);
+        const refs = inv.reference_number.split(',').map(r => r.trim()).filter(Boolean);
+        refs.forEach(ref => {
+          const key = normalizeInvNum(ref);
+          const arr = byReference.get(key) || [];
+          if (!arr.some(x => x.id === inv.id)) {
+            arr.push(inv);
+          }
+          byReference.set(key, arr);
+        });
+      }
+      if (inv.elolegszamla_hivatkozas) {
+        const refs = inv.elolegszamla_hivatkozas.split(',').map(r => r.trim()).filter(Boolean);
+        refs.forEach(ref => {
+          const key = normalizeInvNum(ref);
+          const arr = byReference.get(key) || [];
+          if (!arr.some(x => x.id === inv.id)) {
+            arr.push(inv);
+          }
+          byReference.set(key, arr);
+        });
       }
     });
     return { byBizonylat, byReference };
@@ -523,14 +539,28 @@ const InvoicesPage = () => {
     const linked: (SubmittedInvoice & { relationDirection: 'parent' | 'child' })[] = [];
     const visited = new Set([invoice.id]);
 
-    let currentRef = invoice.reference_number;
-    while (currentRef) {
-      const parents = linkedInvoicesMap.byBizonylat.get(normalizeInvNum(currentRef)) || [];
-      const parent = parents.find(p => !visited.has(p.id));
-      if (!parent) break;
-      visited.add(parent.id);
-      linked.push({ ...parent, relationDirection: 'parent' });
-      currentRef = parent.reference_number;
+    const getParentRefs = (inv: SubmittedInvoice): string[] => {
+      const refs: string[] = [];
+      if (inv.reference_number) {
+        inv.reference_number.split(',').map(r => r.trim()).filter(Boolean).forEach(r => refs.push(r));
+      }
+      if (inv.elolegszamla_hivatkozas) {
+        inv.elolegszamla_hivatkozas.split(',').map(r => r.trim()).filter(Boolean).forEach(r => refs.push(r));
+      }
+      return refs;
+    };
+
+    const parentQueue = getParentRefs(invoice);
+    while (parentQueue.length > 0) {
+      const ref = parentQueue.shift();
+      if (!ref) continue;
+      const parents = linkedInvoicesMap.byBizonylat.get(normalizeInvNum(ref)) || [];
+      for (const parent of parents) {
+        if (visited.has(parent.id)) continue;
+        visited.add(parent.id);
+        linked.push({ ...parent, relationDirection: 'parent' });
+        getParentRefs(parent).forEach(r => parentQueue.push(r));
+      }
     }
 
     const queue = [invoice.bizonylatsorszam];
