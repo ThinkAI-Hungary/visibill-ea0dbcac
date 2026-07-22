@@ -36,7 +36,10 @@ A bankkivonatok (bank statements) tételeinek és a számláknak az összevezet�
 
 ### A. Automatikus Párosítás (Backend/Worker)
 * **Trigger:** A banki CSV importálásakor egy Edge Function elhelyez egy feladatot a PGMQ `transaction_jobs` sorában, amit a Python worker dolgoz fel.
-* **Heurisztikus matching:** Első körben a sorszám, a pontos összeg, a dátum-toleranciák és a partnernév alapján párosít.
+* **Heurisztikus matching:** Első körben a bizonylatszám, a pontos összeg (cross-currency tűréshatárokkal), a dátum-toleranciák és a partnernév alapján párosít.
+  * **Szóhatár-alapú névvizsgálat:** A korábbi, szóközöktől megtisztított részstring-alapú keresést felváltotta a szóhatár-alapú ellenőrzés. A tranzakció leírását szavakra bontva vetjük össze a számla partnernevéből kinyert kulcsszavakkal. Ez megakadályozza, hogy a cég saját neve (pl. a `SPORTSBASE HUNGARY`-ben lévő *sportsbase*) hamis pozitív egyezést adjon egy teljesen más partnernév részszavára (pl. `MK SPORT MANAGEMENT LTD` partner *sport* szavára).
+  * **Magyar végződés-illesztés (`+hu` szabály):** A banki kivonatokon gyakran előforduló egybeírt, országhivatkozásos partnernevek támogatására (pl. `WOLFHU` a `Wolf` céghez) a rendszer explicit módon engedélyezi a `partner_szó + "hu"` formájú egyezéseket.
+  * **Biztonságos prefix-illesztés:** A rövidebb szavak véletlen egyezéseinek elkerülése érdekében szótöredékes/prefix-alapú illesztés csak a legalább 6 karakter hosszúságú név-kulcsszavak esetén engedélyezett (pl. `SimplePay` -> `SIMPLEP`).
 * **AI Fallback:** Ha a heurisztikus keresés bizonytalan, az LLM a `tranzakcio_parositas.md` prompt alapján kiszámítja a `confidence_score`-t, meghatározza a `match_type`-ot (`exact`, `partial`, `ai_suggested`), és elmenti a `gl_reasoning` indoklást a `transactions` táblába.
 * **Multi-match:** A kapcsolatokat a `transaction_invoice_matches` összekötő tábla tárolja (egy tranzakcióhoz több számla is tartozhat — pl. részfizetés vagy gyűjtőutalás).
 
