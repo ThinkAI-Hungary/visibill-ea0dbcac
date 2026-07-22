@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 interface UploadWithInvoices {
   id: string;
   file_name: string;
+  file_url: string | null;
   created_at: string;
   user_id: string | null;
   invoiceNumbers: string[];
@@ -57,6 +58,54 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
 
+  // File preview
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState<string>('');
+  const [previewIsPdf, setPreviewIsPdf] = useState(false);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
+  const blobUrlRef = { current: null as string | null };
+
+  const handleFileNameClick = async (upload: UploadWithInvoices) => {
+    if (!upload.file_url) return;
+
+    // Revoke previous blob URL to free memory
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+
+    setPreviewTitle(upload.file_name);
+    setPreviewOpen(true);
+    setIsLoadingPreview(true);
+    setPreviewError(false);
+    setPreviewUrl(null);
+
+    try {
+      const response = await fetch(upload.file_url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+
+      // Detect type from magic bytes
+      const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+      const isPdf = header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46;
+      const isImage = (header[0] === 0x89 && header[1] === 0x50) || // PNG
+                      (header[0] === 0xFF && header[1] === 0xD8) ||  // JPEG
+                      (header[0] === 0x47 && header[1] === 0x49);    // GIF
+
+      const mime = isPdf ? 'application/pdf' : isImage ? blob.type || 'image/jpeg' : 'application/octet-stream';
+      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
+      blobUrlRef.current = blobUrl;
+      setPreviewIsPdf(isPdf);
+      setPreviewUrl(blobUrl);
+    } catch {
+      setPreviewError(true);
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [uploaderFilter, setUploaderFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,7 +129,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
     queryFn: async () => {
       const { data: uploadData, error: uploadError } = await supabase
         .from('invoice_uploads')
-        .select('id, file_name, created_at, user_id')
+        .select('id, file_name, file_url, created_at, user_id')
         .eq('company_id', companyId!)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false });
@@ -107,6 +156,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
         .map(u => ({
           id: u.id,
           file_name: u.file_name,
+          file_url: (u as any).file_url ?? null,
           created_at: u.created_at,
           user_id: u.user_id,
           invoiceNumbers: invoicesByUpload.get(u.id) || [],
@@ -388,7 +438,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
           ) : (
             <div className="space-y-4">
               <div className="rounded-lg border border-border/50 overflow-x-auto">
-                <Table className="compact-table">
+                <Table className="compact-table table-fixed min-w-[640px]">
                   <TableHeader>
                     <TableRow>
                       {/* Select-all checkbox */}
@@ -402,9 +452,9 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                         />
                       </TableHead>
                       <TableHead className="w-[28%]">Fájl neve</TableHead>
-                      <TableHead className="w-[24%]">Bizonylatszám</TableHead>
-                      <TableHead className="w-[17%]">Feltöltés dátuma</TableHead>
-                      <TableHead className="w-[14%]">Feltöltötte</TableHead>
+                      <TableHead className="w-[22%]">Bizonylatszám</TableHead>
+                      <TableHead className="w-[18%] whitespace-nowrap">Feltöltés dátuma</TableHead>
+                      <TableHead className="w-[16%]">Feltöltötte</TableHead>
                       <TableHead className="w-[10%] text-right">Művelet</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -415,7 +465,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                         data-row-hover
                         className={selectedIds.has(upload.id) ? 'bg-primary/5 dark:bg-primary/10' : ''}
                       >
-                        <TableCell className="pr-0">
+                        <TableCell className="w-[40px] pr-0">
                           <Checkbox
                             checked={selectedIds.has(upload.id)}
                             onCheckedChange={() => toggleSelect(upload.id)}
@@ -423,16 +473,35 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                           />
                         </TableCell>
                         <TableCell className="font-medium text-sm truncate max-w-[220px]">
-                          {upload.file_name}
+                          {upload.file_url ? (
+                            <button
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => handleFileNameClick(upload)}
+                              className="text-left truncate max-w-full text-primary hover:underline underline-offset-2 focus:outline-none cursor-pointer"
+                              title={upload.file_name}
+                            >
+                              {upload.file_name}
+                            </button>
+                          ) : (
+                            <span className="truncate" title={upload.file_name}>{upload.file_name}</span>
+                          )}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {upload.invoiceNumbers.length > 0
-                            ? upload.invoiceNumbers.length <= 2
-                              ? upload.invoiceNumbers.join(', ')
-                              : `${upload.invoiceNumbers.slice(0, 2).join(', ')} +${upload.invoiceNumbers.length - 2}`
-                            : '—'}
+                        <TableCell className="text-sm text-muted-foreground max-w-0">
+                          {(() => {
+                            const text = upload.invoiceNumbers.length > 0
+                              ? upload.invoiceNumbers.length <= 2
+                                ? upload.invoiceNumbers.join(', ')
+                                : `${upload.invoiceNumbers.slice(0, 2).join(', ')} +${upload.invoiceNumbers.length - 2}`
+                              : '—';
+                            return (
+                              <span className="block truncate" title={text}>
+                                {text}
+                              </span>
+                            );
+                          })()}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                           {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: hu })}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -450,6 +519,12 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                         </TableCell>
                       </TableRow>
                     ))}
+                    {/* Placeholder rows — prevent pagination jump on last page (spec: 11-data-display-tables.md) */}
+                    {Array.from({ length: Math.max(0, pageSize - paginatedUploads.length) }).map((_, i) => (
+                      <TableRow key={`placeholder-${i}`} className="border-b border-transparent pointer-events-none select-none">
+                        <TableCell colSpan={6} className="py-1.5">&nbsp;</TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
@@ -464,6 +539,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                   setCurrentPage(1);
                 }}
                 pageSizeOptions={[15, 30, 50]}
+                disableScrollToTop
               />
             </div>
           )}
@@ -619,6 +695,45 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* File Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={(o) => { if (!o && blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null; } setPreviewOpen(o); }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="truncate max-w-[90%]" title={previewTitle}>{previewTitle}</DialogTitle>
+            <DialogDescription>Fájl előnézet</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto mt-2">
+            {isLoadingPreview && (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm">Fájl betöltése...</p>
+              </div>
+            )}
+            {previewError && (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
+                <FileText className="h-10 w-10" />
+                <p className="text-sm">Nem sikerült betölteni a fájlt.</p>
+              </div>
+            )}
+            {!isLoadingPreview && !previewError && previewUrl && (
+              previewIsPdf ? (
+                <iframe
+                  src={previewUrl}
+                  className="w-full h-[70vh] border-0 rounded"
+                  title={previewTitle}
+                />
+              ) : (
+                <img
+                  src={previewUrl}
+                  alt={previewTitle}
+                  className="w-full h-auto rounded max-h-[70vh] object-contain"
+                />
+              )
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

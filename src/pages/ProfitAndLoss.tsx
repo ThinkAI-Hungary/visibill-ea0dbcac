@@ -124,12 +124,12 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
     queryKey: ['pnl_mappings_suggestions', selectedCompany?.id, presetId],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
-      const { data, error } = await supabase.rpc('suggest_gl_mappings', {
+      const { data, error } = await (supabase as any).rpc('suggest_gl_mappings', {
         p_company_id: selectedCompany.id,
         p_preset_id: presetId
       });
       if (error) return [];
-      return (data || []).filter((s: any) => s.pnl_structure_id);
+      return ((data as any[]) || []).filter((s: any) => s.pnl_structure_id);
     },
     enabled: !!selectedCompany?.id && !!presetId
   });
@@ -570,12 +570,20 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   const scopedNavigate = useScopedNavigate();
   const { data: exchangeRates } = useExchangeRates();
 
+  // Stabilize exchangeRates for React Query keys — objects as query keys cause new cache entries
+  // on every render because React Query uses referential equality for objects.
+  // Using a stable JSON string prevents spurious refetches and transient duplicate data windows.
+  const exchangeRatesKey = React.useMemo(
+    () => exchangeRates ? JSON.stringify(exchangeRates) : null,
+    [exchangeRates]
+  );
+
   // F10: Determine previous fiscal year
   const currentFiscalYear = dateFrom ? parseInt(dateFrom.substring(0, 4)) : new Date().getFullYear();
   const previousFiscalYear = currentFiscalYear - 1;
 
   const { data: pnlData, isLoading } = useQuery({
-    queryKey: ['pnl_report', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRates],
+    queryKey: ['pnl_report', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRatesKey],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       const { data, error } = await supabase.rpc('get_pnl_report', {
@@ -592,7 +600,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   });
 
   const { data: dbItems, isLoading: isLoadingItems } = useQuery({
-    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRates],
+    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRatesKey],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       const { data, error } = await supabase.rpc('get_gl_categorized_items', {
@@ -610,7 +618,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
 
   // Fetch monthly P&L trend data
   const { data: trendData } = useQuery({
-    queryKey: ['pnl_trend', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRates],
+    queryKey: ['pnl_trend', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRatesKey],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId || !dateFrom || !dateTo) return [];
       
@@ -771,7 +779,16 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
         .reduce((sum, r) => sum + getRowBalance(r), 0);
     };
 
-    return pnlData.map(row => {
+    // Deduplicate by pnl_structure_id to prevent React key warning
+    // (get_pnl_report RPC may return duplicate rows due to join behavior)
+    const seen = new Set<string>();
+    return pnlData
+      .filter(row => {
+        if (seen.has(row.pnl_structure_id)) return false;
+        seen.add(row.pnl_structure_id);
+        return true;
+      })
+      .map(row => {
       let rawBalance = 0;
 
       if (row.type === 'roman') {
@@ -990,7 +1007,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
               const isExpanded = expandedRows.has(row.pnl_structure_id);
 
               return (
-                <React.Fragment key={row.pnl_structure_id}>
+                <React.Fragment key={`${row.pnl_structure_id}`}>
                   <div 
                     className={cn(
                       "grid grid-cols-12 gap-4 p-3 items-center transition-colors hover:bg-muted/30",

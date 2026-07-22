@@ -30,13 +30,21 @@
 
     {/* Tartalom */}
 
-    <DialogFooter>
-      <Button variant="outline" onClick={handleCancel}>Mégse</Button>
-      <Button onClick={handleSubmit}>Mentés</Button>
+    <DialogFooter className="flex-row items-center justify-between">
+      <div className="flex flex-col text-left min-w-[200px]">
+        <span className="text-xs font-semibold tabular-nums">Összegzés</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" onClick={handleCancel}>Mégse</Button>
+        <Button onClick={handleSubmit} className="min-w-[140px] justify-center tabular-nums">Mentés</Button>
+      </div>
     </DialogFooter>
   </DialogContent>
 </Dialog>
 ```
+
+> **⚠️ DialogFooter Gomb és Összegző Stabilitás (2026-07-22):**
+> A megerősítő gomb feliratában kerüljük a dinamikusan hosszabbodó számlálókat (preferáljuk az `Exportálás` feliratot az `Exportálás (X db)` helyett), és adjunk a gombnak fix minimális szélességet (pl. `min-w-[140px]`) `tabular-nums` beállítással. Így a számlálók és összegek változása nem növeli meg a gomb méretét, és nem tolja el a mellette lévő „Mégse" gombot.
 
 ### Dialog Stílus Konvenciók
 

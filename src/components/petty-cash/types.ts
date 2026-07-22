@@ -31,6 +31,7 @@ export interface PettyCashEntry {
   source_table: string | null;
   routed_by: string;
   created_at: string;
+  partner_id: string | null;
 }
 
 /** Open (unpaid) outbound invoice available for cash settlement */

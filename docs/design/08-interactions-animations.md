@@ -424,3 +424,73 @@ className={cn(
 ### Érintett fájlok (referencia)
 - `src/pages/PartnersPage.tsx` — szín paletta a partner szerkesztőben
 - `src/components/IconPicker.tsx` — szín paletta a kategória szerkesztőben (itt Popover zárja a gombot → nincs ütközés)
+
+---
+
+## Kapcsoló Gombok (Toggle / Format Picker) — Flash és Focus Ring Bug (2026-07-22)
+
+### Probléma leírása
+
+Ha két vagy több egymás melletti `<button>` elem között váltasz kattintással (pl. `Excel (.xlsx)` → `CSV (.csv)` formátumválasztó), a következő böngésző event-sorrend **látható villanást** okoz:
+
+```
+mousedown → böngésző fókuszt ad a gombnak → :focus ring megjelenik
+mouseup + click → React setState → React újrarenderel → ring eltűnik
+```
+
+Ez 1-2 frame-nyi villanásként látszik a **forrás** gombon (amelyikről elhagytuk a fókuszt).
+
+### Megoldás: `onMouseDown preventDefault()`
+
+```tsx
+// ✅ HELYES — onMouseDown preventDefault megakadályozza a focus-on-click-et
+<button
+  type="button"
+  onMouseDown={(e) => e.preventDefault()}
+  onClick={() => setFormat('xlsx')}
+  className={`... focus:outline-none focus-visible:outline-none ...`}
+>
+  Excel (.xlsx)
+</button>
+```
+
+**Miért működik:**
+- `preventDefault()` a `mousedown`-on megakadályozza, hogy a böngésző fókuszt adjon a gombnak kattintásra
+- A `click` event ettől **normálisan tüzel** (az `onClick` meghívódik)
+- Billentyűzettel (Tab + Enter) a fókusz természetesen megmarad — `focus-visible` által kezelve
+- Ugyanezt a technikát alkalmazza a Radix UI belső PopoverTrigger és más Radix primitívek is
+
+### Összehasonlítás: Popover Trigger vs egyszerű button
+
+| | Popover Trigger (Radix) | Egyszerű `<button>` |
+|---|---|---|
+| **Flash megelőzés** | Radix belső logika | `onMouseDown e.preventDefault()` |
+| **Focus ring** | `outline-none focus:outline-none` a triggeren | `focus:outline-none focus-visible:outline-none` |
+| **Keyboard nav** | Automatikus | Tab + Enter működik |
+
+### Érintett fájlok
+- `src/components/invoices/InvoiceDataExportDialog.tsx` — formátum választó gombok (Excel / CSV)
+
+---
+
+## Kijelölés Gomb — `ring` + `border` Dupla Vastag Antipattern (2026-07-22)
+
+Ha egy kijelölt állapotú `<button>` egyszerre tartalmaz **`border-*`** (saját keret) és **`ring-1 ring-*`** (extra Tailwind ring), a két körvonal egymás felett jelenik meg, ami vizuálisan **vastag, dupla keretnek** tűnik.
+
+```tsx
+// ❌ ANTIPATTERN — dupla keret: border + ring egyszerre
+className={`border rounded-lg ${
+  isSelected
+    ? 'border-emerald-500 ring-1 ring-emerald-500'  // DUPLA!
+    : 'border-border'
+}`}
+
+// ✅ HELYES — csak border szín változik, nincs ring
+className={`border rounded-lg ${
+  isSelected
+    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600'
+    : 'border-border hover:border-emerald-500/40'
+}`}
+```
+
+**Szabály:** Ha egy gomb-keretnek van saját `border` osztálya, a kijelölt állapot jelzéséhez **elegendő a border szín változtatása**. A `ring-*` csak akkor szükséges, ha nincs saját border (pl. egy `rounded-full` szín-gombnál).

@@ -518,3 +518,56 @@ Fix szélességű számjegyek pénzügyi adatokhoz.
 ```
 
 > Már alkalmazva: `AppLayout` ContentArea `<main>` elemén.
+
+---
+
+### 4. Checkbox Vertikális Eltolódás — Radix Indicator Layout Bug (2026-07-22)
+
+**Probléma:** A `<Checkbox>` komponens (`ui/checkbox.tsx`) **feljebb tolódik** a cellán belül, amikor checked állapotba kerül (a pipa megjelenik), majd visszaáll, amikor unchecked lesz.
+
+**Gyökérok:**
+
+A Radix `CheckboxPrimitive.Root` egy `<button>` elem. A belső `CheckboxPrimitive.Indicator` (a pipa konténere) `display: none` → `display: flex` állapotot vált checked-re. Ha a Root-on nincs explicit `flex items-center justify-center`, a böngésző baseline-számítása megváltozik az Indicator megjelenésekor — ez okozza a látható eltolódást.
+
+Ráadásul a `Check` ikon `h-4 w-4` (16px) volt egy `h-4 w-4` (16px) Root-ban, amelynek 1px-es border-je van — a tényleges belső tér 14px × 14px, tehát az ikon kilógott.
+
+**Megoldás:**
+
+```tsx
+// ✅ HELYES — checkbox.tsx
+<CheckboxPrimitive.Root
+  className={cn(
+    "peer relative h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background flex items-center justify-center ...",
+    className,
+  )}
+>
+  {/* absolute inset-0 → kiszakad a flow-ból, nem befolyásolja a Root méretét */}
+  <CheckboxPrimitive.Indicator className={cn("absolute inset-0 flex items-center justify-center text-current")}>
+    <Check className="h-3.5 w-3.5" />  {/* 3.5 = 14px, belefér a 14px belső térbe */}
+  </CheckboxPrimitive.Indicator>
+</CheckboxPrimitive.Root>
+```
+
+**Kulcspontok:**
+- `relative` a Root-on → az Indicator `absolute` pozícionálásának alapja
+- `flex items-center justify-center` a Root-on → a Root belső flow stabil marad
+- `absolute inset-0` az Indicator-on → **teljesen kiszakad a document flow-ból**, megjelenése/eltűnése nem befolyásol egyetlen szülő elemet sem
+- `h-3.5 w-3.5` (14px) a `Check` ikonon → belefér a `h-4 w-4` Root `1px border-box`-ába
+
+**Táblázatos Checkbox cellák — ne adj extra wrapper div-et:**
+
+```tsx
+// ✅ HELYES — közvetlen TableCell → Checkbox, nincs wrapper div
+<TableCell className="pr-0" onClick={(e) => e.stopPropagation()}>
+  <Checkbox checked={isChecked} onCheckedChange={() => toggle(id)} />
+</TableCell>
+
+// ❌ ROSSZ — extra flex wrapper div összezavarja a td vertical-align számítását
+<TableCell className="p-0">
+  <div className="flex items-center justify-center h-full">  {/* FELESLEGES */}
+    <Checkbox ... />
+  </div>
+</TableCell>
+```
+
+> Az `absolute inset-0` Indicator-ral a Checkbox önállóan stabil — nincs szükség extra wrapper-re.

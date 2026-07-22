@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import {
   Save, Plus, ArrowRightLeft, Loader2, Filter, AlertTriangle, BookOpen, FileDown,
-  ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check, Eye, Search, ExternalLink, X
+  ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check, Eye, Search, ExternalLink, X, HelpCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
@@ -59,7 +59,7 @@ export default function EntriesTab() {
         .eq('company_id', companyId)
         .order('name');
       if (error) throw error;
-      return data || [];
+      return (data || []) as any[];
     },
     enabled: !!companyId,
   });
@@ -195,7 +195,7 @@ export default function EntriesTab() {
     queryKey: ['partner-monthly-cash-total', companyId, matchedPartner?.id, pendingDate],
     queryFn: async () => {
       if (!matchedPartner?.id || !companyId) return 0;
-      const { data, error } = await supabase.rpc('get_partner_monthly_cash_total', {
+      const { data, error } = await (supabase as any).rpc('get_partner_monthly_cash_total', {
         p_company_id: companyId,
         p_partner_id: matchedPartner.id,
         p_partner_name: matchedPartner.name,
@@ -437,7 +437,7 @@ export default function EntriesTab() {
 
   const allSourceTypes = useMemo(() => {
     const s = new Set<string>();
-    entries.forEach(e => s.add(e.source_type));
+    entries.forEach(e => { if (e.source_type != null) s.add(e.source_type); });
     return Array.from(s).sort();
   }, [entries]);
 
@@ -1002,7 +1002,7 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
     queryKey: ['petty-cash-entry-source', sourceTable, sourceId],
     queryFn: async () => {
       if (!sourceTable || !sourceId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from(sourceTable)
         .select('*')
         .eq('id', sourceId)
@@ -1239,7 +1239,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     queryKey: ['partner-monthly-cash-total', companyId, selectedPartnerId, selectedDate],
     queryFn: async () => {
       if (!selectedPartnerId || !companyId || selectedPartnerId === 'none') return 0;
-      const { data, error } = await supabase.rpc('get_partner_monthly_cash_total', {
+      const { data, error } = await (supabase as any).rpc('get_partner_monthly_cash_total', {
         p_company_id: companyId,
         p_partner_id: selectedPartnerId,
         p_partner_name: selectedPartnerName,
@@ -1569,7 +1569,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Nincs partner</SelectItem>
-                {partners.map(p => (
+                {partners.filter(p => p.id != null).map(p => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name} {p.related_party ? ' (Kapcsolt)' : ''}
                   </SelectItem>

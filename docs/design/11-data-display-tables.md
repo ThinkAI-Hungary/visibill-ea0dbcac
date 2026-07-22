@@ -308,7 +308,11 @@ const getTypeBgClass = (type: string | null): string => {
 
 ## Sor Státusz Kiemelés
 
-> **Döntés (2026-06-18):** A sorok státuszát kizárólag háttérszín jelzi. A korábbi `border-l-2` bal oldali színjelzők eltávolítva — zavaró vizuális elemet adtak `border-collapse` módban.
+> **Döntés (2026-06-18 & 2026-07-22):** A sorok státuszát és kijelölését kizárólag háttérszín jelzi. A korábbi `border-l-2` bal oldali színjelzők eltávolítva — zavaró vizuális elemet és layout shift-et adtak.
+
+> **⚠️ Kijelölési Stabilitási Szabályok (2026-07-22):**
+> 1. **Dinamikus keretek tiltása:** Kijelöléskor a sor kizárólag háttérszínt vált (`bg-primary/10 hover:bg-primary/15`). Tilos `border-l-2`, `ring` vagy egyéb dinamikus keretet hozzáadni kijelöléskor, mert eltolja a cellák tartalmát (layout shift).
+> 2. **NE használj `font-medium` / `font-bold` osztályt kijelölt soron:** A közepes/félkövér betűtípus karakterei vastagabbak és szélesebbek. Ha kijelöléskor `font-medium`-ot adunk a sorhoz, a nem-monospaced szövegek (Partner név, Dátum) vízszintesen szétnyúlnak. A kijelölt sorban a betűvastagság maradjon azonos az inaktív soréval (`font-normal`).
 
 ### TransactionTable — `getRowBackgroundClass()`
 
@@ -328,7 +332,7 @@ const getTypeBgClass = (type: string | null): string => {
 | Kifizetve (`isPaid`) | `bg-[var(--row-matched-bg)]` |
 | Javaslat (`suggestedOnly`) | `bg-[var(--row-suggested-bg)]` |
 | Nincs párosítva | `bg-[var(--row-unmatched-bg)]` |
-| Kijelölve | `bg-primary/5` |
+| Kijelölve | `bg-primary/10` (font-medium nélkül) |
 
 > **Korábbi (archivált) megoldás:** `border-l-2 border-l-[var(--row-*-border)]` — a sor bal szélén 2px színes csík volt. Ez `border-separate` módban réseket okozott, `border-collapse`-nál pedig a háttérszínnel együtt feleslegessé vált.
 
