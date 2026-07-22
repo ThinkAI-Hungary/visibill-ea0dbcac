@@ -1,9 +1,10 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-07-21  
+> **Utoljára frissítve:** 2026-07-22  
 > **Összesen:** 43 döntés | ✅ Decided: 42 | ⛔ Superseded: 1
 
 ---
+
 
 ## Hogyan hasznĂˇld
 
@@ -106,7 +107,7 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | A-019 | Management Dashboard architektúra (11 action, 27 superadmin modul, 5 rétegű guard, Edge Function + service_role) | ✅ Decided | [A-019](./A-019-management-dashboard.md) |
 | A-033 | Service Role kizárása a cég szintű Audit naplóból | ✅ Decided | [A-033](./A-033-exclude-service-role-from-audit.md) |
 | A-042 | Sztornó Számla Kézi Lezárás — 2 lépéses láncolat logika, reversible settle/unsettle toggle | ✅ Decided | [A-042](./A-042-storno-settle-architecture.md) |
-| A-043 | ZIP / Archívum Csatolmány Kicsomagolás — mindkét email pipeline (IMAP + Mailgun), fflate Deno-ban, stdlib Python-ban, max 2 szint rekurzió | ✅ Decided | [A-043](./A-043-zip-archive-email-attachment-expansion.md) |
+| A-043 | ZIP / RAR / 7z Archívum Csatolmány Kicsomagolás és Body-MIME Parsing — mindkét email pipeline (IMAP + Mailgun), fflate Deno-ban, py7zr/rarfile Python Worker-ben, body-mime RFC822 fallback | ✅ Decided | [A-043](./A-043-zip-archive-email-attachment-expansion.md) |
 
 ---
 

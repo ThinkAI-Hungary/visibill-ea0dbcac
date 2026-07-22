@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { unzip } from "npm:fflate@0.8.2";
+import PostalMime from "npm:postal-mime@2.4.1";
 
 // ── Inline error logger (self-contained, no _shared dependency) ──
 // Mirrors supabase/functions/_shared/error-logger.ts. Writes to app_error_logs
@@ -106,9 +107,31 @@ function sanitizeFileName(fileName: string): string {
   return clean;
 }
 
-// ── ZIP support ────────────────────────────────────────────────────────────
-// Compressed archive extensions we extract before processing.
-const COMPRESSED_EXTENSIONS = new Set(['.zip']);
+// ── Archive support ────────────────────────────────────────────────────────
+// Compressed archive extensions we handle.
+// .zip is decompressed in-place via fflate.
+// .rar, .7z, .tar.gz, .tgz are passed through as "deferred archives"
+// and uploaded to storage for worker-side extraction.
+const ZIP_EXTENSIONS = new Set(['.zip']);
+const DEFERRED_ARCHIVE_EXTENSIONS = new Set(['.rar', '.7z', '.tar.gz', '.tgz']);
+const ALL_ARCHIVE_EXTENSIONS = new Set([...ZIP_EXTENSIONS, ...DEFERRED_ARCHIVE_EXTENSIONS]);
+
+/** Check if a filename (lowercased) is an archive we handle */
+function isArchiveExt(filename: string): boolean {
+  const ext = getExt(filename);
+  if (ALL_ARCHIVE_EXTENSIONS.has(ext)) return true;
+  // Handle compound extensions like .tar.gz
+  const lower = filename.toLowerCase();
+  return lower.endsWith('.tar.gz') || lower.endsWith('.tgz');
+}
+
+/** Check if a filename is a deferred (non-zip) archive */
+function isDeferredArchive(filename: string): boolean {
+  const ext = getExt(filename);
+  if (DEFERRED_ARCHIVE_EXTENSIONS.has(ext)) return true;
+  const lower = filename.toLowerCase();
+  return lower.endsWith('.tar.gz') || lower.endsWith('.tgz');
+}
 
 interface ExpandedFile {
   /** The effective filename to classify and upload */
@@ -119,6 +142,8 @@ interface ExpandedFile {
   contentType: string;
   /** Original archive filename this was extracted from (undefined for direct attachments) */
   extractedFromArchive?: string;
+  /** True if this is a non-ZIP archive that the worker must decompress */
+  isDeferredArchive?: boolean;
 }
 
 /**
@@ -147,7 +172,17 @@ async function expandAttachments(
   const MAX_DEPTH = 2;
   const ext = getExt(name);
 
-  if (COMPRESSED_EXTENSIONS.has(ext)) {
+  // ── Deferred archives (.rar, .7z, .tar.gz, .tgz) ──
+  // These cannot be decompressed in Edge Functions (no native bindings).
+  // Pass them through as-is for worker-side extraction.
+  if (isDeferredArchive(name)) {
+    console.log(`[ARCHIVE] Deferred archive detected (worker will extract): ${name}`);
+    const contentType = 'application/octet-stream';
+    return [{ name, bytes, contentType, extractedFromArchive: archiveName, isDeferredArchive: true }];
+  }
+
+  // ── ZIP decompression (in-place via fflate) ──
+  if (ZIP_EXTENSIONS.has(ext)) {
     if (depth >= MAX_DEPTH) {
       console.warn(`[ZIP] Max depth reached, skipping nested archive: ${name}`);
       return [];
@@ -172,13 +207,18 @@ async function expandAttachments(
       // Skip macOS metadata and directory entries (fflate includes empty dirs as 0-byte entries)
       if (innerPath.includes('__MACOSX') || innerPath.endsWith('/') || innerBytes.length === 0) continue;
 
-      const innerName = innerPath.split('/').pop() ?? innerPath;
+      // Sanitize inner filename: strip directory prefixes (both Unix / and Windows \)
+      const innerName = innerPath.split(/[\/\\]/).pop() ?? innerPath;
       const innerExt = getExt(innerName);
 
-      if (COMPRESSED_EXTENSIONS.has(innerExt)) {
-        // Recurse into nested archive
+      if (ZIP_EXTENSIONS.has(innerExt)) {
+        // Recurse into nested ZIP archive
         const nested = await expandAttachments(innerName, innerBytes, topArchive, depth + 1);
         results.push(...nested);
+      } else if (isDeferredArchive(innerName)) {
+        // Nested .rar/.7z/.tar.gz inside a ZIP — pass through for worker
+        console.log(`[ZIP] Nested deferred archive inside ZIP: ${innerName}`);
+        results.push({ name: innerName, bytes: innerBytes, contentType: 'application/octet-stream', extractedFromArchive: topArchive, isDeferredArchive: true });
       } else if (DIRECT_SUPPORTED_EXTS.has(innerExt)) {
         const contentType = getMimeType(innerName);
         results.push({ name: innerName, bytes: innerBytes, contentType, extractedFromArchive: topArchive });
@@ -239,6 +279,7 @@ serve(async (req) => {
     let messageId: string | null = null;
     let originalFrom: string | null = null;
     let parsedHeaders: [string, string][] = [];
+    let bodyMime: string | null = null;  // Raw RFC822 MIME body for fallback parsing
 
     // Parse based on content type
     if (contentType.includes('multipart/form-data')) {
@@ -263,6 +304,7 @@ serve(async (req) => {
       token = formData.get('token') as string;
       signature = formData.get('signature') as string;
       attachmentCount = parseInt(formData.get('attachment-count') as string || '0');
+      bodyMime = formData.get('body-mime') as string;
 
       // ── Extract original sender (From header, not the forwarder) ──
       originalFrom = formData.get('from') as string;
@@ -309,6 +351,7 @@ serve(async (req) => {
       token = params.get('token');
       signature = params.get('signature');
       attachmentCount = parseInt(params.get('attachment-count') || '0');
+      bodyMime = params.get('body-mime');
       
       console.log('Parsed URL-encoded data - recipient:', recipient, 'sender:', sender);
       
@@ -728,20 +771,30 @@ serve(async (req) => {
       console.log('Processing', attachments.length, 'attachments');
       
       for (const attachment of attachments) {
-        // ── ZIP / compressed: expand before any filtering ──────────────────
-        const attachmentExt = getExt(attachment.name);
-        const isArchive = COMPRESSED_EXTENSIONS.has(attachmentExt);
+        // ── Archive detection: expand or defer ──────────────────────────────
+        const archiveDetected = isArchiveExt(attachment.name);
 
         let expandedFiles: ExpandedFile[];
-        if (isArchive) {
+        if (archiveDetected) {
           // Archives bypass isValidInvoiceAttachment (they are not invoices themselves)
           const rawBytes = new Uint8Array(await attachment.arrayBuffer());
           expandedFiles = await expandAttachments(attachment.name, rawBytes);
           if (expandedFiles.length === 0) {
-            console.log(`[ZIP] Archive has no supported files, skipping: ${attachment.name}`);
+            console.log(`[ARCHIVE] Archive has no supported files, skipping: ${attachment.name}`);
+            // Log to app_error_logs for admin visibility
+            await logError(supabase, {
+              error_type: 'archive_empty',
+              severity: 'warning',
+              component: 'process-mailgun-webhook',
+              action: 'expand_archive',
+              message: `Archive attachment yielded 0 supported files: ${attachment.name}`,
+              user_id: alias.user_id,
+              company_id: alias.company_id,
+              context: { fileName: attachment.name, fileSize: rawBytes.length, sender, recipient },
+            });
             continue;
           }
-          console.log(`[ZIP] Archive ${attachment.name} expanded to ${expandedFiles.length} file(s)`);
+          console.log(`[ARCHIVE] ${attachment.name} expanded/deferred to ${expandedFiles.length} file(s)`);
         } else {
           // Regular (non-archive) attachment
           if (!isValidInvoiceAttachment(attachment)) {
@@ -893,6 +946,11 @@ serve(async (req) => {
             ...(messageId ? { mailgun_message_id: messageId } : {}),
             // Track archive source for debugging
             ...(ef.extractedFromArchive ? { extracted_from_archive: ef.extractedFromArchive } : {}),
+            // Flag deferred archives so worker knows to decompress them
+            ...(ef.isDeferredArchive ? {
+              is_deferred_archive: true,
+              archive_format: getExt(ef.name) || ef.name.toLowerCase().endsWith('.tar.gz') ? '.tar.gz' : '.tgz',
+            } : {}),
           };
 
           // Initial note for processing journey tracking
@@ -1039,9 +1097,183 @@ serve(async (req) => {
     } else {
       console.log('No attachments to process (attachmentCount:', attachmentCount, ')');
       
-      // Log if we expected attachments but didn't get any files
-      if (attachmentCount > 0 && !contentType.includes('multipart/form-data')) {
-        console.log('WARNING: Attachments expected but content-type is not multipart/form-data. Attachments may need to be fetched separately.');
+      // ── body-mime fallback: parse RFC822 MIME to extract embedded attachments ──
+      // When Mailgun sends application/x-www-form-urlencoded (or multipart but with
+      // no File objects), attachments may be embedded in the body-mime field as raw
+      // RFC822 MIME content. This happens with forwarded emails.
+      if (attachmentCount > 0 && bodyMime) {
+        console.log('[BODY-MIME-FALLBACK] Attempting to parse body-mime for embedded attachments...');
+        console.log('[BODY-MIME-FALLBACK] body-mime length:', bodyMime.length);
+        
+        try {
+          const parsed = await PostalMime.parse(bodyMime);
+          console.log('[BODY-MIME-FALLBACK] Parsed email - subject:', parsed.subject, 'attachments:', parsed.attachments?.length || 0);
+          
+          if (parsed.attachments && parsed.attachments.length > 0) {
+            console.log('[BODY-MIME-FALLBACK] Found', parsed.attachments.length, 'attachments in body-mime');
+            
+            for (const mimeAttachment of parsed.attachments) {
+              const attachName = mimeAttachment.filename || `attachment-${Date.now()}`;
+              const attachBytes = new Uint8Array(mimeAttachment.content);
+              const attachContentType = mimeAttachment.mimeType || 'application/octet-stream';
+              
+              console.log('[BODY-MIME-FALLBACK] Processing embedded attachment:', attachName, 'type:', attachContentType, 'size:', attachBytes.length);
+              
+              // Check if it's an archive
+              const archiveDetected = isArchiveExt(attachName);
+              
+              let expandedFiles: ExpandedFile[];
+              if (archiveDetected) {
+                expandedFiles = await expandAttachments(attachName, attachBytes);
+                if (expandedFiles.length === 0) {
+                  console.log(`[BODY-MIME-FALLBACK] Archive has no supported files, skipping: ${attachName}`);
+                  continue;
+                }
+              } else if (!isValidInvoiceAttachment(attachName, attachContentType)) {
+                console.log(`[BODY-MIME-FALLBACK] Skipping unsupported attachment: ${attachName}`);
+                continue;
+              } else {
+                expandedFiles = [{ name: attachName, bytes: attachBytes, contentType: attachContentType }];
+              }
+              
+              // Process each expanded file (same logic as the main attachment loop)
+              for (const ef of expandedFiles) {
+                const classification = classifyAttachment(ef.name, senderDomain, sender);
+                const reason = getClassificationReason(ef.name, senderDomain, sender);
+                
+                console.log(`[BODY-MIME-FALLBACK] Classification for ${ef.name}: ${classification} (${reason})`);
+                
+                const storageBucket = classification === 'transaction'
+                  ? 'transactions'
+                  : classification === 'report'
+                    ? 'report-uploads'
+                    : 'invoice-uploads';
+                
+                const sanitizedName = sanitizeFileName(ef.name);
+                const storagePath = `${alias.user_id}/${Date.now()}-${sanitizedName}`;
+                
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                  .from(storageBucket)
+                  .upload(storagePath, ef.bytes, {
+                    contentType: ef.contentType,
+                    upsert: false,
+                  });
+                
+                if (uploadError) {
+                  console.error('[BODY-MIME-FALLBACK] Upload error:', uploadError);
+                  continue;
+                }
+                
+                console.log(`[BODY-MIME-FALLBACK] File uploaded to ${storageBucket}:`, storagePath);
+                
+                const { data: { publicUrl } } = supabase.storage
+                  .from(storageBucket)
+                  .getPublicUrl(storagePath);
+                
+                const emailMetadata = {
+                  source: 'email_alias',
+                  company_name: alias.company_name,
+                  sender,
+                  subject,
+                  received_at: new Date().toISOString(),
+                  ...(messageId ? { mailgun_message_id: messageId } : {}),
+                  extracted_from_body_mime: true,
+                  ...(ef.extractedFromArchive ? { extracted_from_archive: ef.extractedFromArchive } : {}),
+                  ...(ef.isDeferredArchive ? {
+                    is_deferred_archive: true,
+                    archive_format: getExt(ef.name),
+                  } : {}),
+                };
+                
+                const initialNote = [{
+                  timestamp: new Date().toISOString(),
+                  event: `classified_as_${classification}`,
+                  detail: `${reason} (extracted from body-mime)`,
+                  sender_domain: senderDomain,
+                  original_from: originalFrom,
+                }];
+                
+                if (classification === 'report') {
+                  const { error: reportError } = await supabase
+                    .from('report_uploads')
+                    .insert({
+                      user_id: alias.user_id,
+                      company_id: alias.company_id,
+                      file_name: ef.name,
+                      file_url: publicUrl,
+                      file_size: ef.bytes.length,
+                      upload_status: 'uploaded',
+                      processing_status: 'pending',
+                      report_type: detectReportType(ef.name, senderDomain),
+                      metadata: emailMetadata,
+                      notes: initialNote,
+                    });
+                  if (reportError) console.error('[BODY-MIME-FALLBACK] Report insert error:', reportError);
+                  else console.log('[BODY-MIME-FALLBACK] Report upload created for:', ef.name);
+                } else if (classification === 'transaction') {
+                  const { error: txError } = await supabase
+                    .from('transaction_uploads')
+                    .insert({
+                      user_id: alias.user_id,
+                      company_id: alias.company_id,
+                      file_name: ef.name,
+                      file_url: publicUrl,
+                      file_size: ef.bytes.length,
+                      processing_status: 'pending',
+                      bank_hint: detectBankHint(ef.name, senderDomain, bodyPlain),
+                      metadata: emailMetadata,
+                      notes: initialNote,
+                    });
+                  if (txError) console.error('[BODY-MIME-FALLBACK] Transaction insert error:', txError);
+                  else console.log('[BODY-MIME-FALLBACK] Transaction upload created for:', ef.name);
+                } else {
+                  const { error: invError } = await supabase
+                    .from('invoice_uploads')
+                    .insert({
+                      user_id: alias.user_id,
+                      company_id: alias.company_id,
+                      file_name: ef.name,
+                      file_url: publicUrl,
+                      file_size: ef.bytes.length,
+                      processing_status: 'pending',
+                      document_category: 'invoice',
+                      metadata: emailMetadata,
+                      notes: initialNote,
+                    });
+                  if (invError) console.error('[BODY-MIME-FALLBACK] Invoice insert error:', invError);
+                  else console.log('[BODY-MIME-FALLBACK] Invoice upload created for:', ef.name);
+                }
+              }
+            }
+          } else {
+            console.log('[BODY-MIME-FALLBACK] No attachments found in parsed body-mime');
+          }
+        } catch (mimeError) {
+          console.error('[BODY-MIME-FALLBACK] Failed to parse body-mime:', mimeError);
+          await logError(supabase, {
+            error_type: 'body_mime_parse_failed',
+            severity: 'warning',
+            component: 'process-mailgun-webhook',
+            action: 'parse_body_mime',
+            message: `Failed to parse body-mime for embedded attachments: ${mimeError}`,
+            user_id: alias?.user_id,
+            company_id: alias?.company_id,
+            context: { recipient, sender, subject, contentType, attachmentCount, bodyMimeLength: bodyMime?.length },
+          });
+        }
+      } else if (attachmentCount > 0) {
+        // Expected attachments but no body-mime available either
+        console.warn('[ATTACHMENT-MISSING] Attachments expected but neither File objects nor body-mime available.');
+        await logError(supabase, {
+          error_type: 'attachment_missing',
+          severity: 'warning',
+          component: 'process-mailgun-webhook',
+          action: 'parse_attachments',
+          message: `Expected ${attachmentCount} attachment(s) but received 0 and no body-mime field available (content-type: ${contentType}).`,
+          user_id: alias?.user_id,
+          company_id: alias?.company_id,
+          context: { recipient, sender, subject, contentType, attachmentCount, hasBodyMime: !!bodyMime },
+        });
       }
     }
 
