@@ -1,8 +1,6 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ExternalLink, AlertCircle } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { reportError } from '@/lib/errorReporter';
+import { createPortal } from 'react-dom';
+import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
+import { Loader2 } from 'lucide-react';
 
 interface InvoiceForDialog {
   id: string;
@@ -22,142 +20,70 @@ interface InvoiceImageDialogProps {
   isLoading?: boolean;
 }
 
+const INVOICE_TYPE_LABELS: Record<string, string> = {
+  invoice: 'Számla',
+  credit_note: 'Jóváíró számla',
+  proforma: 'Díjbekérő',
+  advance: 'Előlegszámla',
+};
+
 const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading }: InvoiceImageDialogProps) => {
-  const [imageError, setImageError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  if (!open) return null;
 
-  const getInvoiceIdentifier = (invoice: InvoiceForDialog) => {
-    if (invoice.bizonylatsorszam) return invoice.bizonylatsorszam;
-    if (invoice.dokumentum_azonosito) return invoice.dokumentum_azonosito;
-    if (invoice.invoice_type) return INVOICE_TYPE_LABELS[invoice.invoice_type] || invoice.invoice_type;
-    return 'N/A';
-  };
-
-  useEffect(() => {
-    if (open && invoice) {
-      setIsLoading(true);
-      setImageError(false);
-    }
-  }, [invoice?.id, open]);
-
-  // While fetching invoice data from parent, show spinner in dialog
-  if (open && externalLoading) {
-    return (
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Számla betöltése...</DialogTitle>
-            <DialogDescription> </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center py-20 gap-4 text-muted-foreground">
-            <span className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-            <p className="text-sm">Számla adatok betöltése...</p>
-          </div>
-        </DialogContent>
-      </Dialog>
+  // While parent is fetching invoice data — show a minimal loading overlay
+  if (externalLoading || !invoice) {
+    return createPortal(
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="flex flex-col items-center gap-4 text-white">
+          <Loader2 className="h-10 w-10 animate-spin" />
+          <p className="text-sm text-white/80">Számla adatok betöltése...</p>
+        </div>
+      </div>,
+      document.body
     );
   }
 
-  if (!invoice) return null;
-
   const displayUrl = invoice.image_url || invoice.melleklet_url;
-  const isPDF = displayUrl?.toLowerCase().endsWith('.pdf');
+
+  if (!displayUrl) {
+    return createPortal(
+      <div
+        className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-150"
+        onClick={onClose}
+      >
+        <div className="bg-card rounded-xl border border-border p-8 text-center space-y-2" onClick={e => e.stopPropagation()}>
+          <p className="text-muted-foreground text-sm">Nincs elérhető kép ehhez a számlához</p>
+          <button className="text-xs text-primary underline" onClick={onClose}>Bezárás</button>
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
+  const getInvoiceIdentifier = (inv: InvoiceForDialog) => {
+    if (inv.bizonylatsorszam) return inv.bizonylatsorszam;
+    if (inv.dokumentum_azonosito) return inv.dokumentum_azonosito;
+    if (inv.invoice_type) return INVOICE_TYPE_LABELS[inv.invoice_type] || inv.invoice_type;
+    return 'N/A';
+  };
+
+  // Extract extension from URL (ignore query params/tokens) so FilePreviewModal
+  // can correctly detect PDF vs image vs fallback
+  const getDisplayName = (inv: InvoiceForDialog, url: string) => {
+    const identifier = getInvoiceIdentifier(inv);
+    const cleanUrl = url.split('?')[0];
+    const urlExt = cleanUrl.split('.').pop()?.toLowerCase() || '';
+    const knownExts = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'csv', 'tsv', 'xls', 'xlsx', 'xlsm'];
+    return knownExts.includes(urlExt) ? `${identifier}.${urlExt}` : identifier;
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>Számla: {getInvoiceIdentifier(invoice)}</DialogTitle>
-          <DialogDescription>
-            {invoice.elado_nev} → {invoice.vevo_nev}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-4 overflow-auto max-h-[calc(90vh-120px)]">
-          {displayUrl ? (
-            <>
-              {imageError ? (
-                <div className="text-center py-12 space-y-4">
-                  <AlertCircle className="h-12 w-12 mx-auto text-destructive" />
-                  <div>
-                    <p className="text-muted-foreground mb-2">Hiba történt a kép betöltése közben</p>
-                    <p className="text-sm text-muted-foreground mb-4">URL: {displayUrl}</p>
-                    <Button 
-                      onClick={() => window.open(displayUrl, '_blank')}
-                      variant="outline"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Megnyitás új ablakban
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {isLoading && (
-                    <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-                      <span className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-                      <p className="text-sm">Kép betöltése...</p>
-                    </div>
-                  )}
-                  {isPDF ? (
-                    <div className="space-y-4">
-                      <div className="flex justify-center">
-                        <Button 
-                          onClick={() => window.open(displayUrl, '_blank')}
-                          variant="default"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          PDF megnyitása új ablakban
-                        </Button>
-                      </div>
-                      <iframe
-                        src={displayUrl}
-                        className="w-full h-[60vh] border rounded"
-                        title={`Számla: ${getInvoiceIdentifier(invoice)}`}
-                        onLoad={() => setIsLoading(false)}
-                        onError={() => {
-                          reportError({ type: 'db_query', component: 'InvoiceImageDialog', action: 'error', message: 'PDF iframe error:', error: displayUrl });
-                          setImageError(true);
-                          setIsLoading(false);
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex justify-center">
-                        <Button 
-                          onClick={() => window.open(displayUrl, '_blank')}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Megnyitás új ablakban
-                        </Button>
-                      </div>
-                      <img
-                        src={displayUrl}
-                        alt={`Számla: ${getInvoiceIdentifier(invoice)}`}
-                        className="w-full h-auto rounded"
-                        onLoad={() => setIsLoading(false)}
-                        onError={(e) => {
-                          reportError({ type: 'db_query', component: 'InvoiceImageDialog', action: 'error', message: 'Image load error:', error: displayUrl, e });
-                          setImageError(true);
-                          setIsLoading(false);
-                        }}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Nincs elérhető kép ehhez a számlához</p>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+    <FilePreviewModal
+      previewFile={{ url: displayUrl, name: getDisplayName(invoice, displayUrl) }}
+      onClose={onClose}
+    />
   );
 };
 
 export default InvoiceImageDialog;
+

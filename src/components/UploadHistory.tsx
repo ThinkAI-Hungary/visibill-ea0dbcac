@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { FilePreviewModal, useFilePreview } from '@/components/ui/FilePreviewModal';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -112,10 +112,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
 
-  // File preview modal state
-  const [previewFile, setPreviewFile] = useState<{ name: string; url: string } | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(true);
-  const [previewError, setPreviewError] = useState(false);
+  const { previewFile, openPreview, closePreview } = useFilePreview();
 
   // CMR Escalation dialog state
   const [escalationUpload, setEscalationUpload] = useState<UploadRecord | null>(null);
@@ -420,9 +417,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                                className="text-primary hover:underline cursor-pointer text-left truncate max-w-full"
                                onClick={(e) => {
                                  e.stopPropagation();
-                                 setPreviewFile({ name: record.file_name, url: record.file_url });
-                                 setPreviewLoading(true);
-                                 setPreviewError(false);
+                                 openPreview({ name: record.file_name, url: record.file_url });
                                }}
                              >
                                {record.file_name}
@@ -517,107 +512,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       </CardContent>
     </Card>
 
-    {/* File Preview Modal */}
-    <Dialog open={!!previewFile} onOpenChange={(open) => { if (!open) setPreviewFile(null); }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="truncate pr-8">{previewFile?.name}</DialogTitle>
-          <DialogDescription>Feltöltött fájl előnézete</DialogDescription>
-        </DialogHeader>
-        <div className="mt-4 overflow-auto max-h-[calc(90vh-120px)]">
-          {previewFile && (() => {
-            const url = previewFile.url;
-            const ext = (previewFile.name.split('.').pop() || '').toLowerCase();
-            const isPDF = ext === 'pdf';
-            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext);
-            const isCsv = ['csv', 'tsv'].includes(ext);
-            const isExcel = ['xls', 'xlsx', 'xlsm'].includes(ext);
-
-            if (previewError) {
-              return (
-                <div className="text-center py-12 space-y-4">
-                  <AlertCircle className="h-12 w-12 mx-auto text-destructive" />
-                  <p className="text-muted-foreground">Hiba történt a fájl betöltése közben</p>
-                  <Button variant="outline" onClick={() => window.open(url, '_blank')}>
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Megnyitás új ablakban
-                  </Button>
-                </div>
-              );
-            }
-
-            return (
-              <>
-                {previewLoading && !isCsv && !isExcel && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                    <p>Betöltés...</p>
-                  </div>
-                )}
-                {isPDF ? (
-                  <div className="space-y-4">
-                    <div className="flex justify-center">
-                      <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Megnyitás új ablakban
-                      </Button>
-                    </div>
-                    <iframe
-                      src={url}
-                      className="w-full h-[60vh] border rounded"
-                      title={previewFile.name}
-                      onLoad={() => setPreviewLoading(false)}
-                      onError={() => { setPreviewError(true); setPreviewLoading(false); }}
-                    />
-                  </div>
-                ) : isImage ? (
-                  <div className="space-y-4">
-                    <div className="flex justify-center">
-                      <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Megnyitás új ablakban
-                      </Button>
-                    </div>
-                    <img
-                      src={url}
-                      alt={previewFile.name}
-                      className="w-full h-auto rounded"
-                      onLoad={() => setPreviewLoading(false)}
-                      onError={() => { setPreviewError(true); setPreviewLoading(false); }}
-                    />
-                  </div>
-                ) : isCsv ? (
-                  <CsvPreviewComponent url={url} />
-                ) : isExcel ? (
-                  <div className="space-y-4">
-                    <div className="flex justify-center">
-                      <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Megnyitás új ablakban
-                      </Button>
-                    </div>
-                    <iframe
-                      src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`}
-                      className="w-full h-[60vh] border rounded bg-background"
-                      title={previewFile.name}
-                    />
-                  </div>
-                ) : (
-                  <div className="text-center py-12 space-y-4">
-                    <FileText className="h-12 w-12 mx-auto text-muted-foreground" />
-                    <p className="text-muted-foreground">Ez a fájltípus nem megjeleníthető előnézetben</p>
-                    <Button variant="default" onClick={() => window.open(url, '_blank')}>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Megnyitás új ablakban
-                    </Button>
-                  </div>
-                )}
-              </>
-            );
-          })()}
-        </div>
-      </DialogContent>
-    </Dialog>
+    <FilePreviewModal previewFile={previewFile} onClose={closePreview} />
 
     {/* CMR Escalation Dialog */}
     {escalationUpload && (

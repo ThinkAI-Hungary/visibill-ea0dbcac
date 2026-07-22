@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { FilePreviewModal, useFilePreview } from '@/components/ui/FilePreviewModal';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -58,53 +59,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
 
-  // File preview
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewTitle, setPreviewTitle] = useState<string>('');
-  const [previewIsPdf, setPreviewIsPdf] = useState(false);
-  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-  const [previewError, setPreviewError] = useState(false);
-  const blobUrlRef = { current: null as string | null };
-
-  const handleFileNameClick = async (upload: UploadWithInvoices) => {
-    if (!upload.file_url) return;
-
-    // Revoke previous blob URL to free memory
-    if (blobUrlRef.current) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
-    }
-
-    setPreviewTitle(upload.file_name);
-    setPreviewOpen(true);
-    setIsLoadingPreview(true);
-    setPreviewError(false);
-    setPreviewUrl(null);
-
-    try {
-      const response = await fetch(upload.file_url);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const blob = await response.blob();
-
-      // Detect type from magic bytes
-      const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
-      const isPdf = header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46;
-      const isImage = (header[0] === 0x89 && header[1] === 0x50) || // PNG
-                      (header[0] === 0xFF && header[1] === 0xD8) ||  // JPEG
-                      (header[0] === 0x47 && header[1] === 0x49);    // GIF
-
-      const mime = isPdf ? 'application/pdf' : isImage ? blob.type || 'image/jpeg' : 'application/octet-stream';
-      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
-      blobUrlRef.current = blobUrl;
-      setPreviewIsPdf(isPdf);
-      setPreviewUrl(blobUrl);
-    } catch {
-      setPreviewError(true);
-    } finally {
-      setIsLoadingPreview(false);
-    }
-  };
+  const { previewFile, openPreview, closePreview } = useFilePreview();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [uploaderFilter, setUploaderFilter] = useState('all');
@@ -477,7 +432,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                             <button
                               type="button"
                               onMouseDown={(e) => e.preventDefault()}
-                              onClick={() => handleFileNameClick(upload)}
+                              onClick={() => upload.file_url && openPreview({ url: upload.file_url, name: upload.file_name })}
                               className="text-left truncate max-w-full text-primary hover:underline underline-offset-2 focus:outline-none cursor-pointer"
                               title={upload.file_name}
                             >
@@ -696,44 +651,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* File Preview Dialog */}
-      <Dialog open={previewOpen} onOpenChange={(o) => { if (!o && blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null; } setPreviewOpen(o); }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="truncate max-w-[90%]" title={previewTitle}>{previewTitle}</DialogTitle>
-            <DialogDescription>Fájl előnézet</DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto mt-2">
-            {isLoadingPreview && (
-              <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm">Fájl betöltése...</p>
-              </div>
-            )}
-            {previewError && (
-              <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-                <FileText className="h-10 w-10" />
-                <p className="text-sm">Nem sikerült betölteni a fájlt.</p>
-              </div>
-            )}
-            {!isLoadingPreview && !previewError && previewUrl && (
-              previewIsPdf ? (
-                <iframe
-                  src={previewUrl}
-                  className="w-full h-[70vh] border-0 rounded"
-                  title={previewTitle}
-                />
-              ) : (
-                <img
-                  src={previewUrl}
-                  alt={previewTitle}
-                  className="w-full h-auto rounded max-h-[70vh] object-contain"
-                />
-              )
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <FilePreviewModal previewFile={previewFile} onClose={closePreview} />
     </>
   );
 }

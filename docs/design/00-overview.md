@@ -1,6 +1,6 @@
 # eaisybill Design System — Áttekintés
 
-> **Utolsó frissítés:** 2026-06-03  
+> **Utolsó frissítés:** 2026-07-22  
 > **Verzió:** 2.0  
 > **Scope:** Platform-szintű design rendszer — minden eaisybill termékre alkalmazandó
 
@@ -29,6 +29,7 @@ Ez a `docs/design/` mappa tartalmazza az eaisybill platform **vizuális design r
 | 10 | [Accessibility & UX Patternek](./10-accessibility-ux.md) | Keyboard nav, focus management, a11y patternek |
 | 11 | [Adatmegjelenítés & Táblázatok](./11-data-display-tables.md) | Táblázat stílus, pagination, chart-ok, pénzügyi számok |
 | 12 | [Dialógusok & Felugró ablakok](./12-dialogs-modals.md) | Dialog, Sheet, Popover, Drawer patternek |
+| 13 | [Fájl Előnézet Pattern](./13-file-preview-pattern.md) | `FilePreviewModal` shared utility — PDF, kép, Excel, CSV egységes előnézet |
 | — | [App Mode Switcher Koncepciók](./app-mode-switcher-concepts.md) | ⏳ 10 design koncepció az eaisyBill↔eaisyBooks váltóhoz (döntésre vár) |
 
 ### Átkerült a `docs/architecture/` mappába

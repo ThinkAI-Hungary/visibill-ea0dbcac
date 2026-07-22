@@ -87,6 +87,7 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | A-014 | React Query cache stratégia | ✅ Decided | [A-014](./A-014-react-query-cache.md) |
 | A-029 | Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció (ref lock + delay) | ✅ Decided | [A-029](./A-029-syncing-url-dialog-state.md) |
 | A-040 | Multi-Tab Auth Flow Isolation (sessionStorage és auth-token storage detektálás) | ✅ Decided | [A-040](./A-040-multi-tab-auth-flow-isolation.md) |
+| A-044 | Shared FilePreviewModal Utility — Egységes fájl előnézet (portal, típusdetektálás, anti-blob-URL) | ✅ Decided | [A-044](./A-044-shared-file-preview-modal.md) |
 
 ## đź’ł FizetĂ©s
 
@@ -152,5 +153,5 @@ A teljes adatbĂˇzis sĂ©ma referencia a `docs/architecture/` mappĂˇban:
 | [database/20-tickets.md](../database/20-tickets.md) | đźŽ« Hibajegy Rendszer |
 | [database/21-master-data.md](../database/21-master-data.md) | đźŹ·ď¸Ź TĂ¶rzsadatok (categories, projects, partners) |
 | A-026 | Support Admin Ideiglenes Hozzáférés (Impersonation & RLS Bypass) | ✅ Decided | [A-026](./A-026-support-impersonation-access.md) |
-| A-027 | Partner Ranking & Treemap — NAV-only + külföldi partner logika | ✅ Decided | [A-027](./A-027-partner-ranking-treemap.md) |
+| A-027 | Partner Ranking & Treemap — NAV-only + külföldi partner + dátumszűrő logika | ✅ Decided | [A-027](./A-027-partner-ranking-treemap.md) |
 
