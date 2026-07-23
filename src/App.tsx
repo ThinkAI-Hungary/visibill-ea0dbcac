@@ -204,6 +204,7 @@ const CustomReportBuilderPage = lazy(() => import("./pages/Accounty/reports/Cust
 const DeclarationArchivePage = lazy(() => import("./pages/Accounty/declarations/DeclarationArchivePage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
 const TicketsPage = lazy(() => import("./pages/TicketsPage"));
+const TransfersPage = lazy(() => import("./pages/TransfersPage"));
 const ShipmentImportPage = lazy(() => import("./pages/ShipmentImportPage"));
 const ShipmentMatchingDashboard = lazy(() => import("./pages/ShipmentMatchingDashboard"));
 const EscalationListPage = lazy(() => import("./pages/EscalationListPage"));
@@ -751,6 +752,7 @@ const App = () => (
                         <Route index element={<ProtectedPage><Index /></ProtectedPage>} />
                         <Route path="categories" element={<ProtectedPage><Onboarding /></ProtectedPage>} />
                         <Route path="invoices/:tab?" element={<ProtectedPage><InvoicesPage /></ProtectedPage>} />
+                        <Route path="transfers" element={<ProtectedPage><TransfersPage /></ProtectedPage>} />
                         <Route path="upload/:tab?" element={<ProtectedPage><ManualUpload /></ProtectedPage>} />
                         <Route path="tickets/:ticketId?" element={<ProtectedPage><TicketsPage /></ProtectedPage>} />
                         <Route path="integrations" element={<ProtectedPage><Integrations /></ProtectedPage>} />
@@ -779,6 +781,7 @@ const App = () => (
 
                       {/* ═══ Legacy Redirects — old flat paths → scoped ═══ */}
                       <Route path="/invoices" element={<LegacyRedirect page="invoices" />} />
+                      <Route path="/transfers" element={<LegacyRedirect page="transfers" />} />
                       <Route path="/upload" element={<LegacyRedirect page="upload" />} />
                       <Route path="/notes" element={<LegacyRedirect page="notes" />} />
                       <Route path="/integrations" element={<LegacyRedirect page="integrations" />} />

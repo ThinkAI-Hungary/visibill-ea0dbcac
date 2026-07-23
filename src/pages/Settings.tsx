@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { UnsavedChangesDialog } from "@/components/UnsavedChangesDialog";
-import { Building2, Bell, User, Palette, Shield, Info, Users, Copy, RefreshCw, X, UserPlus, AlertTriangle } from "lucide-react";
+import { Building2, Bell, User, Palette, Shield, Info, Users, Copy, RefreshCw, X, UserPlus, AlertTriangle, Landmark } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -23,6 +23,7 @@ import { SystemSection } from '@/components/settings/SystemSection';
 import { SecuritySection } from '@/components/settings/SecuritySection';
 import { InviteUserDialog } from '@/components/settings/InviteUserDialog';
 import { EaisybillPermissionPanel } from '@/components/settings/EaisybillPermissionPanel';
+import { BankAccountsTab } from '@/components/settings/BankAccountsTab';
 import { useUserRole } from '@/hooks/useUserRole';
 import { reportError } from '@/lib/errorReporter';
 import { useUrlTab } from '@/lib/navigation';
@@ -521,7 +522,7 @@ export default function Settings() {
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   // Sync settings tab to URL
-  const SETTINGS_TABS = ['profile', 'business', 'notifications', 'system', 'security'] as const;
+  const SETTINGS_TABS = ['profile', 'business', 'bank-accounts', 'notifications', 'system', 'security'] as const;
   const [activeSettingsTab, setActiveSettingsTab] = useUrlTab('settings', 'profile', SETTINGS_TABS);
 
   const [profile, setProfile] = useState<Profile>({ name: '', company: '', position: '', avatar_url: '' });
@@ -733,12 +734,13 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeSettingsTab} onValueChange={(v) => setActiveSettingsTab(v as typeof SETTINGS_TABS[number])} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="profile" className="flex items-center gap-2"><User className="h-4 w-4" />Profil</TabsTrigger>
-          <TabsTrigger value="business" className="flex items-center gap-2"><Building2 className="h-4 w-4" />Cég</TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2"><Bell className="h-4 w-4" />Értesítések</TabsTrigger>
-          <TabsTrigger value="system" className="flex items-center gap-2"><Palette className="h-4 w-4" />Rendszer</TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2"><Shield className="h-4 w-4" />Biztonság</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-2 bg-transparent h-auto">
+          <TabsTrigger value="profile" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><User className="h-4 w-4" />Profil</TabsTrigger>
+          <TabsTrigger value="business" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building2 className="h-4 w-4" />Cég</TabsTrigger>
+          <TabsTrigger value="bank-accounts" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Landmark className="h-4 w-4" />Bankszámlák</TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Bell className="h-4 w-4" />Értesítések</TabsTrigger>
+          <TabsTrigger value="system" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Palette className="h-4 w-4" />Rendszer</TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Shield className="h-4 w-4" />Biztonság</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -793,6 +795,12 @@ export default function Settings() {
               <FxSettingsCard companyId={selectedCompany.id} toast={toast} />
             )}
           </BusinessSection>
+        </TabsContent>
+
+        <TabsContent value="bank-accounts">
+          {selectedCompany && (
+            <BankAccountsTab companyId={selectedCompany.id} />
+          )}
         </TabsContent>
 
         <TabsContent value="notifications">

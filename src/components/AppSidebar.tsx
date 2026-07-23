@@ -69,6 +69,7 @@ import {
   TicketCheck,
   Truck,
   AlertTriangle,
+  CreditCard,
 } from "lucide-react";
 import { useUnreadTicketCount } from "@/hooks/useTickets";
 import CompanySelector from "./CompanySelector";
@@ -107,10 +108,11 @@ const navigationGroups: NavGroup[] = [
     label: 'Pénzügyek',
     icon: Landmark,
     items: [
-      { title: "Számlák", url: "/invoices", icon: FileText, tourId: "invoices", moduleKey: 'invoices' },
+       { title: "Számlák", url: "/invoices", icon: FileText, tourId: "invoices", moduleKey: 'invoices' },
       { title: "Kintlévőség", url: "/kintlevo", icon: ReceiptText, tourId: "kintlevo", moduleKey: 'receivables' },
       { title: "Tranzakciók", url: "/transactions", icon: Landmark, tourId: "transactions", moduleKey: 'transactions' },
       { title: "Házipénztár", url: "/petty-cash", icon: Banknote, tourId: "petty-cash", moduleKey: 'petty_cash' },
+      { title: "Utalások", url: "/transfers", icon: CreditCard, tourId: "transfers", moduleKey: 'invoices' },
     ],
   },
   {
@@ -183,6 +185,7 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/integrations": () => import("@/pages/Integrations"),
   "/exchange-rates": () => import("@/pages/ExchangeRates"),
   "/notes": () => import("@/pages/NotesPage"),
+  "/transfers": () => import("@/pages/TransfersPage"),
 
   "/tickets": () => import("@/pages/TicketsPage"),
   "/shipments": () => import("@/pages/ShipmentMatchingDashboard"),

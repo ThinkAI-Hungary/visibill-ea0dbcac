@@ -16,6 +16,7 @@ import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
 import type { Transaction } from '@/hooks/useTransactionData';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { supabase } from '@/integrations/supabase/client';
+import { reportError } from '@/lib/errorReporter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -102,22 +103,42 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
 
       // 1. Fetch primary AI match (from matched_invoice_id)
       if (matchedInvoiceId) {
-        const { data: submitted } = await supabase
+        const { data: submitted, error: subErr } = await supabase
           .from('invoices')
           .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, image_url, melleklet_url, invoice_type, reference_number, fizetesi_mod')
           .eq('id', matchedInvoiceId)
           .maybeSingle();
+
+        if (subErr) {
+          reportError({
+            type: 'db_query',
+            component: 'ExpandedTransactionInvoice',
+            action: 'fetch_primary_submitted',
+            message: `Failed to fetch primary matched submitted invoice: ${matchedInvoiceId}`,
+            error: subErr
+          });
+        }
 
         if (cancelled) return;
 
         if (submitted) {
           submittedList.push(submitted);
         } else {
-          const { data: nav } = await supabase
+          const { data: nav, error: navErr } = await supabase
             .from('nav_invoices')
             .select('id, invoice_number, invoice_issue_date, invoice_delivery_date, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, transaction_id, submitted')
             .eq('id', matchedInvoiceId)
             .maybeSingle();
+
+          if (navErr) {
+            reportError({
+              type: 'db_query',
+              component: 'ExpandedTransactionInvoice',
+              action: 'fetch_primary_nav',
+              message: `Failed to fetch primary matched NAV invoice: ${matchedInvoiceId}`,
+              error: navErr
+            });
+          }
 
           if (cancelled) return;
           if (nav) navList.push(nav);
@@ -125,10 +146,20 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
       }
 
       // 2. Fetch additional manual matches from join table
-      const { data: extraMatchesRaw } = await supabase
+      const { data: extraMatchesRaw, error: extraErr } = await supabase
         .from('transaction_invoice_matches')
         .select('invoice_id, invoice_source')
         .eq('transaction_id', transaction.id);
+
+      if (extraErr) {
+        reportError({
+          type: 'db_query',
+          component: 'ExpandedTransactionInvoice',
+          action: 'fetch_extra_matches',
+          message: `Failed to fetch extra matches for transaction: ${transaction.id}`,
+          error: extraErr
+        });
+      }
       const extraMatches = extraMatchesRaw as Array<{ invoice_id: string; invoice_source: string }> | null;
 
       if (cancelled) return;
@@ -144,18 +175,36 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
 
 
         if (extraSubmittedIds.length > 0) {
-          const { data } = await supabase
+          const { data, error: extraSubFetchErr } = await supabase
             .from('invoices')
             .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, image_url, melleklet_url, invoice_type, reference_number, fizetesi_mod')
             .in('id', extraSubmittedIds);
+          if (extraSubFetchErr) {
+            reportError({
+              type: 'db_query',
+              component: 'ExpandedTransactionInvoice',
+              action: 'fetch_extra_submitted_details',
+              message: `Failed to fetch details for extra submitted invoices: ${extraSubmittedIds.join(', ')}`,
+              error: extraSubFetchErr
+            });
+          }
           if (!cancelled && data) submittedList.push(...data);
         }
 
         if (extraNavIds.length > 0) {
-          const { data } = await supabase
+          const { data, error: extraNavFetchErr } = await supabase
             .from('nav_invoices')
             .select('id, invoice_number, invoice_issue_date, invoice_delivery_date, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, transaction_id, submitted')
             .in('id', extraNavIds);
+          if (extraNavFetchErr) {
+            reportError({
+              type: 'db_query',
+              component: 'ExpandedTransactionInvoice',
+              action: 'fetch_extra_nav_details',
+              message: `Failed to fetch details for extra NAV invoices: ${extraNavIds.join(', ')}`,
+              error: extraNavFetchErr
+            });
+          }
           if (!cancelled && data) navList.push(...data);
         }
       }
@@ -167,10 +216,20 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
       ];
 
       if (allInvoiceIds.length > 0) {
-        const { data: siblingTx } = await supabase
+        const { data: siblingTx, error: siblingErr } = await supabase
           .from('transactions')
           .select('id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified')
           .in('matched_invoice_id', allInvoiceIds);
+
+        if (siblingErr) {
+          reportError({
+            type: 'db_query',
+            component: 'ExpandedTransactionInvoice',
+            action: 'fetch_sibling_transactions',
+            message: `Failed to fetch sibling transactions for invoice IDs: ${allInvoiceIds.join(', ')}`,
+            error: siblingErr
+          });
+        }
 
         if (!cancelled && siblingTx) {
           setSiblingTransactions(siblingTx);
