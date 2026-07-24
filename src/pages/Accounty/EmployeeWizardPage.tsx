@@ -3,19 +3,20 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Check, User, Briefcase, CreditCard,
   FileText, Shield, Calendar, Building2, ChevronDown, Loader2,
-  HelpCircle, AlertTriangle, Search
+  HelpCircle, AlertTriangle, Search, Plus, Trash2, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { useCreateEmployee, useCreateEmployment, useJobCodes } from '@/hooks/usePayrollData';
+import { useCreateEmployee, useCreateEmployment, useJobCodes, useCreateDependent } from '@/hooks/usePayrollData';
 import { validateTajNumber, validateTaxId, validateBankAccount, validateFeorCode, formatTajNumber, formatBankAccount } from '@/lib/payroll/validators';
 
 // ── Step definitions ──
 const STEPS = [
   { id: 'type', title: 'Jogviszony típus', subtitle: 'Milyen típusú foglalkoztatás?', icon: Briefcase },
   { id: 'personal', title: 'Személyes adatok', subtitle: 'Név, születési adatok, azonosítók', icon: User },
+  { id: 'dependents', title: 'Eltartottak', subtitle: 'Eltartottak és adókedvezmények', icon: Users },
   { id: 'employment', title: 'Jogviszony részletek', subtitle: 'Munkakör, bérezés, időszak', icon: FileText },
   { id: 'financial', title: 'Pénzügyi adatok', subtitle: 'Bankszámla, adóelőleg', icon: CreditCard },
   { id: 'review', title: 'Áttekintés', subtitle: 'Ellenőrzés és mentés', icon: Check },
@@ -66,6 +67,15 @@ const EMPLOYMENT_TYPES = [
   { value: 'onkentes', label: 'Közérdekű önkéntes', code: '1900', desc: 'Díjazás nélküli önkéntes tevékenység', icon: '', group: 'Speciális' },
 ];
 
+type DependentData = {
+  birth_name: string;
+  tax_id: string;
+  taj_number: string;
+  birth_date: string;
+  mothers_birth_name: string;
+  is_fetus: boolean;
+};
+
 type FormData = {
   // Step 1: Type
   employment_type: string;
@@ -82,7 +92,14 @@ type FormData = {
   tax_id: string;
   email: string;
   phone: string;
-  // Step 3: Employment
+  eu_tax_id: string;
+  education_level: string;
+  has_age_concession: boolean;
+  has_union_fee: boolean;
+  has_no_hungarian_address: boolean;
+  // Step 3: Dependents
+  dependents: DependentData[];
+  // Step 4: Employment
   start_date: string;
   feor_code: string;
   job_title: string;
@@ -91,7 +108,17 @@ type FormData = {
   weekly_hours: string;
   is_fixed_term: boolean;
   end_date: string;
-  // Step 4: Financial
+  is_pensioner: boolean;
+  pension_type: string;
+  is_ekho: boolean;
+  ekho_payer: string;
+  ekho_category: string;
+  is_szocho_discount: boolean;
+  szocho_discount_type: string;
+  szocho_discount_months_elapsed: string;
+  insurance_relationship_code: string;
+  feor_description: string;
+  // Step 5: Financial
   bank_account: string;
 };
 
@@ -109,6 +136,12 @@ const INITIAL_FORM: FormData = {
   tax_id: '',
   email: '',
   phone: '',
+  eu_tax_id: '',
+  education_level: 'none',
+  has_age_concession: false,
+  has_union_fee: false,
+  has_no_hungarian_address: false,
+  dependents: [],
   start_date: new Date().toISOString().slice(0, 10),
   feor_code: '',
   job_title: '',
@@ -117,8 +150,20 @@ const INITIAL_FORM: FormData = {
   weekly_hours: '40',
   is_fixed_term: false,
   end_date: '',
+  is_pensioner: false,
+  pension_type: 'none',
+  is_ekho: false,
+  ekho_payer: 'employee',
+  ekho_category: 'normal',
+  is_szocho_discount: false,
+  szocho_discount_type: 'none',
+  szocho_discount_months_elapsed: '0',
+  insurance_relationship_code: '',
+  feor_description: '',
   bank_account: '',
 };
+
+import { supabase } from '@/integrations/supabase/client';
 
 export default function EmployeeWizardPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -133,7 +178,7 @@ export default function EmployeeWizardPage() {
   const createEmployment = useCreateEmployment();
   const { data: jobCodes = [] } = useJobCodes();
 
-  const update = (field: keyof FormData, value: string | boolean) => {
+  const update = (field: keyof FormData, value: string | boolean | any[]) => {
     setForm(prev => ({ ...prev, [field]: value }));
     setErrors(prev => { const next = { ...prev }; delete next[field]; return next; });
   };
@@ -160,15 +205,25 @@ export default function EmployeeWizardPage() {
       }
     }
 
-    if (step === 2) {
+    // Step 2: Dependents (no strict validation required for basic flow)
+
+    if (step === 3) {
       if (!form.start_date) newErrors.start_date = 'Kötelező mező';
       if (form.feor_code) {
         const feorResult = validateFeorCode(form.feor_code);
         if (!feorResult.valid) newErrors.feor_code = feorResult.error!;
       }
+      if (form.weekly_hours) {
+        const hours = parseFloat(form.weekly_hours);
+        if (isNaN(hours) || hours <= 0) {
+          newErrors.weekly_hours = 'Érvénytelen óraszám';
+        } else if (hours > 168) {
+          newErrors.weekly_hours = 'A heti munkaidő maximum 168 óra lehet';
+        }
+      }
     }
 
-    if (step === 3) {
+    if (step === 4) {
       if (form.bank_account) {
         const bankResult = validateBankAccount(form.bank_account);
         if (!bankResult.valid) newErrors.bank_account = bankResult.error!;
@@ -214,9 +269,30 @@ export default function EmployeeWizardPage() {
         iban: null,
         status: 'active',
         avatar_url: null,
-      });
+        eu_tax_id: form.eu_tax_id || null,
+        education_level: form.education_level || 'none',
+        has_age_concession: form.has_age_concession,
+        has_union_fee: form.has_union_fee,
+        has_no_hungarian_address: form.has_no_hungarian_address,
+      } as any);
 
-      // 2. Create employment
+      // 2. Create dependents if any
+      if (form.dependents && form.dependents.length > 0) {
+        const { error: depErr } = await supabase
+          .from('accounty_dependents')
+          .insert(form.dependents.map(d => ({
+            employee_id: emp.id,
+            birth_name: d.birth_name,
+            tax_id: d.tax_id || null,
+            taj_number: d.taj_number || null,
+            birth_date: d.birth_date || null,
+            mothers_birth_name: d.mothers_birth_name || null,
+            is_fetus: d.is_fetus,
+          })));
+        if (depErr) throw depErr;
+      }
+
+      // 3. Create employment
       await createEmployment.mutateAsync({
         employee_id: emp.id,
         company_id: companyId,
@@ -240,7 +316,24 @@ export default function EmployeeWizardPage() {
         is_insured: true,
         status: 'active',
         metadata: {},
-      });
+        is_pensioner: form.is_pensioner,
+        pension_type: form.is_pensioner ? form.pension_type : 'none',
+        is_ekho: form.is_ekho,
+        ekho_payer: form.is_ekho ? form.ekho_payer : 'employee',
+        ekho_category: form.is_ekho ? form.ekho_category : 'normal',
+        is_szocho_discount: form.is_szocho_discount,
+        szocho_discount_type: form.is_szocho_discount ? form.szocho_discount_type : 'none',
+        szocho_discount_start: form.is_szocho_discount ? form.start_date : null,
+        szocho_discount_end: null,
+        minimum_contribution_base_rule: 'minimal_wage',
+        has_minimum_base: !form.is_pensioner,
+        is_min_base_exempt_gyes_gyed: false,
+        is_min_base_exempt_student: false,
+        is_unequal_work_schedule: false,
+        insurance_relationship_code: form.insurance_relationship_code || null,
+        job_valid_from: form.start_date,
+        feor_description: form.feor_description || null,
+      } as any);
 
       navigate(`/accounty/payroll/${companyId}/employees`);
     } catch {
@@ -406,6 +499,43 @@ export default function EmployeeWizardPage() {
                 </SelectContent>
               </Select>
             </div>
+            <FormField label="Állampolgárság" value={form.eu_tax_id ? 'Külföldi' : 'Magyar'} onChange={() => {}} placeholder="Magyar" className="opacity-70 pointer-events-none" />
+            
+            <div className="md:col-span-2 border-t border-border pt-4 mt-2">
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Külföldi / Egyedi adatok</p>
+            </div>
+            <FormField label="EU adóazonosító (külföldieknek)" value={form.eu_tax_id} onChange={(v) => update('eu_tax_id', v)} placeholder="pl. DE123456789" />
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Végzettség / szakképzettség</label>
+              <Select value={form.education_level} onValueChange={(v) => update('education_level', v)}>
+                <SelectTrigger className="bg-card border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nincs megadva</SelectItem>
+                  <SelectItem value="primary">Általános iskola</SelectItem>
+                  <SelectItem value="secondary">Középiskola / Gimnázium</SelectItem>
+                  <SelectItem value="professional">Szakiskola / Szakmunkás</SelectItem>
+                  <SelectItem value="university">Főiskola / Egyetem</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                <input type="checkbox" id="age_concession" checked={form.has_age_concession} onChange={(e) => update('has_age_concession', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                <label htmlFor="age_concession" className="text-xs text-slate-700 dark:text-slate-300 font-medium">Korkedvezményre jogosult</label>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                <input type="checkbox" id="union_fee" checked={form.has_union_fee} onChange={(e) => update('has_union_fee', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                <label htmlFor="union_fee" className="text-xs text-slate-700 dark:text-slate-300 font-medium">Érdekképviseleti tagdíj (szakszervezet)</label>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                <input type="checkbox" id="no_hungarian_address" checked={form.has_no_hungarian_address} onChange={(e) => update('has_no_hungarian_address', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                <label htmlFor="no_hungarian_address" className="text-xs text-slate-700 dark:text-slate-300 font-medium">Nincs magyar lakcíme</label>
+              </div>
+            </div>
+
             <div className="md:col-span-2 border-t border-border pt-4 mt-2">
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Azonosítók</p>
             </div>
@@ -419,11 +549,157 @@ export default function EmployeeWizardPage() {
           </div>
         )}
 
-        {/* Step 2: Employment details */}
+        {/* Step 2: Dependents */}
         {step === 2 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Add meg az eltartottak (gyermekek, magzatok) adatait a családi kedvezmény érvényesítéséhez.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const newDep: DependentData = {
+                    birth_name: '',
+                    tax_id: '',
+                    taj_number: '',
+                    birth_date: '',
+                    mothers_birth_name: '',
+                    is_fetus: false
+                  };
+                  update('dependents', [...form.dependents, newDep]);
+                }}
+                className="flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" /> Eltartott hozzáadása
+              </Button>
+            </div>
+
+            {form.dependents.length > 0 ? (
+              <div className="border border-border rounded-lg overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border text-slate-500">
+                      <th className="px-3 py-2 text-left">Név</th>
+                      <th className="px-3 py-2 text-left">Adóazonosító</th>
+                      <th className="px-3 py-2 text-left">TAJ szám</th>
+                      <th className="px-3 py-2 text-left">Szül. dátum</th>
+                      <th className="px-3 py-2 text-left">Anyja szül. neve</th>
+                      <th className="px-3 py-2 text-center">Magzat? (91. nap+)</th>
+                      <th className="px-3 py-2 text-center w-12"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {form.dependents.map((dep, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/40">
+                        <td className="p-2">
+                          <Input
+                            value={dep.birth_name}
+                            onChange={(e) => {
+                              const list = [...form.dependents];
+                              list[idx].birth_name = e.target.value;
+                              update('dependents', list);
+                            }}
+                            placeholder="pl. Kis János"
+                            className="h-8 text-xs"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            value={dep.tax_id}
+                            onChange={(e) => {
+                              const list = [...form.dependents];
+                              list[idx].tax_id = e.target.value;
+                              update('dependents', list);
+                            }}
+                            placeholder="8XXXXXXXXX"
+                            className="h-8 text-xs"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            value={dep.taj_number}
+                            onChange={(e) => {
+                              const list = [...form.dependents];
+                              list[idx].taj_number = e.target.value;
+                              update('dependents', list);
+                            }}
+                            placeholder="000-000-000"
+                            className="h-8 text-xs"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            type="date"
+                            value={dep.birth_date}
+                            onChange={(e) => {
+                              const list = [...form.dependents];
+                              list[idx].birth_date = e.target.value;
+                              update('dependents', list);
+                            }}
+                            className="h-8 text-xs"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            value={dep.mothers_birth_name}
+                            onChange={(e) => {
+                              const list = [...form.dependents];
+                              list[idx].mothers_birth_name = e.target.value;
+                              update('dependents', list);
+                            }}
+                            placeholder="születési név"
+                            className="h-8 text-xs"
+                          />
+                        </td>
+                        <td className="p-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={dep.is_fetus}
+                            onChange={(e) => {
+                              const list = [...form.dependents];
+                              list[idx].is_fetus = e.target.checked;
+                              update('dependents', list);
+                            }}
+                            className="w-4 h-4 rounded border-slate-300"
+                          />
+                        </td>
+                        <td className="p-2 text-center">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              const list = form.dependents.filter((_, i) => i !== idx);
+                              update('dependents', list);
+                            }}
+                            className="h-7 w-7 text-red-500 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-10 border-2 border-dashed border-border rounded-xl">
+                <p className="text-sm text-slate-400">Nincsenek felvéve eltartottak ehhez a dolgozóhoz.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Step 3: Employment details */}
+        {step === 3 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Belépés dátuma *" value={form.start_date} onChange={(v) => update('start_date', v)} error={errors.start_date} type="date" />
             <FormField label="FEOR kód" value={form.feor_code} onChange={(v) => update('feor_code', v)} error={errors.feor_code} placeholder="pl. 2411" />
+            <FormField label="FEOR leírása" value={form.feor_description} onChange={(v) => update('feor_description', v)} placeholder="Szakmai megnevezés" />
+            <FormField label="Biztosítási jogviszony kódja (T1041)" value={form.insurance_relationship_code} onChange={(v) => update('insurance_relationship_code', v)} placeholder="pl. 1101" />
             <FormField label="Munkakör" value={form.job_title} onChange={(v) => update('job_title', v)} placeholder="pl. Könyvelő" className="md:col-span-2" />
             <FormField label="Alapbér (Ft)" value={form.base_salary} onChange={(v) => update('base_salary', v)} type="number" placeholder="pl. 450000" />
             <div>
@@ -441,7 +717,7 @@ export default function EmployeeWizardPage() {
                 </SelectContent>
               </Select>
             </div>
-            <FormField label="Heti munkaidő (óra)" value={form.weekly_hours} onChange={(v) => update('weekly_hours', v)} type="number" placeholder="40" />
+            <FormField label="Heti munkaidő (óra)" value={form.weekly_hours} onChange={(v) => update('weekly_hours', v)} type="number" placeholder="40" error={errors.weekly_hours} />
             <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
               <input type="checkbox" checked={form.is_fixed_term} onChange={(e) => update('is_fixed_term', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
               <label className="text-sm text-slate-700 dark:text-slate-300">Határozott idejű</label>
@@ -449,11 +725,99 @@ export default function EmployeeWizardPage() {
             {form.is_fixed_term && (
               <FormField label="Jogviszony vége" value={form.end_date} onChange={(v) => update('end_date', v)} type="date" />
             )}
+
+            <div className="md:col-span-2 border-t border-border pt-4 mt-2">
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Speciális Adózási Formák</p>
+            </div>
+            <div className="flex flex-col gap-2 p-3 rounded-lg border border-border">
+              <div className="flex items-center gap-3">
+                <input type="checkbox" id="is_pensioner" checked={form.is_pensioner} onChange={(e) => update('is_pensioner', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                <label htmlFor="is_pensioner" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">Nyugdíjas státusz</label>
+              </div>
+              {form.is_pensioner && (
+                <div className="mt-2 pl-6">
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Nyugdíj típusa</label>
+                  <Select value={form.pension_type} onValueChange={(v) => update('pension_type', v)}>
+                    <SelectTrigger className="bg-card border-border h-8 text-xs">
+                      <SelectValue placeholder="Válassz..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="old_age">Öregségi nyugdíjas</SelectItem>
+                      <SelectItem value="rehab">Rehabilitációs ellátott</SelectItem>
+                      <SelectItem value="disability">Rokkantsági nyugdíjas</SelectItem>
+                      <SelectItem value="other">Egyéb kiegészítő tevékenység</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 p-3 rounded-lg border border-border">
+              <div className="flex items-center gap-3">
+                <input type="checkbox" id="is_ekho" checked={form.is_ekho} onChange={(e) => update('is_ekho', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                <label htmlFor="is_ekho" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">EKHO választása</label>
+              </div>
+              {form.is_ekho && (
+                <div className="mt-2 pl-6 grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Ki fizeti?</label>
+                    <Select value={form.ekho_payer} onValueChange={(v) => update('ekho_payer', v)}>
+                      <SelectTrigger className="bg-card border-border h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="employee">Munkavállaló</SelectItem>
+                        <SelectItem value="employer">Munkáltató fizeti helyette</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">EKHO kategória</label>
+                    <Select value={form.ekho_category} onValueChange={(v) => update('ekho_category', v)}>
+                      <SelectTrigger className="bg-card border-border h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Művész / Alkotó (60M limit)</SelectItem>
+                        <SelectItem value="athlete">Hivatásos sportoló (500M limit)</SelectItem>
+                        <SelectItem value="egt">EGT tagállamban biztosított</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 p-3 rounded-lg border border-border md:col-span-2">
+              <div className="flex items-center gap-3">
+                <input type="checkbox" id="is_szocho_discount" checked={form.is_szocho_discount} onChange={(e) => update('is_szocho_discount', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                <label htmlFor="is_szocho_discount" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">SZOCHO kedvezmény érvényesítése</label>
+              </div>
+              {form.is_szocho_discount && (
+                <div className="mt-2 pl-6 grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Kedvezmény típusa</label>
+                    <Select value={form.szocho_discount_type} onValueChange={(v) => update('szocho_discount_type', v)}>
+                      <SelectTrigger className="bg-card border-border h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="agriculture">Mezőgazdasági munkakör (FEOR 9)</SelectItem>
+                        <SelectItem value="market_entry">Munkaerőpiacra lépő (Y1-Y2: 100%, Y3: 50%)</SelectItem>
+                        <SelectItem value="mother_market_entry">3+ gyermekes anya piacra lépő (Y1-Y3: 100%, Y4-Y5: 50%)</SelectItem>
+                        <SelectItem value="phd_researcher">K+F / PhD kutató (50% szocho)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <FormField label="Eltelt hónapok száma (ha van)" value={form.szocho_discount_months_elapsed} onChange={(v) => update('szocho_discount_months_elapsed', v)} type="number" className="h-8 text-xs" />
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Step 3: Financial data */}
-        {step === 3 && (
+        {/* Step 4: Financial data */}
+        {step === 4 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Bankszámlaszám" value={form.bank_account} onChange={(v) => update('bank_account', v)} error={errors.bank_account} placeholder="XXXXXXXX-XXXXXXXX-XXXXXXXX" className="md:col-span-2" />
             <div className="md:col-span-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -465,22 +829,30 @@ export default function EmployeeWizardPage() {
           </div>
         )}
 
-        {/* Step 4: Review */}
-        {step === 4 && (
+        {/* Step 5: Review */}
+        {step === 5 && (
           <div className="space-y-4">
             <ReviewRow label="Jogviszony típus" value={EMPLOYMENT_TYPES.find(t => t.value === form.employment_type)?.label || form.employment_type} />
             <ReviewRow label="Jogviszonykód" value={form.job_code} />
+            {form.insurance_relationship_code && <ReviewRow label="Biztosítási kód" value={form.insurance_relationship_code} />}
             <div className="border-t border-border pt-3" />
             <ReviewRow label="Név" value={`${form.last_name} ${form.first_name}`} />
             {form.birth_name && <ReviewRow label="Születési név" value={form.birth_name} />}
             {form.birth_date && <ReviewRow label="Születési dátum" value={form.birth_date} />}
             {form.taj_number && <ReviewRow label="TAJ-szám" value={formatTajNumber(form.taj_number)} />}
             {form.tax_id && <ReviewRow label="Adóazonosító" value={form.tax_id} />}
+            {form.eu_tax_id && <ReviewRow label="EU adóazonosító" value={form.eu_tax_id} />}
+            <ReviewRow label="Végzettség" value={form.education_level} />
+            <ReviewRow label="Eltartottak száma" value={`${form.dependents.length} fő`} />
             <div className="border-t border-border pt-3" />
             <ReviewRow label="Belépés" value={form.start_date} />
             {form.job_title && <ReviewRow label="Munkakör" value={form.job_title} />}
+            {form.feor_code && <ReviewRow label="FEOR" value={`${form.feor_code} - ${form.feor_description || ''}`} />}
             {form.base_salary && <ReviewRow label="Alapbér" value={`${parseInt(form.base_salary).toLocaleString('hu-HU')} Ft`} />}
             <ReviewRow label="Munkaidő" value={`${form.weekly_hours} óra/hét`} />
+            {form.is_ekho && <ReviewRow label="EKHO" value={`Igen (${form.ekho_category}, fizeti: ${form.ekho_payer})`} />}
+            {form.is_pensioner && <ReviewRow label="Nyugdíjas" value={`Igen (${form.pension_type})`} />}
+            {form.is_szocho_discount && <ReviewRow label="SZOCHO kedvezmény" value={form.szocho_discount_type} />}
             {form.bank_account && <ReviewRow label="Bankszámla" value={formatBankAccount(form.bank_account)} />}
           </div>
         )}

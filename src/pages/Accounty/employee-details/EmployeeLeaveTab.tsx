@@ -18,40 +18,90 @@ interface EmployeeLeaveTabProps {
 }
 
 export function EmployeeLeaveTab({ leaves, leaveBalance }: EmployeeLeaveTabProps) {
+  const categories = [
+    { label: 'Alap-szabadság', days: leaveBalance?.baseLeave || 0, hours: leaveBalance?.baseLeaveHours || 0 },
+    { label: 'Életkori pótszabadság', days: leaveBalance?.ageSupplement || 0, hours: leaveBalance?.ageSupplementHours || 0 },
+    { label: 'Gyermek utáni pótszabadság', days: leaveBalance?.childSupplement || 0, hours: leaveBalance?.childSupplementHours || 0 },
+    { label: 'Fogyatékos gyermek pótszabadság', days: leaveBalance?.disabledChildSupplement || 0, hours: leaveBalance?.disabledChildSupplementHours || 0 },
+    { label: 'Apai szabadság', days: leaveBalance?.paternityLeave || 0, hours: (leaveBalance?.paternityLeave || 0) * 8 },
+    { label: 'Szülői szabadság', days: leaveBalance?.parentalLeave || 0, hours: (leaveBalance?.parentalLeave || 0) * 8 },
+    { label: 'Tanulmányi szabadság', days: leaveBalance?.studyLeave || 0, hours: (leaveBalance?.studyLeave || 0) * 8 },
+    { label: 'Rendkívüli / egyéb pótszabadság', days: leaveBalance?.extraordinaryLeave || 0, hours: (leaveBalance?.extraordinaryLeave || 0) * 8 },
+    { label: 'Előző évről áthozott', days: leaveBalance?.carriedOver || 0, hours: leaveBalance?.carriedOverHours || 0 },
+  ];
+
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-6">
       {leaveBalance && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-          <MiniStat label="Alap-szabadság" value={`${leaveBalance.baseLeave} nap`} />
-          <MiniStat label="Életkori pótlék" value={`+${leaveBalance.ageSupplement} nap`} />
-          <MiniStat label="Gyermek pótlék" value={`+${leaveBalance.childSupplement} nap`} />
-          <MiniStat label="Felhasznált" value={`${leaveBalance.used} nap`} />
-          <MiniStat label="Fennmaradó" value={`${leaveBalance.remaining} nap`} color={leaveBalance.remaining < 5 ? 'red' : 'green'} />
-        </div>
+        <>
+          {/* Quick Stats Banner */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <MiniStat label="Éves keret összesen" value={`${leaveBalance.totalAvailable} nap`} />
+            <MiniStat label="Felhasznált eddig" value={`${leaveBalance.used} nap`} />
+            <MiniStat label="Fennmaradó kiadható" value={`${leaveBalance.remaining} nap`} color={leaveBalance.remaining < 5 ? 'red' : 'green'} />
+            <MiniStat label="Órakeret összesen" value={`${leaveBalance.totalAvailableHours} óra`} />
+          </div>
+
+          {/* Tabular breakdown */}
+          <div className="border border-border rounded-xl overflow-hidden">
+            <div className="bg-slate-50 dark:bg-slate-900/40 px-4 py-3 border-b border-border">
+              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Részletes Szabadság Nyilvántartás (Mt.)</h3>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-slate-500 font-medium text-xs uppercase">
+                  <th className="px-4 py-2.5 text-left">Jogcím</th>
+                  <th className="px-4 py-2.5 text-right">Napok</th>
+                  <th className="px-4 py-2.5 text-right">Órák</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {categories.map((cat, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/30">
+                    <td className="px-4 py-2.5 font-medium text-slate-700 dark:text-slate-300">{cat.label}</td>
+                    <td className="px-4 py-2.5 text-right font-mono font-semibold">{cat.days} nap</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-slate-500">{cat.hours} óra</td>
+                  </tr>
+                ))}
+                <tr className="font-bold border-t-2 border-border bg-slate-50/10 dark:bg-slate-900/30">
+                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">ÖSSZESÍTÉS</td>
+                  <td className="px-4 py-3 text-right font-mono text-primary">{leaveBalance.totalAvailable} nap</td>
+                  <td className="px-4 py-3 text-right font-mono text-slate-700 dark:text-slate-300">{leaveBalance.totalAvailableHours} óra</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
-      {leaves.length === 0 ? (
-        <div className="py-8 text-center text-sm text-slate-500">Nincs rögzített távollét</div>
-      ) : (
-        <div className="space-y-2">
-          {leaves.map((l) => (
-            <div key={l.id} className="p-3 rounded-lg border border-border flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 capitalize">
-                  {l.leave_type.replace(/_/g, ' ')}
-                </p>
-                <p className="text-xs text-slate-500">{l.start_date} – {l.end_date} · {l.days} nap</p>
+      {/* Leave history */}
+      <div>
+        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Távollét Történet</h3>
+        {leaves.length === 0 ? (
+          <div className="py-8 text-center text-sm text-slate-500 border border-dashed rounded-xl">
+            Nincs rögzített távollét ebben az évben.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {leaves.map((l) => (
+              <div key={l.id} className="p-3 rounded-lg border border-border flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 capitalize">
+                    {l.leave_type.replace(/_/g, ' ')}
+                  </p>
+                  <p className="text-xs text-slate-500">{l.start_date} – {l.end_date} · {l.days} nap ({l.days * 8} óra)</p>
+                </div>
+                <span className={cn(
+                  'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
+                  l.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                )}>
+                  {l.status === 'approved' ? 'Jóváhagyva' : l.status}
+                </span>
               </div>
-              <span className={cn(
-                'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
-                l.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-              )}>
-                {l.status === 'approved' ? 'Jóváhagyva' : l.status}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

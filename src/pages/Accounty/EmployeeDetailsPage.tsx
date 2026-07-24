@@ -4,7 +4,7 @@ import {
   ArrowLeft, User, Briefcase, CreditCard, Calendar, FileText,
   Shield, Edit3, Trash2, Plus, X,
   Mail, Phone, MapPin, Banknote, AlertTriangle, Save, Loader2,
-  Users, LogOut, FolderOpen
+  Users, LogOut, FolderOpen, Printer, Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,11 @@ import { EmployeeDeclarationsTab } from './employee-details/EmployeeDeclarations
 import { EmployeeLeaveTab } from './employee-details/EmployeeLeaveTab';
 import { EmployeeGarnishmentsTab } from './employee-details/EmployeeGarnishmentsTab';
 import SalaryHistoryTab from './employee-details/SalaryHistoryTab';
+import { printEmploymentCertificate, printIncomeCertificate, printTimesheetTemplate, printAnnualLedger } from '@/lib/payroll/payslipTemplates';
+import { generate2608Xml, generate2658Xml, generateT1041Xml, generateT1042EXml } from '@/lib/payroll/xmlGenerator';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { calculatePayroll, calculateGarnishments, DEFAULT_2026_PARAMS } from '@/lib/payroll/taxEngine';
 
 // ── Tab definíciók ──
 const TABS = [
@@ -52,6 +57,16 @@ export default function EmployeeDetailsPage() {
   const { data: employments = [] } = usePayrollEmployments(empId || '');
   const { data: declarations = [] } = usePayrollDeclarations(empId || '');
   const { data: garnishments = [] } = usePayrollGarnishments(empId || '');
+
+  const { data: companyData } = useQuery({
+    queryKey: ['company', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('companies').select('*').eq('id', companyId).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId
+  });
 
   // Get first employment for leave calc
   const primaryEmployment = employments.find(e => e.status === 'active') || employments[0];
@@ -121,6 +136,11 @@ export default function EmployeeDetailsPage() {
       tax_id: employee.tax_id,
       bank_account: employee.bank_account,
       status: employee.status,
+      eu_tax_id: employee.eu_tax_id,
+      education_level: employee.education_level,
+      has_age_concession: employee.has_age_concession,
+      has_union_fee: employee.has_union_fee,
+      has_no_hungarian_address: employee.has_no_hungarian_address,
     });
     setIsEditing(true);
     setActiveTab('overview');
@@ -241,7 +261,7 @@ export default function EmployeeDetailsPage() {
         )}
 
         {activeTab === 'garnishments' && (
-          <EmployeeGarnishmentsTab garnishments={garnishments} />
+          <EmployeeGarnishmentsTab garnishments={garnishments} empId={empId || ''} />
         )}
 
         {activeTab === 'salary' && (
@@ -249,9 +269,308 @@ export default function EmployeeDetailsPage() {
         )}
 
         {activeTab === 'documents' && (
-          <div className="p-6 py-16 text-center text-sm text-slate-500">
-            <FileText className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-            Dokumentumok kezelése hamarosan elérhető.
+          <div className="p-6 space-y-6">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Generáld és nyomtasd ki a dolgozó munkaviszonyával kapcsolatos kötelező bizonylatokat, vagy töltsd le a NAV ÁNYK kompatibilis bejelentő XML fájlokat.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Printable documents block */}
+              <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Printer className="w-4 h-4 text-primary" /> Munkáltatói Igazolások és Bizonylatok
+                </h4>
+                <div className="divide-y divide-border/60 text-xs">
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">Foglalkoztatási Igazolás</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Hivatalos igazolás a fennálló munkaviszonyról.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => {
+                        const compInfo = {
+                          name: companyData?.name || 'Thinkai Kft.',
+                          taxNumber: companyData?.tax_number || '27384950-2-42',
+                          address: companyData?.address || '1113 Budapest, Bocskai út 77-79.'
+                        };
+                        const empInfo = {
+                          name: `${employee.last_name} ${employee.first_name}`,
+                          birthName: employee.birth_name || undefined,
+                          birthPlace: employee.birth_place || undefined,
+                          birthDate: employee.birth_date || undefined,
+                          mothersName: employee.mothers_name || undefined,
+                          tajNumber: employee.taj_number || '–',
+                          taxId: employee.tax_id || '–',
+                          jobTitle: primaryEmployment?.job_title || '–',
+                          startDate: primaryEmployment?.start_date || '–'
+                        };
+                        printEmploymentCertificate(compInfo, empInfo);
+                      }}
+                    >
+                      Nyomtatás
+                    </Button>
+                  </div>
+
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">Munkáltatói Jövedelemigazolás</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Havi nettó jövedelem igazolása (pl. hitelügyintézéshez).</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => {
+                        const calculatedNet = (() => {
+                          if (!employee || !primaryEmployment) return 380000;
+                          
+                          // Parse declarations
+                          const parsedDecs: any = {};
+                          for (const decl of declarations) {
+                            if (decl.declaration_type === 'family_credit') {
+                              const children = decl.parameters?.children_count || 0;
+                              const sharePct = decl.parameters?.share_pct || 100;
+                              parsedDecs.family = {
+                                dependentCount: Number(children),
+                                eligibleChildrenCount: Number(children),
+                                sharePct: Number(sharePct),
+                              };
+                            }
+                            if (decl.declaration_type === 'netak') {
+                              parsedDecs.netak = { eligible: true };
+                            }
+                            if (decl.declaration_type === 'under_25') {
+                              parsedDecs.young25 = { eligible: true };
+                            }
+                            if (decl.declaration_type === 'new_mother') {
+                              parsedDecs.youngMother30 = { maxDeduction: 0 };
+                            }
+                            if (decl.declaration_type === 'first_marriage') {
+                              const months = decl.parameters?.months_remaining || 24;
+                              parsedDecs.firstMarriage = { eligible: true, monthsRemaining: Number(months) };
+                            }
+                            if (decl.declaration_type === 'personal_disability') {
+                              parsedDecs.personal = { eligible: true };
+                            }
+                          }
+
+                          const birthDate = employee.birth_date ? new Date(employee.birth_date) : null;
+                          const employeeAge = birthDate
+                            ? Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 86400000))
+                            : 30;
+
+                          const baseSalary = Number(primaryEmployment.base_salary) || 0;
+
+                          const calcInput = {
+                            grossComponents: {
+                              baseSalary,
+                              overtime: 0,
+                              nightShift: 0,
+                              sundayPremium: 0,
+                              holidayPremium: 0,
+                              bonus: 0,
+                              sickLeave: 0,
+                              otherIncome: 0,
+                            },
+                            declarations: parsedDecs,
+                            employeeAge,
+                            employeeGender: employee.gender || 'other',
+                            isInsured: primaryEmployment.is_insured ?? true,
+                            jobCode: primaryEmployment.job_code || '',
+                            weeklyHours: primaryEmployment.weekly_hours || 40,
+                            params: DEFAULT_2026_PARAMS,
+                            isPensioner: !!primaryEmployment.is_pensioner,
+                            ekhoCategory: primaryEmployment.ekho_category || 'normal',
+                            ekhoPayer: primaryEmployment.ekho_payer || 'employee',
+                            isEkho: !!primaryEmployment.is_ekho,
+                            isSzochoDiscount: !!primaryEmployment.is_szocho_discount,
+                            szochoDiscountType: primaryEmployment.szocho_discount_type || 'none',
+                            szochoDiscountMonthsElapsed: primaryEmployment.szocho_discount_months_elapsed || 0,
+                            cafeteria: [],
+                          };
+
+                          try {
+                            const payrollResult = calculatePayroll(calcInput as any);
+                            
+                            // Parse garnishments
+                            const parsedGarnishments = (garnishments || []).map((g: any) => ({
+                              type: (g.garnishment_type || 'private_debt') as any,
+                              monthlyDeduction: Number(g.monthly_deduction) || 0,
+                              maxDeductionPct: Number(g.max_deduction_pct) || 0.33,
+                              priority: Number(g.priority) || 1,
+                            }));
+                            
+                            const garnishResult = calculateGarnishments(payrollResult.netSalary, parsedGarnishments);
+                            const finalNet = payrollResult.netSalary - garnishResult.total;
+                            return finalNet > 0 ? finalNet : payrollResult.netSalary;
+                          } catch (e) {
+                            console.error('Error calculating net salary:', e);
+                            return 380000;
+                          }
+                        })();
+
+                        const compInfo = {
+                          name: companyData?.name || 'Thinkai Kft.',
+                          taxNumber: companyData?.tax_number || '27384950-2-42',
+                          address: companyData?.address || '1113 Budapest, Bocskai út 77-79.'
+                        };
+                        const empInfo = {
+                          name: `${employee.last_name} ${employee.first_name}`,
+                          birthName: employee.birth_name || undefined,
+                          birthPlace: employee.birth_place || undefined,
+                          birthDate: employee.birth_date || undefined,
+                          mothersName: employee.mothers_name || undefined,
+                          tajNumber: employee.taj_number || '–',
+                          taxId: employee.tax_id || '–',
+                          jobTitle: primaryEmployment?.job_title || '–',
+                          startDate: primaryEmployment?.start_date || '–'
+                        };
+                        printIncomeCertificate(compInfo, empInfo, calculatedNet);
+                      }}
+                    >
+                      Nyomtatás
+                    </Button>
+                  </div>
+
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">Jelenléti ív sablon</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Üres havi munkaidő nyilvántartó lap kézi kitöltéshez.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => {
+                        const year = new Date().getFullYear();
+                        const monthStr = window.prompt('Melyik hónapra kéred a jelenléti ívet (1-12)?', String(new Date().getMonth() + 1));
+                        if (!monthStr) return;
+                        const month = parseInt(monthStr) || 1;
+                        const compInfo = {
+                          name: companyData?.name || 'Thinkai Kft.',
+                          taxNumber: companyData?.tax_number || '27384950-2-42',
+                          address: companyData?.address || '1113 Budapest, Bocskai út 77-79.'
+                        };
+                        const empInfo = {
+                          name: `${employee.last_name} ${employee.first_name}`,
+                          birthName: employee.birth_name || undefined,
+                          birthPlace: employee.birth_place || undefined,
+                          birthDate: employee.birth_date || undefined,
+                          mothersName: employee.mothers_name || undefined,
+                          tajNumber: employee.taj_number || '–',
+                          taxId: employee.tax_id || '–',
+                          jobTitle: primaryEmployment?.job_title || '–',
+                          startDate: primaryEmployment?.start_date || '–'
+                        };
+                        printTimesheetTemplate(compInfo, empInfo, year, month);
+                      }}
+                    >
+                      Nyomtatás
+                    </Button>
+                  </div>
+
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">Éves Bérkarton</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Összesített adókarton az adott adóév kifizetéseiről.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => {
+                        const year = new Date().getFullYear();
+                        const compInfo = {
+                          name: companyData?.name || 'Thinkai Kft.',
+                          taxNumber: companyData?.tax_number || '27384950-2-42',
+                          address: companyData?.address || '1113 Budapest, Bocskai út 77-79.'
+                        };
+                        const empInfo = {
+                          name: `${employee.last_name} ${employee.first_name}`,
+                          birthName: employee.birth_name || undefined,
+                          birthPlace: employee.birth_place || undefined,
+                          birthDate: employee.birth_date || undefined,
+                          mothersName: employee.mothers_name || undefined,
+                          tajNumber: employee.taj_number || '–',
+                          taxId: employee.tax_id || '–',
+                          jobTitle: primaryEmployment?.job_title || '–',
+                          startDate: primaryEmployment?.start_date || '–'
+                        };
+                        printAnnualLedger(compInfo, empInfo, year, []);
+                      }}
+                    >
+                      Nyomtatás
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* NAV XML generation block */}
+              <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Download className="w-4 h-4 text-primary" /> Kormányzati NAV XML exportok (ÁNYK)
+                </h4>
+                <div className="divide-y divide-border/60 text-xs">
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">T1041 Biztosítotti bejelentés</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Biztosítási jogviszony kezdetének / végének bejelentése.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => {
+                        const compInfo = {
+                          name: companyData?.name || 'Thinkai Kft.',
+                          taxNumber: companyData?.tax_number || '27384950-2-42',
+                          address: companyData?.address || '1113 Budapest, Bocskai út 77-79.'
+                        };
+                        generateT1041Xml({
+                          company: compInfo,
+                          employee,
+                          action: 'bejelentes',
+                          date: primaryEmployment?.start_date || new Date().toISOString().slice(0, 10)
+                        });
+                      }}
+                    >
+                      Letöltés (.xml)
+                    </Button>
+                  </div>
+
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">T1042E EFO Alkalmi Munka</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Alkalmi / egyszerűsített foglalkoztatás napi bejelentője.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => {
+                        const date = new Date().toISOString().slice(0, 10);
+                        const compInfo = {
+                          name: companyData?.name || 'Thinkai Kft.',
+                          taxNumber: companyData?.tax_number || '27384950-2-42',
+                          address: companyData?.address || '1113 Budapest, Bocskai út 77-79.'
+                        };
+                        generateT1042EXml({
+                          company: compInfo,
+                          employee,
+                          date,
+                          daysCount: 1
+                        });
+                      }}
+                    >
+                      Letöltés (.xml)
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

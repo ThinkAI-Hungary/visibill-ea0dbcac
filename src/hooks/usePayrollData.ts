@@ -40,6 +40,11 @@ export interface PayrollEmployee {
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
+  eu_tax_id: string | null;
+  education_level: string | null;
+  has_age_concession: boolean;
+  has_union_fee: boolean;
+  has_no_hungarian_address: boolean;
 }
 
 export interface PayrollEmployment {
@@ -68,6 +73,23 @@ export interface PayrollEmployment {
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+  is_pensioner: boolean;
+  pension_type: string | null;
+  is_ekho: boolean;
+  ekho_payer: string | null;
+  ekho_category: string | null;
+  is_szocho_discount: boolean;
+  szocho_discount_type: string | null;
+  szocho_discount_start: string | null;
+  szocho_discount_end: string | null;
+  minimum_contribution_base_rule: string | null;
+  has_minimum_base: boolean;
+  is_min_base_exempt_gyes_gyed: boolean;
+  is_min_base_exempt_student: boolean;
+  is_unequal_work_schedule: boolean;
+  insurance_relationship_code: string | null;
+  job_valid_from: string | null;
+  feor_description: string | null;
 }
 
 export interface PayrollCycle {
@@ -673,6 +695,99 @@ export function useRevokeDeclaration() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ELTARTOTTAK
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollDependents(employeeId: string) {
+  return useQuery({
+    queryKey: ['payroll', 'dependents', employeeId] as const,
+    queryFn: async (): Promise<any[]> => {
+      const { data, error } = await supabase
+        .from('accounty_dependents')
+        .select('*')
+        .eq('employee_id', employeeId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!employeeId,
+  });
+}
+
+export function useCreateDependent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (dependent: any) => {
+      const { data, error } = await supabase
+        .from('accounty_dependents')
+        .insert(dependent)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['payroll', 'dependents', data.employee_id] });
+      toast({ title: 'Siker', description: 'Eltartott sikeresen hozzáadva.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
+  });
+}
+
+export function useUpdateDependent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; employee_id: string; [key: string]: any }) => {
+      const { data, error } = await supabase
+        .from('accounty_dependents')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['payroll', 'dependents', data.employee_id] });
+      toast({ title: 'Siker', description: 'Eltartott adatai frissítve.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
+  });
+}
+
+export function useDeleteDependent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, employee_id }: { id: string; employee_id: string }) => {
+      const { error } = await supabase
+        .from('accounty_dependents')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { id, employee_id };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['payroll', 'dependents', data.employee_id] });
+      toast({ title: 'Siker', description: 'Eltartott sikeresen törölve.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // NAV BEVALLÁSOK
 // ═══════════════════════════════════════════════════════════════
 
@@ -959,6 +1074,26 @@ export function useRunBatchPayroll() {
           }
         }
 
+        // Fetch active garnishments for this employee
+        const { data: garnishRows } = await supabase
+          .from('accounty_garnishments')
+          .select('*')
+          .eq('employee_id', employee.id)
+          .eq('is_active', true)
+          .order('priority', { ascending: true });
+
+        // Fetch cafeteria items for this employment and cycle
+        const { data: cafeteriaRows } = await supabase
+          .from('accounty_cafeteria')
+          .select('*')
+          .eq('employment_id', employment.id);
+
+        const parsedCafeteria = (cafeteriaRows || []).map((c: any) => ({
+          amount: c.amount || 0,
+          subType: (c.sub_type || 'basic') as 'basic' | 'recreation',
+          isHousingAllowance: !!c.is_housing_allowance
+        }));
+
         // Calculate
         const birthDate = employee.birth_date ? new Date(employee.birth_date) : null;
         const employeeAge = birthDate
@@ -983,9 +1118,28 @@ export function useRunBatchPayroll() {
           jobCode: employment.job_code || '',
           weeklyHours: employment.weekly_hours || 40,
           params: taxParams,
+          isPensioner: !!employment.is_pensioner,
+          ekhoCategory: employment.ekho_category || 'normal',
+          ekhoPayer: employment.ekho_payer || 'employee',
+          isEkho: !!employment.is_ekho,
+          isSzochoDiscount: !!employment.is_szocho_discount,
+          szochoDiscountType: employment.szocho_discount_type || 'none',
+          szochoDiscountMonthsElapsed: employment.szocho_discount_months_elapsed || 0,
+          cafeteria: parsedCafeteria,
         };
 
         const result = calculatePayroll(calcInput);
+
+        // Apply garnishments
+        const parsedGarnishments = (garnishRows || []).map((g: any) => ({
+          type: (g.garnishment_type || 'private_debt') as any,
+          monthlyDeduction: g.monthly_deduction || 0,
+          maxDeductionPct: g.max_deduction_pct || 0.33,
+          priority: g.priority || 1,
+        }));
+        
+        const garnishResult = calculateGarnishments(result.netSalary, parsedGarnishments);
+        const finalNet = result.netSalary - garnishResult.total;
 
         results.push({
           cycle_id: input.cycleId,
@@ -995,11 +1149,11 @@ export function useRunBatchPayroll() {
           szja_amount: result.szjaAmount,
           tb_amount: result.tbAmount,
           szocho_amount: result.szochoAmount,
-          net_salary: result.netSalary,
+          net_salary: finalNet, // net after garnishments
           tax_credits: result.taxCredits || {},
-          szocho_credits: {},
-          deductions: { items: itemDeductions, total: itemDeductions },
-          cafeteria_tax: {},
+          szocho_credits: { discount: result.szochoAmount - (result.szochoBase * taxParams.szocho_rate) },
+          deductions: { items: itemDeductions + garnishResult.total, total: itemDeductions + garnishResult.total },
+          cafeteria_tax: { employer: result.cafeteriaTaxEmployer || 0 },
           metadata: {
             employee_id: employee.id,
             employee_name: `${employee.last_name} ${employee.first_name}`,

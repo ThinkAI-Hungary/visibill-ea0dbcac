@@ -80,6 +80,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
   const [uploaderFilter, setUploaderFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
+  const [viewingUpload, setViewingUpload] = useState<UploadWithTransactions | null>(null);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -168,6 +169,22 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
     if (!userId) return 'Rendszer';
     return profileMap.get(userId) || 'Ismeretlen felhasználó';
   };
+
+  // Fetch transactions for the viewing upload
+  const { data: viewingTransactions = [], isLoading: isLoadingTransactions } = useQuery({
+    queryKey: ['upload_transactions', viewingUpload?.id],
+    queryFn: async () => {
+      if (!viewingUpload) return [];
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('id, transaction_date, description, amount, currency, type, is_verified')
+        .eq('upload_id', viewingUpload.id)
+        .order('transaction_date', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!viewingUpload,
+  });
 
   const getBankLabel = (bankKey: string | null): string => {
     if (!bankKey) return '—';
@@ -444,10 +461,25 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                           {upload.file_name}
                         </TableCell>
                         <TableCell className="text-sm">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-primary">{getBankLabel(upload.detected_bank)}</span>
-                            <span className="text-xs text-muted-foreground">({upload.transactionCount} db)</span>
-                          </div>
+                          {upload.transactionCount > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => setViewingUpload(upload)}
+                              className="flex items-center gap-1.5 hover:underline text-left cursor-pointer group focus:outline-none"
+                            >
+                              <span className="font-semibold text-primary">{getBankLabel(upload.detected_bank)}</span>
+                              <span className="text-xs text-muted-foreground group-hover:text-primary">
+                                ({upload.transactionCount} db)
+                              </span>
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <span>{getBankLabel(upload.detected_bank)}</span>
+                              <span className="text-xs">
+                                ({upload.transactionCount} db)
+                              </span>
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: hu })}
@@ -628,6 +660,78 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Transaction Details Modal */}
+      <Dialog 
+        open={!!viewingUpload} 
+        onOpenChange={(open) => { if (!open) setViewingUpload(null); }}
+      >
+        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col border-border bg-card">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="flex items-center gap-2 truncate">
+              <FileText className="h-5 w-5 text-primary" />
+              <span>Tranzakciók: {viewingUpload?.file_name}</span>
+            </DialogTitle>
+            <DialogDescription>
+              A fájlból kinyert tranzakciós sorok listája ({viewingUpload?.transactionCount} db).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-1 mt-2">
+            {isLoadingTransactions ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : viewingTransactions.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground text-sm">
+                Nincsenek tranzakciók ehhez a fájlhoz.
+              </div>
+            ) : (
+              <div className="rounded-lg border border-border/50 overflow-x-auto">
+                <Table className="compact-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[15%]">Dátum</TableHead>
+                      <TableHead className="w-[50%]">Közlemény</TableHead>
+                      <TableHead className="w-[20%] text-right">Összeg</TableHead>
+                      <TableHead className="w-[15%] text-center">Státusz</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {viewingTransactions.map((tx: any) => (
+                      <TableRow key={tx.id} data-row-hover>
+                        <TableCell className="text-sm font-medium">
+                          {tx.transaction_date}
+                        </TableCell>
+                        <TableCell className="text-xs max-w-[300px] truncate" title={tx.description}>
+                          {tx.description}
+                        </TableCell>
+                        <TableCell className="text-sm font-semibold text-right whitespace-nowrap">
+                          <span className={tx.amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}>
+                            {tx.amount.toLocaleString('hu-HU')} {tx.currency}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {tx.is_verified ? (
+                            <Badge variant="success" className="text-[10px] px-1.5 py-0.5">Jóváhagyott</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">Függőben</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end pt-3 border-t border-border/30 shrink-0">
+            <Button variant="outline" size="sm" onClick={() => setViewingUpload(null)}>
+              Bezárás
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

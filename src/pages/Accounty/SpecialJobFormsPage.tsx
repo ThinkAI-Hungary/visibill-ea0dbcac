@@ -196,6 +196,15 @@ export default function SpecialJobFormsPage() {
 
   const handleSave = async () => {
     if (!isComplete || !id || !empId) return;
+
+    if (formData.weeklyHours) {
+      const hours = Number(formData.weeklyHours);
+      if (isNaN(hours) || hours <= 0 || hours > 168) {
+        toast({ variant: 'destructive', title: 'Hiba', description: 'A heti munkaidő maximum 168 óra lehet!' });
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const { error: jobErr } = await (await import('@/integrations/supabase/client')).supabase

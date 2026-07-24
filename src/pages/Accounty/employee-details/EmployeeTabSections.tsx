@@ -42,15 +42,64 @@ export function EmployeeOverviewTab({ employee, isEditing, editForm, setEditForm
               <EditField label="Anyja neve" value={editForm.mothers_name || ''} onChange={v => setEditForm(f => ({ ...f, mothers_name: v || null }))} />
             </InfoSection>
 
-            <InfoSection title="Elérhetőség">
+            <InfoSection title="Elérhetőség & Cím">
               <EditField label="E-mail" value={editForm.email || ''} onChange={v => setEditForm(f => ({ ...f, email: v || null }))} type="email" />
               <EditField label="Telefon" value={editForm.phone || ''} onChange={v => setEditForm(f => ({ ...f, phone: v || null }))} />
+              <div className="flex items-center gap-2 mt-3 p-2 border rounded-lg bg-slate-50 dark:bg-slate-900/30">
+                <input
+                  type="checkbox"
+                  id="has_no_hungarian_address"
+                  checked={!!editForm.has_no_hungarian_address}
+                  onChange={e => setEditForm(f => ({ ...f, has_no_hungarian_address: e.target.checked }))}
+                  className="w-4 h-4 rounded border-slate-300"
+                />
+                <label htmlFor="has_no_hungarian_address" className="text-xs font-medium text-slate-700 dark:text-slate-300">Nincs magyar lakcíme</label>
+              </div>
             </InfoSection>
 
-            <InfoSection title="Azonosítók">
+            <InfoSection title="Azonosítók & Egyedi mezők">
               <EditField label="TAJ-szám" value={editForm.taj_number || ''} onChange={v => setEditForm(f => ({ ...f, taj_number: v || null }))} placeholder="000-000-000" />
               <EditField label="Adóazonosító" value={editForm.tax_id || ''} onChange={v => setEditForm(f => ({ ...f, tax_id: v || null }))} placeholder="10 jegyű" />
+              <EditField label="EU adóazonosító" value={editForm.eu_tax_id || ''} onChange={v => setEditForm(f => ({ ...f, eu_tax_id: v || null }))} placeholder="Foreign EU tax ID" />
               <EditField label="Bankszámla" value={editForm.bank_account || ''} onChange={v => setEditForm(f => ({ ...f, bank_account: v || null }))} placeholder="00000000-00000000-00000000" />
+              
+              <div className="mt-3">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Végzettség</label>
+                <select
+                  value={editForm.education_level || 'none'}
+                  onChange={e => setEditForm(f => ({ ...f, education_level: e.target.value }))}
+                  className="w-full px-3 py-1.5 rounded-lg border border-border bg-background text-sm"
+                >
+                  <option value="none">Nincs megadva</option>
+                  <option value="primary">Általános iskola</option>
+                  <option value="secondary">Középiskola</option>
+                  <option value="professional">Szakiskola</option>
+                  <option value="university">Főiskola/Egyetem</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2 mt-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="has_age_concession"
+                    checked={!!editForm.has_age_concession}
+                    onChange={e => setEditForm(f => ({ ...f, has_age_concession: e.target.checked }))}
+                    className="w-4 h-4 rounded border-slate-300"
+                  />
+                  <label htmlFor="has_age_concession" className="text-xs font-medium text-slate-700 dark:text-slate-300">Korkedvezmény</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="has_union_fee"
+                    checked={!!editForm.has_union_fee}
+                    onChange={e => setEditForm(f => ({ ...f, has_union_fee: e.target.checked }))}
+                    className="w-4 h-4 rounded border-slate-300"
+                  />
+                  <label htmlFor="has_union_fee" className="text-xs font-medium text-slate-700 dark:text-slate-300">Szakszervezeti tagdíj</label>
+                </div>
+              </div>
             </InfoSection>
           </div>
 
@@ -81,17 +130,22 @@ export function EmployeeOverviewTab({ employee, isEditing, editForm, setEditForm
               <InfoRow icon={MapPin} label="Születési hely" value={employee.birth_place || '–'} />
               <InfoRow icon={Calendar} label="Születési dátum" value={employee.birth_date || '–'} />
               <InfoRow icon={User} label="Anyja neve" value={employee.mothers_name || '–'} />
+              <InfoRow icon={FileText} label="Végzettség" value={employee.education_level || '–'} />
             </InfoSection>
 
-            <InfoSection title="Elérhetőség">
+            <InfoSection title="Elérhetőség & Cím">
               <InfoRow icon={Mail} label="E-mail" value={employee.email || '–'} />
               <InfoRow icon={Phone} label="Telefon" value={employee.phone || '–'} />
+              <InfoRow icon={MapPin} label="Cím státusz" value={employee.has_no_hungarian_address ? 'Nincs magyar címe' : 'Magyar lakcímmel'} />
             </InfoSection>
 
-            <InfoSection title="Azonosítók">
+            <InfoSection title="Azonosítók & Jogok">
               <InfoRow icon={Shield} label="TAJ-szám" value={employee.taj_number ? formatTajNumber(employee.taj_number) : '–'} />
               <InfoRow icon={FileText} label="Adóazonosító" value={employee.tax_id || '–'} />
+              {employee.eu_tax_id && <InfoRow icon={FileText} label="EU adóazonosító" value={employee.eu_tax_id} />}
               <InfoRow icon={CreditCard} label="Bankszámla" value={employee.bank_account ? formatBankAccount(employee.bank_account) : '–'} />
+              <InfoRow icon={Shield} label="Korkedvezmény" value={employee.has_age_concession ? 'Igen' : 'Nem'} />
+              <InfoRow icon={Users} label="Szakszervezet" value={employee.has_union_fee ? 'Tag (tagdíjlevonás)' : 'Nem tag'} />
             </InfoSection>
           </div>
 

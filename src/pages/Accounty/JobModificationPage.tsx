@@ -122,6 +122,14 @@ export default function JobModificationPage() {
   const handleSaveAll = async () => {
     if (!id || !empId || pendingCount === 0) return;
     try {
+      const worktimeChange = pendingTypes.find(([ct]) => ct === 'worktime');
+      if (worktimeChange) {
+        const hours = parseFloat(worktimeChange[1].newValue);
+        if (isNaN(hours) || hours <= 0 || hours > 168) {
+          throw new Error('A heti munkaidő értéke 1 és 168 óra között kell legyen!');
+        }
+      }
+
       const mods = pendingTypes.map(([ct, v]) => ({
         companyId: id, employeeId: empId,
         changeType: ct, effectiveDate,

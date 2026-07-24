@@ -6,80 +6,69 @@
  * - Gyermek utáni pótszabadság
  * - Fogyatékos gyermek pótszabadság
  * - Apasági szabadság (10 nap)
- * - Betegszabadság (15 nap, 70%)
- * - Szabadság-mérleg (felhasznált / fennmaradó / áthozható max 60 nap)
+ * - Szülői szabadság
+ * - Tanulmányi szabadság
+ * - Egyéb rendkívüli szabadság (pl. haláleset)
+ * - Szabadság-mérleg óraalapú nyilvántartása is
  */
 
 // ── Típusok ──
 
 export interface LeaveBalance {
-  /** Éves alap-szabadság napok */
   baseLeave: number;
-  /** Életkori pótszabadság */
   ageSupplement: number;
-  /** Gyermek utáni pótszabadság */
   childSupplement: number;
-  /** Fogyatékos gyermek pótszabadság */
   disabledChildSupplement: number;
-  /** KSZ/egyéb extra szabadság */
   extraLeave: number;
-  /** Teljes éves keret */
   totalAnnual: number;
-  /** Előző évről áthozott */
   carriedOver: number;
-  /** Felhasználható összesen */
   totalAvailable: number;
-  /** Felhasznált napok */
   used: number;
-  /** Fennmaradó napok */
   remaining: number;
+
+  // ── Részletes bontás (napokban) ──
+  paternityLeave: number;
+  parentalLeave: number;
+  studyLeave: number;
+  extraordinaryLeave: number;
+
+  // ── Óraalapú átszámítások ──
+  baseLeaveHours: number;
+  ageSupplementHours: number;
+  childSupplementHours: number;
+  disabledChildSupplementHours: number;
+  extraLeaveHours: number;
+  totalAnnualHours: number;
+  carriedOverHours: number;
+  totalAvailableHours: number;
+  usedHours: number;
+  remainingHours: number;
 }
 
 export interface EmployeeLeaveInput {
-  /** Életkor az adott év első napján */
   ageAtYearStart: number;
-  /** Gyermekek száma (16 év alatti) */
   childrenUnder16: number;
-  /** Fogyatékos gyermekek száma */
   disabledChildren: number;
-  /** Előző évről áthozott napok */
   carriedOverDays: number;
-  /** KSZ/egyéb extra napok */
   extraLeaveDays: number;
-  /** Munkaviszony kezdő dátum (időarányosításhoz) */
+  paternityDays?: number;
+  parentalDays?: number;
+  studyDays?: number;
+  extraordinaryDays?: number;
   employmentStartDate?: Date;
-  /** Munkaviszony befejező dátum (időarányosításhoz) */
   employmentEndDate?: Date;
-  /** Számítás éve */
   year: number;
-  /** Felhasznált napok (eddig) */
   usedDays: number;
+  
+  // Napi munkaóra az óra alapú számításhoz (alapértelmezetten 8)
+  dailyHours?: number;
 }
 
 // ── Szabadság konstansok (Mt.) ──
 
-/** Alap éves szabadság napok */
 const BASE_LEAVE_DAYS = 20;
-
-/** Maximális áthozható napok */
 const MAX_CARRY_OVER = 60;
 
-/**
- * Életkori pótszabadság táblázat (Mt. 117. §)
- *
- * | Betöltött életév | Pótszabadság napok |
- * |---|---|
- * | 25 | +1 |
- * | 28 | +2 |
- * | 31 | +3 |
- * | 33 | +4 |
- * | 35 | +5 |
- * | 37 | +6 |
- * | 39 | +7 |
- * | 41 | +8 |
- * | 43 | +9 |
- * | 45+ | +10 |
- */
 const AGE_SUPPLEMENT_TABLE: Array<[number, number]> = [
   [45, 10],
   [43, 9],
@@ -93,11 +82,8 @@ const AGE_SUPPLEMENT_TABLE: Array<[number, number]> = [
   [25, 1],
 ];
 
-// ── Kalkuláció ──
+// ── Életkori pótszabadság ──
 
-/**
- * Életkori pótszabadság napok kiszámítása.
- */
 export function calculateAgeSupplement(age: number): number {
   for (const [minAge, days] of AGE_SUPPLEMENT_TABLE) {
     if (age >= minAge) return days;
@@ -105,15 +91,8 @@ export function calculateAgeSupplement(age: number): number {
   return 0;
 }
 
-/**
- * Gyermek utáni pótszabadság (Mt. 118. §)
- *
- * - 1 gyermek: 2 nap
- * - 2 gyermek: 4 nap
- * - 3+ gyermek: 7 nap
- *
- * A gyermek 16 éves koráig jár.
- */
+// ── Gyermek utáni pótszabadság ──
+
 export function calculateChildSupplement(childrenUnder16: number): number {
   if (childrenUnder16 <= 0) return 0;
   if (childrenUnder16 === 1) return 2;
@@ -121,21 +100,14 @@ export function calculateChildSupplement(childrenUnder16: number): number {
   return 7;
 }
 
-/**
- * Fogyatékos gyermek pótszabadság (Mt. 118. §)
- *
- * - Gyermekenként 2 extra nap
- */
+// ── Fogyatékos gyermek pótszabadság ──
+
 export function calculateDisabledChildSupplement(disabledChildren: number): number {
   return disabledChildren * 2;
 }
 
-/**
- * Időarányos szabadság számítás.
- *
- * Ha a munkaviszony nem az egész évre szól, arányosítjuk:
- * totalDays × (munkában töltött hónapok / 12)
- */
+// ── Időarányos szabadság számítás ──
+
 function calculateProRata(
   totalDays: number,
   year: number,
@@ -148,7 +120,6 @@ function calculateProRata(
   const effectiveStart = startDate && startDate > yearStart ? startDate : yearStart;
   const effectiveEnd = endDate && endDate < yearEnd ? endDate : yearEnd;
 
-  // Hónapok száma (kerekítés felfelé a megkezdett hónapra)
   const startMonth = effectiveStart.getMonth();
   const endMonth = effectiveEnd.getMonth();
   const months = endMonth - startMonth + 1;
@@ -156,17 +127,17 @@ function calculateProRata(
   return Math.round(totalDays * (months / 12));
 }
 
-/**
- * Teljes szabadság-mérleg számítás.
- */
+// ── Fő szabadság-mérleg számítás ──
+
 export function calculateLeaveBalance(input: EmployeeLeaveInput): LeaveBalance {
   const ageSupplement = calculateAgeSupplement(input.ageAtYearStart);
   const childSupplement = calculateChildSupplement(input.childrenUnder16);
   const disabledChildSupplement = calculateDisabledChildSupplement(input.disabledChildren);
+  const dailyHours = input.dailyHours || 8;
 
   let totalAnnual = BASE_LEAVE_DAYS + ageSupplement + childSupplement + disabledChildSupplement + input.extraLeaveDays;
 
-  // Időarányosítás ha nem egész éves a munkaviszony
+  // Időarányosítás
   if (input.employmentStartDate || input.employmentEndDate) {
     totalAnnual = calculateProRata(
       totalAnnual,
@@ -176,10 +147,14 @@ export function calculateLeaveBalance(input: EmployeeLeaveInput): LeaveBalance {
     );
   }
 
-  // Áthozható max 60 nap
   const carriedOver = Math.min(input.carriedOverDays, MAX_CARRY_OVER);
   const totalAvailable = totalAnnual + carriedOver;
   const remaining = totalAvailable - input.usedDays;
+
+  const paternityLeave = input.paternityDays || 0;
+  const parentalLeave = input.parentalDays || 0;
+  const studyLeave = input.studyDays || 0;
+  const extraordinaryLeave = input.extraordinaryDays || 0;
 
   return {
     baseLeave: BASE_LEAVE_DAYS,
@@ -192,32 +167,43 @@ export function calculateLeaveBalance(input: EmployeeLeaveInput): LeaveBalance {
     totalAvailable,
     used: input.usedDays,
     remaining: Math.max(0, remaining),
+
+    // Részletes
+    paternityLeave,
+    parentalLeave,
+    studyLeave,
+    extraordinaryLeave,
+
+    // Óraalapú átszámítások
+    baseLeaveHours: BASE_LEAVE_DAYS * dailyHours,
+    ageSupplementHours: ageSupplement * dailyHours,
+    childSupplementHours: childSupplement * dailyHours,
+    disabledChildSupplementHours: disabledChildSupplement * dailyHours,
+    extraLeaveHours: input.extraLeaveDays * dailyHours,
+    totalAnnualHours: totalAnnual * dailyHours,
+    carriedOverHours: carriedOver * dailyHours,
+    totalAvailableHours: totalAvailable * dailyHours,
+    usedHours: input.usedDays * dailyHours,
+    remainingHours: Math.max(0, remaining) * dailyHours,
   };
 }
 
 // ── Betegszabadság ──
 
 export interface SickLeaveResult {
-  /** Betegszabadság napok az adott évben */
   availableDays: number;
-  /** Felhasznált napok */
   usedDays: number;
-  /** Fennmaradó napok */
   remainingDays: number;
-  /** Napi díjazás (távolléti díj × 70%) */
   dailyRate: number;
+  availableHours: number;
+  usedHours: number;
+  remainingHours: number;
 }
 
-/**
- * Betegszabadság kalkuláció (Mt. 126. §)
- *
- * - Évi 15 nap
- * - Díjazás: távolléti díj 70%-a
- * - A 15 nap felett: táppénz (OEP)
- */
 export function calculateSickLeave(
   dailyAbsencePay: number,
-  usedSickDays: number
+  usedSickDays: number,
+  dailyHours: number = 8
 ): SickLeaveResult {
   const maxDays = 15;
   return {
@@ -225,26 +211,22 @@ export function calculateSickLeave(
     usedDays: usedSickDays,
     remainingDays: Math.max(0, maxDays - usedSickDays),
     dailyRate: Math.round(dailyAbsencePay * 0.70),
+    
+    // Óra alapú sick leave
+    availableHours: maxDays * dailyHours,
+    usedHours: usedSickDays * dailyHours,
+    remainingHours: Math.max(0, maxDays - usedSickDays) * dailyHours,
   };
 }
 
-// ── Szabadság-megváltás (kilépéskor, Mt. 125. §) ──
+// ── Szabadság-megváltás ──
 
 export interface LeavePayoutResult {
-  /** Megváltandó napok */
   daysToPayOut: number;
-  /** Napi távolléti díj */
   dailyAbsencePay: number;
-  /** Megváltási összeg (bruttó) */
   payoutAmount: number;
 }
 
-/**
- * Szabadság-megváltás kalkuláció kilépéskor (Mt. 125. §)
- *
- * Csak munkaviszony megszűnésekor váltható meg.
- * Összeg: megváltandó napok × utolsó napi távolléti díj
- */
 export function calculateLeavePayout(
   remainingDays: number,
   dailyAbsencePay: number
