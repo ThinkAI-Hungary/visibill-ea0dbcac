@@ -1281,7 +1281,7 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
       .select("id, created_at, updated_at, error_message, file_name, file_url, company_id, user_id, metadata")
       .eq("processing_status", "error"),
     admin.from("report_uploads")
-      .select("id, created_at, updated_at, error_message, file_name, file_url, company_id, user_id")
+      .select("id, created_at, updated_at, error_message, file_name, file_url, company_id, user_id, metadata")
       .eq("processing_status", "error"),
     admin.from("gl_upload_notifications")
       .select("id, created_at, processed_at, error_message, company_id")
