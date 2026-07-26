@@ -240,6 +240,7 @@ export function LiveNotificationProvider() {
               'recentInvoices', 'uploadHistory',
               'analyticsRaw', 'analyticsVat',
               'dashboardPettyCash', 'pettyCashEntries',
+              'payment-transfers-history', 'due-transfer-invoices',
             );
             if (payload.eventType === 'INSERT') {
               const row = payload.new as any;
@@ -324,6 +325,7 @@ export function LiveNotificationProvider() {
               'analyticsRaw', 'analyticsVat',
               'projects', 'projectsList',
               'dashboardPettyCash',
+              'payment-transfers-history', 'due-transfer-invoices',
             );
           }
         )
@@ -346,7 +348,8 @@ export function LiveNotificationProvider() {
               'projects', 'projectsList',
               'dashboardPettyCash',
               'detected-banks', 'upload-bank-map', 'bank-upload-ids',
-              'tx-kpis', 'bank-transactions', 'transactionFilterOptions'
+              'tx-kpis', 'bank-transactions', 'transactionFilterOptions',
+              'payment-transfers-history', 'due-transfer-invoices'
             );
             queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
             queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
@@ -356,6 +359,16 @@ export function LiveNotificationProvider() {
                 showNotification(row.upload_id, 'transaction_uploads');
               }
             }
+          }
+        )
+
+        // ━━ PAYMENT_TRANSFERS table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'payment_transfers' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('payment-transfers-history', 'due-transfer-invoices');
           }
         )
 

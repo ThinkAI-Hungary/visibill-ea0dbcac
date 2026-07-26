@@ -116,6 +116,20 @@ export const TransactionDetailsDialog = ({
 }: TransactionDetailsDialogProps) => {
   const scopedNavigate = useScopedNavigate();
   const queryClient = useQueryClient();
+  const invalidateAllMatches = () => {
+    queryClient.invalidateQueries({ queryKey: ['transactions', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['navInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['navInvoicesLookup', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['transactionInvoiceMatches', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['salaries', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['due-transfer-invoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['payment-transfers-history', companyId] });
+  };
   const [matchedInvoice, setMatchedInvoice] = useState<MatchedInvoice | null>(null);
   const [matchedNavInvoice, setMatchedNavInvoice] = useState<MatchedNavInvoice | null>(null);
   const [matchedSalary, setMatchedSalary] = useState<MatchedSalary | null>(null);
@@ -486,6 +500,7 @@ export const TransactionDetailsDialog = ({
       if (error) throw error;
 
       toast({ title: 'Tranzakció jóváhagyva!' });
+      invalidateAllMatches();
       onUpdate();
       onOpenChange(false);
     } catch (error) {
@@ -559,6 +574,7 @@ export const TransactionDetailsDialog = ({
       logMatchOverride(selectedInvoiceId, 'manual');
 
       toast({ title: 'Tranzakció sikeresen párosítva!' });
+      invalidateAllMatches();
       onUpdate();
       onOpenChange(false);
     } catch (error) {
@@ -574,6 +590,7 @@ export const TransactionDetailsDialog = ({
 
     setSaving(true);
     try {
+      // 1. Clear match on transactions table
       const { error } = await supabase
         .from('transactions')
         .update({
@@ -585,7 +602,30 @@ export const TransactionDetailsDialog = ({
 
       if (error) throw error;
 
+      // 2. Clear transaction_id on related invoices and salary records
+      await supabase
+        .from('invoices')
+        .update({ transaction_id: null, fizetve: false })
+        .eq('transaction_id', transaction.id);
+
+      await supabase
+        .from('nav_invoices')
+        .update({ transaction_id: null, paid: false })
+        .eq('transaction_id', transaction.id);
+
+      await supabase
+        .from('salary')
+        .update({ transaction_id: null, statusz: 'Nyitott' })
+        .eq('transaction_id', transaction.id);
+
+      // 3. Delete from join table (transaction_invoice_matches)
+      await supabase
+        .from('transaction_invoice_matches')
+        .delete()
+        .eq('transaction_id', transaction.id);
+
       toast({ title: 'Párosítás megszüntetve!' });
+      invalidateAllMatches();
       onUpdate();
       onOpenChange(false);
     } catch (error) {
@@ -613,6 +653,7 @@ export const TransactionDetailsDialog = ({
       if (error) throw error;
 
       toast({ title: 'Tranzakció megjelölve: Nincs hozzá számla' });
+      invalidateAllMatches();
       onUpdate();
       onOpenChange(false);
     } catch (error) {
@@ -640,6 +681,7 @@ export const TransactionDetailsDialog = ({
       if (error) throw error;
 
       toast({ title: 'Tranzakció megjelölve: Számla nincs feltöltve' });
+      invalidateAllMatches();
       onUpdate();
       onOpenChange(false);
     } catch (error) {
@@ -665,6 +707,7 @@ export const TransactionDetailsDialog = ({
       if (error) throw error;
 
       toast({ title: 'Státusz visszavonva' });
+      invalidateAllMatches();
       onUpdate();
       onOpenChange(false);
     } catch (error) {
@@ -737,6 +780,7 @@ export const TransactionDetailsDialog = ({
       logMatchOverride(selectedInvoiceId, 'manual_extra');
 
       toast({ title: 'További számla sikeresen hozzáadva!' });
+      invalidateAllMatches();
       setShowAddExtraMatch(false);
       setSelectedInvoiceId(null);
       setSearch('');
@@ -765,6 +809,7 @@ export const TransactionDetailsDialog = ({
       if (error) throw error;
 
       toast({ title: 'További számla eltávolítva' });
+      invalidateAllMatches();
       fetchExtraMatches();
       onUpdate();
     } catch (error) {

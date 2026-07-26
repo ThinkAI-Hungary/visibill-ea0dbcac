@@ -251,6 +251,72 @@ const ExpandedInvoiceRow = ({
   const [newNotePrivate, setNewNotePrivate] = useState(true);
   const [addingNote, setAddingNote] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
+  const [unmatching, setUnmatching] = useState(false);
+
+  const handleUnmatchInvoice = async (invoiceIdToUnmatch: string) => {
+    if (!transactionId) return;
+    setUnmatching(true);
+    try {
+      // 1. Check if this invoice is the primary matched_invoice_id on the transaction
+      const { data: tx } = await supabase
+        .from('transactions')
+        .select('matched_invoice_id')
+        .eq('id', transactionId)
+        .maybeSingle();
+
+      if (tx && tx.matched_invoice_id === invoiceIdToUnmatch) {
+        // Clear primary match on transaction
+        const { error: txErr } = await supabase
+          .from('transactions')
+          .update({
+            matched_invoice_id: null,
+            is_verified: false,
+            match_type: null
+          })
+          .eq('id', transactionId);
+        if (txErr) throw txErr;
+      }
+
+      // 2. Also delete from transaction_invoice_matches (multi-match join table)
+      const { error: matchErr } = await supabase
+        .from('transaction_invoice_matches')
+        .delete()
+        .eq('transaction_id', transactionId)
+        .eq('invoice_id', invoiceIdToUnmatch);
+      if (matchErr) throw matchErr;
+
+      // 3. Clear transaction_id on the invoice tables if set
+      await supabase
+        .from('invoices')
+        .update({ transaction_id: null, fizetve: false })
+        .eq('id', invoiceIdToUnmatch)
+        .eq('transaction_id', transactionId);
+
+      await supabase
+        .from('nav_invoices')
+        .update({ transaction_id: null, paid: false })
+        .eq('id', invoiceIdToUnmatch)
+        .eq('transaction_id', transactionId);
+
+      toast({ title: 'Párosítás megszüntetve!' });
+
+      // 4. Invalidate related queries to refresh the UI
+      if (companyId) {
+        await queryClient.invalidateQueries({ queryKey: ['transactions', companyId] });
+        await queryClient.invalidateQueries({ queryKey: ['tx-kpis', companyId] });
+        await queryClient.invalidateQueries({ queryKey: ['payment-transfers-history', companyId] });
+        await queryClient.invalidateQueries({ queryKey: ['due-transfer-invoices', companyId] });
+      }
+      if (onMatchUpdate) {
+        onMatchUpdate();
+      }
+    } catch (error: any) {
+      console.error('Error unmatching invoice:', error);
+      toast({ title: 'Hiba a párosítás megszüntetésekor', description: error.message || 'Ismeretlen hiba', variant: 'destructive' });
+    } finally {
+      setUnmatching(false);
+    }
+  };
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -834,7 +900,22 @@ const ExpandedInvoiceRow = ({
                         ) : null;
                       })()}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      {transactionId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={unmatching}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUnmatchInvoice(inv.id);
+                          }}
+                          className="h-6 text-[10px] text-muted-foreground hover:text-destructive px-2 border border-border/40 hover:bg-destructive/10 rounded-md transition-colors gap-1"
+                        >
+                          <Unlink className="h-2.5 w-2.5" />
+                          Párosítás megszüntetése
+                        </Button>
+                      )}
                       <Badge variant="success" className="gap-1 text-[10px] h-5">
                         <CheckCircle2 className="h-2.5 w-2.5" />
                         Párosított
@@ -892,7 +973,22 @@ const ExpandedInvoiceRow = ({
                       <FileText className="h-3 w-3 text-muted-foreground" />
                       Párosított NAV számla
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      {transactionId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={unmatching}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUnmatchInvoice(inv.id);
+                          }}
+                          className="h-6 text-[10px] text-muted-foreground hover:text-destructive px-2 border border-border/40 hover:bg-destructive/10 rounded-md transition-colors gap-1"
+                        >
+                          <Unlink className="h-2.5 w-2.5" />
+                          Párosítás megszüntetése
+                        </Button>
+                      )}
                       <Badge variant="success" className="gap-1 text-[10px] h-5">
                         <CheckCircle2 className="h-2.5 w-2.5" />
                         Párosított

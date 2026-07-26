@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useNavigate, useParams } from 'react-router-dom';
 
 interface TransferInvoice {
   id: string;
@@ -67,6 +68,8 @@ interface CompanyBankAccount {
 export default function TransfersPage() {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const navigate = useNavigate();
 
   const [search, setSearch] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'overdue' | 'due_today'>('all');
@@ -446,11 +449,82 @@ export default function TransfersPage() {
       if (!selectedCompany) return [];
       const { data, error } = await supabase
         .from('payment_transfers')
-        .select('id, created_at, partner_name, partner_account, amount, currency, narrative, status, matched_transaction_id')
+        .select('id, created_at, partner_name, partner_account, amount, currency, narrative, status, matched_transaction_id, invoice_ids')
         .eq('company_id', selectedCompany.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data;
+
+      if (!data || data.length === 0) return [];
+
+      // Gather all invoice_ids across all transfers to check their paid status
+      const allInvoiceIds = Array.from(
+        new Set((data as any[]).flatMap(item => item.invoice_ids || []))
+      );
+
+      const paidInvoiceIds = new Set<string>();
+      const invoiceIdToTxIdMap = new Map<string, string>();
+
+      if (allInvoiceIds.length > 0) {
+        // Fetch manual invoices
+        const { data: manualPaid } = await supabase
+          .from('invoices')
+          .select('id, fizetve, transaction_id')
+          .in('id', allInvoiceIds);
+
+        // Fetch NAV invoices
+        const { data: navPaid } = await supabase
+          .from('nav_invoices')
+          .select('id, paid, transaction_id')
+          .in('id', allInvoiceIds);
+
+        (manualPaid || []).forEach(inv => {
+          if (inv.fizetve || inv.transaction_id) {
+            paidInvoiceIds.add(inv.id);
+            if (inv.transaction_id) {
+              invoiceIdToTxIdMap.set(inv.id, inv.transaction_id);
+            }
+          }
+        });
+
+        (navPaid || []).forEach(inv => {
+          if (inv.paid || inv.transaction_id) {
+            paidInvoiceIds.add(inv.id);
+            if (inv.transaction_id) {
+              invoiceIdToTxIdMap.set(inv.id, inv.transaction_id);
+            }
+          }
+        });
+      }
+
+      // Map and update status dynamically (Read-Repair)
+      const mappedData = data.map((item: any) => {
+        const itemInvoiceIds = item.invoice_ids || [];
+        if (item.status === 'pending' && itemInvoiceIds.length > 0) {
+          const allPaid = itemInvoiceIds.every((id: string) => paidInvoiceIds.has(id));
+          if (allPaid) {
+            // Find matched transaction ID
+            const txId = itemInvoiceIds.map((id: string) => invoiceIdToTxIdMap.get(id)).find(Boolean) || null;
+
+            // Update database asynchronously
+            supabase
+              .from('payment_transfers')
+              .update({ status: 'matched', matched_transaction_id: txId })
+              .eq('id', item.id)
+              .then(({ error: updateErr }) => {
+                if (updateErr) console.error("Error updating payment transfer status:", updateErr);
+              });
+
+            return {
+              ...item,
+              status: 'matched',
+              matched_transaction_id: txId
+            };
+          }
+        }
+        return item;
+      });
+
+      return mappedData;
     },
     enabled: !!selectedCompany
   });
@@ -605,7 +679,7 @@ export default function TransfersPage() {
   // 4. Compute grouped invoices if checked
   const displayItems = useMemo(() => {
     if (!groupByPartner) {
-      return filteredInvoices.map(inv => ({
+      const items = filteredInvoices.map(inv => ({
         key: inv.id,
         invoice_ids: [inv.id],
         invoice_sources: [inv.source],
@@ -617,6 +691,14 @@ export default function TransfersPage() {
         partner_bank_account: editingBankAccounts[inv.id] !== undefined ? editingBankAccounts[inv.id] : inv.partner_bank_account,
         original_invoices: [inv]
       }));
+
+      // Sort individual items by due_date ascending, then partner_name alphabetically
+      return items.sort((a, b) => {
+        if (a.due_date !== b.due_date) {
+          return a.due_date.localeCompare(b.due_date);
+        }
+        return a.partner_name.localeCompare(b.partner_name);
+      });
     }
 
     // Group by partner name and currency
@@ -627,7 +709,7 @@ export default function TransfersPage() {
       groups[key].push(inv);
     });
 
-    return Object.values(groups).map((group, idx) => {
+    const mappedGroups = Object.values(groups).map((group, idx) => {
       const totalAmount = group.reduce((sum, inv) => sum + inv.amount, 0);
       const invoiceNumbers = group.map(inv => inv.invoice_number);
       const invoiceIds = group.map(inv => inv.id);
@@ -651,6 +733,14 @@ export default function TransfersPage() {
         partner_bank_account: editingBankAccounts[key] !== undefined ? editingBankAccounts[key] : bankAccount,
         original_invoices: group
       };
+    });
+
+    // Sort grouped items by earliest due_date ascending, then partner_name alphabetically
+    return mappedGroups.sort((a, b) => {
+      if (a.due_date !== b.due_date) {
+        return a.due_date.localeCompare(b.due_date);
+      }
+      return a.partner_name.localeCompare(b.partner_name);
     });
   }, [filteredInvoices, groupByPartner, editingBankAccounts]);
 
@@ -1374,7 +1464,10 @@ export default function TransfersPage() {
                 <Label className="text-sm font-semibold">Indító céges bankszámla</Label>
                 {bankAccounts.length === 0 && (
                   <button
-                    onClick={() => window.location.hash = '#/settings?tab=bank-accounts'}
+                    onClick={() => {
+                      setExportDialogOpen(false);
+                      navigate(`/${companyId}/${dateRange}/settings/bank-accounts`);
+                    }}
                     className="text-xs text-primary hover:underline font-semibold"
                   >
                     Saját hozzáadása

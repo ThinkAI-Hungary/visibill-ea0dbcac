@@ -1,7 +1,8 @@
-﻿import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format, subDays, addDays } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 
 // ── Types ──
 
@@ -43,12 +44,28 @@ export function useTransactionMatcher({
   companyId,
   onUpdate,
 }: UseTransactionMatcherParams) {
+  const queryClient = useQueryClient();
   const [availableTransactions, setAvailableTransactions] = useState<AvailableTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
+
+  const invalidateAllMatches = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['transactions', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['navInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['navInvoicesLookup', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['transactionInvoiceMatches', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['salaries', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['due-transfer-invoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['payment-transfers-history', companyId] });
+  }, [queryClient, companyId]);
 
   // ── Approximate FX rates for frontend filtering ──
   const approxRates: Record<string, number> = { EUR: 395, USD: 370, GBP: 470, CHF: 420 };
@@ -181,6 +198,7 @@ export function useTransactionMatcher({
       if (error) throw error;
 
       toast({ title: 'Tranzakció sikeresen párosítva!' });
+      invalidateAllMatches();
       closeSearch();
       onUpdate?.();
     } catch (error) {
@@ -195,6 +213,7 @@ export function useTransactionMatcher({
   const handleUnmatch = useCallback(async (transactionId: string) => {
     setSaving(true);
     try {
+      // 1. Clear match on transactions table
       const { error } = await supabase
         .from('transactions')
         .update({
@@ -206,7 +225,30 @@ export function useTransactionMatcher({
 
       if (error) throw error;
 
+      // 2. Clear transaction_id on related invoices and salary records
+      await supabase
+        .from('invoices')
+        .update({ transaction_id: null, fizetve: false })
+        .eq('transaction_id', transactionId);
+
+      await supabase
+        .from('nav_invoices')
+        .update({ transaction_id: null, paid: false })
+        .eq('transaction_id', transactionId);
+
+      await supabase
+        .from('salary')
+        .update({ transaction_id: null, statusz: 'Nyitott' })
+        .eq('transaction_id', transactionId);
+
+      // 3. Delete from join table (transaction_invoice_matches)
+      await supabase
+        .from('transaction_invoice_matches')
+        .delete()
+        .eq('transaction_id', transactionId);
+
       toast({ title: 'Párosítás megszüntetve!' });
+      invalidateAllMatches();
       onUpdate?.();
     } catch (error) {
       reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error unmatching transaction:', error: error });
@@ -228,6 +270,7 @@ export function useTransactionMatcher({
       if (error) throw error;
 
       toast({ title: 'Párosítás jóváhagyva!' });
+      invalidateAllMatches();
       onUpdate?.();
     } catch (error) {
       reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error verifying match:', error: error });
@@ -253,6 +296,7 @@ export function useTransactionMatcher({
       if (error) throw error;
 
       toast({ title: 'Tranzakció megjelölve: Nincs hozzá számla' });
+      invalidateAllMatches();
       onUpdate?.();
     } catch (error) {
       reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error marking no invoice:', error: error });
@@ -278,6 +322,7 @@ export function useTransactionMatcher({
       if (error) throw error;
 
       toast({ title: 'Tranzakció megjelölve: Számla nincs feltöltve' });
+      invalidateAllMatches();
       onUpdate?.();
     } catch (error) {
       reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error marking invoice missing:', error: error });
@@ -299,6 +344,7 @@ export function useTransactionMatcher({
       if (error) throw error;
 
       toast({ title: 'Státusz visszavonva' });
+      invalidateAllMatches();
       onUpdate?.();
     } catch (error) {
       reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error reverting status:', error: error });
