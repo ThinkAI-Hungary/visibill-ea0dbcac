@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -23,7 +24,8 @@ import {
   CreditCard,
   Building,
   HelpCircle,
-  History
+  History,
+  Trash2
 } from 'lucide-react';
 import {
   Dialog,
@@ -77,6 +79,7 @@ export default function TransfersPage() {
   const [senderAccountId, setSenderAccountId] = useState<string>('');
   const [exportFormat, setExportFormat] = useState<string>('otp');
   const [exporting, setExporting] = useState(false);
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
 
   // 1. Fetch own bank accounts
   const { data: bankAccounts = [], refetch: refetchBankAccounts } = useQuery<CompanyBankAccount[]>({
@@ -97,7 +100,7 @@ export default function TransfersPage() {
     if (bankAccounts.length > 0) return bankAccounts;
     return [{
       id: 'dummy-test-id',
-      bank_name: 'Minta OTP Céges Bankszámla (Teszt)',
+      bank_name: 'Minta Céges Bankszámla (Teszt)',
       account_number: '11773000-11111111-22222222',
       currency: 'HUF'
     }];
@@ -461,7 +464,23 @@ export default function TransfersPage() {
 
   // Handle bank account inline modification
   const handleBankChange = (id: string, value: string) => {
-    setEditingBankAccounts(prev => ({ ...prev, [id]: value }));
+    let formatted = value;
+    if (!/^[a-zA-Z]/u.test(value)) {
+      const digits = value.replace(/\D/g, '').slice(0, 24);
+      if (digits.length <= 8) {
+        formatted = digits.length === 8 && value.endsWith('-') ? `${digits}-` : digits;
+      } else if (digits.length <= 16) {
+        formatted = digits.length === 16 && value.endsWith('-') 
+          ? `${digits.slice(0, 8)}-${digits.slice(8)}-` 
+          : `${digits.slice(0, 8)}-${digits.slice(8)}`;
+      } else {
+        formatted = `${digits.slice(0, 8)}-${digits.slice(8, 16)}-${digits.slice(16)}`;
+      }
+    } else {
+      formatted = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+
+    setEditingBankAccounts(prev => ({ ...prev, [id]: formatted }));
   };
 
   const handleBankBlur = async (id: string, invoice: TransferInvoice) => {
@@ -505,6 +524,58 @@ export default function TransfersPage() {
       if (idx !== -1) {
         invoices[idx].partner_bank_account = formatted;
       }
+    }
+  };
+
+  const handleDeleteTransfer = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('payment_transfers')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sikeres törlés',
+        description: 'A tétel sikeresen törölve lett az utalási előzményekből.',
+      });
+
+      refetchTransferHistory();
+    } catch (err: any) {
+      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleDeleteTransfer', error: err });
+      toast({
+        title: 'Hiba',
+        description: 'Nem sikerült a tétel törlése.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleBulkDeleteTransfers = async () => {
+    if (selectedHistoryIds.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('payment_transfers')
+        .delete()
+        .in('id', selectedHistoryIds);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sikeres törlés',
+        description: `${selectedHistoryIds.length} tétel sikeresen törölve lett az utalási előzményekből.`,
+      });
+
+      setSelectedHistoryIds([]);
+      refetchTransferHistory();
+    } catch (err: any) {
+      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleBulkDeleteTransfers', error: err });
+      toast({
+        title: 'Hiba',
+        description: 'Nem sikerült a tételek törlése.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -654,11 +725,33 @@ export default function TransfersPage() {
       });
       return;
     }
+
+    // If the user has exactly 1 real corporate bank account, we skip the dialog!
+    if (bankAccounts.length === 1) {
+      const singleAcc = bankAccounts[0];
+      const bName = singleAcc.bank_name.toLowerCase();
+      let format = 'otp'; // default
+      if (bName.includes('otp')) format = 'otp';
+      else if (bName.includes('cib')) format = 'cib';
+      else if (bName.includes('erste')) format = 'erste';
+      else if (bName.includes('k&h') || bName.includes('kh') || bName.includes('kereskedelmi')) format = 'kh';
+      else if (bName.includes('raiffeisen')) format = 'raiffeisen';
+      else if (bName.includes('mbh')) format = 'mbh';
+      else if (bName.includes('sepa')) format = 'sepa';
+      
+      // Directly generate without opening dialog
+      handleGenerateFile(singleAcc.id, format);
+      return;
+    }
+
     setExportDialogOpen(true);
   };
 
-  const handleGenerateFile = async () => {
-    const sender = displayBankAccounts.find(acc => acc.id === senderAccountId);
+  const handleGenerateFile = async (overrideSenderId?: string, overrideFormat?: string) => {
+    const activeSenderId = overrideSenderId || senderAccountId;
+    const activeFormat = overrideFormat || exportFormat;
+
+    const sender = displayBankAccounts.find(acc => acc.id === activeSenderId);
     if (!sender) {
       toast({ title: 'Hiba', description: 'Kérjük, válaszd ki a céges indító bankszámlát!', variant: 'destructive' });
       return;
@@ -669,10 +762,21 @@ export default function TransfersPage() {
       const selectedItems = displayItems.filter(item => selectedIds.includes(item.key));
       const todayStr = new Date().toISOString().split('T')[0];
 
-      let fileContent = '';
-      let filename = `visibill-transfers-${todayStr}`;
+      const now = new Date();
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const formattedDateTime = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}_${pad(now.getHours())}.${pad(now.getMinutes())}`;
+      const companyName = selectedCompany?.name || 'Visibill';
+      const rawBankLabel = sender.bank_name || activeFormat.toUpperCase();
+      const bankLabel = rawBankLabel
+        .replace(/(Minta|Céges|Bankszámla|\(Teszt\))/ig, '')
+        .trim() || activeFormat.toUpperCase();
 
-      if (exportFormat === 'sepa') {
+      let fileContent = '';
+      let filename = `${companyName} - ${bankLabel} - Utalási lista - ${formattedDateTime}`;
+      // Clean forbidden filename characters
+      filename = filename.replace(/[/\\?%*:|"<>\r\n\t]+/g, '').trim();
+
+      if (activeFormat === 'sepa') {
         // Generate SEPA XML pain.001.001.03
         const msgId = `MSG${Date.now()}`;
         const pmtInfId = `PMTINF${Date.now()}`;
@@ -748,7 +852,7 @@ export default function TransfersPage() {
   </CstmrCdtTrfInitn>
 </Document>`;
         filename += '.xml';
-      } else if (exportFormat === 'cib') {
+      } else if (activeFormat === 'cib') {
         // CIB Business Online CSV Format (19 columns, semicolon separated, no header)
         fileContent = '';
         selectedItems.forEach(item => {
@@ -760,7 +864,7 @@ export default function TransfersPage() {
           fileContent += `${cleanSender};${item.partner_name.slice(0, 70)};${cleanPartner};${item.amount.toFixed(0)};${narrative};;;;;;;;;;;;;;\r\n`;
         });
         filename += '.csv';
-      } else if (exportFormat === 'erste' || exportFormat === 'raiffeisen') {
+      } else if (activeFormat === 'erste' || activeFormat === 'raiffeisen') {
         // Erste/Raiffeisen Electra CSV Sablon Format
         const header = 'NAME;COMMENT;CtgyPurpCd;CtgyPurpPrtry;DbtrOrgId;DbtrPrvtId;UltmtDbtrNm;UltmtDbtrOrgId;UltmtDbtrPrvtId;CdtrNm;CdtrOrgId;CdtrPrvtId;CdtrAcct;UltmtCdtrNm;UltmtCdtrOrgId;UltmtCdtrPrvtId;PurpCd;PurpPrtry;Ustrd;PostaStrd;OtherStrd;LclInstrm;SchmeNmPrtry;CdtrAcctIdOthrId';
         const rows = [header];
@@ -778,7 +882,7 @@ export default function TransfersPage() {
 
         fileContent = rows.join('\r\n') + '\r\n';
         filename += '.csv';
-      } else if (exportFormat === 'mbh') {
+      } else if (activeFormat === 'mbh') {
         // MBH Fixed-Width TXT Format (293 bytes per row)
         fileContent = '';
         selectedItems.forEach((item, idx) => {
@@ -825,9 +929,9 @@ export default function TransfersPage() {
       }
 
       // Download file in browser
-      const mimeType = exportFormat === 'sepa' 
+      const mimeType = activeFormat === 'sepa' 
         ? 'application/xml' 
-        : (exportFormat === 'mbh' ? 'text/plain;charset=utf-8;' : 'text/csv;charset=utf-8;');
+        : (activeFormat === 'mbh' ? 'text/plain;charset=utf-8;' : 'text/csv;charset=utf-8;');
       const blob = new Blob([fileContent], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -839,10 +943,10 @@ export default function TransfersPage() {
       URL.revokeObjectURL(url);
 
       // 7. Save transfers logs to Supabase (only if it's a real bank account, not the dummy test ID)
-      if (senderAccountId !== 'dummy-test-id') {
+      if (activeSenderId !== 'dummy-test-id') {
         const insertRows = selectedItems.map(item => ({
           company_id: selectedCompany!.id,
-          bank_account_id: senderAccountId,
+          bank_account_id: activeSenderId,
           partner_name: item.partner_name,
           partner_account: item.partner_bank_account,
           amount: item.amount,
@@ -1127,9 +1231,22 @@ export default function TransfersPage() {
               Az eddig kiexportált utalási tételek és a hozzájuk tartozó banki tranzakció-párosítások nyomon követése.
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetchTransferHistory()} className="h-8 text-xs gap-1.5">
-            Frissítés
-          </Button>
+          <div className="flex items-center gap-2">
+            {selectedHistoryIds.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={handleBulkDeleteTransfers}
+              >
+                <Trash2 className="h-4 w-4" />
+                Kijelöltek törlése ({selectedHistoryIds.length})
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => refetchTransferHistory()} className="h-8 text-xs gap-1.5">
+              Frissítés
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {transferHistory.length === 0 ? (
@@ -1141,12 +1258,25 @@ export default function TransfersPage() {
               <table className="w-full text-sm text-left">
                 <thead>
                   <tr className="border-b border-border/40 bg-muted/20 text-muted-foreground text-xs font-semibold">
+                    <th className="py-3 px-4 w-12 text-center">
+                      <Checkbox
+                        checked={transferHistory.length > 0 && selectedHistoryIds.length === transferHistory.length}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedHistoryIds(transferHistory.map((item: any) => item.id));
+                          } else {
+                            setSelectedHistoryIds([]);
+                          }
+                        }}
+                      />
+                    </th>
                     <th className="py-3 px-4">Dátum</th>
                     <th className="py-3 px-4">Partner</th>
                     <th className="py-3 px-4">Partner bankszámla</th>
                     <th className="py-3 px-4">Összeg</th>
                     <th className="py-3 px-4">Közlemény</th>
                     <th className="py-3 px-4 text-center">Státusz</th>
+                    <th className="py-3 px-4 text-center w-20">Művelet</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/30">
@@ -1169,8 +1299,20 @@ export default function TransfersPage() {
                       className: 'bg-muted text-muted-foreground'
                     };
 
+                    const isSelected = selectedHistoryIds.includes(item.id);
+
                     return (
-                      <tr key={item.id} className="hover:bg-muted/10 transition-colors">
+                      <tr key={item.id} className={`hover:bg-muted/10 transition-colors ${isSelected ? 'bg-primary/5' : ''}`}>
+                        <td className="py-3 px-4 text-center">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => {
+                              setSelectedHistoryIds(prev =>
+                                prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]
+                              );
+                            }}
+                          />
+                        </td>
                         <td className="py-3 px-4 font-mono text-xs text-muted-foreground">
                           {new Date(item.created_at).toLocaleString('hu-HU')}
                         </td>
@@ -1190,6 +1332,17 @@ export default function TransfersPage() {
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusConfig.className}`}>
                             {statusConfig.label}
                           </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                            onClick={() => handleDeleteTransfer(item.id)}
+                            title="Törlés"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </td>
                       </tr>
                     );
@@ -1285,7 +1438,7 @@ export default function TransfersPage() {
               Mégse
             </Button>
             <Button
-              onClick={handleGenerateFile}
+              onClick={() => handleGenerateFile()}
               disabled={exporting || displayBankAccounts.length === 0 || !senderAccountId}
               className="gap-1.5"
             >
@@ -1295,6 +1448,27 @@ export default function TransfersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Bottom Action Bar for Selected Invoices (Portaled to body to bypass dashboard transform/clipping) */}
+      {selectedIds.length > 0 && !exportDialogOpen && createPortal(
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl bg-card border border-primary/30 shadow-2xl rounded-2xl px-6 py-4 flex items-center justify-between z-[9999] animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+            <p className="text-sm font-semibold text-foreground">
+              Kijelölt tételek: <span className="font-extrabold text-primary">{selectedIds.length} db</span>
+            </p>
+            <span className="text-muted-foreground/30 text-xs">|</span>
+            <p className="text-xs text-muted-foreground font-medium">
+              Összesen: <span className="font-bold text-foreground">{stats.selectedSumHuf.toLocaleString('hu-HU')} Ft</span>
+            </p>
+          </div>
+          <Button onClick={triggerFileExport} className="gap-2 shadow-lg hover:shadow-primary/20 transition-all font-semibold h-9 text-xs rounded-xl">
+            <Download className="h-4 w-4" />
+            Utalási lista letöltése
+          </Button>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
