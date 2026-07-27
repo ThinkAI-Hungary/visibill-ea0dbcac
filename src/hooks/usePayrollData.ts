@@ -30,8 +30,8 @@ export interface PayrollEmployee {
   taj_number: string | null;
   tax_id: string | null;
   id_card_number: string | null;
-  address: Record<string, unknown> | null;
-  temp_address: Record<string, unknown> | null;
+  address: any | null;
+  temp_address: any | null;
   email: string | null;
   phone: string | null;
   bank_account: string | null;
@@ -70,7 +70,7 @@ export interface PayrollEmployment {
   remote_work_days_per_week: number | null;
   is_insured: boolean;
   status: string;
-  metadata: Record<string, unknown>;
+  metadata: any;
   created_at: string;
   updated_at: string;
   is_pensioner: boolean;
@@ -86,6 +86,9 @@ export interface PayrollEmployment {
   has_minimum_base: boolean;
   is_min_base_exempt_gyes_gyed: boolean;
   is_min_base_exempt_student: boolean;
+  is_min_base_paid_elsewhere: boolean;
+  other_company_name: string | null;
+  other_company_tax_number: string | null;
   is_unequal_work_schedule: boolean;
   insurance_relationship_code: string | null;
   job_valid_from: string | null;
@@ -146,7 +149,7 @@ export interface PayrollDeclaration {
   valid_from: string;
   valid_until: string | null;
   status: string;
-  parameters: Record<string, unknown>;
+  parameters: any;
   document_url: string | null;
   nav_receipt_id: string | null;
   created_at: string;
@@ -207,6 +210,8 @@ export interface PayrollCafeteriaItem {
   card_number: string | null;
   tax_rate: number | null;
   status: string;
+  sub_type?: string | null;
+  is_housing_allowance?: boolean | null;
   created_at: string;
 }
 
@@ -375,6 +380,31 @@ export function useCreateEmployment() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: payrollQueryKeys.employments(data.employee_id) });
       toast({ title: 'Siker', description: 'Jogviszony sikeresen rögzítve.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
+  });
+}
+
+export function useUpdateEmployment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<PayrollEmployment> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('accounty_employments')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as PayrollEmployment;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.employments(data.employee_id) });
+      toast({ title: 'Siker', description: 'Jogviszony sikeresen frissítve.' });
     },
     onError: (err: Error) => {
       toast({ variant: 'destructive', title: 'Hiba', description: err.message });
@@ -609,7 +639,7 @@ export function useAddDeclaration() {
       declaration_type: string;
       valid_from: string;
       valid_until?: string;
-      parameters?: Record<string, unknown>;
+      parameters?: any;
     }) => {
       const { data, error } = await supabase
         .from('accounty_declarations')
@@ -620,7 +650,7 @@ export function useAddDeclaration() {
           valid_until: decl.valid_until || null,
           parameters: decl.parameters || {},
           status: 'active',
-        })
+        } as any)
         .select()
         .single();
 
@@ -647,11 +677,11 @@ export function useUpdateDeclaration() {
       declaration_type?: string;
       valid_from?: string;
       valid_until?: string | null;
-      parameters?: Record<string, unknown>;
+      parameters?: any;
     }) => {
       const { data, error } = await supabase
         .from('accounty_declarations')
-        .update(updates)
+        .update(updates as any)
         .eq('id', id)
         .select()
         .single();
@@ -934,6 +964,45 @@ export function usePayrollCafeteria(employmentId: string, cycleId?: string) {
   });
 }
 
+export function useCreateCafeteriaItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (item: Omit<PayrollCafeteriaItem, 'id' | 'created_at'>) => {
+      const { data, error } = await supabase
+        .from('accounty_cafeteria')
+        .insert(item)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as PayrollCafeteriaItem;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.cafeteria(data.employment_id, '') });
+    },
+  });
+}
+
+export function useDeleteCafeteriaItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, employmentId }: { id: string; employmentId: string }) => {
+      const { error } = await supabase
+        .from('accounty_cafeteria')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { id, employmentId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.cafeteria(data.employmentId, '') });
+    },
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════
 // LETILTÁSOK
 // ═══════════════════════════════════════════════════════════════
@@ -960,7 +1029,7 @@ export function usePayrollGarnishments(employeeId: string) {
 // TÖMEGES SZÁMFEJTÉS (Batch Payroll)
 // ═══════════════════════════════════════════════════════════════
 
-import { calculatePayroll, type PayrollCalculationInput, type EmployeeDeclarations } from '@/lib/payroll/taxEngine';
+import { calculatePayroll, calculateGarnishments, type PayrollCalculationInput, type EmployeeDeclarations } from '@/lib/payroll/taxEngine';
 
 export interface BatchPayrollInput {
   cycleId: string;
@@ -1016,7 +1085,7 @@ export function useRunBatchPayroll() {
       if (itemErr) throw itemErr;
 
       // 4. Run calculations per employment
-      const results: Array<Record<string, unknown>> = [];
+      const results: any[] = [];
 
       for (const employment of (employments as any[])) {
         const employee = employment.accounty_employees;
@@ -1124,8 +1193,17 @@ export function useRunBatchPayroll() {
           isEkho: !!employment.is_ekho,
           isSzochoDiscount: !!employment.is_szocho_discount,
           szochoDiscountType: employment.szocho_discount_type || 'none',
-          szochoDiscountMonthsElapsed: employment.szocho_discount_months_elapsed || 0,
+          szochoDiscountMonthsElapsed: (employment.is_szocho_discount && employment.szocho_discount_start)
+            ? Math.max(0, (input.year - new Date(employment.szocho_discount_start).getFullYear()) * 12 + (input.month - (new Date(employment.szocho_discount_start).getMonth() + 1)))
+            : 0,
           cafeteria: parsedCafeteria,
+          minimumContributionBaseRule: (employment.minimum_contribution_base_rule || 'none') as any,
+          hasMinimumBase: !!employment.has_minimum_base,
+          isMinBaseExemptGyesGyed: !!employment.is_min_base_exempt_gyes_gyed,
+          isMinBaseExemptStudent: !!employment.is_min_base_exempt_student,
+          isMinBasePaidElsewhere: !!employment.is_min_base_paid_elsewhere,
+          otherCompanyName: employment.other_company_name || undefined,
+          otherCompanyTaxNumber: employment.other_company_tax_number || undefined,
         };
 
         const result = calculatePayroll(calcInput);

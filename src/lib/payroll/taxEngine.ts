@@ -106,6 +106,16 @@ export interface PayrollCalculationInput {
   szochoDiscountMonthsElapsed?: number; // piacra lépőnél eltelt hónapok száma
   cafeteria?: CafeteriaInputItem[];
   travelReimbursement?: TravelReimbursementInput;
+
+  // ── Minimális járulékalap mezők ──
+  minimumContributionBaseRule?: 'minimal_wage' | 'guaranteed_minimum' | 'none';
+  hasMinimumBase?: boolean;
+  isMinBaseExemptGyesGyed?: boolean;
+  isMinBaseExemptStudent?: boolean;
+  isMinBasePaidElsewhere?: boolean;
+  otherCompanyName?: string;
+  otherCompanyTaxNumber?: string;
+  eurRate?: number;
 }
 
 export interface TaxCreditDetail {
@@ -178,8 +188,11 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
   if (input.cafeteria) {
     const housingItems = input.cafeteria.filter(c => c.isHousingAllowance);
     for (const item of housingItems) {
-      if (input.employeeAge < 35 && item.amount <= 150000) {
-        housingAllowanceTaxFree += item.amount;
+      if (input.employeeAge < 35) {
+        const freePart = Math.min(item.amount, 150000);
+        const taxablePart = Math.max(0, item.amount - 150000);
+        housingAllowanceTaxFree += freePart;
+        housingAllowanceTaxable += taxablePart;
       } else {
         housingAllowanceTaxable += item.amount;
       }
@@ -423,7 +436,25 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
     szjaAmount = Math.round(szjaBase * params.szja_rate);
 
     // TB járulék (18.5%)
-    const tbBase = input.isInsured ? grossSalary : 0;
+    let tbBase = input.isInsured ? grossSalary : 0;
+    
+    // Minimális járulékalap szabály alkalmazása
+    const hasMinBaseRule = input.minimumContributionBaseRule === 'minimal_wage' || input.minimumContributionBaseRule === 'guaranteed_minimum';
+    const isExempt = 
+      !!input.isMinBaseExemptGyesGyed || 
+      !!input.isMinBaseExemptStudent || 
+      !!input.isMinBasePaidElsewhere || 
+      !!input.isPensioner;
+
+    if (hasMinBaseRule && !isExempt && input.isInsured) {
+      const minBaseVal = input.minimumContributionBaseRule === 'minimal_wage' 
+        ? params.minimum_wage 
+        : params.guaranteed_minimum;
+      
+      tbBase = Math.max(tbBase, minBaseVal);
+      szochoBase = Math.max(szochoBase, minBaseVal);
+    }
+
     const tbGross = Math.round(tbBase * params.tb_rate);
     tbAmount = Math.max(0, tbGross - totalTbSaving);
 
@@ -461,6 +492,12 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
 
   // 3. Cafeteria munkáltatói adók számítása (brief limit szabályok)
   let cafeteriaTaxEmployer = 0;
+  
+  // Lakhatási támogatás adója a munkáltató oldalán (limit alatt 28% közteher)
+  if (housingAllowanceTaxFree > 0) {
+    cafeteriaTaxEmployer += Math.round(housingAllowanceTaxFree * (params.szja_rate + params.szocho_rate));
+  }
+
   if (input.cafeteria) {
     const szepBasic = input.cafeteria
       .filter(c => c.subType === 'basic' && !c.isHousingAllowance)
@@ -471,38 +508,41 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
 
     // SZÉP basic limit (havi 37.500 Ft)
     const szepBasicCap = 37500;
-    const basicTaxableWithSzocho = Math.max(0, szepBasic - szepBasicCap);
     const basicTaxableLow = Math.min(szepBasic, szepBasicCap);
-    // Low: 15% SZJA 1.18x base (SZOCHO mentes)
-    cafeteriaTaxEmployer += Math.round(basicTaxableLow * 1.18 * 0.15);
+    const basicTaxableHigh = Math.max(0, szepBasic - szepBasicCap);
+    // Low: 15% SZJA + 13% SZOCHO 1.0x base
+    cafeteriaTaxEmployer += Math.round(basicTaxableLow * (params.szja_rate + params.szocho_rate));
     // High: 15% SZJA + 13% SZOCHO 1.18x base
-    cafeteriaTaxEmployer += Math.round(basicTaxableWithSzocho * 1.18 * (0.15 + 0.13));
+    cafeteriaTaxEmployer += Math.round(basicTaxableHigh * 1.18 * (params.szja_rate + params.szocho_rate));
 
     // SZÉP recreation limit (havi 10.000 Ft)
     const szepRecreationCap = 10000;
-    const recTaxableWithSzocho = Math.max(0, szepRecreation - szepRecreationCap);
     const recTaxableLow = Math.min(szepRecreation, szepRecreationCap);
-    cafeteriaTaxEmployer += Math.round(recTaxableLow * 1.18 * 0.15);
-    cafeteriaTaxEmployer += Math.round(recTaxableWithSzocho * 1.18 * (0.15 + 0.13));
+    const recTaxableHigh = Math.max(0, szepRecreation - szepRecreationCap);
+    // Low: 15% SZJA + 13% SZOCHO 1.0x base
+    cafeteriaTaxEmployer += Math.round(recTaxableLow * (params.szja_rate + params.szocho_rate));
+    // High: 15% SZJA + 13% SZOCHO 1.18x base
+    cafeteriaTaxEmployer += Math.round(recTaxableHigh * 1.18 * (params.szja_rate + params.szocho_rate));
   }
 
   // 4. Kiküldetési / Út-költségtérítési adómentes napidíjak
   let travelReimbursementAmount = 0;
   if (input.travelReimbursement) {
     const { commuteKm = 0, commuteDays = 0, businessDaysDomestic = 0, businessDaysForeign = 0, isDriver = false } = input.travelReimbursement;
+    const eurRate = input.eurRate || 400;
     
     // Munkába járás (30 Ft/km adómentes)
     travelReimbursementAmount += commuteKm * commuteDays * 30;
 
     // Kiküldetés napidíj
     if (isDriver) {
-      // Sofőrök: belföld 9.000 Ft, külföld 85€ (középárfolyam pl. 400 Ft)
+      // Sofőrök: belföld 9.000 Ft, külföld 85€
       travelReimbursementAmount += businessDaysDomestic * 9000;
-      travelReimbursementAmount += businessDaysForeign * 85 * 400;
+      travelReimbursementAmount += businessDaysForeign * 85 * eurRate;
     } else {
       // Normál: belföld 3.000 Ft, külföld max 15€ napidíj (30%-a)
       travelReimbursementAmount += businessDaysDomestic * 3000;
-      travelReimbursementAmount += businessDaysForeign * 15 * 400;
+      travelReimbursementAmount += businessDaysForeign * 15 * eurRate;
     }
   }
 

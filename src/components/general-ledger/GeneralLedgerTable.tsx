@@ -2,7 +2,7 @@ import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, u
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { cn } from '@/lib/utils';
+import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -306,7 +306,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
          
          return {
            id: String(dbItem.gl_number),
-           name: dbItem.short_name,
+           name: fixCharacterEncoding(dbItem.short_name),
            balance: Number(dbItem.total_balance) || 0,
            hasChildren,
            cid

@@ -59,6 +59,34 @@ export function formatTajNumber(taj: string): string {
   return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 9)}`;
 }
 
+/**
+ * TAJ-szám formázása gépelés közben: 000-000-000
+ */
+export function formatTajNumberOnType(taj: string): string {
+  const digits = taj.replace(/\D/g, '').slice(0, 9);
+  if (digits.length <= 3) {
+    return digits;
+  }
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  }
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+/**
+ * Bankszámlaszám formázása gépelés közben: XXXXXXXX-XXXXXXXX(-XXXXXXXX)
+ */
+export function formatBankAccountOnType(account: string): string {
+  const digits = account.replace(/\D/g, '').slice(0, 24);
+  if (digits.length <= 8) {
+    return digits;
+  }
+  if (digits.length <= 16) {
+    return `${digits.slice(0, 8)}-${digits.slice(8)}`;
+  }
+  return `${digits.slice(0, 8)}-${digits.slice(8, 16)}-${digits.slice(16)}`;
+}
+
 // ── Adóazonosító jel validáció ──
 
 /**

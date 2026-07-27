@@ -21,7 +21,7 @@ export const DEFAULT_2026_SZEP_LIMITS: SzepCardLimits = {
   accommodationYearly: 450_000,
   hospitalityYearly: 450_000,
   leisureYearly: 450_000,
-  recreationYearly: 75_000,
+  recreationYearly: 120_000,
   taxRate: 0.28,
 };
 
@@ -65,6 +65,13 @@ export interface YtdUsage {
   recreationYtd: number;
 }
 
+function calculatePocketTax(monthly: number, ytd: number, yearlyLimit: number, taxRate: number): number {
+  const remainingLimit = Math.max(0, yearlyLimit - ytd);
+  const lowPart = Math.min(monthly, remainingLimit);
+  const highPart = Math.max(0, monthly - remainingLimit);
+  return Math.round(lowPart * taxRate) + Math.round(highPart * 1.18 * taxRate);
+}
+
 /**
  * Calculate cafeteria tax for a monthly allocation
  */
@@ -75,11 +82,7 @@ export function calculateCafeteriaTax(
 ): CafeteriaTaxResult {
   const warnings: CafeteriaWarning[] = [];
 
-  // SZÉP kártya
-  const szepTotal = allocation.accommodation + allocation.hospitality + allocation.leisure;
-  const szepTax = Math.round(szepTotal * limits.taxRate);
-
-  // Check limits
+  // Pockets limit and warning checks
   const pockets = [
     { name: 'Szálláshely', monthly: allocation.accommodation, ytd: ytd.accommodationYtd, limit: limits.accommodationYearly },
     { name: 'Vendéglátás', monthly: allocation.hospitality, ytd: ytd.hospitalityYtd, limit: limits.hospitalityYearly },
@@ -108,12 +111,17 @@ export function calculateCafeteriaTax(
     }
   }
 
+  // Calculate taxes for each pocket
+  const accommodationTax = calculatePocketTax(allocation.accommodation, ytd.accommodationYtd, limits.accommodationYearly, limits.taxRate);
+  const hospitalityTax = calculatePocketTax(allocation.hospitality, ytd.hospitalityYtd, limits.hospitalityYearly, limits.taxRate);
+  const leisureTax = calculatePocketTax(allocation.leisure, ytd.leisureYtd, limits.leisureYearly, limits.taxRate);
+  
+  const szepTotal = allocation.accommodation + allocation.hospitality + allocation.leisure;
+  const szepTax = accommodationTax + hospitalityTax + leisureTax;
+
   // Rekreáció
   const recreationTotal = allocation.recreation;
-  const recreationYtdNew = ytd.recreationYtd + recreationTotal;
-  const recreationTax = recreationYtdNew > limits.recreationYearly
-    ? Math.round(Math.max(0, recreationYtdNew - limits.recreationYearly) * limits.taxRate)
-    : 0;
+  const recreationTax = calculatePocketTax(recreationTotal, ytd.recreationYtd, limits.recreationYearly, limits.taxRate);
 
   // Magáncélú telefon (20% adóköteles)
   const phoneTaxable = Math.round(allocation.privatePhone * 0.2);

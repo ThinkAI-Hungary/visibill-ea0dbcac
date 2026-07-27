@@ -309,7 +309,7 @@ export default function GeneralLedgerPage() {
             <div className="border-l pl-3 border-border/60 flex items-center gap-2">
               <Button onClick={handleOpenUpload} size="sm" className="h-9 gap-2">
                 <UploadCloud className="w-4 h-4" />
-                <span>Új feltöltése</span>
+                <span>Új sablon feltöltése</span>
               </Button>
               <Button onClick={() => setAuditXmlModalOpen(true)} size="sm" variant="outline" className="h-9 gap-2">
                 <FileUp className="w-4 h-4" />

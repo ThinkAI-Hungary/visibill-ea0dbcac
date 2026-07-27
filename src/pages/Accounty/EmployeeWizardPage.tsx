@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useCreateEmployee, useCreateEmployment, useJobCodes, useCreateDependent } from '@/hooks/usePayrollData';
-import { validateTajNumber, validateTaxId, validateBankAccount, validateFeorCode, formatTajNumber, formatBankAccount } from '@/lib/payroll/validators';
+import { validateTajNumber, validateTaxId, validateBankAccount, validateFeorCode, formatTajNumber, formatBankAccount, formatTajNumberOnType, formatBankAccountOnType } from '@/lib/payroll/validators';
 
 // ── Step definitions ──
 const STEPS = [
@@ -53,8 +53,8 @@ const EMPLOYMENT_TYPES = [
   // ── Vállalkozók ──
   { value: 'tarsas_vallalkozo', label: 'Társas vállalkozó (főfogl.)', code: '1451', desc: 'Személyesen közreműködő tag, főállás', icon: '', group: 'Vállalkozó' },
   { value: 'tarsas_vallalkozo_mellekfogl', label: 'Társas vállalkozó (mellékfogl.)', code: '1452', desc: 'Mellékfoglalkozású társas vállalkozó', icon: '', group: 'Vállalkozó', tag: 'KEDV' },
-  { value: 'ev', label: 'Egyéni vállalkozó (főfogl.)', code: '1470', desc: 'Főállású egyéni vállalkozó', icon: '', group: 'Vállalkozó' },
-  { value: 'ev_mellekfogl', label: 'Egyéni vállalkozó (mellékfogl.)', code: '1471', desc: 'Mellékfoglalkozású EV', icon: '', group: 'Vállalkozó', tag: 'KEDV' },
+  { value: 'ev', label: 'Egyéni vállalkozó (főfogl.) (EV)', code: '1470', desc: 'Főállású egyéni vállalkozó (EV)', icon: '', group: 'Vállalkozó' },
+  { value: 'ev_mellekfogl', label: 'Egyéni vállalkozó (mellékfogl.) (EV)', code: '1471', desc: 'Mellékfoglalkozású EV', icon: '', group: 'Vállalkozó', tag: 'KEDV' },
   { value: 'szovetkezeti_tag', label: 'Szövetkezeti tag', code: '1460', desc: 'Szövetkezetben személyesen közreműködő', icon: '', group: 'Vállalkozó' },
   { value: 'iskolaszovetkezet', label: 'Iskolaszövetkezeti tag', code: '1464', desc: 'Diákmunka iskolaszövetkezeten keresztül', icon: '', group: 'Vállalkozó' },
 
@@ -120,6 +120,12 @@ type FormData = {
   feor_description: string;
   // Step 5: Financial
   bank_account: string;
+  minimum_contribution_base_rule: string;
+  is_min_base_paid_elsewhere: boolean;
+  other_company_name: string;
+  other_company_tax_number: string;
+  is_min_base_exempt_gyes_gyed: boolean;
+  is_min_base_exempt_student: boolean;
 };
 
 const INITIAL_FORM: FormData = {
@@ -161,6 +167,12 @@ const INITIAL_FORM: FormData = {
   insurance_relationship_code: '',
   feor_description: '',
   bank_account: '',
+  minimum_contribution_base_rule: 'none',
+  is_min_base_paid_elsewhere: false,
+  other_company_name: '',
+  other_company_tax_number: '',
+  is_min_base_exempt_gyes_gyed: false,
+  is_min_base_exempt_student: false,
 };
 
 import { supabase } from '@/integrations/supabase/client';
@@ -323,12 +335,22 @@ export default function EmployeeWizardPage() {
         ekho_category: form.is_ekho ? form.ekho_category : 'normal',
         is_szocho_discount: form.is_szocho_discount,
         szocho_discount_type: form.is_szocho_discount ? form.szocho_discount_type : 'none',
-        szocho_discount_start: form.is_szocho_discount ? form.start_date : null,
+        szocho_discount_start: form.is_szocho_discount 
+          ? (() => {
+              const months = parseInt(form.szocho_discount_months_elapsed) || 0;
+              const d = new Date(form.start_date);
+              d.setMonth(d.getMonth() - months);
+              return d.toISOString().slice(0, 10);
+            })()
+          : null,
         szocho_discount_end: null,
-        minimum_contribution_base_rule: 'minimal_wage',
-        has_minimum_base: !form.is_pensioner,
-        is_min_base_exempt_gyes_gyed: false,
-        is_min_base_exempt_student: false,
+        minimum_contribution_base_rule: form.minimum_contribution_base_rule || 'none',
+        has_minimum_base: form.minimum_contribution_base_rule !== 'none',
+        is_min_base_exempt_gyes_gyed: form.is_min_base_exempt_gyes_gyed,
+        is_min_base_exempt_student: form.is_min_base_exempt_student,
+        is_min_base_paid_elsewhere: form.is_min_base_paid_elsewhere,
+        other_company_name: form.is_min_base_paid_elsewhere ? (form.other_company_name || null) : null,
+        other_company_tax_number: form.is_min_base_paid_elsewhere ? (form.other_company_tax_number || null) : null,
         is_unequal_work_schedule: false,
         insurance_relationship_code: form.insurance_relationship_code || null,
         job_valid_from: form.start_date,
@@ -357,26 +379,22 @@ export default function EmployeeWizardPage() {
       </div>
 
       {/* Stepper */}
-      <div className="flex items-center gap-2">
+      <div className="grid grid-cols-6 gap-2 w-full">
         {STEPS.map((s, i) => (
-          <React.Fragment key={s.id}>
-            <button
-              onClick={() => i < step && setStep(i)}
-              className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
-                i === step ? 'bg-primary text-primary-foreground shadow-lg' :
-                i < step ? 'bg-accent text-primary cursor-pointer hover:bg-accent/80' :
-                'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
-              )}
-            >
-              <s.icon className="w-4 h-4" />
-              <span className="hidden md:inline">{s.title}</span>
-              <span className="md:hidden">{i + 1}</span>
-            </button>
-            {i < STEPS.length - 1 && (
-              <div className={cn('flex-1 h-0.5 rounded-full', i < step ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700')} />
+          <button
+            key={s.id}
+            onClick={() => i < step && setStep(i)}
+            className={cn(
+              'w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all min-w-0',
+              i === step ? 'bg-primary text-primary-foreground shadow-lg' :
+              i < step ? 'bg-accent text-primary cursor-pointer hover:bg-accent/80' :
+              'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
             )}
-          </React.Fragment>
+          >
+            <s.icon className="w-4 h-4 shrink-0" />
+            <span className="hidden md:inline truncate">{s.title}</span>
+            <span className="md:hidden">{i + 1}</span>
+          </button>
         ))}
       </div>
 
@@ -390,7 +408,7 @@ export default function EmployeeWizardPage() {
           const groups = ['Mind', ...Array.from(new Set(EMPLOYMENT_TYPES.map(t => (t as any).group).filter(Boolean)))];
           const filtered = EMPLOYMENT_TYPES.filter(t => {
             const matchGroup = activeGroup === 'Mind' || (t as any).group === activeGroup;
-            const matchSearch = !typeSearch || t.label.toLowerCase().includes(typeSearch.toLowerCase()) || t.desc.toLowerCase().includes(typeSearch.toLowerCase()) || t.code.toLowerCase().includes(typeSearch.toLowerCase());
+            const matchSearch = !typeSearch || t.label.toLowerCase().includes(typeSearch.toLowerCase()) || t.desc.toLowerCase().includes(typeSearch.toLowerCase()) || t.code.toLowerCase().includes(typeSearch.toLowerCase()) || t.value.toLowerCase().includes(typeSearch.toLowerCase());
             return matchGroup && matchSearch;
           });
           return (
@@ -431,6 +449,8 @@ export default function EmployeeWizardPage() {
                     onClick={() => {
                       update('employment_type', type.value);
                       update('job_code', type.code);
+                      const isVal = type.group === 'Vállalkozó';
+                      update('minimum_contribution_base_rule', isVal ? 'minimal_wage' : 'none');
                     }}
                     className={cn(
                       'relative flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all duration-200',
@@ -539,7 +559,7 @@ export default function EmployeeWizardPage() {
             <div className="md:col-span-2 border-t border-border pt-4 mt-2">
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Azonosítók</p>
             </div>
-            <FormField label="TAJ-szám" value={form.taj_number} onChange={(v) => update('taj_number', v)} error={errors.taj_number} placeholder="000-000-000" />
+            <FormField label="TAJ-szám" value={form.taj_number} onChange={(v) => update('taj_number', formatTajNumberOnType(v))} error={errors.taj_number} placeholder="000-000-000" />
             <FormField label="Adóazonosító jel" value={form.tax_id} onChange={(v) => update('tax_id', v)} error={errors.tax_id} placeholder="8XXXXXXXXX" />
             <div className="md:col-span-2 border-t border-border pt-4 mt-2">
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Elérhetőség</p>
@@ -623,7 +643,7 @@ export default function EmployeeWizardPage() {
                             value={dep.taj_number}
                             onChange={(e) => {
                               const list = [...form.dependents];
-                              list[idx].taj_number = e.target.value;
+                              list[idx].taj_number = formatTajNumberOnType(e.target.value);
                               update('dependents', list);
                             }}
                             placeholder="000-000-000"
@@ -813,13 +833,97 @@ export default function EmployeeWizardPage() {
                 </div>
               )}
             </div>
+
+            <div className="md:col-span-2 border-t border-border pt-4 mt-2">
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Minimális Járulékalap Szabályok és Mentességek</p>
+            </div>
+            
+            <div className="flex flex-col gap-3 p-4 rounded-lg border border-border md:col-span-2 bg-slate-50/50 dark:bg-slate-900/10">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Minimális járulékalap szabály</label>
+                <Select value={form.minimum_contribution_base_rule} onValueChange={(v) => update('minimum_contribution_base_rule', v)}>
+                  <SelectTrigger className="bg-card border-border h-9 text-xs">
+                    <SelectValue placeholder="Válassz szabályt..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nincs szabály (tényleges bér alapján)</SelectItem>
+                    <SelectItem value="minimal_wage">Minimálbér (Minimal Wage)</SelectItem>
+                    <SelectItem value="guaranteed_minimum">Garantált bérminimum (Guaranteed Minimum)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {form.minimum_contribution_base_rule !== 'none' && (
+                <div className="space-y-3 mt-2 border-t border-border/60 pt-3">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="checkbox" 
+                        id="is_min_base_paid_elsewhere" 
+                        checked={form.is_min_base_paid_elsewhere} 
+                        onChange={(e) => update('is_min_base_paid_elsewhere', e.target.checked)} 
+                        className="w-4 h-4 rounded border-slate-300" 
+                      />
+                      <label htmlFor="is_min_base_paid_elsewhere" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">
+                        A minimális járulékalap utáni járulékot máshol megfizették
+                      </label>
+                    </div>
+
+                    {form.is_min_base_paid_elsewhere && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1 pl-6">
+                        <FormField 
+                          label="Másik cég neve *" 
+                          value={form.other_company_name} 
+                          onChange={(v) => update('other_company_name', v)} 
+                          placeholder="pl. Példa Kft." 
+                          className="h-8 text-xs" 
+                        />
+                        <FormField 
+                          label="Másik cég adószáma *" 
+                          value={form.other_company_tax_number} 
+                          onChange={(v) => update('other_company_tax_number', v)} 
+                          placeholder="pl. 12345678-1-12" 
+                          className="h-8 text-xs" 
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="checkbox" 
+                      id="is_min_base_exempt_gyes_gyed" 
+                      checked={form.is_min_base_exempt_gyes_gyed} 
+                      onChange={(e) => update('is_min_base_exempt_gyes_gyed', e.target.checked)} 
+                      className="w-4 h-4 rounded border-slate-300" 
+                    />
+                    <label htmlFor="is_min_base_exempt_gyes_gyed" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">
+                      Mentesség GYES/GYED melletti foglalkoztatás miatt
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="checkbox" 
+                      id="is_min_base_exempt_student" 
+                      checked={form.is_min_base_exempt_student} 
+                      onChange={(e) => update('is_min_base_exempt_student', e.target.checked)} 
+                      className="w-4 h-4 rounded border-slate-300" 
+                    />
+                    <label htmlFor="is_min_base_exempt_student" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">
+                      Mentesség nappali tagozatos tanulói jogviszony miatt
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Step 4: Financial data */}
         {step === 4 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Bankszámlaszám" value={form.bank_account} onChange={(v) => update('bank_account', v)} error={errors.bank_account} placeholder="XXXXXXXX-XXXXXXXX-XXXXXXXX" className="md:col-span-2" />
+            <FormField label="Bankszámlaszám" value={form.bank_account} onChange={(v) => update('bank_account', formatBankAccountOnType(v))} error={errors.bank_account} placeholder="XXXXXXXX-XXXXXXXX-XXXXXXXX" className="md:col-span-2" />
             <div className="md:col-span-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 shrink-0" />

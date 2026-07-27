@@ -256,3 +256,81 @@ describe('calculateGarnishments — Letiltások', () => {
     expect(result.total).toBe(0);
   });
 });
+
+describe('calculatePayroll — Minimális járulékalap és Új Cafeteria / Lakhatás szabályok', () => {
+  it('minimális járulékalap — minimálbér szabály (gross < minimálbér)', () => {
+    const result = calculatePayroll(makeInput(200_000, {
+      minimumContributionBaseRule: 'minimal_wage',
+      isInsured: true,
+    }));
+
+    // gross = 200_000, minimal_wage = 322_800
+    // tbBase and szochoBase should be bumped to 322_800
+    expect(result.tbAmount).toBe(Math.round(322_800 * 0.185));
+    expect(result.szochoAmount).toBe(Math.round(322_800 * 0.13));
+  });
+
+  it('minimális járulékalap — garantált bérminimum szabály (gross < bérminimum)', () => {
+    const result = calculatePayroll(makeInput(300_000, {
+      minimumContributionBaseRule: 'guaranteed_minimum',
+      isInsured: true,
+    }));
+
+    // gross = 300_000, guaranteed_minimum = 373_200
+    // tbBase and szochoBase should be bumped to 373_200
+    expect(result.tbAmount).toBe(Math.round(373_200 * 0.185));
+    expect(result.szochoAmount).toBe(Math.round(373_200 * 0.13));
+  });
+
+  it('minimális járulékalap mentesség — ha más cégnél megfizetve', () => {
+    const result = calculatePayroll(makeInput(200_000, {
+      minimumContributionBaseRule: 'minimal_wage',
+      isMinBasePaidElsewhere: true,
+      isInsured: true,
+    }));
+
+    // exempt from minimum base, so normal gross base (200k) is used
+    expect(result.tbAmount).toBe(Math.round(200_000 * 0.185));
+    expect(result.szochoAmount).toBe(Math.round(200_000 * 0.13));
+  });
+
+  it('cafeteria és lakhatás — munkáltatói terhek kiszámítása (35 év alatti lakhatás)', () => {
+    const result = calculatePayroll(makeInput(500_000, {
+      employeeAge: 30,
+      cafeteria: [
+        { amount: 120_000, subType: 'basic', isHousingAllowance: true }, // housing allowance under 150k limit
+      ],
+    }));
+
+    // 120k is free for employee, so not in gross.
+    // Employer pays 28% tax on 1.0x of the free amount.
+    // 120_000 * 0.28 = 33_600
+    expect(result.cafeteriaTaxEmployer).toBe(33_600);
+  });
+
+  it('cafeteria és lakhatás — 35 év feletti lakhatás (teljesen adóköteles)', () => {
+    const result = calculatePayroll(makeInput(500_000, {
+      employeeAge: 40,
+      cafeteria: [
+        { amount: 120_000, subType: 'basic', isHousingAllowance: true },
+      ],
+    }));
+
+    // Over 35, housing allowance is taxable as regular income (added to gross components).
+    // Gross salary: 500k + 120k = 620k
+    expect(result.grossSalary).toBe(620_000);
+    expect(result.cafeteriaTaxEmployer).toBe(0);
+  });
+
+  it('kiküldetés — eurRate paraméter használata', () => {
+    const result = calculatePayroll(makeInput(500_000, {
+      travelReimbursement: {
+        businessDaysForeign: 5,
+      },
+      eurRate: 420,
+    }));
+
+    // Foreign trip: 5 days * 15 EUR * 420 = 31_500
+    expect(result.travelReimbursementAmount).toBe(31_500);
+  });
+});

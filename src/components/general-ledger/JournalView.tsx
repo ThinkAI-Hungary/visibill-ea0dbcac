@@ -6,7 +6,7 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { Search, Download, Loader2, BookOpen, ArrowUpDown } from 'lucide-react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { exportToFile } from '@/lib/exportUtils';
@@ -94,7 +94,7 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
 
   const glMap = useMemo(() => {
     const m: Record<string, { gl_number: string; short_name: string }> = {};
-    glAccounts.forEach((a: any) => { m[a.gl_account_id] = { gl_number: a.gl_number, short_name: a.short_name }; });
+    glAccounts.forEach((a: any) => { m[a.gl_account_id] = { gl_number: a.gl_number, short_name: fixCharacterEncoding(a.short_name) }; });
     return m;
   }, [glAccounts]);
 

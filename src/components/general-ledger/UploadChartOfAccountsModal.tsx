@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,96 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { reportError } from '@/lib/errorReporter';
+
+// Helper to load PDF.js dynamically from CDN
+const loadPdfJs = async (): Promise<any> => {
+  if ((window as any).pdfjsLib) {
+    return (window as any).pdfjsLib;
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js";
+    script.onload = () => {
+      const pdfjsLib = (window as any).pdfjsLib;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+      resolve(pdfjsLib);
+    };
+    script.onerror = (err) => reject(new Error("Nem sikerült betölteni a PDF-feldolgozó könyvtárat."));
+    document.head.appendChild(script);
+  });
+};
+
+// Parser function to extract and match GL accounts from PDF
+const parsePdfChartOfAccounts = async (file: File): Promise<any[]> => {
+  const pdfjsLib = await loadPdfJs();
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const rows: any[] = [];
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const items = textContent.items as any[];
+    
+    // Group text items by y coordinate with 3px tolerance
+    const tolerance = 3;
+    const yGroups: { y: number; items: any[] }[] = [];
+    
+    for (const item of items) {
+      if (!item.str || !item.str.trim()) continue;
+      const y = item.transform[5];
+      let group = yGroups.find(g => Math.abs(g.y - y) <= tolerance);
+      if (!group) {
+        group = { y, items: [] };
+        yGroups.push(group);
+      }
+      group.items.push(item);
+    }
+    
+    // Sort groups from top to bottom (y descending)
+    yGroups.sort((a, b) => b.y - a.y);
+    
+    for (const group of yGroups) {
+      // Sort items within the same line from left to right (x ascending)
+      group.items.sort((a, b) => a.transform[4] - b.transform[4]);
+      
+      const lineText = group.items.map(item => item.str).join(" ").trim();
+      if (!lineText) continue;
+
+      // Match "GLNumber Name" format (starts with digits, followed by whitespace/punctuation and words)
+      const match = lineText.match(/^\s*(\d[\d.-]*)\s+(.+)$/);
+      if (match) {
+        const glNumber = match[1].trim();
+        const name = match[2].trim();
+        
+        // Skip address lines, postal codes, footers
+        const nameLower = name.toLowerCase();
+        if (
+          nameLower.includes("budapest") || 
+          nameLower.includes("utca") || 
+          nameLower.includes("út") || 
+          nameLower.includes("tér") || 
+          nameLower.includes("kft.") || 
+          nameLower.includes("bt.") || 
+          nameLower.includes("adószám") ||
+          nameLower.includes("lapszám") ||
+          nameLower.includes("üzleti év") ||
+          nameLower.includes("készült:") ||
+          nameLower.includes("ügyviteli")
+        ) {
+          continue;
+        }
+
+        rows.push({
+          gl_number: glNumber,
+          short_name: name
+        });
+      }
+    }
+  }
+
+  return rows;
+};
 
 interface UploadModalProps {
   open: boolean;
@@ -58,12 +148,12 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
   };
 
   const validateAndSetFile = (selectedFile: File) => {
-    const validExensions = ['.csv', '.xlsx', '.xls'];
+    const validExensions = ['.csv', '.xlsx', '.xls', '.pdf'];
     const nameLower = selectedFile.name.toLowerCase();
     if (validExensions.some(ext => nameLower.endsWith(ext))) {
       setFile(selectedFile);
     } else {
-      toast({ title: "Hibás formátum", description: "Kérlek CSV vagy Excel (XLSX, XLS) fájlt tölts fel.", variant: "destructive" });
+      toast({ title: "Hibás formátum", description: "Kérlek CSV, Excel (XLSX, XLS) vagy PDF fájlt tölts fel.", variant: "destructive" });
     }
   };
 
@@ -166,9 +256,17 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
       }
     };
 
-    const isCsv = file.name.toLowerCase().endsWith('.csv');
+    const nameLower = file.name.toLowerCase();
 
-    if (isCsv) {
+    if (nameLower.endsWith('.pdf')) {
+      try {
+        const pdfRows = await parsePdfChartOfAccounts(file);
+        await processRows(pdfRows);
+      } catch (error: any) {
+        toast({ title: "PDF feldolgozási hiba", description: error.message || "Hibás PDF fájl formátum.", variant: "destructive" });
+        setLoading(false);
+      }
+    } else if (nameLower.endsWith('.csv')) {
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
@@ -200,7 +298,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
         <DialogHeader>
           <DialogTitle>Új Számlatükör Feltöltése</DialogTitle>
           <DialogDescription>
-            Importálj egyéni számlatükröt CSV vagy Excel fájlból. Az adatok Oszlopai sorrendje: Főkönyvi szám, Név, (Leírás opcionális).
+            Importálj egyéni számlatükröt CSV, Excel vagy PDF fájlból. Az adatok Oszlopai sorrendje: Főkönyvi szám, Név, (Leírás opcionális).
           </DialogDescription>
         </DialogHeader>
 
@@ -227,8 +325,8 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
               >
                 <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
                   <UploadCloud className="h-8 w-8 text-primary/60" />
-                  <p className="text-sm font-medium">Kattints, vagy húzd ide a CSV/Excel fájlt</p>
-                  <p className="text-xs">Támogatott: .csv, .xlsx, .xls (max. 10MB)</p>
+                  <p className="text-sm font-medium">Kattints, vagy húzd ide a CSV/Excel/PDF fájlt</p>
+                  <p className="text-xs">Támogatott: .csv, .xlsx, .xls, .pdf (max. 10MB)</p>
                 </div>
               </div>
             ) : (
@@ -246,7 +344,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
               type="file" 
               ref={fileInputRef} 
               className="hidden" 
-              accept=".csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+              accept=".csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf"
               onChange={handleFileSelect} 
             />
           </div>

@@ -42,3 +42,12 @@ export function extractStoragePath(publicUrl: string, bucket: string): string | 
     return null;
   }
 }
+
+/** Fix Hungarian character encoding bugs where accents are replaced by ? due to database migration encoding issues. */
+export function fixCharacterEncoding(str: string | null | undefined): string {
+  if (!str) return '';
+  return str
+    .replace(/Besorolatlan t\?telek/gi, (m) => m.toUpperCase() === m ? 'BESOROLATLAN TÉTELEK' : 'Besorolatlan tételek')
+    .replace(/elt\?r\? sablonb\?l/gi, (m) => m.toUpperCase() === m ? 'ELTÉRŐ SABLONBÓL' : 'Eltérő sablonból')
+    .replace(/sablonb\?l/gi, (m) => m.toUpperCase() === m ? 'SABLONBÓL' : 'sablonból');
+}

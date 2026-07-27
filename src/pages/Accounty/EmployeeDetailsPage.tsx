@@ -4,7 +4,7 @@ import {
   ArrowLeft, User, Briefcase, CreditCard, Calendar, FileText,
   Shield, Edit3, Trash2, Plus, X,
   Mail, Phone, MapPin, Banknote, AlertTriangle, Save, Loader2,
-  Users, LogOut, FolderOpen, Printer, Download
+  Users, LogOut, FolderOpen, Printer, Download, Gift
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ import { EmployeeOverviewTab, EmployeeEmploymentsTab } from './employee-details/
 import { EmployeeDeclarationsTab } from './employee-details/EmployeeDeclarationsTab';
 import { EmployeeLeaveTab } from './employee-details/EmployeeLeaveTab';
 import { EmployeeGarnishmentsTab } from './employee-details/EmployeeGarnishmentsTab';
+import { EmployeeCafeteriaTab } from './employee-details/EmployeeCafeteriaTab';
 import SalaryHistoryTab from './employee-details/SalaryHistoryTab';
 import { printEmploymentCertificate, printIncomeCertificate, printTimesheetTemplate, printAnnualLedger } from '@/lib/payroll/payslipTemplates';
 import { generate2608Xml, generate2658Xml, generateT1041Xml, generateT1042EXml } from '@/lib/payroll/xmlGenerator';
@@ -36,6 +37,7 @@ const TABS = [
   { id: 'overview', title: 'Áttekintés', icon: User },
   { id: 'employments', title: 'Jogviszonyok', icon: Briefcase },
   { id: 'declarations', title: 'Nyilatkozatok', icon: FileText },
+  { id: 'cafeteria', title: 'Cafeteria', icon: Gift },
   { id: 'leave', title: 'Szabadság', icon: Calendar },
   { id: 'garnishments', title: 'Letiltások', icon: Shield },
   { id: 'salary', title: 'Bérelőzmények', icon: Banknote },
@@ -256,6 +258,10 @@ export default function EmployeeDetailsPage() {
           />
         )}
 
+        {activeTab === 'cafeteria' && (
+          <EmployeeCafeteriaTab employmentId={primaryEmployment?.id || ''} />
+        )}
+
         {activeTab === 'leave' && (
           <EmployeeLeaveTab leaves={leaves} leaveBalance={leaveBalance} />
         )}
@@ -388,7 +394,9 @@ export default function EmployeeDetailsPage() {
                             isEkho: !!primaryEmployment.is_ekho,
                             isSzochoDiscount: !!primaryEmployment.is_szocho_discount,
                             szochoDiscountType: primaryEmployment.szocho_discount_type || 'none',
-                            szochoDiscountMonthsElapsed: primaryEmployment.szocho_discount_months_elapsed || 0,
+                            szochoDiscountMonthsElapsed: primaryEmployment.szocho_discount_start 
+                               ? Math.max(0, (new Date().getFullYear() - new Date(primaryEmployment.szocho_discount_start).getFullYear()) * 12 + (new Date().getMonth() - new Date(primaryEmployment.szocho_discount_start).getMonth()))
+                               : 0,
                             cafeteria: [],
                           };
 

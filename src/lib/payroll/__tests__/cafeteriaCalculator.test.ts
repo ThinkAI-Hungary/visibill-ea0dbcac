@@ -72,23 +72,26 @@ describe('cafeteriaCalculator', () => {
     expect(result.warnings[0].pocket).toBe('Vendéglátás');
   });
 
-  it('should not tax recreation within 75k limit', () => {
+  it('should tax recreation within 120k limit at 1.0x rate', () => {
     const result = calculateCafeteriaTax(
       makeAlloc({ recreation: 10_000 }),
-      makeYtd({ recreationYtd: 30_000 }) // 30k + 10k = 40k < 75k
+      makeYtd({ recreationYtd: 30_000 }) // 30k + 10k = 40k < 120k
     );
 
     expect(result.recreationTotal).toBe(10_000);
-    expect(result.recreationTax).toBe(0);
+    expect(result.recreationTax).toBe(Math.round(10_000 * 0.28));
   });
 
-  it('should tax recreation above 75k limit', () => {
+  it('should tax recreation above 120k limit at 1.18x rate', () => {
     const result = calculateCafeteriaTax(
       makeAlloc({ recreation: 20_000 }),
-      makeYtd({ recreationYtd: 70_000 }) // 70k + 20k = 90k → 15k over
+      makeYtd({ recreationYtd: 110_000 }) // 110k + 20k = 130k → 10k low, 10k high
     );
 
-    expect(result.recreationTax).toBe(Math.round(15_000 * 0.28)); // 4.200
+    // 10_000 * 0.28 = 2.800
+    // 10_000 * 1.18 * 0.28 = 3.304
+    // total = 6.104
+    expect(result.recreationTax).toBe(6104);
   });
 
   it('should tax 20% of private phone usage', () => {
@@ -107,7 +110,7 @@ describe('cafeteriaCalculator', () => {
         accommodation: 37_500,  // 450k / 12
         hospitality: 37_500,
         leisure: 37_500,
-        recreation: 6_250,      // 75k / 12
+        recreation: 10_000,      // 120k / 12
         privatePhone: 5_000,
       }),
       makeYtd()
@@ -115,9 +118,9 @@ describe('cafeteriaCalculator', () => {
 
     const szepTotal = 37_500 * 3; // 112.500
     expect(result.szepTotal).toBe(szepTotal);
-    expect(result.totalBenefit).toBe(szepTotal + 6_250 + 5_000); // 123.750
+    expect(result.totalBenefit).toBe(szepTotal + 10_000 + 5_000); // 127.500
     expect(result.szepTax).toBe(Math.round(szepTotal * 0.28));
-    expect(result.recreationTax).toBe(0); // Within limit
+    expect(result.recreationTax).toBe(Math.round(10_000 * 0.28));
     expect(result.phoneTaxable).toBe(1_000); // 5.000 * 20%
   });
 

@@ -1195,6 +1195,7 @@ export type Database = {
           is_insured: boolean | null
           is_min_base_exempt_gyes_gyed: boolean | null
           is_min_base_exempt_student: boolean | null
+          is_min_base_paid_elsewhere: boolean | null
           is_pensioner: boolean | null
           is_szocho_discount: boolean | null
           is_unequal_work_schedule: boolean | null
@@ -1205,6 +1206,8 @@ export type Database = {
           location_id: string | null
           metadata: Json | null
           minimum_contribution_base_rule: string | null
+          other_company_name: string | null
+          other_company_tax_number: string | null
           pension_type: string | null
           probation_end: string | null
           remote_work_days_per_week: number | null
@@ -1239,6 +1242,7 @@ export type Database = {
           is_insured?: boolean | null
           is_min_base_exempt_gyes_gyed?: boolean | null
           is_min_base_exempt_student?: boolean | null
+          is_min_base_paid_elsewhere?: boolean | null
           is_pensioner?: boolean | null
           is_szocho_discount?: boolean | null
           is_unequal_work_schedule?: boolean | null
@@ -1249,6 +1253,8 @@ export type Database = {
           location_id?: string | null
           metadata?: Json | null
           minimum_contribution_base_rule?: string | null
+          other_company_name?: string | null
+          other_company_tax_number?: string | null
           pension_type?: string | null
           probation_end?: string | null
           remote_work_days_per_week?: number | null
@@ -1283,6 +1289,7 @@ export type Database = {
           is_insured?: boolean | null
           is_min_base_exempt_gyes_gyed?: boolean | null
           is_min_base_exempt_student?: boolean | null
+          is_min_base_paid_elsewhere?: boolean | null
           is_pensioner?: boolean | null
           is_szocho_discount?: boolean | null
           is_unequal_work_schedule?: boolean | null
@@ -1293,6 +1300,8 @@ export type Database = {
           location_id?: string | null
           metadata?: Json | null
           minimum_contribution_base_rule?: string | null
+          other_company_name?: string | null
+          other_company_tax_number?: string | null
           pension_type?: string | null
           probation_end?: string | null
           remote_work_days_per_week?: number | null
