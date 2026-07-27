@@ -45,6 +45,17 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useNavigate, useParams } from 'react-router-dom';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import { CopyableCell } from '@/components/ui/copyable-cell';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
+
 
 interface TransferInvoice {
   id: string;
@@ -83,6 +94,13 @@ export default function TransfersPage() {
   const [exportFormat, setExportFormat] = useState<string>('otp');
   const [exporting, setExporting] = useState(false);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
+
+  // Pagination State
+  const [activePage, setActivePage] = useState(1);
+  const [activePageSize, setActivePageSize] = useState(50);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(50);
+
 
   // 1. Fetch own bank accounts
   const { data: bankAccounts = [], refetch: refetchBankAccounts } = useQuery<CompanyBankAccount[]>({
@@ -579,7 +597,7 @@ export default function TransfersPage() {
           .eq('id', invoice.id);
         toast({ title: 'Mentve', description: 'Bankszámlaszám sikeresen frissítve.' });
       } catch (err) {
-        reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleBankBlur', error: err });
+        reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleBankBlur', message: 'Failed to update manual invoice bank account', error: err });
       }
     } else {
       // Just visually save for now in state
@@ -617,7 +635,7 @@ export default function TransfersPage() {
 
       refetchTransferHistory();
     } catch (err: any) {
-      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleDeleteTransfer', error: err });
+      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleDeleteTransfer', message: 'Failed to delete payment transfer', error: err });
       toast({
         title: 'Hiba',
         description: 'Nem sikerült a tétel törlése.',
@@ -644,7 +662,7 @@ export default function TransfersPage() {
       setSelectedHistoryIds([]);
       refetchTransferHistory();
     } catch (err: any) {
-      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleBulkDeleteTransfers', error: err });
+      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleBulkDeleteTransfers', message: 'Failed to bulk delete payment transfers', error: err });
       toast({
         title: 'Hiba',
         description: 'Nem sikerült a tételek törlése.',
@@ -743,6 +761,25 @@ export default function TransfersPage() {
       return a.partner_name.localeCompare(b.partner_name);
     });
   }, [filteredInvoices, groupByPartner, editingBankAccounts]);
+
+  const paginatedActiveItems = useMemo(() => {
+    const start = (activePage - 1) * activePageSize;
+    return displayItems.slice(start, start + activePageSize);
+  }, [displayItems, activePage, activePageSize]);
+
+  useEffect(() => {
+    setActivePage(1);
+  }, [search, filterTab, groupByPartner]);
+
+  const paginatedHistoryItems = useMemo(() => {
+    const start = (historyPage - 1) * historyPageSize;
+    return transferHistory.slice(start, start + historyPageSize);
+  }, [transferHistory, historyPage, historyPageSize]);
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [transferHistory.length]);
+
 
   // 5. Statistics
   const stats = useMemo(() => {
@@ -1069,7 +1106,7 @@ export default function TransfersPage() {
       refetchInvoices();
       refetchTransferHistory();
     } catch (err: any) {
-      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleGenerateFile', error: err });
+      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleGenerateFile', message: 'Failed to generate transfer file', error: err });
       toast({ title: 'Hiba', description: 'Nem sikerült az utalások mentése a rendszerben.', variant: 'destructive' });
     } finally {
       setExporting(false);
@@ -1215,96 +1252,118 @@ export default function TransfersPage() {
               <p className="text-xs text-muted-foreground mt-1">Nincs lejárt vagy ma esedékes kifizetetlen számlád.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto border-t">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead>
-                  <tr className="bg-muted/40 border-b border-border/40 text-muted-foreground font-medium text-xs select-none">
-                    <th className="py-3 px-4 w-12 text-center">
-                      <Checkbox
-                        checked={displayItems.length > 0 && selectedIds.length === displayItems.length}
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </th>
-                    <th className="py-3 px-4">Partner</th>
-                    <th className="py-3 px-4">Számlaszám(ok)</th>
-                    <th className="py-3 px-4 w-32">Határidő</th>
-                    <th className="py-3 px-4 w-40 text-right">Összeg</th>
-                    <th className="py-3 px-4 w-72">Partner Bankszámlaszáma</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {displayItems.map(item => {
-                    const isSelected = selectedIds.includes(item.key);
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    const isOverdue = item.due_date < todayStr;
-                    const hasBank = item.partner_bank_account.trim().length > 0;
+            <>
+              <div className="rounded-lg border border-border/50 overflow-x-auto">
+                <Table className="compact-table min-w-max">
+                  <TableHeader>
+                    <TableRow className="bg-muted/40 text-muted-foreground font-medium text-xs select-none hover:bg-muted/40">
+                      <TableHead className="w-12 text-center">
+                        <Checkbox
+                          checked={displayItems.length > 0 && selectedIds.length === displayItems.length}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
+                      <TableHead>Partner</TableHead>
+                      <TableHead className="min-w-[200px] whitespace-nowrap">Számlaszám(ok)</TableHead>
+                      <TableHead className="w-32 whitespace-nowrap">Határidő</TableHead>
+                      <TableHead className="w-40 text-right whitespace-nowrap">Összeg</TableHead>
+                      <TableHead className="w-72">Partner Bankszámlaszáma</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedActiveItems.map(item => {
+                      const isSelected = selectedIds.includes(item.key);
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      const isOverdue = item.due_date < todayStr;
+                      const hasBank = item.partner_bank_account.trim().length > 0;
 
-                    return (
-                      <tr
-                        key={item.key}
-                        className={`hover:bg-muted/30 transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
-                      >
-                        <td className="py-3 px-4 text-center">
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => handleSelectRow(item.key)}
-                          />
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground/80" />
-                            <span className="font-semibold text-foreground">{item.partner_name}</span>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground font-mono mt-1 max-w-[200px] truncate" title={`Szamlak: ${item.invoice_numbers.join(', ')}`}>
-                            Közlemény: {`Szamlak: ${item.invoice_numbers.join(', ')}`.slice(0, 140)}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex flex-wrap gap-1 max-w-xs">
-                            {item.invoice_numbers.map((num, i) => (
-                              <span key={i} className="inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded text-xs text-muted-foreground font-mono">
-                                <FileText className="h-3 w-3" />
-                                {num || 'Sorszám nélkül'}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold ${isOverdue ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700'}`}>
-                            <Calendar className="h-3.5 w-3.5" />
-                            {new Date(item.due_date).toLocaleDateString('hu-HU')}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right font-bold text-foreground">
-                          {item.amount.toLocaleString('hu-HU')} {item.currency}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex flex-col gap-1 w-full max-w-[240px]">
-                            <div className="relative flex items-center">
-                              <Input
-                                value={editingBankAccounts[item.key] !== undefined ? editingBankAccounts[item.key] : item.partner_bank_account}
-                                onChange={e => handleBankChange(item.key, e.target.value)}
-                                onBlur={() => handleBankBlur(item.key, item.original_invoices[0])}
-                                placeholder="Pl: 11773000-00000000"
-                                className={`h-8 font-mono text-xs pl-2.5 pr-8 rounded w-full ${!hasBank && !editingBankAccounts[item.key] ? 'border-destructive/40 bg-destructive/5 focus-visible:ring-destructive' : 'bg-background'}`}
+                      return (
+                        <TableRow
+                          key={item.key}
+                          className={isSelected ? 'bg-primary/10 hover:bg-primary/15' : ''}
+                        >
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => handleSelectRow(item.key)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground/80" />
+                              <CopyableCell
+                                value={item.partner_name}
+                                displayValue={item.partner_name.length > 13 ? item.partner_name.slice(0, 13) + '…' : item.partner_name}
+                                truncate
+                                maxWidth="100%"
+                                className="font-semibold text-foreground text-xs"
+                                ariaLabel={`${item.partner_name} másolása`}
                               />
+                            </div>
+                            <div className="text-[10px] text-muted-foreground font-mono mt-1 max-w-[200px] truncate" title={`Szamlak: ${item.invoice_numbers.join(', ')}`}>
+                              Közlemény: {`Szamlak: ${item.invoice_numbers.join(', ')}`.slice(0, 140)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="min-w-[200px] whitespace-nowrap">
+                            <div className="flex flex-wrap gap-1 max-w-xs">
+                              {item.invoice_numbers.map((num, i) => (
+                                <span key={i} className="inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded text-xs text-muted-foreground font-mono">
+                                  <FileText className="h-3 w-3" />
+                                  {num || 'Sorszám nélkül'}
+                                </span>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold ${isOverdue ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700'}`}>
+                              <Calendar className="h-3.5 w-3.5" />
+                              {new Date(item.due_date).toLocaleDateString('hu-HU')}
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-mono tabular-nums text-right whitespace-nowrap font-bold text-foreground">
+                            {item.amount.toLocaleString('hu-HU')} {item.currency}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1 w-full max-w-[240px]">
+                              <div className="relative flex items-center">
+                                <Input
+                                  value={editingBankAccounts[item.key] !== undefined ? editingBankAccounts[item.key] : item.partner_bank_account}
+                                  onChange={e => handleBankChange(item.key, e.target.value)}
+                                  onBlur={() => handleBankBlur(item.key, item.original_invoices[0])}
+                                  placeholder="Pl: 11773000-00000000"
+                                  className={`h-8 font-mono text-xs pl-2.5 pr-8 rounded w-full ${!hasBank && !editingBankAccounts[item.key] ? 'border-destructive/40 bg-destructive/5 focus-visible:ring-destructive' : 'bg-background'}`}
+                                />
+                                {!hasBank && !editingBankAccounts[item.key] && (
+                                  <AlertTriangle className="absolute right-2.5 h-3.5 w-3.5 text-destructive pointer-events-none animate-pulse" />
+                                )}
+                              </div>
                               {!hasBank && !editingBankAccounts[item.key] && (
-                                <AlertTriangle className="absolute right-2.5 h-3.5 w-3.5 text-destructive pointer-events-none animate-pulse" />
+                                <span className="text-[10px] text-destructive/80 font-bold flex items-center gap-1 px-1">
+                                  Hiányzó bankszámlaszám!
+                                </span>
                               )}
                             </div>
-                            {!hasBank && !editingBankAccounts[item.key] && (
-                              <span className="text-[10px] text-destructive/80 font-bold flex items-center gap-1 px-1">
-                                Hiányzó bankszámlaszám!
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="p-4 border-t border-border/40">
+                <UnifiedPagination
+                  currentPage={activePage}
+                  totalPages={Math.ceil(displayItems.length / activePageSize)}
+                  totalItems={displayItems.length}
+                  pageSize={activePageSize}
+                  onPageChange={setActivePage}
+                  onPageSizeChange={(size) => { setActivePageSize(size); setActivePage(1); }}
+                />
+              </div>
+            </>
+
+
           )}
         </CardContent>
       </Card>
@@ -1344,102 +1403,123 @@ export default function TransfersPage() {
               Még nem történt utalási fájl exportálás.
             </div>
           ) : (
-            <div className="overflow-x-auto border-t border-border/40">
-              <table className="w-full text-sm text-left">
-                <thead>
-                  <tr className="border-b border-border/40 bg-muted/20 text-muted-foreground text-xs font-semibold">
-                    <th className="py-3 px-4 w-12 text-center">
-                      <Checkbox
-                        checked={transferHistory.length > 0 && selectedHistoryIds.length === transferHistory.length}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedHistoryIds(transferHistory.map((item: any) => item.id));
-                          } else {
-                            setSelectedHistoryIds([]);
-                          }
-                        }}
-                      />
-                    </th>
-                    <th className="py-3 px-4">Dátum</th>
-                    <th className="py-3 px-4">Partner</th>
-                    <th className="py-3 px-4">Partner bankszámla</th>
-                    <th className="py-3 px-4">Összeg</th>
-                    <th className="py-3 px-4">Közlemény</th>
-                    <th className="py-3 px-4 text-center">Státusz</th>
-                    <th className="py-3 px-4 text-center w-20">Művelet</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/30">
-                  {transferHistory.map((item: any) => {
-                    const statusConfig = {
-                      pending: {
-                        label: 'Párosításra vár',
-                        className: 'bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse'
-                      },
-                      sent: {
-                        label: 'Elküldve',
-                        className: 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                      },
-                      matched: {
-                        label: 'Párosítva',
-                        className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                      }
-                    }[item.status as 'pending' | 'sent' | 'matched'] || {
-                      label: item.status,
-                      className: 'bg-muted text-muted-foreground'
-                    };
+            <>
+              <div className="rounded-lg border border-border/50 overflow-x-auto">
+                <Table className="compact-table min-w-max">
+                  <TableHeader>
+                    <TableRow className="bg-muted/20 text-muted-foreground text-xs font-semibold hover:bg-muted/20">
+                      <TableHead className="w-12 text-center">
+                        <Checkbox
+                          checked={transferHistory.length > 0 && selectedHistoryIds.length === transferHistory.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedHistoryIds(transferHistory.map((item: any) => item.id));
+                            } else {
+                              setSelectedHistoryIds([]);
+                            }
+                          }}
+                        />
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">Dátum</TableHead>
+                      <TableHead>Partner</TableHead>
+                      <TableHead className="whitespace-nowrap">Partner bankszámla</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Összeg</TableHead>
+                      <TableHead>Közlemény</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">Státusz</TableHead>
+                      <TableHead className="text-center w-20 whitespace-nowrap">Művelet</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedHistoryItems.map((item: any) => {
+                      const statusConfig = {
+                        pending: {
+                          label: 'Párosításra vár',
+                          className: 'bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse'
+                        },
+                        sent: {
+                          label: 'Elküldve',
+                          className: 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                        },
+                        matched: {
+                          label: 'Párosítva',
+                          className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                        }
+                      }[item.status as 'pending' | 'sent' | 'matched'] || {
+                        label: item.status,
+                        className: 'bg-muted text-muted-foreground'
+                      };
 
-                    const isSelected = selectedHistoryIds.includes(item.id);
+                      const isSelected = selectedHistoryIds.includes(item.id);
 
-                    return (
-                      <tr key={item.id} className={`hover:bg-muted/10 transition-colors ${isSelected ? 'bg-primary/5' : ''}`}>
-                        <td className="py-3 px-4 text-center">
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => {
-                              setSelectedHistoryIds(prev =>
-                                prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]
-                              );
-                            }}
-                          />
-                        </td>
-                        <td className="py-3 px-4 font-mono text-xs text-muted-foreground">
-                          {new Date(item.created_at).toLocaleString('hu-HU')}
-                        </td>
-                        <td className="py-3 px-4 font-semibold text-foreground">
-                          {item.partner_name}
-                        </td>
-                        <td className="py-3 px-4 font-mono text-xs">
-                          {item.partner_account}
-                        </td>
-                        <td className="py-3 px-4 font-bold text-foreground">
-                          {item.amount.toLocaleString('hu-HU')} {item.currency}
-                        </td>
-                        <td className="py-3 px-4 text-xs max-w-xs truncate" title={item.narrative}>
-                          {item.narrative}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusConfig.className}`}>
-                            {statusConfig.label}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                            onClick={() => handleDeleteTransfer(item.id)}
-                            title="Törlés"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      return (
+                        <TableRow key={item.id} className={isSelected ? 'bg-primary/10 hover:bg-primary/15' : ''}>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => {
+                                setSelectedHistoryIds(prev =>
+                                  prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]
+                                );
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(item.created_at).toLocaleString('hu-HU')}
+                          </TableCell>
+                          <TableCell>
+                            <CopyableCell
+                              value={item.partner_name}
+                              displayValue={item.partner_name.length > 13 ? item.partner_name.slice(0, 13) + '…' : item.partner_name}
+                              truncate
+                              maxWidth="100%"
+                              className="font-semibold text-foreground text-xs"
+                              ariaLabel={`${item.partner_name} másolása`}
+                            />
+                          </TableCell>
+                          <TableCell className="font-mono text-xs whitespace-nowrap">
+                            {item.partner_account}
+                          </TableCell>
+                          <TableCell className="font-mono tabular-nums text-right whitespace-nowrap font-bold text-foreground">
+                            {item.amount.toLocaleString('hu-HU')} {item.currency}
+                          </TableCell>
+                          <TableCell className="text-xs max-w-xs truncate" title={item.narrative}>
+                            {item.narrative}
+                          </TableCell>
+                          <TableCell className="text-center whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusConfig.className}`}>
+                              {statusConfig.label}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                              onClick={() => handleDeleteTransfer(item.id)}
+                              title="Törlés"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="p-4 border-t border-border/40">
+                <UnifiedPagination
+                  currentPage={historyPage}
+                  totalPages={Math.ceil(transferHistory.length / historyPageSize)}
+                  totalItems={transferHistory.length}
+                  pageSize={historyPageSize}
+                  onPageChange={setHistoryPage}
+                  onPageSizeChange={(size) => { setHistoryPageSize(size); setHistoryPage(1); }}
+                />
+              </div>
+            </>
+
           )}
         </CardContent>
       </Card>
