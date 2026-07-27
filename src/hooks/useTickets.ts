@@ -228,58 +228,12 @@ export function useUnreadTicketCount() {
     queryFn: async () => {
       if (!user) return 0;
 
-      // 1. Get all tickets visible to this user (feedback ids)
-      // Support admins only see unassigned + own assigned tickets
-      // Management role bypasses this — sees ALL tickets
-      let ticketQuery = supabase.from("feedback").select("id");
-      if (isSupportAdmin && !isManagement) {
-        ticketQuery = ticketQuery.or(`assigned_to.is.null,assigned_to.eq.${user.id}`);
-      }
-      const { data: tickets } = await ticketQuery;
-
-      if (!tickets || tickets.length === 0) return 0;
-      const ticketIds = tickets.map((t) => t.id);
-
-      // 2. Latest OTHER-party comment per ticket (exclude own comments)
-      const { data: comments } = await supabase
-        .from("ticket_comments")
-        .select("feedback_id, created_at")
-        .in("feedback_id", ticketIds)
-        .neq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (!comments || comments.length === 0) return 0;
-
-      // Build latest other-party comment per ticket
-      const latestPerTicket = new Map<string, string>();
-      for (const c of comments) {
-        if (!c.created_at) continue;
-        if (!latestPerTicket.has(c.feedback_id)) {
-          latestPerTicket.set(c.feedback_id, c.created_at);
-        }
-      }
-
-      // 3. Get read timestamps (single query)
-      const relevantIds = Array.from(latestPerTicket.keys());
-      const { data: reads } = await supabase
-        .from("ticket_reads")
-        .select("feedback_id, last_read_at")
-        .eq("user_id", user.id)
-        .in("feedback_id", relevantIds);
-
-      const readMap = new Map<string, string>();
-      (reads || []).forEach((r) => {
-        if (r.last_read_at) readMap.set(r.feedback_id, r.last_read_at);
+      const { data, error } = await (supabase.rpc as any)("get_unread_ticket_count", {
+        p_user_id: user.id,
       });
 
-      // 4. Count unread
-      let count = 0;
-      latestPerTicket.forEach((latestComment, feedbackId) => {
-        const lastRead = readMap.get(feedbackId);
-        if (!lastRead || latestComment > lastRead) count++;
-      });
-
-      return count;
+      if (error) throw error;
+      return (data || 0) as number;
     },
     enabled: !!user,
     staleTime: 60 * 1000,

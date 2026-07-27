@@ -751,7 +751,17 @@ npm run preview      # Preview production build
 
 ## Changelog
 
-### Version 1.3.0 (Current - 2026-07-20)
+### Version 1.4.0 (Current - 2026-07-28)
+- **Database Query Optimizations:**
+  - *NAV Invoice Lookup:* Added strict date window filtering (`dateFromFormatted` and `dateToFormatted`) and updated the React Query `queryKey` in `useInvoiceData.ts` to prevent duplicate or endless refetches of massive historical company datasets.
+  - *Tickets Unread Count:* Replaced expensive client-side filtering (which downloaded all comments for all tickets) with a secure, permission-respecting server-side RPC `get_unread_ticket_count` in `useTickets.ts`.
+  - *Dashboard VAT Breakdown:* Replaced full download of `nav_invoice_items` with a performant server-side RPC `get_vat_breakdown` in `useDashboardData.ts` grouping by VAT rate, invoice direction, and currency, reducing data load from 50,000+ items to 50-100 aggregated rows.
+- **Payroll (Accounty) Module Bugfixes:**
+  - *Deductions Column:* Resolved `column accounty_payroll_calculations.total_deductions does not exist` database errors by adding `total_deductions numeric` to `accounty_payroll_calculations`, backfilling the data from `deductions->>'total'`, and updating `usePayrollData.ts` to store calculations correctly.
+- **General Ledger Template Enhancements:**
+  - *Plain Text Upload:* Extended the `UploadChartOfAccountsModal.tsx` file dialog to accept and parse `.txt` files as delimiter-detected CSV files.
+
+### Version 1.3.0 (2026-07-20)
 - **Transaction Rules & Auto-Categorization:**
   - Integrated an in-memory auto-categorization rules engine (`apply_transaction_rules`) in the Python worker.
   - Automatically matches unmatched transactions using direction, amount boundaries, and text description patterns (substring/regex).

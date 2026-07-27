@@ -251,7 +251,7 @@ export function useInvoiceData(
   // Lightweight NAV lookup for cross-tab matching (submitted ↔ NAV by bizonylatsorszam)
   // Paginated fetch to bypass Supabase max_rows limit (default 1000)
   const { data: navInvoicesLookup = [] } = useQuery({
-    queryKey: ['navInvoicesLookup', companyId],
+    queryKey: ['navInvoicesLookup', companyId, dateFromFormatted, dateToFormatted],
     queryFn: async () => {
       const PAGE_SIZE = 1000;
       let allData: NavInvoice[] = [];
@@ -260,10 +260,19 @@ export function useInvoiceData(
       while (hasMore) {
         const from = page * PAGE_SIZE;
         const to = from + PAGE_SIZE - 1;
-        const { data, error } = await supabase
+        let query = supabase
           .from('nav_invoices')
           .select('id, invoice_number, invoice_direction, invoice_issue_date, invoice_delivery_date, supplier_name, supplier_tax_number, customer_name, customer_tax_number, invoice_net_amount, invoice_gross_amount, currency, transaction_id, submitted')
-          .eq('company_id', companyId)
+          .eq('company_id', companyId);
+
+        if (dateFromFormatted) {
+          query = query.gte('invoice_issue_date', dateFromFormatted);
+        }
+        if (dateToFormatted) {
+          query = query.lte('invoice_issue_date', dateToFormatted);
+        }
+
+        const { data, error } = await query
           .range(from, to)
           .order('invoice_issue_date', { ascending: false })
           .order('id', { ascending: true });

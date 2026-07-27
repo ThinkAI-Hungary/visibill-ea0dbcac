@@ -1228,6 +1228,7 @@ export function useRunBatchPayroll() {
           tb_amount: result.tbAmount,
           szocho_amount: result.szochoAmount,
           net_salary: finalNet, // net after garnishments
+          total_deductions: itemDeductions + garnishResult.total,
           tax_credits: result.taxCredits || {},
           szocho_credits: { discount: result.szochoAmount - (result.szochoBase * taxParams.szocho_rate) },
           deductions: { items: itemDeductions + garnishResult.total, total: itemDeductions + garnishResult.total },

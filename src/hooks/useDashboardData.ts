@@ -506,12 +506,11 @@ export function useDashboardData() {
     queryKey: queryKeys.analyticsVat(companyId, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
       const [itemsRes, headersRes, unmatchedInvRes] = await Promise.all([
-        supabase
-          .from("nav_invoice_items")
-          .select(`vat_rate, net_amount, vat_amount, nav_invoices!inner (id, invoice_direction, invoice_issue_date, company_id, currency)`)
-          .eq("nav_invoices.company_id", companyId)
-          .gte("nav_invoices.invoice_issue_date", dateFromFormatted)
-          .lte("nav_invoices.invoice_issue_date", dateToFormatted),
+        (supabase.rpc as any)("get_vat_breakdown", {
+          p_company_id: companyId,
+          p_date_from: dateFromFormatted,
+          p_date_to: dateToFormatted
+        }),
         supabase
           .from("nav_invoices")
           .select("id, invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_number, currency")
@@ -529,14 +528,11 @@ export function useDashboardData() {
           .lte("kibocsatas_datuma", dateToFormatted),
       ]);
 
-      const vatItems = itemsRes.data || [];
+      const vatItems: any[] = itemsRes.data || [];
       const allNavInvoices = headersRes.data || [];
-
-      // Build set of NAV invoice numbers for matching
       const navInvoiceNumbers = new Set(
         allNavInvoices.map(n => (n as any).invoice_number?.replace(/\s+/g, '')).filter(Boolean)
       );
-
       // Find unmatched INBOUND invoices (foreign invoices not in NAV)
       const unmatchedInvoices = (unmatchedInvRes.data || []).filter((inv: any) => {
         const clean = inv.bizonylatsorszam?.replace(/\s+/g, '');
@@ -575,31 +571,36 @@ export function useDashboardData() {
       if (vatItems.length > 0 || unmatchedInvoices.length > 0) {
         const outboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
         const inboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
-        const itemsVatByInvoice: Record<string, { vatSum: number; netSum: number; direction: string }> = {};
+        
+        // Track overall item sum by currency and direction for global gap calculation
+        const itemSumByGroup: Record<string, { net: number; vat: number }> = {};
 
         vatItems.forEach(item => {
-          const navInvoice = item.nav_invoices as unknown as { id: string; invoice_direction: string; currency: string };
-          const direction = navInvoice?.invoice_direction;
-          const invoiceId = navInvoice?.id;
-          const currency = navInvoice?.currency || 'HUF';
+          const direction = item.invoice_direction;
+          const currency = item.currency || 'HUF';
 
-          const netHUF = convertToSelectedCurrency(item.net_amount || 0, currency, 'HUF');
-          const vatHUF = convertToSelectedCurrency(item.vat_amount || 0, currency, 'HUF');
+          const netHUF = convertToSelectedCurrency(Number(item.net_sum || 0), currency, 'HUF');
+          const vatHUF = convertToSelectedCurrency(Number(item.vat_sum || 0), currency, 'HUF');
 
-          if (invoiceId) {
-            if (!itemsVatByInvoice[invoiceId]) {
-              itemsVatByInvoice[invoiceId] = { vatSum: 0, netSum: 0, direction: direction || 'INBOUND' };
-            }
-            itemsVatByInvoice[invoiceId].vatSum += vatHUF;
-            itemsVatByInvoice[invoiceId].netSum += netHUF;
+          // Accumulate global sums for gap calculation
+          const groupKey = `${direction}_${currency}`;
+          if (!itemSumByGroup[groupKey]) {
+            itemSumByGroup[groupKey] = { net: 0, vat: 0 };
           }
+          itemSumByGroup[groupKey].net += netHUF;
+          itemSumByGroup[groupKey].vat += vatHUF;
 
           let rateLabel: string;
-          if (item.vat_rate === null || item.vat_rate === undefined) {
+          if (item.vat_rate === null || item.vat_rate === undefined || item.vat_rate === '') {
             rateLabel = 'ÁFA mentes';
           } else {
-            const ratePercent = Math.round(Number(item.vat_rate) * 100);
-            rateLabel = `${ratePercent}%`;
+            const numericVal = parseFloat(item.vat_rate);
+            if (isNaN(numericVal)) {
+              rateLabel = 'ÁFA mentes';
+            } else {
+              const ratePercent = Math.round(numericVal * 100);
+              rateLabel = `${ratePercent}%`;
+            }
           }
 
           const target = direction === 'OUTBOUND' ? outboundByRate : inboundByRate;
@@ -608,18 +609,36 @@ export function useDashboardData() {
           target[rateLabel].vatAmount += vatHUF;
         });
 
+        // Calculate gap globally per direction and currency
         let gapOutVat = 0, gapOutNet = 0, gapInVat = 0, gapInNet = 0;
+
+        // Sum headers by group
+        const headerSumByGroup: Record<string, { net: number; vat: number }> = {};
         allNavInvoices.forEach(inv => {
-          const currency = (inv as any).currency || 'HUF';
-          const headerVat = convertToSelectedCurrency(inv.invoice_vat_amount || 0, currency, 'HUF');
-          const headerNet = convertToSelectedCurrency(inv.invoice_net_amount || 0, currency, 'HUF');
-          const itemData = itemsVatByInvoice[inv.id];
-          const itemVat = itemData ? itemData.vatSum : 0;
-          const itemNet = itemData ? itemData.netSum : 0;
-          const vatGap = headerVat - itemVat;
-          const netGap = headerNet - itemNet;
+          const direction = inv.invoice_direction || 'INBOUND';
+          const currency = inv.currency || 'HUF';
+          const groupKey = `${direction}_${currency}`;
+
+          const headerVatHUF = convertToSelectedCurrency(inv.invoice_vat_amount || 0, currency, 'HUF');
+          const headerNetHUF = convertToSelectedCurrency(inv.invoice_net_amount || 0, currency, 'HUF');
+
+          if (!headerSumByGroup[groupKey]) {
+            headerSumByGroup[groupKey] = { net: 0, vat: 0 };
+          }
+          headerSumByGroup[groupKey].net += headerNetHUF;
+          headerSumByGroup[groupKey].vat += headerVatHUF;
+        });
+
+        // Compute gaps comparing headers to items
+        Object.keys(headerSumByGroup).forEach(groupKey => {
+          const header = headerSumByGroup[groupKey];
+          const item = itemSumByGroup[groupKey] || { net: 0, vat: 0 };
+          
+          const vatGap = header.vat - item.vat;
+          const netGap = header.net - item.net;
+
           if (Math.abs(vatGap) > 0.01 || Math.abs(netGap) > 0.01) {
-            if (inv.invoice_direction === 'OUTBOUND') {
+            if (groupKey.startsWith('OUTBOUND')) {
               gapOutVat += vatGap;
               gapOutNet += netGap;
             } else {

@@ -148,12 +148,12 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
   };
 
   const validateAndSetFile = (selectedFile: File) => {
-    const validExensions = ['.csv', '.xlsx', '.xls', '.pdf'];
+    const validExensions = ['.csv', '.xlsx', '.xls', '.pdf', '.txt'];
     const nameLower = selectedFile.name.toLowerCase();
     if (validExensions.some(ext => nameLower.endsWith(ext))) {
       setFile(selectedFile);
     } else {
-      toast({ title: "Hibás formátum", description: "Kérlek CSV, Excel (XLSX, XLS) vagy PDF fájlt tölts fel.", variant: "destructive" });
+      toast({ title: "Hibás formátum", description: "Kérlek CSV, Excel (XLSX, XLS), PDF vagy TXT fájlt tölts fel.", variant: "destructive" });
     }
   };
 
@@ -266,7 +266,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
         toast({ title: "PDF feldolgozási hiba", description: error.message || "Hibás PDF fájl formátum.", variant: "destructive" });
         setLoading(false);
       }
-    } else if (nameLower.endsWith('.csv')) {
+    } else if (nameLower.endsWith('.csv') || nameLower.endsWith('.txt')) {
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
@@ -344,7 +344,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
               type="file" 
               ref={fileInputRef} 
               className="hidden" 
-              accept=".csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf"
+              accept=".csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,text/plain"
               onChange={handleFileSelect} 
             />
           </div>
