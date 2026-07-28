@@ -28,14 +28,17 @@ export interface ExportableInvoice {
   source: 'nav' | 'submitted';
 }
 
+export type ExportLevel = 'summary' | 'itemized_posting';
+
 interface InvoiceDataExportDialogProps {
   open: boolean;
   onClose: () => void;
   invoices: ExportableInvoice[];
   initialSelectedIds: Set<string>;
-  initialFormat?: 'csv' | 'xlsx';
+  initialFormat?: 'csv' | 'xlsx' | 'pdf';
+  initialLevel?: ExportLevel;
   companyName?: string;
-  onExport: (selectedInvoices: ExportableInvoice[], format: 'csv' | 'xlsx') => Promise<void>;
+  onExport: (selectedInvoices: ExportableInvoice[], format: 'csv' | 'xlsx' | 'pdf', exportLevel: ExportLevel) => Promise<void>;
 }
 
 type PeriodPreset = 'all_filtered' | 'current_month' | 'previous_month' | 'current_quarter' | 'previous_quarter' | 'custom';
@@ -115,9 +118,12 @@ export function InvoiceDataExportDialog({
   invoices,
   initialSelectedIds,
   initialFormat = 'xlsx',
+  initialLevel = 'summary',
+  companyName,
   onExport,
 }: InvoiceDataExportDialogProps) {
-  const [format, setFormat] = useState<'csv' | 'xlsx'>(initialFormat);
+  const [format, setFormat] = useState<'csv' | 'xlsx' | 'pdf'>(initialFormat);
+  const [exportLevel, setExportLevel] = useState<ExportLevel>(initialLevel);
   const [selectedPreset, setSelectedPreset] = useState<PeriodPreset>('all_filtered');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -130,6 +136,7 @@ export function InvoiceDataExportDialog({
   useEffect(() => {
     if (open) {
       setFormat(initialFormat);
+      setExportLevel(initialLevel || 'summary');
       setSearchQuery('');
       setCurrentPage(1);
 
@@ -141,7 +148,7 @@ export function InvoiceDataExportDialog({
         setSelectedPreset('all_filtered');
       }
     }
-  }, [open, initialSelectedIds, initialFormat, invoices]);
+  }, [open, initialSelectedIds, initialFormat, initialLevel, invoices]);
 
   const presetDates = useMemo(() => getPresetDates(selectedPreset), [selectedPreset]);
 
@@ -213,7 +220,7 @@ export function InvoiceDataExportDialog({
     if (invoicesToExport.length === 0) return;
     setIsExporting(true);
     try {
-      await onExport(invoicesToExport, format);
+      await onExport(invoicesToExport, format, exportLevel);
       onClose();
     } finally {
       setIsExporting(false);
@@ -241,11 +248,57 @@ export function InvoiceDataExportDialog({
             )}
           </div>
           <DialogDescription className="mt-1 text-xs">
-            Válaszd ki az exportálandó számlákat, az időszakot és a kívánt fájlformátumot.
+            Válaszd ki az exportálandó számlákat, az időszakot, az adatszintet és a kívánt fájlformátumot.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4 py-3">
+          {/* Export Level Selector (Fejléc vs Tételes Kontírozott) */}
+          <div>
+            <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
+              Exportálási Adatszint
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setExportLevel('summary')}
+                className={`flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-all focus:outline-none ${
+                  exportLevel === 'summary'
+                    ? 'border-primary bg-primary/10 text-foreground font-semibold'
+                    : 'border-border hover:border-primary/40 hover:bg-muted/30 text-muted-foreground'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold">Fejléces Összesítő</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground/80 font-normal">
+                  Számlánként 1 sor (Fejléc adatok, bruttó/nettó/ÁFA összegek)
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setExportLevel('itemized_posting')}
+                className={`flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-all focus:outline-none ${
+                  exportLevel === 'itemized_posting'
+                    ? 'border-emerald-500 bg-emerald-500/10 text-foreground font-semibold'
+                    : 'border-border hover:border-emerald-500/40 hover:bg-muted/30 text-muted-foreground'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-emerald-500" />
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Tételes Kontírozott (NAV Audit)</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground/80 font-normal">
+                  Tételenkénti kontírozás + Tartozik (T) & Követel (K) főkönyvi számok
+                </span>
+              </button>
+            </div>
+          </div>
+
           {/* Format selector & Preset options */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Export format picker */}
@@ -253,32 +306,45 @@ export function InvoiceDataExportDialog({
               <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
                 Fájlformátum
               </Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setFormat('xlsx')}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all focus:outline-none focus-visible:outline-none ${
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-semibold transition-all focus:outline-none ${
                     format === 'xlsx'
                       ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                       : 'border-border hover:border-emerald-500/40 hover:bg-emerald-500/5'
                   }`}
                 >
-                  <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500" />
                   Excel (.xlsx)
                 </button>
                 <button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setFormat('csv')}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all focus:outline-none focus-visible:outline-none ${
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-semibold transition-all focus:outline-none ${
                     format === 'csv'
                       ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
                       : 'border-border hover:border-blue-500/40 hover:bg-blue-500/5'
                   }`}
                 >
-                  <FileText className="h-4 w-4 text-blue-500" />
+                  <FileText className="h-3.5 w-3.5 text-blue-500" />
                   CSV (.csv)
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setFormat('pdf')}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-semibold transition-all focus:outline-none ${
+                    format === 'pdf'
+                      ? 'border-rose-500 bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                      : 'border-border hover:border-rose-500/40 hover:bg-rose-500/5'
+                  }`}
+                >
+                  <Download className="h-3.5 w-3.5 text-rose-500" />
+                  PDF (.pdf)
                 </button>
               </div>
             </div>

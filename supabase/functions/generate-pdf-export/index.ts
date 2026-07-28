@@ -25,11 +25,14 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error('Authentication failed');
 
-    const { companyId, dateFrom, dateTo, invoiceDirection } = body;
+    const { companyId, dateFrom, dateTo, invoiceDirection, exportMode, includePostingSlips } = body;
 
     if (!companyId || !dateFrom || !dateTo) {
       throw new Error('Missing required fields: companyId, dateFrom, dateTo');
     }
+
+    const includeSlips = exportMode === 'posting_slips' || Boolean(includePostingSlips);
+    const mode = includeSlips ? 'posting_slips' : 'standard';
 
     // ── Verify company membership ──
     const { data: membership } = await supabase
@@ -65,7 +68,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const baseName = `${dateFrom}_${dateTo}_bekuldott_szamlak`;
+    const suffix = includeSlips ? '_kontirozott' : '';
+    const baseName = `${dateFrom}_${dateTo}_bekuldott_szamlak${suffix}`;
 
     const invoiceList = (invoices || []).map((inv: any) => ({
       id: inv.id,
@@ -104,6 +108,8 @@ Deno.serve(async (req) => {
         user_id: user.id,
         invoice_list: invoiceList,
         base_name: baseName,
+        export_mode: mode,
+        include_posting_slips: includeSlips,
       },
     });
 

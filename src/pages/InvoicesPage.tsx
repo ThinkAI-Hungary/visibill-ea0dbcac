@@ -250,12 +250,14 @@ const InvoicesPage = () => {
   // ── PDF Export hook ──
   const pdfExport = usePdfExport();
 
-  // ── CSV / XLSX Interactive Data Export Dialog ──
+  // ── CSV / XLSX / PDF Interactive Data Export Dialog ──
   const [dataExportDialogOpen, setDataExportDialogOpen] = useState(false);
-  const [dataExportFormat, setDataExportFormat] = useState<'csv' | 'xlsx'>('xlsx');
+  const [dataExportFormat, setDataExportFormat] = useState<'csv' | 'xlsx' | 'pdf'>('xlsx');
+  const [dataExportLevel, setDataExportLevel] = useState<ExportLevel>('summary');
 
-  const openDataExportDialog = (format: 'csv' | 'xlsx') => {
+  const openDataExportDialog = (format: 'csv' | 'xlsx' | 'pdf' = 'xlsx', level: ExportLevel = 'summary') => {
     setDataExportFormat(format);
+    setDataExportLevel(level);
     setDataExportDialogOpen(true);
   };
 
@@ -297,7 +299,136 @@ const InvoicesPage = () => {
     }));
   }, [isSubmittedTab, filteredAndSortedSubmittedInvoices, filteredAndSortedNavInvoices, getCategoryName, getProjectName, getInvoicePartnerName, getPartnerTaxNumber]);
 
-  const handleDataExportConfirm = async (selectedInvoices: ExportableInvoice[], format: 'csv' | 'xlsx') => {
+  const handleDataExportConfirm = async (
+    selectedInvoices: ExportableInvoice[],
+    format: 'csv' | 'xlsx' | 'pdf',
+    exportLevel: ExportLevel = 'summary'
+  ) => {
+    if (format === 'pdf') {
+      if (!selectedCompany?.id) return;
+      const dates = selectedInvoices.map(i => i.issue_date).filter(Boolean).sort();
+      const dateFrom = dates[0] || new Date().toISOString().split('T')[0];
+      const dateTo = dates[dates.length - 1] || new Date().toISOString().split('T')[0];
+      await pdfExport.startExport({
+        dateFrom,
+        dateTo,
+        exportMode: exportLevel === 'itemized_posting' ? 'posting_slips' : 'standard',
+        includePostingSlips: exportLevel === 'itemized_posting',
+      });
+      return;
+    }
+
+    if (exportLevel === 'itemized_posting') {
+      const navIds = selectedInvoices.filter(i => i.source === 'nav').map(i => i.id);
+      const subIds = selectedInvoices.filter(i => i.source === 'submitted').map(i => i.id);
+
+      const navItemsMap = new Map<string, any[]>();
+      const subItemsMap = new Map<string, any[]>();
+
+      if (navIds.length > 0) {
+        const { data: navItems } = await supabase
+          .from('nav_invoice_items')
+          .select('*')
+          .in('nav_invoice_id', navIds);
+        (navItems || []).forEach((item: any) => {
+          const arr = navItemsMap.get(item.nav_invoice_id) || [];
+          arr.push(item);
+          navItemsMap.set(item.nav_invoice_id, arr);
+        });
+      }
+
+      if (subIds.length > 0) {
+        const { data: subItems } = await supabase
+          .from('invoice_items')
+          .select('*')
+          .in('invoice_id', subIds);
+        (subItems || []).forEach((item: any) => {
+          const arr = subItemsMap.get(item.invoice_id) || [];
+          arr.push(item);
+          subItemsMap.set(item.invoice_id, arr);
+        });
+      }
+
+      const headers = [
+        'Számlaszám', 'Tétel #', 'Irány', 'Partner név', 'Partner adószám',
+        'Kibocsátás dátuma', 'Teljesítés dátuma', 'Tétel megnevezése',
+        'Mennyiség', 'Egység', 'Egységár', 'Tétel nettó', 'ÁFA %', 'Tétel ÁFA',
+        'Tétel bruttó', 'Pénznem', 'Tartozik (T)', 'Követel (K)', 'Könyvelési Kategória'
+      ];
+
+      const rows: (string | number)[][] = [];
+
+      selectedInvoices.forEach(inv => {
+        const items = (inv.source === 'nav' ? navItemsMap.get(inv.id) : subItemsMap.get(inv.id)) || [];
+        const isOutbound = inv.direction === 'OUTBOUND';
+        const defaultDebit = isOutbound ? '3110' : '5110';
+        const defaultCredit = isOutbound ? '9110' : '4540';
+
+        if (items.length === 0) {
+          rows.push([
+            inv.invoice_number,
+            1,
+            isOutbound ? 'Kimenő' : 'Bejövő',
+            inv.partner_name,
+            inv.partner_tax_number || '',
+            inv.issue_date,
+            inv.delivery_date || '',
+            'Számla összesítő',
+            1,
+            'db',
+            inv.net_amount || 0,
+            inv.net_amount || 0,
+            inv.vat_amount && inv.net_amount ? Math.round((inv.vat_amount / inv.net_amount) * 100) : 0,
+            inv.vat_amount || 0,
+            inv.gross_amount || 0,
+            inv.currency || 'HUF',
+            defaultDebit,
+            defaultCredit,
+            inv.category_name || 'Általános'
+          ]);
+        } else {
+          items.forEach((item, idx) => {
+            const itemNet = Number(item.net_amount ?? item.line_net_amount ?? item.netto_erteke ?? 0);
+            const itemVat = Number(item.vat_amount ?? item.line_vat_amount ?? item.afa_erteke ?? 0);
+            const itemGross = Number(item.gross_amount ?? item.line_gross_amount ?? item.brutto_erteke ?? (itemNet + itemVat));
+            
+            let vatPct = 0;
+            if (item.vat_rate != null) {
+              const parsedRate = parseFloat(item.vat_rate);
+              vatPct = parsedRate > 0 && parsedRate < 1 ? Math.round(parsedRate * 100) : Math.round(parsedRate);
+            } else {
+              vatPct = item.vat_percentage || item.afa_kulcs || (itemNet > 0 ? Math.round((itemVat / itemNet) * 100) : 0);
+            }
+
+            rows.push([
+              inv.invoice_number,
+              item.line_number || idx + 1,
+              isOutbound ? 'Kimenő' : 'Bejövő',
+              inv.partner_name,
+              inv.partner_tax_number || '',
+              inv.issue_date,
+              inv.delivery_date || '',
+              item.line_description || item.megnevezes || `Tétel ${idx + 1}`,
+              item.quantity || item.mennyiseg || 1,
+              item.unit_of_measure || item.egyseg || 'db',
+              item.unit_price || item.egysegar || 0,
+              itemNet,
+              vatPct,
+              itemVat,
+              itemGross,
+              inv.currency || 'HUF',
+              item.gl_account_debit || item.tartozik_szamla || defaultDebit,
+              item.gl_account_credit || item.kovetel_szamla || defaultCredit,
+              item.category_name || inv.category_name || 'Általános'
+            ]);
+          });
+        }
+      });
+
+      await exportToFile(headers, rows, format as 'csv' | 'xlsx', `szamlak_teteles_kontirozott`);
+      return;
+    }
+
     if (isSubmittedTab) {
       const headers = [
         'Kibocsátás dátuma', 'Teljesítés dátuma', 'Irány', 'Eladó / Vevő',
@@ -1132,24 +1263,23 @@ const InvoicesPage = () => {
                       <ChevronDown className="h-4 w-4 ml-2" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => openDataExportDialog('csv')} className="gap-2 cursor-pointer">
-                      <FileText className="h-4 w-4 text-blue-500" />
-                      <span>Export CSV (.csv)</span>
-                    </DropdownMenuItem>
+                  <DropdownMenuContent className="w-48">
                     <DropdownMenuItem onClick={() => openDataExportDialog('xlsx')} className="gap-2 cursor-pointer">
                       <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
                       <span>Export Excel (.xlsx)</span>
                     </DropdownMenuItem>
-                    {isSubmittedTab && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={pdfExport.openDialog} className="gap-2 cursor-pointer">
-                          <FileDown className="h-4 w-4 text-rose-500" />
-                          <span>Export PDF (számlaképek)</span>
-                        </DropdownMenuItem>
-                      </>
-                    )}
+
+                    <DropdownMenuItem onClick={() => openDataExportDialog('csv')} className="gap-2 cursor-pointer">
+                      <FileText className="h-4 w-4 text-blue-500" />
+                      <span>Export CSV (.csv)</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem onClick={() => openDataExportDialog('pdf')} className="gap-2 cursor-pointer">
+                      <FileDown className="h-4 w-4 text-rose-500" />
+                      <span>Export PDF (.pdf)</span>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 </div>
@@ -1180,13 +1310,14 @@ const InvoicesPage = () => {
             initialDirection={activeTab === 'SUBMITTED_INBOUND' ? 'INBOUND' : 'OUTBOUND'}
           />
 
-          {/* Interactive Data Export Dialog (CSV / XLSX) */}
+          {/* Interactive Data Export Dialog (CSV / XLSX / PDF) */}
           <InvoiceDataExportDialog
             open={dataExportDialogOpen}
             onClose={() => setDataExportDialogOpen(false)}
             invoices={exportableInvoices}
             initialSelectedIds={isSubmittedTab ? selectedSubmittedIds : selectedInvoiceIds}
             initialFormat={dataExportFormat}
+            initialLevel={dataExportLevel}
             companyName={selectedCompany?.name}
             onExport={handleDataExportConfirm}
           />

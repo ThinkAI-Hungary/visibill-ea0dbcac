@@ -35,17 +35,20 @@ Frontend → EF (auth + query + PGMQ enqueue) → Worker felveszi <1s
 
 | Komponens | Fájl | Felelősség |
 |---|---|---|
-| **Edge Function** (v13) | `generate-pdf-export/index.ts` | Auth, invoice query, job insert, PGMQ enqueue |
-| **Worker** | `pdf_export_processor.py` | Download, merge, upload, DB update |
+| **Edge Function** (v14) | `generate-pdf-export/index.ts` | Auth, invoice query, `export_mode` & `include_posting_slips` opciók átvétele, job insert, PGMQ enqueue |
+| **Worker** | `pdf_export_processor.py` | Download, merge, A4 **Kontírozó Lap** PIL képgenerálás (`_generate_posting_slip_image`), upload, DB update |
 | **Frontend hook** | `usePdfExport.ts` | Start, poll, auto-download, banner |
 | **Global notification** | `usePdfExportNotifications.ts` | Toast bármely oldalon (transition-based) |
 | **Banner** | `PdfExportBanner.tsx` | Vizuális állapotjelző |
 
-### Job lifecycle
+### Job lifecycle & Modes
 ```
 queued → processing → completed → downloaded → [cleanup cron 24h]
                    ↘ error
 ```
+- **Export Módok (`export_mode` / `include_posting_slips`):**
+  - **`standard`**: Sima számlaképek kötege egymás után összefűzve.
+  - **`posting_slips`**: Minden egyes számla képe mögé automatikusan legyártásra kerül annak 1 oldalas A4-es **Kontírozó Lapja** (bizonylat adatok, Tartozik T / Követel K főkönyvi számlák, tételes bontás).
 
 ### Cleanup
 - **pg_cron** `cleanup-pdf-exports`: hajnali 3:00 UTC
