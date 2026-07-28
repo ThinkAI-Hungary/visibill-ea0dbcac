@@ -282,23 +282,28 @@ const InvoicesPage = () => {
       }));
     }
 
-    return filteredAndSortedNavInvoices.map(inv => ({
-      id: inv.id,
-      invoice_number: inv.invoice_number || 'Nincs sorszám',
-      direction: inv.invoice_direction === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND',
-      partner_name: getInvoicePartnerName(inv),
-      partner_tax_number: getPartnerTaxNumber(inv),
-      issue_date: inv.invoice_issue_date || '',
-      delivery_date: inv.invoice_delivery_date || '',
-      net_amount: inv.invoice_net_amount || 0,
-      gross_amount: inv.invoice_gross_amount || 0,
-      vat_amount: inv.invoice_vat_amount || 0,
-      currency: inv.currency || 'HUF',
-      paid: inv.paid,
-      submitted: inv.submitted,
-      project_name: getProjectName(inv.project_id),
-      source: 'nav',
-    }));
+    return filteredAndSortedNavInvoices.map(inv => {
+      const pairedSub = filteredAndSortedSubmittedInvoices.find(s => (s as any).nav_invoice_id === inv.id);
+      return {
+        id: inv.id,
+        invoice_number: inv.invoice_number || 'Nincs sorszám',
+        direction: inv.invoice_direction === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND',
+        partner_name: getInvoicePartnerName(inv),
+        partner_tax_number: getPartnerTaxNumber(inv),
+        issue_date: inv.invoice_issue_date || '',
+        delivery_date: inv.invoice_delivery_date || '',
+        net_amount: inv.invoice_net_amount || 0,
+        gross_amount: inv.invoice_gross_amount || 0,
+        vat_amount: inv.invoice_vat_amount || 0,
+        currency: inv.currency || 'HUF',
+        paid: inv.paid,
+        submitted: inv.submitted,
+        project_name: getProjectName(inv.project_id),
+        image_url: (inv as any).image_url || pairedSub?.image_url,
+        melleklet_url: (inv as any).melleklet_url || pairedSub?.melleklet_url,
+        source: 'nav',
+      };
+    });
   }, [isSubmittedTab, filteredAndSortedSubmittedInvoices, filteredAndSortedNavInvoices, getCategoryName, getProjectName, getInvoicePartnerName, getPartnerTaxNumber]);
 
   const handleDataExportConfirm = async (
