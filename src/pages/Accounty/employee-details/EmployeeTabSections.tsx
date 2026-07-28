@@ -273,7 +273,17 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                   <span>Kezdés: {emp.start_date}</span>
                   <span>Munkakör: {emp.job_title || '–'}</span>
                   <span>FEOR: {emp.feor_code || '–'}</span>
-                  <span>Alapbér: {emp.base_salary ? formatAmount(emp.base_salary) : '–'}</span>
+                  <span>
+                    Alapbér: {emp.base_salary ? `${formatAmount(emp.base_salary)} ${
+                      emp.salary_type === 'hourly' ? '/ óra' : 
+                      emp.salary_type === 'monthly' ? '/ hó' : 
+                      emp.salary_type === 'daily' ? '/ nap' : 
+                      emp.salary_type === 'weekly' ? '/ hét' : 
+                      emp.salary_type === 'project' ? '/ projekt' : 
+                      emp.salary_type === 'performance' ? '/ telj.' : 
+                      `(${emp.salary_type})`
+                    }` : '–'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 ml-4 shrink-0">
                   <Button

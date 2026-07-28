@@ -108,8 +108,56 @@ export default function PayrollCyclePage() {
     supabase.from('accounty_employments').select('*').eq('company_id', companyId).eq('status', 'active')
       .then(({ data }) => { if (data) setAllEmployments(data); });
   }, [companyId]);
+
+  // Fetch saved timesheet data for this cycle
+  React.useEffect(() => {
+    if (!cycle?.id || allEmployments.length === 0) return;
+    supabase.from('accounty_timesheets')
+      .select('*')
+      .eq('cycle_id', cycle.id)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error fetching timesheets:', error);
+          return;
+        }
+        if (data && data.length > 0) {
+          const loadedAttendance: Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number }> = {};
+          data.forEach(t => {
+            const emp = allEmployments.find(e => e.id === t.employment_id);
+            if (emp && t.ocr_data) {
+              const ocr = t.ocr_data as any;
+              loadedAttendance[emp.employee_id] = {
+                workDays: ocr.workDays ?? 22,
+                overtime: ocr.overtime ?? 0,
+                sickDays: ocr.sickDays ?? 0,
+                leaveDays: ocr.leaveDays ?? 0,
+              };
+            }
+          });
+          setAttendanceData(loadedAttendance);
+        }
+      });
+  }, [cycle?.id, allEmployments]);
   
   const [attendanceData, setAttendanceData] = useState<Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number }>>({});
+
+  const [garnishments, setGarnishments] = useState<any[]>([]);
+  React.useEffect(() => {
+    if (activeEmployees.length === 0) return;
+    const empIds = activeEmployees.map(e => e.id);
+    supabase.from('accounty_garnishments')
+      .select('*')
+      .in('employee_id', empIds)
+      .eq('is_active', true)
+      .then(({ data }) => { if (data) setGarnishments(data); });
+  }, [employees]);
+
+  const [companyDetails, setCompanyDetails] = useState<any>(null);
+  React.useEffect(() => {
+    if (!companyId) return;
+    supabase.from('companies').select('*').eq('id', companyId).single()
+      .then(({ data }) => { if (data) setCompanyDetails(data); });
+  }, [companyId]);
 
   // CSV validation results
   interface CsvValidationResult {
@@ -183,6 +231,33 @@ export default function PayrollCyclePage() {
       }
 
       setAttendanceData(prev => ({ ...prev, ...newData }));
+
+      // Save parsed timesheet data to the database
+      if (cycle?.id) {
+        supabase
+          .from('accounty_timesheets')
+          .delete()
+          .eq('cycle_id', cycle.id)
+          .then(async () => {
+            const recordsToInsert = Object.keys(newData).map(employeeId => {
+              const employment = allEmployments.find(e => e.employee_id === employeeId);
+              return {
+                cycle_id: cycle.id,
+                employment_id: employment?.id,
+                ocr_data: newData[employeeId],
+                is_verified: true,
+              };
+            }).filter(r => r.employment_id);
+
+            if (recordsToInsert.length > 0) {
+              const { error } = await supabase.from('accounty_timesheets').insert(recordsToInsert);
+              if (error) {
+                console.error('Error saving timesheets:', error);
+              }
+            }
+          });
+      }
+
       setCsvValidation({
         matched,
         total: dataRowCount,
@@ -273,40 +348,111 @@ export default function PayrollCyclePage() {
   const handlePrintPayslip = (calc: any) => {
     const meta = calc.metadata as any;
     const emp = activeEmployees.find(e => e.id === meta?.employee_id);
+    const employment = allEmployments.find(e => e.employee_id === emp?.id);
+    
+    // Retrieve attendance stats
+    const att = attendanceData[emp?.id || ''] || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
+    
+    // Parse deductions details if present
+    const decs = (calc.deductions || {}) as any;
+    const garnishmentAmount = decs.garnishments || 0;
+    const advanceAmount = decs.advances || 0;
+    const otherDeductionsAmount = decs.other || 0;
+    
+    // Extract tax credits
+    const credits = (calc.tax_credits || []) as any[];
+    const familyCredit = credits.filter(c => c.type === 'family' || c.type === 'family_tb').reduce((sum, c) => sum + (c.taxSaving || 0) + (c.tbSaving || 0), 0);
+    const under25Credit = credits.find(c => c.type === 'young_25')?.taxSaving || 0;
+    const newMotherCredit = credits.find(c => c.type === 'young_mother_30')?.taxSaving || 0;
+    const firstMarriageCredit = credits.find(c => c.type === 'first_marriage')?.taxSaving || 0;
+    const personalDisabilityCredit = credits.find(c => c.type === 'personal')?.taxSaving || 0;
+
+    // Calculate supplement amounts
+    const weeklyHours = employment?.weekly_hours || 40;
+    const dailyHours = weeklyHours / 5;
+    const rawBaseSalary = employment ? Number(employment.base_salary) : 0;
+    const isHourly = employment?.salary_type === 'hourly';
+
+    let hourlyRate = 0;
+    let dailyRate = 0;
+    let calculatedOvertime = 0;
+    let calculatedSickLeave = 0;
+    let calculatedLeaveAmount = 0;
+    let calculatedBase = 0;
+
+    if (isHourly) {
+      hourlyRate = rawBaseSalary;
+      dailyRate = hourlyRate * dailyHours;
+
+      const actualWorkedHours = (att.workDays || 0) * dailyHours;
+      const sickHours = (att.sickDays || 0) * dailyHours;
+      const leaveHours = (att.leaveDays || 0) * dailyHours;
+
+      calculatedBase = Math.round(actualWorkedHours * hourlyRate);
+      calculatedOvertime = Math.round(hourlyRate * (att.overtime || 0) * 1.5);
+      calculatedSickLeave = Math.round(hourlyRate * sickHours * 0.70);
+      calculatedLeaveAmount = Math.round(hourlyRate * leaveHours * 1.0);
+    } else {
+      dailyRate = rawBaseSalary / 22;
+      hourlyRate = rawBaseSalary / (dailyHours * 22);
+
+      const baseReduction = Math.round(dailyRate * (att.sickDays || 0));
+      calculatedBase = Math.max(0, rawBaseSalary - baseReduction);
+
+      calculatedOvertime = Math.round(hourlyRate * (att.overtime || 0) * 1.5);
+      calculatedSickLeave = Math.round(dailyRate * (att.sickDays || 0) * 0.70);
+      calculatedLeaveAmount = 0; // Already covered in base monthly wage
+    }
+
+    // Sum explicit items
+    const empItems = items.filter(i => i.employment_id === employment?.id && !i.is_deduction);
+    const overtimeOverride = empItems.find(i => i.item_type === 'overtime')?.amount;
+    const sickLeaveOverride = empItems.find(i => i.item_type === 'sick_leave')?.amount;
+    
+    const finalOvertime = overtimeOverride !== undefined ? Number(overtimeOverride) : calculatedOvertime;
+    const finalSickLeave = sickLeaveOverride !== undefined ? Number(sickLeaveOverride) : calculatedSickLeave;
+
+    const baseSalary = empItems.find(i => i.item_type === 'base_salary')?.amount 
+      || calculatedBase;
+
+    const otherPremiums = empItems
+      .filter(i => !['base_salary', 'overtime', 'sick_leave'].includes(i.item_type))
+      .reduce((s, i) => s + (i.amount || 0), 0);
+
     const payslipData: PayslipData = {
-      companyName: company?.name || '–',
-      companyTaxNumber: company?.taxNumber || '–',
-      companyAddress: '–',
+      companyName: companyDetails?.name || company?.name || '–',
+      companyTaxNumber: companyDetails?.tax_number || company?.taxNumber || '–',
+      companyAddress: companyDetails?.address || '–',
       employeeName: meta?.employee_name || '–',
       tajNumber: emp?.taj_number || '–',
       taxId: emp?.tax_id || '–',
       bankAccount: emp?.bank_account || '–',
-      jobTitle: '–',
-      jobCode: '1101',
+      jobTitle: employment?.job_title || '–',
+      jobCode: employment?.job_code || '–',
       year: cycle?.year || new Date().getFullYear(),
       month: cycle?.month || new Date().getMonth() + 1,
-      workDays: 22,
-      workedDays: 22,
-      overtimeHours: 0,
-      sickDays: 0,
-      leaveDays: 0,
-      baseSalary: calc.gross_salary || 0,
-      supplements: 0,
-      bonuses: 0,
-      otherIncome: 0,
+      workDays: att.workDays ?? 22,
+      workedDays: Math.max(0, (att.workDays ?? 22) - (att.sickDays || 0) - (att.leaveDays || 0)),
+      overtimeHours: att.overtime || 0,
+      sickDays: att.sickDays || 0,
+      leaveDays: att.leaveDays || 0,
+      baseSalary: baseSalary,
+      supplements: finalOvertime + finalSickLeave,
+      bonuses: otherPremiums,
+      otherIncome: calculatedLeaveAmount, // leave paid amount
       grossTotal: calc.gross_salary || 0,
       szjaBase: calc.szja_base || calc.gross_salary || 0,
       szjaAmount: calc.szja_amount || 0,
       tbAmount: calc.tb_amount || 0,
       szochoAmount: calc.szocho_amount || 0,
-      familyCredit: 0,
-      under25Credit: 0,
-      newMotherCredit: 0,
-      firstMarriageCredit: 0,
-      personalDisabilityCredit: 0,
-      garnishments: 0,
-      advances: 0,
-      otherDeductions: calc.total_deductions || 0,
+      familyCredit,
+      under25Credit,
+      newMotherCredit,
+      firstMarriageCredit,
+      personalDisabilityCredit,
+      garnishments: garnishmentAmount,
+      advances: advanceAmount,
+      otherDeductions: otherDeductionsAmount,
       netSalary: calc.net_salary || 0,
     };
     printPayslip(payslipData);
@@ -564,10 +710,17 @@ export default function PayrollCyclePage() {
               setCsvValidation={setCsvValidation}
             />
           )}
-          {currentStep === 4 && <PayrollStep4 />}
+          {currentStep === 4 && (
+            <PayrollStep4
+              activeEmployees={activeEmployees}
+              allEmployments={allEmployments}
+              items={items}
+            />
+          )}
           {currentStep === 5 && (
             <PayrollStep5
               activeEmployees={activeEmployees}
+              allEmployments={allEmployments}
               items={items}
             />
           )}
@@ -581,6 +734,8 @@ export default function PayrollCyclePage() {
             <PayrollStep7
               activeEmployees={activeEmployees}
               items={items}
+              garnishments={garnishments}
+              allEmployments={allEmployments}
             />
           )}
           {currentStep === 8 && (

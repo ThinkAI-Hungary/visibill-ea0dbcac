@@ -1084,6 +1084,14 @@ export function useRunBatchPayroll() {
 
       if (itemErr) throw itemErr;
 
+      // 3.5 Fetch timesheets for this cycle
+      const { data: timesheets, error: tsErr } = await supabase
+        .from('accounty_timesheets')
+        .select('*')
+        .eq('cycle_id', input.cycleId);
+
+      if (tsErr) throw tsErr;
+
       // 4. Run calculations per employment
       const results: any[] = [];
 
@@ -1092,18 +1100,73 @@ export function useRunBatchPayroll() {
         const empItems = ((items || []) as any[]).filter(i => i.employment_id === employment.id);
 
         // Base salary from employment or items
-        const baseSalary = empItems.find((i: any) => i.item_type === 'base_salary')?.amount
-          || employment.base_salary || 0;
+        const baseSalary = Number(employment.base_salary || 0);
+        const isHourly = employment.salary_type === 'hourly';
 
-        // Sum extras
-        const extras = empItems
-          .filter((i: any) => !i.is_deduction && i.item_type !== 'base_salary')
-          .reduce((s: number, i: any) => s + (i.amount || 0), 0);
+        // Fetch timesheet attendance
+        const tsRow = (timesheets || []).find((t: any) => t.employment_id === employment.id);
+        const attendance = (tsRow?.ocr_data as any) || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
+
+        // Calculate auto attendance values
+        const weeklyHours = employment.weekly_hours || 40;
+        const dailyHours = weeklyHours / 5;
+
+        let hourlyRate = 0;
+        let dailyRate = 0;
+        let overtimeAmount = 0;
+        let sickLeaveAmount = 0;
+        let leaveAmount = 0;
+        let adjustedBaseSalary = 0;
+
+        if (isHourly) {
+          // For Hourly employees: baseSalary is the hourly wage rate (e.g. 142 Ft/hour)
+          hourlyRate = baseSalary;
+          dailyRate = hourlyRate * dailyHours;
+
+          const actualWorkedHours = (attendance.workDays || 0) * dailyHours;
+          const sickHours = (attendance.sickDays || 0) * dailyHours;
+          const leaveHours = (attendance.leaveDays || 0) * dailyHours;
+
+          adjustedBaseSalary = Math.round(actualWorkedHours * hourlyRate);
+          overtimeAmount = Math.round(hourlyRate * (attendance.overtime || 0) * 1.5);
+          sickLeaveAmount = Math.round(hourlyRate * sickHours * 0.70);
+          leaveAmount = Math.round(hourlyRate * leaveHours * 1.0);
+        } else {
+          // For Monthly employees: baseSalary is the full monthly salary (e.g. 150,000 Ft/month)
+          dailyRate = baseSalary / 22;
+          hourlyRate = baseSalary / (dailyHours * 22);
+
+          const baseReduction = Math.round(dailyRate * (attendance.sickDays || 0));
+          adjustedBaseSalary = Math.max(0, baseSalary - baseReduction);
+
+          overtimeAmount = Math.round(hourlyRate * (attendance.overtime || 0) * 1.5);
+          sickLeaveAmount = Math.round(dailyRate * (attendance.sickDays || 0) * 0.70);
+          // For monthly salaried employees, leave (vacation) days are already covered in the base salary
+          leaveAmount = 0;
+        }
+
+        // Fetch explicit item overrides if any
+        const itemBaseSalary = empItems.find((i: any) => i.item_type === 'base_salary')?.amount;
+        const itemOvertime = empItems.find((i: any) => i.item_type === 'overtime')?.amount;
+        const itemSickLeave = empItems.find((i: any) => i.item_type === 'sick_leave')?.amount;
+
+        const finalBase = itemBaseSalary !== undefined ? Number(itemBaseSalary) : adjustedBaseSalary;
+        const finalOvertime = itemOvertime !== undefined ? Number(itemOvertime) : overtimeAmount;
+        const finalSickLeave = itemSickLeave !== undefined ? Number(itemSickLeave) : sickLeaveAmount;
+
+        const nightShift = Number(empItems.find((i: any) => i.item_type === 'night_shift')?.amount || 0);
+        const sundayPremium = Number(empItems.find((i: any) => i.item_type === 'sunday_premium')?.amount || 0);
+        const holidayPremium = Number(empItems.find((i: any) => i.item_type === 'holiday_premium')?.amount || 0);
+        const bonus = Number(empItems.find((i: any) => i.item_type === 'bonus')?.amount || 0);
+        
+        const otherExtras = empItems
+          .filter((i: any) => !i.is_deduction && !['base_salary', 'overtime', 'night_shift', 'sunday_premium', 'holiday_premium', 'bonus', 'sick_leave'].includes(i.item_type))
+          .reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
 
         // Sum deductions from items
         const itemDeductions = empItems
           .filter((i: any) => i.is_deduction)
-          .reduce((s: number, i: any) => s + (i.amount || 0), 0);
+          .reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
 
         // Fetch declarations for this employee
         const { data: declRows } = await supabase
@@ -1171,14 +1234,14 @@ export function useRunBatchPayroll() {
 
         const calcInput: PayrollCalculationInput = {
           grossComponents: {
-            baseSalary,
-            overtime: 0,
-            nightShift: 0,
-            sundayPremium: 0,
-            holidayPremium: 0,
-            bonus: extras,
-            sickLeave: 0,
-            otherIncome: 0,
+            baseSalary: finalBase,
+            overtime: finalOvertime,
+            nightShift,
+            sundayPremium,
+            holidayPremium,
+            bonus,
+            sickLeave: finalSickLeave,
+            otherIncome: leaveAmount + otherExtras,
           },
           declarations,
           employeeAge,
@@ -1231,7 +1294,12 @@ export function useRunBatchPayroll() {
           total_deductions: itemDeductions + garnishResult.total,
           tax_credits: result.taxCredits || {},
           szocho_credits: { discount: result.szochoAmount - (result.szochoBase * taxParams.szocho_rate) },
-          deductions: { items: itemDeductions + garnishResult.total, total: itemDeductions + garnishResult.total },
+          deductions: {
+            advances: empItems.filter((i: any) => i.is_deduction && i.item_type === 'advance').reduce((s: number, i: any) => s + (i.amount || 0), 0),
+            garnishments: garnishResult.total,
+            other: empItems.filter((i: any) => i.is_deduction && i.item_type !== 'advance').reduce((s: number, i: any) => s + (i.amount || 0), 0),
+            total: itemDeductions + garnishResult.total
+          },
           cafeteria_tax: { employer: result.cafeteriaTaxEmployer || 0 },
           metadata: {
             employee_id: employee.id,
