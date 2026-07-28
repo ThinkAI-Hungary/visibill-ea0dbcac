@@ -234,8 +234,8 @@ export function InvoiceDataExportDialog({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col bg-card/95 backdrop-blur-md border-border/50 p-6 overflow-hidden">
-        <DialogHeader className="border-b border-border pb-4">
-          <div className="flex items-center justify-between">
+        <DialogHeader className="border-b border-border pb-4 pr-6">
+          <div className="flex items-center gap-3 flex-wrap">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
               <Download className="h-5 w-5 text-primary" />
               Számlák Exportálása
