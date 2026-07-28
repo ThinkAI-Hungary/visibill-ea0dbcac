@@ -283,7 +283,12 @@ const InvoicesPage = () => {
     }
 
     return filteredAndSortedNavInvoices.map(inv => {
-      const pairedSub = filteredAndSortedSubmittedInvoices.find(s => (s as any).nav_invoice_id === inv.id);
+      const invNum = (inv.invoice_number || '').trim().toLowerCase();
+      const pairedSub = filteredAndSortedSubmittedInvoices.find(s => {
+        const subNum = (s.bizonylatsorszam || (s as any).invoice_number || '').trim().toLowerCase();
+        return (Boolean(invNum) && Boolean(subNum) && invNum === subNum) || (s as any).nav_invoice_id === inv.id;
+      });
+
       return {
         id: inv.id,
         invoice_number: inv.invoice_number || 'Nincs sorszám',
