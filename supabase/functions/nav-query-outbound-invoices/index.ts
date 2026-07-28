@@ -394,6 +394,20 @@ Deno.serve(async (req) => {
       }).eq('id', syncLogId);
     }
 
+    // Auto-promote NAV credentials validation_status to 'valid' on successful NAV API communication
+    try {
+      await serviceClient
+        .from('user_nav_credentials')
+        .update({
+          validation_status: 'valid',
+          last_validated_at: new Date().toISOString(),
+          validation_error: null
+        })
+        .eq('company_id', companyId);
+    } catch (credErr) {
+      console.warn('[NAV-QUERY-OUTBOUND] Failed to auto-promote validation_status:', credErr);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

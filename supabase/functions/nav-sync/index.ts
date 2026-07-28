@@ -130,6 +130,20 @@ Deno.serve(async (req) => {
         })
         .eq('id', syncLog.id);
 
+      // Auto-promote NAV credentials validation_status to 'valid' on successful NAV API communication
+      try {
+        await supabaseClient
+          .from('user_nav_credentials')
+          .update({
+            validation_status: 'valid',
+            last_validated_at: new Date().toISOString(),
+            validation_error: null
+          })
+          .eq('user_id', user.id);
+      } catch (credErr) {
+        console.warn('[NAV-SYNC] Failed to auto-promote validation_status:', credErr);
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
