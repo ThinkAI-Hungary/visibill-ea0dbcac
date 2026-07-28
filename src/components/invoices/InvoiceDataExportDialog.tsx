@@ -25,6 +25,8 @@ export interface ExportableInvoice {
   submitted?: boolean;
   category_name?: string;
   project_name?: string;
+  image_url?: string;
+  melleklet_url?: string;
   source: 'nav' | 'submitted';
 }
 

@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error('Authentication failed');
 
-    const { companyId, dateFrom, dateTo, invoiceDirection, exportMode, includePostingSlips } = body;
+    const { companyId, dateFrom, dateTo, invoiceDirection, exportMode, includePostingSlips, invoiceList: customInvoiceList } = body;
 
     if (!companyId || !dateFrom || !dateTo) {
       throw new Error('Missing required fields: companyId, dateFrom, dateTo');
@@ -44,38 +44,44 @@ Deno.serve(async (req) => {
 
     if (!membership) throw new Error('User is not a member of this company');
 
-    // ── Query invoices ──
-    let invoiceQuery = supabase
-      .from('invoices')
-      .select('id, bizonylatsorszam, image_url, melleklet_url, kibocsatas_datuma', { count: 'exact' })
-      .eq('company_id', companyId)
-      .gte('kibocsatas_datuma', dateFrom)
-      .lte('kibocsatas_datuma', dateTo)
-      .order('kibocsatas_datuma', { ascending: true });
+    let invoiceList: any[] = [];
 
-    if (invoiceDirection) {
-      invoiceQuery = invoiceQuery.eq('invoice_direction', invoiceDirection);
+    if (Array.isArray(customInvoiceList) && customInvoiceList.length > 0) {
+      invoiceList = customInvoiceList;
+    } else {
+      // ── Query invoices from DB by date range ──
+      let invoiceQuery = supabase
+        .from('invoices')
+        .select('id, bizonylatsorszam, image_url, melleklet_url, kibocsatas_datuma', { count: 'exact' })
+        .eq('company_id', companyId)
+        .gte('kibocsatas_datuma', dateFrom)
+        .lte('kibocsatas_datuma', dateTo)
+        .order('kibocsatas_datuma', { ascending: true });
+
+      if (invoiceDirection) {
+        invoiceQuery = invoiceQuery.eq('invoice_direction', invoiceDirection);
+      }
+
+      const { data: invoices, error: queryError } = await invoiceQuery;
+      if (queryError) throw new Error(`Invoice query failed: ${queryError.message}`);
+
+      invoiceList = (invoices || []).map((inv: any) => ({
+        id: inv.id,
+        name: inv.bizonylatsorszam || inv.id.slice(0, 8),
+        url: inv.image_url || inv.melleklet_url || '',
+        source: 'submitted',
+      }));
     }
 
-    const { data: invoices, error: queryError, count } = await invoiceQuery;
-    if (queryError) throw new Error(`Invoice query failed: ${queryError.message}`);
-
-    const totalInvoices = count || invoices?.length || 0;
-    if (totalInvoices === 0) {
-      return new Response(JSON.stringify({ error: 'Nincs számla a megadott időszakban' }), {
+    if (invoiceList.length === 0) {
+      return new Response(JSON.stringify({ error: 'Nincs számla a megadott feltételekkel' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const suffix = includeSlips ? '_kontirozott' : '';
-    const baseName = `${dateFrom}_${dateTo}_bekuldott_szamlak${suffix}`;
-
-    const invoiceList = (invoices || []).map((inv: any) => ({
-      id: inv.id,
-      name: inv.bizonylatsorszam || inv.id.slice(0, 8),
-      url: inv.image_url || inv.melleklet_url,
-    })).filter((inv: any) => inv.url);
+    const baseName = `${dateFrom}_${dateTo}_szamlak${suffix}`;
 
     // ── Create job record ──
     const { data: job, error: jobError } = await supabase

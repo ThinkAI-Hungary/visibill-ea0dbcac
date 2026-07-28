@@ -28,12 +28,20 @@ export interface PdfExportJob {
   completed_at: string | null;
 }
 
+export interface ExportInvoiceItem {
+  id: string;
+  name: string;
+  url?: string;
+  source?: 'nav' | 'submitted';
+}
+
 export interface ExportParams {
   dateFrom: string;
   dateTo: string;
   invoiceDirection?: 'INBOUND' | 'OUTBOUND' | null;
   exportMode?: 'standard' | 'posting_slips';
   includePostingSlips?: boolean;
+  invoiceList?: ExportInvoiceItem[];
 }
 
 export interface PdfExportState {
@@ -396,6 +404,7 @@ export function usePdfExport(): PdfExportState {
           invoiceDirection: params.invoiceDirection,
           exportMode: params.exportMode || (params.includePostingSlips ? 'posting_slips' : 'standard'),
           includePostingSlips: params.includePostingSlips || params.exportMode === 'posting_slips',
+          invoiceList: params.invoiceList,
         }),
       });
 

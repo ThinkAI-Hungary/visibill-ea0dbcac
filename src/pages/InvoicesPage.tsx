@@ -18,7 +18,7 @@ import { Search, Download, ArrowUpDown, FileText, FileSpreadsheet, FileDown, X, 
 import { usePdfExport } from '@/hooks/usePdfExport';
 import { PdfExportDialog } from '@/components/invoices/PdfExportDialog';
 import { PdfExportBanner } from '@/components/invoices/PdfExportBanner';
-import { InvoiceDataExportDialog, type ExportableInvoice } from '@/components/invoices/InvoiceDataExportDialog';
+import { InvoiceDataExportDialog, type ExportableInvoice, type ExportLevel } from '@/components/invoices/InvoiceDataExportDialog';
 import { exportToFile } from '@/lib/exportUtils';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -276,6 +276,8 @@ const InvoicesPage = () => {
         currency: inv.penznem || 'HUF',
         category_name: getCategoryName(inv.category_id),
         project_name: getProjectName(inv.project_id),
+        image_url: inv.image_url,
+        melleklet_url: inv.melleklet_url,
         source: 'submitted',
       }));
     }
@@ -309,11 +311,20 @@ const InvoicesPage = () => {
       const dates = selectedInvoices.map(i => i.issue_date).filter(Boolean).sort();
       const dateFrom = dates[0] || new Date().toISOString().split('T')[0];
       const dateTo = dates[dates.length - 1] || new Date().toISOString().split('T')[0];
+
+      const invoiceList = selectedInvoices.map(inv => ({
+        id: inv.id,
+        name: inv.invoice_number,
+        url: inv.image_url || inv.melleklet_url || '',
+        source: inv.source || 'submitted',
+      }));
+
       await pdfExport.startExport({
         dateFrom,
         dateTo,
         exportMode: exportLevel === 'itemized_posting' ? 'posting_slips' : 'standard',
         includePostingSlips: exportLevel === 'itemized_posting',
+        invoiceList,
       });
       return;
     }
@@ -425,7 +436,7 @@ const InvoicesPage = () => {
         }
       });
 
-      await exportToFile(headers, rows, format as 'csv' | 'xlsx', `szamlak_teteles_kontirozott`);
+      await exportToFile(headers, rows as string[][], format as 'csv' | 'xlsx', `szamlak_teteles_kontirozott`);
       return;
     }
 
