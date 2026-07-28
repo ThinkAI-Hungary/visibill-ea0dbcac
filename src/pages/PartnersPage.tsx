@@ -43,7 +43,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { hu } from "date-fns/locale";
+import { useDateRange } from "@/contexts/DateRangeContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PartnerRankingCard, type RankedPartner } from "@/components/partners/PartnerRankingCard";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
@@ -102,7 +105,12 @@ export default function PartnersPage() {
   const queryClient = useQueryClient();
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('partners');
-  
+  const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+
+  const periodLabel = useMemo(() => {
+    if (!dateFrom || !dateTo) return '';
+    return `${format(dateFrom, 'yyyy. MMM dd.', { locale: hu })} – ${format(dateTo, 'yyyy. MMM dd.', { locale: hu })}`;
+  }, [dateFrom, dateTo]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -264,11 +272,13 @@ export default function PartnersPage() {
 
   // ── Fetch partner ranking data ──
   const { data: rankingRaw, isLoading: isRankingLoading } = useQuery({
-    queryKey: ['partner-ranking', selectedCompany?.id],
+    queryKey: ['partner-ranking', selectedCompany?.id, dateFromFormatted, dateToFormatted],
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase.rpc('get_partner_ranking', {
         p_company_id: selectedCompany.id,
+        p_date_from: dateFromFormatted,
+        p_date_to: dateToFormatted,
       });
       if (error) throw error;
       return data as Array<{
@@ -734,8 +744,14 @@ export default function PartnersPage() {
       <Collapsible open={rankingOpen} onOpenChange={handleRankingToggle} className="shrink-0">
         <CollapsibleTrigger asChild>
           <button className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full group py-1">
-            <BarChart3 className="h-3.5 w-3.5" />
-            <span>Rangsor & Kimutatás</span>
+            <BarChart3 className="h-3.5 w-3.5 text-primary" />
+            <span className="font-semibold text-foreground">Rangsor & Kimutatás</span>
+            {periodLabel && (
+              <Badge variant="outline" className="h-5 text-[10px] font-normal gap-1 bg-background/50 px-2 py-0 border-primary/20 text-primary">
+                <Calendar className="h-2.5 w-2.5" />
+                <span>{periodLabel}</span>
+              </Badge>
+            )}
             <ChevronDown className={cn(
               "h-3.5 w-3.5 transition-transform duration-200",
               rankingOpen && "rotate-180"
@@ -751,6 +767,7 @@ export default function PartnersPage() {
               data={topSuppliers}
               totalAll={totalSupplier}
               isLoading={isRankingLoading}
+              periodLabel={periodLabel}
               onPartnerClick={(taxNumber) => {
                 // Find partner by tax_number and select it
                 // FOREIGN: partners: taxNumber is the full FOREIGN:xxx key, match directly
@@ -772,6 +789,7 @@ export default function PartnersPage() {
               data={topCustomers}
               totalAll={totalCustomer}
               isLoading={isRankingLoading}
+              periodLabel={periodLabel}
               onPartnerClick={(taxNumber) => {
                 // FOREIGN: partners: taxNumber is the full FOREIGN:xxx key, match directly
                 const match = (partners as Partner[] | undefined)?.find(p => {

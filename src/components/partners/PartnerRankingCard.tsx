@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { getAvatarColor, getInitials } from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from '@/contexts/ThemeContext';
+import { Calendar } from 'lucide-react';
 
 // ── Color palette for treemap cells (light + dark mode aware) ──
 const TREEMAP_COLORS = [
@@ -34,6 +35,7 @@ interface PartnerRankingCardProps {
   data: RankedPartner[];
   totalAll: number;
   isLoading: boolean;
+  periodLabel?: string;
   onPartnerClick?: (taxNumber: string) => void;
 }
 
@@ -45,7 +47,7 @@ function formatCompact(value: number): string {
   return Math.round(value).toString();
 }
 
-export function PartnerRankingCard({ title, type, data, totalAll, isLoading, onPartnerClick }: PartnerRankingCardProps) {
+export function PartnerRankingCard({ title, type, data, totalAll, isLoading, periodLabel, onPartnerClick }: PartnerRankingCardProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const isSupplier = type === 'supplier';
@@ -88,11 +90,23 @@ export function PartnerRankingCard({ title, type, data, totalAll, isLoading, onP
     );
   }
 
-  if (data.length === 0) {
-    return (
-      <div className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold">{title}</h3>
+  const TARGET_ROW_COUNT = 10;
+  const placeholdersCount = Math.max(0, TARGET_ROW_COUNT - data.length);
+
+  return (
+    <div className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-5 flex flex-col justify-between">
+      <div>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3.5">
+          <div>
+            <h3 className="text-sm font-semibold">{title}</h3>
+            {periodLabel && (
+              <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
+                <Calendar className="h-3 w-3 text-muted-foreground/70" />
+                <span>{periodLabel}</span>
+              </p>
+            )}
+          </div>
           <span className={cn(
             "text-[10px] font-semibold px-2 py-0.5 rounded-md border",
             isSupplier
@@ -102,124 +116,151 @@ export function PartnerRankingCard({ title, type, data, totalAll, isLoading, onP
             {isSupplier ? 'Szállítók' : 'Vevők'}
           </span>
         </div>
-        <p className="text-xs text-muted-foreground text-center py-8">Nincs adat</p>
-      </div>
-    );
-  }
 
-  return (
-    <div className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-5">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3.5">
-        <h3 className="text-sm font-semibold">{title}</h3>
-        <span className={cn(
-          "text-[10px] font-semibold px-2 py-0.5 rounded-md border",
-          isSupplier
-            ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-            : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-        )}>
-          {isSupplier ? 'Szállítók' : 'Vevők'}
-        </span>
-      </div>
+        {/* Ranking list (always 10 rows) */}
+        <div className="flex flex-col gap-1">
+          {data.map((partner, idx) => {
+            const barWidth = maxGross > 0 ? Math.max(4, (partner.total_gross / maxGross) * 100) : 4;
+            const avatarBg = partner.custom_bg_color || (partner.custom_color ? partner.custom_color + '20' : undefined);
+            const avatarText = partner.custom_color || undefined;
 
-      {/* Ranking list */}
-      <div className="flex flex-col gap-1">
-        {data.map((partner, idx) => {
-          const barWidth = maxGross > 0 ? Math.max(4, (partner.total_gross / maxGross) * 100) : 4;
-          const avatarBg = partner.custom_bg_color || (partner.custom_color ? partner.custom_color + '20' : undefined);
-          const avatarText = partner.custom_color || undefined;
-
-          return (
-            <div
-              key={partner.tax_number}
-              className="flex items-center gap-2 py-1 cursor-pointer hover:bg-accent/20 rounded-md px-1 -mx-1 transition-colors"
-              onClick={() => onPartnerClick?.(partner.tax_number)}
-            >
-              <span className={cn(
-                "w-5 text-[11px] font-bold text-right shrink-0 tabular-nums",
-                idx < 3 ? "text-primary" : "text-muted-foreground/40"
-              )}>
-                {idx + 1}.
-              </span>
-
-              {/* Avatar */}
+            return (
               <div
-                className={cn(
-                  "w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold shrink-0",
-                  !avatarBg && getAvatarColor(partner.name)
-                )}
-                style={avatarBg ? { backgroundColor: avatarBg, color: avatarText } : undefined}
+                key={partner.tax_number}
+                className="flex items-center gap-2 py-1 cursor-pointer hover:bg-accent/20 rounded-md px-1 -mx-1 transition-colors"
+                onClick={() => onPartnerClick?.(partner.tax_number)}
               >
-                {partner.custom_monogram || getInitials(partner.name)}
-              </div>
-
-              {/* Name + count */}
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold truncate">{partner.name}</p>
-                <p className="text-[9px] text-muted-foreground/50">{partner.invoice_count} számla</p>
-              </div>
-
-              {/* Bar + amount */}
-              <div className="w-[120px] shrink-0 flex items-center gap-1.5">
-                <div className="flex-1 h-[5px] bg-foreground/[0.04] rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full"
-                    style={{ width: `${barWidth}%`, background: barGradient }}
-                  />
-                </div>
-                <span className="text-[10px] font-semibold tabular-nums whitespace-nowrap" style={{ color: accentColor }}>
-                  {formatCompact(partner.total_gross)}
+                <span className={cn(
+                  "w-5 text-[11px] font-bold text-right shrink-0 tabular-nums",
+                  idx < 3 ? "text-primary" : "text-muted-foreground/40"
+                )}>
+                  {idx + 1}.
                 </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
 
-      {/* Treemap */}
-      {data.length > 0 && (
-        <div className="mt-3.5 pt-3.5 border-t border-border/40">
-          <p className="text-[10px] text-muted-foreground/50 font-medium uppercase tracking-wider mb-2">
-            Top {data.length} arányos áttekintés
-          </p>
-          <div className="flex flex-wrap gap-[3px]">
-            {data.map((partner, idx) => {
-              const color = TREEMAP_COLORS[idx] || TREEMAP_COLORS[TREEMAP_COLORS.length - 1];
-              const pct = top10Total > 0 ? (partner.total_gross / top10Total) * 100 : 10;
-              // Width as percentage of total, minus gap compensation
-              const widthPct = Math.max(8, pct);
-              // Height based on rank tier
-              const h = idx < 3 ? 48 : idx < 6 ? 40 : idx < 9 ? 34 : 28;
-              return (
+                {/* Avatar */}
                 <div
-                  key={partner.tax_number}
-                  className="rounded-md flex flex-col items-center justify-center px-1 cursor-pointer transition-opacity hover:opacity-80"
-                  style={{
-                    backgroundColor: color.bg,
-                    color: isDark ? color.textDark : color.textLight,
-                    overflow: 'hidden',
-                    width: `calc(${widthPct}% - 3px)`,
-                    height: `${h}px`,
-                    flexShrink: 0,
-                  }}
-                  onClick={() => onPartnerClick?.(partner.tax_number)}
-                  title={`${partner.name}: ${formatCompact(partner.total_gross)} Ft (${pct.toFixed(1)}%)`}
-                >
-                  {h >= 40 && (
-                    <span className="text-[7px] font-extrabold opacity-40 leading-none">#{idx + 1}</span>
+                  className={cn(
+                    "w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold shrink-0",
+                    !avatarBg && getAvatarColor(partner.name)
                   )}
-                  <span className={`font-bold whitespace-nowrap leading-tight ${h >= 40 ? 'text-[11px]' : 'text-[10px]'}`}>
+                  style={avatarBg ? { backgroundColor: avatarBg, color: avatarText } : undefined}
+                >
+                  {partner.custom_monogram || getInitials(partner.name)}
+                </div>
+
+                {/* Name + count */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold truncate">{partner.name}</p>
+                  <p className="text-[9px] text-muted-foreground/50">{partner.invoice_count} számla</p>
+                </div>
+
+                {/* Bar + amount */}
+                <div className="w-[120px] shrink-0 flex items-center gap-1.5">
+                  <div className="flex-1 h-[5px] bg-foreground/[0.04] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${barWidth}%`, background: barGradient }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-semibold tabular-nums whitespace-nowrap" style={{ color: accentColor }}>
                     {formatCompact(partner.total_gross)}
                   </span>
-                  <span className="text-[8px] font-medium opacity-60 whitespace-nowrap overflow-hidden text-ellipsis max-w-full text-center leading-none">
-                    {partner.name.length > 12 ? partner.name.substring(0, 10) + '…' : partner.name}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Placeholder rows to maintain fixed 10-row height */}
+          {placeholdersCount > 0 && Array.from({ length: placeholdersCount }).map((_, i) => {
+            const rankIdx = data.length + i;
+            return (
+              <div
+                key={`placeholder-${rankIdx}`}
+                className="flex items-center gap-2 py-1 px-1 -mx-1 select-none pointer-events-none opacity-40"
+              >
+                <span className="w-5 text-[11px] font-bold text-right shrink-0 tabular-nums text-muted-foreground/20">
+                  {rankIdx + 1}.
+                </span>
+
+                {/* Avatar placeholder */}
+                <div className="w-6 h-6 rounded-full border border-dashed border-border/30 bg-muted/5 shrink-0 flex items-center justify-center text-[9px] text-muted-foreground/20 font-bold">
+                  —
+                </div>
+
+                {/* Name + count placeholder */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-normal text-muted-foreground/30 italic truncate">
+                    {data.length === 0 && i === 0 ? 'Nincs partner ebben az időszakban' : '—'}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground/15">—</p>
+                </div>
+
+                {/* Bar + amount placeholder */}
+                <div className="w-[120px] shrink-0 flex items-center gap-1.5">
+                  <div className="flex-1 h-[5px] bg-foreground/[0.02] rounded-full" />
+                  <span className="text-[10px] font-medium text-muted-foreground/20 tabular-nums whitespace-nowrap">
+                    —
                   </span>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+
+        {/* Treemap */}
+        {data.length > 0 ? (
+          <div className="mt-3.5 pt-3.5 border-t border-border/40">
+            <p className="text-[10px] text-muted-foreground/50 font-medium uppercase tracking-wider mb-2">
+              Top {data.length} arányos áttekintés
+            </p>
+            <div className="flex flex-wrap gap-[3px]">
+              {data.map((partner, idx) => {
+                const color = TREEMAP_COLORS[idx] || TREEMAP_COLORS[TREEMAP_COLORS.length - 1];
+                const pct = top10Total > 0 ? (partner.total_gross / top10Total) * 100 : 10;
+                // Width as percentage of total, minus gap compensation
+                const widthPct = Math.max(8, pct);
+                // Height based on rank tier
+                const h = idx < 3 ? 48 : idx < 6 ? 40 : idx < 9 ? 34 : 28;
+                return (
+                  <div
+                    key={partner.tax_number}
+                    className="rounded-md flex flex-col items-center justify-center px-1 cursor-pointer transition-opacity hover:opacity-80"
+                    style={{
+                      backgroundColor: color.bg,
+                      color: isDark ? color.textDark : color.textLight,
+                      overflow: 'hidden',
+                      width: `calc(${widthPct}% - 3px)`,
+                      height: `${h}px`,
+                      flexShrink: 0,
+                    }}
+                    onClick={() => onPartnerClick?.(partner.tax_number)}
+                    title={`${partner.name}: ${formatCompact(partner.total_gross)} Ft (${pct.toFixed(1)}%)`}
+                  >
+                    {h >= 40 && (
+                      <span className="text-[7px] font-extrabold opacity-40 leading-none">#{idx + 1}</span>
+                    )}
+                    <span className={`font-bold whitespace-nowrap leading-tight ${h >= 40 ? 'text-[11px]' : 'text-[10px]'}`}>
+                      {formatCompact(partner.total_gross)}
+                    </span>
+                    <span className="text-[8px] font-medium opacity-60 whitespace-nowrap overflow-hidden text-ellipsis max-w-full text-center leading-none">
+                      {partner.name.length > 12 ? partner.name.substring(0, 10) + '…' : partner.name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3.5 pt-3.5 border-t border-border/40">
+            <p className="text-[10px] text-muted-foreground/50 font-medium uppercase tracking-wider mb-2">
+              Arányos áttekintés
+            </p>
+            <div className="h-[48px] rounded-md border border-dashed border-border/30 bg-muted/5 flex items-center justify-center text-xs text-muted-foreground/30 font-medium">
+              Nincs megjeleníthető adat
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Summary row */}
       <div className="mt-3.5 pt-3 border-t border-border/40 grid grid-cols-4 gap-2 text-center">
