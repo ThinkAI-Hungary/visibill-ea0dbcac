@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Database, ArrowLeft, ChevronRight, Save, Edit3, X,
   Building2, User, MapPin, Phone, Mail, Globe,
@@ -50,12 +50,14 @@ function DataField({ label, value, icon: Icon, mono, isEditing, onChange }: {
 
 export default function EvMasterDataPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
   const { data: client } = useAccountyClient(id);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
-  const { data: settings, isLoading } = useEvClientSettings(id, 2026);
+  const { data: settings, isLoading } = useEvClientSettings(id, taxYear);
   const updateSettings = useUpdateEvSettings();
 
   // ─── Edit form state ───────────────────────────────────────────────────────
@@ -203,7 +205,7 @@ export default function EvMasterDataPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />

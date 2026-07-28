@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   FileText, ArrowLeft, ChevronRight, CheckCircle2,
   Clock, AlertTriangle, Download, Eye,
@@ -82,9 +82,19 @@ export default function EvFormsOverviewPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
+
+  const setTaxYear = (year: number) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('year', String(year));
+      return next;
+    });
+  };
 
   // ─── Real data: portfolio-wide tax returns ────────────────────────────────
-  const { data: allReturns, isLoading } = useAllEvTaxReturns(2026);
+  const { data: allReturns, isLoading } = useAllEvTaxReturns(taxYear);
 
   // Group returns by (return_type + period_key) to aggregate across clients
   const forms = useMemo<AggregatedForm[]>(() => {
@@ -266,6 +276,15 @@ export default function EvFormsOverviewPage() {
           <option value="draft">Vázlat</option>
           <option value="upcoming">Közelgő</option>
           <option value="overdue">Lejárt</option>
+        </select>
+        <select
+          value={taxYear}
+          onChange={e => setTaxYear(Number(e.target.value))}
+          className="text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground"
+        >
+          <option value={2026}>2026</option>
+          <option value={2025}>2025</option>
+          <option value={2024}>2024</option>
         </select>
       </div>
 

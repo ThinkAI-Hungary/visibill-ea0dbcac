@@ -1,5 +1,4 @@
-import React, { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Receipt, Car, ArrowLeft, ChevronRight, Info, CheckCircle2,
   Clock, AlertTriangle, Send, Download, Calendar, Loader2, ShieldCheck
@@ -50,33 +49,35 @@ function mapReturn(r: any) {
   };
 }
 
-const QUARTER_DEADLINES_20 = [
-  { q: 'Q1', deadline: '2026-04-20' },
-  { q: 'Q2', deadline: '2026-07-20' },
-  { q: 'Q3', deadline: '2026-10-20' },
-  { q: 'Q4', deadline: '2027-01-20' },
-];
-
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvVatCarReturnPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
   const updateReturn = useUpdateEvTaxReturn();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
 
-  const { data: allReturns, isLoading } = useEvTaxReturns(id, 2026);
-  const { data: evSettings } = useEvClientSettings(id, 2026);
+  const { data: allReturns, isLoading } = useEvTaxReturns(id, taxYear);
+  const { data: evSettings } = useEvClientSettings(id, taxYear);
 
   const isAlanyiMentes = evSettings?.vat_status === 'alanyi_mentes';
+
+  const quarterDeadlines = useMemo(() => [
+    { q: 'Q1', deadline: `${taxYear}-04-20` },
+    { q: 'Q2', deadline: `${taxYear}-07-20` },
+    { q: 'Q3', deadline: `${taxYear}-10-20` },
+    { q: 'Q4', deadline: `${taxYear + 1}-01-20` },
+  ], [taxYear]);
 
   const vatReturns = useMemo(() => {
     const dbReturns = (allReturns || []).filter((r: any) => r.return_type === 'afa').map(mapReturn);
     if (dbReturns.length === 0 && !isAlanyiMentes) {
-      return QUARTER_DEADLINES_20.map(qd => ({
+      return quarterDeadlines.map(qd => ({
         id: `gen-afa-${qd.q}`,
         type: 'ÁFA bevallás',
         code: '65A',
-        period: `2026 ${qd.q}`,
+        period: `${taxYear} ${qd.q}`,
         deadline: qd.deadline,
         status: getDateStatus(qd.deadline),
         amount: 0,
@@ -84,7 +85,7 @@ export default function EvVatCarReturnPage() {
       }));
     }
     return dbReturns;
-  }, [allReturns, isAlanyiMentes]);
+  }, [allReturns, isAlanyiMentes, quarterDeadlines, taxYear]);
 
   const carReturns = useMemo(() => {
     const dbReturns = (allReturns || []).filter((r: any) => r.return_type === 'car' || r.return_type === 'cegautado').map(mapReturn);
@@ -116,7 +117,7 @@ export default function EvVatCarReturnPage() {
       // 2. Save/upsert return to db
       await updateReturn.mutateAsync({
         company_id: id,
-        tax_year: 2026,
+        tax_year: taxYear,
         return_type: rType,
         form_code: fCode,
         period_key: ret.period,
@@ -250,7 +251,7 @@ export default function EvVatCarReturnPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
         <ChevronRight className="w-3 h-3" />
         <span className="text-slate-900 dark:text-slate-100 font-medium">ÁFA & Cégautóadó bevallás</span>
       </div>

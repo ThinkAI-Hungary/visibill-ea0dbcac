@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import React, { useMemo } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   TrendingUp, ArrowLeft, ChevronRight, Info,
   ArrowUpRight, ArrowDownRight, Calendar, Download, Loader2
@@ -28,7 +28,16 @@ interface MonthlyData {
 export default function EvIncomeReportPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
-  const [year, setYear] = useState(2026);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const year = Number(searchParams.get('year') || '2026');
+
+  const setYear = (newYear: number) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('year', String(newYear));
+      return next;
+    });
+  };
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawEntries, isLoading: entriesLoading } = useCashbookEntries(id, year);

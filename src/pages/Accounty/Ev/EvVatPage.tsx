@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Receipt, ArrowLeft, ChevronRight, Info, Calculator,
   AlertTriangle, CheckCircle2, Clock, FileText, Loader2
@@ -14,8 +14,9 @@ import { toast } from '@/hooks/use-toast';
 
 export default function EvVatPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
   const { data: client } = useAccountyClient(id);
-  const [taxYear] = useState(2026);
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: evSettings } = useEvClientSettings(id, taxYear);
@@ -59,7 +60,7 @@ export default function EvVatPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -157,7 +158,7 @@ export default function EvVatPage() {
             <div className="flex items-start gap-2">
               <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
               <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
-                <p className="font-semibold">ÁFA szabályok (2026)</p>
+                <p className="font-semibold">ÁFA szabályok ({taxYear})</p>
                 <ul className="list-disc list-inside space-y-0.5">
                   <li>Alanyi mentesség határa: {formatHuf(afaLimit)}</li>
                   <li>ÁFA kulcsok: 27%, 18%, 5%, mentes</li>

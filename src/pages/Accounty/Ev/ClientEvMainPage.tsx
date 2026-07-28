@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Receipt, ArrowLeft, BookOpen, Calculator, FileText,
   TrendingUp, AlertTriangle, Calendar, Settings, ChevronRight,
@@ -47,7 +47,16 @@ const ORG_TYPE_LABELS: Record<string, string> = {
 export default function ClientEvMainPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
-  const [taxYear, setTaxYear] = useState(2026);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
+  
+  const setTaxYear = (year: number) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('year', String(year));
+      return next;
+    });
+  };
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: evSettings, isLoading: settingsLoading } = useEvClientSettings(id, taxYear);
@@ -65,16 +74,16 @@ export default function ClientEvMainPage() {
   const thresholds = getEvThresholds(ytdRevenue, taxpayerForm, false);
 
   // Navigation sections
-  const sections = [
+  const sections = useMemo(() => [
     {
       title: 'Törzsadatok & életciklus',
       description: 'Alapadatok, beállítások, tevékenység-történet',
       icon: Settings,
       color: 'indigo',
       items: [
-        { to: `/accounty/client/${id}/ev/master-data`, label: 'Törzsadatok', icon: ClipboardList },
-        { to: `/accounty/client/${id}/ev/lifecycle`, label: 'Életciklus', icon: Calendar },
-        { to: `/accounty/client/${id}/ev/setup`, label: 'Beállítás varázsló', icon: Settings },
+        { to: `/accounty/client/${id}/ev/master-data?year=${taxYear}`, label: 'Törzsadatok', icon: ClipboardList },
+        { to: `/accounty/client/${id}/ev/lifecycle?year=${taxYear}`, label: 'Életciklus', icon: Calendar },
+        { to: `/accounty/client/${id}/ev/setup?year=${taxYear}`, label: 'Beállítás varázsló', icon: Settings },
       ],
     },
     {
@@ -83,12 +92,12 @@ export default function ClientEvMainPage() {
       icon: Calculator,
       color: 'indigo',
       items: [
-        { to: `/accounty/client/${id}/ev/flat-rate`, label: 'Átalányadó kalkulátor', icon: PiggyBank },
-        { to: `/accounty/client/${id}/ev/entrepreneurial/base`, label: 'Vállalkozói SZJA – adóalap', icon: TrendingUp },
-        { to: `/accounty/client/${id}/ev/entrepreneurial/dividend`, label: 'Vállalkozói SZJA – osztalékalap', icon: Wallet },
-        { to: `/accounty/client/${id}/ev/kata`, label: 'KATA kisadózó', icon: Shield },
-        { to: `/accounty/client/${id}/ev/depreciation`, label: 'Értékcsökkenési leírás (ÉCS)', icon: BarChart3 },
-        { to: `/accounty/client/${id}/ev/compare`, label: 'Adóforma-összehasonlítás', icon: Scale },
+        { to: `/accounty/client/${id}/ev/flat-rate?year=${taxYear}`, label: 'Átalányadó kalkulátor', icon: PiggyBank },
+        { to: `/accounty/client/${id}/ev/entrepreneurial/base?year=${taxYear}`, label: 'Vállalkozói SZJA – adóalap', icon: TrendingUp },
+        { to: `/accounty/client/${id}/ev/entrepreneurial/dividend?year=${taxYear}`, label: 'Vállalkozói SZJA – osztalékalap', icon: Wallet },
+        { to: `/accounty/client/${id}/ev/kata?year=${taxYear}`, label: 'KATA kisadózó', icon: Shield },
+        { to: `/accounty/client/${id}/ev/depreciation?year=${taxYear}`, label: 'Értékcsökkenési leírás (ÉCS)', icon: BarChart3 },
+        { to: `/accounty/client/${id}/ev/compare?year=${taxYear}`, label: 'Adóforma-összehasonlítás', icon: Scale },
       ],
     },
     {
@@ -97,9 +106,9 @@ export default function ClientEvMainPage() {
       icon: BookOpen,
       color: 'violet',
       items: [
-        { to: `/accounty/client/${id}/ev/cashbook`, label: 'Pénztárkönyv', icon: BookOpen },
-        { to: `/accounty/client/${id}/ev/cashbook/ledger`, label: 'Főkönyvi nézet', icon: BarChart3 },
-        { to: `/accounty/client/${id}/ev/cashbook/close`, label: 'Időszaki zárás', icon: ClipboardList },
+        { to: `/accounty/client/${id}/ev/cashbook?year=${taxYear}`, label: 'Pénztárkönyv', icon: BookOpen },
+        { to: `/accounty/client/${id}/ev/cashbook/ledger?year=${taxYear}`, label: 'Főkönyvi nézet', icon: BarChart3 },
+        { to: `/accounty/client/${id}/ev/cashbook/close?year=${taxYear}`, label: 'Időszaki zárás', icon: ClipboardList },
       ],
     },
     {
@@ -108,11 +117,11 @@ export default function ClientEvMainPage() {
       icon: FileText,
       color: 'teal',
       items: [
-        { to: `/accounty/client/${id}/ev/records`, label: 'Nyilvántartások áttekintő', icon: FileText },
-        { to: `/accounty/client/${id}/ev/records/receivables`, label: 'Vevői követelések', icon: Users },
-        { to: `/accounty/client/${id}/ev/records/payables`, label: 'Szállítói tartozások', icon: Package },
-        { to: `/accounty/client/${id}/ev/records/fixed-assets`, label: 'Tárgyi eszközök', icon: Landmark },
-        { to: `/accounty/client/${id}/ev/records/vehicle-log`, label: 'Útnyilvántartás', icon: Car },
+        { to: `/accounty/client/${id}/ev/records?year=${taxYear}`, label: 'Nyilvántartások áttekintő', icon: FileText },
+        { to: `/accounty/client/${id}/ev/records/receivables?year=${taxYear}`, label: 'Vevői követelések', icon: Users },
+        { to: `/accounty/client/${id}/ev/records/payables?year=${taxYear}`, label: 'Szállítói tartozások', icon: Package },
+        { to: `/accounty/client/${id}/ev/records/fixed-assets?year=${taxYear}`, label: 'Tárgyi eszközök', icon: Landmark },
+        { to: `/accounty/client/${id}/ev/records/vehicle-log?year=${taxYear}`, label: 'Útnyilvántartás', icon: Car },
       ],
     },
     {
@@ -121,12 +130,12 @@ export default function ClientEvMainPage() {
       icon: Landmark,
       color: 'rose',
       items: [
-        { to: `/accounty/client/${id}/ev/contributions`, label: 'TB-járulék & szocho', icon: Calculator },
-        { to: `/accounty/client/${id}/ev/hipa`, label: 'Helyi iparűzési adó', icon: Landmark },
-        { to: `/accounty/client/${id}/ev/vat`, label: 'ÁFA kezelés', icon: Receipt },
-        { to: `/accounty/client/${id}/ev/chamber`, label: 'Kamarai hozzájárulás', icon: Shield },
-        { to: `/accounty/client/${id}/ev/car-tax`, label: 'Cégautóadó', icon: Car },
-        { to: `/accounty/client/${id}/ev/innovation`, label: 'Innovációs járulék', icon: TrendingUp },
+        { to: `/accounty/client/${id}/ev/contributions?year=${taxYear}`, label: 'TB-járulék & szocho', icon: Calculator },
+        { to: `/accounty/client/${id}/ev/hipa?year=${taxYear}`, label: 'Helyi iparűzési adó', icon: Landmark },
+        { to: `/accounty/client/${id}/ev/vat?year=${taxYear}`, label: 'ÁFA kezelés', icon: Receipt },
+        { to: `/accounty/client/${id}/ev/chamber?year=${taxYear}`, label: 'Kamarai hozzájárulás', icon: Shield },
+        { to: `/accounty/client/${id}/ev/car-tax?year=${taxYear}`, label: 'Cégautóadó', icon: Car },
+        { to: `/accounty/client/${id}/ev/innovation?year=${taxYear}`, label: 'Innovációs járulék', icon: TrendingUp },
       ],
     },
     {
@@ -135,13 +144,13 @@ export default function ClientEvMainPage() {
       icon: ClipboardList,
       color: 'cyan',
       items: [
-        { to: `/accounty/client/${id}/ev/returns`, label: 'SZJA bevallás (25SZJA)', icon: FileText },
-        { to: `/accounty/client/${id}/ev/returns/contrib`, label: 'Járulékbevallás (2658)', icon: Calculator },
-        { to: `/accounty/client/${id}/ev/returns/kata`, label: 'KATA bevallás', icon: Shield },
-        { to: `/accounty/client/${id}/ev/returns/hipa`, label: 'HIPA bevallás', icon: Landmark },
-        { to: `/accounty/client/${id}/ev/returns/vat-car`, label: 'ÁFA / cégautóadó bevallás', icon: Car },
-        { to: `/accounty/client/${id}/ev/income-report`, label: 'Jövedelem-kimutatás', icon: TrendingUp },
-        { to: `/accounty/client/${id}/ev/optimization`, label: 'Adóoptimalizálás', icon: BarChart3 },
+        { to: `/accounty/client/${id}/ev/returns?year=${taxYear}`, label: 'SZJA bevallás (25SZJA)', icon: FileText },
+        { to: `/accounty/client/${id}/ev/returns/contrib?year=${taxYear}`, label: 'Járulékbevallás (2658)', icon: Calculator },
+        { to: `/accounty/client/${id}/ev/returns/kata?year=${taxYear}`, label: 'KATA bevallás', icon: Shield },
+        { to: `/accounty/client/${id}/ev/returns/hipa?year=${taxYear}`, label: 'HIPA bevallás', icon: Landmark },
+        { to: `/accounty/client/${id}/ev/returns/vat-car?year=${taxYear}`, label: 'ÁFA / cégautóadó bevallás', icon: Car },
+        { to: `/accounty/client/${id}/ev/income-report?year=${taxYear}`, label: 'Jövedelem-kimutatás', icon: TrendingUp },
+        { to: `/accounty/client/${id}/ev/optimization?year=${taxYear}`, label: 'Adóoptimalizálás', icon: BarChart3 },
       ],
     },
     {
@@ -150,14 +159,24 @@ export default function ClientEvMainPage() {
       icon: Users,
       color: 'indigo',
       items: [
-        { to: `/accounty/client/${id}/ev/org/bookkeeping`, label: 'Könyvvezetés mód', icon: BookOpen },
-        { to: `/accounty/client/${id}/ev/org/civil`, label: 'Civil szervezet', icon: Users },
-        { to: `/accounty/client/${id}/ev/org/condominium`, label: 'Társasház', icon: Landmark },
-        { to: `/accounty/client/${id}/ev/org/other`, label: 'Egyéb szervezet', icon: Package },
-        { to: `/accounty/client/${id}/ev/org/simplified-report`, label: 'Egyszerűsített beszámoló', icon: FileText },
+        { to: `/accounty/client/${id}/ev/org/bookkeeping?year=${taxYear}`, label: 'Könyvvezetés mód', icon: BookOpen },
+        { to: `/accounty/client/${id}/ev/org/civil?year=${taxYear}`, label: 'Civil szervezet', icon: Users },
+        { to: `/accounty/client/${id}/ev/org/condominium?year=${taxYear}`, label: 'Társasház', icon: Landmark },
+        { to: `/accounty/client/${id}/ev/org/other?year=${taxYear}`, label: 'Egyéb szervezet', icon: Package },
+        { to: `/accounty/client/${id}/ev/org/simplified-report?year=${taxYear}`, label: 'Egyszerűsített beszámoló', icon: FileText },
       ],
     },
-  ];
+  ], [id, taxYear]);
+
+  const visibleSections = useMemo(() => {
+    const isOrg = !!evSettings?.org_type;
+    return sections.filter(sec => {
+      if (sec.title === 'Szervezeti nyilvántartás') {
+        return isOrg;
+      }
+      return true;
+    });
+  }, [sections, evSettings?.org_type]);
 
   const colorMap: Record<string, string> = {
     indigo: 'from-indigo-500 to-purple-600 shadow-indigo-500/20',
@@ -297,7 +316,7 @@ export default function ClientEvMainPage() {
 
       {/* Navigation sections */}
       <div className="space-y-4">
-        {sections.map(section => (
+        {visibleSections.map(section => (
           <div key={section.title} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border/50 flex items-center gap-3">
               <div className={cn('p-1.5 rounded-lg bg-gradient-to-br shadow-md', colorMap[section.color])}>

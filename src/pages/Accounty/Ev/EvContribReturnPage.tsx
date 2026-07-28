@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   FileBarChart, ArrowLeft, ChevronRight, Info, Calculator,
   CheckCircle2, Clock, AlertTriangle, Send, Download, Calendar, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
-import { formatHuf, DEFAULT_2026_PARAMS, calculateQuarterlyContributions } from '@/lib/evCalculations';
+import { formatHuf, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, calculateQuarterlyContributions } from '@/lib/evCalculations';
 import { useEvTaxReturns, useEvContributions, useUpdateEvTaxReturn, useEvClientSettings } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
 
@@ -35,16 +35,18 @@ export default function EvContribReturnPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
   const updateReturn = useUpdateEvTaxReturn();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
 
   // Real data
-  const { data: allReturns, isLoading: returnsLoading } = useEvTaxReturns(id, 2026);
-  const { data: contributions } = useEvContributions(id, 2026);
-  const { data: settings } = useEvClientSettings(id, 2026);
-  const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(2026);
+  const { data: allReturns, isLoading: returnsLoading } = useEvTaxReturns(id, taxYear);
+  const { data: contributions } = useEvContributions(id, taxYear);
+  const { data: settings } = useEvClientSettings(id, taxYear);
+  const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(taxYear);
   
   const isLoading = returnsLoading || paramsLoading;
 
-  const taxParams = dbParams || DEFAULT_2026_PARAMS;
+  const taxParams = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const contribReturns = useMemo(() => {
     const dbReturns = (allReturns || [])
@@ -72,7 +74,7 @@ export default function EvContribReturnPage() {
     // Generate expected quarterly returns and merge with DB records
     const now = new Date();
     const deadlines = [
-      `2026-04-12`, `2026-07-12`, `2026-10-12`, `2027-01-12`,
+      `${taxYear}-04-12`, `${taxYear}-07-12`, `${taxYear}-10-12`, `${taxYear + 1}-01-12`,
     ];
 
     const expectedQuarters = [1, 2, 3, 4].map((q, i) => {
@@ -99,7 +101,7 @@ export default function EvContribReturnPage() {
       }
 
       return {
-        quarterKey: `2026 ${QUARTER_LABELS[i]}`,
+        quarterKey: `${taxYear} ${QUARTER_LABELS[i]}`,
         deadline: deadlines[i],
         defaultStatus: status,
         tbAmount,
@@ -222,7 +224,7 @@ export default function EvContribReturnPage() {
       // 2. Save/upsert return to db
       await updateReturn.mutateAsync({
         company_id: id,
-        tax_year: 2026,
+        tax_year: taxYear,
         return_type: 'jarulekbevallas',
         form_code: '2658',
         period_key: ret.quarter,
@@ -274,7 +276,7 @@ export default function EvContribReturnPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
         <ChevronRight className="w-3 h-3" />
         <span className="text-slate-900 dark:text-slate-100 font-medium">TB/Szocho bevallás (58-as)</span>
       </div>

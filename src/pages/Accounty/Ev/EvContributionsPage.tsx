@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Calculator, TrendingUp, AlertTriangle,
   Info, CheckCircle, Clock, Wallet, Loader2
@@ -20,8 +20,9 @@ const QUARTER_DEADLINES = ['ápr. 12.', 'júl. 12.', 'okt. 12.', 'jan. 12.'];
 
 export default function EvContributionsPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
   const { data: client } = useAccountyClient(id);
-  const [taxYear] = useState(2026);
   const [employmentStatus, setEmploymentStatus] = useState<EmploymentStatus>('foallasu');
   const [isSkilled, setIsSkilled] = useState(false);
 
@@ -93,7 +94,7 @@ export default function EvContributionsPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />

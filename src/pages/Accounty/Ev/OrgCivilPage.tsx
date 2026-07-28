@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Building2, Heart, Shield, FileText,
   Calendar, TrendingUp, Users, AlertTriangle, CheckCircle2, Info,
@@ -60,8 +60,10 @@ const ORG_TYPE_LABELS: Record<string, string> = {
 export default function OrgCivilPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
-  const { data: settings, isLoading: settingsLoading } = useEvClientSettings(id, 2026);
-  const { data: entries, isLoading: entriesLoading } = useCashbookEntries(id, 2026);
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
+  const { data: settings, isLoading: settingsLoading } = useEvClientSettings(id, taxYear);
+  const { data: entries, isLoading: entriesLoading } = useCashbookEntries(id, taxYear);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
 
   const isLoading = settingsLoading || entriesLoading;
@@ -137,7 +139,7 @@ export default function OrgCivilPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -174,7 +176,7 @@ export default function OrgCivilPage() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Összes bevétel', value: formatHuf(totalIncome), color: 'text-green-600', sub: '2026 YTD' },
+            { label: 'Összes bevétel', value: formatHuf(totalIncome), color: 'text-green-600', sub: `${taxYear} YTD` },
             { label: 'Alaptevékenység', value: formatHuf(coreIncome), color: 'text-blue-600', sub: totalIncome > 0 ? `${((coreIncome / totalIncome) * 100).toFixed(0)}% arány` : '-' },
             { label: 'Vállalkozási bevétel', value: formatHuf(businessIncome), color: 'text-amber-600', sub: totalIncome > 0 ? `${((businessIncome / totalIncome) * 100).toFixed(0)}% arány` : '-' },
             { label: 'Egyenleg', value: formatHuf(balance), color: balance >= 0 ? 'text-green-600' : 'text-red-600', sub: balance >= 0 ? 'Pozitív' : 'Negatív' },
@@ -367,10 +369,10 @@ export default function OrgCivilPage() {
       {activeTab === 'reports' && (
         <div className="space-y-3 animate-in fade-in duration-300">
           {[
-            { name: 'Közhasznúsági melléklet — 2025', status: 'Benyújtva', date: '2026.05.28', statusColor: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-            { name: 'Egyszerűsített éves beszámoló — 2025', status: 'Letétbe helyezve', date: '2026.05.30', statusColor: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-            { name: 'Közhasznúsági melléklet — 2026', status: 'Előkészítés', date: 'Határidő: 2027.05.31', statusColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-            { name: 'Egyszerűsített éves beszámoló — 2026', status: 'Nem kezdett', date: 'Határidő: 2027.05.31', statusColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' },
+            { name: `Közhasznúsági melléklet — ${taxYear - 1}`, status: 'Benyújtva', date: `${taxYear}.05.28`, statusColor: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+            { name: `Egyszerűsített éves beszámoló — ${taxYear - 1}`, status: 'Letétbe helyezve', date: `${taxYear}.05.30`, statusColor: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+            { name: `Közhasznúsági melléklet — ${taxYear}`, status: 'Előkészítés', date: `Határidő: ${taxYear + 1}.05.31`, statusColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+            { name: `Egyszerűsített éves beszámoló — ${taxYear}`, status: 'Nem kezdett', date: `Határidő: ${taxYear + 1}.05.31`, statusColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' },
           ].map((report, i) => (
             <div key={i} className="bg-card rounded-xl border border-border p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group">
               <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">

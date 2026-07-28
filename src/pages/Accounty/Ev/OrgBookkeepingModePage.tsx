@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, BookOpen, Building2, Calculator,
   CheckCircle2, AlertTriangle, Info, Scale, ArrowRight,
@@ -82,7 +82,9 @@ const ORG_TYPES = [
 export default function OrgBookkeepingModePage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
-  const { data: evSettings } = useEvClientSettings(id, 2026);
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
+  const { data: evSettings } = useEvClientSettings(id, taxYear);
   const updateSettings = useUpdateEvSettings();
   const [selectedMode, setSelectedMode] = useState<BookkeepingMode | null>(null);
   const [selectedOrgType, setSelectedOrgType] = useState<string | null>(null);
@@ -92,7 +94,7 @@ export default function OrgBookkeepingModePage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -237,7 +239,7 @@ export default function OrgBookkeepingModePage() {
                     try {
                       await updateSettings.mutateAsync({
                         company_id: id,
-                        tax_year: 2026,
+                        tax_year: taxYear,
                         bookkeeping_mode: selectedMode === 'single' ? 'egyszeres' : 'kettos',
                         org_type: (orgTypeDbMap[selectedOrgType] || 'egyeb') as any,
                       });

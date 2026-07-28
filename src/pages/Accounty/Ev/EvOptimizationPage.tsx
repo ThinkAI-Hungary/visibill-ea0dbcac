@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Lightbulb, ArrowLeft, ChevronRight, Info, TrendingDown,
   CheckCircle2, ArrowRight, Star, Calculator, Sparkles
@@ -17,10 +17,12 @@ import {
 
 export default function EvOptimizationPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
   const { data: client } = useAccountyClient(id);
 
-  const { data: dbParams } = useEvTaxParams(2026);
-  const params = dbParams || DEFAULT_2026_PARAMS;
+  const { data: dbParams } = useEvTaxParams(taxYear);
+  const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const [revenue, setRevenue] = useState(24_000_000);
   const [costs, setCosts] = useState(8_000_000);
@@ -107,7 +109,7 @@ export default function EvOptimizationPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />

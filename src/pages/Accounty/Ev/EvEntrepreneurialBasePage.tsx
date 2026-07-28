@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   TrendingUp, ArrowLeft, ChevronRight, Calculator,
   FileText, AlertTriangle, Info, ChevronDown, ArrowRight, Send
@@ -20,7 +20,9 @@ export default function EvEntrepreneurialBasePage() {
   const { data: client } = useAccountyClient(id);
   const updateReturn = useUpdateEvTaxReturn();
   const [saving, setSaving] = useState(false);
-  const [taxYear, setTaxYear] = useState(2026);
+  const [searchParams] = useSearchParams();
+  const yearParam = Number(searchParams.get('year') || '2026');
+  const [taxYear, setTaxYear] = useState(yearParam);
 
   const { data: dbParams } = useEvTaxParams(taxYear);
   const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
@@ -132,7 +134,7 @@ export default function EvEntrepreneurialBasePage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -323,7 +325,7 @@ export default function EvEntrepreneurialBasePage() {
                   Az adóalap-megállapítás után a vállalkozói jövedelemből osztalékalap kerül megállapításra (15% SZJA + 13% szocho).
                 </p>
                 <Link
-                  to={`/accounty/client/${id}/ev/entrepreneurial/dividend`}
+                  to={`/accounty/client/${id}/ev/entrepreneurial/dividend?year=${taxYear}`}
                   className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors"
                 >
                   Osztalékalap számítás <ChevronRight className="w-3 h-3" />

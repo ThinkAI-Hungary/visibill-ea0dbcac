@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Home, Building2, Users, FileText,
   Calendar, TrendingUp, AlertTriangle, CheckCircle2, Info,
@@ -68,8 +68,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 export default function OrgCondominiumPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
-  const { data: settings } = useEvClientSettings(id, 2026);
-  const { data: entries, isLoading: entriesLoading } = useCashbookEntries(id, 2026);
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
+  const { data: settings } = useEvClientSettings(id, taxYear);
+  const { data: entries, isLoading: entriesLoading } = useCashbookEntries(id, taxYear);
   const { data: units, isLoading: unitsLoading } = useCondoUnits(id);
   const { data: funds, isLoading: fundsLoading } = useCondoFunds(id);
   const { data: maintenance, isLoading: maintenanceLoading } = useCondoMaintenance(id);
@@ -134,7 +136,7 @@ export default function OrgCondominiumPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
         <ChevronRight className="w-3 h-3" />

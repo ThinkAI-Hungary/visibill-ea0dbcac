@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ClipboardList, ArrowLeft, ChevronRight, Info, ExternalLink,
   FileText, BookOpen, Calculator, Car, Package, Users, Home, Coins
@@ -40,7 +40,9 @@ const RECORDS: RecordType[] = [
 export default function EvRecordsOverviewPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
-  const { data: counts = {} } = useEvRecordCounts(id, 2026);
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
+  const { data: counts = {} } = useEvRecordCounts(id, taxYear);
 
   const records = useMemo(() => {
     return RECORDS.map(r => ({
@@ -109,8 +111,8 @@ export default function EvRecordsOverviewPage() {
           {requiredRecords.map(rec => {
             const Icon = rec.icon;
             const targetPath = rec.id === 'penztarkonyv'
-              ? `/accounty/client/${id}/ev/cashbook`
-              : `/accounty/client/${id}/ev/records/${rec.id}`;
+              ? `/accounty/client/${id}/ev/cashbook?year=${taxYear}`
+              : `/accounty/client/${id}/ev/records/${rec.id}?year=${taxYear}`;
             return (
               <Link key={rec.id} to={targetPath} className="bg-card rounded-xl border border-border shadow-soft hover:shadow-md transition-all cursor-pointer group overflow-hidden">
                 <div className="flex items-center gap-4 px-5 py-4">
@@ -143,7 +145,7 @@ export default function EvRecordsOverviewPage() {
           {optionalRecords.map(rec => {
             const Icon = rec.icon;
             const isEmpty = rec.entryCount === 0;
-            const targetPath = `/accounty/client/${id}/ev/records/${rec.id}`;
+            const targetPath = `/accounty/client/${id}/ev/records/${rec.id}?year=${taxYear}`;
             return (
               <Link key={rec.id} to={targetPath} className={cn(
                 'bg-card rounded-xl border shadow-soft hover:shadow-md transition-all cursor-pointer group overflow-hidden',

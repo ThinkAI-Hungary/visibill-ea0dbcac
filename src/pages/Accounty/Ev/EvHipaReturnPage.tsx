@@ -1,14 +1,16 @@
 import React, { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Building2, ArrowLeft, ChevronRight, Info, CheckCircle2,
   Clock, AlertTriangle, Send, Download, Calendar, FileText, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAccountyClient } from '@/hooks/accounty';
+import { useAccountyClient, useAccountyCommunicationPrefs } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
 import { useEvTaxReturns, useEvHipaCalc, useUpdateEvTaxReturn } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -32,11 +34,28 @@ function escapeXml(str: string): string {
 export default function EvHipaReturnPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
+  const { data: company } = useQuery({
+    queryKey: ['company-detail', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', id!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+  const { data: commPrefs } = useAccountyCommunicationPrefs(id || '');
+
   const updateReturn = useUpdateEvTaxReturn();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
 
   // Real data
-  const { data: allReturns, isLoading } = useEvTaxReturns(id, 2026);
-  const { data: hipaCalc } = useEvHipaCalc(id, 2026);
+  const { data: allReturns, isLoading } = useEvTaxReturns(id, taxYear);
+  const { data: hipaCalc } = useEvHipaCalc(id, taxYear);
 
   const hipaReturns = useMemo(() => {
     const dbReturns = (allReturns || [])
@@ -72,23 +91,23 @@ export default function EvHipaReturnPage() {
     const expectedEntries = [
       {
         id: 'gen-hipa-eloleg-1',
-        period: '2026 I. félévi adóelőleg',
-        deadline: '2026-03-15',
-        defaultStatus: getStatus('2026-03-15'),
+        period: `${taxYear} I. félévi adóelőleg`,
+        deadline: `${taxYear}-03-15`,
+        defaultStatus: getStatus(`${taxYear}-03-15`),
         amount: Math.round(hipaAmount / 2),
       },
       {
         id: 'gen-hipa-annual',
-        period: '2026. adóévi HIPA bevallás',
-        deadline: '2026-05-31',
-        defaultStatus: getStatus('2026-05-31'),
+        period: `${taxYear}. adóévi HIPA bevallás`,
+        deadline: `${taxYear}-05-31`,
+        defaultStatus: getStatus(`${taxYear}-05-31`),
         amount: hipaAmount,
       },
       {
         id: 'gen-hipa-eloleg-2',
-        period: '2026 II. félévi adóelőleg',
-        deadline: '2026-09-15',
-        defaultStatus: getStatus('2026-09-15'),
+        period: `${taxYear} II. félévi adóelőleg`,
+        deadline: `${taxYear}-09-15`,
+        defaultStatus: getStatus(`${taxYear}-09-15`),
         amount: Math.round(hipaAmount / 2),
       },
     ];
@@ -115,32 +134,32 @@ export default function EvHipaReturnPage() {
     try {
       // 1. Generate XML
       const yearMatch = ret.period.match(/\d{4}/);
-      const taxYear = yearMatch ? Number(yearMatch[0]) : 2026;
+      const selectedYear = yearMatch ? Number(yearMatch[0]) : taxYear;
       
-      let periodFrom = `${taxYear}-01-01`;
-      let periodTo = `${taxYear}-12-31`;
+      let periodFrom = `${selectedYear}-01-01`;
+      let periodTo = `${selectedYear}-12-31`;
       
       if (ret.period.includes('I. félévi')) {
-        periodFrom = `${taxYear}-01-01`;
-        periodTo = `${taxYear}-06-30`;
+        periodFrom = `${selectedYear}-01-01`;
+        periodTo = `${selectedYear}-06-30`;
       } else if (ret.period.includes('II. félévi')) {
-        periodFrom = `${taxYear}-07-01`;
-        periodTo = `${taxYear}-12-31`;
+        periodFrom = `${selectedYear}-07-01`;
+        periodTo = `${selectedYear}-12-31`;
       }
 
       const currentDate = new Date().toISOString().slice(0, 10);
 
-      const taxNum = client?.taxNumber || client?.tax_number || '';
+      const taxNum = company?.tax_number || client?.taxNumber || '';
       const taxParts = taxNum.split('-');
       const taxNum8 = taxParts[0] || '';
       const taxNumVat = taxParts[1] || '';
       const taxNumCounty = taxParts[2] || '';
 
-      const taxId = client?.taxId || client?.tax_id || '8329900747';
-      const clientName = client?.name || 'Egyéni Vállalkozó';
-      const clientAddress = client?.address || '1054 Budapest, Alkotmány utca 4.';
-      const clientEmail = client?.email || `${clientName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
-      const clientPhone = client?.phone || '+36 30 123 4567';
+      const taxId = (company as any)?.tax_id || '8329900747';
+      const clientName = company?.name || client?.name || 'Egyéni Vállalkozó';
+      const clientAddress = company?.address || '1054 Budapest, Alkotmány utca 4.';
+      const clientEmail = commPrefs?.contactEmail || `${clientName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+      const clientPhone = commPrefs?.contactPhone || '+36 30 123 4567';
 
       const taxBase = hipaCalc?.tax_base || 0;
       const municipalityRate = hipaCalc?.municipality_rate || 2;
@@ -150,7 +169,7 @@ export default function EvHipaReturnPage() {
       xml += `<nyomtatvanyok xmlns="http://www.nav.gov.hu/nyomtatvanyok" verzio="1.0">\n`;
       xml += `  <nyomtatvany>\n`;
       xml += `    <nyomtatvanyinformacio>\n`;
-      xml += `      <nyomtatvanyazonosito>${taxYear}HIPA</nyomtatvanyazonosito>\n`;
+      xml += `      <nyomtatvanyazonosito>${selectedYear}HIPA</nyomtatvanyazonosito>\n`;
       xml += `      <verzio>1.0</verzio>\n`;
       xml += `    </nyomtatvanyinformacio>\n`;
       xml += `    <mezok>\n`;
@@ -170,7 +189,7 @@ export default function EvHipaReturnPage() {
       xml += `      <!-- ========================================== -->\n`;
       xml += `      <!-- B) IDŐSZAK ÉS NYILATKOZAT TÍPUSA -->\n`;
       xml += `      <!-- ========================================== -->\n`;
-      xml += `      <mezo eazon="01_0010_adoev">${taxYear}</mezo>\n`;
+      xml += `      <mezo eazon="01_0010_adoev">${selectedYear}</mezo>\n`;
       xml += `      <mezo eazon="01_0011_idoszak_tol">${periodFrom}</mezo>\n`;
       xml += `      <mezo eazon="01_0012_idoszak_ig">${periodTo}</mezo>\n`;
       xml += `      <mezo eazon="01_0013_bevallastipus">M</mezo>\n`;
@@ -196,7 +215,7 @@ export default function EvHipaReturnPage() {
       // 2. Save/upsert return to db
       await updateReturn.mutateAsync({
         company_id: id,
-        tax_year: 2026,
+        tax_year: selectedYear,
         return_type: 'hipa',
         form_code: 'HIPAK',
         period_key: ret.period,

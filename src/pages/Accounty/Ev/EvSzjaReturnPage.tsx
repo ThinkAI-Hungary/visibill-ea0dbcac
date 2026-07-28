@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   FileText, ArrowLeft, ChevronRight, Info, Calculator,
   CheckCircle2, Clock, AlertTriangle, Send, Download,
@@ -167,10 +167,12 @@ export default function EvSzjaReturnPage() {
   const { data: client } = useAccountyClient(id);
   const [tab, setTab] = useState<'all' | 'pending' | 'submitted'>('all');
   const updateReturn = useUpdateEvTaxReturn();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
 
   // ─── Real data ────────────────────────────────────────────────────────────
-  const { data: allReturns, isLoading } = useEvTaxReturns(id, 2026);
-  const { data: evSettings } = useEvClientSettings(id, 2026);
+  const { data: allReturns, isLoading } = useEvTaxReturns(id, taxYear);
+  const { data: evSettings } = useEvClientSettings(id, taxYear);
 
   const handlePrepareAndDownload = async (ret: any) => {
     if (!id) return;
@@ -207,7 +209,7 @@ export default function EvSzjaReturnPage() {
       // 2. Save/upsert return to db
       await updateReturn.mutateAsync({
         company_id: id,
-        tax_year: 2026,
+        tax_year: taxYear,
         return_type: rType,
         form_code: ret.code,
         period_key: ret.period,
@@ -270,10 +272,10 @@ export default function EvSzjaReturnPage() {
 
     // If no DB records, generate expected returns
     if (dbReturns.length === 0) {
-      return generateExpectedReturns(2026, evSettings);
+      return generateExpectedReturns(taxYear, evSettings);
     }
     return dbReturns;
-  }, [allReturns, evSettings]);
+  }, [allReturns, evSettings, taxYear]);
 
   const filtered = useMemo(() => {
     if (tab === 'all') return returns;
@@ -293,7 +295,7 @@ export default function EvSzjaReturnPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -372,18 +374,18 @@ export default function EvSzjaReturnPage() {
             let linkPath = "";
             const codeLower = ret.code.toLowerCase();
             if (codeLower.includes('2658') || codeLower.includes('58')) {
-              linkPath = `/accounty/client/${id}/ev/returns/contrib`;
+              linkPath = `/accounty/client/${id}/ev/returns/contrib?year=${taxYear}`;
             } else if (codeLower.includes('kata')) {
-              linkPath = `/accounty/client/${id}/ev/returns/kata`;
+              linkPath = `/accounty/client/${id}/ev/returns/kata?year=${taxYear}`;
             } else if (codeLower.includes('hipa')) {
-              linkPath = `/accounty/client/${id}/ev/returns/hipa`;
+              linkPath = `/accounty/client/${id}/ev/returns/hipa?year=${taxYear}`;
             } else if (codeLower.includes('65') || codeLower.includes('car')) {
-              linkPath = `/accounty/client/${id}/ev/returns/vat-car`;
+              linkPath = `/accounty/client/${id}/ev/returns/vat-car?year=${taxYear}`;
             } else if (codeLower.includes('2553') || codeLower.includes('szja') || codeLower.includes('53')) {
               const isAtalany = evSettings?.taxpayer_form === 'atalany';
               linkPath = isAtalany 
-                ? `/accounty/client/${id}/ev/flat-rate`
-                : `/accounty/client/${id}/ev/entrepreneurial/base`;
+                ? `/accounty/client/${id}/ev/flat-rate?year=${taxYear}`
+                : `/accounty/client/${id}/ev/entrepreneurial/base?year=${taxYear}`;
             }
 
             const InnerContent = (

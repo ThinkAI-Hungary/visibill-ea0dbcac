@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Calendar, ArrowLeft, ChevronRight, Clock, CheckCircle2,
   AlertTriangle, XCircle, FileText, ChevronLeft,
@@ -47,7 +47,9 @@ const STATUS_ICON: Record<DeadlineStatus, React.ReactNode> = {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvCalendarPage() {
-  const [selectedYear, setSelectedYear] = useState(2026);
+  const [searchParams] = useSearchParams();
+  const yearParam = Number(searchParams.get('year') || '2026');
+  const [selectedYear, setSelectedYear] = useState(yearParam);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 

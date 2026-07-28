@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Gauge, ArrowLeft, ChevronRight, AlertTriangle, CheckCircle2,
   TrendingUp, Zap, Info, ArrowUpRight, Loader2
@@ -7,7 +7,7 @@ import {
 import { cn } from '@/lib/utils';
 import {
   formatHuf, formatPercent, formatMillionHuf,
-  getEvThresholds, DEFAULT_2026_PARAMS,
+  getEvThresholds, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS,
   type ThresholdCheck, type ThresholdStatus,
 } from '@/lib/evCalculations';
 import { useAllEvClientSettings, useEvYtdRevenue } from '@/hooks/useEvData';
@@ -42,7 +42,8 @@ const STATUS_CONFIG = {
 
 export default function EvThresholdMonitorPage() {
   const [filter, setFilter] = useState<'all' | ThresholdStatus>('all');
-  const [taxYear] = useState(2026);
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawSettings, isLoading: settingsLoading } = useAllEvClientSettings(taxYear);
@@ -50,7 +51,7 @@ export default function EvThresholdMonitorPage() {
   const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(taxYear);
   const isLoading = settingsLoading || revenueLoading || paramsLoading;
 
-  const params = dbParams || DEFAULT_2026_PARAMS;
+  const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const clients = useMemo((): ClientThresholdRow[] => {
     return (rawSettings || []).map((s: any) => {
@@ -228,7 +229,7 @@ export default function EvThresholdMonitorPage() {
                       </td>
                       <td className="py-3 px-4">
                         <Link
-                          to={`/accounty/client/${c.clientId}/ev`}
+                          to={`/accounty/client/${c.clientId}/ev?year=${taxYear}`}
                           className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-indigo-600 inline-flex"
                         >
                           <ArrowUpRight className="w-4 h-4" />

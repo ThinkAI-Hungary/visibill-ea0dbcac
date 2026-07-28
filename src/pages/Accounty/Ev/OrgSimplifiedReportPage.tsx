@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, FileText, Download, Printer,
   CheckCircle2, AlertTriangle, Info, Calendar, Scale,
@@ -38,9 +38,11 @@ export default function OrgSimplifiedReportPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
   const [activeView, setActiveView] = useState<'balance' | 'income'>('balance');
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
 
   // Fetch report lines from DB
-  const { data: dbReportLines = [] } = useOrgReportLines(id, 2026);
+  const { data: dbReportLines = [] } = useOrgReportLines(id, taxYear);
 
   // Map DB lines to component-level arrays
   const ASSETS = useMemo<BalanceSheetRow[]>(() =>
@@ -76,7 +78,7 @@ export default function OrgSimplifiedReportPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -92,7 +94,7 @@ export default function OrgSimplifiedReportPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Egyszerűsített éves beszámoló</h1>
             <p className="text-sm text-slate-500">
-              {client?.name || 'Szervezet'} · 2026. üzleti év · Szt. 96-98. §
+              {client?.name || 'Szervezet'} · {taxYear}. üzleti év · Szt. 96-98. §
             </p>
           </div>
         </div>

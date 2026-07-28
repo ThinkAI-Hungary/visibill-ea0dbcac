@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Receipt, Check, AlertCircle,
   Building2, Briefcase, FileText, Settings, Shield,
@@ -45,7 +45,9 @@ export default function EvSetupWizardPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
   const navigate = useNavigate();
-  const { data: existingSettings } = useEvClientSettings(id, 2026);
+  const [searchParams] = useSearchParams();
+  const defaultTaxYear = Number(searchParams.get('year') || '2026');
+  const { data: existingSettings } = useEvClientSettings(id, defaultTaxYear);
   const updateSettings = useUpdateEvSettings();
 
   const [step, setStep] = useState(0);
@@ -60,7 +62,7 @@ export default function EvSetupWizardPage() {
     skilledMainActivity: false,
     orgType: null,
     isPublicBenefit: false,
-    taxYear: 2026,
+    taxYear: defaultTaxYear,
   });
 
   // Pre-populate from existing settings if available
@@ -114,7 +116,7 @@ export default function EvSetupWizardPage() {
             title: 'Beállítások mentve',
             description: 'Az EV beállítások sikeresen elmentésre kerültek.',
           });
-          navigate(`/accounty/client/${id}/ev`);
+          navigate(`/accounty/client/${id}/ev?year=${form.taxYear}`);
         },
         onError: (err) => {
           toast({
@@ -442,7 +444,7 @@ export default function EvSetupWizardPage() {
     <div className="w-full max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/client/${id}/ev?year=${defaultTaxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" />
           EV Főoldal
         </Link>

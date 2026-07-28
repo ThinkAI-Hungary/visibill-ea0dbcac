@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Car, ArrowLeft, ChevronRight, Info,
   Plus, Fuel, Tag, Loader2
@@ -20,11 +20,13 @@ const ENGINE_LABELS: Record<string, string> = {
 
 export default function EvCompanyCarTaxPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
   const { data: client } = useAccountyClient(id);
 
   // ─── Real data ────────────────────────────────────────────────────────────
-  const { data: vehicleLog, isLoading: logLoading } = useEvVehicleLog(id, 2026);
-  const { data: allReturns, isLoading: returnsLoading } = useEvTaxReturns(id, 2026);
+  const { data: vehicleLog, isLoading: logLoading } = useEvVehicleLog(id, taxYear);
+  const { data: allReturns, isLoading: returnsLoading } = useEvTaxReturns(id, taxYear);
   const isLoading = logLoading || returnsLoading;
 
   // Derive unique vehicles from the vehicle log entries
@@ -76,7 +78,7 @@ export default function EvCompanyCarTaxPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />

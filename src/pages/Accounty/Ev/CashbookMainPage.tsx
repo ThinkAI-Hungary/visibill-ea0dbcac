@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, BookOpen, Plus, Filter,
   Search, Calendar, Download, ChevronDown, Lock,
@@ -36,7 +36,8 @@ type FilterDirection = 'all' | 'bevetel' | 'kiadas';
 export default function CashbookMainPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
-  const [taxYear] = useState(2026);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDirection, setFilterDirection] = useState<FilterDirection>('all');
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
@@ -142,7 +143,7 @@ export default function CashbookMainPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -157,18 +158,26 @@ export default function CashbookMainPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Pénztárkönyv</h1>
-            <p className="text-sm text-slate-500">Szja tv. 5. sz. melléklet — {client?.name || 'Ügyfél'}</p>
+            <p className="text-sm text-slate-500">Szja tv. 5. sz. melléklet — {client?.name || 'Ügyfél'} ({taxYear}. adóév)</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <select
+            value={taxYear}
+            onChange={(e) => setSearchParams({ year: e.target.value })}
+            className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground mr-2"
+          >
+            <option value={2026}>2026. adóév</option>
+            <option value={2025}>2025. adóév</option>
+          </select>
           <Link
-            to={`/accounty/client/${id}/ev/cashbook/ledger`}
+            to={`/accounty/client/${id}/ev/cashbook/ledger?year=${taxYear}`}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
             <FileText className="w-3.5 h-3.5" /> Főkönyvi nézet
           </Link>
           <Link
-            to={`/accounty/client/${id}/ev/cashbook/close`}
+            to={`/accounty/client/${id}/ev/cashbook/close?year=${taxYear}`}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
             <Lock className="w-3.5 h-3.5" /> Periódus zárás
@@ -215,7 +224,7 @@ export default function CashbookMainPage() {
             )}
           </div>
           <Link
-            to={`/accounty/client/${id}/ev/cashbook/import-nav`}
+            to={`/accounty/client/${id}/ev/cashbook/import-nav?year=${taxYear}`}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
             <Import className="w-3.5 h-3.5" /> NAV számlák

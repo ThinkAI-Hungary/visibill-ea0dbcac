@@ -1,22 +1,24 @@
 import React from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Shield, ArrowLeft, ChevronRight, Info, CheckCircle2,
   Calendar, CreditCard, Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
-import { formatHuf, DEFAULT_2026_PARAMS } from '@/lib/evCalculations';
+import { formatHuf, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS } from '@/lib/evCalculations';
 import { useEvChamberPayments } from '@/hooks/useEvData';
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvChamberPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
   const { data: client } = useAccountyClient(id);
 
-  const { data: dbParams } = useEvTaxParams(2026);
-  const params = dbParams || DEFAULT_2026_PARAMS;
+  const { data: dbParams } = useEvTaxParams(taxYear);
+  const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
   const annualFee = params.kamaraiHozzajarulas;
 
   // Fetch from DB
@@ -44,7 +46,7 @@ export default function EvChamberPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -80,7 +82,7 @@ export default function EvChamberPage() {
                 <p className="text-sm text-slate-900 dark:text-slate-100 font-medium font-mono">{membershipNumber}</p>
               </div>
               <div>
-                <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Éves hozzájárulás (2026)</label>
+                <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Éves hozzájárulás ({taxYear})</label>
                 <p className="text-2xl font-bold text-amber-600">{formatHuf(annualFee)}</p>
               </div>
               <div>

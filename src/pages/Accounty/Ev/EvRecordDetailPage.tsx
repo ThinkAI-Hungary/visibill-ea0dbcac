@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Link, useParams, Navigate } from 'react-router-dom';
+import { Link, useParams, Navigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Plus, Search, Filter, Download, Trash2,
   Edit2, Calendar, AlertTriangle, CheckCircle2, Info, X, Save,
@@ -337,6 +337,131 @@ async function calculateOsrmDistance(departure: string, arrival: string): Promis
   return Math.round((routeData.routes[0].distance / 1000) * 10) / 10;
 }
 
+interface QuickDistanceCalculatorProps {
+  onUseDistance?: (departure: string, arrival: string, distance: number) => void;
+}
+
+function QuickDistanceCalculator({ onUseDistance }: QuickDistanceCalculatorProps) {
+  const [departure, setDeparture] = useState('');
+  const [arrival, setArrival] = useState('');
+  const [distance, setDistance] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCalculate = async () => {
+    if (!departure || !arrival) {
+      toast({
+        variant: 'destructive',
+        title: 'Hiányzó adatok',
+        description: 'Kérjük, add meg az indulás és érkezés helyét!'
+      });
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setDistance(null);
+    try {
+      const dist = await calculateOsrmDistance(departure, arrival);
+      setDistance(dist);
+      toast({
+        title: 'Távolság kiszámítva',
+        description: `${dist} km`
+      });
+    } catch (err: any) {
+      setError(err.message || 'Hiba történt az útvonal lekérése során.');
+      toast({
+        variant: 'destructive',
+        title: 'Hiba a számítás során',
+        description: err.message || 'Nem sikerült kiszámítani a távolságot.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = () => {
+    if (distance === null) return;
+    navigator.clipboard.writeText(String(distance));
+    toast({ title: 'Másolva', description: 'Távolság a vágólapra másolva.' });
+  };
+
+  return (
+    <div className="bg-card rounded-xl border border-indigo-100 dark:border-indigo-900/50 p-4 shadow-soft space-y-3">
+      <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+        <Car className="w-4 h-4" />
+        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Gyors Távolság-kalkulátor (OSRM / OpenStreetMap)</h3>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-end">
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-500">Indulási hely</label>
+          <Input
+            placeholder="Pl. Budapest, Hősök tere"
+            value={departure}
+            onChange={e => setDeparture(e.target.value)}
+            className="h-9 text-sm bg-card"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-500">Érkezési hely</label>
+          <Input
+            placeholder="Pl. Debrecen, Kossuth tér"
+            value={arrival}
+            onChange={e => setArrival(e.target.value)}
+            className="h-9 text-sm bg-card"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            onClick={handleCalculate}
+            disabled={loading}
+            className="flex-1 h-9 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Car className="w-3.5 h-3.5 mr-1" />}
+            Számítás
+          </Button>
+        </div>
+      </div>
+
+      {distance !== null && (
+        <div className="flex items-center justify-between bg-indigo-50/50 dark:bg-indigo-950/20 p-3 rounded-lg border border-indigo-100/50 dark:border-indigo-900/30 animate-in fade-in duration-300">
+          <div className="text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-slate-500">Útvonal távolsága:</span>{' '}
+            <strong className="text-indigo-600 dark:text-indigo-400 font-bold font-mono text-base">{distance} km</strong>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopy}
+              className="text-xs h-8"
+            >
+              Másolás
+            </Button>
+            {onUseDistance && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => onUseDistance(departure, arrival, distance)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8"
+              >
+                Felvitel tételként
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 p-2.5 rounded-lg border border-red-100 dark:border-red-900/50">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function RecordForm({ fields, initialValues, onSave, onCancel, saving, recordType }: {
   fields: DbField[];
   initialValues?: Record<string, any>;
@@ -549,13 +674,28 @@ export default function EvRecordDetailPage() {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [prepopulatedValues, setPrepopulatedValues] = useState<Record<string, any> | null>(null);
+
+  const handleUseDistance = useCallback((departure: string, arrival: string, distance: number) => {
+    setPrepopulatedValues({
+      departure_location: departure,
+      arrival_location: arrival,
+      distance_km: distance,
+      travel_date: new Date().toISOString().split('T')[0]
+    });
+    setShowAddForm(true);
+    setEditingRow(null);
+  }, []);
 
   const config = recordType ? CONFIGS[recordType] : null;
 
   if (!config) return <Navigate to={`/accounty/client/${id}/ev/records`} replace />;
 
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
+
   // Hooks
-  const { data: dbRecords = [], isLoading } = useEvRecords(id, recordType || '', 2026);
+  const { data: dbRecords = [], isLoading } = useEvRecords(id, recordType || '', taxYear);
   const createRecord = useCreateEvRecord();
   const updateRecord = useUpdateEvRecord();
   const deleteRecord = useDeleteEvRecord();
@@ -609,14 +749,15 @@ export default function EvRecordDetailPage() {
     try {
       await createRecord.mutateAsync({
         recordType,
-        data: { ...data, company_id: id, tax_year: 2026 },
+        data: { ...data, company_id: id, tax_year: taxYear },
       });
       toast({ title: 'Bejegyzés rögzítve', description: 'Sikeresen mentve.' });
       setShowAddForm(false);
+      setPrepopulatedValues(null);
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Hiba', description: err.message || 'Nem sikerült menteni.' });
     }
-  }, [id, recordType, createRecord]);
+  }, [id, recordType, createRecord, taxYear]);
 
   const handleUpdate = useCallback(async (data: Record<string, any>) => {
     if (!editingRow?.id || !recordType) return;
@@ -683,11 +824,11 @@ export default function EvRecordDetailPage() {
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev/records`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/client/${id}/ev/records?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           Nyilvántartások
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -727,12 +868,18 @@ export default function EvRecordDetailPage() {
         </div>
       </div>
 
+      {/* Quick Distance Calculator for Mileage Log */}
+      {recordType === 'utnyilv' && !isReadOnly && (
+        <QuickDistanceCalculator onUseDistance={handleUseDistance} />
+      )}
+
       {/* Add form */}
       {showAddForm && !isReadOnly && (
         <RecordForm
           fields={config.dbFields}
+          initialValues={prepopulatedValues || undefined}
           onSave={handleCreate}
-          onCancel={() => setShowAddForm(false)}
+          onCancel={() => { setShowAddForm(false); setPrepopulatedValues(null); }}
           saving={createRecord.isPending}
           recordType={recordType}
         />

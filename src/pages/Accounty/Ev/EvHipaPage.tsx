@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Landmark, Calculator, Info, MapPin, Send
 } from 'lucide-react';
@@ -15,6 +15,9 @@ import { toast } from '@/hooks/use-toast';
 export default function EvHipaPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
+  const [searchParams] = useSearchParams();
+  const yearParam = Number(searchParams.get('year') || '2026');
+  const [taxYear, setTaxYear] = useState(yearParam);
   const updateReturn = useUpdateEvTaxReturn();
   const [saving, setSaving] = useState(false);
 
@@ -39,7 +42,7 @@ export default function EvHipaPage() {
     if (!id) return;
     setSaving(true);
     try {
-      const period = '2026. adóévi HIPA bevallás';
+      const period = `${taxYear}. adóévi HIPA bevallás`;
       // 1. Generate XML
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
       xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
@@ -59,14 +62,14 @@ export default function EvHipaPage() {
       // 2. Save/upsert return to db
       await updateReturn.mutateAsync({
         company_id: id,
-        tax_year: 2026,
+        tax_year: taxYear,
         return_type: 'hipa',
         form_code: 'HIPAK',
         period_key: period,
         status: 'submitted',
         calculated_tax: result.taxAmount,
         paid_amount: 0,
-        deadline: '2027-05-31',
+        deadline: `${taxYear + 1}-05-31`,
         submitted_at: new Date().toISOString(),
         xml_data: xml,
         data: {
@@ -82,13 +85,13 @@ export default function EvHipaPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `NAV_HIPA_2026_Eves_Bevallas.xml`;
+      a.download = `NAV_HIPA_${taxYear}_Eves_Bevallas.xml`;
       a.click();
       URL.revokeObjectURL(url);
 
       toast({
         title: 'Siker',
-        description: `HIPA bevallás (2026) sikeresen elkészítve és beküldöttként mentve, az XML letöltése elindult.`,
+        description: `HIPA bevallás (${taxYear}) sikeresen elkészítve és beküldöttként mentve, az XML letöltése elindult.`,
       });
     } catch (err: any) {
       toast({
@@ -105,7 +108,7 @@ export default function EvHipaPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -120,17 +123,27 @@ export default function EvHipaPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Helyi iparűzési adó (HIPA)</h1>
-            <p className="text-sm text-slate-500">Htv. 39. § — {client?.name || 'Ügyfél'}</p>
+            <p className="text-sm text-slate-500">Htv. 39. § — {client?.name || 'Ügyfél'} — {taxYear}. adóév</p>
           </div>
         </div>
-        <button
-          onClick={handleGenerateReturn}
-          disabled={saving}
-          className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
-        >
-          <Send className="w-3.5 h-3.5" />
-          Bevallás elkészítése (HIPA)
-        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={taxYear}
+            onChange={(e) => setTaxYear(Number(e.target.value))}
+            className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
+          >
+            <option value={2026}>2026</option>
+            <option value={2025}>2025</option>
+          </select>
+          <button
+            onClick={handleGenerateReturn}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+          >
+            <Send className="w-3.5 h-3.5" />
+            Bevallás elkészítése (HIPA)
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

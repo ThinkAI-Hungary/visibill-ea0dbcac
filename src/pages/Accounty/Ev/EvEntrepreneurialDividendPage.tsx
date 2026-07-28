@@ -1,21 +1,24 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Wallet, ArrowLeft, ChevronRight, Calculator,
   Info, PieChart, ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
-import { formatHuf, formatPercent, DEFAULT_2026_PARAMS } from '@/lib/evCalculations';
+import { formatHuf, formatPercent, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS } from '@/lib/evCalculations';
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvEntrepreneurialDividendPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
+  const [searchParams] = useSearchParams();
+  const yearParam = Number(searchParams.get('year') || '2026');
+  const [taxYear, setTaxYear] = useState(yearParam);
 
-  const { data: dbParams } = useEvTaxParams(2026);
-  const params = dbParams || DEFAULT_2026_PARAMS;
+  const { data: dbParams } = useEvTaxParams(taxYear);
+  const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const [entrepreneurialIncome, setEntrepreneurialIncome] = useState(16_800_000);
   const [entrepreneurialTaxPaid, setEntrepreneurialTaxPaid] = useState(1_512_000);
@@ -39,7 +42,7 @@ export default function EvEntrepreneurialDividendPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />

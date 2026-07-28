@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import {
   FileText, ArrowLeft, ChevronRight, Info, CheckCircle2,
@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
-import { formatHuf, DEFAULT_2026_PARAMS } from '@/lib/evCalculations';
+import { formatHuf, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS } from '@/lib/evCalculations';
 import { useEvTaxReturns, useUpdateEvTaxReturn } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
 
@@ -34,14 +34,16 @@ export default function EvKataReturnPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
   const updateReturn = useUpdateEvTaxReturn();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
 
   // Real data
-  const { data: allReturns, isLoading: returnsLoading } = useEvTaxReturns(id, 2026);
-  const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(2026);
+  const { data: allReturns, isLoading: returnsLoading } = useEvTaxReturns(id, taxYear);
+  const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(taxYear);
   
   const isLoading = returnsLoading || paramsLoading;
 
-  const taxParams = dbParams || DEFAULT_2026_PARAMS;
+  const taxParams = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const kataReturns = useMemo(() => {
     const dbReturns = (allReturns || [])
@@ -77,14 +79,14 @@ export default function EvKataReturnPage() {
 
     const expectedPeriods = [
       {
-        period: '2026 I. félév',
-        deadline: '2026-07-12',
-        defaultStatus: getStatus('2026-07-12'),
+        period: `${taxYear} I. félév`,
+        deadline: `${taxYear}-07-12`,
+        defaultStatus: getStatus(`${taxYear}-07-12`),
       },
       {
-        period: '2026 II. félév',
-        deadline: '2027-01-12',
-        defaultStatus: getStatus('2027-01-12'),
+        period: `${taxYear} II. félév`,
+        deadline: `${taxYear + 1}-01-12`,
+        defaultStatus: getStatus(`${taxYear + 1}-01-12`),
       },
     ];
 
@@ -110,10 +112,10 @@ export default function EvKataReturnPage() {
     try {
       // 1. Prepare parameters for the Edge Function
       const yearMatch = ret.period.match(/\d{4}/);
-      const taxYear = yearMatch ? Number(yearMatch[0]) : 2026;
+      const selectedYear = yearMatch ? Number(yearMatch[0]) : taxYear;
       const isH1 = ret.period.includes('I.');
-      const periodFrom = isH1 ? `${taxYear}-01-01` : `${taxYear}-07-01`;
-      const periodTo = isH1 ? `${taxYear}-06-30` : `${taxYear}-12-31`;
+      const periodFrom = isH1 ? `${selectedYear}-01-01` : `${selectedYear}-07-01`;
+      const periodTo = isH1 ? `${selectedYear}-06-30` : `${selectedYear}-12-31`;
 
       const taxNum = client?.taxNumber || client?.tax_number || '';
       const taxParts = taxNum.split('-');
@@ -132,7 +134,7 @@ export default function EvKataReturnPage() {
         body: {
           type: 'kata-anyk',
           data: {
-            taxYear,
+            taxYear: selectedYear,
             periodFrom,
             periodTo,
             retPeriod: ret.period,
@@ -159,7 +161,7 @@ export default function EvKataReturnPage() {
       // 3. Save/upsert return to db
       await updateReturn.mutateAsync({
         company_id: id,
-        tax_year: 2026,
+        tax_year: selectedYear,
         return_type: 'kata',
         form_code: 'KATA',
         period_key: ret.period,
@@ -208,7 +210,7 @@ export default function EvKataReturnPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
+        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
         <ChevronRight className="w-3 h-3" />
         <span className="text-slate-900 dark:text-slate-100 font-medium">KATA bevallás</span>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Receipt, Search, ChevronRight, TrendingUp, AlertTriangle,
   Users, Calendar, BarChart3, ArrowUpRight, ArrowDownRight,
@@ -83,7 +83,16 @@ export default function EvPortfolioDashboard() {
   const { data: clients = [], isLoading: clientsLoading } = useAccountyClients();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
-  const [taxYear, setTaxYear] = useState(2026);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
+
+  const setTaxYear = (year: number) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('year', String(year));
+      return next;
+    });
+  };
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: allSettings = [], isLoading: settingsLoading } = useAllEvClientSettings(taxYear);
