@@ -751,7 +751,13 @@ npm run preview      # Preview production build
 
 ## Changelog
 
-### Version 1.4.0 (Current - 2026-07-28)
+### Version 1.4.1 (Current - 2026-07-28)
+- **OTP Bank Statement Extractor Fixes:**
+  - *Deviza (EUR) Parsing:* Fixed extraction of OTP Bank statements in foreign currencies (e.g. EUR) by updating the column limits (shifted `X_ERTEKNAP` from `140` to `110` to handle layout changes) and updating amount parsing to support commas for decimal points.
+  - *Dynamic Currency Detection:* Enabled automatic detection of statement currency (e.g., `EUR`, `HUF`) from the statement header instead of assuming HUF.
+  - *Testing Utilities:* Fixed the `_extract_from_pdf` return type unpacking inside `test_transaction.py`.
+
+### Version 1.4.0 (2026-07-28)
 - **Database Query Optimizations:**
   - *NAV Invoice Lookup:* Added strict date window filtering (`dateFromFormatted` and `dateToFormatted`) and updated the React Query `queryKey` in `useInvoiceData.ts` to prevent duplicate or endless refetches of massive historical company datasets.
   - *Tickets Unread Count:* Replaced expensive client-side filtering (which downloaded all comments for all tickets) with a secure, permission-respecting server-side RPC `get_unread_ticket_count` in `useTickets.ts`.
@@ -816,5 +822,5 @@ npm run preview      # Preview production build
 
 ---
 
-**Last Updated:** 2026-07-16  
+**Last Updated:** 2026-07-28  
 **Maintained By:** VisiBill Development Team
