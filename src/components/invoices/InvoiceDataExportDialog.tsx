@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -134,23 +134,25 @@ export function InvoiceDataExportDialog({
   const [currentPage, setCurrentPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Sync format & pre-selected IDs when dialog opens
+  // Tracks previous open state to only initialize when dialog transitions from closed to open
+  const prevOpenRef = useRef(false);
+
   useEffect(() => {
-    if (open) {
-      setFormat(initialFormat);
+    if (open && !prevOpenRef.current) {
+      setFormat(initialFormat || 'xlsx');
       setExportLevel(initialLevel || 'summary');
       setSearchQuery('');
       setCurrentPage(1);
 
       if (initialSelectedIds && initialSelectedIds.size > 0) {
         setSelectedIds(new Set(initialSelectedIds));
-        setSelectedPreset('all_filtered');
       } else {
-        setSelectedIds(new Set(invoices.map(inv => inv.id)));
-        setSelectedPreset('all_filtered');
+        setSelectedIds(new Set());
       }
+      setSelectedPreset('all_filtered');
     }
-  }, [open, initialSelectedIds, initialFormat, initialLevel, invoices]);
+    prevOpenRef.current = open;
+  }, [open, initialSelectedIds, initialFormat, initialLevel]);
 
   const presetDates = useMemo(() => getPresetDates(selectedPreset), [selectedPreset]);
 
