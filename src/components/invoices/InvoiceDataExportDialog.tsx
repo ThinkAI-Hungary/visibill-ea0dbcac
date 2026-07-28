@@ -146,7 +146,7 @@ export function InvoiceDataExportDialog({
         setSelectedIds(new Set(initialSelectedIds));
         setSelectedPreset('all_filtered');
       } else {
-        setSelectedIds(new Set());
+        setSelectedIds(new Set(invoices.map(inv => inv.id)));
         setSelectedPreset('all_filtered');
       }
     }
