@@ -1,51 +1,52 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-07-25  
-> **Összesen:** 46 döntés | ✅ Decided: 45 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-07-28  
+> **Összesen:** 47 döntés | ✅ Decided: 46 | ⛔ Superseded: 1
 
 ---
 
 
-## Hogyan hasznĂˇld
+## Hogyan használd
 
-Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** vĂˇlasztottuk az adott technolĂłgiai/architekturĂˇlis megoldĂˇst. Az ADR-ek az AI asszisztensnek is segĂ­tenek: nem kell kitalĂˇlnia a tervezĂ©si szĂˇndĂ©kot.
+Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk az adott technológiai/architekturális megoldást. Az ADR-ek az AI asszisztensnek is segítenek: nem kell kitalálnia a tervezési szándékot.
 
-**ADR formĂˇtum:**
-- `Status` â€” Decided / Open / Superseded
-- `Context` â€” MiĂ©rt volt szĂĽksĂ©g erre a dĂ¶ntĂ©sre?
-- `Decision` â€” Mit vĂˇlasztottunk?
-- `Consequences` â€” Mik a kĂ¶vetkezmĂ©nyek, trade-off-ok?
+**ADR formátum:**
+- `Status` — Decided / Open / Superseded
+- `Context` — Miért volt szükség erre a döntésre?
+- `Decision` — Mit választottunk?
+- `Consequences` — Mik a következmények, trade-off-ok?
 
 ---
 
-## đźŹ—ď¸Ź Rendszer ArchitektĂşra
+## 🏛️ Rendszer Architektúra
 
-| # | DĂ¶ntĂ©s | StĂˇtusz | FĂˇjl |
+| # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-001 | HĂˇrom rĂ©tegĹ± architektĂşra (Frontend / Edge / Worker) | âś… Decided | [A-001](./A-001-system-architecture.md) |
-| A-002 | Supabase mint Backend-as-a-Service | âś… Decided | [A-002](./A-002-supabase-baas.md) |
-| A-003 | Multi-tenancy RLS alapon | âś… Decided | [A-003](./A-003-multi-tenancy-rls.md) |
+| A-001 | Három rétegű architektúra (Frontend / Edge / Worker) | ✅ Decided | [A-001](./A-001-system-architecture.md) |
+| A-002 | Supabase mint Backend-as-a-Service | ✅ Decided | [A-002](./A-002-supabase-baas.md) |
+| A-003 | Multi-tenancy RLS alapon | ✅ Decided | [A-003](./A-003-multi-tenancy-rls.md) |
 
-## đź“ˇ KommunikĂˇciĂł & Queue
+## 📡 Kommunikáció & Queue
 
-| # | DĂ¶ntĂ©s | StĂˇtusz | FĂˇjl |
+| # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-004 | PGMQ mint aszinkron queue | âś… Decided | [A-004](./A-004-pgmq-queue.md) |
-| A-005 | Edge Functions (Deno) â€” 50 function teljes katalĂłgus | âś… Decided | [A-005](./A-005-edge-functions.md) |
-| A-023 | Upload Dedup VĂ©delem (DB Trigger + Frontend Mutex) | âś… Decided | [A-023](./A-023-upload-dedup-protection.md) |
+| A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
+| A-005 | Edge Functions (Deno) — 50 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
+| A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
 
-## đź¤– AI & FeldolgozĂˇs
+## 🤖 AI & Feldolgozás
 
-| # | DĂ¶ntĂ©s | StĂˇtusz | FĂˇjl |
+| # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-006 | Python Worker architektĂşra (Docker, asyncio) | âś… Decided | [A-006](./A-006-python-worker.md) |
-| A-007 | LLM stratĂ©gia (LiteLLM, multi-provider) | âś… Decided | [A-007](./A-007-llm-strategy.md) |
-| A-008 | OCR pipeline (Vision + MarkItDown) | âś… Decided | [A-008](./A-008-ocr-pipeline.md) |
-| A-024 | Partner Upsert Strategy (prefix match, foreign partners, both upgrade) | âś… Decided | [A-024](./A-024-partner-upsert-strategy.md) |
-| A-025 | Cross-company Invoice Routing (multi-company adĂłszĂˇm-alapĂş ĂˇtirĂˇnyĂ­tĂˇs) | âś… Decided | [A-025](./A-025-cross-company-routing.md) |
+| A-006 | Python Worker architektúra (Docker, asyncio) | ✅ Decided | [A-006](./A-006-python-worker.md) |
+| A-007 | LLM stratégia (LiteLLM, multi-provider) | ✅ Decided | [A-007](./A-007-llm-strategy.md) |
+| A-008 | OCR pipeline (Vision + MarkItDown) | ✅ Decided | [A-008](./A-008-ocr-pipeline.md) |
+| A-024 | Partner Upsert Strategy (prefix match, foreign partners, both upgrade) | ✅ Decided | [A-024](./A-024-partner-upsert-strategy.md) |
+| A-025 | Cross-company Invoice Routing (multi-company adószám-alapú átirányítás) | ✅ Decided | [A-025](./A-025-cross-company-routing.md) |
 | A-028 | PDF Export Workflow & Lifecycle (PGMQ, Realtime, 24h cleanup) | ✅ Decided | [A-028](./A-028-pdf-export-lifecycle.md) |
 | A-035 | Háromirányú Szekvenciális Pipeline Átirányítás (Invoice ↔ Transaction ↔ Report) és Hibakezelés | ✅ Decided | [A-035](./A-035-three-way-fallback-redirection.md) |
 | A-039 | Transaction Matcher Performance Optimization (O(1) in-memory hash indexing) | ✅ Decided | [A-039](./A-039-transaction-matcher-performance-optimization.md) |
+| A-047 | Robust PDF Export Pipeline, Paired Image Resolution & eaisybill Brand Kontírozó Lap | ✅ Decided | [A-047](./A-047-pdf-export-enhancements-and-posting-slips.md) |
 
 ## đź”  BiztonsĂˇg & Auth
 
