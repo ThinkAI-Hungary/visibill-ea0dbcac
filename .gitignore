@@ -35,3 +35,8 @@ test_*.ps1
 test_*.js
 test_*.sh
 *.secret
+
+# Personal learning roadmap & study materials
+docs/architecture/ARCHITECT_LEARNING_ROADMAP.md
+docs/learning/
+

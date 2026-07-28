@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X, Search, ChevronLeft, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, X, Search, ChevronLeft, ChevronRight, CheckCircle2, Circle, Download, FileText, FileSpreadsheet, File, ChevronDown } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { reportError } from '@/lib/errorReporter';
@@ -21,6 +22,8 @@ import { CategoryAccordionItem, formatCurrencyTotals, type CategoryInvoice } fro
 import { IconPicker, ColorPicker, DEFAULT_CATEGORY_COLOR, resolveIcon } from '@/components/IconPicker';
 import { FolderOpen } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { exportData } from '@/lib/exportCsv';
+import { exportPdf } from '@/lib/exportPdf';
 
 interface Category {
   id?: string;
@@ -692,6 +695,66 @@ const Onboarding = () => {
     }
   };
 
+  const handleExportCategoryInvoices = async (format: 'csv' | 'xlsx' | 'pdf', categoryName: string, invoices: CategoryInvoice[]) => {
+    if (invoices.length === 0) {
+      toast({ title: 'Nincs exportálható számla', description: 'Ez a kategória jelenleg nem tartalmaz számlákat.', variant: 'destructive' });
+      return;
+    }
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    const safeCatName = categoryName.replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/g, '_');
+    const filename = `Kategoria_${safeCatName}_szamlai_${timestamp}`;
+
+    const headers = ['Számlaszám', 'Irány', 'Partner', 'Dátum', 'Összeg', 'Deviza', 'Forrás'];
+    const rows = invoices.map(inv => [
+      inv.invoice_number || '',
+      inv.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő',
+      inv.supplier_name || '',
+      inv.invoice_issue_date || '',
+      inv.invoice_gross_amount ?? 0,
+      inv.penznem || 'HUF',
+      inv.source === 'nav_invoices' ? 'NAV Online' : 'Feltöltött',
+    ]);
+
+    try {
+      if (format === 'pdf') {
+        await exportPdf(filename, {
+          title: `Kategória: ${categoryName}`,
+          subtitle: `${invoices.length} db hozzárendelt számla`,
+          companyName: selectedCompany?.name,
+          period: new Date().toLocaleDateString('hu-HU'),
+          headers: ['Számlaszám', 'Irány', 'Partner', 'Dátum', 'Összeg', 'Deviza'],
+          rows: invoices.map(inv => [
+            inv.invoice_number || '',
+            inv.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő',
+            inv.supplier_name || '',
+            inv.invoice_issue_date || '',
+            inv.invoice_gross_amount != null
+              ? new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 }).format(inv.invoice_gross_amount)
+              : '0',
+            inv.penznem || 'HUF',
+          ]),
+          footer: {
+            label: `Összesen ${invoices.length} db számla`,
+            value: `Exportálva: ${new Date().toLocaleDateString('hu-HU')}`,
+          },
+        });
+      } else {
+        await exportData(filename, headers, rows, format);
+      }
+      toast({
+        title: 'Exportálás sikeres',
+        description: `A(z) "${categoryName}" kategória számlái kiexportálva ${format.toUpperCase()} formátumban.`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Exportálási hiba',
+        description: error?.message || 'Hiba történt az exportálás során.',
+      });
+    }
+  };
+
   if (!user || !selectedCompany || initialLoading) {
     return <CategoryPageSkeleton />;
   }
@@ -1040,9 +1103,48 @@ const Onboarding = () => {
 
               {/* Scrollable invoice list */}
               <div className="flex-1 overflow-y-auto py-4 min-h-[200px] flex flex-col">
-                <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-                  Hozzárendelt számlák ({invoices.length})
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    Hozzárendelt számlák ({invoices.length})
+                  </h3>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 hover:bg-accent/50"
+                        disabled={invoices.length === 0}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Exportálás</span>
+                        <ChevronDown className="h-3 w-3 opacity-50" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuItem
+                        onClick={() => handleExportCategoryInvoices('csv', activeModalCategory.name, invoices)}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <FileText className="h-4 w-4 text-blue-500" />
+                        <span>CSV fájl (.csv)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleExportCategoryInvoices('xlsx', activeModalCategory.name, invoices)}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
+                        <span>Excel fájl (.xlsx)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleExportCategoryInvoices('pdf', activeModalCategory.name, invoices)}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <File className="h-4 w-4 text-rose-500" />
+                        <span>PDF dokumentum (.pdf)</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
                 <div className="border border-border rounded-lg overflow-hidden bg-background/50 flex-1">
                   <Table>
                     <TableHeader>

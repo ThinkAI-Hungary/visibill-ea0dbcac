@@ -187,6 +187,7 @@ serve(async (req) => {
 
     const url = new URL(req.url);
     const action = url.searchParams.get("action") || "overview";
+    console.log(`[MANAGEMENT-STATS v139] ${new Date().toISOString()} action=${action}`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -196,6 +197,8 @@ serve(async (req) => {
       console.error("[MANAGEMENT-STATS] Missing Supabase environment variables");
       return json(emptyForAction(action));
     }
+    // Log first 20 chars of serviceRoleKey to verify correct key is loaded
+    console.log(`[MANAGEMENT-STATS v139] svcKey_prefix=${serviceRoleKey.substring(0, 20)}...`);
 
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader.startsWith("Bearer ")) {
@@ -203,17 +206,41 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace(/^Bearer\s+/i, "");
-    const admin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false },
+
+    // Validate user JWT via direct REST call — keeps admin client auth-state clean.
+    const userResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: anonKey },
     });
-
-    const { data: userData, error: userError } = await admin.auth.getUser(token);
-    const userId = userData.user?.id;
-
-    if (userError || !userId) {
-      console.warn("[MANAGEMENT-STATS] JWT validation failed", userError?.message);
+    if (!userResp.ok) {
+      console.warn("[MANAGEMENT-STATS] JWT validation failed", userResp.status);
       return json({ error: "Unauthorized", ...emptyForAction(action) });
     }
+    const userData = await userResp.json();
+    const userId = userData.id;
+    if (!userId) {
+      return json({ error: "Unauthorized", ...emptyForAction(action) });
+    }
+
+    // CRITICAL: custom fetch wrapper that ALWAYS sends service_role JWT.
+    // supabase-js v2 from() dynamically sets Authorization from session state,
+    // which can leak the user's JWT and cause RLS to filter rows.
+    // By intercepting fetch, we guarantee service_role for every PostgREST call.
+    const serviceFetch = (url: RequestInfo | URL, opts: RequestInit = {}) => {
+      const headers = new Headers(opts.headers || {});
+      headers.set("Authorization", `Bearer ${serviceRoleKey}`);
+      headers.set("apikey", serviceRoleKey);
+      const urlStr = typeof url === 'string' ? url : url.toString();
+      if (urlStr.includes('llm_koltsegek') || urlStr.includes('llm-costs')) {
+        console.log(`[serviceFetch] ${urlStr.substring(0, 80)} auth=svc_role_${serviceRoleKey.substring(0, 10)}...`);
+      }
+      return fetch(url, { ...opts, headers });
+    };
+
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { fetch: serviceFetch },
+    });
+
 
     const { data: requesterProfile, error: profileError } = await admin
       .from("profiles")
@@ -3181,6 +3208,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
 }
 
 async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: string) {
+  console.log(`[buildLLMCosts] ENTRY period=${period} ts=${new Date().toISOString()}`);
   const now = new Date();
   const periodMs: Record<string, number> = {
     "24h": 24 * 60 * 60 * 1000,
@@ -3189,7 +3217,8 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
     "90d": 90 * 24 * 60 * 60 * 1000,
   };
   const ms = periodMs[period];
-  const since = ms ? new Date(now.getTime() - ms).toISOString() : null; // null = all time
+  const since = ms ? new Date(now.getTime() - ms).toISOString() : null;
+  const sinceTs = since ? since : null;
 
   // Build cross-project clients
   interface PC { name: string; client: ReturnType<typeof createClient> }
@@ -3205,84 +3234,97 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
     try { projectClients.push({ name: "THINKERMAN", client: createClient(thinkUrl, thinkKey) }); } catch {}
   }
 
-  // Fetch LLM data from all projects in parallel
+  // Use SECURITY DEFINER RPC for each project — bypasses both RLS AND PostgREST max_rows limit.
+  // Previously, PostgREST's max_rows (default 1000) was returning only the most-recent 1000 rows
+  // giving a stable but wrong aggregated value.
   const fetches = projectClients.map(async (pc) => {
     try {
-      let query = pc.client
-        .from("llm_koltsegek")
-        .select("pipeline, model_name, company_id, input_tokens, output_tokens, total_tokens, estimated_cost_usd, processing_duration_ms, created_at")
-        .order("created_at", { ascending: false })
-        .limit(10000);
-      if (since) query = query.gte("created_at", since);
-      const { data } = await query;
-      // Also fetch company names
-      const companyIds = [...new Set((data || []).map((r: any) => r.company_id).filter(Boolean))];
-      let companyMap = new Map<string, string>();
-      if (companyIds.length > 0) {
-        const { data: companies } = await pc.client
-          .from("companies")
-          .select("id, name")
-          .in("id", companyIds);
-        for (const c of (companies || [])) companyMap.set(c.id, c.name);
+      // When sinceTs is null (all-time), call RPC without params to use PostgreSQL DEFAULT.
+      const rpcCall = sinceTs
+        ? pc.client.rpc('get_llm_cost_full_agg', { since_date: sinceTs })
+        : pc.client.rpc('get_llm_cost_full_agg');
+      const { data: rpcRaw, error } = await rpcCall;
+      if (error) {
+        console.warn(`[buildLLMCosts] ${pc.name} RPC error: code=${error.code} msg=${error.message} detail=${error.details}`);
+        throw error;
       }
-      return { project: pc.name, rows: data || [], companyMap };
-    } catch (e) {
-      console.warn(`[llm-costs] query failed for ${pc.name}:`, e);
-      return { project: pc.name, rows: [], companyMap: new Map<string, string>() };
+      // PostgREST may return RETURNS JSONB as an array [value] in some supabase-js versions
+      const agg = Array.isArray(rpcRaw) ? (rpcRaw[0] || {}) : (rpcRaw || {});
+      console.log(`[buildLLMCosts] ${pc.name}: raw_type=${Array.isArray(rpcRaw)?'array':'obj'} total_cost=${agg?.total_cost} total_jobs=${agg?.total_jobs} sinceTs=${sinceTs}`);
+      return { project: pc.name, agg, client: pc.client };
+    } catch (e: any) {
+      console.warn(`[llm-costs] RPC exception for ${pc.name}: ${e?.message || String(e)}`);
+      return { project: pc.name, agg: {}, client: pc.client };
     }
   });
+
+
   const results = await Promise.all(fetches);
 
-  // Aggregation maps
-  let totalCost = 0, totalJobs = 0, totalTokens = 0, totalInputTokens = 0, totalOutputTokens = 0;
+  // Aggregation maps (merge across projects)
+  let totalCost = 0, totalJobs = 0, totalInputTokens = 0, totalOutputTokens = 0;
   const pipelineAgg = new Map<string, { cost: number; jobs: number }>();
   const projectAgg = new Map<string, { cost: number; jobs: number }>();
   const companyAgg = new Map<string, { name: string; cost: number; jobs: number; project: string }>();
-  const modelAgg = new Map<string, { cost: number; jobs: number; tokens: number; pipeline: string }>();
-  const dailyAgg = new Map<string, number>(); // dayKey -> cost
+  const modelAgg = new Map<string, { cost: number; jobs: number; tokens: number }>();
+  const dailyAgg = new Map<string, number>();
 
-  for (const { project, rows, companyMap } of results) {
-    for (const row of rows) {
-      const cost = parseFloat(row.estimated_cost_usd) || 0;
-      const tokens = row.total_tokens || 0;
-      const inputTokens = Number(row.input_tokens) || 0;
-      const outputTokens = Number(row.output_tokens) || 0;
-      const pipeline = row.pipeline || "unknown";
-      const model = row.model_name || "unknown";
-      const companyId = row.company_id || "unknown";
-      const companyName = companyMap.get(companyId) || "N/A";
-      const dayKey = row.created_at.substring(0, 10);
+  // First pass: collect all company IDs from PROD top_companies for name lookup
+  const allCompanyIds = new Set<string>();
+  for (const { agg } of results) {
+    for (const tc of (agg.top_companies || [])) {
+      if (tc.company_id) allCompanyIds.add(tc.company_id);
+    }
+  }
+  // Fetch company names from PROD
+  const companyNameMap = new Map<string, string>();
+  if (allCompanyIds.size > 0) {
+    try {
+      const { data: companies } = await admin
+        .from("companies").select("id, name").in("id", [...allCompanyIds]);
+      for (const c of (companies || [])) companyNameMap.set(c.id, c.name);
+    } catch {}
+  }
 
-      totalCost += cost;
-      totalJobs += 1;
-      totalTokens += tokens;
-      totalInputTokens += inputTokens;
-      totalOutputTokens += outputTokens;
+  for (const { project, agg } of results) {
+    const pc_cost = Number(agg.total_cost || 0);
+    const pc_jobs = Number(agg.total_jobs || 0);
+    const pc_input = Number(agg.total_input_tokens || 0);
+    const pc_output = Number(agg.total_output_tokens || 0);
 
-      // Pipeline
-      if (!pipelineAgg.has(pipeline)) pipelineAgg.set(pipeline, { cost: 0, jobs: 0 });
-      const pa = pipelineAgg.get(pipeline)!;
-      pa.cost += cost; pa.jobs += 1;
+    totalCost += pc_cost;
+    totalJobs += pc_jobs;
+    totalInputTokens += pc_input;
+    totalOutputTokens += pc_output;
 
-      // Project
-      if (!projectAgg.has(project)) projectAgg.set(project, { cost: 0, jobs: 0 });
-      const pra = projectAgg.get(project)!;
-      pra.cost += cost; pra.jobs += 1;
+    // Project breakdown
+    projectAgg.set(project, { cost: pc_cost, jobs: pc_jobs });
 
-      // Company
-      const cKey = `${project}:${companyId}`;
-      if (!companyAgg.has(cKey)) companyAgg.set(cKey, { name: companyName, cost: 0, jobs: 0, project });
-      const ca = companyAgg.get(cKey)!;
-      ca.cost += cost; ca.jobs += 1;
+    // Pipeline breakdown
+    for (const [pipeline, pd] of Object.entries(agg.by_pipeline || {})) {
+      const existing = pipelineAgg.get(pipeline) || { cost: 0, jobs: 0 };
+      pipelineAgg.set(pipeline, { cost: existing.cost + Number((pd as any).cost || 0), jobs: existing.jobs + Number((pd as any).jobs || 0) });
+    }
 
-      // Model
-      const mKey = `${model}|${pipeline}`;
-      if (!modelAgg.has(mKey)) modelAgg.set(mKey, { cost: 0, jobs: 0, tokens: 0, pipeline });
-      const ma = modelAgg.get(mKey)!;
-      ma.cost += cost; ma.jobs += 1; ma.tokens += tokens;
+    // Model breakdown
+    for (const [model, md] of Object.entries(agg.by_model || {})) {
+      const existing = modelAgg.get(model) || { cost: 0, jobs: 0, tokens: 0 };
+      modelAgg.set(model, { cost: existing.cost + Number((md as any).cost || 0), jobs: existing.jobs + Number((md as any).jobs || 0), tokens: existing.tokens + Number((md as any).tokens || 0) });
+    }
 
-      // Daily
-      dailyAgg.set(dayKey, (dailyAgg.get(dayKey) || 0) + cost);
+    // Top companies
+    for (const tc of (agg.top_companies || [])) {
+      if (!tc.company_id) continue;
+      const cKey = `${project}:${tc.company_id}`;
+      const name = companyNameMap.get(tc.company_id) || tc.company_id.substring(0, 8);
+      const existing = companyAgg.get(cKey) || { name, cost: 0, jobs: 0, project };
+      companyAgg.set(cKey, { name, cost: existing.cost + Number(tc.cost || 0), jobs: existing.jobs + Number(tc.jobs || 0), project });
+    }
+
+    // Daily trend
+    for (const dd of (agg.daily_trend || [])) {
+      const dk = dd.day;
+      dailyAgg.set(dk, (dailyAgg.get(dk) || 0) + Number(dd.cost || 0));
     }
   }
 
@@ -3306,7 +3348,7 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
     }))
     .sort((a, b) => b.cost - a.cost);
 
-  // Build top_companies (top 3)
+  // Build top_companies
   const top_companies = Array.from(companyAgg.values())
     .sort((a, b) => b.cost - a.cost)
     .slice(0, 3)
@@ -3318,7 +3360,7 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
     }));
 
   // Build daily_trend
-  const dayCount = Math.min(Math.ceil(ms / (24 * 60 * 60 * 1000)), 90);
+  const dayCount = ms ? Math.min(Math.ceil(ms / (24 * 60 * 60 * 1000)), 90) : 30;
   const daily_trend: { date: string; cost: number }[] = [];
   for (let i = dayCount - 1; i >= 0; i--) {
     const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
@@ -3328,25 +3370,23 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
 
   // Build by_model
   const by_model = Array.from(modelAgg.entries())
-    .map(([key, d]) => {
-      const [model] = key.split("|");
-      return {
-        model,
-        pipeline: d.pipeline,
-        cost: Math.round(d.cost * 10000) / 10000,
-        jobs: d.jobs,
-        avg_tokens: d.jobs > 0 ? Math.round(d.tokens / d.jobs) : 0,
-        pct: totalCost > 0 ? Math.round((d.cost / totalCost) * 1000) / 10 : 0,
-      };
-    })
+    .map(([model, d]) => ({
+      model,
+      cost: Math.round(d.cost * 10000) / 10000,
+      jobs: d.jobs,
+      avg_tokens: d.jobs > 0 ? Math.round(d.tokens / d.jobs) : 0,
+      pct: totalCost > 0 ? Math.round((d.cost / totalCost) * 1000) / 10 : 0,
+    }))
     .sort((a, b) => b.cost - a.cost);
+
+  console.log(`[buildLLMCosts] DONE period=${period}: totalCost=${totalCost.toFixed(4)}, totalJobs=${totalJobs}`);
 
   return {
     kpi: {
       total_cost: Math.round(totalCost * 10000) / 10000,
       total_jobs: totalJobs,
       avg_cost_per_job: totalJobs > 0 ? Math.round((totalCost / totalJobs) * 10000) / 10000 : 0,
-      total_tokens: totalTokens,
+      total_tokens: totalInputTokens + totalOutputTokens,
       total_input_tokens: totalInputTokens,
       total_output_tokens: totalOutputTokens,
     },
@@ -3359,7 +3399,13 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
   };
 }
 
+
+
 async function fetchMultiProjectMonthlyLlm(admin: ReturnType<typeof createClient>, monthStart: string) {
+  // Use SECURITY DEFINER RPCs instead of PostgREST row-fetch.
+  // Reason: PostgREST has a server-side max_rows limit (default 1000) that
+  // causes non-deterministic results when datasets exceed the limit.
+  // SECURITY DEFINER functions bypass both RLS and max_rows limitations.
   interface PC { name: string; client: ReturnType<typeof createClient> }
   const projectClients: PC[] = [{ name: "PROD", client: admin }];
   const vswebUrl = Deno.env.get("VSWEB_SUPABASE_URL");
@@ -3375,37 +3421,55 @@ async function fetchMultiProjectMonthlyLlm(admin: ReturnType<typeof createClient
 
   const fetches = projectClients.map(async (pc) => {
     try {
-      const { data, error } = await pc.client
-        .from("llm_koltsegek")
-        .select("company_id, input_tokens, output_tokens, total_tokens, estimated_cost_usd, llm_calls, created_at")
-        .gte("created_at", monthStart);
+      // Call SECURITY DEFINER RPC — aggregates server-side, bypasses RLS + max_rows
+      const { data: rpcResult, error } = await pc.client
+        .rpc('get_monthly_llm_by_company', { month_start: monthStart });
       if (error) throw error;
 
+      // rpcResult is a JSONB: { rows: [{company_id, cost, input_tokens, output_tokens}], total_cost, total_input, total_output }
+      const rows: any[] = rpcResult?.rows || [];
+      console.log(`[fetchMultiProjectMonthlyLlm] ${pc.name}: ${rows.length} company rows, total_cost=${rpcResult?.total_cost}`);
+
+      // Fetch company names for VSWEB/THINKERMAN projects
       let companyMap = new Map<string, string>();
-      if (pc.name !== "PROD" && data && data.length > 0) {
-        const cIds = [...new Set(data.map((r: any) => r.company_id).filter(Boolean))];
+      if (pc.name !== "PROD" && rows.length > 0) {
+        const cIds = rows.map((r: any) => r.company_id).filter(Boolean);
         if (cIds.length > 0) {
           const { data: companies } = await pc.client
-            .from("companies")
-            .select("id, name")
-            .in("id", cIds);
-          for (const c of (companies || [])) {
-            companyMap.set(c.id, c.name);
-          }
+            .from("companies").select("id, name").in("id", cIds);
+          for (const c of (companies || [])) companyMap.set(c.id, c.name);
         }
       }
 
-      return (data || []).map((row: any) => ({
-        ...row,
+      // Transform to row format expected by buildOverview aggregation
+      return rows.map((row: any) => ({
+        company_id: row.company_id,
+        estimated_cost_usd: row.cost,
+        input_tokens: row.input_tokens,
+        output_tokens: row.output_tokens,
+        total_tokens: (row.input_tokens || 0) + (row.output_tokens || 0),
         project: pc.name,
         company_name_override: pc.name !== "PROD" ? companyMap.get(row.company_id) : undefined,
       }));
     } catch (e) {
-      console.warn(`[overview-llm] fetch failed for ${pc.name}:`, e);
-      return [];
+      console.warn(`[overview-llm] RPC failed for ${pc.name}, falling back to direct query:`, e);
+      // Fallback to direct PostgREST query (may be limited by max_rows)
+      try {
+        const { data, error: qErr } = await pc.client
+          .from("llm_koltsegek")
+          .select("company_id, input_tokens, output_tokens, total_tokens, estimated_cost_usd")
+          .gte("created_at", monthStart)
+          .limit(50000);
+        if (qErr) throw qErr;
+        return (data || []).map((row: any) => ({ ...row, project: pc.name }));
+      } catch (e2) {
+        console.warn(`[overview-llm] fallback also failed for ${pc.name}:`, e2);
+        return [];
+      }
     }
   });
 
   const results = await Promise.all(fetches);
   return { data: results.flat(), error: null };
 }
+

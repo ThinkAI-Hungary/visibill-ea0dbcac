@@ -584,7 +584,7 @@ All colors MUST be HSL.
   }
 
   .compact-table td {
-    @apply py-1 px-1.5 h-[45px] max-h-[45px];
+    @apply py-1 px-1.5 h-[45px] max-h-[45px] align-middle;
   }
 
   .compact-table tr {

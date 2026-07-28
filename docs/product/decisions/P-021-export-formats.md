@@ -1,15 +1,24 @@
-# P-021: Export Formátumok
+# P-021: Export Formátumok & Számlák Adat-exportáló Dialógus
 
 **Status:** Decided  
-**Category:** Főkönyv & Riportok
+**Category:** Számlák, Főkönyv & Riportok  
+**Utoljára frissítve:** 2026-07-22
 
-**Question:** Milyen formátumokban exportálhatóak az adatok?
+**Decision:**
+1. **Adat-exportáló Dialógus (`InvoiceDataExportDialog`):** A Számlák menüben az Export CSV / XLSX gombokra kattintva interaktív dialógus jelenik meg.
+2. **Előzetes kijelölés átvétele:** Ha a felhasználó a főtáblázatban már kijelölt számlákat (checkbox selection), a modal automatikusan azokkal megnyílik (`initialSelectedIds`), és jelzi az előzetes kijelölés darabszámát.
+3. **Időszakos és egyéni szűrés:** A modalban választható dátumtartomány preset (Aktuális hónap, Előző hónap, Aktuális negyedév, Előző negyedév, Egyéni dátumtartomány).
+4. **Modálon belüli keresés és ki- / kijelölés:** Keresőmezővel és tömeges "Mindet kijelöl" / "Kijelölés törlése" gombokkal tetszőlegesen módosítható a kijelölés az exportálás előtt.
+5. **Támogatott formátumok:**
+   - **CSV (`.csv`):** UTF-8 BOM, pontosvesszővel elválasztott gépi feldolgozású adatfájl.
+   - **Excel (`.xlsx`):** SheetJS dinamikus importtal generált, autó-méretezett oszlopokkal ellátott munkafüzet.
+   - **PDF (`.pdf`):** Kötegelt számlaképek összevonása (PGMQ Worker pipeline, lásd [A-028](../../architecture/decisions/A-028-pdf-export-lifecycle.md) és [P-045](./P-045-pdf-export-ux.md)).
 
-**Decision:** CSV + PDF export. Excel (xlsx) nem prioritás.
+---
 
-**TODO:**
-- CSV export: számlák, tranzakciók, főkönyv, beszámoló adatok
-- PDF export: formázott, brandelt dokumentumok (számla lista, beszámoló, P&L, mérleg)
-- PDF generálás Edge Function-ben (headless browser vagy template engine)
+## Kapcsolódó Fájlok
 
-**Rationale:** CSV lefedi a gépi feldolgozás igényt (könyvelők, import más rendszerbe). PDF lefedi a nyomtatás és megosztás igényt (ügyfelek, hatóságok). Excel natív export alacsony prioritás — a CSV Excelben megnyitható.
+- `src/components/invoices/InvoiceDataExportDialog.tsx` — Interaktív exportáló modal
+- `src/pages/InvoicesPage.tsx` — Számlák oldal integráció
+- `src/lib/exportUtils.ts` — CSV & XLSX exportáló segédmodul
+- `src/hooks/usePdfExport.ts` — PDF exportáló hook
