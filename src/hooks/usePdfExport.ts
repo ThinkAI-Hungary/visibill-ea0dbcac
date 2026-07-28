@@ -32,6 +32,8 @@ export interface ExportParams {
   dateFrom: string;
   dateTo: string;
   invoiceDirection?: 'INBOUND' | 'OUTBOUND' | null;
+  exportMode?: 'standard' | 'posting_slips';
+  includePostingSlips?: boolean;
 }
 
 export interface PdfExportState {
@@ -392,6 +394,8 @@ export function usePdfExport(): PdfExportState {
           dateFrom: params.dateFrom,
           dateTo: params.dateTo,
           invoiceDirection: params.invoiceDirection,
+          exportMode: params.exportMode || (params.includePostingSlips ? 'posting_slips' : 'standard'),
+          includePostingSlips: params.includePostingSlips || params.exportMode === 'posting_slips',
         }),
       });
 

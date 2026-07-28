@@ -73,6 +73,13 @@ csökkenő összeg szerinti sorrendben.
 - Összeg label: multi-currency formátum (`X Ft | Y EUR`)
 - Üres kategóriák (0 számla) nem jelennek meg
 
+### 6. Kategória számlák exportálása — CSV, XLSX, PDF (2026-07-22)
+
+A kategória részletező dialógusban (`Dialog`) a hozzárendelt számlák felett egy **Exportálás** `DropdownMenu` található Lucide ikonokkal:
+- **CSV:** `exportData` — UTF-8 BOM, pontosvesszővel elválasztva (`FileText` ikon, kék)
+- **Excel (XLSX):** `exportData` — dinamikus importált SheetJS autó-méretezett oszlopokkal (`FileSpreadsheet` ikon, zöld)
+- **PDF:** `exportPdf` — dinamikus importált jsPDF + autoTable céges fejléccel és összegzés lábléccel (`File` ikon, piros)
+
 ---
 
 ## Kapcsolódó fájlok
@@ -80,5 +87,7 @@ csökkenő összeg szerinti sorrendben.
 - `src/components/CategoryAccordionItem.tsx` — accordion sor, progress bar
 - `src/components/CategoryDonutChart.tsx` — donut chart + legenda
 - `src/components/CategoryAmountSummary.tsx` — összeg sáv diagram
-- `src/pages/Onboarding.tsx` — Kategóriák oldal
+- `src/pages/Onboarding.tsx` — Kategóriák oldal + exportálás logika (`handleExportCategoryInvoices`)
+- `src/lib/exportCsv.ts` — CSV és XLSX exportáló
+- `src/lib/exportPdf.ts` — PDF exportáló
 - Táblák: `nav_invoices`, `invoices`, `categories`

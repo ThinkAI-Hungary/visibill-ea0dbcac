@@ -104,22 +104,22 @@ Az Edge Function `service_role` klienssel az alábbi táblákat olvassa:
 | `audit_logs` | Utolsó aktivitás (company-detail) |
 | `auth.users` (admin API) | Email címek (listUsers) |
 
-### LLM Költség Lekérdezés (Server-Side)
+### LLM Költség Lekérdezés (Szerver-Oldali RPC Aggregáció)
 
-A `company-detail` action a `llm_koltsegek` táblát **szerver-oldalon lapozza és szűri**:
+A `company-detail`, az `overview` és a `llm-costs` action-ök az LLM költségeket **szerver-oldali PostgreSQL RPC-kkel** aggregálják a PostgREST alapértelmezett 1000 soros korlátjának és a kliens oldali memóriaterhelésnek az áthidalására (lásd [A-046](./A-046-llm-cost-aggregation-server-side-rpc.md)):
+
+- **`get_llm_cost_full_agg(since_date)`:** Cross-project aggregáció a `buildLLMCosts` metódusban (total_cost, total_jobs, tokens, pipeline/model/company bontások).
+- **`get_monthly_llm_by_company(year, month)`:** Havi aggregáció a `fetchMultiProjectMonthlyLlm` metódusban.
+- **Tranzakciós garancia:** Az RPC-k explicit `VOLATILE` tulajdonsággal rendelkeznek mindhárom projekten (`PROD`, `VSWEB`, `THINKERMAN`), megakadályozva a PostgREST read-only tranzakciós hibáját (`ERROR 25006`).
 
 ```typescript
-// Aggregált számok (lightweight query, nincs lapozás)
-admin.from("llm_koltsegek")
-  .select("estimated_cost_usd, total_tokens, llm_calls")
-  .eq("company_id", companyId)
+// RPC hívás PostgREST sor-korlát nélkül
+const rpcCall = sinceTs
+  ? pc.client.rpc('get_llm_cost_full_agg', { since_date: sinceTs })
+  : pc.client.rpc('get_llm_cost_full_agg');
 
-// Részletes táblázat (DB-level sort + pagination + count)
-admin.from("llm_koltsegek")
-  .select("...", { count: "exact" })
-  .eq("company_id", companyId)
-  .order(sortCol, { ascending: sortDir === "asc" })
-  .range(page * pageSize, page * pageSize + pageSize - 1)
+const { data: rpcRaw, error } = await rpcCall;
+const agg = Array.isArray(rpcRaw) ? (rpcRaw[0] || {}) : (rpcRaw || {});
 ```
 
 **Szűrők** (DB-szinten):

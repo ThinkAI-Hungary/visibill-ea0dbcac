@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-07-22  
-> **Összesen:** 43 döntés | ✅ Decided: 42 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-07-25  
+> **Összesen:** 46 döntés | ✅ Decided: 45 | ⛔ Superseded: 1
 
 ---
 
@@ -109,6 +109,8 @@ Minden dĂ¶ntĂ©s egy kĂĽlĂ¶n `.md` fĂˇjl, amely leĂ­rja **miĂ©rt** 
 | A-033 | Service Role kizárása a cég szintű Audit naplóból | ✅ Decided | [A-033](./A-033-exclude-service-role-from-audit.md) |
 | A-042 | Sztornó Számla Kézi Lezárás — 2 lépéses láncolat logika, reversible settle/unsettle toggle | ✅ Decided | [A-042](./A-042-storno-settle-architecture.md) |
 | A-043 | ZIP / RAR / 7z Archívum Csatolmány Kicsomagolás és Body-MIME Parsing — mindkét email pipeline (IMAP + Mailgun), fflate Deno-ban, py7zr/rarfile Python Worker-ben, body-mime RFC822 fallback | ✅ Decided | [A-043](./A-043-zip-archive-email-attachment-expansion.md) |
+| A-045 | Audit Trigger Email-Alias Bypass — service_role guard kivétele Mailgun EF INSERT-ekre + trigger kiterjesztés transaction_uploads és report_uploads táblákra | ✅ Decided | [A-045](./A-045-audit-trigger-email-alias-service-role-bypass.md) |
+| A-046 | LLM Költség Aggregáció Szerver-Oldali SECURITY DEFINER VOLATILE RPC-kkel — PostgREST max_rows (1000 sor) és 25006-os read-only tranzakciós hibák kiküszöbölése | ✅ Decided | [A-046](./A-046-llm-cost-aggregation-server-side-rpc.md) |
 
 ---
 
