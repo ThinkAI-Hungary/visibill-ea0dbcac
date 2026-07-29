@@ -162,9 +162,9 @@ export default function ClientSettingsTab({
                 onChange={(e) => setNotifPrefs(prev => ({ ...prev, frequency: e.target.value }))}
                 className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
               >
-                <option value="aggressive"> Agresszív (naponta)</option>
+                <option value="high"> Agresszív (naponta)</option>
                 <option value="normal"> Normál (hetente 2x)</option>
-                <option value="gentle"> Óvatos (hetente 1x)</option>
+                <option value="low"> Óvatos (hetente 1x)</option>
               </select>
             </div>
           </div>

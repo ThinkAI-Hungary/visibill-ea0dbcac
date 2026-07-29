@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -91,19 +91,51 @@ export function useTransactionData() {
   const uniqueCurrencies = filterOptions?.currencies || [];
   const uniqueTypes = filterOptions?.types || [];
 
+  // Prevent race condition: if filters/dates changed, query page 1 instead of currentPage
+  // to avoid out-of-bounds range queries (HTTP 416 range not satisfiable)
+  const lastFiltersRef = useRef({
+    search: filters.search,
+    dateFrom,
+    dateTo,
+    currency: filters.currency,
+    type: filters.type,
+    matchStatus: filters.matchStatus,
+  });
+
+  const filtersChanged =
+    lastFiltersRef.current.search !== filters.search ||
+    lastFiltersRef.current.dateFrom !== dateFrom ||
+    lastFiltersRef.current.dateTo !== dateTo ||
+    lastFiltersRef.current.currency !== filters.currency ||
+    lastFiltersRef.current.type !== filters.type ||
+    lastFiltersRef.current.matchStatus !== filters.matchStatus;
+
+  if (filtersChanged) {
+    lastFiltersRef.current = {
+      search: filters.search,
+      dateFrom,
+      dateTo,
+      currency: filters.currency,
+      type: filters.type,
+      matchStatus: filters.matchStatus,
+    };
+  }
+
+  const queryPage = filtersChanged ? 1 : currentPage;
+
   // Main query
   const { data: queryResult, isLoading: loading } = useQuery({
     queryKey: [
       ...queryKeys.transactions(
         selectedCompany?.id || '',
         dateFromStr, dateToStr,
-        currentPage, pageSize,
+        queryPage, pageSize,
         serverFilters
       ),
       sortField, sortDirection,
     ],
     queryFn: async () => {
-      const from = (currentPage - 1) * pageSize;
+      const from = (queryPage - 1) * pageSize;
       const to = from + pageSize - 1;
 
       let query = supabase
