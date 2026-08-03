@@ -26,6 +26,7 @@
 | role | text | — | `'user'::text` |
 | is_support_admin | boolean | ✓ | `false` |
 | eaisybill_access | boolean | — | `true` |
+| eaisybooks_access | boolean | — | `false` |
 | registration_source | text | ✓ |  |
 
 **FK:** `user_id` → `auth.users.id`

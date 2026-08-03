@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Wrench, Plus, Trash2, GripVertical, Download, Eye,
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
 import { usePayrollEmployees } from '@/hooks/usePayrollData';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 interface ColumnDef {
   id: string;
@@ -57,6 +58,10 @@ export default function CustomReportBuilderPage() {
   const [showColumnPicker, setShowColumnPicker] = useState(true);
   const [generated, setGenerated] = useState(false);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   const { data: employees = [] } = usePayrollEmployees(id || '');
 
   const selectedColumns = columns.filter(c => c.selected);
@@ -101,6 +106,18 @@ export default function CustomReportBuilderPage() {
       selectedColumns.map(col => (COLUMN_ACCESSOR[col.id] || (() => '–'))(emp))
     );
   }, [generated, employees, selectedColumns]);
+
+  const totalItems = reportRows.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedReportRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return reportRows.slice(start, start + pageSize);
+  }, [reportRows, currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [reportRows.length]);
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -174,7 +191,7 @@ export default function CustomReportBuilderPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
-                      {reportRows.map((row, ri) => (
+                      {paginatedReportRows.map((row, ri) => (
                         <tr key={ri} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                           {row.map((cell, ci) => (
                             <td key={ci} className="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">{cell}</td>
@@ -184,6 +201,19 @@ export default function CustomReportBuilderPage() {
                     </tbody>
                   </table>
                 </div>
+                {totalPages > 1 && (
+                  <div className="border-t border-border px-4 py-3 bg-card">
+                    <UnifiedPagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      totalItems={totalItems}
+                      pageSize={pageSize}
+                      onPageChange={setCurrentPage}
+                      onPageSizeChange={setPageSize}
+                      pageSizeOptions={[10, 25, 50]}
+                    />
+                  </div>
+                )}
               </div>
             )
           )}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Send, Clock,
@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateFiling08Xml, downloadXml } from '@/lib/payroll/filingGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 const fmt = (n: number) => n.toLocaleString('hu-HU') + ' Ft';
 const MONTHS = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'Aug', 'Szep', 'Okt', 'Nov', 'Dec'];
@@ -28,6 +29,10 @@ export default function Filing2608Page() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const { data: clients } = useAccountyClients();
   const { data: cycles = [] } = usePayrollCycles(companyId || '');
@@ -83,6 +88,18 @@ export default function Filing2608Page() {
       };
     });
   }, [calculations, employees]);
+
+  const totalItems = mlapRows.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedMlapRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return mlapRows.slice(start, start + pageSize);
+  }, [mlapRows, currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [mlapRows.length]);
 
   const buildFilingXml = () => {
     const totalGross = calculations.reduce((s, c) => s + (c.gross_salary || 0), 0);
@@ -298,7 +315,7 @@ export default function Filing2608Page() {
                   </tr>
                 </thead>
                 <tbody>
-                  {mlapRows.map((m) => (
+                  {paginatedMlapRows.map((m) => (
                     <React.Fragment key={m.id}>
                       <tr
                         className="border-b border-border/30 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
@@ -351,6 +368,19 @@ export default function Filing2608Page() {
                 </tbody>
               </table>
             </div>
+            {totalPages > 1 && (
+              <div className="border-t border-border px-4 py-3 bg-card">
+                <UnifiedPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={[10, 25, 50]}
+                />
+              </div>
+            )}
           </div>
 
           {/* Actions */}

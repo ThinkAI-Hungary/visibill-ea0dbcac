@@ -66,7 +66,7 @@ A rendszernek támogatnia kell: regisztrációt, bejelentkezést, session kezel�
 | Hook | Logika | Hatás |
 |---|---|---|
 | `useHasEaisybillAccess` | `company_members` tagSág VAGY `profiles.eaisybill_access` flag | eaisybill toggle láthatóság (AccountyLayout sidebar) |
-| `useHasAccountyAccess` | `accounty_assignments` tagság | eaisybooks link láthatóság (AppSidebar) |
+| `useHasAccountyAccess` | `accounty_assignments` tagság VAGY `profiles.eaisybooks_access` flag | eaisybooks link láthatóság (AppSidebar) |
 
 ## Signup Trigger Chain
 

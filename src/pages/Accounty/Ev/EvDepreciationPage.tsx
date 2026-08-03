@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   BarChart3, ArrowLeft, ChevronRight, Plus, Edit3, Trash2,
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
 import { useEvFixedAssets, type EvFixedAsset } from '@/hooks/useEvData';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -17,6 +18,10 @@ export default function EvDepreciationPage() {
   const { data: client } = useAccountyClient(id);
   const [taxYear] = useState(2026);
   const [importOpen, setImportOpen] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawAssets, isLoading } = useEvFixedAssets(id, taxYear);
@@ -50,6 +55,18 @@ export default function EvDepreciationPage() {
   const totalCurrentYear = assets.reduce((s, a) => s + a.currentYearDepreciation, 0);
   const totalCumulative = assets.reduce((s, a) => s + a.cumulativeDepreciation, 0);
   const totalNetBook = assets.reduce((s, a) => s + a.netBookValue, 0);
+
+  const totalItems = assets.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedAssets = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return assets.slice(start, start + pageSize);
+  }, [assets, currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [assets.length]);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -148,7 +165,7 @@ export default function EvDepreciationPage() {
                   </td>
                 </tr>
               ) : (
-                assets.map(asset => {
+                paginatedAssets.map(asset => {
                   const depPercentage = asset.acquisitionCost > 0
                     ? (asset.cumulativeDepreciation / asset.acquisitionCost) * 100
                     : 0;
@@ -230,6 +247,19 @@ export default function EvDepreciationPage() {
             )}
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="border-t border-border px-4 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[10, 25, 50]}
+            />
+          </div>
+        )}
       </div>
 
       {/* Info */}
