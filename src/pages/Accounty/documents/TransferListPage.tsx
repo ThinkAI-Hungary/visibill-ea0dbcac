@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   ArrowLeft, CreditCard, Download, CheckCircle,
@@ -12,6 +12,7 @@ import { useAccountyClients } from '@/hooks/accounty';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { generateTransferPdf } from '@/lib/documentPdfs';
 import { usePayrollCycles, usePayrollCalculations } from '@/hooks/usePayrollData';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 export default function TransferListPage() {
   const { id } = useParams<{ id: string }>();
@@ -26,8 +27,18 @@ export default function TransferListPage() {
 
   const [exportFormat, setExportFormat] = useState<'sepa' | 'mt940'>('sepa');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   const transferList = transfers || [];
+  const totalItems = transferList.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedTransfers = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return transferList.slice(start, start + pageSize);
+  }, [transferList, currentPage, pageSize]);
+
   const fmt = (n: number) => n.toLocaleString('hu-HU');
   const readyCount = transferList.filter(t => t.status === 'approved').length;
   const totalAmount = transferList.filter(t => t.status === 'approved').reduce((s, t) => s + t.netSalary, 0);
@@ -114,7 +125,7 @@ export default function TransferListPage() {
                 </tr>
               </thead>
               <tbody>
-                {transferList.map(t => (
+                {paginatedTransfers.map(t => (
                   <tr key={t.id} className={cn('border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer', t.status === 'pending' && 'bg-yellow-50/30')} onClick={handlePreview}>
                     <td className="px-5 py-2.5 font-medium">{t.employeeName}</td>
                     <td className="px-3 py-2.5 font-mono text-xs">{t.bankAccount || '—'}</td>
@@ -135,6 +146,19 @@ export default function TransferListPage() {
                 </tr>
               </tfoot>
             </table>
+            {totalPages > 1 && (
+              <div className="border-t border-border px-5 py-3 bg-card">
+                <UnifiedPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={[25, 50, 100]}
+                />
+              </div>
+            )}
           </div>
         </>
       )}

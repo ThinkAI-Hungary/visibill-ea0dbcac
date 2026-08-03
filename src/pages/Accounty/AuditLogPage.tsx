@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Search, Download, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useAuditLog } from '@/hooks/useAdminData';
 
 const EVENT_TYPES = ['Minden', 'login', 'create', 'update', 'delete', 'submit', 'export', 'upload', 'resolve', 'send_email'];
@@ -37,12 +38,17 @@ export default function AuditLogPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [eventFilter, setEventFilter] = useState('Minden');
-  const [page, setPage] = useState(0);
-  const pageSize = 50;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [eventFilter, searchQuery]);
 
   const { data, isLoading } = useAuditLog({
     eventType: eventFilter !== 'Minden' ? eventFilter : undefined,
-    page,
+    page: currentPage - 1,
     pageSize,
   });
 
@@ -182,19 +188,17 @@ export default function AuditLogPage() {
             </tbody>
           </table>
         </div>
-        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-            <p className="text-xs text-slate-500">{totalCount} bejegyzés</p>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <span className="text-sm text-slate-600 dark:text-slate-400">{page + 1} / {totalPages}</span>
-              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
+          <div className="border-t border-border px-4 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalCount}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 export default function ClientInvoicesPage() {
   const navigate = useNavigate();
@@ -134,7 +135,24 @@ export default function ClientInvoicesPage() {
       const matchFad = !fadFilter || inv.isReverseCharge === true;
       return matchSearch && matchStatus && matchType && matchFad;
     });
-  }, [invoicesData, searchQuery, statusFilter, typeFilter]);
+  }, [invoicesData, searchQuery, statusFilter, typeFilter, fadFilter]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, typeFilter, fadFilter]);
+
+  const totalItems = filteredInvoices.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedInvoices = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredInvoices.slice(start, start + pageSize);
+  }, [filteredInvoices, currentPage, pageSize]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(amount);
@@ -446,7 +464,7 @@ export default function ClientInvoicesPage() {
                   </td>
                 </tr>
               ) : filteredInvoices.length > 0 ? (
-                filteredInvoices.map((inv) => (
+                paginatedInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-slate-50/50 dark:bg-slate-900/50 transition-colors group">
                     <td className="px-6 py-4 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></td>
                     <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{inv.invoiceNumber}</td>
@@ -490,6 +508,20 @@ export default function ClientInvoicesPage() {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="border-t border-border px-6 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
+          </div>
+        )}
 
         {/* Footer Summary */}
         <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 border-t border-border flex items-center gap-6 text-xs text-slate-600 dark:text-slate-400">

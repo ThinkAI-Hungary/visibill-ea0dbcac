@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useAccountyCompanySummary } from '@/hooks/accounty';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(0);
@@ -33,6 +34,13 @@ export default function MissingInvoicesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [kpiModal, setKpiModal] = useState<KpiModalType>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   const { data: companySummary, isLoading, isError, refetch } = useAccountyCompanySummary();
 
@@ -81,6 +89,14 @@ export default function MissingInvoicesPage() {
       return matchesSearch && matchesStatus;
     });
   }, [searchQuery, statusFilter, data]);
+
+  const totalItems = filteredData.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize]);
 
   // Modal data based on type — uses real company data
   const modalData = useMemo(() => {
@@ -471,7 +487,7 @@ export default function MissingInvoicesPage() {
            </thead>
            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
              {filteredData.length > 0 ? (
-               filteredData.map((row) => (
+               paginatedData.map((row) => (
                <tr 
                  key={row.id} 
                  onClick={() => navigate(`/accounty/missing-invoices/${row.id}`)}
@@ -541,6 +557,19 @@ export default function MissingInvoicesPage() {
            </tbody>
          </table>
        </div>
+       {totalPages > 1 && (
+         <div className="border-t border-border px-6 py-4 bg-card">
+           <UnifiedPagination
+             currentPage={currentPage}
+             totalPages={totalPages}
+             totalItems={totalItems}
+             pageSize={pageSize}
+             onPageChange={setCurrentPage}
+             onPageSizeChange={setPageSize}
+             pageSizeOptions={[25, 50, 100]}
+           />
+         </div>
+       )}
     </div>
   );
 }

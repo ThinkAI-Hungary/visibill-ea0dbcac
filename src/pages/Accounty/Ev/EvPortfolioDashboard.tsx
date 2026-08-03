@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Receipt, Search, ChevronRight, TrendingUp, AlertTriangle,
@@ -16,6 +16,7 @@ import {
   useAllEvTaxReturns, type EvTaxpayerForm, type EvClientSettings,
 } from '@/hooks/useEvData';
 import EvAlertsCenter, { type PortfolioAlert } from '@/components/nav/EvAlertsCenter';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -364,6 +365,23 @@ export default function EvPortfolioDashboard() {
     return list;
   }, [enriched, searchQuery, filterMode]);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterMode]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
   // Summary stats
   const totalClients = enriched.length;
   const atalanyCount = enriched.filter((c: EnrichedEvClient) => c.taxpayerForm === 'atalany').length;
@@ -545,7 +563,7 @@ export default function EvPortfolioDashboard() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((client: EnrichedEvClient) => {
+                paginated.map((client: EnrichedEvClient) => {
                   const form = client.taxpayerForm ? FORM_LABELS[client.taxpayerForm] : null;
                   const fs = FILING_STATUS[client.filingStatus];
                   const ts = THRESHOLD_CONFIG[client.thresholdStatus];
@@ -628,6 +646,19 @@ export default function EvPortfolioDashboard() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="border-t border-border px-4 py-3 dark:bg-slate-900/30">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

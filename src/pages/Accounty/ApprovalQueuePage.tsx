@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -28,6 +28,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { reportError } from '@/lib/errorReporter';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import {
   type OutgoingMessage,
   type MessageStatus,
@@ -127,6 +128,23 @@ export default function ApprovalQueuePage() {
       return matchesSearch && matchesCategory;
     });
   }, [currentMessages, searchTerm, categoryFilter]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, categoryFilter, activeTab]);
+
+  const totalItems = filteredMessages.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedMessages = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredMessages.slice(start, start + pageSize);
+  }, [filteredMessages, currentPage, pageSize]);
 
   // ── Handlers ──
 
@@ -420,7 +438,7 @@ export default function ApprovalQueuePage() {
       {/* Grid View */}
       {filteredMessages.length > 0 && viewMode === 'grid' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredMessages.map((message) => {
+          {paginatedMessages.map((message) => {
             const cat = categoryConfig[message.category];
             const isSelected = selectedIds.has(message.id);
             return (
@@ -535,7 +553,7 @@ export default function ApprovalQueuePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {filteredMessages.map((message) => {
+                {paginatedMessages.map((message) => {
                   const cat = categoryConfig[message.category];
                   const isSelected = selectedIds.has(message.id);
                   return (
@@ -604,6 +622,20 @@ export default function ApprovalQueuePage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="bg-card border border-border rounded-xl p-4 shadow-soft">
+          <UnifiedPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[10, 20, 50]}
+          />
         </div>
       )}
 

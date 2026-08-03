@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calculator, Search, ChevronRight, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { useAccountyClients, useAccountyCompanySummary } from '@/hooks/accounty'
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 // ── Types ──
 
@@ -157,6 +158,13 @@ export default function PayrollPortfolioPage() {
   const { rows, isLoading, isError, refetch } = usePayrollPortfolioData();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterMode]);
 
   if (isError) {
     return <AccountyErrorState message="Nem sikerült betölteni a bérszámfejtési portfólió adatait." onRetry={() => refetch()} />;
@@ -173,6 +181,14 @@ export default function PayrollPortfolioPage() {
     if (filterMode === 'no_filing') list = list.filter(c => c.filingStatus === 'none');
     return list;
   }, [rows, searchQuery, filterMode]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const totalEmployees = rows.reduce((s, c) => s + c.employeeCount, 0);
   const closedCount = rows.filter(c => c.cycleStatus === 'closed').length;
@@ -275,7 +291,7 @@ export default function PayrollPortfolioPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map(client => {
+                paginated.map(client => {
                   const cs = CYCLE_STATUS_CONFIG[client.cycleStatus] || CYCLE_STATUS_CONFIG.none;
                   const fs = FILING_STATUS_MAP[client.filingStatus] || FILING_STATUS_MAP.none;
                   return (
@@ -336,6 +352,19 @@ export default function PayrollPortfolioPage() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="border-t border-border px-4 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

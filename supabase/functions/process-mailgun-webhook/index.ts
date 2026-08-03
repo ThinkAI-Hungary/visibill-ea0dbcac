@@ -621,6 +621,28 @@ serve(async (req) => {
         return { classification: 'report', bankHint: null, reportType: reportType || 'gls', reason: `Known report sender: ${senderEmail}` };
       }
 
+      // 00a. Image File Check: Exclude images from transaction pipeline entirely.
+      // Images (.png, .jpg, .jpeg, .tiff, .tif, .webp, .heic, .bmp, .gif) are never bank statements.
+      // E.g., photo of an invoice/receipt, or a scanned shipment document (CMR/POD).
+      const isImage = ['.png', '.jpg', '.jpeg', '.tiff', '.tif', '.webp', '.heic', '.bmp', '.gif'].includes(ext);
+      if (isImage) {
+        if (isShipmentDomain(senderDom)) {
+          const reportType = detectCourierReportType(senderDom);
+          return { classification: 'report', bankHint: null, reportType: reportType || 'gls', reason: `Image from shipment domain (${senderDom}) → report` };
+        }
+        const fnNorm = fn.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (fnNorm.includes('gls')) {
+          return { classification: 'report', bankHint: null, reportType: 'gls', reason: 'GLS image file → report' };
+        }
+        if (fnNorm.includes('mpl') || fnNorm.includes('posta')) {
+          return { classification: 'report', bankHint: null, reportType: 'mpl', reason: 'MPL/Posta image file → report' };
+        }
+        if (fnNorm.includes('mixpack')) {
+          return { classification: 'report', bankHint: null, reportType: 'mixpack', reason: 'Mixpack image file → report' };
+        }
+        return { classification: 'invoice', bankHint: null, reportType: null, reason: 'Image file default → invoice' };
+      }
+
       // Sender-based bank hint (available for all file types)
       const senderBank = getBankFromDomain(senderDom);
 

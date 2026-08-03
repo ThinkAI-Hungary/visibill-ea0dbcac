@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Users, UserPlus, Search, Filter, ChevronRight, ArrowLeft,
@@ -15,15 +15,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 export default function EmployeesPage() {
   const { id: companyId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [page, setPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const PAGE_SIZE = 20;
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+
+
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -63,6 +72,14 @@ export default function EmployeesPage() {
 
     return result;
   }, [employees, searchQuery, statusFilter]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedEmployees = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const statusCounts = useMemo(() => ({
     all: employees.length,
@@ -227,7 +244,7 @@ export default function EmployeesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((emp) => (
+                {paginatedEmployees.map((emp) => (
                   <tr
                     key={emp.id}
                     onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${emp.id}`)}
@@ -297,34 +314,17 @@ export default function EmployeesPage() {
             </table>
           </div>
           {/* Pagination */}
-          {filtered.length > PAGE_SIZE && (
-            <div className="px-5 py-3 border-t border-border/50 flex items-center justify-between dark:bg-slate-900/30">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} / {filtered.length} fő
-              </p>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={page === 0}
-                  onClick={() => setPage(p => p - 1)}
-                  className="h-8 px-2 text-xs"
-                >
-                  <ChevronLeft className="w-4 h-4" /> Előző
-                </Button>
-                <span className="text-xs text-slate-600 dark:text-slate-400 px-2">
-                  {page + 1} / {Math.ceil(filtered.length / PAGE_SIZE)}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={(page + 1) * PAGE_SIZE >= filtered.length}
-                  onClick={() => setPage(p => p + 1)}
-                  className="h-8 px-2 text-xs"
-                >
-                  Következő <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
+          {totalPages > 1 && (
+            <div className="px-5 py-3 border-t border-border/50 dark:bg-slate-900/30">
+              <UnifiedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+                pageSizeOptions={[10, 20, 50]}
+              />
             </div>
           )}
           </>

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getPriorityBadge, getStatusBadge } from './badges';
 import type { InvoiceItem } from './InvoiceDetailModal';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 interface MissingInvoicesTableProps {
   filteredInvoices: InvoiceItem[];
@@ -152,29 +153,17 @@ export function MissingInvoicesTable({
 
       {/* Pagination controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, totalCount)} / {totalCount.toLocaleString('hu-HU')} tétel
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onPageChange(Math.max(0, currentPage - 1))}
-              disabled={currentPage === 0}
-              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-card hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              ← Előző
-            </button>
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 px-2">
-              {currentPage + 1} / {totalPages}
-            </span>
-            <button
-              onClick={() => onPageChange(Math.min(totalPages - 1, currentPage + 1))}
-              disabled={currentPage >= totalPages - 1}
-              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-card hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              Következő →
-            </button>
-          </div>
+        <div className="border-t border-border px-6 py-3 bg-card">
+          <UnifiedPagination
+            currentPage={currentPage + 1}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            pageSize={pageSize}
+            onPageChange={(page) => onPageChange(page - 1)}
+            onPageSizeChange={() => {}}
+            pageSizeOptions={[100]}
+            disableScrollToTop={true}
+          />
         </div>
       )}
     </div>

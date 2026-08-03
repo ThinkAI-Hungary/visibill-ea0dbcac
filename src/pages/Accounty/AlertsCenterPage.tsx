@@ -1,10 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Bell, AlertTriangle, Info, CheckCircle, XCircle, Clock, TrendingUp, Users, FileWarning, Calculator, Search, CheckCircle2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Bell, AlertTriangle, Info, CheckCircle, XCircle, Clock, TrendingUp, Users, FileWarning, Calculator, Search, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAccountyClients } from '@/hooks/accounty';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { useAllEvClientSettings, useEvYtdTotals, useAllEvTaxReturns } from '@/hooks/useEvData';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 type AlertLevel = 'critical' | 'warning' | 'info';
 type AlertCategory = 'all' | 'nav' | 'payroll' | 'employee' | 'system';
@@ -50,12 +54,25 @@ const CATEGORIES: { id: AlertCategory; label: string; icon: React.ElementType }[
   { id: 'system', label: 'Rendszer', icon: TrendingUp },
 ];
 
-// Generate realistic alerts based on actual clients
-function generateAlerts(clients: any[]): Alert[] {
+// Generate dynamic, real alerts based on actual database totals and filings
+function generateAlerts(
+  clients: any[],
+  allSettings: any[],
+  ytdTotalsMap: Map<string, { revenue: number; expense: number }> | undefined,
+  allReturns: any[],
+  customerTotalsMap: Map<string, { customerName: string; total: number }[]> | undefined
+): Alert[] {
   const now = new Date();
   const alerts: Alert[] = [];
+  const taxYear = 2026;
 
-  // NAV deadlines
+  // Build a lookup: company_id → settings
+  const settingsMap = new Map<string, any>();
+  allSettings.forEach((s: any) => {
+    settingsMap.set(s.company_id, s);
+  });
+
+  // NAV deadlines (dynamic calendar-based alert)
   const navDay = 12;
   const daysUntilNav = navDay - now.getDate();
   if (daysUntilNav > 0 && daysUntilNav <= 5) {
@@ -69,46 +86,142 @@ function generateAlerts(clients: any[]): Alert[] {
     });
   }
 
-  // Payroll cycle alerts per client
-  clients.slice(0, 3).forEach((client, i) => {
-    alerts.push({
-      id: `payroll-${client.id || i}`,
-      level: i === 0 ? 'warning' : 'info',
-      category: 'payroll',
-      title: `${client.name}: havi bérszámfejtés nem indult`,
-      description: `Az aktuális hónapra még nem indult el a bérszámfejtési ciklus.`,
-      client: client.name,
-      createdAt: new Date(now.getTime() - 172800000 * (i + 1)),
+  // Generate real alerts for each client
+  clients.forEach((c) => {
+    const settings = settingsMap.get(c.companyId);
+    const totals = ytdTotalsMap?.get(c.companyId) || { revenue: 0, expense: 0 };
+    const revenue = totals.revenue;
+    const form = settings?.taxpayer_form ?? null;
+    const vatStatus = settings?.vat_status ?? '';
+
+    if (form) {
+      // 1.1 ÁFA alanyi mentesség check
+      if (vatStatus === 'Alanyi mentes' || vatStatus === 'alanyi_mentes') {
+        const afaLimit = taxYear === 2026 ? 20_000_000 : 18_000_000;
+        if (revenue >= afaLimit) {
+          alerts.push({
+            id: `afa-danger-${c.companyId}`,
+            level: 'critical',
+            category: 'nav',
+            title: `${c.name}: ÁFA alanyi mentesség határ túllépés`,
+            description: `A vállalkozás bevétele (${revenue.toLocaleString('hu-HU')} Ft) átlépte az alanyi ÁFA mentesség ${afaLimit.toLocaleString('hu-HU')} Ft-os határértékét!`,
+            client: c.name,
+            createdAt: new Date(now.getTime() - 86400000),
+            action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/vat` }
+          });
+        } else if (revenue >= afaLimit * 0.85) {
+          alerts.push({
+            id: `afa-warning-${c.companyId}`,
+            level: 'warning',
+            category: 'nav',
+            title: `${c.name}: ÁFA alanyi mentesség határ közelít`,
+            description: `A vállalkozás bevétele (${revenue.toLocaleString('hu-HU')} Ft) megközelítette az alanyi ÁFA mentességi határt (a limit ${(revenue / afaLimit * 100).toFixed(0)}%-ánál jár).`,
+            client: c.name,
+            createdAt: new Date(now.getTime() - 86400000),
+            action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/vat` }
+          });
+        }
+      }
+
+      // 1.2 KATA éves limit check
+      if (form === 'kata') {
+        const kataLimit = 18_000_000;
+        if (revenue >= kataLimit) {
+          alerts.push({
+            id: `kata-danger-${c.companyId}`,
+            level: 'critical',
+            category: 'nav',
+            title: `${c.name}: KATA éves keret túllépés`,
+            description: `A vállalkozás bevétele (${revenue.toLocaleString('hu-HU')} Ft) átlépte a KATA éves ${kataLimit.toLocaleString('hu-HU')} Ft-os keretét!`,
+            client: c.name,
+            createdAt: new Date(now.getTime() - 86400000),
+            action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/kata` }
+          });
+        } else if (revenue >= kataLimit * 0.85) {
+          alerts.push({
+            id: `kata-warning-${c.companyId}`,
+            level: 'warning',
+            category: 'nav',
+            title: `${c.name}: KATA éves keret közelít`,
+            description: `A vállalkozás bevétele (${revenue.toLocaleString('hu-HU')} Ft) megközelítette a KATA éves keretet (a limit ${(revenue / kataLimit * 100).toFixed(0)}%-ánál jár).`,
+            client: c.name,
+            createdAt: new Date(now.getTime() - 86400000),
+            action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/kata` }
+          });
+        }
+
+        // 1.3 KATA 3M Ft-os partner/customer limit check
+        const customerTotals = customerTotalsMap?.get(c.companyId) || [];
+        customerTotals.forEach(cust => {
+          if (cust.total >= 3_000_000) {
+            alerts.push({
+              id: `kata-cust-danger-${c.companyId}-${cust.customerName}`,
+              level: 'critical',
+              category: 'nav',
+              title: `${c.name}: KATA partner 3M Ft limit túllépés`,
+              description: `A(z) "${cust.customerName}" partner felé kiállított számlák összege (${cust.total.toLocaleString('hu-HU')} Ft) átlépte a 3 millió Ft-os KATA limitet (40%-os adófizetési kötelezettség keletkezett).`,
+              client: c.name,
+              createdAt: new Date(now.getTime() - 86400000),
+              action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/kata` }
+            });
+          } else if (cust.total >= 2_500_000) {
+            alerts.push({
+              id: `kata-cust-warning-${c.companyId}-${cust.customerName}`,
+              level: 'warning',
+              category: 'nav',
+              title: `${c.name}: KATA partner 3M Ft limit közelít`,
+              description: `A(z) "${cust.customerName}" partner felé kiállított számlák összege (${cust.total.toLocaleString('hu-HU')} Ft) megközelítette a 3 millió Ft-os KATA limitet (a limit ${(cust.total / 30000).toFixed(0)}%-ánál jár).`,
+              client: c.name,
+              createdAt: new Date(now.getTime() - 86400000),
+              action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/kata` }
+            });
+          }
+        });
+      }
+    }
+
+    // 1.4 Tax returns deadline checks
+    const companyReturns = (allReturns || []).filter((ret: any) => ret.company_id === c.companyId);
+    companyReturns.forEach((ret: any) => {
+      if (!ret.deadline) return;
+      const deadlineDate = new Date(ret.deadline);
+      const isPastDue = deadlineDate.getTime() < now.getTime();
+      const isNotDone = ret.status !== 'submitted' && ret.status !== 'accepted';
+      const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      let targetUrl = `/accounty/client/${c.companyId}/ev/returns`;
+      if (ret.form_code === '2658') {
+        targetUrl = `/accounty/client/${c.companyId}/ev/returns/contrib`;
+      } else if (ret.form_code === 'KATA') {
+        targetUrl = `/accounty/client/${c.companyId}/ev/returns/kata`;
+      } else if (ret.form_code === 'HIPAK') {
+        targetUrl = `/accounty/client/${c.companyId}/ev/returns/hipa`;
+      }
+
+      if (isPastDue && isNotDone) {
+        alerts.push({
+          id: `return-danger-${ret.id}`,
+          level: 'critical',
+          category: 'nav',
+          title: `${c.name}: Lejárt bevallási határidő`,
+          description: `A(z) ${ret.form_code || 'bevallás'} leadási határideje lejárt! (Határidő: ${new Date(ret.deadline).toLocaleDateString('hu-HU')}, jelenlegi állapot: ${ret.status})`,
+          client: c.name,
+          createdAt: new Date(ret.deadline),
+          action: { label: 'Megtekint', path: targetUrl }
+        });
+      } else if (!isPastDue && isNotDone && diffDays <= 5) {
+        alerts.push({
+          id: `return-warning-${ret.id}`,
+          level: 'warning',
+          category: 'nav',
+          title: `${c.name}: Közelgő bevallási határidő`,
+          description: `A(z) ${ret.form_code || 'bevallás'} leadási határideje ${diffDays} napon belül van! (Határidő: ${new Date(ret.deadline).toLocaleDateString('hu-HU')})`,
+          client: c.name,
+          createdAt: new Date(now.getTime() - 86400000),
+          action: { label: 'Megtekint', path: targetUrl }
+        });
+      }
     });
-  });
-
-  // Employee alerts
-  alerts.push({
-    id: 'emp-min-wage',
-    level: 'critical',
-    category: 'employee',
-    title: 'Minimálbér alatti bér — 2 foglalkoztatott',
-    description: 'A 2026-os minimálbér (322 800 Ft) alatti alapbér rögzítve. Ellenőrizd a részfoglalkoztatást.',
-    createdAt: new Date(now.getTime() - 86400000 * 2),
-  });
-
-  alerts.push({
-    id: 'emp-rehab',
-    level: 'warning',
-    category: 'employee',
-    title: 'Rehabilitációs hozzájárulás aktiválandó',
-    description: 'Egy ügyfél létszáma meghaladta a 25 főt, rehabilitációs hozzájárulási kötelezettség keletkezett.',
-    createdAt: new Date(now.getTime() - 86400000 * 3),
-  });
-
-  // System info
-  alerts.push({
-    id: 'sys-legal',
-    level: 'info',
-    category: 'system',
-    title: 'Új jogszabály-módosítás észlelve',
-    description: 'Magyar Közlöny 2026/42. — családi kedvezmény végrehajtási rendelet frissítve.',
-    createdAt: new Date(now.getTime() - 86400000 * 5),
   });
 
   return alerts.sort((a, b) => {
@@ -125,11 +238,59 @@ export default function AlertsCenterPage() {
   const [alertStates, setAlertStates] = useState<Record<string, AlertState>>({});
   const [showArchived, setShowArchived] = useState(false);
 
-  if (isError) {
+  const taxYear = 2026;
+  const { data: allSettings = [], isLoading: settingsLoading, isError: settingsError } = useAllEvClientSettings(taxYear);
+  const { data: ytdTotalsMap, isLoading: totalsLoading, isError: totalsError } = useEvYtdTotals(taxYear);
+  const { data: allReturns = [], isLoading: returnsLoading, isError: returnsError } = useAllEvTaxReturns(taxYear);
+
+  const { data: customerTotalsMap, isLoading: customerTotalsLoading, isError: customerTotalsError } = useQuery({
+    queryKey: ['portfolio-kata-customer-totals-alerts', taxYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nav_invoices')
+        .select('company_id, customer_name, invoice_gross_amount')
+        .eq('invoice_direction', 'OUTBOUND')
+        .gte('invoice_issue_date', `${taxYear}-01-01`)
+        .lte('invoice_issue_date', `${taxYear}-12-31`);
+      
+      if (error) throw error;
+      
+      const map = new Map<string, { customerName: string; total: number }[]>();
+      (data || []).forEach(inv => {
+        if (!inv.company_id || !inv.customer_name) return;
+        const list = map.get(inv.company_id) || [];
+        const existing = list.find(item => item.customerName === inv.customer_name);
+        const amount = Number(inv.invoice_gross_amount) || 0;
+        if (existing) {
+          existing.total += amount;
+        } else {
+          list.push({ customerName: inv.customer_name, total: amount });
+        }
+        map.set(inv.company_id, list);
+      });
+      return map;
+    }
+  });
+
+  const isLoading = settingsLoading || totalsLoading || returnsLoading || customerTotalsLoading;
+  const isQueryError = settingsError || totalsError || returnsError || customerTotalsError;
+
+  if (isError || isQueryError) {
     return <AccountyErrorState message="Nem sikerült betölteni a riasztásokat." onRetry={() => refetch()} />;
   }
 
-  const allAlerts = useMemo(() => generateAlerts(clients), [clients]);
+  if (isLoading) {
+    return (
+      <div className="py-32 text-center">
+        <Loader2 className="w-10 h-10 mx-auto mb-3 text-indigo-500 animate-spin" />
+        <p className="text-sm text-slate-500">Riasztások betöltése...</p>
+      </div>
+    );
+  }
+
+  const allAlerts = useMemo(() => {
+    return generateAlerts(clients, allSettings, ytdTotalsMap, allReturns, customerTotalsMap);
+  }, [clients, allSettings, ytdTotalsMap, allReturns, customerTotalsMap]);
 
   const getState = (id: string): AlertState => alertStates[id] || 'active';
 
@@ -312,6 +473,13 @@ export default function AlertsCenterPage() {
                       </div>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">{alert.description}</p>
+                    {alert.action && !isArchived && (
+                      <div className="mt-2.5">
+                        <Button variant="outline" size="sm" asChild className="h-6 text-[10px] hover:bg-primary/10 hover:text-primary">
+                          <Link to={alert.action.path}>{alert.action.label}</Link>
+                        </Button>
+                      </div>
+                    )}
                     {isResolved && (
                       <p className="text-[10px] text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Megoldva

@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { Link, useParams, Navigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Plus, Search, Filter, Download, Trash2,
@@ -739,6 +740,23 @@ export default function EvRecordDetailPage() {
     return data;
   }, [dbRecords, searchQuery, sortKey, sortAsc, dateCol, filterDateFrom, filterDateTo]);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterDateFrom, filterDateTo, sortKey, sortAsc]);
+
+  const totalItems = filteredData.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize]);
+
   const handleSort = (key: string) => {
     if (sortKey === key) setSortAsc(!sortAsc);
     else { setSortKey(key); setSortAsc(true); }
@@ -1016,7 +1034,7 @@ export default function EvRecordDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {filteredData.map((row) => (
+                {paginatedData.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                     {config.displayColumns.map((col, ci) => (
                       <td
@@ -1055,6 +1073,20 @@ export default function EvRecordDetailPage() {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="border-t border-border px-4 py-3 bg-card">
+              <UnifiedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+                pageSizeOptions={[10, 25, 50]}
+              />
+            </div>
+          )}
 
           {/* Footer */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-slate-50 dark:bg-slate-900/30">

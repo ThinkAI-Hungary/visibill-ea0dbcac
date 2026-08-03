@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Plus, Shield, Clock, CheckCircle, AlertTriangle,
@@ -72,6 +73,23 @@ export default function RepresentationPage() {
   const allReps = reps || [];
   const activeReps = allReps.filter(r => r.status === 'active');
   const inactiveReps = allReps.filter(r => r.status !== 'active');
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // Reset page when reps change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [reps]);
+
+  const totalItems = activeReps.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedActiveReps = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return activeReps.slice(start, start + pageSize);
+  }, [activeReps, currentPage, pageSize]);
 
   const updateWizard = (patch: Partial<WizardData>) => setWizardData(d => ({ ...d, ...patch }));
 
@@ -422,9 +440,22 @@ export default function RepresentationPage() {
           {activeReps.length === 0 ? (
             <div className="py-12 text-center text-sm text-slate-400">Nincs aktív meghatalmazás</div>
           ) : (
-            activeReps.map(renderRepCard)
+            paginatedActiveReps.map(renderRepCard)
           )}
         </div>
+        {totalPages > 1 && (
+          <div className="border-t border-border px-5 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[10, 25, 50]}
+            />
+          </div>
+        )}
       </div>
 
       {/* Inactive */}

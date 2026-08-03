@@ -6641,6 +6641,7 @@ interface UserPermissionsData {
   name: string;
   profileRole: string;
   isSupportAdmin: boolean;
+  eaisybooksAccess: boolean;
   eaisybill: Array<{
     companyId: string;
     companyName: string;
@@ -6964,6 +6965,7 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
 
   const [pendingChanges, setPendingChanges] = useState<Map<string, { canRead: boolean; canWrite: boolean }>>(new Map());
   const [isSupportAdmin, setIsSupportAdmin] = useState<boolean>(false);
+  const [eaisybooksAccess, setEaisybooksAccess] = useState<boolean>(false);
 
   React.useEffect(() => {
     setPendingChanges(new Map());
@@ -6997,6 +6999,7 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   React.useEffect(() => {
     if (userPerms) {
       setIsSupportAdmin(userPerms.isSupportAdmin);
+      setEaisybooksAccess(userPerms.eaisybooksAccess || false);
     }
   }, [userPerms]);
 
@@ -7064,7 +7067,7 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   };
 
   const handleSave = async () => {
-    if (!selectedUserId || !userPerms || (pendingChanges.size === 0 && isSupportAdmin === userPerms.isSupportAdmin)) return;
+    if (!selectedUserId || !userPerms || (pendingChanges.size === 0 && isSupportAdmin === userPerms.isSupportAdmin && eaisybooksAccess === userPerms.eaisybooksAccess)) return;
     setSaving(true);
     setSaveMessage(null);
 
@@ -7118,6 +7121,14 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
       const result = await postManagementData('update-permissions', {
         userId: selectedUserId,
         isSupportAdmin,
+      });
+      if (result.error) totalErrors++;
+    }
+
+    if (eaisybooksAccess !== userPerms.eaisybooksAccess) {
+      const result = await postManagementData('update-permissions', {
+        userId: selectedUserId,
+        eaisybooksAccess,
       });
       if (result.error) totalErrors++;
     }
@@ -7219,35 +7230,53 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
           <>
             {/* User info header */}
             <Card>
-              <CardContent className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-6">
-                  <div>
-                    <p className="font-semibold">{userPerms.name}</p>
-                    <p className="text-xs text-muted-foreground">{userPerms.email}</p>
+              <CardContent className="flex items-center justify-between p-4 gap-4">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className="min-w-0 max-w-[200px] md:max-w-[250px] shrink-0">
+                    <p className="font-semibold truncate" title={userPerms.name || ""}>{userPerms.name}</p>
+                    <p className="text-xs text-muted-foreground truncate" title={userPerms.email}>{userPerms.email}</p>
                     <Badge variant="outline" className="mt-1 text-[10px]">{userPerms.profileRole}</Badge>
                   </div>
                   
                   {/* Vertical separator */}
-                  <div className="h-8 w-px bg-border/60" />
+                  <div className="h-8 w-px bg-border/60 shrink-0" />
 
                   {/* Support admin switch */}
-                  <div className="flex items-center gap-2 bg-accent/20 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="flex items-center gap-2 bg-accent/20 px-3 py-1.5 rounded-lg border border-border/40 shrink-0">
                     <Switch
                       id="support-admin-toggle"
                       checked={isSupportAdmin}
                       onCheckedChange={setIsSupportAdmin}
                     />
-                    <label htmlFor="support-admin-toggle" className="text-xs font-medium cursor-pointer select-none">
-                      Support munkatárs (Globális hozzáférés)
+                    <label htmlFor="support-admin-toggle" className="text-xs font-medium cursor-pointer select-none whitespace-nowrap">
+                      Support munkatárs
+                    </label>
+                  </div>
+
+                  {/* Vertical separator */}
+                  <div className="h-8 w-px bg-border/60 shrink-0" />
+
+                  {/* Eaisybooks access switch */}
+                  <div className="flex items-center gap-2 bg-accent/20 px-3 py-1.5 rounded-lg border border-border/40 shrink-0">
+                    <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <Switch
+                      id="eaisybooks-access-toggle"
+                      checked={eaisybooksAccess}
+                      onCheckedChange={setEaisybooksAccess}
+                    />
+                    <label htmlFor="eaisybooks-access-toggle" className="text-xs font-medium cursor-pointer select-none whitespace-nowrap">
+                      Eaisybooks hozzáférés
                     </label>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   {saveMessage && (
                     <span className="text-xs font-medium text-primary animate-in fade-in">{saveMessage}</span>
                   )}
                   {(() => {
-                    const totalPending = pendingChanges.size + (isSupportAdmin !== userPerms.isSupportAdmin ? 1 : 0);
+                    const totalPending = pendingChanges.size 
+                      + (isSupportAdmin !== userPerms.isSupportAdmin ? 1 : 0)
+                      + (eaisybooksAccess !== userPerms.eaisybooksAccess ? 1 : 0);
                     return (
                       <Button
                         size="sm"

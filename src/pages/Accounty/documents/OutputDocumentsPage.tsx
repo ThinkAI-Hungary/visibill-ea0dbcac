@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import {
@@ -12,6 +12,7 @@ import { usePayrollGarnishments } from '@/hooks/usePayrollData';
 import { useAccountyClients, useAccountyDocuments } from '@/hooks/accounty';
 import { getPdfBlobUrl } from '@/lib/exportPdf';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import {
   generateCertificatePdf, generateCashPaymentPdf, generateGarnishmentPdf,
   generateCafeteriaPdf, generateSummaryPdf,
@@ -85,6 +86,14 @@ const fmt = (n: number) => n.toLocaleString('hu-HU');
 export default function OutputDocumentsPage() {
   const { id: companyId, docType } = useParams<{ id: string; docType: string }>();
   const config = CONFIGS[docType as DocType];
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when docType changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [docType]);
 
   const { data: clients } = useAccountyClients();
   const company = useMemo(() => clients?.find(c => c.id === companyId), [clients, companyId]);
@@ -197,6 +206,14 @@ export default function OutputDocumentsPage() {
   }, [docType, calculations]);
 
   const finalData = docType === 'garnishment' ? garnishmentData : tableData;
+
+  const totalItems = finalData.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return finalData.slice(start, start + pageSize);
+  }, [finalData, currentPage, pageSize]);
 
   const footerData = useMemo(() => {
     if (docType === 'summary') {
@@ -322,8 +339,8 @@ export default function OutputDocumentsPage() {
               </tr>
             </thead>
             <tbody>
-              {finalData.map((row, ri) => (
-                <tr key={ri} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => handlePreview(ri)}>
+              {paginatedData.map((row, ri) => (
+                <tr key={ri} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => handlePreview((currentPage - 1) * pageSize + ri)}>
                   {config.columns.map(col => (
                     <td key={col.key} className={cn('px-5 py-2.5', col.align === 'right' ? 'text-right font-mono' : col.align === 'center' ? 'text-center' : '', col.key === 'name' || col.key === 'item' ? 'font-medium' : '')}>{String(row[col.key] || '')}</td>
                   ))}
@@ -339,6 +356,19 @@ export default function OutputDocumentsPage() {
               </tfoot>
             )}
           </table>
+          {totalPages > 1 && (
+            <div className="border-t border-border px-5 py-3 bg-card">
+              <UnifiedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+                pageSizeOptions={[25, 50, 100]}
+              />
+            </div>
+          )}
         </div>
       )}
 

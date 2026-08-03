@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Import, ShieldAlert, Sparkles,
@@ -60,6 +61,23 @@ export default function EvCashbookImportNavPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [processedCount, setProcessedCount] = useState(0);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dataInitialized]);
+
+  const totalItems = gridData.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedGridData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return gridData.slice(start, start + pageSize);
+  }, [gridData, currentPage, pageSize]);
 
   // Queries
   const { data: client } = useAccountyClient(id);
@@ -397,79 +415,95 @@ export default function EvCashbookImportNavPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {gridData.map((row, index) => (
-                  <tr
-                    key={row.invoiceId}
-                    className={cn(
-                      "hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors",
-                      !row.selected && "opacity-60"
-                    )}
-                  >
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={(e) => handleCheckboxClick(e, index)}
-                        className="text-slate-400 hover:text-slate-600 transition-colors mx-auto block"
-                      >
-                        {row.selected ? (
-                          <CheckSquare className="w-4 h-4 text-indigo-600" />
-                        ) : (
-                          <Square className="w-4 h-4" />
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3 text-xs font-mono font-medium text-slate-900 dark:text-slate-100">
-                      {row.invoiceNumber}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        {row.partnerName}
-                      </div>
-                      <div className="text-xs text-slate-400">
-                        {row.date}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={cn(
-                        "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                        row.direction === 'kimeno'
-                          ? "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400"
-                          : "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"
-                      )}>
-                        {row.direction === 'kimeno' ? 'Kimenő' : 'Bejövő'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums">
-                        {new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(row.grossAmount)}
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-mono tabular-nums">
-                        ÁFA: {new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(row.vatAmount)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
-                        value={row.category}
-                        onChange={(e) => handleUpdateRow(row.invoiceId, { category: e.target.value as PenztarkonyvCategory })}
-                        className="w-full text-xs bg-card border border-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
-                      >
-                        {CATEGORIES.filter(cat => cat.direction === (row.direction === 'kimeno' ? 'bevetel' : 'kiadas')).map(cat => (
-                          <option key={cat.key} value={cat.key}>
-                            {cat.label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        value={row.description}
-                        onChange={(e) => handleUpdateRow(row.invoiceId, { description: e.target.value })}
-                        className="text-xs bg-card border-border font-medium h-8"
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {paginatedGridData.map((row, index) => {
+                  const absoluteIndex = (currentPage - 1) * pageSize + index;
+                  return (
+                    <tr
+                      key={row.invoiceId}
+                      className={cn(
+                        "hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors",
+                        !row.selected && "opacity-60"
+                      )}
+                    >
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={(e) => handleCheckboxClick(e, absoluteIndex)}
+                          className="text-slate-400 hover:text-slate-600 transition-colors mx-auto block"
+                        >
+                          {row.selected ? (
+                            <CheckSquare className="w-4 h-4 text-indigo-600" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-mono font-medium text-slate-900 dark:text-slate-100">
+                        {row.invoiceNumber}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          {row.partnerName}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          {row.date}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={cn(
+                          "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                          row.direction === 'kimeno'
+                            ? "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"
+                        )}>
+                          {row.direction === 'kimeno' ? 'Kimenő' : 'Bejövő'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums">
+                          {new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(row.grossAmount)}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono tabular-nums">
+                          ÁFA: {new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(row.vatAmount)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={row.category}
+                          onChange={(e) => handleUpdateRow(row.invoiceId, { category: e.target.value as PenztarkonyvCategory })}
+                          className="w-full text-xs bg-card border border-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+                        >
+                          {CATEGORIES.filter(cat => cat.direction === (row.direction === 'kimeno' ? 'bevetel' : 'kiadas')).map(cat => (
+                            <option key={cat.key} value={cat.key}>
+                              {cat.label}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Input
+                          value={row.description}
+                          onChange={(e) => handleUpdateRow(row.invoiceId, { description: e.target.value })}
+                          className="text-xs bg-card border-border font-medium h-8"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+          </div>
+        )}
+        {totalPages > 1 && (
+          <div className="border-t border-border px-4 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
           </div>
         )}
       </div>

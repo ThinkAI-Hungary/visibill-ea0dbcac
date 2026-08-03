@@ -58,6 +58,14 @@ export function useHasAccountyAccess() {
   const { data: hasAccess, isPending } = useQuery({
     queryKey: ['has-accounty-access', user?.id],
     queryFn: async () => {
+      // First check if user profile has global eaisybooks_access = true
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('eaisybooks_access')
+        .eq('user_id', user!.id)
+        .single();
+      if (profile && profile.eaisybooks_access === true) return true;
+
       // Standard check: user has an accounty_assignment
       const { count } = await supabase
         .from('accounty_assignments')

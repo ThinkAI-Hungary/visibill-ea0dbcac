@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import {
@@ -8,6 +8,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useDeclarations, type Declaration } from '@/hooks/accounty';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { exportToCsv } from '@/lib/exportCsv';
 
 const TYPE_LABELS: Record<string, string> = {
   family: 'Családi kedvezmény', netak: 'NÉTAK', mothers: '30 év alatti anyák',
@@ -36,18 +38,33 @@ export default function DeclarationArchivePage() {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterType, filterStatus, filterYear]);
 
   const { data: declarations, isLoading } = useDeclarations(id || '');
   const declList = declarations || [];
 
   const filtered = declList.filter(d => {
-    if (search && !(d.data?.employeeName || '').toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !String(d.data?.employeeName || '').toLowerCase().includes(search.toLowerCase())) return false;
     if (filterType !== 'all' && d.type !== filterType) return false;
     if (filterStatus !== 'all' && d.status !== filterStatus) return false;
     const declYear = d.validFrom ? new Date(d.validFrom).getFullYear().toString() : '';
     if (filterYear !== 'all' && declYear !== filterYear) return false;
     return true;
   });
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginated = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const years = [...new Set(declList.map(d => d.validFrom ? new Date(d.validFrom).getFullYear().toString() : ''))].filter(Boolean).sort().reverse();
   const types = [...new Set(declList.map(d => d.type))];
@@ -67,9 +84,9 @@ export default function DeclarationArchivePage() {
           filename="nyilatkozat_archivum"
           headers={['Munkavállaló', 'Típus', 'Év', 'Státusz', 'Beadva']}
           getRows={() => filtered.map(d => [
-            d.data?.employeeName || '', TYPE_LABELS[d.type] || d.type,
+            String(d.data?.employeeName || ''), TYPE_LABELS[d.type] || d.type,
             d.validFrom ? new Date(d.validFrom).getFullYear() : '',
-            STATUS_BADGE[d.status]?.label || d.status,
+            STATUS_BADGE[d.status as string]?.label || d.status,
             d.filedAt ? new Date(d.filedAt).toLocaleDateString('hu-HU') : ''
           ])}
         />
@@ -87,7 +104,7 @@ export default function DeclarationArchivePage() {
           <div className="grid grid-cols-4 gap-3">
             <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold text-emerald-600">{declList.filter(d => d.status === 'active').length}</p><p className="text-xs text-slate-500">Érvényes</p></div>
             <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold text-slate-500">{declList.filter(d => d.status === 'expired').length}</p><p className="text-xs text-slate-500">Lejárt</p></div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold text-amber-500">{declList.filter(d => d.status === 'archived').length}</p><p className="text-xs text-slate-500">Archivált</p></div>
+            <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold text-amber-500">{declList.filter(d => (d.status as string) === 'archived').length}</p><p className="text-xs text-slate-500">Archivált</p></div>
             <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold">{declList.length}</p><p className="text-xs text-slate-500">Összesen</p></div>
           </div>
 
@@ -126,21 +143,21 @@ export default function DeclarationArchivePage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(dec => (
+                {paginated.map(dec => (
                   <tr key={dec.id} className={cn('border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors', dec.status !== 'active' && 'opacity-60')}>
-                    <td className="px-5 py-2.5 font-medium">{dec.data?.employeeName || '—'}</td>
+                    <td className="px-5 py-2.5 font-medium">{String(dec.data?.employeeName || '—')}</td>
                     <td className="px-3 py-2.5"><span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', TYPE_COLORS[dec.type] || 'bg-slate-100 text-slate-500')}>{TYPE_LABELS[dec.type] || dec.type}</span></td>
                     <td className="px-3 py-2.5 text-center text-xs font-mono">{dec.validFrom ? new Date(dec.validFrom).getFullYear() : '—'}</td>
-                    <td className="px-3 py-2.5 text-center"><span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', STATUS_BADGE[dec.status]?.color)}>{STATUS_BADGE[dec.status]?.label}</span></td>
+                    <td className="px-3 py-2.5 text-center"><span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', STATUS_BADGE[dec.status as string]?.color)}>{STATUS_BADGE[dec.status as string]?.label}</span></td>
                     <td className="px-3 py-2.5 text-center text-xs text-slate-400">{dec.filedAt ? new Date(dec.filedAt).toLocaleDateString('hu-HU') : '—'}</td>
                     <td className="px-3 py-2.5">
                       <div className="flex gap-1">
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Eye className="w-3 h-3" /></Button>
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => {
                           exportToCsv(`nyilatkozat_${dec.type}`, ['Munkavállaló', 'Típus', 'Év', 'Státusz', 'Beadva'], [[
-                            dec.data?.employeeName || '', TYPE_LABELS[dec.type] || dec.type,
+                            String(dec.data?.employeeName || ''), TYPE_LABELS[dec.type] || dec.type,
                             dec.validFrom ? new Date(dec.validFrom).getFullYear() : '',
-                            STATUS_BADGE[dec.status]?.label || dec.status,
+                            STATUS_BADGE[dec.status as string]?.label || dec.status,
                             dec.filedAt ? new Date(dec.filedAt).toLocaleDateString('hu-HU') : ''
                           ]]);
                         }}><Download className="w-3 h-3" /></Button>
@@ -150,6 +167,19 @@ export default function DeclarationArchivePage() {
                 ))}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div className="border-t border-border px-5 py-3 bg-card">
+                <UnifiedPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={[25, 50, 100]}
+                />
+              </div>
+            )}
             {filtered.length === 0 && <div className="px-5 py-8 text-center text-sm text-slate-400">Nincs találat a szűrési feltételeknek.</div>}
           </div>
         </>

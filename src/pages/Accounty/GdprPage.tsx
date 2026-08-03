@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Plus, FileText, Eye, CheckCircle, Clock, XCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useGdprRequests, useCreateGdprRequest, useUpdateGdprRequest } from '@/hooks/useAdminData';
 import { useAccountyClients } from '@/hooks/accounty';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 const TYPE_LABELS: Record<string, string> = {
   access: 'Hozzáférés',
@@ -29,6 +30,15 @@ export default function GdprPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [form, setForm] = useState({ employee_name: '', request_type: 'access', notes: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const totalItems = requests.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const paginated = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return requests.slice(start, start + pageSize);
+  }, [requests, currentPage, pageSize]);
 
   // Use selected company or first available
   const effectiveCompanyId = selectedCompanyId || (clients.length > 0 ? clients[0].id : '');
@@ -116,7 +126,7 @@ export default function GdprPage() {
                 </td>
               </tr>
             ) : (
-              requests.map((req: any) => {
+              paginated.map((req: any) => {
                 const sc = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
                 return (
                   <tr key={req.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -148,6 +158,19 @@ export default function GdprPage() {
             )}
           </tbody>
         </table>
+        {totalPages > 1 && (
+          <div className="border-t border-border px-4 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[10, 20, 50]}
+            />
+          </div>
+        )}
       </div>
 
       {/* Create dialog */}

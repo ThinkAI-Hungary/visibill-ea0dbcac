@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Landmark, Search, ChevronRight, CheckCircle, AlertTriangle, Clock,
@@ -7,6 +7,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAccountyClients, type AccountyClient } from '@/hooks/accounty';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 // TAO filing statuses
 type TaoFilingStatus = 'not_started' | 'data_entry' | 'deductions' | 'credits' | 'review' | 'signed' | 'submitted' | 'accepted';
@@ -72,6 +73,13 @@ export default function TaoPortfolioPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [taxYear, setTaxYear] = useState(2025);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterMode, taxYear]);
 
   const enriched = useMemo(
     () => clients.map((c: AccountyClient, i: number) => enrichWithTaoData(c, i)),
@@ -91,6 +99,14 @@ export default function TaoPortfolioPage() {
     if (filterMode === 'kiva') list = list.filter((c: EnrichedTaoClient) => c.kivaAlany);
     return list;
   }, [enriched, searchQuery, filterMode]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const totalClients = enriched.length;
   const kivaCount = enriched.filter((c: EnrichedTaoClient) => c.kivaAlany).length;
@@ -217,7 +233,7 @@ export default function TaoPortfolioPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((client: EnrichedTaoClient) => {
+                paginated.map((client: EnrichedTaoClient) => {
                   const fs = FILING_STATUS[client.filingStatus as TaoFilingStatus] || FILING_STATUS.not_started;
                   const tp = TP_STATUS[client.tpStatus] || TP_STATUS.exempt;
                   return (
@@ -283,6 +299,19 @@ export default function TaoPortfolioPage() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="border-t border-border px-4 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

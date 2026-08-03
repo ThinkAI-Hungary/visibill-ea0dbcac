@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Gauge, ArrowLeft, ChevronRight, AlertTriangle, CheckCircle2,
@@ -12,6 +12,7 @@ import {
 } from '@/lib/evCalculations';
 import { useAllEvClientSettings, useEvYtdRevenue } from '@/hooks/useEvData';
 import { useEvTaxParams } from '@/hooks/accounty';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 // ─── Types & Constants ──────────────────────────────────────────────────────
 
@@ -41,9 +42,16 @@ const STATUS_CONFIG = {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvThresholdMonitorPage() {
-  const [filter, setFilter] = useState<'all' | ThresholdStatus>('all');
-  const [searchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2025');
+  const [filter, setFilter] = useState<ThresholdStatus | 'all'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, taxYear]);
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawSettings, isLoading: settingsLoading } = useAllEvClientSettings(taxYear);
@@ -78,6 +86,14 @@ export default function EvThresholdMonitorPage() {
     if (filter === 'all') return clients;
     return clients.filter(c => c.worstStatus === filter);
   }, [clients, filter]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const countByStatus = useMemo(() => ({
     red: clients.filter(c => c.worstStatus === 'red').length,
@@ -172,7 +188,7 @@ export default function EvThresholdMonitorPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map(c => {
+                paginated.map(c => {
                   const worstCfg = STATUS_CONFIG[c.worstStatus];
                   return (
                     <tr key={c.clientId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
@@ -242,6 +258,19 @@ export default function EvThresholdMonitorPage() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="border-t border-border px-4 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
+          </div>
+        )}
       </div>
 
       {/* Info */}

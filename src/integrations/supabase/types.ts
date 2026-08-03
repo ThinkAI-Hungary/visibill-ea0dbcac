@@ -7968,6 +7968,7 @@ export type Database = {
           company: string | null
           created_at: string
           eaisybill_access: boolean
+          eaisybooks_access: boolean
           email_verified: boolean
           email_verify_token: string | null
           has_completed_tour: boolean | null
@@ -7985,6 +7986,7 @@ export type Database = {
           company?: string | null
           created_at?: string
           eaisybill_access?: boolean
+          eaisybooks_access?: boolean
           email_verified?: boolean
           email_verify_token?: string | null
           has_completed_tour?: boolean | null
@@ -8002,6 +8004,7 @@ export type Database = {
           company?: string | null
           created_at?: string
           eaisybill_access?: boolean
+          eaisybooks_access?: boolean
           email_verified?: boolean
           email_verify_token?: string | null
           has_completed_tour?: boolean | null

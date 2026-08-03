@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, BookOpen, Plus, Filter,
@@ -14,6 +14,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import CashbookEntryForm, { type CashbookEntryFormData } from './CashbookEntryForm';
 import { toast } from '@/hooks/use-toast';
 import { exportEvCashbookAnykXml, exportEvCashbookOnyaXml } from '@/lib/evCashbookXml';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 // ─── Category labels (constant, not mock) ────────────────────────────────────
 
@@ -132,6 +133,23 @@ export default function CashbookMainPage() {
     }
     return list;
   }, [entries, searchQuery, filterDirection, dateFromFormatted, dateToFormatted]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterDirection, dateFromFormatted, dateToFormatted]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   // Totals based on filtered data (respects date range)
   const totalBevetel = filtered.filter(e => e.direction === 'bevetel').reduce((s, e) => s + e.amount, 0);
@@ -380,7 +398,7 @@ export default function CashbookMainPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map(entry => {
+                paginated.map(entry => {
                   const catInfo = CATEGORY_LABELS[entry.category] || { label: entry.categoryLabel, color: 'text-slate-500' };
                   return (
                     <tr
@@ -431,6 +449,20 @@ export default function CashbookMainPage() {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="border-t border-border px-4 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
+          </div>
+        )}
 
         {/* Footer totals */}
         <div className="border-t border-border px-4 py-3 bg-slate-50 dark:bg-slate-900/30 flex items-center justify-between">

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
@@ -421,6 +422,27 @@ ThinkAI`;
     }).filter(item => item.badges.length > 0);
   };
 
+  // Pagination states for List view
+  const [listPage, setListPage] = useState(1);
+  const [listPageSize, setListPageSize] = useState(20);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setListPage(1);
+  }, [selectedClient, viewScope, currentDate]);
+
+  const listItems = useMemo(() => {
+    return getListViewItems();
+  }, [deadlineGroups, viewScope, selectedClient, currentDate]);
+
+  const totalItems = listItems.length;
+  const totalPages = Math.ceil(totalItems / listPageSize);
+
+  const paginatedListItems = useMemo(() => {
+    const start = (listPage - 1) * listPageSize;
+    return listItems.slice(start, start + listPageSize);
+  }, [listItems, listPage, listPageSize]);
+
   const filteredClients = useMemo(() => {
     if (!selectedDeadline) return [];
     return clientDeadlines.filter(c => {
@@ -558,7 +580,7 @@ ThinkAI`;
         </div>
       {calendarView === 'list' ? (
         <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
-          {getListViewItems().map((item, idx) => (
+          {paginatedListItems.map((item, idx) => (
             <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors gap-4">
               <div className="font-semibold text-slate-800 dark:text-slate-200">
                 {item.dateString}
@@ -583,9 +605,22 @@ ThinkAI`;
               </div>
             </div>
           ))}
-          {getListViewItems().length === 0 && (
+          {listItems.length === 0 && (
             <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
               Nincs határidő ebben a hónapban.
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="p-4 bg-card border-t border-border">
+              <UnifiedPagination
+                currentPage={listPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={listPageSize}
+                onPageChange={setListPage}
+                onPageSizeChange={setListPageSize}
+                pageSizeOptions={[10, 20, 50]}
+              />
             </div>
           )}
         </div>

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Upload, CheckCircle2, Clock,
@@ -73,6 +74,23 @@ export default function FilingsPage() {
     }
     return result;
   }, [filings, filterType, filterStatus, searchQuery]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType, filterStatus]);
+
+  const totalItems = filteredFilings.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedFilings = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredFilings.slice(start, start + pageSize);
+  }, [filteredFilings, currentPage, pageSize]);
 
   // Stats
   const stats = useMemo(() => ({
@@ -402,7 +420,7 @@ export default function FilingsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {filteredFilings.map((filing) => {
+                {paginatedFilings.map((filing) => {
                   const typeInfo = FILING_TYPES[filing.filing_type] || { label: filing.filing_type, color: 'bg-slate-100 text-slate-600', desc: '' };
                   const statusInfo = STATUS_MAP[filing.status] || STATUS_MAP.draft;
                   const StatusIcon = statusInfo.icon;
@@ -489,18 +507,18 @@ export default function FilingsPage() {
                               variant="ghost"
                               size="sm"
                               onClick={async () => {
-                                if (!confirm('Biztosan törölni szeretnéd ezt a bevallást?')) return;
-                                const { error } = await supabase
-                                  .from('accounty_filings')
-                                  .delete()
-                                  .eq('id', filing.id);
-                                if (error) {
-                                  toast({ variant: 'destructive', title: 'Hiba', description: error.message });
-                                } else {
-                                  toast({ title: 'Törölve', description: 'A bevallás sikeresen törölve.' });
-                                  queryClient.invalidateQueries({ queryKey: ['payroll', 'filings', companyId] });
-                                }
-                              }}
+                                  if (!confirm('Biztosan törölni szeretnéd ezt a bevallást?')) return;
+                                  const { error } = await supabase
+                                    .from('accounty_filings')
+                                    .delete()
+                                    .eq('id', filing.id);
+                                  if (error) {
+                                    toast({ variant: 'destructive', title: 'Hiba', description: error.message });
+                                  } else {
+                                    toast({ title: 'Törölve', description: 'A bevallás sikeresen törölve.' });
+                                    queryClient.invalidateQueries({ queryKey: ['payroll', 'filings', companyId] });
+                                  }
+                                }}
                               className="h-7 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -513,6 +531,19 @@ export default function FilingsPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+        {totalPages > 1 && (
+          <div className="border-t border-border px-5 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
           </div>
         )}
       </div>

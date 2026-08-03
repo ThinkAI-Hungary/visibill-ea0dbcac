@@ -2048,7 +2048,7 @@ async function buildUserPermissions(admin: ReturnType<typeof createClient>, user
 
   const { data: profileData } = await admin
     .from("profiles")
-    .select("name, role, is_support_admin")
+    .select("name, role, is_support_admin, eaisybooks_access")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -2145,6 +2145,7 @@ async function buildUserPermissions(admin: ReturnType<typeof createClient>, user
     name: profileData?.name || "—",
     profileRole: profileData?.role || "user",
     isSupportAdmin: profileData?.is_support_admin || false,
+    eaisybooksAccess: profileData?.eaisybooks_access || (accountyAssignments && accountyAssignments.length > 0) || false,
     eaisybill,
     accounty,
   };
@@ -2159,6 +2160,7 @@ async function updatePermissions(
     firmId?: string;
     permissions?: Array<{ module: string; canRead: boolean; canWrite: boolean }>;
     isSupportAdmin?: boolean;
+    eaisybooksAccess?: boolean;
   },
 ) {
   if (!body.userId) {
@@ -2176,6 +2178,19 @@ async function updatePermissions(
 
     if (error) {
       errors.push(`is_support_admin: ${error.message}`);
+    } else {
+      updated++;
+    }
+  }
+
+  if (body.eaisybooksAccess !== undefined) {
+    const { error } = await admin
+      .from("profiles")
+      .update({ eaisybooks_access: body.eaisybooksAccess })
+      .eq("user_id", body.userId);
+
+    if (error) {
+      errors.push(`eaisybooks_access: ${error.message}`);
     } else {
       updated++;
     }

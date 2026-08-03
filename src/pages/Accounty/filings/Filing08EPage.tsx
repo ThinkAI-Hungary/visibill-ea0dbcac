@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Plus, Trash2, Save, CheckCircle, AlertTriangle,
@@ -12,6 +12,7 @@ import { useAccountyClients } from '@/hooks/accounty';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 const CHANGE_CODES = [
   { code: '01', label: 'Biztosítási jogviszony kezdete', type: 'bejelentes' as const },
@@ -37,7 +38,7 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
 };
 
 interface Row08E {
-  id: string;
+  id?: string;
   name: string;
   tajNumber: string;
   changeType: 'bejelentes' | 'valtozas' | 'kijelentes';
@@ -107,6 +108,22 @@ export default function Filing08EPage() {
         };
       });
   }, [filings]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when rows count changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [rows.length]);
+
+  const totalItems = rows.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+  }, [rows, currentPage, pageSize]);
 
   // Fetch employments for FEOR codes
   const [employments, setEmployments] = useState<any[]>([]);
@@ -319,7 +336,7 @@ export default function Filing08EPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row, idx) => (
+                  {paginatedRows.map((row, idx) => (
                     <tr
                       key={idx}
                       className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
@@ -346,6 +363,19 @@ export default function Filing08EPage() {
                 </tbody>
               </table>
             </div>
+            {totalPages > 1 && (
+              <div className="border-t border-border px-4 py-3 bg-card">
+                <UnifiedPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={[25, 50, 100]}
+                />
+              </div>
+            )}
           </div>
         </>
       )}

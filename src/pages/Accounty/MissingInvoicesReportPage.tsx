@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, TrendingUp, CheckCircle2, Clock, Zap, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAccountyClients, useAccountyAllMissingItems } from '@/hooks/accounty';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 const COLORS = ['hsl(173, 80%, 40%)', '#334155', '#64748B', '#94A3B8'];
 
@@ -13,6 +14,13 @@ const MONTH_NAMES_HU = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'A
 export default function MissingInvoicesReportPage() {
   const navigate = useNavigate();
   const [selectedClient, setSelectedClient] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when client filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedClient]);
   
   const { data: clients } = useAccountyClients();
   const { data: allMissingItems } = useAccountyAllMissingItems();
@@ -50,6 +58,14 @@ export default function MissingInvoicesReportPage() {
     if (selectedClient === 'all') return tableData;
     return tableData.filter(row => row.id === selectedClient);
   }, [selectedClient, tableData]);
+
+  const totalItems = filteredTableData.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedTableData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredTableData.slice(start, start + pageSize);
+  }, [filteredTableData, currentPage, pageSize]);
 
   // Filtered items for charts
   const filteredItems = useMemo(() => {
@@ -340,7 +356,7 @@ export default function MissingInvoicesReportPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-            {filteredTableData.map((row) => (
+            {paginatedTableData.map((row) => (
               <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-foreground">{row.name}</td>
                 <td className="px-6 py-4 text-center font-medium text-foreground">{row.requested}</td>
@@ -370,6 +386,19 @@ export default function MissingInvoicesReportPage() {
             )}
           </tbody>
         </table>
+        {totalPages > 1 && (
+          <div className="border-t border-border px-6 py-4 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

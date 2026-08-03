@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Send, Clock, CheckCircle, Eye, 
@@ -13,13 +13,16 @@ import { getPayslipPreviewUrl, type PayslipPdfData } from '@/lib/payslipPdf';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 export default function EPayslipPortalPage() {
   const { id } = useParams<{ id: string }>();
-  const [sending, setSending] = useState(false);
+   const [sending, setSending] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const { toast } = useToast();
 
   const { data: docs, isLoading } = useAccountyDocuments(id || '', 'payslip');
@@ -35,6 +38,14 @@ export default function EPayslipPortalPage() {
   const { data: calculations = [] } = usePayrollCalculations(currentCycle?.id || '');
 
   const slips = docs || [];
+  const totalItems = slips.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedSlips = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return slips.slice(start, start + pageSize);
+  }, [slips, currentPage, pageSize]);
+
   const queryClient = useQueryClient();
 
   const toggleSelect = (docId: string) => {
@@ -154,7 +165,7 @@ export default function EPayslipPortalPage() {
                 </tr>
               </thead>
               <tbody>
-                {slips.map(slip => {
+                {paginatedSlips.map(slip => {
                   const payslipData = getPayslipData(slip);
                   return (
                     <tr key={slip.id} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50">
@@ -179,6 +190,19 @@ export default function EPayslipPortalPage() {
                 })}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div className="border-t border-border px-5 py-3 bg-card">
+                <UnifiedPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={[25, 50, 100]}
+                />
+              </div>
+            )}
           </div>
         </>
       )}

@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BookOpen, Search, Plus, Edit3, Check, X, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useJobCodes, useUpsertJobCode } from '@/hooks/useAdminData';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 type Filter = 'all' | 'active' | 'inactive';
 
@@ -17,6 +18,13 @@ export default function JobCodesPage() {
     code: '', name: '', is_insured: true, min_contribution_base_rule: '', is_active: true,
     valid_from: '', valid_to: '', nav_reference_url: '', notes: '',
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filter]);
 
   const filtered = useMemo(() => {
     let list = codes;
@@ -29,6 +37,14 @@ export default function JobCodesPage() {
     }
     return list;
   }, [codes, filter, searchQuery]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const openCreate = () => {
     setForm({ code: '', name: '', is_insured: true, min_contribution_base_rule: '', is_active: true, valid_from: '', valid_to: '', nav_reference_url: '', notes: '' });
@@ -114,7 +130,7 @@ export default function JobCodesPage() {
                 </td>
               </tr>
             ) : (
-              filtered.map((c: any) => (
+              paginated.map((c: any) => (
                 <tr key={c.id || c.code} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="px-4 py-3 text-sm font-bold font-mono text-primary">{c.code}</td>
                   <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">{c.name}</td>
@@ -141,6 +157,19 @@ export default function JobCodesPage() {
             )}
           </tbody>
         </table>
+        {totalPages > 1 && (
+          <div className="border-t border-border px-4 py-3 bg-card">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[25, 50, 100]}
+            />
+          </div>
+        )}
       </div>
 
       {/* Edit/Create modal */}
