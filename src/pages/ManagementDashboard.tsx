@@ -701,7 +701,16 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
     handleDelete(ids);
   };
 
-  const RETRYABLE_SOURCES = new Set(['invoice_uploads', 'transaction_uploads', 'gl_upload_notifications', 'report_uploads']);
+  const RETRYABLE_SOURCES = new Set([
+    'invoice_uploads',
+    'transaction_uploads',
+    'gl_upload_notifications',
+    'report_uploads',
+    'app_error_logs',
+    'app_error_logs:frontend',
+    'app_error_logs:worker',
+    'app_error_logs:mailgun',
+  ]);
 
   // Retry modal state
   const [retryModalOpen, setRetryModalOpen] = useState(false);

@@ -1837,6 +1837,63 @@ async function retryErrors(
   for (const [project, sourceMap] of byProjectAndSource) {
     const projectClient = getClientForProject(admin, project);
 
+    // --- Resolve app_error_logs to underlying upload tables ---
+    const logSources = Array.from(sourceMap.keys()).filter(k => k === "app_error_logs" || k.startsWith("app_error_logs:"));
+    if (logSources.length > 0) {
+      const logIds: string[] = [];
+      for (const src of logSources) {
+        logIds.push(...(sourceMap.get(src) || []));
+        sourceMap.delete(src);
+      }
+
+      if (logIds.length > 0) {
+        console.log(`[MANAGEMENT-STATS] [${project}] Resolving ${logIds.length} app_error_logs to uploads...`);
+        const { data: logs, error: logErr } = await projectClient
+          .from("app_error_logs")
+          .select("id, component, context")
+          .in("id", logIds);
+
+        if (logErr) {
+          console.error(`[MANAGEMENT-STATS] [${project}] Failed to fetch app_error_logs:`, logErr.message);
+          errors.push(`[${project}] app_error_logs fetch: ${logErr.message}`);
+        } else {
+          for (const log of logs || []) {
+            let ctx = log.context;
+            if (typeof ctx === "string") {
+              try {
+                ctx = JSON.parse(ctx);
+              } catch (_) {
+                ctx = null;
+              }
+            }
+            const uploadId = ctx?.upload_id || ctx?.job_id;
+            if (!uploadId) {
+              errors.push(`[${project}] Log ${log.id} has no upload_id or job_id in context`);
+              continue;
+            }
+
+            let uploadTable = "";
+            if (log.component === "report_pipeline") {
+              uploadTable = "report_uploads";
+            } else if (log.component === "invoice_pipeline") {
+              uploadTable = "invoice_uploads";
+            } else if (log.component === "transaction_pipeline") {
+              uploadTable = "transaction_uploads";
+            } else {
+              errors.push(`[${project}] Log ${log.id} component ${log.component} not mapable to upload table`);
+              continue;
+            }
+
+            if (!sourceMap.has(uploadTable)) {
+              sourceMap.set(uploadTable, []);
+            }
+            sourceMap.get(uploadTable)!.push(uploadId);
+            console.log(`[MANAGEMENT-STATS] [${project}] Resolved log ${log.id} to ${uploadTable}/${uploadId}`);
+          }
+        }
+      }
+    }
+
     for (const [rawSource, ids] of sourceMap) {
       // Normalize sub-sources: 'app_error_logs:frontend' → 'app_error_logs'
       const source = rawSource.includes(':') ? rawSource.split(':')[0] : rawSource;
