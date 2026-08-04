@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Lock, CheckCircle2, AlertTriangle,
   FileText, Calendar, ArrowRight, Shield, Loader2
@@ -86,12 +86,14 @@ export default function CashbookCloseWizard() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const taxYear = Number(searchParams.get('year') || '2026');
   const [step, setStep] = useState<WizardStep>('select');
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
   // ─── Real data ────────────────────────────────────────────────────────────
-  const { data: entries, isLoading: entriesLoading } = useCashbookEntries(id, 2026);
-  const { data: periodCloses, isLoading: closesLoading } = useEvPeriodCloses(id, 2026);
+  const { data: entries, isLoading: entriesLoading } = useCashbookEntries(id, taxYear);
+  const { data: periodCloses, isLoading: closesLoading } = useEvPeriodCloses(id, taxYear);
   const closePeriodMutation = useClosePeriod();
   const isLoading = entriesLoading || closesLoading;
 
@@ -102,11 +104,13 @@ export default function CashbookCloseWizard() {
     (periodCloses || []).forEach((pc: any) => {
       if (pc.period_type === 'monthly' && pc.period_key) {
         // period_key format: "2026-01", "2026-02", etc.
-        const monthStr = pc.period_key.split('-')[1];
-        const month = parseInt(monthStr, 10);
-        if (!isNaN(month)) {
-          closedMonths.add(month);
-          closeMap.set(month, pc.closed_at);
+        const [yearStr, monthStr] = pc.period_key.split('-');
+        if (Number(yearStr) === taxYear) {
+          const month = parseInt(monthStr, 10);
+          if (!isNaN(month)) {
+            closedMonths.add(month);
+            closeMap.set(month, pc.closed_at);
+          }
         }
       }
     });
@@ -156,12 +160,12 @@ export default function CashbookCloseWizard() {
     if (selectedMonth === null || !id) return;
 
     const monthStr = String(selectedMonth).padStart(2, '0');
-    const periodKey = `2026-${monthStr}`;
+    const periodKey = `${taxYear}-${monthStr}`;
 
     try {
       await closePeriodMutation.mutateAsync({
         company_id: id,
-        tax_year: 2026,
+        tax_year: taxYear,
         period_type: 'monthly',
         period_key: periodKey,
         column_totals: {
@@ -186,7 +190,7 @@ export default function CashbookCloseWizard() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev/cashbook`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/client/${id}/ev/cashbook?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -454,7 +458,7 @@ export default function CashbookCloseWizard() {
               <Calendar className="w-3.5 h-3.5" /> Következő hónap
             </button>
             <Link
-              to={`/accounty/client/${id}/ev/cashbook`}
+              to={`/accounty/client/${id}/ev/cashbook?year=${taxYear}`}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
               <FileText className="w-3.5 h-3.5" /> Vissza a pénztárkönyvhöz

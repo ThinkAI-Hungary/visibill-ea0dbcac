@@ -30,7 +30,9 @@ import {
   Rocket,
   Landmark,
   Shield,
-  PiggyBank
+  Coins,
+  ArrowLeft,
+  ClipboardList
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -38,6 +40,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AppModeSwitcher from '@/components/AppModeSwitcher';
 import { PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
+import { useAccountyTaxProfile } from '@/hooks/accounty';
+import { useEvClientSettings } from '@/hooks/useEvData';
 
 interface AccountySidebarProps {
   isCollapsed: boolean;
@@ -94,6 +98,87 @@ export default function AccountySidebar({
   isActive,
   navigate,
 }: AccountySidebarProps) {
+  const [expandedSubSections, setExpandedSubSections] = React.useState<Set<string>>(new Set());
+
+  const toggleSubSection = (key: string) => {
+    setExpandedSubSections(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const subGroups = React.useMemo(() => [
+    {
+      id: 'office',
+      label: 'Iroda & Beállítások',
+      icon: Settings,
+      items: [
+        { to: '/accounty/settings', icon: Settings, label: 'Beállítások' },
+        { to: '/accounty/profile/settings', icon: User, label: 'Profilbeállítások' },
+        { to: '/accounty/admin/permissions', icon: Shield, label: 'Jogosultságkezelő' },
+        { to: '/accounty/admin/accountants', icon: Users, label: 'Könyvelők kezelése' },
+      ].filter(item => {
+        const module = PATH_TO_MODULE[item.to];
+        return !module || canAccess(module);
+      })
+    },
+    {
+      id: 'professional',
+      label: 'Szakmai Törzsadatok',
+      icon: BookOpen,
+      items: [
+        { to: '/accounty/admin/templates', icon: FileText, label: 'Sablonok' },
+        { to: '/accounty/admin/job-codes', icon: BookOpen, label: 'Jogviszonykódok' },
+        { to: '/accounty/admin/tax-parameters', icon: Calculator, label: 'Adómértékek' },
+        { to: '/accounty/admin/legal-updates', icon: Scale, label: 'Jogszabály-frissítések' },
+      ].filter(item => {
+        const module = PATH_TO_MODULE[item.to];
+        return !module || canAccess(module);
+      })
+    },
+    {
+      id: 'security',
+      label: 'Biztonság & GDPR',
+      icon: ShieldCheck,
+      items: [
+        { to: '/accounty/admin/audit', icon: ShieldCheck, label: 'Audit napló' },
+        { to: '/accounty/admin/gdpr', icon: ShieldCheck, label: 'GDPR' },
+      ].filter(item => {
+        const module = PATH_TO_MODULE[item.to];
+        return !module || canAccess(module);
+      })
+    },
+    {
+      id: 'support',
+      label: 'Támogatás & AI',
+      icon: HelpCircle,
+      items: [
+        { to: '/accounty/ai-assistant', icon: Sparkles, label: 'AI Asszisztens' },
+        { to: '/accounty/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
+        { to: '/accounty/help', icon: HelpCircle, label: 'Segítség' },
+      ].filter(item => {
+        const module = PATH_TO_MODULE[item.to];
+        return !module || canAccess(module);
+      })
+    }
+  ], [unreadTicketCount, canAccess]);
+
+  React.useEffect(() => {
+    const activeSubGroup = subGroups.find(g => g.items.some(i => isActive(i.to)));
+    if (activeSubGroup) {
+      setExpandedSubSections(prev => {
+        if (prev.has(activeSubGroup.id)) return prev;
+        const next = new Set(prev);
+        next.add(activeSubGroup.id);
+        return next;
+      });
+    }
+  }, [pathname, subGroups]);
 
   const getUserInitials = () => {
     if (user?.user_metadata?.name) {
@@ -105,6 +190,18 @@ export default function AccountySidebar({
     }
     return user?.email?.substring(0, 2).toUpperCase() || 'U';
   };
+
+  const clientMatch = pathname.match(/\/(?:client|payroll|missing-invoices)\/([a-f0-9-]{36})/i);
+  const selectedClientId = clientMatch ? clientMatch[1] : null;
+  const selectedClient = allClients?.find(c => c.companyId === selectedClientId);
+  const { data: evSettings } = useEvClientSettings(selectedClientId || undefined);
+  const isEv = pathname.split('/').includes('ev') || 
+               !!evSettings || 
+               (selectedClient?.name ? (
+                 selectedClient.name.toUpperCase().includes('EV') || 
+                 selectedClient.name.toUpperCase().includes('E.V.') ||
+                 selectedClient.name.toLowerCase().includes('egyéni vállalkozó')
+               ) : false);
 
   return (
     <aside className={cn(
@@ -154,63 +251,169 @@ export default function AccountySidebar({
         )}
 
         {isCollapsed ? (
-          /* Collapsed mode: icon-only with tooltip */
-          <ul className="flex w-full min-w-0 flex-col gap-1">
-            {[
-              { path: '/accounty', name: 'Portfólió', icon: Briefcase },
-              { path: '/accounty/missing-invoices', name: 'Hiányzó számlák', icon: FileWarning, badge: kpis?.missingItems },
-              { path: '/accounty/tax-calendar', name: 'Adó naptár', icon: Calendar },
-              { path: '/accounty/reports', name: 'Riportok', icon: BarChart2 },
-              { path: '/accounty/approval-queue', name: 'Jóváhagyás', icon: MailCheck },
-              { path: '/accounty/alerts', name: 'Riasztások', icon: AlertTriangle },
-              { path: '/accounty/nav-deadlines', name: 'NAV határidők', icon: Clock },
-              { path: '/accounty/onboarding', name: 'Onboarding', icon: Rocket },
-              { type: 'divider' as const },
-              { path: '/accounty/payroll-portfolio', name: 'Bérszámfejtés', icon: Calculator },
-              { type: 'divider' as const },
-              { path: '/accounty/tao', name: 'TAO Portfólió', icon: Landmark },
-              { path: '/accounty/tao/calendar', name: 'TAO Naptár', icon: Calendar },
-              { path: '/accounty/tao/taxpayer-types', name: 'Adózói Körök', icon: Users },
-              { type: 'divider' as const },
-              { path: '/accounty/ev', name: 'EV Portfólió', icon: PiggyBank },
-              { type: 'divider' as const },
-              { path: '/accounty/settings', name: 'Beállítások', icon: Settings },
-              { path: '/accounty/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
-              { path: '/accounty/help', name: 'Segítség', icon: HelpCircle },
-              { path: '/accounty/ai-assistant', name: 'AI Asszisztens', icon: Sparkles },
-              { path: '/accounty/admin/audit', name: 'Audit', icon: ShieldCheck },
-            ].filter(item => {
-              if ('type' in item) return true;
-              const module = PATH_TO_MODULE[(item as any).path];
-              return !module || canAccess(module);
-            }).map((item, idx) => {
-              if ('type' in item) return <li key={`div-${idx}`} className="my-1 mx-2 h-px bg-border/50" />;
-              const navItem = item as { path: string; name: string; icon: any; badge?: number };
-              return (
-                <li key={navItem.path} className="relative flex justify-center">
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <Link
-                        to={navItem.path}
-                        className={cn(
-                          "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
-                          isActive(navItem.path) ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                        )}
-                      >
-                        <navItem.icon className="h-4 w-4 shrink-0" />
-                        {navItem.badge && navItem.badge > 0 ? (
-                          <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                            {navItem.badge > 9 ? '9+' : navItem.badge}
-                          </span>
-                        ) : null}
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">{navItem.name}</TooltipContent>
-                  </Tooltip>
-                </li>
-              );
-            })}
-          </ul>
+          selectedClientId ? (
+            /* Client Context Collapsed Mode */
+            <ul className="flex w-full min-w-0 flex-col gap-1 animate-in fade-in duration-300">
+              {[
+                { path: '/accounty', name: 'Vissza a portfólióhoz', icon: ArrowLeft },
+                { type: 'divider' as const },
+                { path: `/accounty/client/${selectedClientId}/overview`, name: 'Áttekintés', icon: Briefcase, exact: true },
+                { path: `/accounty/client/${selectedClientId}/invoices`, name: 'Számlák', icon: FileText },
+                { path: `/accounty/client/${selectedClientId}/missing-invoices`, name: 'Hiányzó számlák', icon: FileWarning },
+                { path: `/accounty/client/${selectedClientId}/ev`, name: 'Egyéni Vállalkozás', icon: Coins },
+                { path: `/accounty/client/${selectedClientId}/tao`, name: 'Társasági Adó', icon: Landmark },
+                { path: `/accounty/client/${selectedClientId}/payroll`, name: 'Bérszámfejtés', icon: Calculator },
+                { path: `/accounty/client/${selectedClientId}/payroll/filings`, name: 'NAV bevallások', icon: ClipboardList },
+                { path: `/accounty/client/${selectedClientId}/settings`, name: 'Beállítások / Cégkapu', icon: Settings },
+              ].map((item, idx) => {
+                if ('type' in item) return <li key={`div-${idx}`} className="my-1 mx-2 h-px bg-border/50" />;
+                const active = item.exact ? pathname === item.path : pathname.startsWith(item.path);
+                return (
+                  <li key={item.path} className="relative flex justify-center">
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          to={item.path}
+                          className={cn(
+                            "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
+                            active ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                          )}
+                        >
+                          <item.icon className="h-4 w-4 shrink-0" />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">{item.name}</TooltipContent>
+                    </Tooltip>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            /* Collapsed mode: icon-only with tooltip */
+            <ul className="flex w-full min-w-0 flex-col gap-1">
+              {[
+                { path: '/accounty', name: 'Portfólió', icon: Briefcase },
+                { path: '/accounty/missing-invoices', name: 'Hiányzó számlák', icon: FileWarning, badge: kpis?.missingItems },
+                { path: '/accounty/tax-calendar', name: 'Adó naptár', icon: Calendar },
+                { path: '/accounty/reports', name: 'Riportok', icon: BarChart2 },
+                { path: '/accounty/approval-queue', name: 'Jóváhagyás', icon: MailCheck },
+                { path: '/accounty/alerts', name: 'Riasztások', icon: AlertTriangle },
+                { path: '/accounty/nav-deadlines', name: 'NAV határidők', icon: Clock },
+                { path: '/accounty/onboarding', name: 'Onboarding', icon: Rocket },
+                { type: 'divider' as const },
+                { path: '/accounty/payroll-portfolio', name: 'Bérszámfejtés', icon: Calculator },
+                { type: 'divider' as const },
+                { path: '/accounty/tao', name: 'TAO Portfólió', icon: Landmark },
+                { path: '/accounty/tao/calendar', name: 'TAO Naptár', icon: Calendar },
+                { path: '/accounty/tao/taxpayer-types', name: 'Adózói Körök', icon: Users },
+                { type: 'divider' as const },
+                { path: '/accounty/ev', name: 'EV Portfólió', icon: Coins },
+                { type: 'divider' as const },
+                { path: '/accounty/settings', name: 'Beállítások', icon: Settings },
+                { path: '/accounty/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
+                { path: '/accounty/help', name: 'Segítség', icon: HelpCircle },
+                { path: '/accounty/ai-assistant', name: 'AI Asszisztens', icon: Sparkles },
+                { path: '/accounty/admin/audit', name: 'Audit', icon: ShieldCheck },
+              ].filter(item => {
+                if ('type' in item) return true;
+                const module = PATH_TO_MODULE[(item as any).path];
+                return !module || canAccess(module);
+              }).map((item, idx) => {
+                if ('type' in item) return <li key={`div-${idx}`} className="my-1 mx-2 h-px bg-border/50" />;
+                const navItem = item as { path: string; name: string; icon: any; badge?: number };
+                return (
+                  <li key={navItem.path} className="relative flex justify-center">
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          to={navItem.path}
+                          className={cn(
+                            "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
+                            isActive(navItem.path) ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                          )}
+                        >
+                          <navItem.icon className="h-4 w-4 shrink-0" />
+                          {navItem.badge && navItem.badge > 0 ? (
+                            <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                              {navItem.badge > 9 ? '9+' : navItem.badge}
+                            </span>
+                          ) : null}
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">{navItem.name}</TooltipContent>
+                    </Tooltip>
+                  </li>
+                );
+              })}
+            </ul>
+          )
+        ) : selectedClientId ? (
+          /* Client Context Expanded Mode */
+          <div className="flex flex-col gap-1 px-1 animate-in fade-in duration-300">
+            {/* Back to Portfolio */}
+            <button
+              onClick={() => navigate('/accounty')}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm transition-all duration-150 h-8 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/70 mb-2 border border-border/40"
+            >
+              <ArrowLeft className="h-4 w-4 shrink-0" />
+              <span className="truncate flex-1 font-semibold text-xs">Vissza a portfólióhoz</span>
+            </button>
+
+            {/* Client Info Card */}
+            <div className="p-3 mb-3 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/10 flex items-start gap-2.5">
+              <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg text-primary shrink-0">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-xs font-bold text-sidebar-foreground truncate leading-tight">
+                  {selectedClient?.name || 'Ügyfél betöltése...'}
+                </h4>
+                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                  {selectedClient?.taxNumber || ''}
+                </p>
+                {selectedClient?.status && (
+                  <span className={cn(
+                    "inline-block text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded-full mt-1.5",
+                    selectedClient.status === 'Rendben' ? 'bg-emerald-500/10 text-emerald-500' :
+                    selectedClient.status === 'Feldolgozandó' ? 'bg-amber-500/10 text-amber-500' :
+                    'bg-rose-500/10 text-rose-500'
+                  )}>
+                    {selectedClient.status}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Client Navigation Items */}
+            <ul className="flex flex-col gap-1">
+              {[
+                { to: `/accounty/client/${selectedClientId}/overview`, label: 'Áttekintés', icon: Briefcase, exact: true },
+                { to: `/accounty/client/${selectedClientId}/invoices`, label: 'Számlák', icon: FileText },
+                { to: `/accounty/client/${selectedClientId}/missing-invoices`, label: 'Hiányzó számlák', icon: FileWarning },
+                { to: `/accounty/client/${selectedClientId}/ev`, label: 'Egyéni Vállalkozás', icon: Coins },
+                { to: `/accounty/client/${selectedClientId}/tao`, label: 'Társasági Adó', icon: Landmark },
+                { to: `/accounty/client/${selectedClientId}/payroll`, label: 'Bérszámfejtés', icon: Calculator },
+                { to: `/accounty/client/${selectedClientId}/payroll/filings`, label: 'NAV bevallások', icon: ClipboardList },
+                { to: `/accounty/client/${selectedClientId}/settings`, label: 'Beállítások / Cégkapu', icon: Settings },
+              ].map(item => {
+                const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+                return (
+                  <li key={item.to}>
+                    <Link
+                      to={item.to}
+                      className={cn(
+                        "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-all duration-150",
+                        active ? "bg-primary/15 font-semibold text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground/80"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate flex-1">{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         ) : (
           /* Expanded mode: Collapsible groups */
           <div className="flex flex-col gap-1">
@@ -459,49 +662,22 @@ export default function AccountySidebar({
 
             {/* EV / Egyszeres könyvvitel csoport */}
             {(() => {
-              const groupKey = 'ev';
-              const isOpen = expandedSections.has(groupKey);
-              const items = [
-                { to: '/accounty/ev', icon: PiggyBank, label: 'EV Portfólió', exact: true },
-              ];
               const groupHasActive = pathname === '/accounty/ev' || pathname.startsWith('/accounty/ev/') || (pathname.includes('/ev') && pathname.includes('/client/'));
               return (
                 <div>
-                  <button
-                    onClick={() => toggleSection(groupKey)}
+                  <Link
+                    to="/accounty/ev"
                     className={cn(
                       "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
-                      !isOpen && groupHasActive
+                      groupHasActive
                         ? "bg-primary/8 text-primary font-semibold"
                         : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
                     )}
                   >
-                    <PiggyBank className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
+                    <Coins className={cn("h-4 w-4 shrink-0 transition-colors", groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
                     <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">EV / Szervezetek</span>
-                    <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
-                    {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
-                  </button>
-                  {isOpen && (
-                    <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
-                      {items.map(item => {
-                        const active = item.exact ? pathname === item.to : isActive(item.to);
-                        return (
-                          <li key={item.to}>
-                            <Link
-                              to={item.to}
-                              className={cn(
-                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
-                                active ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                              )}
-                            >
-                              <item.icon className="h-4 w-4 shrink-0" />
-                              <span className="truncate">{item.label}</span>
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
+                    {groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
+                  </Link>
                 </div>
               );
             })()}
@@ -510,26 +686,11 @@ export default function AccountySidebar({
             {(() => {
               const groupKey = 'admin';
               const isOpen = expandedSections.has(groupKey);
-              const allItems = [
-                { to: '/accounty/settings', icon: Settings, label: 'Beállítások' },
-                { to: '/accounty/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
-                { to: '/accounty/help', icon: HelpCircle, label: 'Segítség' },
-                { to: '/accounty/ai-assistant', icon: Sparkles, label: 'AI Asszisztens' },
-                { to: '/accounty/profile/settings', icon: User, label: 'Profilbeállítások' },
-                { to: '/accounty/admin/audit', icon: ShieldCheck, label: 'Audit napló' },
-                { to: '/accounty/admin/gdpr', icon: ShieldCheck, label: 'GDPR' },
-                { to: '/accounty/admin/templates', icon: FileText, label: 'Sablonok' },
-                { to: '/accounty/admin/job-codes', icon: BookOpen, label: 'Jogviszonykódok' },
-                { to: '/accounty/admin/tax-parameters', icon: Calculator, label: 'Adómértékek' },
-                { to: '/accounty/admin/legal-updates', icon: Scale, label: 'Jogszabály-frissítések' },
-                { to: '/accounty/admin/permissions', icon: Shield, label: 'Jogosultságkezelő' },
-                { to: '/accounty/admin/accountants', icon: Users, label: 'Könyvelők kezelése' },
-              ];
-              const items = allItems.filter(item => {
-                const module = PATH_TO_MODULE[item.to];
-                return !module || canAccess(module);
-              });
-              const groupHasActive = items.some(i => isActive(i.to));
+              const visibleSubGroups = subGroups.filter(g => g.items.length > 0);
+              const groupHasActive = visibleSubGroups.some(g => g.items.some(i => isActive(i.to)));
+
+              if (visibleSubGroups.length === 0) return null;
+
               return (
                 <div>
                   <button
@@ -547,30 +708,53 @@ export default function AccountySidebar({
                     {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
                   </button>
                   {isOpen && (
-                    <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
-                      {items.map(item => {
-                        const active = isActive(item.to);
+                    <div className="mt-1 flex flex-col gap-1 pb-1">
+                      {visibleSubGroups.map(subGroup => {
+                        const subGroupOpen = expandedSubSections.has(subGroup.id);
+                        const subGroupActive = subGroup.items.some(i => isActive(i.to));
                         return (
-                          <li key={item.to}>
-                            <Link
-                              to={item.to}
+                          <div key={subGroup.id} className="space-y-0.5">
+                            <button
+                              onClick={() => toggleSubSection(subGroup.id)}
                               className={cn(
-                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
-                                active ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                                "flex w-full items-center gap-2 rounded-md px-2 py-1 pl-6 text-left text-xs font-semibold transition-colors select-none group/subtrigger",
+                                subGroupActive ? "text-primary" : "text-sidebar-foreground/60 hover:text-primary hover:bg-primary/5"
                               )}
                             >
-                              <item.icon className="h-4 w-4 shrink-0" />
-                              <span className="truncate flex-1">{item.label}</span>
-                              {item.badge && item.badge > 0 ? (
-                                <span className="h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                                  {item.badge > 9 ? '9+' : item.badge}
-                                </span>
-                              ) : null}
-                            </Link>
-                          </li>
+                              <subGroup.icon className="h-3.5 w-3.5 shrink-0" />
+                              <span className="flex-1 truncate">{subGroup.label}</span>
+                              <ChevronRight className={cn("h-3 w-3 transition-transform duration-200", subGroupOpen ? 'rotate-90' : '')} />
+                            </button>
+                            {subGroupOpen && (
+                              <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
+                                {subGroup.items.map(item => {
+                                  const active = isActive(item.to);
+                                  return (
+                                    <li key={item.to}>
+                                      <Link
+                                        to={item.to}
+                                        className={cn(
+                                          "flex w-full items-center gap-2 rounded-md px-2 py-1 pl-10 text-left text-sm transition-colors",
+                                          active ? "bg-primary/10 font-medium text-primary" : "hover:bg-primary/5 hover:text-primary text-sidebar-foreground/80"
+                                        )}
+                                      >
+                                        <item.icon className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="truncate flex-1">{item.label}</span>
+                                        {item.badge && item.badge > 0 ? (
+                                          <span className="h-4.5 min-w-4.5 px-1 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                                            {item.badge > 9 ? '9+' : item.badge}
+                                          </span>
+                                        ) : null}
+                                      </Link>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+                          </div>
                         );
                       })}
-                    </ul>
+                    </div>
                   )}
                 </div>
               );

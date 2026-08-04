@@ -189,7 +189,7 @@ export default function ClientInvoicesPage() {
             variant="ghost" 
             size="icon" 
             className="w-8 h-8 mt-1.5 shrink-0 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800"
-            onClick={() => navigate(`/accounty/client/${client.id}`)}
+            onClick={() => navigate(-1)}
           >
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </Button>

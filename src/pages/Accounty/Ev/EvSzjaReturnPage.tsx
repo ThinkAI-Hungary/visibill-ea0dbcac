@@ -63,7 +63,7 @@ function generateExpectedReturns(taxYear: number, settings: EvClientSettings | n
     expected.push({
       id: `gen-2658-${qd.q}`,
       type: 'TB járulék bevallás',
-      code: '2658',
+      code: `${taxYear % 100}58`,
       period: `${taxYear} ${qd.q}`,
       deadline: qd.deadline,
       status: getStatus(qd.deadline),
@@ -80,7 +80,7 @@ function generateExpectedReturns(taxYear: number, settings: EvClientSettings | n
     expected.push({
       id: `gen-szja-annual`,
       type: form === 'atalany' ? 'SZJA bevallás (átalányadó)' : 'SZJA bevallás (VSZJA)',
-      code: form === 'atalany' ? '2553' : '2553',
+      code: `${taxYear % 100}53`,
       period: `${taxYear} Éves`,
       deadline: `${taxYear + 1}-05-20`,
       status: getStatus(`${taxYear + 1}-05-20`),
@@ -96,7 +96,7 @@ function generateExpectedReturns(taxYear: number, settings: EvClientSettings | n
     expected.push({
       id: `gen-kata-annual`,
       type: 'KATA nyilatkozat',
-      code: 'KATA',
+      code: `${taxYear % 100}KATA`,
       period: `${taxYear} Éves`,
       deadline: `${taxYear + 1}-02-25`,
       status: getStatus(`${taxYear + 1}-02-25`),
@@ -111,7 +111,7 @@ function generateExpectedReturns(taxYear: number, settings: EvClientSettings | n
   expected.push({
     id: `gen-hipa-annual`,
     type: 'HIPA bevallás',
-    code: 'HIPAK',
+    code: `${taxYear % 100}HIPA`,
     period: `${taxYear} Éves`,
     deadline: `${taxYear}-05-31`,
     status: getStatus(`${taxYear}-05-31`),
@@ -127,7 +127,7 @@ function generateExpectedReturns(taxYear: number, settings: EvClientSettings | n
     expected.push({
       id: `gen-afa-annual`,
       type: 'ÁFA bevallás',
-      code: '2665',
+      code: `${taxYear % 100}65`,
       period: `${taxYear} Éves`,
       deadline: `${taxYear + 1}-02-25`,
       status: getStatus(`${taxYear + 1}-02-25`),
@@ -291,7 +291,7 @@ export default function EvSzjaReturnPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/accounty/ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />

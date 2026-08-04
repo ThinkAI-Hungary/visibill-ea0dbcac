@@ -19,9 +19,9 @@ export function CompanySwitcher() {
   const [searchQuery, setSearchQuery] = React.useState('');
 
   // Extract current company ID from URL patterns:
-  // /accounty/client/:id, /accounty/payroll/:id, /accounty/client/:id/...
+  // /accounty/client/:id, /accounty/payroll/:id, /accounty/missing-invoices/:id, /accounty/client/:id/...
   const currentCompanyId = useMemo(() => {
-    const match = location.pathname.match(/\/accounty\/(?:client|payroll)\/([^/]+)/);
+    const match = location.pathname.match(/\/accounty\/(?:client|payroll|missing-invoices)\/([^/]+)/);
     return match?.[1] ?? null;
   }, [location.pathname]);
 
@@ -44,13 +44,11 @@ export function CompanySwitcher() {
 
   // Navigate to the selected company, maintaining the current sub-route pattern
   function handleSelect(client: AccountyClient) {
-    const path = location.pathname;
-
-    if (path.includes('/payroll/')) {
-      // If we're in payroll context, switch to the new company's payroll
-      navigate(`/accounty/payroll/${client.id}`);
+    const uuidRegex = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
+    if (uuidRegex.test(location.pathname)) {
+      const newPath = location.pathname.replace(uuidRegex, client.id);
+      navigate(newPath);
     } else {
-      // Default: go to client details
       navigate(`/accounty/client/${client.id}`);
     }
     setOpen(false);
@@ -65,16 +63,16 @@ export function CompanySwitcher() {
       <PopoverTrigger asChild>
         <button
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg
-                     bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700
-                     border border-slate-200 dark:border-slate-700
-                     text-sm font-medium text-slate-700 dark:text-slate-200
+                     bg-muted hover:bg-accent/80
+                     border border-border
+                     text-sm font-medium text-foreground
                      transition-all duration-150 max-w-[260px] group"
         >
           <Building2 className="w-4 h-4 shrink-0 text-primary" />
           <span className="truncate">
             {isLoading ? '...' : (currentCompany?.name ?? 'Cég kiválasztása')}
           </span>
-          <ChevronDown className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : undefined }} />
+          <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : undefined }} />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -84,8 +82,8 @@ export function CompanySwitcher() {
       >
         {/* Search */}
         <div className="px-3 py-2 border-b border-border">
-          <div className="flex items-center gap-2 px-2 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700">
-            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <div className="flex items-center gap-2 px-2 py-1.5 bg-muted/40 rounded-md border border-border">
+            <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <input
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}

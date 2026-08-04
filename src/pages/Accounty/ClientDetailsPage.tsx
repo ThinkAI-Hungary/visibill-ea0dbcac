@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowLeft, Settings, FileText, UploadCloud, RefreshCcw, FileCheck,
   Clock, AlertTriangle, FileWarning, TrendingUp, CheckCircle2, ChevronRight,
@@ -29,7 +31,54 @@ export default function ClientDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('Áttekintés');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [navSyncError, setNavSyncError] = useState<string | null>(null);
+
+  const handleNavSync = async () => {
+    if (!id) return;
+    setIsSyncing(true);
+    setNavSyncError(null);
+    try {
+      const today = new Date();
+      const firstDayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+      const lastDayStr = today.toISOString().slice(0, 10);
+
+      const [{ data: syncOut, error: errOut }, { data: syncIn, error: errIn }] = await Promise.all([
+        supabase.functions.invoke('nav-sync', {
+          body: { direction: 'OUTBOUND', dateFrom: firstDayStr, dateTo: lastDayStr, companyId: id }
+        }),
+        supabase.functions.invoke('nav-sync', {
+          body: { direction: 'INBOUND', dateFrom: firstDayStr, dateTo: lastDayStr, companyId: id }
+        })
+      ]);
+
+      if (errOut || errIn) {
+        throw errOut || errIn || new Error('NAV szinkronizáció sikertelen');
+      }
+
+      toast({
+        title: 'Sikeres NAV szinkronizáció!',
+        description: 'Az inbound és outbound számlák frissítése befejeződött.'
+      });
+
+      // Invalidate query caches
+      queryClient.invalidateQueries({ queryKey: ['companyInvoices', id] });
+      queryClient.invalidateQueries({ queryKey: ['portfolio-kata-customer-totals'] });
+    } catch (err: any) {
+      console.error('NAV sync error:', err);
+      const errMsg = err?.message || 'Nem sikerült kapcsolatot létesíteni a NAV szerverrel. Ellenőrizd a hitelesítő adatokat.';
+      setNavSyncError(errMsg);
+      toast({
+        title: 'Szinkronizálási hiba',
+        description: errMsg,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [ignoredIds, setIgnoredIds] = useState<Set<string>>(new Set());
   const [manualItems, setManualItems] = useState<BlockingItem[]>([]);
@@ -216,6 +265,19 @@ export default function ClientDetailsPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={handleNavSync}
+            disabled={isSyncing}
+            className={cn(
+              'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all border border-indigo-200 dark:border-indigo-900/40',
+              isSyncing
+                ? 'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 cursor-not-allowed animate-pulse'
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
+            )}
+          >
+            {isSyncing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <RefreshCcw className="w-4 h-4 shrink-0" />}
+            {isSyncing ? 'NAV szinkron...' : 'NAV szinkron'}
+          </button>
+          <button
             onClick={startCall}
             disabled={callState !== 'idle' && callState !== 'completed' && callState !== 'failed'}
             className={cn(
@@ -257,12 +319,51 @@ export default function ClientDetailsPage() {
         </div>
       </div>
 
+      {navSyncError && (
+        <div className="flex items-center justify-between gap-4 px-4 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl text-sm animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-2.5 text-red-800 dark:text-red-300">
+            <AlertTriangle className="w-4.5 h-4.5 text-red-500 shrink-0" />
+            <div>
+              <span className="font-semibold">NAV Szinkronizációs hiba:</span> {navSyncError}. Kérjük, ellenőrizze a NAV API technikai felhasználó beállításait.
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/accounty/client/${id}/settings`)}
+              className="bg-card border-red-200 hover:bg-red-50 dark:border-red-800/40 dark:hover:bg-red-900/20 text-red-800 dark:text-red-300 text-xs font-semibold px-3 py-1.5 h-auto rounded-lg transition-colors shadow-soft"
+            >
+              NAV API Beállítások
+            </Button>
+            <button
+              onClick={() => setNavSyncError(null)}
+              className="p-1 text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation Tabs */}
       <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-full w-fit">
         {tabs.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => {
+              if (tab === 'Számlák') {
+                navigate(`/accounty/client/${id}/invoices`);
+              } else if (tab === 'Bérszámfejtés') {
+                navigate(`/accounty/client/${id}/payroll`);
+              } else if (tab === 'Riportok') {
+                navigate(`/accounty/client/${id}/reports`);
+              } else if (tab === 'Beállítások') {
+                navigate(`/accounty/client/${id}/settings`);
+              } else {
+                setActiveTab(tab);
+              }
+            }}
             className={cn(
               "px-4 py-2 rounded-full text-sm font-medium transition-all",
               activeTab === tab 
@@ -334,14 +435,17 @@ export default function ClientDetailsPage() {
 
           {/* Action Buttons */}
           <div className="grid grid-cols-3 gap-4">
-            <Button className="h-14 bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 text-white rounded-xl text-base font-semibold flex items-center justify-center gap-2">
+            <Button 
+              onClick={() => navigate(`/accounty/client/${client.id}/invoices`)}
+              className="h-14 bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 text-white rounded-xl text-base font-semibold flex items-center justify-center gap-2"
+            >
               <FileCheck className="w-5 h-5" />
               Számlák feldolgozása
             </Button>
             <Button 
               variant="outline" 
               className="h-14 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl text-base font-semibold flex items-center justify-center gap-2"
-              onClick={() => navigate(`/accounty/missing-invoices/${client.id}`)}
+              onClick={() => navigate(`/accounty/client/${client.id}/missing-invoices`)}
             >
               <AlertTriangle className="w-5 h-5 text-slate-400" />
               Hiányzók bekérése

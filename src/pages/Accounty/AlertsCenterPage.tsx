@@ -275,19 +275,6 @@ export default function AlertsCenterPage() {
   const isLoading = settingsLoading || totalsLoading || returnsLoading || customerTotalsLoading;
   const isQueryError = settingsError || totalsError || returnsError || customerTotalsError;
 
-  if (isError || isQueryError) {
-    return <AccountyErrorState message="Nem sikerült betölteni a riasztásokat." onRetry={() => refetch()} />;
-  }
-
-  if (isLoading) {
-    return (
-      <div className="py-32 text-center">
-        <Loader2 className="w-10 h-10 mx-auto mb-3 text-indigo-500 animate-spin" />
-        <p className="text-sm text-slate-500">Riasztások betöltése...</p>
-      </div>
-    );
-  }
-
   const allAlerts = useMemo(() => {
     return generateAlerts(clients, allSettings, ytdTotalsMap, allReturns, customerTotalsMap);
   }, [clients, allSettings, ytdTotalsMap, allReturns, customerTotalsMap]);
@@ -319,6 +306,19 @@ export default function AlertsCenterPage() {
   const setAlertState = (id: string, state: AlertState) => {
     setAlertStates(prev => ({ ...prev, [id]: state }));
   };
+
+  if (isError || isQueryError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a riasztásokat." onRetry={() => refetch()} />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="py-32 text-center">
+        <Loader2 className="w-10 h-10 mx-auto mb-3 text-indigo-500 animate-spin" />
+        <p className="text-sm text-slate-500">Riasztások betöltése...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">

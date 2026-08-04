@@ -1,15 +1,18 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   ArrowLeft, ChevronRight, BookOpen, Plus, Filter,
   Search, Calendar, Download, ChevronDown, Lock,
-  ArrowUpRight, ArrowDownRight, FileText, AlertCircle, Loader2, Import
+  ArrowUpRight, ArrowDownRight, FileText, AlertCircle, Loader2, Import,
+  CheckSquare, Square, X, Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
-import { useCashbookEntries, useEvClientSettings, useCreateCashbookEntry, type PenztarkonyvTetel } from '@/hooks/useEvData';
+import { useCashbookEntries, useEvClientSettings, useCreateCashbookEntry, type PenztarkonyvTetel, type PenztarkonyvCategory } from '@/hooks/useEvData';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import CashbookEntryForm, { type CashbookEntryFormData } from './CashbookEntryForm';
 import { toast } from '@/hooks/use-toast';
@@ -44,6 +47,44 @@ export default function CashbookMainPage() {
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const { dateFromFormatted, dateToFormatted } = useDateRange();
+  
+  const queryClient = useQueryClient();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [lastSelectedIdx, setLastSelectedIdx] = useState<number | null>(null);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+
+  const handleBulkCategoryChange = async (newCategory: PenztarkonyvCategory) => {
+    if (selectedIds.size === 0 || !id) return;
+    setIsBulkUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('accounty_penztarkonyv_tetel')
+        .update({ main_category: newCategory })
+        .in('id', Array.from(selectedIds));
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sikeres tömeges módosítás!',
+        description: `${selectedIds.size} pénztárkönyv tétel kategóriája frissítve.`
+      });
+
+      setSelectedIds(new Set());
+      setLastSelectedIdx(null);
+      
+      queryClient.invalidateQueries({ queryKey: ['cashbook-entries', id] });
+      queryClient.invalidateQueries({ queryKey: ['cashbook-totals', id] });
+    } catch (err: any) {
+      console.error('Bulk category update error:', err);
+      toast({
+        title: 'Hiba a módosítás során',
+        description: err?.message || 'Nem sikerült tömegesen frissíteni a tételeket.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
 
   const handleAnykExport = async () => {
     try {
@@ -138,9 +179,11 @@ export default function CashbookMainPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
 
-  // Reset page when filters change
+  // Reset page and selection when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedIds(new Set());
+    setLastSelectedIdx(null);
   }, [searchQuery, filterDirection, dateFromFormatted, dateToFormatted]);
 
   const totalItems = filtered.length;
@@ -372,6 +415,28 @@ export default function CashbookMainPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border dark:bg-slate-900/30">
+                <th className="px-4 py-3 text-center w-12">
+                  <input
+                    type="checkbox"
+                    checked={paginated.length > 0 && paginated.every(e => selectedIds.has(e.id))}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedIds(prev => {
+                          const next = new Set(prev);
+                          paginated.forEach(entry => next.add(entry.id));
+                          return next;
+                        });
+                      } else {
+                        setSelectedIds(prev => {
+                          const next = new Set(prev);
+                          paginated.forEach(entry => next.delete(entry.id));
+                          return next;
+                        });
+                      }
+                    }}
+                    className="rounded border-border bg-card text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                </th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-12">#</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Dátum</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Bizonylat</th>
@@ -385,20 +450,20 @@ export default function CashbookMainPage() {
             <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-sm text-slate-400">
+                  <td colSpan={9} className="py-16 text-center text-sm text-slate-400">
                     <Loader2 className="w-8 h-8 mx-auto mb-3 text-indigo-400 animate-spin" />
                     Betöltés...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-sm text-slate-400">
+                  <td colSpan={9} className="py-16 text-center text-sm text-slate-400">
                     <BookOpen className="w-10 h-10 mx-auto mb-3 text-slate-300" />
                     {entries.length === 0 ? 'Nincs még pénztárkönyv tétel' : 'Nincs találat'}
                   </td>
                 </tr>
               ) : (
-                paginated.map(entry => {
+                paginated.map((entry, index) => {
                   const catInfo = CATEGORY_LABELS[entry.category] || { label: entry.categoryLabel, color: 'text-slate-500' };
                   return (
                     <tr
@@ -406,9 +471,39 @@ export default function CashbookMainPage() {
                       className={cn(
                         'hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors',
                         entry.isStorno && 'opacity-50 line-through',
-                        entry.periodClosed && 'bg-slate-50/50 dark:bg-slate-800/20'
+                        entry.periodClosed && 'bg-slate-50/50 dark:bg-slate-800/20',
+                        selectedIds.has(entry.id) && 'bg-indigo-50 dark:bg-indigo-900/10'
                       )}
                     >
+                      <td className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(entry.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            const shiftKey = (e.nativeEvent as MouseEvent).shiftKey;
+                            setSelectedIds(prev => {
+                              const next = new Set(prev);
+                              const currentIdx = paginated.findIndex(item => item.id === entry.id);
+                              
+                              if (shiftKey && lastSelectedIdx !== null && currentIdx !== -1) {
+                                const start = Math.min(lastSelectedIdx, currentIdx);
+                                const end = Math.max(lastSelectedIdx, currentIdx);
+                                for (let i = start; i <= end; i++) {
+                                  if (e.target.checked) next.add(paginated[i].id);
+                                  else next.delete(paginated[i].id);
+                                }
+                              } else {
+                                if (e.target.checked) next.add(entry.id);
+                                else next.delete(entry.id);
+                              }
+                              setLastSelectedIdx(currentIdx);
+                              return next;
+                            });
+                          }}
+                          className="rounded border-border bg-card text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-4 py-3 text-xs text-slate-400 font-mono tabular-nums">
                         {entry.serialNumber}
                       </td>
@@ -485,6 +580,44 @@ export default function CashbookMainPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-card/90 backdrop-blur-md border border-border shadow-2xl px-6 py-3.5 rounded-2xl flex items-center justify-between gap-6 z-40 w-[95%] max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{selectedIds.size} tétel kijelölve</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-500 font-medium">Tömeges kategória:</span>
+            <select
+              disabled={isBulkUpdating}
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleBulkCategoryChange(e.target.value as PenztarkonyvCategory);
+                  e.target.value = ''; // Reset select
+                }
+              }}
+              className="text-xs bg-card border border-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium cursor-pointer"
+              defaultValue=""
+            >
+              <option value="" disabled>Válassz kategóriát...</option>
+              {Object.entries(CATEGORY_LABELS).map(([key, value]) => (
+                <option key={key} value={key}>
+                  {value.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => { setSelectedIds(new Set()); setLastSelectedIdx(null); }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="Kijelölés törlése"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

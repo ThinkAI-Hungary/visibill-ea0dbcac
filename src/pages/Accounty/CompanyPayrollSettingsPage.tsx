@@ -11,6 +11,7 @@ import { useAccountyClients, useAccountyTaxProfile } from '@/hooks/accounty';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { supabase } from '@/integrations/supabase/client';
 import { Breadcrumb } from '@/components/accounty/SharedComponents';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 type Tab = 'payroll' | 'locations' | 'nav' | 'documents';
 
@@ -164,27 +165,21 @@ export default function CompanyPayrollSettingsPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-0.5 w-fit">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={cn(
-              'flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-medium transition-all',
-              tab === t.id
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            )}
-          >
-            <t.icon className="w-3.5 h-3.5" /> {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs value={tab} onValueChange={v => setTab(v as Tab)} className="w-full space-y-6">
+        <TabsList className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl">
+          {TABS.map(t => (
+            <TabsTrigger
+              key={t.id}
+              value={t.id}
+              className="flex items-center gap-1.5 py-2 text-xs font-medium rounded-lg transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm"
+            >
+              <t.icon className="w-3.5 h-3.5" /> {t.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      {/* ── Bérszámfejtés tab ── */}
-      {tab === 'payroll' && (
-        <div className="space-y-6">
+        {/* ── Bérszámfejtés tab ── */}
+        <TabsContent value="payroll" className="space-y-6 animate-in fade-in duration-300 outline-none">
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
             <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <Clock className="w-4 h-4" /> Munkaidő & Kerekítés
@@ -196,7 +191,7 @@ export default function CompanyPayrollSettingsPage() {
                   type="number"
                   value={settings.defaultWeeklyHours}
                   onChange={e => update({ defaultWeeklyHours: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                 />
               </div>
               <div>
@@ -204,7 +199,7 @@ export default function CompanyPayrollSettingsPage() {
                 <select
                   value={settings.rounding}
                   onChange={e => update({ rounding: e.target.value as PayrollSettings['rounding'] })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                 >
                   <option value="none">Nincs kerekítés</option>
                   <option value="1">1 Ft-ra kerekít</option>
@@ -217,7 +212,7 @@ export default function CompanyPayrollSettingsPage() {
                 <select
                   value={settings.workDaysSource}
                   onChange={e => update({ workDaysSource: e.target.value as 'official' | 'custom' })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                 >
                   <option value="official">Hivatalos munkarend</option>
                   <option value="custom">Egyéni munkanap-szám</option>
@@ -230,7 +225,7 @@ export default function CompanyPayrollSettingsPage() {
                     type="number"
                     value={settings.customWorkDays}
                     onChange={e => update({ customWorkDays: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                   />
                 </div>
               )}
@@ -247,7 +242,7 @@ export default function CompanyPayrollSettingsPage() {
                 <select
                   value={settings.premiumRules}
                   onChange={e => update({ premiumRules: e.target.value as 'mt' | 'ksz' | 'custom' })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                 >
                   <option value="mt">Munka Törvénykönyve (Mt.)</option>
                   <option value="ksz">Kollektív Szerződés (KSZ)</option>
@@ -259,7 +254,7 @@ export default function CompanyPayrollSettingsPage() {
                 <select
                   value={settings.szepProvider}
                   onChange={e => update({ szepProvider: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                 >
                   <option value="">— Nincs megadva —</option>
                   <option value="otp">OTP Bank</option>
@@ -273,7 +268,7 @@ export default function CompanyPayrollSettingsPage() {
                   type="number"
                   value={settings.remoteAllowanceDefault}
                   onChange={e => update({ remoteAllowanceDefault: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                 />
                 <p className="text-[10px] text-slate-400 mt-0.5">2026: max 32 280 Ft/hó adómentes</p>
               </div>
@@ -285,7 +280,7 @@ export default function CompanyPayrollSettingsPage() {
                   max={28}
                   value={settings.paymentDay}
                   onChange={e => update({ paymentDay: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                 />
               </div>
             </div>
@@ -319,12 +314,10 @@ export default function CompanyPayrollSettingsPage() {
               ))}
             </div>
           </div>
-        </div>
-      )}
+        </TabsContent>
 
-      {/* ── Telephelyek tab ── */}
-      {tab === 'locations' && (
-        <div className="space-y-6">
+        {/* ── Telephelyek tab ── */}
+        <TabsContent value="locations" className="space-y-6 animate-in fade-in duration-300 outline-none">
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
             <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <MapPin className="w-4 h-4" /> Telephelyek
@@ -380,7 +373,7 @@ export default function CompanyPayrollSettingsPage() {
                   type="text"
                   value={newLocName}
                   onChange={e => setNewLocName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                   placeholder="Pl. Központi iroda"
                 />
               </div>
@@ -390,7 +383,7 @@ export default function CompanyPayrollSettingsPage() {
                   type="text"
                   value={newLocAddress}
                   onChange={e => setNewLocAddress(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                   placeholder="Pl. 1052 Budapest, Váci u. 1."
                 />
               </div>
@@ -399,7 +392,7 @@ export default function CompanyPayrollSettingsPage() {
                 <select
                   value={newLocType}
                   onChange={e => setNewLocType(e.target.value as 'headquarters' | 'branch')}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                 >
                   <option value="headquarters">Székhely</option>
                   <option value="branch">Telephely</option>
@@ -415,12 +408,10 @@ export default function CompanyPayrollSettingsPage() {
               Hozzáadás
             </Button>
           </div>
-        </div>
-      )}
+        </TabsContent>
 
-      {/* ── NAV / Integráció tab ── */}
-      {tab === 'nav' && (
-        <div className="space-y-6">
+        {/* ── NAV / Integráció tab ── */}
+        <TabsContent value="nav" className="space-y-6 animate-in fade-in duration-300 outline-none">
           <div className="bg-card rounded-xl border border-border p-6 space-y-5">
             <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <Globe className="w-4 h-4" /> NAV Online kapcsolat
@@ -436,7 +427,7 @@ export default function CompanyPayrollSettingsPage() {
                   type="text"
                   value={navTechnicalUser}
                   onChange={e => setNavTechnicalUser(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                   placeholder="technikai_felhasznalo"
                 />
               </div>
@@ -446,7 +437,7 @@ export default function CompanyPayrollSettingsPage() {
                   type="password"
                   value={navApiKey}
                   onChange={e => setNavApiKey(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                   placeholder="••••••••"
                 />
               </div>
@@ -455,7 +446,7 @@ export default function CompanyPayrollSettingsPage() {
                 <select
                   value={navEnv}
                   onChange={e => setNavEnv(e.target.value as 'production' | 'sandbox')}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
                 >
                   <option value="production"> Éles (production)</option>
                   <option value="sandbox"> Teszt (sandbox)</option>
@@ -482,38 +473,38 @@ export default function CompanyPayrollSettingsPage() {
             </div>
             <p className="text-[10px] text-slate-400">Az adózási profilt az eaisybooks Portfólió → Cégadatok oldalon módosíthatod.</p>
           </div>
-        </div>
-      )}
+        </TabsContent>
 
-      {/* ── Dokumentumok tab ── */}
-      {tab === 'documents' && (
-        <div className="bg-card rounded-xl border border-border p-6 space-y-5">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <CreditCard className="w-4 h-4" /> Dokumentum beállítások
-          </h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 rounded-xl border border-border">
-              <div>
-                <p className="text-sm font-bold">E-bérjegyzék engedélyezése</p>
-                <p className="text-xs text-slate-500 mt-0.5">Foglalkoztatottak e-mailben kapják a bérjegyzéket PDF-ben</p>
+        {/* ── Dokumentumok tab ── */}
+        <TabsContent value="documents" className="space-y-6 animate-in fade-in duration-300 outline-none">
+          <div className="bg-card rounded-xl border border-border p-6 space-y-5">
+            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <CreditCard className="w-4 h-4" /> Dokumentum beállítások
+            </h2>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-border">
+                <div>
+                  <p className="text-sm font-bold">E-bérjegyzék engedélyezése</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Foglalkoztatottak e-mailben kapják a bérjegyzéket PDF-ben</p>
+                </div>
+                <button
+                  onClick={() => update({ emailPayslips: !settings.emailPayslips })}
+                  className={cn(
+                    'relative w-12 h-6 rounded-full transition-colors',
+                    settings.emailPayslips ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                  )}
+                >
+                  <div className={cn(
+                    'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+                    settings.emailPayslips ? 'translate-x-6' : 'translate-x-0.5'
+                  )} />
+                </button>
               </div>
-              <button
-                onClick={() => update({ emailPayslips: !settings.emailPayslips })}
-                className={cn(
-                  'relative w-12 h-6 rounded-full transition-colors',
-                  settings.emailPayslips ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
-                )}
-              >
-                <div className={cn(
-                  'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                  settings.emailPayslips ? 'translate-x-6' : 'translate-x-0.5'
-                )} />
-              </button>
             </div>
+            <p className="text-[10px] text-slate-400">További dokumentum-sablonok az Admin → Sablonok menüben kezelhetők.</p>
           </div>
-          <p className="text-[10px] text-slate-400">További dokumentum-sablonok az Admin → Sablonok menüben kezelhetők.</p>
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
 
       {/* Save button */}
       <div className="flex items-center justify-between">

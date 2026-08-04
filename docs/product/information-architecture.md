@@ -94,47 +94,50 @@ Visibill
 │
 ├── eaisyBooks (/accounty/)                ← korábban: Accounty
 │   ├── /                          Portfólió (Grid/Lista/Kanban nézet)
-│   ├── /client/:id                Ügyfél részletes nézet
+│   ├── /client/:id/overview       Ügyfél főoldal / részletes nézet (Áttekintés és Zárás)
 │   ├── /client/:id/invoices       Ügyfél számlái
+│   ├── /client/:id/missing-invoices Ügyfél hiányzó számlái (bekérési és feltöltési felület)
+│   ├── /client/:id/accounting     Könyvelési modul választó (átirányít az EV vagy TAO felületre)
 │   ├── /client/:id/reports        Ügyfél riportjai
 │   ├── /client/:id/reports/missing-invoices  Hiányzó számlák riport
-│   ├── /missing-invoices          Összes hiányzó számla
-│   ├── /missing-invoices/:id      Ügyfél hiányzó számlái
+│   ├── /missing-invoices          Összes hiányzó számla (globális nézet)
 │   ├── /tax-calendar              Adó naptár
 │   ├── /reports                   Iroda szintű riportok
 │   ├── /reports/missing-invoices  Hiányzó számlák összesítő riport
-│   ├── /approval-queue            Jóváhagyási sor
-│   ├── /payroll/:id               Bérszámfejtés dashboard (per ügyfél)
-│   ├── /payroll/:id/employees     Alkalmazottak
-│   ├── /payroll/:id/employees/new Új alkalmazott wizard
-│   ├── /payroll/:id/employees/:empId  Alkalmazott részletek
-│   ├── /payroll/:id/cycle/new     Új bérciklus
-│   ├── /payroll/:id/cycle/:cycleId  Bérciklus szerkesztés
-│   ├── /payroll/:id/filings       Bevallások
-│   ├── /payroll/:id/reports       Bérszámfejtési riportok
-│   ├── /payroll/:id/portal        Ügyfélportál preview
-│   ├── /payroll/:id/tax-params    Adóparaméterek
+│   ├── /approval-queue            Jóváhagyási sor (e-mail kiküldések előtt)
+│   ├── /client/:id/payroll        Bérszámfejtés dashboard (per ügyfél)
+│   │   ├── /employees             Alkalmazottak
+│   │   ├── /employees/new         Új alkalmazott wizard
+│   │   ├── /employees/:empId      Alkalmazott részletek
+│   │   ├── /cycle/new             Új bérciklus
+│   │   ├── /cycle/:cycleId        Bérciklus szerkesztés
+│   │   ├── /filings               Bevallások
+│   │   ├── /reports               Bérszámfejtési riportok
+│   │   ├── /portal                Ügyfélportál preview
+│   │   └── /tax-params            Adóparaméterek
 │   ├── /client/:id/ev             EV Főoldal (pénztárkönyv egyenleg, küszöbérték-figyelő)
-│   ├── /client/:id/ev/cashbook    Pénztárkönyv (egyszeres könyvvitel)
-│   ├── /client/:id/ev/records     Nyilvántartások áttekintés
-│   ├── /client/:id/ev/records/:type  Nyilvántartás részletes (14 típus)
-│   ├── /client/:id/ev/compare     Adóforma-összehasonlítás (átalány/VSZJA/KATA + járulékok)
-│   ├── /client/:id/ev/flat-rate   Átalányadó kalkulátor
-│   ├── /client/:id/ev/entrepreneurial  Vállalkozói SZJA kalkulátor
-│   ├── /client/:id/ev/kata        KATA kalkulátor
-│   ├── /client/:id/ev/contributions  TB-járulék & szocho negyedéves
-│   ├── /client/:id/ev/vat         ÁFA nyilvántartás
-│   ├── /client/:id/ev/hipa        HIPA kalkulátor
-│   ├── /client/:id/ev/depreciation  Értékcsökkenés
-│   ├── /client/:id/ev/thresholds  Küszöbérték-figyelő
-│   ├── /client/:id/ev/returns     Bevallások (SZJA, ÁFA, járulék, HIPA, KATA, cégautóadó)
-│   ├── /client/:id/ev/lifecycle   Életút (alapítás, forma-váltás, szüneteltetés)
-│   ├── /client/:id/ev/calendar    Adónaptár
-│   ├── /client/:id/ev/optimization  Optimalizáció (tervezett)
-│   ├── /client/:id/ev/master-data Törzsadatok (EV beállítások)
-│   ├── /client/:id/ev/setup       EV beállító wizard
+│   │   ├── /cashbook              Pénztárkönyv (egyszeres könyvvitel)
+│   │   ├── /records               Nyilvántartások áttekintés
+│   │   ├── /records/:type         Nyilvántartás részletes (14 típus)
+│   │   ├── /compare               Adóforma-összehasonlítás (átalány/VSZJA/KATA + járulékok)
+│   │   ├── /flat-rate             Átalányadó kalkulátor
+│   │   ├── /entrepreneurial       Vállalkozói SZJA kalkulátor
+│   │   ├── /kata                  KATA kalkulátor
+│   │   ├── /contributions         TB-járulék & szocho negyedéves
+│   │   ├── /vat                   ÁFA nyilvántartás
+│   │   ├── /hipa                  HIPA kalkulátor
+│   │   ├── /depreciation          Értékcsökkenés
+│   │   ├── /thresholds            Küszöbérték-figyelő
+│   │   ├── /returns               Bevallások (SZJA, ÁFA, járulék, HIPA, KATA, cégautóadó)
+│   │   ├── /lifecycle             Életút (alapítás, forma-váltás, szüneteltetés)
+│   │   ├── /calendar              Adónaptár
+│   │   ├── /optimization          Optimalizáció (tervezett)
+│   │   ├── /master-data           Törzsadatok (EV beállítások)
+│   │   └── /setup                 EV beállító wizard
+│   ├── /client/:id/tao            TAO Főoldal (társasági adó zárás és kalkuláció)
+│   ├── /client/:id/settings       Cégkapu / KÜNY-tárhely és integrációs beállítások
 │   ├── /tickets/:ticketId?        Hibajegyek
-│   ├── /settings                  eaisyBooks beállítások
+│   ├── /settings                  Globális eaisyBooks iroda beállítások
 │   ├── /help                      Segítség
 │   └── /new-client                Új ügyfél wizard (meghívó kód + manuális létrehozás)
 │

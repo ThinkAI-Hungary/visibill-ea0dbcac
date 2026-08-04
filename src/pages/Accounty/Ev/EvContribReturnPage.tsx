@@ -176,7 +176,7 @@ export default function EvContribReturnPage() {
       xml += `<nyomtatvanyok xmlns="http://www.nav.gov.hu/nyomtatvanyok" verzio="1.0">\n`;
       xml += `  <nyomtatvany>\n`;
       xml += `    <nyomtatvanyinformacio>\n`;
-      xml += `      <nyomtatvanyazonosito>${taxYear}58</nyomtatvanyazonosito>\n`;
+      xml += `      <nyomtatvanyazonosito>${taxYear % 100}58</nyomtatvanyazonosito>\n`;
       xml += `      <verzio>1.0</verzio>\n`;
       xml += `    </nyomtatvanyinformacio>\n`;
       xml += `    <mezok>\n`;
@@ -272,7 +272,7 @@ export default function EvContribReturnPage() {
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/accounty/ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />

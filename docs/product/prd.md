@@ -136,17 +136,23 @@ Cég és felhasználói beállítások, csapatkezelés.
 
 ---
 
-### 2.8 eaisyBooks EV Modul
+### 2.8 eaisyBooks EV Modul & Client-Centric Layout (2026-08-04)
 
-Az eaisyBooks könyvelői nézeten belüli egyéni vállalkozó (EV) kezelő modul.
+Az eaisyBooks könyvelői nézeten belüli modulok és navigáció teljes, hierarchikus ügyfélkontextus-alapú újratervezése.
 
 | Funkció | Leírás | Ref |
 |---------|--------|-----|
+| Client-Centric Sidebar | Ha belépünk egy ügyfélbe, a sidebar átvált Ügyfél Kontextus Módra, külön **Egyéni Vállalkozás** (`Coins` ikon), **Társasági Adó** (`Landmark` ikon), és **Hiányzó számlák** (`FileWarning` ikon) gombokkal, kiküszöbölve a kontextusvesztést. | [IA](./information-architecture.md) |
+| Ügyfélválasztó Switcher | A fejléc switcher UUID cserével működik, megőrizve az éppen aktív aloldalt (pl. bérszámfejtés vagy számlák) cégváltáskor. | — |
+| Tabbed Settings | A `CegkapuSettingsPage.tsx` és `CompanyPayrollSettingsPage.tsx` lapfüles elrendezésű lett (Radix UI Tabs), növelve az olvashatóságot és koherenciát. | — |
+| E-mail Előnézet | A hiányzó számlák bekérésekor a rendszer egy részletes előnézeti modált (Email Preview Modal) mutat a küldés jóváhagyása előtt. | — |
+| Self-Healing NAV Banner | A NAV szinkronizáció sikertelensége esetén a rendszer egy figyelemfelkeltő piros figyelmeztető sávot mutat a fejléc alatt, ahonnan egy gombnyomással a technikai felhasználó beállításaiba jut a felhasználó. | — |
+| Glassmorphic Search | A `Ctrl + K` Command Palette teljesen glassmorphic külsőt kapott, és a cégekre keresve azonnal a hierarchikus `/client/:id/overview` oldalra visz. | [P-039](./decisions/P-039-global-search.md) |
 | EV Főoldal | Pénztárkönyv egyenleg, havi bevétel/kiadás, éves összesítők, küszöbérték-figyelő | — |
 | Pénztárkönyv | Egyszeres könyvvitel: bevétel/kiadás könyvelés, időszak-zárás, storno, nyomtatás | — |
 | Nyilvántartások | 14 féle: vevők, szállítók, tárgyi eszközök, beruházások, készlet, gépjármű, stb. | — |
 | Adóforma-összehasonlítás | Átalányadó vs VSZJA vs KATA interaktív kalkulátor. Bevétel slider, költséghányad, foglalkoztatási státusz és szakképzettség toggle-ökkel. | [020](../business/decisions/020-tax-module.md) |
-| TB-járulék & szocho | TB (18,5%) + szocho (13%) kalkuláció adóformánként. Főfoglalkozásúaknál **minimumjárulék-alap** érvényesül (minimálbér vagy garantált bérminimum). Kiegészítő tevékenységűek mentesek. | [020](../business/decisions/020-tax-module.md) |
+| TB-járulék & szocho | TB (18,5%) + szocho (13%) kalkuláció adóformánként. Főfoglalkozásúaknál minimumjárulék-alap érvényesül (minimálbér vagy garantált bérminimum). Kiegészítő tevékenységűek mentesek. | [020](../business/decisions/020-tax-module.md) |
 | Küszöbérték-figyelő | KATA keret (18M), átalány bevételi határ (38,7M/193,7M), ÁFA alanyi mentesség (20M) — zöld/sárga/piros státusz | — |
 | Bevallások | SZJA, ÁFA, Járulék, HIPA, KATA, cégautóadó — draft/submitted/accepted workflow, XML generálás | — |
 | HIPA | Egyszerűsített (sávos) és általános módszer, települési adókulcs beállítás | — |

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, X, Briefcase } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface AccountyCommandPaletteProps {
   cmdOpen: boolean;
@@ -21,9 +22,52 @@ export default function AccountyCommandPalette({
   filteredClients,
   navigate,
 }: AccountyCommandPaletteProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // Combine items to enable unified keyboard index tracking
+  const combinedItems = useMemo(() => {
+    const items: Array<{ name: string; path?: string; id?: string; type: 'page' | 'client'; icon?: any; taxNumber?: string }> = [];
+    filteredPages.forEach(p => {
+      items.push({ name: p.name, path: p.path, type: 'page', icon: p.icon });
+    });
+    filteredClients.forEach(c => {
+      items.push({ name: c.name, id: c.id, type: 'client', taxNumber: c.taxNumber });
+    });
+    return items;
+  }, [filteredPages, filteredClients]);
+
+  // Reset selectedIndex whenever the search query or items change
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [combinedItems]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setCmdOpen(false);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev + 1) % Math.max(1, combinedItems.length));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev - 1 + combinedItems.length) % Math.max(1, combinedItems.length));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const selected = combinedItems[selectedIndex];
+      if (selected) {
+        if (selected.type === 'page' && selected.path) {
+          navigate(selected.path);
+        } else if (selected.type === 'client' && selected.id) {
+          navigate(`/accounty/client/${selected.id}/overview`);
+        }
+        setCmdOpen(false);
+        setCmdQuery('');
+      }
+    }
+  };
+
   return (
     <Dialog open={cmdOpen} onOpenChange={(v) => { setCmdOpen(v); if (!v) setCmdQuery(''); }}>
-      <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden [&>button]:hidden">
+      <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden [&>button]:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800/40 shadow-2xl">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
@@ -32,9 +76,7 @@ export default function AccountyCommandPalette({
             value={cmdQuery}
             onChange={(e) => setCmdQuery(e.target.value)}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground text-foreground"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setCmdOpen(false);
-            }}
+            onKeyDown={handleKeyDown}
           />
           <button
             onClick={() => { setCmdOpen(false); setCmdQuery(''); }}
@@ -47,34 +89,57 @@ export default function AccountyCommandPalette({
           {filteredPages.length > 0 && (
             <div className="mb-2">
               <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Oldalak</p>
-              {filteredPages.map((p) => (
-                <button
-                  key={p.path}
-                  onClick={() => { navigate(p.path); setCmdOpen(false); setCmdQuery(''); }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors text-left"
-                >
-                  <p.icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <span className="text-foreground">{p.name}</span>
-                </button>
-              ))}
+              {filteredPages.map((p, idx) => {
+                const isSelected = idx === selectedIndex;
+                return (
+                  <button
+                    key={p.path}
+                    onClick={() => { navigate(p.path); setCmdOpen(false); setCmdQuery(''); }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-150 text-left",
+                      isSelected
+                        ? "bg-primary text-primary-foreground font-semibold shadow-sm scale-[1.01]"
+                        : "hover:bg-accent text-foreground"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <p.icon className={cn("w-4 h-4 shrink-0", isSelected ? "text-primary-foreground" : "text-muted-foreground")} />
+                      <span>{p.name}</span>
+                    </div>
+                    {isSelected && <span className="text-[10px] opacity-75 font-mono">↵</span>}
+                  </button>
+                );
+              })}
             </div>
           )}
           {filteredClients.length > 0 && (
             <div>
               <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ügyfelek</p>
-              {filteredClients.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => { navigate(`/accounty/client/${c.id}`); setCmdOpen(false); setCmdQuery(''); }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors text-left"
-                >
-                  <Briefcase className="w-4 h-4 text-primary shrink-0" />
-                  <div>
-                    <span className="text-foreground font-medium">{c.name}</span>
-                    <span className="text-muted-foreground text-xs ml-2">{c.taxNumber}</span>
-                  </div>
-                </button>
-              ))}
+              {filteredClients.map((c, idx) => {
+                const globalIdx = filteredPages.length + idx;
+                const isSelected = globalIdx === selectedIndex;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => { navigate(`/accounty/client/${c.id}/overview`); setCmdOpen(false); setCmdQuery(''); }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-150 text-left",
+                      isSelected
+                        ? "bg-primary text-primary-foreground font-semibold shadow-sm scale-[1.01]"
+                        : "hover:bg-accent text-foreground"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Briefcase className={cn("w-4 h-4 shrink-0", isSelected ? "text-primary-foreground" : "text-primary")} />
+                      <div>
+                        <span>{c.name}</span>
+                        <span className={cn("text-xs ml-2", isSelected ? "text-primary-foreground/75" : "text-muted-foreground")}>{c.taxNumber}</span>
+                      </div>
+                    </div>
+                    {isSelected && <span className="text-[10px] opacity-75 font-mono">↵</span>}
+                  </button>
+                );
+              })}
             </div>
           )}
           {filteredPages.length === 0 && filteredClients.length === 0 && cmdQuery && (
@@ -83,6 +148,19 @@ export default function AccountyCommandPalette({
             </div>
           )}
         </div>
+        {combinedItems.length > 0 && (
+          <div className="border-t border-border px-4 py-2 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <span className="px-1.5 py-0.5 bg-card border border-border rounded font-mono shadow-sm">↑↓</span> navigálás
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="px-1.5 py-0.5 bg-card border border-border rounded font-mono shadow-sm">Enter</span> kiválasztás
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="px-1.5 py-0.5 bg-card border border-border rounded font-mono shadow-sm">Esc</span> bezárás
+            </span>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

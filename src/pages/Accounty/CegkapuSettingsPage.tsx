@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Shield, Building2, Key, Clock, CheckCircle, AlertTriangle,
   Monitor, RefreshCw, Save, TestTube, User, Loader2
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCegkapuSettings, useUpsertCegkapuSettings, type CegkapuSettings } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 type TarhelyType = 'cegkapu' | 'kuny';
 type KauType = 'ugyfelkapu_plus' | 'dap' | 'eszig';
@@ -46,6 +47,7 @@ const DEFAULTS: FormData = {
 
 export default function CegkapuSettingsPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { data: saved, isLoading } = useCegkapuSettings(id || '');
   const upsertMutation = useUpsertCegkapuSettings();
@@ -119,9 +121,9 @@ export default function CegkapuSettingsPage() {
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/accounty/client/${id}`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
-        </Link>
+        </button>
         <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg shadow-blue-500/25">
           <Shield className="w-5 h-5 text-white" />
         </div>
@@ -134,205 +136,225 @@ export default function CegkapuSettingsPage() {
         )}
       </div>
 
-      {/* Tárhely típus */}
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <Building2 className="w-4 h-4" /> Tárhely típusa
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { value: 'cegkapu' as TarhelyType, label: 'Cégkapu', desc: 'Gazdasági társaságok számára' },
-            { value: 'kuny' as TarhelyType, label: 'KÜNY-tárhely', desc: 'Egyéni vállalkozó / magánszemély' },
-          ].map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => update({ tarhelyType: opt.value })}
-              className={cn(
-                'p-4 rounded-xl border-2 text-left transition-all',
-                data.tarhelyType === opt.value
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
-                  : 'border-border hover:border-blue-300'
-              )}
-            >
-              <p className="text-sm font-bold">{opt.label}</p>
-              <p className="text-xs text-slate-500 mt-1">{opt.desc}</p>
-            </button>
-          ))}
-        </div>
-      </div>
+      <Tabs defaultValue="tarhely" className="w-full space-y-6">
+        <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl">
+          <TabsTrigger value="tarhely" className="flex items-center gap-2 py-2 text-sm font-medium rounded-lg transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm">
+            <Building2 className="w-4 h-4 text-slate-500" /> Tárhely
+          </TabsTrigger>
+          <TabsTrigger value="alairo" className="flex items-center gap-2 py-2 text-sm font-medium rounded-lg transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm">
+            <User className="w-4 h-4 text-slate-500" /> Aláíró (KAÜ)
+          </TabsTrigger>
+          <TabsTrigger value="szinkron" className="flex items-center gap-2 py-2 text-sm font-medium rounded-lg transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm">
+            <Monitor className="w-4 h-4 text-slate-500" /> Szinkronizáció
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Tárhely azonosító */}
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <Key className="w-4 h-4" /> Tárhely-azonosító
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">Azonosító (10 jegyű)</label>
-            <input
-              type="text"
-              maxLength={10}
-              value={data.tarhelyId}
-              onChange={e => {
-                const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                update({ tarhelyId: val });
-              }}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="1234567890"
-            />
-            {data.tarhelyId.length > 0 && data.tarhelyId.length !== 10 && (
-              <p className="text-xs text-red-500 mt-1">Pontosan 10 számjegyű azonosító szükséges</p>
-            )}
-          </div>
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">Státusz</label>
-            <div className="flex items-center gap-2 h-10">
-              <select
-                value={data.tarhelyStatus}
-                onChange={e => update({ tarhelyStatus: e.target.value as FormData['tarhelyStatus'] })}
-                className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-              >
-                <option value="unknown">Nem ellenőrzött</option>
-                <option value="active">Aktív</option>
-                <option value="error">Hiba</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div>
-          <label className="text-xs text-slate-500 mb-1 block">Cég neve a tárhelyen</label>
-          <input
-            type="text"
-            value={data.tarhelyCompanyName}
-            onChange={e => update({ tarhelyCompanyName: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Pl. Minta Kft."
-          />
-        </div>
-
-        {/* Kapacitás */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-slate-500">Tárhely-kapacitás</span>
-            <span className="text-xs font-mono text-slate-600">{data.capacityUsed} / {data.capacityTotal} MB ({capacityPct}%)</span>
-          </div>
-          <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-            <div
-              className={cn('h-full rounded-full transition-all', capacityPct > 80 ? 'bg-red-500' : capacityPct > 50 ? 'bg-yellow-500' : 'bg-emerald-500')}
-              style={{ width: `${capacityPct}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Aláíró személy */}
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <User className="w-4 h-4" /> Aláíró személy
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">Aláíró neve</label>
-            <input
-              type="text"
-              value={data.signerName}
-              onChange={e => update({ signerName: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Kovács Péter"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">KAÜ-azonosító típusa</label>
-            <select
-              value={data.signerKauType}
-              onChange={e => update({ signerKauType: e.target.value as KauType })}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="ugyfelkapu_plus">Ügyfélkapu+</option>
-              <option value="dap">DÁP (Digitális Állampolgárság Program)</option>
-              <option value="eszig">e-SZIG</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">KAÜ azonosító</label>
-            <input
-              type="text"
-              value={data.signerKauId}
-              onChange={e => update({ signerKauId: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="KP-2026-001"
-            />
-          </div>
-          <div className="flex items-end gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleTest}
-              disabled={testing || !data.signerName}
-              className="gap-1.5"
-            >
-              {testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <TestTube className="w-3.5 h-3.5" />}
-              {testing ? 'Tesztelés...' : 'Aláíró tesztelése'}
-            </Button>
-            {data.signerVerified && (
-              <span className="text-xs text-emerald-600 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Sikeres</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Tárhely-figyelő beállítások */}
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <Monitor className="w-4 h-4" /> Tárhely-figyelő beállítások
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">Polling gyakoriság</label>
-            <div className="flex gap-2">
-              {(['15', '30', '60'] as const).map(freq => (
+        <TabsContent value="tarhely" className="space-y-6 animate-in fade-in duration-300 outline-none">
+          {/* Tárhely típus */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <Building2 className="w-4 h-4" /> Tárhely típusa
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: 'cegkapu' as TarhelyType, label: 'Cégkapu', desc: 'Gazdasági társaságok számára' },
+                { value: 'kuny' as TarhelyType, label: 'KÜNY-tárhely', desc: 'Egyéni vállalkozó / magánszemély' },
+              ].map(opt => (
                 <button
-                  key={freq}
-                  onClick={() => update({ pollingFrequency: freq })}
+                  key={opt.value}
+                  onClick={() => update({ tarhelyType: opt.value })}
                   className={cn(
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-all border',
-                    data.pollingFrequency === freq
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300'
-                      : 'border-border hover:border-blue-300'
+                    'p-4 rounded-xl border-2 text-left transition-all',
+                    data.tarhelyType === opt.value
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-900 dark:text-blue-100 font-semibold'
+                      : 'border-border hover:border-blue-300 text-slate-700 dark:text-slate-300'
                   )}
                 >
-                  {freq === '60' ? '1 óra' : `${freq} perc`}
+                  <p className="text-sm font-bold">{opt.label}</p>
+                  <p className="text-xs text-slate-500 mt-1">{opt.desc}</p>
                 </button>
               ))}
             </div>
           </div>
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">Automatikus nyugta-feldolgozás</label>
-            <button
-              onClick={() => update({ autoReceipt: !data.autoReceipt })}
-              className={cn(
-                'relative w-12 h-6 rounded-full transition-colors',
-                data.autoReceipt ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
-              )}
-            >
-              <div className={cn(
-                'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                data.autoReceipt ? 'translate-x-6' : 'translate-x-0.5'
-              )} />
-            </button>
+
+          {/* Tárhely azonosító */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <Key className="w-4 h-4" /> Tárhely-azonosító
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Azonosító (10 jegyű)</label>
+                <input
+                  type="text"
+                  maxLength={10}
+                  value={data.tarhelyId}
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    update({ tarhelyId: val });
+                  }}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  placeholder="1234567890"
+                />
+                {data.tarhelyId.length > 0 && data.tarhelyId.length !== 10 && (
+                  <p className="text-xs text-red-500 mt-1">Pontosan 10 számjegyű azonosító szükséges</p>
+                )}
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Státusz</label>
+                <div className="flex items-center gap-2 h-10">
+                  <select
+                    value={data.tarhelyStatus}
+                    onChange={e => update({ tarhelyStatus: e.target.value as FormData['tarhelyStatus'] })}
+                    className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  >
+                    <option value="unknown">Nem ellenőrzött</option>
+                    <option value="active">Aktív</option>
+                    <option value="error">Hiba</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Cég neve a tárhelyen</label>
+              <input
+                type="text"
+                value={data.tarhelyCompanyName}
+                onChange={e => update({ tarhelyCompanyName: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                placeholder="Pl. Minta Kft."
+              />
+            </div>
+
+            {/* Kapacitás */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-slate-500">Tárhely-kapacitás</span>
+                <span className="text-xs font-mono text-slate-600 dark:text-slate-400">{data.capacityUsed} / {data.capacityTotal} MB ({capacityPct}%)</span>
+              </div>
+              <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className={cn('h-full rounded-full transition-all', capacityPct > 80 ? 'bg-red-500' : capacityPct > 50 ? 'bg-yellow-500' : 'bg-emerald-500')}
+                  style={{ width: `${capacityPct}%` }}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-        {data.lastSync && (
-          <p className="text-xs text-slate-400">
-            Utolsó szinkronizáció: {new Date(data.lastSync).toLocaleString('hu-HU')}
-          </p>
-        )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="alairo" className="space-y-6 animate-in fade-in duration-300 outline-none">
+          {/* Aláíró személy */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <User className="w-4 h-4" /> Aláíró személy
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Aláíró neve</label>
+                <input
+                  type="text"
+                  value={data.signerName}
+                  onChange={e => update({ signerName: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  placeholder="Kovács Péter"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">KAÜ-azonosító típusa</label>
+                <select
+                  value={data.signerKauType}
+                  onChange={e => update({ signerKauType: e.target.value as KauType })}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                >
+                  <option value="ugyfelkapu_plus">Ügyfélkapu+</option>
+                  <option value="dap">DÁP (Digitális Állampolgárság Program)</option>
+                  <option value="eszig">e-SZIG</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">KAÜ azonosító</label>
+                <input
+                  type="text"
+                  value={data.signerKauId}
+                  onChange={e => update({ signerKauId: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  placeholder="KP-2026-001"
+                />
+              </div>
+              <div className="flex items-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTest}
+                  disabled={testing || !data.signerName}
+                  className="gap-1.5 bg-card border-border text-slate-700 dark:text-slate-300"
+                >
+                  {testing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TestTube className="w-3.5 h-3.5" />}
+                  {testing ? 'Tesztelés...' : 'Aláíró tesztelése'}
+                </Button>
+                {data.signerVerified && (
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Sikeres</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="szinkron" className="space-y-6 animate-in fade-in duration-300 outline-none">
+          {/* Tárhely-figyelő beállítások */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <Monitor className="w-4 h-4" /> Tárhely-figyelő beállítások
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Polling gyakoriság</label>
+                <div className="flex gap-2">
+                  {(['15', '30', '60'] as const).map(freq => (
+                    <button
+                      key={freq}
+                      onClick={() => update({ pollingFrequency: freq })}
+                      className={cn(
+                        'px-4 py-2 rounded-lg text-sm font-medium transition-all border',
+                        data.pollingFrequency === freq
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 font-semibold'
+                          : 'border-border hover:border-blue-300 text-slate-700 dark:text-slate-300'
+                      )}
+                    >
+                      {freq === '60' ? '1 óra' : `${freq} perc`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Automatikus nyugta-feldolgozás</label>
+                <button
+                  onClick={() => update({ autoReceipt: !data.autoReceipt })}
+                  className={cn(
+                    'relative w-12 h-6 rounded-full transition-colors',
+                    data.autoReceipt ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                  )}
+                >
+                  <div className={cn(
+                    'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+                    data.autoReceipt ? 'translate-x-6' : 'translate-x-0.5'
+                  )} />
+                </button>
+              </div>
+            </div>
+            {data.lastSync && (
+              <p className="text-xs text-slate-400">
+                Utolsó szinkronizáció: {new Date(data.lastSync).toLocaleString('hu-HU')}
+              </p>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Mentés */}
       <div className="flex justify-end gap-3">
-        <Button variant="outline" asChild>
-          <Link to={`/accounty/client/${id}`}>Mégse</Link>
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          Mégse
         </Button>
         <Button
           onClick={handleSave}

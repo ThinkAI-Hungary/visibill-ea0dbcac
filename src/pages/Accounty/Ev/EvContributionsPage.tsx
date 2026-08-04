@@ -9,9 +9,15 @@ import { Input } from '@/components/ui/input';
 import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import {
   calculateQuarterlyContributions, formatHuf, formatPercent,
-  DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, type EmploymentStatus
+  DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, type EmploymentStatus,
+  calculateFlatRateIncome
 } from '@/lib/evCalculations';
-import { useEvContributions, type EvContributionCalc } from '@/hooks/useEvData';
+import {
+  useEvContributions,
+  useEvClientSettings,
+  useCashbookEntries,
+  type EvContributionCalc
+} from '@/hooks/useEvData';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -30,7 +36,19 @@ export default function EvContributionsPage() {
   const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
-  const { data: rawContributions, isLoading } = useEvContributions(id, taxYear);
+  const { data: rawContributions, isLoading: contribsLoading } = useEvContributions(id, taxYear);
+  const { data: evSettings, isLoading: settingsLoading } = useEvClientSettings(id, taxYear);
+  const { data: cashbookEntries, isLoading: entriesLoading } = useCashbookEntries(id, taxYear);
+
+  const isLoading = contribsLoading || settingsLoading || entriesLoading;
+
+  // Pre-populate settings from database
+  React.useEffect(() => {
+    if (evSettings) {
+      setEmploymentStatus(evSettings.employment_status || 'foallasu');
+      setIsSkilled(evSettings.skilled_main_activity || false);
+    }
+  }, [evSettings]);
 
   // Build quarterly data from DB records or fallback to local calculation
   const calculations = useMemo(() => {
@@ -66,18 +84,49 @@ export default function EvContributionsPage() {
           },
         };
       } else {
+        // Calculate dynamically from cashbook entries if available
+        let ytdIncome = 0;
+        let prevQuartersBase = 0;
+
+        if (cashbookEntries && evSettings) {
+          const getQuarterlyYtdBase = (q: number) => {
+            const upToMonth = q * 3;
+            if (evSettings.taxpayer_form === 'vszja') {
+              return cashbookEntries
+                .filter(e => {
+                  const m = parseInt(e.entry_date.substring(5, 7), 10);
+                  return m <= upToMonth && e.main_category === 'kiadas_vallalkozoi_kivet' && !e.is_storno;
+                })
+                .reduce((s, e) => s + e.amount, 0);
+            } else if (evSettings.taxpayer_form === 'atalany') {
+              const ytdRev = cashbookEntries
+                .filter(e => {
+                  const m = parseInt(e.entry_date.substring(5, 7), 10);
+                  return m <= upToMonth && e.entry_direction === 'bevetel' && !e.is_storno;
+                })
+                .reduce((s, e) => s + e.amount, 0);
+              const costCat = evSettings.cost_ratio_category || 'general';
+              return calculateFlatRateIncome(ytdRev, costCat, params).taxableIncome;
+            }
+            return 0;
+          };
+
+          ytdIncome = getQuarterlyYtdBase(quarter);
+          prevQuartersBase = quarter > 1 ? getQuarterlyYtdBase(quarter - 1) : 0;
+        }
+
         const calc = calculateQuarterlyContributions(
-          quarter, 0, 0, 3, employmentStatus, isSkilled, params
+          quarter, ytdIncome, prevQuartersBase, 3, employmentStatus, isSkilled, params
         );
         return {
           quarter,
-          ytdIncome: 0,
+          ytdIncome,
           status,
           calc,
         };
       }
     });
-  }, [rawContributions, employmentStatus, isSkilled, params, taxYear]);
+  }, [rawContributions, cashbookEntries, evSettings, employmentStatus, isSkilled, params, taxYear]);
 
   const totalTb = calculations.reduce((s, c) => s + c.calc.tbAmount, 0);
   const totalSzocho = calculations.reduce((s, c) => s + c.calc.szochoAmount, 0);

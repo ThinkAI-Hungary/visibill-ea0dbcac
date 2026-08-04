@@ -11,6 +11,7 @@ interface SyncParams {
   dateFrom: string;
   dateTo: string;
   page?: number;
+  companyId?: string;
 }
 
 Deno.serve(async (req) => {
@@ -53,7 +54,8 @@ Deno.serve(async (req) => {
         invoice_direction: syncParams.direction,
         date_from: syncParams.dateFrom,
         date_to: syncParams.dateTo,
-        status: 'running'
+        status: 'running',
+        company_id: syncParams.companyId || null
       })
       .select()
       .single();
@@ -68,7 +70,7 @@ Deno.serve(async (req) => {
     try {
       // Get credentials
       const { data: credsResult, error: credsError } = await supabaseClient
-        .rpc('get_nav_credentials', { p_user_id: user.id });
+        .rpc('get_nav_credentials', { p_user_id: user.id, p_company_id: syncParams.companyId || null });
 
       if (credsError || !credsResult || credsResult.error) {
         throw new Error('Could not retrieve credentials');
@@ -96,6 +98,7 @@ Deno.serve(async (req) => {
         // "ON CONFLICT DO UPDATE command cannot affect row a second time" error
         const invoicesRaw = invoices.map(invoice => ({
               ...invoice,
+              company_id: credentials.company_id,
               user_id: user.id,
               fetched_at: new Date().toISOString()
             }));
@@ -189,11 +192,11 @@ async function fetchInvoicesFromNAV(
     ? 'https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3'
     : 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
 
-  const queryXML = await createQueryInvoiceDataRequest(credentials, token, params);
+  const queryXML = await createQueryInvoiceDigestRequest(credentials, token, params);
 
   console.log('[NAV-SYNC] Querying NAV API with:', queryXML);
 
-  const response = await fetch(`${baseUrl}/queryInvoiceData`, {
+  const response = await fetch(`${baseUrl}/queryInvoiceDigest`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/xml; charset=UTF-8',
@@ -206,26 +209,28 @@ async function fetchInvoicesFromNAV(
   console.log('[NAV-SYNC] NAV API response:', xmlResponse);
 
   if (!response.ok) {
-    throw new Error(`NAV API request failed: ${response.status}`);
+    const errorCode = extractXMLValue(xmlResponse, 'funcCode') || extractXMLValue(xmlResponse, 'resultCode');
+    const errorMessage = extractXMLValue(xmlResponse, 'message') || extractXMLValue(xmlResponse, 'errorDetail');
+    throw new Error(`NAV API request failed: ${response.status} - ${errorCode || 'UNKNOWN'}: ${errorMessage || xmlResponse}`);
   }
 
   // Parse XML response and extract invoice data
   return parseInvoiceDataResponse(xmlResponse);
 }
 
-async function createQueryInvoiceDataRequest(
+async function createQueryInvoiceDigestRequest(
   credentials: any,
   token: string,
   params: SyncParams
 ): Promise<string> {
   const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-  const requestId = crypto.randomUUID();
+  const requestId = crypto.randomUUID().replace(/-/g, '').substring(0, 30);
 
   const passwordHash = await hashPassword(credentials.nav_password);
   const signature = await createSignature(credentials, requestId, timestamp);
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<QueryInvoiceDataRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api"
+<QueryInvoiceDigestRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api"
                         xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
   <common:header>
     <common:requestId>${requestId}</common:requestId>
@@ -247,16 +252,17 @@ async function createQueryInvoiceDataRequest(
     <softwareDevName>${credentials.software_dev_name || 'VisiBill'}</softwareDevName>
     <softwareDevContact>${credentials.software_dev_contact || 'support@visibill.hu'}</softwareDevContact>
   </software>
-  <exchangeToken>${token}</exchangeToken>
+  <page>1</page>
+  <invoiceDirection>${params.direction}</invoiceDirection>
   <invoiceQueryParams>
     <mandatoryQueryParams>
-      <invoiceDirection>${params.direction}</invoiceDirection>
-      <queryDateType>ISSUE</queryDateType>
-      <queryDateFrom>${params.dateFrom}</queryDateFrom>
-      <queryDateTo>${params.dateTo}</queryDateTo>
+      <invoiceIssueDate>
+        <dateFrom>${params.dateFrom}</dateFrom>
+        <dateTo>${params.dateTo}</dateTo>
+      </invoiceIssueDate>
     </mandatoryQueryParams>
   </invoiceQueryParams>
-</QueryInvoiceDataRequest>`;
+</QueryInvoiceDigestRequest>`;
 }
 
 function parseInvoiceDataResponse(xmlResponse: string): any[] {

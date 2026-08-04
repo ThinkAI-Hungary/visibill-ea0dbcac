@@ -682,7 +682,7 @@ export default function EvRecordDetailPage() {
       departure_location: departure,
       arrival_location: arrival,
       distance_km: distance,
-      travel_date: new Date().toISOString().split('T')[0]
+      entry_date: new Date().toISOString().split('T')[0]
     });
     setShowAddForm(true);
     setEditingRow(null);

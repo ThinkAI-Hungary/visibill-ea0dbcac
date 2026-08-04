@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, History, Plus } from 'lucide-react';
+import { ArrowLeft, History, Plus, MailCheck } from 'lucide-react';
 import { useAccountyMissingItems, useAccountyMissingCounts, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem, useAccountyCommunicationPrefs, useGeneratePortalToken } from '@/hooks/accounty';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -90,10 +92,11 @@ export default function ClientMissingInvoicesPage() {
   const generateTokenMutation = useGeneratePortalToken();
 
 
-  // ── Handler: send request to approval queue ──
+  const [previewMessage, setPreviewMessage] = useState<OutgoingMessage | null>(null);
+
+  // ── Handler: prepare request message for preview ──
   const handleSendToApprovalQueue = async (items: InvoiceItem[]) => {
     if (!companyId || items.length === 0) return;
-
 
     const contactEmail = commPrefs?.contactEmail || 'nincs-megadva@example.com';
     const missingItemsForEmail: MissingItemForEmail[] = items.map(item => ({
@@ -101,7 +104,6 @@ export default function ClientMissingInvoicesPage() {
       category: item.category,
       deadline: item.itemDate ? new Date(item.itemDate).toLocaleDateString('hu-HU') : undefined,
     }));
-
 
     // Generate real portal token using the hook (with specific item IDs)
     let portalLink = `${window.location.origin}/portal/demo-fallback`;
@@ -112,14 +114,12 @@ export default function ClientMissingInvoicesPage() {
       reportError({ type: 'db_query', component: 'ClientMissingInvoicesPage', action: 'error', message: 'Portal token creation failed:', error: err });
     }
 
-
     const generated = generateRequestEmail({
       companyName: clientName,
       missingItems: missingItemsForEmail,
       portalLink,
       senderName: 'ThinkAI',
     });
-
 
     const message: OutgoingMessage = {
       id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -138,12 +138,18 @@ export default function ClientMissingInvoicesPage() {
       missingItemIds: items.map(i => i.id),
     };
 
+    setPreviewMessage(message);
+  };
 
-    addToApprovalQueue(message);
+  const handleConfirmSend = () => {
+    if (!previewMessage) return;
+    addToApprovalQueue(previewMessage);
     toast({
-      title: ' Bekérés a jóváhagyó sorba került',
-      description: `${items.length} dokumentum – ${clientName}`,
+      title: 'Bekérés a jóváhagyó sorba került',
+      description: `${previewMessage.missingItemIds.length} dokumentum – ${clientName}`,
     });
+    setPreviewMessage(null);
+    setSelectedIds([]);
     navigate('/accounty/approval-queue');
   };
 
@@ -372,7 +378,7 @@ export default function ClientMissingInvoicesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <button 
-            onClick={() => navigate('/accounty/missing-invoices')}
+            onClick={() => navigate(-1)}
             className="flex items-center text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors mb-1"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
@@ -441,6 +447,37 @@ export default function ClientMissingInvoicesPage() {
         onSendToApprovalQueue={handleSendToApprovalQueue}
       />
 
+      {/* Email Preview Modal */}
+      {previewMessage && (
+        <Dialog open={!!previewMessage} onOpenChange={(v) => { if (!v) setPreviewMessage(null); }}>
+          <DialogContent className="sm:max-w-[640px] p-6 max-h-[85vh] flex flex-col gap-4 overflow-hidden dark:bg-card border-border">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Bekérő levél előnézete</h3>
+              <p className="text-xs text-slate-500 mt-1">Az alábbi levelet fogjuk küldeni a(z) <span className="font-semibold">{previewMessage.contactEmail}</span> címre jóváhagyás után.</p>
+            </div>
+            
+            <div className="border border-border rounded-xl overflow-hidden flex flex-col flex-1 min-h-[300px] bg-slate-50 dark:bg-slate-900/50">
+              <div className="px-4 py-3 border-b border-border bg-white dark:bg-slate-900 flex flex-col gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                <p><span className="font-semibold text-slate-900 dark:text-slate-200">Címzett:</span> {previewMessage.contactEmail}</p>
+                <p><span className="font-semibold text-slate-900 dark:text-slate-200">Tárgy:</span> {previewMessage.subject}</p>
+              </div>
+              <div 
+                className="p-6 overflow-y-auto flex-1 bg-white dark:bg-slate-950/40 text-sm text-slate-800 dark:text-slate-300 font-sans"
+                dangerouslySetInnerHTML={{ __html: previewMessage.htmlPreview || `<pre class="font-mono whitespace-pre-wrap">${previewMessage.aiGeneratedBody}</pre>` }}
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 shrink-0 pt-2">
+              <Button variant="outline" onClick={() => setPreviewMessage(null)} className="bg-card border-border text-slate-700 dark:text-slate-300">
+                Mégse
+              </Button>
+              <Button onClick={handleConfirmSend} className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold gap-1.5">
+                <MailCheck className="w-4 h-4" /> Bekérés küldése
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
     </div>
   );

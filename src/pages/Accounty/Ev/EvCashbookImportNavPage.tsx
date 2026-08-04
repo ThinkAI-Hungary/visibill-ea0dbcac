@@ -47,6 +47,7 @@ interface GridRow {
   description: string;
   selected: boolean;
   isPredicting: boolean;
+  ruleApplied?: boolean;
 }
 
 export default function EvCashbookImportNavPage() {
@@ -107,15 +108,27 @@ export default function EvCashbookImportNavPage() {
   if (invoices && cashbookEntries && !dataInitialized) {
     const initialGrid = importableInvoices.map(inv => {
       const isSales = inv.type === 'kimeno';
-      // Basic smart rules for default category prediction
-      let defaultCat: PenztarkonyvCategory = isSales ? 'bevetel_adokoteles' : 'kiadas_egyeb_koltseg';
       
-      const lowerPartner = inv.partnerName.toLowerCase();
-      if (!isSales) {
-        if (lowerPartner.includes('nav') || lowerPartner.includes('adó') || lowerPartner.includes('vám')) {
-          defaultCat = 'kiadas_egyeb_nem_koltseg';
-        } else if (lowerPartner.includes('tesco') || lowerPartner.includes('auchan') || lowerPartner.includes('obi') || lowerPartner.includes('praktiker') || lowerPartner.includes('lild') || lowerPartner.includes('aldi') || lowerPartner.includes('irodaszer')) {
-          defaultCat = 'kiadas_anyag_arubeszerzes';
+      // Load local rules for category prediction fallback
+      let defaultCat: PenztarkonyvCategory = isSales ? 'bevetel_adokoteles' : 'kiadas_egyeb_koltseg';
+      let ruleApplied = false;
+      try {
+        const localRules = JSON.parse(localStorage.getItem(`cashbook_rules_${id}`) || '{}');
+        const partnerKey = inv.partnerName.trim().toLowerCase();
+        if (localRules[partnerKey]) {
+          defaultCat = localRules[partnerKey];
+          ruleApplied = true;
+        }
+      } catch (err) {}
+
+      if (!ruleApplied) {
+        const lowerPartner = inv.partnerName.toLowerCase();
+        if (!isSales) {
+          if (lowerPartner.includes('nav') || lowerPartner.includes('adó') || lowerPartner.includes('vám')) {
+            defaultCat = 'kiadas_egyeb_nem_koltseg';
+          } else if (lowerPartner.includes('tesco') || lowerPartner.includes('auchan') || lowerPartner.includes('obi') || lowerPartner.includes('praktiker') || lowerPartner.includes('lild') || lowerPartner.includes('aldi') || lowerPartner.includes('irodaszer')) {
+            defaultCat = 'kiadas_anyag_arubeszerzes';
+          }
         }
       }
 
@@ -128,9 +141,12 @@ export default function EvCashbookImportNavPage() {
         vatAmount: inv.vatAmount,
         direction: isSales ? 'kimeno' : 'bejovo',
         category: defaultCat,
-        description: `${inv.partnerName} - Számla: ${inv.invoiceNumber}`,
+        description: ruleApplied 
+          ? `${inv.partnerName} - Szabály alapján besorolva` 
+          : `${inv.partnerName} - Számla: ${inv.invoiceNumber}`,
         selected: true,
         isPredicting: false,
+        ruleApplied,
       };
     });
     setGridData(initialGrid);
@@ -220,11 +236,27 @@ export default function EvCashbookImportNavPage() {
 
       setGridData(prev => prev.map(row => {
         if (!row.selected) return row;
+        
+        // Prioritize local rules first
+        try {
+          const localRules = JSON.parse(localStorage.getItem(`cashbook_rules_${id}`) || '{}');
+          const partnerKey = row.partnerName.trim().toLowerCase();
+          if (localRules[partnerKey]) {
+            return {
+              ...row,
+              category: localRules[partnerKey],
+              ruleApplied: true,
+              description: `${row.partnerName} - Szabály alapján besorolva`
+            };
+          }
+        } catch (e) {}
+
         const pred = predictionsMap.get(row.invoiceId);
         if (pred) {
           return {
             ...row,
             category: pred.category,
+            ruleApplied: false,
             description: `${row.partnerName} - ${pred.explanation || `Számla: ${row.invoiceNumber}`}`
           };
         }
@@ -467,17 +499,42 @@ export default function EvCashbookImportNavPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <select
-                          value={row.category}
-                          onChange={(e) => handleUpdateRow(row.invoiceId, { category: e.target.value as PenztarkonyvCategory })}
-                          className="w-full text-xs bg-card border border-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
-                        >
-                          {CATEGORIES.filter(cat => cat.direction === (row.direction === 'kimeno' ? 'bevetel' : 'kiadas')).map(cat => (
-                            <option key={cat.key} value={cat.key}>
-                              {cat.label}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5 min-w-[200px]">
+                          <select
+                            value={row.category}
+                            onChange={(e) => handleUpdateRow(row.invoiceId, { category: e.target.value as PenztarkonyvCategory, ruleApplied: false })}
+                            className={cn(
+                              "flex-1 text-xs bg-card border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium transition-colors",
+                              row.ruleApplied
+                                ? "border-indigo-500/50 bg-indigo-50/30 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400"
+                                : "border-border"
+                            )}
+                          >
+                            {CATEGORIES.filter(cat => cat.direction === (row.direction === 'kimeno' ? 'bevetel' : 'kiadas')).map(cat => (
+                              <option key={cat.key} value={cat.key}>
+                                {cat.label}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => {
+                              try {
+                                const localRules = JSON.parse(localStorage.getItem(`cashbook_rules_${id}`) || '{}');
+                                localRules[row.partnerName.trim().toLowerCase()] = row.category;
+                                localStorage.setItem(`cashbook_rules_${id}`, JSON.stringify(localRules));
+                                handleUpdateRow(row.invoiceId, { ruleApplied: true, description: `${row.partnerName} - Szabály alapján besorolva` });
+                                toast({
+                                  title: 'Szabály mentve!',
+                                  description: `A(z) "${row.partnerName}" partner kategóriája elmentve.`
+                                });
+                              } catch (err) {}
+                            }}
+                            className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-indigo-600 transition-colors shrink-0"
+                            title="Mentés szabályként ehhez a partnerhez"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <Input

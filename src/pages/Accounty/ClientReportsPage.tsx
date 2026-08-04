@@ -52,7 +52,7 @@ export default function ClientReportsPage() {
       {/* Header */}
       <div className="flex flex-col gap-1">
         <button 
-          onClick={() => navigate(`/accounty/client/${id}`)}
+          onClick={() => navigate(-1)}
           className="flex items-center text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors w-fit"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
