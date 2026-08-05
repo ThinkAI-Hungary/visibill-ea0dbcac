@@ -23,6 +23,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import CourierReportTab from '@/components/CourierReportTab';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { format } from 'date-fns';
+import { hu } from 'date-fns/locale';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -107,33 +108,131 @@ const TransactionsPage = () => {
 
   const { data: exchangeRates } = useExchangeRates();
 
+  // Query to fetch all transactions (lightweight, no range/pagination limit) for the chart
+  const { data: chartTransactions = [] } = useQuery({
+    queryKey: [
+      'transactions-chart',
+      selectedCompany?.id,
+      dateFromStr,
+      dateToStr,
+      filters.currency,
+      filters.type,
+      filters.search,
+      filters.matchStatus,
+    ],
+    queryFn: async () => {
+      let query = supabase
+        .from('transactions')
+        .select('transaction_date, amount, currency')
+        .eq('company_id', selectedCompany!.id)
+        .order('transaction_date', { ascending: true });
+
+      if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
+      if (dateToStr) query = query.lte('transaction_date', dateToStr);
+      if (filters.currency !== 'all') query = query.eq('currency', filters.currency);
+      if (filters.type !== 'all') query = query.eq('type', filters.type);
+      if (filters.search) {
+        query = query.or(`description.ilike.%${filters.search}%,type.ilike.%${filters.search}%`);
+      }
+
+      // Server-side match status filtering
+      if (filters.matchStatus !== 'all') {
+        if (filters.matchStatus === 'matched') {
+          query = query
+            .eq('is_verified', true)
+            .not('matched_invoice_id', 'is', null);
+        } else if (filters.matchStatus === 'auto_settled') {
+          query = query.or(
+            'match_type.eq.no_match_category,' +
+            'type.in.("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók")'
+          );
+        } else if (filters.matchStatus === 'suggested') {
+          query = query
+            .not('matched_invoice_id', 'is', null)
+            .or('is_verified.is.null,is_verified.eq.false')
+            .not('match_type', 'eq', 'no_match_category')
+            .not('match_type', 'eq', 'no_invoice')
+            .not('match_type', 'eq', 'invoice_missing');
+        } else if (filters.matchStatus === 'unmatched') {
+          query = query
+            .is('matched_invoice_id', null)
+            .not('match_type', 'eq', 'no_match_category')
+            .not('match_type', 'eq', 'no_invoice')
+            .not('match_type', 'eq', 'invoice_missing')
+            .not('type', 'in', '("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók")');
+        } else if (filters.matchStatus === 'no_invoice') {
+          query = query.eq('match_type', 'no_invoice');
+        } else if (filters.matchStatus === 'invoice_missing') {
+          query = query.eq('match_type', 'invoice_missing');
+        }
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as { transaction_date: string; amount: number; currency: string | null }[];
+    },
+    enabled: !!selectedCompany?.id && !!dateFromStr && !!dateToStr,
+    staleTime: 30_000,
+  });
+
+  const isYearlyOrLongRange = useMemo(() => {
+    if (!dateFrom || !dateTo) return false;
+    const diffTime = Math.abs(dateTo.getTime() - dateFrom.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 35;
+  }, [dateFrom, dateTo]);
+
   const chartData = useMemo(() => {
-    if (!filteredTransactions || filteredTransactions.length === 0) return [];
+    if (!chartTransactions || chartTransactions.length === 0) return [];
+    
+    // Apply client-side amount filters
+    let txs = [...chartTransactions];
+    if (filters.amountMin) {
+      const min = parseFloat(filters.amountMin);
+      if (!isNaN(min)) txs = txs.filter(t => Math.abs(t.amount) >= min);
+    }
+    if (filters.amountMax) {
+      const max = parseFloat(filters.amountMax);
+      if (!isNaN(max)) txs = txs.filter(t => Math.abs(t.amount) <= max);
+    }
+
     const groups: Record<string, { date: string; dateParsed: Date; inflow: number; outflow: number }> = {};
-    for (const t of filteredTransactions) {
+    for (const t of txs) {
       if (!t.transaction_date) continue;
-      const dateStr = format(new Date(t.transaction_date), 'yyyy-MM-dd');
+      
+      const parsedDate = new Date(t.transaction_date);
+      // Group by year-month for yearly/long ranges, otherwise group by day
+      const groupKey = isYearlyOrLongRange
+        ? format(parsedDate, 'yyyy-MM')
+        : format(parsedDate, 'yyyy-MM-dd');
+
+      const label = isYearlyOrLongRange
+        ? format(parsedDate, 'yyyy. LLL', { locale: hu })
+        : format(parsedDate, 'MM.dd');
+
       const amount = t.amount;
       const currency = t.currency || 'HUF';
       const rate = exchangeRates?.[currency] ?? 1;
       const hufAmount = amount * rate;
 
-      if (!groups[dateStr]) {
-        groups[dateStr] = {
-          date: format(new Date(t.transaction_date), 'MM.dd'),
-          dateParsed: new Date(t.transaction_date),
+      if (!groups[groupKey]) {
+        groups[groupKey] = {
+          date: label,
+          dateParsed: isYearlyOrLongRange
+            ? new Date(parsedDate.getFullYear(), parsedDate.getMonth(), 1)
+            : parsedDate,
           inflow: 0,
           outflow: 0,
         };
       }
       if (hufAmount > 0) {
-        groups[dateStr].inflow += hufAmount;
+        groups[groupKey].inflow += hufAmount;
       } else {
-        groups[dateStr].outflow += Math.abs(hufAmount);
+        groups[groupKey].outflow += Math.abs(hufAmount);
       }
     }
     return Object.values(groups).sort((a, b) => a.dateParsed.getTime() - b.dateParsed.getTime());
-  }, [filteredTransactions, exchangeRates]);
+  }, [chartTransactions, exchangeRates, filters.amountMin, filters.amountMax, isYearlyOrLongRange]);
 
   // ── P1: Unified bank uploads query (consolidates 3 queries into 1) ──
   const { data: bankUploads = [] } = useQuery({

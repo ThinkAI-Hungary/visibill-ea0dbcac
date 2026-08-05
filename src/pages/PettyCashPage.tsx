@@ -57,6 +57,7 @@ const PettyCashPage = () => {
   });
 
   // Aggregate by currency (total across all registers)
+  // Aggregate by currency (total across all registers)
   const totalByCurrency = useMemo(() => {
     const m: Record<string, number> = {};
     summary.forEach(r => {
@@ -72,6 +73,12 @@ const PettyCashPage = () => {
       if (!m[r.register_id]) m[r.register_id] = { name: r.register_name, is_default: r.is_default, currencies: [] };
       m[r.register_id].currencies.push({ currency: r.currency, balance: r.current_balance });
     });
+    
+    // Sort currencies within each register consistently (HUF first, then alphabetically)
+    Object.values(m).forEach(reg => {
+      reg.currencies.sort((a, b) => a.currency === 'HUF' ? -1 : b.currency === 'HUF' ? 1 : a.currency.localeCompare(b.currency));
+    });
+
     return Object.entries(m)
       .sort(([, a], [, b]) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0) || a.name.localeCompare(b.name));
   }, [summary]);

@@ -53,11 +53,23 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
   const setIsOpen = externalOnOpenChange || setInternalOpen;
   const [deleteTarget, setDeleteTarget] = useState<ReportUploadWithRows | null>(null);
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<ReportUploadWithRows[] | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [uploaderFilter, setUploaderFilter] = useState('all');
 
   const companyId = selectedCompany?.id;
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setSelectedIds(new Set());
+  };
+
+  const handleUploaderFilterChange = (val: string) => {
+    setUploaderFilter(val);
+    setSelectedIds(new Set());
+  };
 
   // Fetch report_uploads with courier_reports counts
   const { data: uploads = [], isLoading } = useQuery({
@@ -251,6 +263,103 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
     }
   };
 
+  // Bulk Delete file only (keep report data)
+  const handleBulkDeleteFileOnly = async (uploadsToDelete: ReportUploadWithRows[]) => {
+    setDeleting(true);
+    try {
+      const ids = uploadsToDelete.map(u => u.id);
+      const { data: uploadRows } = await supabase
+        .from('report_uploads')
+        .select('file_url')
+        .in('id', ids);
+
+      // Unlink courier_reports from these uploads
+      await supabase
+        .from('courier_reports')
+        .update({ upload_id: null })
+        .in('upload_id', ids);
+
+      // Delete upload records
+      const { error } = await supabase
+        .from('report_uploads')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+
+      // Remove from storage
+      const storagePaths: string[] = [];
+      (uploadRows || []).forEach(row => {
+        if (row.file_url) {
+          const storagePath = extractStoragePath(row.file_url, 'report-uploads');
+          if (storagePath) storagePaths.push(storagePath);
+        }
+      });
+      if (storagePaths.length > 0) {
+        await supabase.storage.from('report-uploads').remove(storagePaths);
+      }
+
+      toast({ title: 'Sikeres törlés', description: `${uploadsToDelete.length} fájl törölve lett. A riport adatok megmaradtak.`, duration: 3000 });
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['report_uploads_with_rows', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['courier-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+    } catch (err: any) {
+      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+      setBulkDeleteTarget(null);
+    }
+  };
+
+  // Bulk Delete file AND all associated report data
+  const handleBulkDeleteFileAndData = async (uploadsToDelete: ReportUploadWithRows[]) => {
+    setDeleting(true);
+    try {
+      const ids = uploadsToDelete.map(u => u.id);
+      const { data: uploadRows } = await supabase
+        .from('report_uploads')
+        .select('file_url')
+        .in('id', ids);
+
+      // 1. Delete linked courier_reports
+      const { error: reportError } = await supabase
+        .from('courier_reports')
+        .delete()
+        .in('upload_id', ids);
+      if (reportError) throw reportError;
+
+      // 2. Delete upload records
+      const { error } = await supabase
+        .from('report_uploads')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+
+      // 3. Remove from storage
+      const storagePaths: string[] = [];
+      (uploadRows || []).forEach(row => {
+        if (row.file_url) {
+          const storagePath = extractStoragePath(row.file_url, 'report-uploads');
+          if (storagePath) storagePaths.push(storagePath);
+        }
+      });
+      if (storagePaths.length > 0) {
+        await supabase.storage.from('report-uploads').remove(storagePaths);
+      }
+
+      toast({ title: 'Sikeres törlés', description: `A kijelölt dokumentumok és a hozzájuk tartozó riport sorok törölve lettek.`, duration: 3000 });
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['report_uploads_with_rows', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['courier-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+    } catch (err: any) {
+      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+      setBulkDeleteTarget(null);
+    }
+  };
+
   const REPORT_TYPE_LABELS: Record<string, string> = {
     gls: 'GLS',
     dpd: 'DPD',
@@ -261,7 +370,10 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) setSelectedIds(new Set());
+      }}>
         {externalOpen === undefined && (
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
@@ -288,11 +400,11 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
               <Input
                 placeholder="Keresés fájlnév alapján..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
               />
             </div>
-            <Select value={uploaderFilter} onValueChange={setUploaderFilter}>
+            <Select value={uploaderFilter} onValueChange={handleUploaderFilterChange}>
               <SelectTrigger className="h-9 w-[220px] bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
                 <User className="h-3.5 w-3.5 mr-1.5 text-slate-500 dark:text-muted-foreground" />
                 <SelectValue placeholder="Feltöltő" />
@@ -308,6 +420,25 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
             </Select>
           </div>
 
+          {/* Bulk Action Bar */}
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-950 dark:text-red-400 animate-in fade-in duration-200">
+              <span className="text-sm font-semibold">{selectedIds.size} kijelölt elem</span>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 gap-1.5 font-semibold"
+                onClick={() => {
+                  const targets = uploads.filter(u => selectedIds.has(u.id));
+                  setBulkDeleteTarget(targets);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                Kijelöltek törlése
+              </Button>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -321,17 +452,52 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
               <Table className="compact-table">
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[5%]">
+                      <input
+                        type="checkbox"
+                        checked={filteredUploads.length > 0 && selectedIds.size === filteredUploads.length}
+                        ref={input => {
+                          if (input) {
+                            input.indeterminate = selectedIds.size > 0 && selectedIds.size < filteredUploads.length;
+                          }
+                        }}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIds(new Set(filteredUploads.map(u => u.id)));
+                          } else {
+                            setSelectedIds(new Set());
+                          }
+                        }}
+                        className="rounded border-slate-300 dark:border-white/10 text-primary focus:ring-primary h-4 w-4 accent-primary cursor-pointer mt-1"
+                      />
+                    </TableHead>
                     <TableHead className="w-[30%]">Fájl neve</TableHead>
                     <TableHead className="w-[10%]">Típus</TableHead>
                     <TableHead className="w-[15%]">Sorok</TableHead>
                     <TableHead className="w-[18%]">Feltöltés dátuma</TableHead>
                     <TableHead className="w-[15%]">Feltöltötte</TableHead>
-                    <TableHead className="w-[12%] text-right">Művelet</TableHead>
+                    <TableHead className="w-[7%] text-right">Művelet</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredUploads.map((upload) => (
                     <TableRow key={upload.id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(upload.id)}
+                          onChange={() => {
+                            const next = new Set(selectedIds);
+                            if (next.has(upload.id)) {
+                              next.delete(upload.id);
+                            } else {
+                              next.add(upload.id);
+                            }
+                            setSelectedIds(next);
+                          }}
+                          className="rounded border-slate-300 dark:border-white/10 text-primary focus:ring-primary h-4 w-4 accent-primary cursor-pointer mt-1"
+                        />
+                      </TableCell>
                       <TableCell className="font-medium text-sm truncate max-w-[250px]">
                         {upload.file_name}
                       </TableCell>
@@ -371,10 +537,17 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+      <AlertDialog open={!!deleteTarget || !!bulkDeleteTarget} onOpenChange={(open) => {
+        if (!open) {
+          setDeleteTarget(null);
+          setBulkDeleteTarget(null);
+        }
+      }}>
         <AlertDialogContent className="max-w-md border-border bg-card">
           <AlertDialogHeader className="w-full min-w-0">
-            <AlertDialogTitle>Riport dokumentum törlése</AlertDialogTitle>
+            <AlertDialogTitle>
+              {deleteTarget ? 'Riport dokumentum törlése' : 'Kijelölt riport dokumentumok törlése'}
+            </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 w-full min-w-0">
                 <p>Válaszd ki a törlés módját:</p>
@@ -387,7 +560,10 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
             {/* Option A: File only */}
             <button
               disabled={deleting}
-              onClick={() => { if (deleteTarget) handleDeleteFileOnly(deleteTarget); }}
+              onClick={() => {
+                if (deleteTarget) handleDeleteFileOnly(deleteTarget);
+                else if (bulkDeleteTarget) handleBulkDeleteFileOnly(bulkDeleteTarget);
+              }}
               className="w-full text-left p-3 rounded-lg border border-border/60 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-start gap-3">
@@ -399,7 +575,15 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
                     Csak a fájl törlése
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A <span className="font-medium text-foreground break-all">{deleteTarget?.file_name}</span> fájl törlődik, de a feldolgozott riport adatok megmaradnak.
+                    {deleteTarget ? (
+                      <>
+                        A <span className="font-medium text-foreground break-all">{deleteTarget.file_name}</span> fájl törlődik, de a feldolgozott riport adatok megmaradnak.
+                      </>
+                    ) : (
+                      <>
+                        A kijelölt <span className="font-medium text-foreground">{bulkDeleteTarget?.length} fájl</span> törlődik, de a feldolgozott riport adatok megmaradnak.
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
@@ -408,7 +592,10 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
             {/* Option B: File + Report data */}
             <button
               disabled={deleting}
-              onClick={() => { if (deleteTarget) handleDeleteFileAndData(deleteTarget); }}
+              onClick={() => {
+                if (deleteTarget) handleDeleteFileAndData(deleteTarget);
+                else if (bulkDeleteTarget) handleBulkDeleteFileAndData(bulkDeleteTarget);
+              }}
               className="w-full text-left p-3 rounded-lg border border-red-200 dark:border-red-900/40 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-start gap-3">
@@ -420,11 +607,23 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
                     Fájl és riport adatok törlése
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A <span className="font-medium text-foreground break-all">{deleteTarget?.file_name}</span> fájl és a hozzátartozó{' '}
-                    <span className="font-medium text-foreground">
-                      {deleteTarget?.rowCount} riport sor
-                    </span>{' '}
-                    is véglegesen törlődik.
+                    {deleteTarget ? (
+                      <>
+                        A <span className="font-medium text-foreground break-all">{deleteTarget.file_name}</span> fájl és a hozzátartozó{' '}
+                        <span className="font-medium text-foreground">
+                          {deleteTarget.rowCount} riport sor
+                        </span>{' '}
+                        is véglegesen törlődik.
+                      </>
+                    ) : (
+                      <>
+                        A kijelölt <span className="font-medium text-foreground">{bulkDeleteTarget?.length} fájl</span> és a hozzájuk tartozó összesen{' '}
+                        <span className="font-medium text-foreground">
+                          {bulkDeleteTarget?.reduce((acc, u) => acc + u.rowCount, 0)} riport sor
+                        </span>{' '}
+                        is véglegesen törlődik.
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
