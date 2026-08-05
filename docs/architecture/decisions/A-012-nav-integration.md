@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-10
-**Utoljára frissítve:** 2026-07-18
+**Utoljára frissítve:** 2026-07-29
 
 ## Context
 
@@ -35,6 +35,7 @@ A magyar adórendszer megköveteli a NAV Online Számla rendszer használatát. 
 - **Bruttó összeg fallback számítása:** Ha a számlázó szoftver a NAV XML-ben nem adta meg a felső szintű `<invoiceGrossAmount>` (vagy `<invoiceGrossAmountHUF>`) elemet, az Edge Function automatikusan visszalép a `<invoiceNetAmount>` és `<invoiceVatAmount>` összeadására a bruttó összeg kiszámításához.
 - **Többfelhasználós cégek szinkronizációja:** A NAV számlák részleteinek lekérdezésekor a lekérdezés kizárólag a `company_id`-re szűr, a `user_id` szűrése elhagyásra került. Ezzel biztosított, hogy ha a cégen belül egy másik felhasználó kezdeményezte a számlák beolvasását, a részletek lekérése és mentése akkor is sikeres legyen a cég érvényes NAV hitelesítő adataival.
 - **Automatikus `validation_status` előléptetés (2026-07-28):** Minden sikeres NAV API szinkronizáció (`nav-query-outbound-invoices`, `nav-sync`) automatikusan `valid` státuszra lépteti elő a cég `user_nav_credentials` rekordját (`validation_status = 'valid'`, `last_validated_at = NOW()`), megelőzve az esetleges beragadt `pending` állapotot és biztosítva az éjszakai automatikus cron szinkronizáció folyamatosságát. Emellett a `save_nav_credentials` eljárás a sikeres felületi teszt után közvetlenül `valid` státusszal hozza létre/frissíti a rekordot.
+- **`save_nav_credentials` regresszió javítás (2026-07-29):** A 07-28-as migráció regressziót okozott: a `software_id` formátuma `VISIBILL_XXXXXXXX`-re változott (helyes: `HU` + 8 jegyű adószám + 8 hex karakter = 18 karakter), a Vault secret nevek inkonzisztenssé váltak, és az idempotens törlés (DELETE before CREATE) kimaradt. Javítva: `software_id` helyes formátum, `nav_*_company_` + company_id Vault nevek, idempotens secret kezelés, `company_id IS NULL` validáció visszaállítva.
 - A számlák automatikusan GL kategorizálást kapnak (PGMQ → Worker)
 
 **Partner caching (2026-06-29):**

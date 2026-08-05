@@ -4,6 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import { exportToFile } from '@/lib/exportUtils';
 import type { NavInvoice, SubmittedInvoice } from './useInvoiceData';
 import { reportError } from '@/lib/errorReporter';
+import type { SyncProgress } from '@/components/nav/NavSyncDialog';
 
 interface UseInvoiceMutationsParams {
   companyId: string;
@@ -103,7 +104,7 @@ export function useInvoiceMutations({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleSync = async () => {
+  const handleSync = async (syncDateFrom?: string, syncDateTo?: string, onProgress?: (progress: SyncProgress) => void) => {
     if (!selectedCompany) {
       toast({ title: 'Nincs kiválasztott cég', variant: 'destructive' });
       return;
@@ -139,16 +140,19 @@ export function useInvoiceMutations({
         return chunks;
       };
 
-      const endDate = new Date();
-      const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+      const endDate = syncDateTo ? new Date(syncDateTo) : new Date();
+      const startDate = syncDateFrom ? new Date(syncDateFrom) : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
       const dateChunks = splitDateRange(startDate, endDate);
 
+      // Report initial progress
+      onProgress?.({ currentChunk: 0, totalChunks: dateChunks.length, totalInvoices: 0 });
 
       let totalOutbound = 0;
       let totalInbound = 0;
       const errors: string[] = [];
 
-      for (const chunk of dateChunks) {
+      for (let i = 0; i < dateChunks.length; i++) {
+        const chunk = dateChunks[i];
 
         const [outboundResult, inboundResult] = await Promise.allSettled([
           supabase.functions.invoke('nav-query-outbound-invoices', {
@@ -178,6 +182,9 @@ export function useInvoiceMutations({
             totalInbound += data.totalInvoices || 0;
           }
         }
+
+        // Report chunk progress
+        onProgress?.({ currentChunk: i + 1, totalChunks: dateChunks.length, totalInvoices: totalOutbound + totalInbound });
       }
 
       const totalInvoices = totalOutbound + totalInbound;

@@ -985,8 +985,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceMutations.ts": {
-    "mtime": 1785323991.0829368,
-    "ast_hash": "c6b7974c5a46bb66061ae94cbb367471",
+    "mtime": 1782492721.132134,
+    "ast_hash": "9966ffdea2d99b98a494066a78dfe771",
     "semantic_hash": ""
   },
   "src/hooks/useKeyboardShortcuts.ts": {
@@ -1495,8 +1495,8 @@
     "semantic_hash": ""
   },
   "src/pages/InvoicesPage.tsx": {
-    "mtime": 1785324031.2087483,
-    "ast_hash": "e857c8e367eeeaaee69b9e911253904f",
+    "mtime": 1785274099.5990705,
+    "ast_hash": "8b40ef1e94850afed43a40ccc2fbf677",
     "semantic_hash": ""
   },
   "src/pages/KintlevoPage.tsx": {
@@ -3050,8 +3050,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-012-nav-integration.md": {
-    "mtime": 1785321416.8176546,
-    "ast_hash": "55a834b38d35ea772c2a2d2e01421fdf",
+    "mtime": 1785267960.574581,
+    "ast_hash": "ea168e6ee5384d269cf02290391fd0f9",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-013-scoped-routing.md": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1785332983.133943,
-    "ast_hash": "97a12c4e326e5dd5225575d40608135b",
+    "mtime": 1784632385.7658856,
+    "ast_hash": "f1bb8fba4beff869a88b6b4ec39fa013",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1785332993.9115772,
-    "ast_hash": "14c805c49d53ddaadd9da7c7af73973d",
+    "mtime": 1785274883.0240424,
+    "ast_hash": "84702b97cdeebb55c8c66c7ca583c402",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1785329447.0460367,
-    "ast_hash": "20a03e88e758e6ad049fdafb56ae4a27",
+    "mtime": 1784632468.9454522,
+    "ast_hash": "2e7312b44e9bb03b5cc71bd8b3eef90f",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1785324068.230398,
+    "mtime": 1785268701.8965929,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -6472,26 +6472,6 @@
   "scratch/diff_tab.txt": {
     "mtime": 1785267960.2286215,
     "ast_hash": "3c1011d2c9e361a94fbc34a136687659",
-    "semantic_hash": ""
-  },
-  "src/components/nav/NavSyncDialog.tsx": {
-    "mtime": 1785324189.7474625,
-    "ast_hash": "d211f552a196e42792b17d27d4ba6a20",
-    "semantic_hash": ""
-  },
-  "supabase/migrations/20260729123300_fix_save_nav_credentials_regression.sql": {
-    "mtime": 1785321271.201636,
-    "ast_hash": "d53844fe12868652e8baf73abba9292c",
-    "semantic_hash": ""
-  },
-  "supabase/migrations/20260729_fix_get_vat_breakdown_parameters.sql": {
-    "mtime": 1785332966.2039838,
-    "ast_hash": "35a5ec903c5e50f5fe8238a9cb350181",
-    "semantic_hash": ""
-  },
-  "docs/product/decisions/P-049-nav-sync-dialog-ux.md": {
-    "mtime": 1785329424.754935,
-    "ast_hash": "bf64cf12b1b3dc577fdfc5054d4b2341",
     "semantic_hash": ""
   }
 }

@@ -1,13 +1,3 @@
-# Visibill — Product Requirements: Döntések
-
-> **Utoljára frissítve:** 2026-07-21  
-> **Összesen:** 43 döntés | ✅ Decided: 40 | ⛔ Superseded: 2 | 🔴 Open: 1
-
----
-
-## Hogyan használd
-
-Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a döntés és indoklás dokumentálva. Az **Open** státuszúak még döntésre várnak.
 
 ---
 
@@ -133,3 +123,9 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-048 | Sztornó Számla Kézi Lezárás UX — toggle gomb, confirm dialog, visszavonható | ✅ Decided | [P-048](./P-048-storno-settle-ux.md) |
+
+## 🔗 NAV Integráció
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-049 | NAV Szinkronizálás Dátumtartomány Választó Modal UX (preset gombok, progress bar) | ✅ Decided | [P-049](./P-049-nav-sync-dialog-ux.md) |

@@ -25,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { RefreshCw } from 'lucide-react';
 import { InvoiceFilesDialog } from '@/components/invoices/InvoiceFilesDialog';
+import { NavSyncDialog } from '@/components/nav/NavSyncDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
@@ -108,6 +109,7 @@ const InvoicesPage = () => {
   const [selectedNavInvoice, setSelectedNavInvoice] = useState<NavInvoice | null>(null);
   const [selectedSubmittedForItems, setSelectedSubmittedForItems] = useState<SubmittedInvoice | null>(null);
   const [filesDialogOpen, setFilesDialogOpen] = useState(false);
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const dialogClosingRef = useRef(false); // prevents URL effect re-trigger during close
 
   // Issue date popover states (shared across tabs)
@@ -1252,7 +1254,7 @@ const InvoicesPage = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={handleSync}
+                        onClick={() => setSyncDialogOpen(true)}
                         disabled={syncing || !credentialsExist || !canSync || !writable}
                       >
                         <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
@@ -1264,13 +1266,20 @@ const InvoicesPage = () => {
                         ? 'Állítsd be a NAV integrációt az Integrációk oldalon'
                         : !canSync
                           ? `Legközelebb ${formatCooldown(cooldownSeconds)} múlva szinkronizálhatsz`
-                          : selectedInvoiceIds.size > 0
-                            ? `NAV szinkronizálás + ${selectedInvoiceIds.size} kijelölt számla újrakategorizálása`
-                            : 'NAV számlák szinkronizálása (utolsó 30 nap)'
+                          : 'NAV számlák szinkronizálása'
                       }
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                <NavSyncDialog
+                  open={syncDialogOpen}
+                  onOpenChange={setSyncDialogOpen}
+                  onSync={handleSync}
+                  syncing={syncing}
+                  canSync={canSync}
+                  cooldownSeconds={cooldownSeconds}
+                  formatCooldown={formatCooldown}
+                />
                 <Button variant="outline" size="sm" onClick={handleOpenFiles}>
                   <FileText className="h-4 w-4 mr-2" />
                   Feltöltött fájlok
