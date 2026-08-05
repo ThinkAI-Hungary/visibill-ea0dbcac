@@ -45,7 +45,7 @@ await supabase.from('invoices').update({ status: 'verified' }).eq('id', invoiceI
 
 ### 2. Teljes RPC Function Katalógus
 
-**Összesen: 80 function** a `public` sémában.
+**Összesen: 81 function** a `public` sémában.
 
 ---
 
@@ -61,6 +61,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `get_gl_categorized_items(p_company_id, p_preset_id, p_date_from?, p_date_to?, p_exchange_rates?)` | DEFINER | GeneralLedgerTable.tsx | GL drill-down tételek |
 | `get_invoice_aggregates(p_company_id, p_date_from, p_date_to)` | DEFINER | useDashboardData.ts | Dashboard számla összesítők |
 | `get_nav_invoice_aggregates(p_company_id, p_date_from, p_date_to)` | DEFINER | useDashboardData.ts | Dashboard NAV összesítők |
+| `get_vat_breakdown(p_company_id, p_date_from, p_date_to)` | DEFINER | useDashboardData.ts | Dashboard ÁFA bontás kategóriánként |
 | `get_petty_cash_balance(p_company_id)` | DEFINER | useDashboardData.ts | Házipénztár egyenleg |
 | `get_filtered_nav_invoices(p_company_id, p_date_from, p_date_to, p_direction, ...)` | DEFINER | useInvoiceFilters.ts | NAV számlák szűrt/lapozott lekérdezés |
 | `get_filtered_nav_invoices(... + p_issue_date_from?, p_issue_date_to?)` | DEFINER | useInvoiceFilters.ts | ↑ Overload: kibocsátási dátum szűrővel |
