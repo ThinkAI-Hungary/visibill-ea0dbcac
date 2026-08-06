@@ -26,6 +26,12 @@ export interface Transaction {
   created_at: string | null;
   company_id: string | null;
   upload_id: string | null;
+  gl_account_id: string | null;
+  gl_accounts?: {
+    id: string;
+    gl_number: string;
+    short_name: string;
+  } | null;
 }
 
 export interface TransactionFilters {
@@ -140,7 +146,7 @@ export function useTransactionData() {
 
       let query = supabase
         .from('transactions')
-        .select('*', { count: 'exact' })
+        .select('*, gl_accounts(id, gl_number, short_name)', { count: 'exact' })
         .eq('company_id', selectedCompany!.id)
         .order(sortField, { ascending: sortDirection === 'asc' });
 

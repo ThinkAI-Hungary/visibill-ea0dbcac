@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Settings, Ban, UploadCloud, ChevronDown, Link2, Link2Off, Copy, Download, FileText, X, Trash2, Lock, Users, Loader2, Plus, ClipboardCheck } from 'lucide-react';
+import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Settings, Ban, UploadCloud, ChevronDown, Link2, Link2Off, Copy, Download, FileText, X, Trash2, Lock, Users, Loader2, Plus, ClipboardCheck, Pencil, Check, Undo2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
@@ -23,11 +23,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { hu } from 'date-fns/locale';
+import { useActivePreset } from '@/hooks/useActivePreset';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 // ── Row styling helpers (static, outside component) ──
 
 const getRowBackgroundClass = (transaction: Transaction): string => {
+  if (transaction.gl_account_id) {
+    return 'bg-emerald-500/5 hover:bg-emerald-500/10 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20';
+  }
   const status = computeMatchStatus(transaction);
   if (status === 'matched') {
     return 'bg-[var(--row-matched-bg)]';
@@ -78,16 +84,139 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
   matchedInvoiceId,
   transaction,
   onOpenDetails,
+  colSpan,
 }: {
   matchedInvoiceId: string | null;
   transaction: Transaction;
   onOpenDetails: (transaction: Transaction) => void;
+  colSpan: number;
 }) {
   const queryClient = useQueryClient();
+  const { session } = useAuth();
   const [matchedSubmitted, setMatchedSubmitted] = useState<any[]>([]);
   const [matchedNav, setMatchedNav] = useState<any[]>([]);
   const [siblingTransactions, setSiblingTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const { activePresetId } = useActivePreset(transaction.company_id || undefined);
+  const [selectedGlId, setSelectedGlId] = useState(transaction.gl_account_id || '');
+  const [isEditingGl, setIsEditingGl] = useState(false);
+  const [glSearchQuery, setGlSearchQuery] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const { data: glAccounts = [] } = useQuery({
+    queryKey: ['glAccounts', activePresetId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gl_accounts')
+        .select('id, gl_number, short_name')
+        .eq('preset_id', activePresetId!)
+        .order('gl_number');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activePresetId,
+  });
+
+  const cleanGlNum = (num: any) => num ? String(num).replace(/\./g, '') : '';
+
+  const handleBookTransaction = async () => {
+    if (!transaction || !selectedGlId || !session?.user?.id || !activePresetId) return;
+    setSaving(true);
+    try {
+      const newGlItem = glAccounts.find(gl => gl.id === selectedGlId);
+      const newGlNumber = newGlItem?.gl_number || '';
+
+      // Step A: Update jsonb mapping in database
+      const { error: rpcError } = await supabase.rpc('override_gl_classifications_batch', {
+        p_items: [{
+          item_id: transaction.id,
+          source_table: 'transactions',
+          original_gl_account_id: transaction.gl_account_id || null,
+        }],
+        p_new_gl_account_id: selectedGlId,
+        p_company_id: transaction.company_id || '',
+        p_user_id: session.user.id,
+        p_preset_id: activePresetId,
+        p_new_gl_number: newGlNumber,
+      });
+      if (rpcError) throw rpcError;
+
+      // Step B: Update base transaction fields
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          gl_account_id: selectedGlId,
+          gl_is_manually_overridden: true,
+          is_verified: true,
+          matched_invoice_id: null,
+          match_type: null,
+        })
+        .eq('id', transaction.id);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      setIsEditingGl(false);
+      setGlSearchQuery('');
+    } catch (error) {
+      console.error('Error booking transaction directly inline:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUnbookTransaction = async () => {
+    if (!transaction || !session?.user?.id || !activePresetId) return;
+    setSaving(true);
+    try {
+      // Step A: Remove jsonb mapping in database
+      const { error: rpcError } = await supabase.rpc('override_gl_classifications_batch', {
+        p_items: [{
+          item_id: transaction.id,
+          source_table: 'transactions',
+          original_gl_account_id: transaction.gl_account_id || null,
+        }],
+        p_new_gl_account_id: null,
+        p_company_id: transaction.company_id || '',
+        p_user_id: session.user.id,
+        p_preset_id: activePresetId,
+        p_new_gl_number: '',
+      });
+      if (rpcError) throw rpcError;
+
+      // Step B: Clear base transaction fields
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          gl_account_id: null,
+          gl_is_manually_overridden: false,
+          is_verified: false,
+        })
+        .eq('id', transaction.id);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      setIsEditingGl(false);
+      setSelectedGlId('');
+      setGlSearchQuery('');
+    } catch (error) {
+      console.error('Error unbooking transaction inline:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    setSelectedGlId(transaction.gl_account_id || '');
+    setIsEditingGl(false);
+    setGlSearchQuery('');
+  }, [transaction.gl_account_id]);
 
   // Notes state
   const [newNoteTitle, setNewNoteTitle] = useState('');
@@ -317,7 +446,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
   if (loading) {
     return (
       <TableRow>
-        <TableCell colSpan={8} className="bg-muted/20 py-3">
+        <TableCell colSpan={colSpan} className="bg-muted/20 py-3">
           <div className="flex items-center justify-center py-2">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             <span className="ml-2 text-xs text-muted-foreground">Számla betöltése...</span>
@@ -332,12 +461,12 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
       <>
         {/* Top spacer row */}
         <TableRow className="bg-transparent hover:bg-transparent border-none">
-          <TableCell colSpan={8} className="p-0 h-1 border-none" />
+          <TableCell colSpan={colSpan} className="p-0 h-1 border-none" />
         </TableRow>
         <TableRow className="bg-muted/40 dark:bg-card hover:bg-muted/40 dark:hover:bg-card border-t border-b border-border/30">
-          <TableCell colSpan={8} className="p-0">
-            <div className="py-6 px-8 space-y-4 max-w-4xl ml-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <TableCell colSpan={colSpan} className="p-0">
+            <div className="py-6 px-8 space-y-4 max-w-5xl ml-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
                 
                 {/* Left column: Related items (unmatched card) */}
                 <div className="space-y-4">
@@ -358,6 +487,131 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                         <Link2 className="h-3.5 w-3.5" />
                         Számla hozzárendelése
                       </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Middle column: Direct GL Classification */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
+                    Közvetlen könyvelés (Számla nélkül)
+                  </div>
+                  <Card className="bg-muted/30 border-border/50">
+                    <CardContent className="p-4 space-y-3">
+                      {transaction.gl_account_id ? (
+                        <div className="space-y-2">
+                          <div className="bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-md p-2.5 flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                                Lekönyvelt számlaosztály:
+                              </p>
+                              <p className="text-xs font-mono font-bold mt-1 truncate">
+                                {(() => {
+                                  const gl = glAccounts.find(g => g.id === transaction.gl_account_id);
+                                  return gl ? `${gl.gl_number} ${gl.short_name}` : transaction.gl_account_id;
+                                })()}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-emerald-800 hover:text-emerald-900 shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedGlId(transaction.gl_account_id || '');
+                                setIsEditingGl(true);
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+
+                          {!isEditingGl && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={saving}
+                              onClick={(e) => { e.stopPropagation(); handleUnbookTransaction(); }}
+                              className="text-xs w-full text-red-500 hover:text-red-600 border-red-500/30 hover:bg-red-500/10 h-8"
+                            >
+                              <Undo2 className="h-3.5 w-3.5 mr-1" />
+                              Könyvelés törlése
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          Ha a tételhez nem tartozik bizonylat, közvetlenül kontírozhatod egy főkönyvi számra.
+                        </p>
+                      )}
+
+                      {(isEditingGl || !transaction.gl_account_id) && (
+                        <div className="space-y-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                          <div className="relative">
+                            <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[180px]" shouldFilter={false}>
+                              <CommandInput 
+                                placeholder="Keresés főkönyvi szám vagy név alapján..." 
+                                value={glSearchQuery}
+                                onValueChange={setGlSearchQuery}
+                                className="h-8 text-xs w-full border-none focus:ring-0"
+                              />
+                              <CommandList className="h-[140px] max-h-[140px] overflow-y-auto w-full overflow-x-hidden">
+                                <CommandEmpty className="py-2 text-xs text-center text-muted-foreground">Nincs találat.</CommandEmpty>
+                                <CommandGroup>
+                                  {glAccounts
+                                    ?.filter(gl => !glSearchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(glSearchQuery.toLowerCase()))
+                                    .sort((a, b) => cleanGlNum(a.gl_number).localeCompare(cleanGlNum(b.gl_number)))
+                                    .map(gl => {
+                                      const isLeaf = !glAccounts.some(sub => cleanGlNum(sub.gl_number).startsWith(cleanGlNum(gl.gl_number)) && sub.id !== gl.id);
+                                      if (!isLeaf) return null;
+                                      
+                                      return (
+                                        <CommandItem
+                                          key={gl.id}
+                                          value={`${gl.gl_number} ${gl.short_name}`}
+                                          onSelect={() => setSelectedGlId(gl.id)}
+                                          className="cursor-pointer py-1.5 px-2.5 text-xs flex items-center justify-between hover:bg-muted/50"
+                                        >
+                                          <span className={cn("truncate", selectedGlId === gl.id ? "font-bold text-foreground" : "")}>
+                                            {gl.gl_number} {gl.short_name}
+                                          </span>
+                                          {selectedGlId === gl.id && <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />}
+                                        </CommandItem>
+                                      );
+                                    })}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </div>
+
+                          <div className="flex gap-2">
+                            {isEditingGl && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setIsEditingGl(false);
+                                  setSelectedGlId('');
+                                  setGlSearchQuery('');
+                                }}
+                                className="text-xs flex-1 h-8"
+                              >
+                                Mégse
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              disabled={!selectedGlId || saving || (transaction.gl_account_id === selectedGlId)}
+                              onClick={handleBookTransaction}
+                              className="text-xs flex-1 h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                            >
+                              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
+                              {transaction.gl_account_id ? 'Módosítás mentése' : 'Kontírozás'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
@@ -500,7 +754,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
 
   return (
     <ExpandedInvoiceRow
-      colSpan={8}
+      colSpan={colSpan}
       matchedSubmittedInvoices={matchedSubmitted}
       matchedNavInvoices={matchedNav}
       matchedTransactions={siblingTransactions}
@@ -648,6 +902,23 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
           <span className="text-xs text-muted-foreground">-</span>
         )}
       </TableCell>
+      {/* Számlaosztály cell */}
+      <TableCell className="text-center overflow-hidden">
+        {transaction.gl_accounts?.gl_number ? (
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-600/15 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/20 max-w-[120px] truncate cursor-default">
+                  {transaction.gl_accounts.gl_number}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{transaction.gl_accounts.short_name}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        )}
+      </TableCell>
       <TableCell className="text-center whitespace-nowrap">
         <TooltipProvider delayDuration={0}>
           <Tooltip>
@@ -729,6 +1000,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
         matchedInvoiceId={transaction.matched_invoice_id}
         transaction={transaction}
         onOpenDetails={onOpenDetails}
+        colSpan={showCheckbox ? 10 : 9}
       />
     )}
     </>
@@ -828,7 +1100,7 @@ const TransactionTable = React.memo(function TransactionTable({
     });
   }, []);
 
-  const colCount = showBulkMode ? 9 : 8;
+  const colCount = showBulkMode ? 10 : 9;
 
   return (
     <div className="space-y-0 relative">
@@ -958,12 +1230,13 @@ const TransactionTable = React.memo(function TransactionTable({
           <colgroup>
             {showBulkMode && <col style={{ width: '3%' }} />}
             <col style={{ width: showBulkMode ? '8%' : '8%' }} />
-            <col style={{ width: showBulkMode ? '29%' : '32%' }} />
+            <col style={{ width: showBulkMode ? '22%' : '25%' }} />
             <col style={{ width: '11%' }} />
             <col style={{ width: '5%' }} />
-            <col style={{ width: '14%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '10%' }} />
             <col style={{ width: '9%' }} />
-            <col style={{ width: showBulkMode ? '14%' : '14%' }} />
+            <col style={{ width: showBulkMode ? '13%' : '13%' }} />
             <col style={{ width: '7%' }} />
           </colgroup>
           <TableHeader>
@@ -1000,6 +1273,7 @@ const TransactionTable = React.memo(function TransactionTable({
               </TableHead>
               <TableHead className="font-semibold">Pénznem</TableHead>
               <TableHead className="font-semibold">Típus</TableHead>
+              <TableHead className="font-semibold text-center">Számlaosztály</TableHead>
               <TableHead className="font-semibold text-center">Státusz</TableHead>
               <TableHead className="font-semibold">Indoklás</TableHead>
               <TableHead className="font-semibold text-center">Tételek</TableHead>

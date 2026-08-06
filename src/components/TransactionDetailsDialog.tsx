@@ -9,14 +9,17 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet, Package, Ban, UploadCloud, Undo2, Lock, Users, Loader2, Plus, ClipboardCheck } from 'lucide-react';
+import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet, Package, Ban, UploadCloud, Undo2, Lock, Users, Loader2, Plus, ClipboardCheck, Pencil } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useScopedNavigate } from '@/lib/navigation';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 import { reportError } from '@/lib/errorReporter';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useActivePreset } from '@/hooks/useActivePreset';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Transaction {
   id: string;
@@ -32,6 +35,12 @@ interface Transaction {
   reason: string | null;
   created_at: string | null;
   company_id: string | null;
+  gl_account_id: string | null;
+  gl_accounts?: {
+    id: string;
+    gl_number: string;
+    short_name: string;
+  } | null;
 }
 
 // Matched invoice from the 'invoices' table
@@ -116,6 +125,7 @@ export const TransactionDetailsDialog = ({
 }: TransactionDetailsDialogProps) => {
   const scopedNavigate = useScopedNavigate();
   const queryClient = useQueryClient();
+  const { session } = useAuth();
   const invalidateAllMatches = () => {
     queryClient.invalidateQueries({ queryKey: ['transactions', companyId] });
     queryClient.invalidateQueries({ queryKey: ['navInvoices', companyId] });
@@ -153,6 +163,28 @@ export const TransactionDetailsDialog = ({
   const [newNotePrivate, setNewNotePrivate] = useState(true);
   const [addingNote, setAddingNote] = useState(false);
   const [loadingNotes, setLoadingNotes] = useState(false);
+
+  const [selectedGlId, setSelectedGlId] = useState('');
+  const [isEditingGl, setIsEditingGl] = useState(false);
+  const [glSearchQuery, setGlSearchQuery] = useState('');
+
+  const { activePresetId } = useActivePreset(companyId);
+
+  const { data: glAccounts = [] } = useQuery({
+    queryKey: ['glAccounts', activePresetId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gl_accounts')
+        .select('id, gl_number, short_name')
+        .eq('preset_id', activePresetId!)
+        .order('gl_number');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activePresetId && open,
+  });
+
+  const cleanGlNum = (num: any) => num ? String(num).replace(/\./g, '') : '';
 
   const fetchNotes = async () => {
     if (!transaction) return;
@@ -234,6 +266,11 @@ export const TransactionDetailsDialog = ({
       setSearch('');
       setSelectedInvoiceId(null);
       
+      // Initialize direct GL booking state
+      setSelectedGlId(transaction.gl_account_id || '');
+      setIsEditingGl(false);
+      setGlSearchQuery('');
+      
       // Always fetch courier reports for this transaction
       fetchCourierReports();
       // Always fetch extra matches from join table
@@ -251,6 +288,106 @@ export const TransactionDetailsDialog = ({
       }
     }
   }, [open, transaction]);
+
+  const handleBookTransaction = async () => {
+    if (!transaction || !selectedGlId || !session?.user?.id || !activePresetId) return;
+    setSaving(true);
+    try {
+      const newGlItem = glAccounts.find(gl => gl.id === selectedGlId);
+      const newGlNumber = newGlItem?.gl_number || '';
+
+      // Step A: Update jsonb mapping in database
+      const { error: rpcError } = await supabase.rpc('override_gl_classifications_batch', {
+        p_items: [{
+          item_id: transaction.id,
+          source_table: 'transactions',
+          original_gl_account_id: transaction.gl_account_id || null,
+        }],
+        p_new_gl_account_id: selectedGlId,
+        p_company_id: companyId,
+        p_user_id: session.user.id,
+        p_preset_id: activePresetId,
+        p_new_gl_number: newGlNumber,
+      });
+      if (rpcError) throw rpcError;
+
+      // Step B: Update base transaction fields
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          gl_account_id: selectedGlId,
+          gl_is_manually_overridden: true,
+          is_verified: true,
+          matched_invoice_id: null,
+          match_type: null,
+        })
+        .eq('id', transaction.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Tranzakció közvetlenül kontírozva!' });
+      setIsEditingGl(false);
+      setGlSearchQuery('');
+      invalidateAllMatches();
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      onUpdate();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error booking transaction directly:', error);
+      toast({ title: 'Hiba a kontírozás mentésekor', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUnbookTransaction = async () => {
+    if (!transaction || !session?.user?.id || !activePresetId) return;
+    setSaving(true);
+    try {
+      // Step A: Remove jsonb mapping in database
+      const { error: rpcError } = await supabase.rpc('override_gl_classifications_batch', {
+        p_items: [{
+          item_id: transaction.id,
+          source_table: 'transactions',
+          original_gl_account_id: transaction.gl_account_id || null,
+        }],
+        p_new_gl_account_id: null,
+        p_company_id: companyId,
+        p_user_id: session.user.id,
+        p_preset_id: activePresetId,
+        p_new_gl_number: '',
+      });
+      if (rpcError) throw rpcError;
+
+      // Step B: Clear base transaction fields
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          gl_account_id: null,
+          gl_is_manually_overridden: false,
+          is_verified: false,
+        })
+        .eq('id', transaction.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Közvetlen kontírozás törölve!' });
+      setIsEditingGl(false);
+      setSelectedGlId('');
+      setGlSearchQuery('');
+      invalidateAllMatches();
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      onUpdate();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error unbooking transaction:', error);
+      toast({ title: 'Hiba a törlés során', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Fetch matched invoice - try 'invoices' first, then fallback to 'nav_invoices'
   const fetchMatchedInvoice = async () => {
@@ -1369,6 +1506,136 @@ export const TransactionDetailsDialog = ({
                 ))}
               </div>
             )}
+          </>
+        )}
+
+        {/* Direct Ledger Classification (Unmatched only) */}
+        {!transaction.matched_invoice_id && (
+          <>
+            <Separator className="my-1" />
+            <Card className="bg-muted/30 border-border/50">
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
+                  <ClipboardCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  Közvetlen könyvelés (Számla nélkül)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0 space-y-3">
+                {transaction.gl_account_id ? (
+                  <div className="space-y-2">
+                    <div className="bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-md p-2.5 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                          Lekönyvelt számlaosztály:
+                        </p>
+                        <p className="text-xs font-mono font-bold mt-1 truncate">
+                          {(() => {
+                            const gl = glAccounts.find(g => g.id === transaction.gl_account_id);
+                            return gl ? `${gl.gl_number} ${gl.short_name}` : transaction.gl_account_id;
+                          })()}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-emerald-800 hover:text-emerald-900 shrink-0"
+                        onClick={() => {
+                          setSelectedGlId(transaction.gl_account_id || '');
+                          setIsEditingGl(true);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+
+                    {!isEditingGl && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={saving}
+                        onClick={handleUnbookTransaction}
+                        className="text-xs w-full text-red-500 hover:text-red-600 border-red-500/30 hover:bg-red-500/10 h-8"
+                      >
+                        <Undo2 className="h-3.5 w-3.5 mr-1" />
+                        Könyvelés törlése
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Ha a tételhez nem tartozik bizonylat (pl. biztosítási díj, banki jutalék), közvetlenül kontírozhatod egy főkönyvi számra.
+                  </p>
+                )}
+
+                {(isEditingGl || !transaction.gl_account_id) && (
+                  <div className="space-y-2 pt-1">
+                    <div className="relative">
+                      <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[180px]" shouldFilter={false}>
+                        <CommandInput 
+                          placeholder="Keresés főkönyvi szám vagy név alapján..." 
+                          value={glSearchQuery}
+                          onValueChange={setGlSearchQuery}
+                          className="h-8 text-xs w-full border-none focus:ring-0"
+                        />
+                        <CommandList className="h-[140px] max-h-[140px] overflow-y-auto w-full overflow-x-hidden">
+                          <CommandEmpty className="py-2 text-xs text-center text-muted-foreground">Nincs találat.</CommandEmpty>
+                          <CommandGroup>
+                            {glAccounts
+                              ?.filter(gl => !glSearchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(glSearchQuery.toLowerCase()))
+                              .sort((a, b) => cleanGlNum(a.gl_number).localeCompare(cleanGlNum(b.gl_number)))
+                              .map(gl => {
+                                // Only show leaf nodes
+                                const isLeaf = !glAccounts.some(sub => cleanGlNum(sub.gl_number).startsWith(cleanGlNum(gl.gl_number)) && sub.id !== gl.id);
+                                if (!isLeaf) return null;
+                                
+                                return (
+                                  <CommandItem
+                                    key={gl.id}
+                                    value={`${gl.gl_number} ${gl.short_name}`}
+                                    onSelect={() => setSelectedGlId(gl.id)}
+                                    className="cursor-pointer py-1.5 px-2.5 text-xs flex items-center justify-between hover:bg-muted/50"
+                                  >
+                                    <span className={cn("truncate", selectedGlId === gl.id ? "font-bold text-foreground" : "")}>
+                                      {gl.gl_number} {gl.short_name}
+                                    </span>
+                                    {selectedGlId === gl.id && <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />}
+                                  </CommandItem>
+                                );
+                              })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </div>
+
+                    <div className="flex gap-2">
+                      {isEditingGl && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setIsEditingGl(false);
+                            setSelectedGlId('');
+                            setGlSearchQuery('');
+                          }}
+                          className="text-xs flex-1 h-8"
+                        >
+                          Mégse
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        disabled={!selectedGlId || saving || (transaction.gl_account_id === selectedGlId)}
+                        onClick={handleBookTransaction}
+                        className="text-xs flex-1 h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                      >
+                        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
+                        {transaction.gl_account_id ? 'Módosítás mentése' : 'Kontírozás közvetlenül'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </>
         )}
 
