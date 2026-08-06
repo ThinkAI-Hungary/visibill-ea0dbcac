@@ -609,7 +609,7 @@ const App = () => (
                        <Route path="client/:id" element={<Navigate to="overview" replace />} />
                        <Route path="client/:id/overview" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientDetailsPage /></Suspense>} />
                        <Route path="client/:id/accounting" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountingRedirectPage /></Suspense>} />
-                       <Route path="client/:id/settings" element={<Navigate to="../cegkapu" replace relative="path" />} />
+                       <Route path="client/:id/settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientDetailsPage /></Suspense>} />
                        
                        {/* Client-Centric Payroll Routes */}
                        <Route path="client/:id/payroll" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollDashboardPage /></Suspense>} />

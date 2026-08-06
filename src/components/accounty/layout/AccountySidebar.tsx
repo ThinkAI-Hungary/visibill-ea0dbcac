@@ -264,10 +264,11 @@ export default function AccountySidebar({
                 { path: `/accounty/client/${selectedClientId}/tao`, name: 'Társasági Adó', icon: Landmark },
                 { path: `/accounty/client/${selectedClientId}/payroll`, name: 'Bérszámfejtés', icon: Calculator },
                 { path: `/accounty/client/${selectedClientId}/payroll/filings`, name: 'NAV bevallások', icon: ClipboardList },
-                { path: `/accounty/client/${selectedClientId}/settings`, name: 'Beállítások / Cégkapu', icon: Settings },
+                { path: `/accounty/client/${selectedClientId}/settings#cegkapu`, name: 'Beállítások / Cégkapu', icon: Settings },
               ].map((item, idx) => {
                 if ('type' in item) return <li key={`div-${idx}`} className="my-1 mx-2 h-px bg-border/50" />;
-                const active = item.exact ? pathname === item.path : pathname.startsWith(item.path);
+                const pathWithoutHash = item.path.split('#')[0];
+                const active = item.exact ? pathname === pathWithoutHash : pathname.startsWith(pathWithoutHash);
                 return (
                   <li key={item.path} className="relative flex justify-center">
                     <Tooltip delayDuration={0}>
@@ -394,9 +395,10 @@ export default function AccountySidebar({
                 { to: `/accounty/client/${selectedClientId}/tao`, label: 'Társasági Adó', icon: Landmark },
                 { to: `/accounty/client/${selectedClientId}/payroll`, label: 'Bérszámfejtés', icon: Calculator },
                 { to: `/accounty/client/${selectedClientId}/payroll/filings`, label: 'NAV bevallások', icon: ClipboardList },
-                { to: `/accounty/client/${selectedClientId}/settings`, label: 'Beállítások / Cégkapu', icon: Settings },
+                { to: `/accounty/client/${selectedClientId}/settings#cegkapu`, label: 'Beállítások / Cégkapu', icon: Settings },
               ].map(item => {
-                const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+                const pathWithoutHash = item.to.split('#')[0];
+                const active = item.exact ? pathname === pathWithoutHash : pathname.startsWith(pathWithoutHash);
                 return (
                   <li key={item.to}>
                     <Link

@@ -80,18 +80,7 @@ export function ReportGeneratorModal({
 
         {/* Body */}
         <div className="p-6 space-y-6 overflow-y-auto">
-          {/* Report Type */}
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Riport típusa</Label>
-            <RadioGroup value={selectedType} onValueChange={(v) => onTypeChange(v as ReportType)} className="grid grid-cols-2 gap-3">
-              {reportTypes.map(r => (
-                <div key={r.id} className="flex items-center space-x-2">
-                  <RadioGroupItem value={r.id} id={`type-${r.id}`} className="border-slate-300 text-slate-900 dark:text-slate-100" />
-                  <Label htmlFor={`type-${r.id}`} className="text-sm font-normal cursor-pointer">{r.title}</Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
+
 
           {/* Date Range */}
           <div className="space-y-3">
@@ -156,7 +145,7 @@ export function ReportGeneratorModal({
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <div className="p-4 max-h-[200px] overflow-y-auto text-xs">
+              <div className="p-4 max-h-[350px] overflow-y-auto text-xs">
                 <PreviewTable data={reportData} type={selectedType} options={{ details: includeDetails }} />
               </div>
             </div>

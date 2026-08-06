@@ -63,7 +63,7 @@ export default function ClientPayrollTab({ client }: ClientPayrollTabProps) {
             { label: 'Paramétertábla 2026', path: `/accounty/payroll/${client.id}/tax-params` },
             { label: 'NAV bevallások', path: `/accounty/payroll/${client.id}/filings` },
             { label: 'Új foglalkoztatott', path: `/accounty/payroll/${client.id}/employees/new` },
-            { label: 'Cégkapu / KÜNY-tárhely', path: `/accounty/client/${client.id}/cegkapu` },
+            { label: 'Cégkapu / KÜNY-tárhely', path: `/accounty/client/${client.id}/settings#cegkapu` },
             { label: 'NAV-meghatalmazás', path: `/accounty/client/${client.id}/representation` },
             { label: 'Iratkezelés és GDPR', path: `/accounty/client/${client.id}/data-retention` },
             { label: 'Bérezési struktúra', path: `/accounty/client/${client.id}/structure` },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -30,9 +30,22 @@ import ClientSettingsTab from '@/components/accounty/client-details/ClientSettin
 export default function ClientDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { pathname } = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('Áttekintés');
+  
+  const defaultTab = pathname.endsWith('/settings') ? 'Beállítások' : 'Áttekintés';
+  const [activeTab, setActiveTab] = useState(defaultTab);
+
+  useEffect(() => {
+    if (pathname.endsWith('/settings')) {
+      setActiveTab('Beállítások');
+    } else if (pathname.endsWith('/overview')) {
+      if (activeTab === 'Beállítások') {
+        setActiveTab('Áttekintés');
+      }
+    }
+  }, [pathname]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [navSyncError, setNavSyncError] = useState<string | null>(null);
 
@@ -361,6 +374,9 @@ export default function ClientDetailsPage() {
               } else if (tab === 'Beállítások') {
                 navigate(`/accounty/client/${id}/settings`);
               } else {
+                if (pathname.endsWith('/settings')) {
+                  navigate(`/accounty/client/${id}/overview`);
+                }
                 setActiveTab(tab);
               }
             }}
@@ -463,7 +479,7 @@ export default function ClientDetailsPage() {
           {/* Gyors elérés — korábban csak a Bérszámfejtés fülről volt elérhető */}
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
             {[
-              { label: 'Cégkapu / KÜNY', path: `/accounty/client/${client.id}/cegkapu`, icon: '' },
+              { label: 'Cégkapu / KÜNY', path: `/accounty/client/${client.id}/settings#cegkapu`, icon: '' },
               { label: 'NAV meghatalmazás', path: `/accounty/client/${client.id}/representation`, icon: '' },
               { label: 'Iratkezelés & GDPR', path: `/accounty/client/${client.id}/data-retention`, icon: '' },
               { label: 'NAV bevallások', path: `/accounty/payroll/${client.id}/filings`, icon: '' },
