@@ -15,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 
 export default function ClientInvoicesPage() {
   const navigate = useNavigate();
@@ -140,6 +141,7 @@ export default function ClientInvoicesPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  const [previewInvoice, setPreviewInvoice] = useState<any>(null);
 
   // Reset page when filters change
   useEffect(() => {
@@ -154,8 +156,13 @@ export default function ClientInvoicesPage() {
     return filteredInvoices.slice(start, start + pageSize);
   }, [filteredInvoices, currentPage, pageSize]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(amount);
+  const formatCurrency = (amount: number, currencyCode: string = 'HUF') => {
+    const curr = (currencyCode || 'HUF').toUpperCase();
+    return new Intl.NumberFormat('hu-HU', {
+      style: 'currency',
+      currency: curr,
+      minimumFractionDigits: curr === 'HUF' ? 0 : 2,
+    }).format(amount);
   };
 
   const getStatusBadge = (status: string) => {
@@ -175,10 +182,22 @@ export default function ClientInvoicesPage() {
     }
   };
 
-  const totalGross = filteredInvoices.reduce((sum, inv) => sum + inv.grossAmount, 0);
-  const totalVat = filteredInvoices.reduce((sum, inv) => sum + inv.vatAmount, 0);
+  // Group totals by currency
+  const totalsByCurrency = useMemo(() => {
+    const map: Record<string, { gross: number; vat: number; fadNet: number }> = {};
+    filteredInvoices.forEach((inv) => {
+      const c = (inv.currency || 'HUF').toUpperCase();
+      if (!map[c]) map[c] = { gross: 0, vat: 0, fadNet: 0 };
+      map[c].gross += inv.grossAmount;
+      map[c].vat += inv.vatAmount;
+      if (inv.isReverseCharge) {
+        map[c].fadNet += (inv.grossAmount - inv.vatAmount);
+      }
+    });
+    return map;
+  }, [filteredInvoices]);
+
   const fadCount = filteredInvoices.filter(inv => inv.isReverseCharge).length;
-  const fadNetTotal = filteredInvoices.filter(inv => inv.isReverseCharge).reduce((sum, inv) => sum + (inv.grossAmount - inv.vatAmount), 0);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500 pb-12">
@@ -470,8 +489,8 @@ export default function ClientInvoicesPage() {
                     <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{inv.invoiceNumber}</td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{inv.partnerName}</td>
                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{inv.date}</td>
-                    <td className="px-6 py-4 text-slate-900 dark:text-slate-100 font-semibold text-right">{formatCurrency(inv.grossAmount)}</td>
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-right">{formatCurrency(inv.vatAmount)}</td>
+                    <td className="px-6 py-4 text-slate-900 dark:text-slate-100 font-semibold text-right">{formatCurrency(inv.grossAmount, inv.currency)}</td>
+                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-right">{formatCurrency(inv.vatAmount, inv.currency)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5">
                         {getStatusBadge(inv.status)}
@@ -490,7 +509,30 @@ export default function ClientInvoicesPage() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="cursor-pointer">Megtekintés</DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer"
+                            onClick={() => {
+                              const url = inv.imageUrl || inv.mellekletUrl;
+                              if (url) {
+                                setPreviewInvoice({
+                                  id: inv.id,
+                                  elado_nev: inv.type === 'bejovo' ? inv.partnerName : '',
+                                  vevo_nev: inv.type === 'kimeno' ? inv.partnerName : '',
+                                  bizonylatsorszam: inv.invoiceNumber,
+                                  image_url: inv.imageUrl || undefined,
+                                  melleklet_url: inv.mellekletUrl || undefined,
+                                });
+                              } else {
+                                toast({
+                                  title: 'Nincs elérhető bizonylatkép',
+                                  description: 'A NAV Online Számla rendszerből lekérdezett számlákhoz nem tartozik szkennelt bizonylatkép.',
+                                  variant: 'default',
+                                });
+                              }
+                            }}
+                          >
+                            Megtekintés
+                          </DropdownMenuItem>
                           <DropdownMenuItem className="cursor-pointer">Kontírozás</DropdownMenuItem>
                           <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600">Törlés</DropdownMenuItem>
                         </DropdownMenuContent>
@@ -524,20 +566,35 @@ export default function ClientInvoicesPage() {
         )}
 
         {/* Footer Summary */}
-        <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 border-t border-border flex items-center gap-6 text-xs text-slate-600 dark:text-slate-400">
+        <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 border-t border-border flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-slate-400">
           <div>Számlák: <span className="font-bold text-slate-900 dark:text-slate-100">{filteredInvoices.length}</span></div>
-          <div>Összesen: <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(totalGross)}</span></div>
-          <div>ÁFA: <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(totalVat)}</span></div>
+          <div>Összesen: <span className="font-bold text-slate-900 dark:text-slate-100">
+            {Object.entries(totalsByCurrency).map(([curr, val]) => formatCurrency(val.gross, curr)).join(', ') || '0 Ft'}
+          </span></div>
+          <div>ÁFA: <span className="font-bold text-slate-900 dark:text-slate-100">
+            {Object.entries(totalsByCurrency).map(([curr, val]) => formatCurrency(val.vat, curr)).join(', ') || '0 Ft'}
+          </span></div>
           {fadCount > 0 && (
             <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">
               <ShieldAlert className="w-3 h-3 text-amber-600 dark:text-amber-400" />
               <span className="text-amber-700 dark:text-amber-400 font-semibold">{fadCount} FAD számla</span>
-              <span className="text-amber-600/70 dark:text-amber-400/70">({formatCurrency(fadNetTotal)} nettó)</span>
+              <span className="text-amber-600/70 dark:text-amber-400/70">
+                ({Object.entries(totalsByCurrency)
+                  .filter(([_, val]) => val.fadNet > 0)
+                  .map(([curr, val]) => formatCurrency(val.fadNet, curr))
+                  .join(', ') || '0 Ft'} nettó)
+              </span>
             </div>
           )}
         </div>
 
       </div>
+      
+      <InvoiceImageDialog
+        invoice={previewInvoice}
+        open={previewInvoice !== null}
+        onClose={() => setPreviewInvoice(null)}
+      />
     </div>
   );
 }

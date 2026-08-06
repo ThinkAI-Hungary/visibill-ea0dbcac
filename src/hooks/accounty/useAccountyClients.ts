@@ -601,6 +601,9 @@ export interface CompanyInvoice {
   type: 'bejovo' | 'kimeno';
   isReverseCharge?: boolean;
   reverseChargeCategory?: string | null;
+  currency: string;
+  imageUrl?: string | null;
+  mellekletUrl?: string | null;
 }
 
 const mapDbStatus = (s: string | null): InvoiceStatus => {
@@ -621,7 +624,7 @@ export function useCompanyInvoices(companyId: string) {
       // 1. Uploaded invoices
       const { data: uploaded, error: err1 } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, elado_nev, vevo_nev, kibocsatas_datuma, brutto_vegosszeg, afa_osszeg_osszesen, adoalap_osszesen, statusz, invoice_direction, forditott_adozas, reverse_charge_category')
+        .select('id, bizonylatsorszam, elado_nev, vevo_nev, kibocsatas_datuma, brutto_vegosszeg, afa_osszeg_osszesen, adoalap_osszesen, statusz, invoice_direction, forditott_adozas, reverse_charge_category, penznem, image_url, melleklet_url')
         .eq('company_id', companyId)
         .order('kibocsatas_datuma', { ascending: false })
         .limit(500);
@@ -630,7 +633,7 @@ export function useCompanyInvoices(companyId: string) {
       // 2. NAV invoices
       const { data: navData, error: err2 } = await supabase
         .from('nav_invoices')
-        .select('id, invoice_number, supplier_name, customer_name, invoice_issue_date, invoice_gross_amount, invoice_vat_amount, invoice_direction, is_reverse_charge, reverse_charge_category')
+        .select('id, invoice_number, supplier_name, customer_name, invoice_issue_date, invoice_gross_amount, invoice_vat_amount, invoice_direction, is_reverse_charge, reverse_charge_category, currency')
         .eq('company_id', companyId)
         .order('invoice_issue_date', { ascending: false })
         .limit(500);
@@ -655,6 +658,9 @@ export function useCompanyInvoices(companyId: string) {
           type: isInbound ? 'bejovo' : 'kimeno',
           isReverseCharge: inv.forditott_adozas === true,
           reverseChargeCategory: inv.reverse_charge_category || null,
+          currency: inv.penznem || 'HUF',
+          imageUrl: inv.image_url,
+          mellekletUrl: inv.melleklet_url,
         });
       }
 
@@ -675,6 +681,7 @@ export function useCompanyInvoices(companyId: string) {
           type: isInbound ? 'bejovo' : 'kimeno',
           isReverseCharge: nav.is_reverse_charge === true,
           reverseChargeCategory: nav.reverse_charge_category || null,
+          currency: nav.currency || 'HUF',
         });
       }
 
