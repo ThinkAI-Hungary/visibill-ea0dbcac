@@ -3605,6 +3605,7 @@ export default function ManagementDashboard() {
             allUsers={overview?.users || []}
             overviewLoading={overviewLoading}
             companyCostMap={companyCostMap}
+            onRetryFiles={openRetryModal}
           />
         )}
       </main>
@@ -3633,12 +3634,14 @@ function ControlCenter({
   allUsers,
   overviewLoading,
   companyCostMap,
+  onRetryFiles,
 }: {
   initialTab: ControlCenterTab;
   onOpenCompany: (id: string) => void;
   allUsers: ControlCenterUser[];
   overviewLoading: boolean;
   companyCostMap: Map<string, any>;
+  onRetryFiles?: (targets: Array<{ source: string; id: string; project?: string }>) => void;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = initialTab;
@@ -3713,7 +3716,7 @@ function ControlCenter({
         <div className="w-full" style={{ minWidth: 900 }}>
           {tab === 'errors' && <ErrorControlPanel onOpenCompany={onOpenCompany} allUsers={allUsers} />}
           {tab === 'permissions' && <PermissionsPanel allUsers={allUsers} />}
-          {tab === 'files' && <FilesPanel allUsers={allUsers} />}
+          {tab === 'files' && <FilesPanel allUsers={allUsers} onRetryFiles={onRetryFiles} />}
           {tab === 'worker' && <WorkerPanel />}
           {tab === 'users' && (
             <UsersControlPanel
@@ -5623,7 +5626,13 @@ function fileTypeBadge(label: string, sourceTable: string) {
   return <Badge className={`text-[10px] border ${cls} w-20 justify-center`}>{label}</Badge>;
 }
 
-function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
+function FilesPanel({
+  allUsers,
+  onRetryFiles,
+}: {
+  allUsers: ControlCenterUser[];
+  onRetryFiles?: (targets: Array<{ source: string; id: string; project?: string }>) => void;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -6280,6 +6289,34 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                 <Trash2 className="h-3 w-3" />
                 Törlés
               </Button>
+              {onRetryFiles && (
+                <>
+                  <div className="h-4 w-px bg-border" />
+                  <Button
+                    size="sm" variant="outline"
+                    className="h-8 text-xs gap-1.5 border-primary/30 hover:bg-primary/10"
+                    onClick={() => {
+                      const targets = Array.from(selectedFiles).map(key => {
+                        const [sourceTable, id] = key.split(':');
+                        const fullTable = sourceTable === 'invoice' ? 'invoice_uploads' :
+                                          sourceTable === 'transaction' ? 'transaction_uploads' :
+                                          sourceTable === 'report' ? 'report_uploads' : sourceTable + '_uploads';
+                        return { source: fullTable, id };
+                      }).filter(t => t.source === 'invoice_uploads' || t.source === 'transaction_uploads' || t.source === 'report_uploads');
+                      
+                      if (targets.length > 0) {
+                        onRetryFiles(targets);
+                      } else {
+                        toast({ title: 'Nem támogatott', description: 'A kijelölt fájlok nem támogatják az újraküldést.', variant: 'destructive' });
+                      }
+                    }}
+                    disabled={bulkUpdating || bulkDeleting}
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Újraküldés
+                  </Button>
+                </>
+              )}
               <div className="h-4 w-px bg-border" />
               <Button
                 size="sm" variant="ghost"
@@ -6386,10 +6423,10 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                 <col style={{ width: 90 }} />
                 <col style={{ width: '15%' }} />
                 <col style={{ width: '11%' }} />
-                <col style={{ width: 140 }} />
+                <col style={{ width: 130 }} />
                 <col style={{ width: 80 }} />
                 <col style={{ width: 90 }} />
-                <col style={{ width: 90 }} />
+                <col style={{ width: 110 }} />
               </colgroup>
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-xs bg-muted/30">
@@ -6513,6 +6550,23 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                           <div className="flex justify-end gap-1">
                             {row.file_url && (
                               <>
+                                {onRetryFiles && (row.source_table === 'invoice' || row.source_table === 'transaction' || row.source_table === 'report') && (
+                                  <Button
+                                    variant="ghost" size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                    title="Újraküldés feldolgozásra"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      const fullTable = row.source_table === 'invoice' ? 'invoice_uploads' :
+                                                        row.source_table === 'transaction' ? 'transaction_uploads' :
+                                                        row.source_table === 'report' ? 'report_uploads' : row.source_table + '_uploads';
+                                      onRetryFiles([{ source: fullTable, id: row.id }]);
+                                    }}
+                                    aria-label="Újraküldés feldolgozásra"
+                                  >
+                                    <RefreshCw className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost" size="icon"
                                   className="h-7 w-7 text-muted-foreground hover:text-primary"
