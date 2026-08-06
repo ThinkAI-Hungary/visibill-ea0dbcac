@@ -3605,7 +3605,6 @@ export default function ManagementDashboard() {
             allUsers={overview?.users || []}
             overviewLoading={overviewLoading}
             companyCostMap={companyCostMap}
-            onRetryFiles={openRetryModal}
           />
         )}
       </main>
@@ -3634,14 +3633,12 @@ function ControlCenter({
   allUsers,
   overviewLoading,
   companyCostMap,
-  onRetryFiles,
 }: {
   initialTab: ControlCenterTab;
   onOpenCompany: (id: string) => void;
   allUsers: ControlCenterUser[];
   overviewLoading: boolean;
   companyCostMap: Map<string, any>;
-  onRetryFiles?: (targets: Array<{ source: string; id: string; project?: string }>) => void;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = initialTab;
@@ -3716,7 +3713,7 @@ function ControlCenter({
         <div className="w-full" style={{ minWidth: 900 }}>
           {tab === 'errors' && <ErrorControlPanel onOpenCompany={onOpenCompany} allUsers={allUsers} />}
           {tab === 'permissions' && <PermissionsPanel allUsers={allUsers} />}
-          {tab === 'files' && <FilesPanel allUsers={allUsers} onRetryFiles={onRetryFiles} />}
+          {tab === 'files' && <FilesPanel allUsers={allUsers} />}
           {tab === 'worker' && <WorkerPanel />}
           {tab === 'users' && (
             <UsersControlPanel
@@ -5626,17 +5623,79 @@ function fileTypeBadge(label: string, sourceTable: string) {
   return <Badge className={`text-[10px] border ${cls} w-20 justify-center`}>{label}</Badge>;
 }
 
-function FilesPanel({
-  allUsers,
-  onRetryFiles,
-}: {
-  allUsers: ControlCenterUser[];
-  onRetryFiles?: (targets: Array<{ source: string; id: string; project?: string }>) => void;
-}) {
+function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const PAGE_SIZE = 25;
+
+  // Local retry states
+  const [retryModalOpen, setRetryModalOpen] = useState(false);
+  const [retryTargets, setRetryTargets] = useState<Array<{ source: string; id: string; project?: string }>>([]);
+  const [retryPipeline, setRetryPipeline] = useState('same');
+  const [retryPhase, setRetryPhase] = useState<'idle' | 'sending' | 'refreshing'>('idle');
+  const [retrying, setRetrying] = useState(false);
+
+  const PIPELINE_OPTIONS: Array<{ value: string; label: string; icon: React.ReactNode; queue?: string; category?: string | null }> = [
+    { value: 'same', label: 'Eredeti pipeline (változatlan)', icon: <RotateCcw className="h-4 w-4 text-muted-foreground" /> },
+    { value: 'invoice', label: 'Számla feldolgozás', icon: <Receipt className="h-4 w-4 text-emerald-500" />, queue: 'invoice_jobs', category: 'invoice' },
+    { value: 'payroll', label: 'Bérjegyzék feldolgozás', icon: <Wallet className="h-4 w-4 text-amber-500" />, queue: 'invoice_jobs', category: 'payroll' },
+    { value: 'transaction', label: 'Tranzakció feldolgozás', icon: <Landmark className="h-4 w-4 text-blue-500" />, queue: 'transaction_jobs', category: null },
+    { value: 'gl', label: 'Főkönyvi besorolás', icon: <BarChart3 className="h-4 w-4 text-purple-500" />, queue: 'gl_classification_jobs', category: null },
+    { value: 'report', label: 'Futár riport feldolgozás', icon: <Truck className="h-4 w-4 text-orange-500" />, queue: 'report_jobs', category: null },
+  ];
+
+  const getPipelineOptionsForSource = (_source: string) => {
+    return ['same', 'invoice', 'payroll', 'transaction', 'gl', 'report'];
+  };
+
+  const availablePipelines = useMemo(() => {
+    if (retryTargets.length === 0) return ['same'];
+    const sources = new Set(retryTargets.map(t => t.source));
+    if (sources.size === 1) {
+      return getPipelineOptionsForSource([...sources][0]);
+    }
+    return ['same'];
+  }, [retryTargets]);
+
+  const openRetryModal = (ids: Array<{ source: string; id: string; project?: string }>) => {
+    setRetryTargets(ids);
+    setRetryPipeline('same');
+    setRetryModalOpen(true);
+  };
+
+  const handleRetryConfirm = async () => {
+    if (retryTargets.length === 0) return;
+    setRetrying(true);
+    setRetryPhase('sending');
+    try {
+      const pipelineOverride = retryPipeline !== 'same'
+        ? PIPELINE_OPTIONS.find(p => p.value === retryPipeline)
+        : null;
+
+      await postManagementData('retry-errors', {
+        ids: retryTargets,
+        ...(pipelineOverride && {
+          targetQueue: pipelineOverride.queue,
+          targetCategory: pipelineOverride.category,
+        }),
+      });
+      setSelectedFiles(new Set());
+
+      setRetryPhase('refreshing');
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['management-files'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['management-overview'], type: 'active' }),
+      ]);
+    } catch (e) {
+      reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Retry errors failed:', error: e });
+    } finally {
+      setRetrying(false);
+      setRetryPhase('idle');
+      setRetryModalOpen(false);
+      setRetryTargets([]);
+    }
+  };
 
   // Deriving states directly from URL search parameters
   const page = Number(searchParams.get('file_page')) || 1;
@@ -6289,8 +6348,6 @@ function FilesPanel({
                 <Trash2 className="h-3 w-3" />
                 Törlés
               </Button>
-              {onRetryFiles && (
-                <>
                   <div className="h-4 w-px bg-border" />
                   <Button
                     size="sm" variant="outline"
@@ -6305,7 +6362,7 @@ function FilesPanel({
                       }).filter(t => t.source === 'invoice_uploads' || t.source === 'transaction_uploads' || t.source === 'report_uploads');
                       
                       if (targets.length > 0) {
-                        onRetryFiles(targets);
+                        openRetryModal(targets);
                       } else {
                         toast({ title: 'Nem támogatott', description: 'A kijelölt fájlok nem támogatják az újraküldést.', variant: 'destructive' });
                       }
@@ -6315,8 +6372,6 @@ function FilesPanel({
                     <RefreshCw className="h-3 w-3" />
                     Újraküldés
                   </Button>
-                </>
-              )}
               <div className="h-4 w-px bg-border" />
               <Button
                 size="sm" variant="ghost"
@@ -6550,7 +6605,7 @@ function FilesPanel({
                           <div className="flex justify-end gap-1">
                             {row.file_url && (
                               <>
-                                {onRetryFiles && (row.source_table === 'invoice' || row.source_table === 'transaction' || row.source_table === 'report') && (
+                                {(row.source_table === 'invoice' || row.source_table === 'transaction' || row.source_table === 'report') && (
                                   <Button
                                     variant="ghost" size="icon"
                                     className="h-7 w-7 text-muted-foreground hover:text-primary"
@@ -6560,7 +6615,7 @@ function FilesPanel({
                                       const fullTable = row.source_table === 'invoice' ? 'invoice_uploads' :
                                                         row.source_table === 'transaction' ? 'transaction_uploads' :
                                                         row.source_table === 'report' ? 'report_uploads' : row.source_table + '_uploads';
-                                      onRetryFiles([{ source: fullTable, id: row.id }]);
+                                      openRetryModal([{ source: fullTable, id: row.id }]);
                                     }}
                                     aria-label="Újraküldés feldolgozásra"
                                   >
@@ -6691,6 +6746,62 @@ function FilesPanel({
 
       {/* File Preview */}
       <FilePreviewModal previewFile={previewFile} onClose={closePreview2} />
+
+      {/* Retry Pipeline Modal */}
+      {retryModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
+          <Card className="w-full max-w-md mx-4 shadow-2xl border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 text-primary" />
+                Újraküldés feldolgozásra
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                {retryTargets.length} elem kerül újra feldolgozásra. Válaszd ki a cél pipeline-t:
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1.5">
+                {PIPELINE_OPTIONS.filter(p => availablePipelines.includes(p.value)).map(p => (
+                  <label
+                    key={p.value}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-150 ${
+                      retryPipeline === p.value
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                        : 'border-border hover:border-primary/30 hover:bg-accent/30'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="retryPipeline"
+                      value={p.value}
+                      checked={retryPipeline === p.value}
+                      onChange={() => setRetryPipeline(p.value)}
+                      className="accent-primary"
+                    />
+                    <span className="flex items-center justify-center w-5 h-5 shrink-0">{p.icon}</span>
+                    <span className="text-sm font-medium">{p.label}</span>
+                  </label>
+                ))}
+              </div>
+              {availablePipelines.length <= 1 && (
+                <p className="text-xs text-muted-foreground/70 italic">
+                  A kijelölt elemek forrása csak az eredeti pipeline-on küldhető újra.
+                </p>
+              )}
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button variant="ghost" size="sm" onClick={() => setRetryModalOpen(false)} disabled={retrying}>
+                  Mégse
+                </Button>
+                <Button size="sm" className="gap-1.5" onClick={handleRetryConfirm} disabled={retrying}>
+                  {retrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                  {retryPhase === 'refreshing' ? null : retrying ? 'Küldés…' : <>Újraküldés (<span className="tabular-nums inline-block min-w-[2ch] text-center">{retryTargets.length}</span>)</>}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      , document.body)}
     </div>
   );
 }
