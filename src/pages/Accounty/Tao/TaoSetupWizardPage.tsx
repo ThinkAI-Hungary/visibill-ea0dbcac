@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Shield, ChevronRight, Check, HelpCircle } from 'lucide-react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Shield, ChevronRight, Check, HelpCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { useUpsertTaxProfile } from '@/hooks/accounty';
 
 const QUESTIONS = [
   { id: 1, question: 'KIVA-alany?', hint: 'Ha igen → KIVA-modul (11. fejezet), NEM TAO', options: ['Igen', 'Nem'] },
@@ -14,8 +16,46 @@ const QUESTIONS = [
 
 export default function TaoSetupWizardPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const upsertTaxProfile = useUpsertTaxProfile();
+
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
+
+  const handleApply = async () => {
+    if (!id) return;
+    const result = getResult();
+    
+    const isKiva = result.type === 'KIVA';
+    const isKata = result.type === 'SZJA' && answers[2] === 'Igen';
+    const taxGroup = result.type === 'KIVA' ? 'KIVA' :
+                     result.type === 'SZJA' ? 'SZJA' :
+                     result.type.startsWith('Nonprofit') ? 'Nonprofit' :
+                     result.type === 'Külföldi vállalkozó' ? 'Külföldi' : 'TAO';
+
+    try {
+      await upsertTaxProfile.mutateAsync({
+        companyId: id,
+        isKiva,
+        isKata,
+        taxGroup
+      });
+      
+      toast({
+        title: 'Adóalany-státusz sikeresen beállítva',
+        description: `Új besorolás: ${result.type} (${result.regime})`
+      });
+      
+      navigate(`/accounty/client/${id}/tao`);
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Hiba a mentés során',
+        description: err.message || 'Ismeretlen hiba történt.'
+      });
+    }
+  };
 
   const handleAnswer = (questionId: number, answer: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
@@ -118,10 +158,15 @@ export default function TaoSetupWizardPage() {
             </h2>
             <p className="text-sm text-slate-500">{result.regime}</p>
             <div className="flex items-center justify-center gap-3 mt-6">
-              <Button variant="outline" onClick={() => { setCurrentStep(0); setAnswers({}); }}>
+              <Button variant="outline" onClick={() => { setCurrentStep(0); setAnswers({}); }} disabled={upsertTaxProfile.isPending}>
                 Újrakezdés
               </Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button 
+                onClick={handleApply}
+                disabled={upsertTaxProfile.isPending}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+              >
+                {upsertTaxProfile.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Alkalmazás
               </Button>
             </div>

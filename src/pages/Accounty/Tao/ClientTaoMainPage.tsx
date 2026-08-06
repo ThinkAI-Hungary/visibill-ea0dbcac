@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useAccountyClients } from '@/hooks/accounty';
+import { useAccountyClients, useAccountyTaxProfile } from '@/hooks/accounty';
 import { useTaoYearly } from '@/hooks/useAdminData';
 
 // 11-step year-end wizard steps
@@ -36,6 +36,7 @@ export default function ClientTaoMainPage() {
   const { id } = useParams<{ id: string }>();
   const { data: clients = [] } = useAccountyClients();
   const client = clients.find((c: any) => c.companyId === id);
+  const { data: taxProfile } = useAccountyTaxProfile(id || '');
   const [taxYear] = useState(2025);
 
   // Load real data from DB
@@ -75,13 +76,46 @@ export default function ClientTaoMainPage() {
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
               Belföldi Kft. (GFO 113)
             </span>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-              Általános 6.§
-            </span>
+            {taxProfile?.isKiva ? (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                KIVA-alany
+              </span>
+            ) : taxProfile?.isKata ? (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                KATA-alany
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                {taxProfile?.taxGroup === 'SZJA' ? 'SZJA-alany' :
+                 taxProfile?.taxGroup === 'Külföldi' ? 'Külföldi vállalkozó' :
+                 taxProfile?.taxGroup === 'Nonprofit' ? 'Nonprofit TAO' : 'Általános 6.§'}
+              </span>
+            )}
           </div>
           <p className="text-sm text-slate-500 mt-0.5">{taxYear}. adóév</p>
         </div>
       </div>
+
+      {/* KIVA warning banner */}
+      {taxProfile?.isKiva && (
+        <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/30 rounded-xl p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+          <div className="space-y-1.5 text-left">
+            <h4 className="text-sm font-bold text-orange-800 dark:text-orange-300">
+              KIVA adóalanyiság aktív
+            </h4>
+            <p className="text-xs text-orange-700 dark:text-orange-400 leading-relaxed">
+              Ez a cég a választott adóalany-státusz alapján <span className="font-bold">KIVA (Kisvállalati adó)</span> hatálya alá tartozik. 
+              A TAO zárási lépések helyett a KIVA modul használata javasolt.
+            </p>
+            <div className="flex gap-3 mt-2">
+              <Button size="sm" variant="outline" className="h-7 text-xs border-orange-300 text-orange-800 hover:bg-orange-100 dark:border-orange-800 dark:text-orange-300 dark:hover:bg-orange-950/40" asChild>
+                <Link to={`/accounty/client/${id}/tao/kiva`}>KIVA kalkulátor megnyitása</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
