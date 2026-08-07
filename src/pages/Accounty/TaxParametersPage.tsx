@@ -278,7 +278,7 @@ function formatParamValue(key: string, value: number): string {
 }
 
 export default function TaxParametersPage() {
-  const { id: companyId } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState(2026);

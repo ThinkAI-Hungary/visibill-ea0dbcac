@@ -4,7 +4,7 @@ import {
   Receipt, ArrowLeft, BookOpen, Calculator, FileText,
   TrendingUp, AlertTriangle, Calendar, Settings, ChevronRight,
   Wallet, BarChart3, Users, Car, Package, Shield,
-  Landmark, ClipboardList, PiggyBank, Scale, Loader2
+  Landmark, ClipboardList, PiggyBank, Scale, Loader2, ChevronLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
@@ -45,8 +45,9 @@ const ORG_TYPE_LABELS: Record<string, string> = {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function ClientEvMainPage() {
-  const { id } = useParams<{ id: string }>();
-  const { data: client } = useAccountyClient(id);
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
+  const { data: client, isLoading: clientLoading } = useAccountyClient(id);
   const [searchParams, setSearchParams] = useSearchParams();
   const taxYear = Number(searchParams.get('year') || '2026');
   
@@ -81,9 +82,9 @@ export default function ClientEvMainPage() {
       icon: Settings,
       color: 'indigo',
       items: [
-        { to: `/accounty/client/${id}/ev/master-data?year=${taxYear}`, label: 'Törzsadatok', icon: ClipboardList },
-        { to: `/accounty/client/${id}/ev/lifecycle?year=${taxYear}`, label: 'Életciklus', icon: Calendar },
-        { to: `/accounty/client/${id}/ev/setup?year=${taxYear}`, label: 'Beállítás varázsló', icon: Settings },
+        { to: `/accounty/${companyId}/${dateRange}/ev/master-data?year=${taxYear}`, label: 'Törzsadatok', icon: ClipboardList },
+        { to: `/accounty/${companyId}/${dateRange}/ev/lifecycle?year=${taxYear}`, label: 'Életciklus', icon: Calendar },
+        { to: `/accounty/${companyId}/${dateRange}/ev/setup?year=${taxYear}`, label: 'Beállítás varázsló', icon: Settings },
       ],
     },
     {
@@ -92,12 +93,12 @@ export default function ClientEvMainPage() {
       icon: Calculator,
       color: 'indigo',
       items: [
-        { to: `/accounty/client/${id}/ev/flat-rate?year=${taxYear}`, label: 'Átalányadó kalkulátor', icon: PiggyBank },
-        { to: `/accounty/client/${id}/ev/entrepreneurial/base?year=${taxYear}`, label: 'Vállalkozói SZJA – adóalap', icon: TrendingUp },
-        { to: `/accounty/client/${id}/ev/entrepreneurial/dividend?year=${taxYear}`, label: 'Vállalkozói SZJA – osztalékalap', icon: Wallet },
-        { to: `/accounty/client/${id}/ev/kata?year=${taxYear}`, label: 'KATA kisadózó', icon: Shield },
-        { to: `/accounty/client/${id}/ev/depreciation?year=${taxYear}`, label: 'Értékcsökkenési leírás (ÉCS)', icon: BarChart3 },
-        { to: `/accounty/client/${id}/ev/compare?year=${taxYear}`, label: 'Adóforma-összehasonlítás', icon: Scale },
+        { to: `/accounty/${companyId}/${dateRange}/ev/flat-rate?year=${taxYear}`, label: 'Átalányadó kalkulátor', icon: PiggyBank },
+        { to: `/accounty/${companyId}/${dateRange}/ev/entrepreneurial/base?year=${taxYear}`, label: 'Vállalkozói SZJA – adóalap', icon: TrendingUp },
+        { to: `/accounty/${companyId}/${dateRange}/ev/entrepreneurial/dividend?year=${taxYear}`, label: 'Vállalkozói SZJA – osztalékalap', icon: Wallet },
+        { to: `/accounty/${companyId}/${dateRange}/ev/kata?year=${taxYear}`, label: 'KATA kisadózó', icon: Shield },
+        { to: `/accounty/${companyId}/${dateRange}/ev/depreciation?year=${taxYear}`, label: 'Értékcsökkenési leírás (ÉCS)', icon: BarChart3 },
+        { to: `/accounty/${companyId}/${dateRange}/ev/compare?year=${taxYear}`, label: 'Adóforma-összehasonlítás', icon: Scale },
       ],
     },
     {
@@ -106,9 +107,9 @@ export default function ClientEvMainPage() {
       icon: BookOpen,
       color: 'violet',
       items: [
-        { to: `/accounty/client/${id}/ev/cashbook?year=${taxYear}`, label: 'Pénztárkönyv', icon: BookOpen },
-        { to: `/accounty/client/${id}/ev/cashbook/ledger?year=${taxYear}`, label: 'Főkönyvi nézet', icon: BarChart3 },
-        { to: `/accounty/client/${id}/ev/cashbook/close?year=${taxYear}`, label: 'Időszaki zárás', icon: ClipboardList },
+        { to: `/accounty/${companyId}/${dateRange}/ev/cashbook?year=${taxYear}`, label: 'Pénztárkönyv', icon: BookOpen },
+        { to: `/accounty/${companyId}/${dateRange}/ev/cashbook/ledger?year=${taxYear}`, label: 'Főkönyvi nézet', icon: BarChart3 },
+        { to: `/accounty/${companyId}/${dateRange}/ev/cashbook/close?year=${taxYear}`, label: 'Időszaki zárás', icon: ClipboardList },
       ],
     },
     {
@@ -117,11 +118,11 @@ export default function ClientEvMainPage() {
       icon: FileText,
       color: 'teal',
       items: [
-        { to: `/accounty/client/${id}/ev/records?year=${taxYear}`, label: 'Nyilvántartások áttekintő', icon: FileText },
-        { to: `/accounty/client/${id}/ev/records/receivables?year=${taxYear}`, label: 'Vevői követelések', icon: Users },
-        { to: `/accounty/client/${id}/ev/records/payables?year=${taxYear}`, label: 'Szállítói tartozások', icon: Package },
-        { to: `/accounty/client/${id}/ev/records/fixed-assets?year=${taxYear}`, label: 'Tárgyi eszközök', icon: Landmark },
-        { to: `/accounty/client/${id}/ev/records/vehicle-log?year=${taxYear}`, label: 'Útnyilvántartás', icon: Car },
+        { to: `/accounty/${companyId}/${dateRange}/ev/records?year=${taxYear}`, label: 'Nyilvántartások áttekintő', icon: FileText },
+        { to: `/accounty/${companyId}/${dateRange}/ev/records/receivables?year=${taxYear}`, label: 'Vevői követelések', icon: Users },
+        { to: `/accounty/${companyId}/${dateRange}/ev/records/payables?year=${taxYear}`, label: 'Szállítói tartozások', icon: Package },
+        { to: `/accounty/${companyId}/${dateRange}/ev/records/fixed-assets?year=${taxYear}`, label: 'Tárgyi eszközök', icon: Landmark },
+        { to: `/accounty/${companyId}/${dateRange}/ev/records/vehicle-log?year=${taxYear}`, label: 'Útnyilvántartás', icon: Car },
       ],
     },
     {
@@ -130,12 +131,12 @@ export default function ClientEvMainPage() {
       icon: Landmark,
       color: 'rose',
       items: [
-        { to: `/accounty/client/${id}/ev/contributions?year=${taxYear}`, label: 'TB-járulék & szocho', icon: Calculator },
-        { to: `/accounty/client/${id}/ev/hipa?year=${taxYear}`, label: 'Helyi iparűzési adó', icon: Landmark },
-        { to: `/accounty/client/${id}/ev/vat?year=${taxYear}`, label: 'ÁFA kezelés', icon: Receipt },
-        { to: `/accounty/client/${id}/ev/chamber?year=${taxYear}`, label: 'Kamarai hozzájárulás', icon: Shield },
-        { to: `/accounty/client/${id}/ev/car-tax?year=${taxYear}`, label: 'Cégautóadó', icon: Car },
-        { to: `/accounty/client/${id}/ev/innovation?year=${taxYear}`, label: 'Innovációs járulék', icon: TrendingUp },
+        { to: `/accounty/${companyId}/${dateRange}/ev/contributions?year=${taxYear}`, label: 'TB-járulék & szocho', icon: Calculator },
+        { to: `/accounty/${companyId}/${dateRange}/ev/hipa?year=${taxYear}`, label: 'Helyi iparűzési adó', icon: Landmark },
+        { to: `/accounty/${companyId}/${dateRange}/ev/vat?year=${taxYear}`, label: 'ÁFA kezelés', icon: Receipt },
+        { to: `/accounty/${companyId}/${dateRange}/ev/chamber?year=${taxYear}`, label: 'Kamarai hozzájárulás', icon: Shield },
+        { to: `/accounty/${companyId}/${dateRange}/ev/car-tax?year=${taxYear}`, label: 'Cégautóadó', icon: Car },
+        { to: `/accounty/${companyId}/${dateRange}/ev/innovation?year=${taxYear}`, label: 'Innovációs járulék', icon: TrendingUp },
       ],
     },
     {
@@ -144,13 +145,13 @@ export default function ClientEvMainPage() {
       icon: ClipboardList,
       color: 'cyan',
       items: [
-        { to: `/accounty/client/${id}/ev/returns?year=${taxYear}`, label: 'SZJA bevallás (25SZJA)', icon: FileText },
-        { to: `/accounty/client/${id}/ev/returns/contrib?year=${taxYear}`, label: 'Járulékbevallás (2658)', icon: Calculator },
-        { to: `/accounty/client/${id}/ev/returns/kata?year=${taxYear}`, label: 'KATA bevallás', icon: Shield },
-        { to: `/accounty/client/${id}/ev/returns/hipa?year=${taxYear}`, label: 'HIPA bevallás', icon: Landmark },
-        { to: `/accounty/client/${id}/ev/returns/vat-car?year=${taxYear}`, label: 'ÁFA / cégautóadó bevallás', icon: Car },
-        { to: `/accounty/client/${id}/ev/income-report?year=${taxYear}`, label: 'Jövedelem-kimutatás', icon: TrendingUp },
-        { to: `/accounty/client/${id}/ev/optimization?year=${taxYear}`, label: 'Adóoptimalizálás', icon: BarChart3 },
+        { to: `/accounty/${companyId}/${dateRange}/ev/returns?year=${taxYear}`, label: 'SZJA bevallás (25SZJA)', icon: FileText },
+        { to: `/accounty/${companyId}/${dateRange}/ev/returns/contrib?year=${taxYear}`, label: 'Járulékbevallás (2658)', icon: Calculator },
+        { to: `/accounty/${companyId}/${dateRange}/ev/returns/kata?year=${taxYear}`, label: 'KATA bevallás', icon: Shield },
+        { to: `/accounty/${companyId}/${dateRange}/ev/returns/hipa?year=${taxYear}`, label: 'HIPA bevallás', icon: Landmark },
+        { to: `/accounty/${companyId}/${dateRange}/ev/returns/vat-car?year=${taxYear}`, label: 'ÁFA / cégautóadó bevallás', icon: Car },
+        { to: `/accounty/${companyId}/${dateRange}/ev/income-report?year=${taxYear}`, label: 'Jövedelem-kimutatás', icon: TrendingUp },
+        { to: `/accounty/${companyId}/${dateRange}/ev/optimization?year=${taxYear}`, label: 'Adóoptimalizálás', icon: BarChart3 },
       ],
     },
     {
@@ -159,11 +160,11 @@ export default function ClientEvMainPage() {
       icon: Users,
       color: 'indigo',
       items: [
-        { to: `/accounty/client/${id}/ev/org/bookkeeping?year=${taxYear}`, label: 'Könyvvezetés mód', icon: BookOpen },
-        { to: `/accounty/client/${id}/ev/org/civil?year=${taxYear}`, label: 'Civil szervezet', icon: Users },
-        { to: `/accounty/client/${id}/ev/org/condominium?year=${taxYear}`, label: 'Társasház', icon: Landmark },
-        { to: `/accounty/client/${id}/ev/org/other?year=${taxYear}`, label: 'Egyéb szervezet', icon: Package },
-        { to: `/accounty/client/${id}/ev/org/simplified-report?year=${taxYear}`, label: 'Egyszerűsített beszámoló', icon: FileText },
+        { to: `/accounty/${companyId}/${dateRange}/ev/org/bookkeeping?year=${taxYear}`, label: 'Könyvvezetés mód', icon: BookOpen },
+        { to: `/accounty/${companyId}/${dateRange}/ev/org/civil?year=${taxYear}`, label: 'Civil szervezet', icon: Users },
+        { to: `/accounty/${companyId}/${dateRange}/ev/org/condominium?year=${taxYear}`, label: 'Társasház', icon: Landmark },
+        { to: `/accounty/${companyId}/${dateRange}/ev/org/other?year=${taxYear}`, label: 'Egyéb szervezet', icon: Package },
+        { to: `/accounty/${companyId}/${dateRange}/ev/org/simplified-report?year=${taxYear}`, label: 'Egyszerűsített beszámoló', icon: FileText },
       ],
     },
   ], [id, taxYear]);
@@ -196,25 +197,24 @@ export default function ClientEvMainPage() {
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
-      {/* Breadcrumb & Header */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/accounty/ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
-          <ArrowLeft className="w-3.5 h-3.5" />
-          EV Portfólió
-        </Link>
-        <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">{client?.name || 'Ügyfél'}</span>
-      </div>
-
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">
-            <Receipt className="w-5 h-5 text-white" />
-          </div>
+        <div className="flex items-start gap-4">
+          <Link 
+            to={`/accounty/${companyId}/${dateRange}/overview`}
+            className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+            title="Vissza az áttekintéshez"
+          >
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          </Link>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {client?.name || 'Ügyfél'}
-            </h1>
+            <div className="flex items-center gap-1.5 mb-1">
+              {clientLoading ? (
+                <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+              ) : (
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client?.name || 'Ügyfél'}</span>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Egyéni vállalkozás (EV)</h1>
             <div className="flex items-center gap-3 mt-0.5 flex-wrap">
               <span className="text-xs text-slate-400 font-mono">{client?.taxNumber || ''}</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600">
@@ -249,7 +249,7 @@ export default function ClientEvMainPage() {
             <option value={2025}>2025. adóév</option>
           </select>
           <Link
-            to={`/accounty/client/${id}/ev/setup`}
+            to={`/accounty/${companyId}/${dateRange}/ev/setup`}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <Settings className="w-3.5 h-3.5" /> Beállítások

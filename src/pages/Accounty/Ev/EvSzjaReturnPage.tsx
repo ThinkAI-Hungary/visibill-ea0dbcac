@@ -163,7 +163,8 @@ function generateDraftReturnXml(code: string, period: string, client: any) {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvSzjaReturnPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { data: client } = useAccountyClient(id);
   const [tab, setTab] = useState<'all' | 'pending' | 'submitted'>('all');
   const updateReturn = useUpdateEvTaxReturn();
@@ -295,7 +296,7 @@ export default function EvSzjaReturnPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -374,18 +375,18 @@ export default function EvSzjaReturnPage() {
             let linkPath = "";
             const codeLower = ret.code.toLowerCase();
             if (codeLower.includes('2658') || codeLower.includes('58')) {
-              linkPath = `/accounty/client/${id}/ev/returns/contrib?year=${taxYear}`;
+              linkPath = `/accounty/${id}/${dateRange}/ev/returns/contrib?year=${taxYear}`;
             } else if (codeLower.includes('kata')) {
-              linkPath = `/accounty/client/${id}/ev/returns/kata?year=${taxYear}`;
+              linkPath = `/accounty/${id}/${dateRange}/ev/returns/kata?year=${taxYear}`;
             } else if (codeLower.includes('hipa')) {
-              linkPath = `/accounty/client/${id}/ev/returns/hipa?year=${taxYear}`;
+              linkPath = `/accounty/${id}/${dateRange}/ev/returns/hipa?year=${taxYear}`;
             } else if (codeLower.includes('65') || codeLower.includes('car')) {
-              linkPath = `/accounty/client/${id}/ev/returns/vat-car?year=${taxYear}`;
+              linkPath = `/accounty/${id}/${dateRange}/ev/returns/vat-car?year=${taxYear}`;
             } else if (codeLower.includes('2553') || codeLower.includes('szja') || codeLower.includes('53')) {
               const isAtalany = evSettings?.taxpayer_form === 'atalany';
               linkPath = isAtalany 
-                ? `/accounty/client/${id}/ev/flat-rate?year=${taxYear}`
-                : `/accounty/client/${id}/ev/entrepreneurial/base?year=${taxYear}`;
+                ? `/accounty/${id}/${dateRange}/ev/flat-rate?year=${taxYear}`
+                : `/accounty/${id}/${dateRange}/ev/entrepreneurial/base?year=${taxYear}`;
             }
 
             const InnerContent = (

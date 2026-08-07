@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useAccountyRole } from './AccountyRoleContext';
+import NavDeadlinesPage from './NavDeadlinesPage';
 import { useAccountyDeadlines, useAccountyKpis, useCompleteDeadline } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -78,7 +79,9 @@ function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:t
 }
 
 export default function TaxCalendarPage() {
-  const { isAdmin } = useAccountyRole();
+  const { isAdmin, isSenior } = useAccountyRole();
+  const isAuthorizedForNavDeadlines = isAdmin || isSenior;
+  const [activeTab, setActiveTab] = useState<'calendar' | 'deadlines'>('calendar');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [viewScope, setViewScope] = useState<'mine' | 'all'>('mine');
@@ -474,14 +477,86 @@ ThinkAI`;
     }
   };
 
+  if (activeTab === 'deadlines') {
+    return (
+      <div className="w-full space-y-8 animate-in fade-in duration-500 pb-20">
+        {/* Header section with tabs */}
+        <div className="flex flex-col gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Naptár & Határidők</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">Könyvelési naptár és hivatalos NAV határidők</p>
+          </div>
+          
+          {/* Tab Selector */}
+          <div className="flex border-b border-border">
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className={cn(
+                "px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px]",
+                activeTab === 'calendar'
+                  ? "border-primary text-slate-900 dark:text-slate-100 font-bold"
+                  : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              )}
+            >
+              Adónaptár
+            </button>
+            {isAuthorizedForNavDeadlines && (
+              <button
+                onClick={() => setActiveTab('deadlines')}
+                className={cn(
+                  "px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px]",
+                  activeTab === 'deadlines'
+                    ? "border-primary text-slate-900 dark:text-slate-100 font-bold"
+                    : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                )}
+              >
+                Hivatalos NAV határidők
+              </button>
+            )}
+          </div>
+        </div>
+
+        <NavDeadlinesPage hideHeader={true} />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500 pb-20">
       
-      {/* Header section */}
-      <div className="flex items-end justify-between">
+      {/* Header section with tabs */}
+      <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Adó naptár</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Ügyfelek adózási és bérszámfejtési határidői</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Naptár & Határidők</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Könyvelési naptár és hivatalos NAV határidők</p>
+        </div>
+        
+        {/* Tab Selector */}
+        <div className="flex border-b border-border">
+          <button
+            onClick={() => setActiveTab('calendar')}
+            className={cn(
+              "px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px]",
+              activeTab === 'calendar'
+                ? "border-primary text-slate-900 dark:text-slate-100 font-bold"
+                : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            )}
+          >
+            Adónaptár
+          </button>
+          {isAuthorizedForNavDeadlines && (
+            <button
+              onClick={() => setActiveTab('deadlines')}
+              className={cn(
+                "px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px]",
+                activeTab === 'deadlines'
+                  ? "border-primary text-slate-900 dark:text-slate-100 font-bold"
+                  : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              )}
+            >
+              Hivatalos NAV határidők
+            </button>
+          )}
         </div>
       </div>
 

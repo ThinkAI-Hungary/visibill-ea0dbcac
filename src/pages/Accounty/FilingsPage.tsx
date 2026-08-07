@@ -3,7 +3,7 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Upload, CheckCircle2, Clock,
-  AlertTriangle, Search, Plus, Loader2, Send, XCircle, Filter, Trash2
+  AlertTriangle, Search, Plus, Loader2, Send, XCircle, Filter, Trash2, ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
@@ -39,7 +39,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: React.Ele
 const MONTHS = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'Aug', 'Szep', 'Okt', 'Nov', 'Dec'];
 
 export default function FilingsPage() {
-  const { id: companyId } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -91,6 +91,8 @@ export default function FilingsPage() {
     const start = (currentPage - 1) * pageSize;
     return filteredFilings.slice(start, start + pageSize);
   }, [filteredFilings, currentPage, pageSize]);
+
+  const clientsLoading = isLoading;
 
   // Stats
   const stats = useMemo(() => ({
@@ -241,14 +243,24 @@ export default function FilingsPage() {
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/accounty/payroll/${companyId}`)} className="h-9 w-9">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4">
+          <button 
+            onClick={() => navigate(`/accounty/${companyId}/${dateRange}/payroll`)}
+            className="flex items-center justify-center w-8 h-8 mt-1.5 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            title="Vissza a bérszámfejtéshez"
+          >
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">NAV Bevallások</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{company?.name || '–'}</p>
+            <div className="flex items-center gap-1.5 mb-1">
+              {clientsLoading ? (
+                <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+              ) : (
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{company?.name || '–'}</span>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">NAV Bevallások</h1>
           </div>
         </div>
         <div className="flex items-center gap-2">

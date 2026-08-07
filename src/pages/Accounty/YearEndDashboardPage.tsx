@@ -29,7 +29,8 @@ const STATUS_BADGE: Record<TaskStatus, { label: string; color: string; icon: Rea
 };
 
 export default function YearEndDashboardPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const { toast } = useToast();
   const currentYear = new Date().getFullYear();
   const [expandedTask, setExpandedTask] = useState<string | null>(null);

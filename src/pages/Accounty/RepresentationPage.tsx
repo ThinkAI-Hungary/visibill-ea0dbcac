@@ -3,8 +3,9 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Plus, Shield, Clock, CheckCircle, AlertTriangle,
-  ChevronRight, X, Calendar, Users, Trash2, Loader2
+  ChevronRight, X, Calendar, Users, Trash2, Loader2, ChevronLeft
 } from 'lucide-react';
+import { useAccountyClient } from '@/hooks/accounty';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useNavRepresentations, useAddNavRepresentation, useRevokeNavRepresentation, type NavRepresentation } from '@/hooks/accounty';
@@ -38,8 +39,10 @@ const SCOPE_OPTIONS = [
 ];
 
 export default function RepresentationPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { toast } = useToast();
+  const { data: client, isLoading: clientLoading } = useAccountyClient(id || '');
   const { data: reps, isLoading, isError: repsError, refetch: refetchReps } = useNavRepresentations(id || '');
   const addMutation = useAddNavRepresentation();
   const revokeMutation = useRevokeNavRepresentation();
@@ -405,17 +408,25 @@ export default function RepresentationPage() {
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to={`/accounty/client/${id}`} className="p-2 rounded-lg hover:bg-muted transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4">
+          <Link 
+            to={`/accounty/${companyId}/${dateRange}/settings`}
+            className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+            title="Vissza a beállításokhoz"
+          >
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </Link>
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">
-            <Shield className="w-5 h-5 text-white" />
-          </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">NAV-meghatalmazás kezelés</h1>
-            <p className="text-sm text-slate-500">UJEGYKE — Állandó meghatalmazások nyilvántartása</p>
+            <div className="flex items-center gap-1.5 mb-1">
+              {clientLoading ? (
+                <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+              ) : (
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client?.name || 'Ügyfél'}</span>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">NAV-meghatalmazás kezelés</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">UJEGYKE — Állandó meghatalmazások nyilvántartása</p>
           </div>
         </div>
         <Button onClick={() => { setShowWizard(true); setWizardStep(1); }} className="gap-1.5 bg-indigo-600 hover:bg-indigo-700">

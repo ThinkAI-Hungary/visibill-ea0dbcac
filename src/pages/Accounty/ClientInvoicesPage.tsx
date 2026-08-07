@@ -19,9 +19,10 @@ import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 
 export default function ClientInvoicesPage() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   
-  const { data: supabaseClients } = useAccountyClients();
+  const { data: supabaseClients, isLoading: clientLoading } = useAccountyClients();
   const client = useMemo(() => {
     const found = supabaseClients?.find((c) => c.id === id);
     if (found) return { id: found.id, name: found.name, taxNumber: found.taxNumber || '' };
@@ -204,18 +205,20 @@ export default function ClientInvoicesPage() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex items-start gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="w-8 h-8 mt-1.5 shrink-0 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800"
-            onClick={() => navigate(-1)}
+          <button 
+            onClick={() => navigate(`/accounty/${companyId}/${dateRange}/overview`)}
+            className="flex items-center justify-center w-8 h-8 mt-1 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            title="Vissza az áttekintéshez"
           >
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          </Button>
+          </button>
           <div>
-            <div className="flex items-center gap-1.5 mb-1 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 px-2 py-0.5 -ml-2 rounded-md transition-colors w-max">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client.name}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <div className="flex items-center gap-1.5 mb-1">
+              {clientLoading ? (
+                <div className="h-3.5 w-24 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+              ) : (
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client.name}</span>
+              )}
             </div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Számlák</h1>
           </div>

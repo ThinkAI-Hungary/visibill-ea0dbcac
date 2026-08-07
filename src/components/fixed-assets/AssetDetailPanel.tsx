@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, lazy, Suspense, useRef } from 'react';
+import { useState, useEffect, lazy, Suspense, useRef } from 'react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
@@ -8,7 +8,9 @@ import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
 import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -34,6 +36,7 @@ const EVENT_ICONS: Record<string, React.ReactNode> = {
   disposal: <Trash2 className="h-3.5 w-3.5 text-destructive" />,
   value_change: <PlusCircle className="h-3.5 w-3.5 text-warning" />,
   document_upload: <Upload className="h-3.5 w-3.5 text-muted-foreground" />,
+  performance_log: <PlusCircle className="h-3.5 w-3.5 text-success" />,
 };
 
 const EVENT_LABELS: Record<string, string> = {
@@ -44,6 +47,7 @@ const EVENT_LABELS: Record<string, string> = {
   disposal: 'Kivezetés',
   value_change: 'Értékváltozás',
   document_upload: 'Dokumentum feltöltés',
+  performance_log: 'Teljesítmény rögzítés',
 };
 
 export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
@@ -58,6 +62,54 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Performance Log States
+  const [perfOpen, setPerfOpen] = useState(false);
+  const [perfDate, setPerfDate] = useState('');
+  const [perfAmount, setPerfAmount] = useState('');
+  const [perfCumulative, setPerfCumulative] = useState('');
+  const [submittingPerf, setSubmittingPerf] = useState(false);
+
+  const handleSavePerf = async () => {
+    if (!user?.id || !perfAmount) return;
+    setSubmittingPerf(true);
+    
+    try {
+      const periodAmount = parseFloat(perfAmount);
+      const cumulativeValue = perfCumulative ? parseFloat(perfCumulative) : null;
+      
+      const depreciableBase = Math.max(0, asset.acquisition_value - asset.residual_value);
+      const planned = Number(asset.total_planned_performance) || 1;
+      const calculatedDep = Math.round(depreciableBase * (periodAmount / planned));
+
+      const { error } = await supabase.from('asset_events').insert({
+        asset_id: asset.id,
+        company_id: asset.company_id,
+        user_id: user.id,
+        event_type: 'performance_log',
+        event_date: perfDate,
+        description: `Teljesítmény: ${periodAmount.toLocaleString('hu-HU')} ${asset.performance_unit} (+${calculatedDep.toLocaleString('hu-HU')} Ft ÉCS)`,
+        new_values: {
+          period_performance: periodAmount,
+          cumulative_reading: cumulativeValue,
+          calculated_depreciation: calculatedDep,
+        }
+      });
+
+      if (error) throw error;
+
+      toast({ title: 'Teljesítmény sikeresen rögzítve' });
+      setPerfOpen(false);
+      
+      queryClient.invalidateQueries({ queryKey: ['fixedAssets', asset.company_id] });
+      queryClient.invalidateQueries({ queryKey: ['fixedAssetDetail', asset.id] });
+      queryClient.invalidateQueries({ queryKey: ['fixed-asset-detail', asset.id] });
+    } catch (err: any) {
+      toast({ title: 'Hiba a mentés során', description: err.message, variant: 'destructive' });
+    } finally {
+      setSubmittingPerf(false);
+    }
+  };
 
   const isActive = asset.status === 'active';
 
@@ -244,7 +296,149 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
       </div>
 
       {/* Depreciation Cards */}
-      <DepreciationCards asset={asset} />
+      <DepreciationCards
+        asset={asset}
+        performanceLogs={events
+          .filter(e => e.event_type === 'performance_log')
+          .map(e => ({ date: e.event_date, amount: e.new_values?.period_performance || 0 }))
+        }
+      />
+
+      {/* Teljesítményarányos ÉCS napló */}
+      {asset.depreciation_method === 'performance' && (
+        <div className="space-y-3 border-t pt-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Teljesítmény Napló</h4>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 h-7 text-xs border-success/30 text-success hover:bg-success/5"
+              onClick={() => {
+                setPerfAmount('');
+                setPerfCumulative('');
+                setPerfDate(new Date().toISOString().slice(0, 10));
+                setPerfOpen(true);
+              }}
+              disabled={!isActive}
+            >
+              <PlusCircle className="h-3.5 w-3.5" />
+              Teljesítmény rögzítése
+            </Button>
+          </div>
+
+          <div className="rounded-lg border overflow-hidden">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-muted/50 border-b text-muted-foreground">
+                <tr>
+                  <th className="py-2 px-3 font-medium">Dátum</th>
+                  <th className="py-2 px-3 font-medium text-right">Időszaki érték</th>
+                  <th className="py-2 px-3 font-medium text-right">Számlálóállás</th>
+                  <th className="py-2 px-3 font-medium text-right">Elszámolt ÉCS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {events.filter(e => e.event_type === 'performance_log').length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-muted-foreground italic">
+                      Nincs még rögzített teljesítmény bejegyzés.
+                    </td>
+                  </tr>
+                ) : (
+                  events
+                    .filter(e => e.event_type === 'performance_log')
+                    .map((event) => {
+                      const pVal = event.new_values?.period_performance || 0;
+                      const cVal = event.new_values?.cumulative_reading;
+                      const decVal = event.new_values?.calculated_depreciation || 0;
+                      return (
+                        <tr key={event.id} className="hover:bg-muted/20">
+                          <td className="py-2 px-3 font-mono">
+                            {format(new Date(event.event_date), 'yyyy.MM.dd.', { locale: hu })}
+                          </td>
+                          <td className="py-2 px-3 text-right tabular-nums">
+                            {pVal.toLocaleString('hu-HU')} {asset.performance_unit}
+                          </td>
+                          <td className="py-2 px-3 text-right tabular-nums text-muted-foreground">
+                            {cVal ? `${cVal.toLocaleString('hu-HU')} ${asset.performance_unit}` : '-'}
+                          </td>
+                          <td className="py-2 px-3 text-right tabular-nums font-semibold text-success">
+                            +{decVal.toLocaleString('hu-HU')} Ft
+                          </td>
+                        </tr>
+                      );
+                    })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Teljesítmény Rögzítése Dialog */}
+      <Dialog open={perfOpen} onOpenChange={setPerfOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Új Teljesítmény Rögzítése</DialogTitle>
+            <DialogDescription>
+              Add meg az eszköz által teljesített egységet a leíráshoz (Tervezett összesen: {asset.total_planned_performance?.toLocaleString('hu-HU')} {asset.performance_unit}).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-3 text-sm">
+            <div className="space-y-2">
+              <Label>Dátum *</Label>
+              <Input
+                type="date"
+                value={perfDate}
+                onChange={e => setPerfDate(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Időszaki érték ({asset.performance_unit || 'egység'}) *</Label>
+                <Input
+                  type="number"
+                  value={perfAmount}
+                  onChange={e => {
+                    setPerfAmount(e.target.value);
+                    setPerfCumulative('');
+                  }}
+                  placeholder="pl. 5000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Vagy új állás ({asset.performance_unit || 'egység'})</Label>
+                <Input
+                  type="number"
+                  value={perfCumulative}
+                  onChange={e => {
+                    setPerfCumulative(e.target.value);
+                    const logs = events.filter(ev => ev.event_type === 'performance_log');
+                    const lastOdo = logs.length > 0 ? Number(logs[logs.length - 1].new_values?.cumulative_reading || 0) : 0;
+                    const val = parseFloat(e.target.value) || 0;
+                    if (val >= lastOdo) {
+                      setPerfAmount(String(val - lastOdo));
+                    }
+                  }}
+                  placeholder="pl. 15000"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPerfOpen(false)} disabled={submittingPerf}>
+              Mégse
+            </Button>
+            <Button
+              onClick={handleSavePerf}
+              disabled={submittingPerf || !perfAmount || parseFloat(perfAmount) <= 0}
+              className="gap-2"
+            >
+              {submittingPerf ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Mentés
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Action Buttons */}
       <div className="flex gap-2">

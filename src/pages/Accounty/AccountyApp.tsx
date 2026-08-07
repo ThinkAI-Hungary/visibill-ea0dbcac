@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 import AccountyWelcomeWizard from '@/components/accounty/AccountyWelcomeWizard';
 import { 
@@ -23,7 +23,7 @@ import {
   AlertCircle,
   Check
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -57,8 +57,14 @@ import ClientListView from '@/components/accounty/dashboard/ClientListView';
 import ClientKanbanView from '@/components/accounty/dashboard/ClientKanbanView';
 import { KpiCard, CLIENT_COLORS } from '@/components/accounty/dashboard/DashboardShared';
 
+const PayrollPortfolioPage = lazy(() => import('./PayrollPortfolioPage'));
+const TaoPortfolioPage = lazy(() => import('./Tao/TaoPortfolioPage'));
+const EvPortfolioDashboard = lazy(() => import('./Ev/EvPortfolioDashboard'));
+
 export default function AccountyApp() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'companies';
   const { toast } = useToast();
   const { data: supabaseClients, isLoading: clientsLoading, isError: clientsError, refetch: refetchClients } = useAccountyClients();
   const { data: supabaseKpis } = useAccountyKpis();
@@ -466,7 +472,7 @@ export default function AccountyApp() {
   }
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 animate-in fade-in duration-500">
       
       {/* Header section */}
       <div className="flex items-end justify-between">
@@ -497,160 +503,197 @@ export default function AccountyApp() {
         </div>
       </div>
 
-      {/* KPIs (Hidden in KPI view since it has its own) */}
-      {viewScope !== 'kpi' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="stagger-1"><KpiCard title="Összes ügyfél" value={kpis.totalClients} icon={Users} accentColor="teal" /></div>
-          <div className="stagger-2"><KpiCard title="Feldolgozatlan számlák" value={kpis.unprocessedInvoices} icon={FileText} accentColor="blue" /></div>
-          <div className="stagger-3"><KpiCard title="Hiányzó számlák" value={kpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" accentColor="red" onClick={() => navigate('/accounty/missing-invoices')} /></div>
-          <div className="stagger-4"><KpiCard title="Közeledő határidők" value={kpis.upcomingDeadlines} icon={Clock} accentColor="amber" onClick={() => navigate('/accounty/tax-calendar')} /></div>
-        </div>
-      )}
-
-      {/* Scope Tabs */}
-      <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-border/60 shadow-inner flex items-center">
-        <button
-          onClick={() => setViewScope('kpi')}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
-            viewScope === 'kpi' 
-              ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
-          )}
-        >
-          <BarChart2 className="w-4 h-4" />
-          {isAdmin ? 'Irodai KPI (Vezetői)' : 'Statisztikák'}
-        </button>
-        <button
-          onClick={() => setViewScope('mine')}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
-            viewScope === 'mine' 
-              ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
-          )}
-        >
-          <User className="w-4 h-4" />
-          Saját ügyfeleim ({mineCount})
-        </button>
-        {isAdmin && (
+      {/* Tab Switcher for Overviews */}
+      <div className="flex items-center gap-1 border-b border-border/40 pb-px mb-2 overflow-x-auto">
+        {([
+          ['companies', 'Céglista'],
+          ['payroll', 'Bérszámfejtés'],
+          ['tao', 'TAO / KIVA'],
+          ['ev', 'EV / Szervezetek'],
+        ] as const).map(([tabKey, label]) => (
           <button
-            onClick={() => setViewScope('all')}
+            key={tabKey}
+            onClick={() => setSearchParams({ tab: tabKey })}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
-              viewScope === 'all' 
-                ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
+              "px-5 py-2.5 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap",
+              activeTab === tabKey
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
             )}
           >
-            <Building className="w-4 h-4" />
-            Összes ügyfél ({allCount})
+            {label}
           </button>
-        )}
+        ))}
       </div>
 
-      {/* Toolbar - Hide if KPI view */}
-      {viewScope !== 'kpi' && (
-        <div className="flex items-center justify-between gap-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-3 rounded-xl border border-border shadow-soft sticky top-0 z-10">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input 
-                placeholder="Keresés..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-slate-50 dark:bg-background border-transparent focus-visible:ring-primary"
-              />
-            </div>
-            
-            <div className="hidden sm:block">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px] bg-card border-border h-9 gap-2 text-slate-600 dark:text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 shrink-0" />
-                    <SelectValue placeholder="Szűrés..." />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Minden">Minden</SelectItem>
-                  <SelectItem value="Rendben">Rendben</SelectItem>
-                  <SelectItem value="Feldolgozandó">Feldolgozandó</SelectItem>
-                  <SelectItem value="Kritikus">Kritikus</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="flex items-center bg-slate-50 dark:bg-background rounded-lg p-1 border border-border">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setViewMode('grid')}
-              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
-            >
-              <Grid className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setViewMode('list')}
-              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'list' ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
-            >
-              <ListIcon className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setViewMode('kanban')}
-              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'kanban' ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
-            >
-              <Kanban className="w-4 h-4" />
-            </Button>
-          </div>
+      <Suspense fallback={
+        <div className="py-20 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="text-sm text-muted-foreground mt-2">Betöltés...</p>
         </div>
-      )}
+      }>
+        {activeTab === 'companies' && (
+          <div className="space-y-6">
+            {/* KPIs (Hidden in KPI view since it has its own) */}
+            {viewScope !== 'kpi' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="stagger-1"><KpiCard title="Összes ügyfél" value={kpis.totalClients} icon={Users} accentColor="teal" /></div>
+                <div className="stagger-2"><KpiCard title="Feldolgozatlan számlák" value={kpis.unprocessedInvoices} icon={FileText} accentColor="blue" /></div>
+                <div className="stagger-3"><KpiCard title="Hiányzó számlák" value={kpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" accentColor="red" onClick={() => navigate('/accounty/missing-invoices')} /></div>
+                <div className="stagger-4"><KpiCard title="Közeledő határidők" value={kpis.upcomingDeadlines} icon={Clock} accentColor="amber" onClick={() => navigate('/accounty/tax-calendar')} /></div>
+              </div>
+            )}
 
-      {/* Content based on View Mode */}
-      {viewScope === 'kpi' ? (
-        <DashboardKpiView
-          clients={clients}
-          dynamicKpiStats={dynamicKpiStats}
-          portalStats={portalStats}
-          editingLayout={editingLayout}
-          setEditingLayout={setEditingLayout}
-          widgetOrder={widgetOrder}
-          moveWidget={moveWidget}
-          dynamicBarData={dynamicBarData}
-          dynamicPieData={dynamicPieData}
-          monthlyTrendData={monthlyTrendData}
-          colleagueStats={colleagueStats}
-          auditLog={auditLog}
-          isAdmin={isAdmin}
-        />
-      ) : viewMode === 'kanban' ? (
-        <ClientKanbanView
-          filteredClients={filteredClients}
-          handleUpdateOwner={handleUpdateOwner}
-          onStatusChange={handleKanbanStatusChange}
-        />
-      ) : viewMode === 'grid' ? (
-        <ClientGridView
-          filteredClients={filteredClients}
-          handleUpdateOwner={handleUpdateOwner}
-          searchQuery={searchQuery}
-          statusFilter={statusFilter}
-          setSearchQuery={setSearchQuery}
-          setStatusFilter={setStatusFilter}
-        />
-      ) : (
-        <ClientListView
-          filteredClients={filteredClients}
-          handleUpdateOwner={handleUpdateOwner}
-          searchQuery={searchQuery}
-          statusFilter={statusFilter}
-        />
-      )}
+            {/* Scope Tabs */}
+            <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-border/60 shadow-inner flex items-center">
+              <button
+                onClick={() => setViewScope('kpi')}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
+                  viewScope === 'kpi' 
+                    ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
+                )}
+              >
+                <BarChart2 className="w-4 h-4" />
+                {isAdmin ? 'Irodai KPI (Vezetői)' : 'Statisztikák'}
+              </button>
+              <button
+                onClick={() => setViewScope('mine')}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
+                  viewScope === 'mine' 
+                    ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
+                )}
+              >
+                <User className="w-4 h-4" />
+                Saját ügyfeleim ({mineCount})
+              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setViewScope('all')}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
+                    viewScope === 'all' 
+                      ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
+                  )}
+                >
+                  <Building className="w-4 h-4" />
+                  Összes ügyfél ({allCount})
+                </button>
+              )}
+            </div>
 
+            {/* Toolbar - Hide if KPI view */}
+            {viewScope !== 'kpi' && (
+              <div className="flex items-center justify-between gap-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-3 rounded-xl border border-border shadow-soft sticky top-0 z-10">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input 
+                      placeholder="Keresés..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 bg-slate-50 dark:bg-background border-transparent focus-visible:ring-primary"
+                    />
+                  </div>
+                  
+                  <div className="hidden sm:block">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-[140px] bg-card border-border h-9 gap-2 text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <Filter className="w-4 h-4 shrink-0" />
+                          <SelectValue placeholder="Szűrés..." />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Minden">Minden</SelectItem>
+                        <SelectItem value="Rendben">Rendben</SelectItem>
+                        <SelectItem value="Feldolgozandó">Feldolgozandó</SelectItem>
+                        <SelectItem value="Kritikus">Kritikus</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="flex items-center bg-slate-50 dark:bg-background rounded-lg p-1 border border-border">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setViewMode('grid')}
+                    className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
+                  >
+                    <Grid className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setViewMode('list')}
+                    className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'list' ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
+                  >
+                    <ListIcon className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setViewMode('kanban')}
+                    className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'kanban' ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
+                  >
+                    <Kanban className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Content based on View Mode */}
+            {viewScope === 'kpi' ? (
+              <DashboardKpiView
+                clients={clients}
+                dynamicKpiStats={dynamicKpiStats}
+                portalStats={portalStats}
+                editingLayout={editingLayout}
+                setEditingLayout={setEditingLayout}
+                widgetOrder={widgetOrder}
+                moveWidget={moveWidget}
+                dynamicBarData={dynamicBarData}
+                dynamicPieData={dynamicPieData}
+                monthlyTrendData={monthlyTrendData}
+                colleagueStats={colleagueStats}
+                auditLog={auditLog}
+                isAdmin={isAdmin}
+              />
+            ) : viewMode === 'kanban' ? (
+              <ClientKanbanView
+                filteredClients={filteredClients}
+                handleUpdateOwner={handleUpdateOwner}
+                onStatusChange={handleKanbanStatusChange}
+              />
+            ) : viewMode === 'grid' ? (
+              <ClientGridView
+                filteredClients={filteredClients}
+                handleUpdateOwner={handleUpdateOwner}
+                searchQuery={searchQuery}
+                statusFilter={statusFilter}
+                setSearchQuery={setSearchQuery}
+                setStatusFilter={setStatusFilter}
+              />
+            ) : (
+              <ClientListView
+                filteredClients={filteredClients}
+                handleUpdateOwner={handleUpdateOwner}
+                searchQuery={searchQuery}
+                statusFilter={statusFilter}
+              />
+            )}
+          </div>
+        )}
+
+        {activeTab === 'payroll' && <PayrollPortfolioPage />}
+        {activeTab === 'tao' && <TaoPortfolioPage />}
+        {activeTab === 'ev' && <EvPortfolioDashboard />}
+      </Suspense>
     </div>
   );
 }

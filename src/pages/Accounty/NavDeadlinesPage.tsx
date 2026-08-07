@@ -60,7 +60,7 @@ function generateDeadlines(): Deadline[] {
   return deadlines;
 }
 
-export default function NavDeadlinesPage() {
+export default function NavDeadlinesPage({ hideHeader }: { hideHeader?: boolean }) {
   const deadlines = useMemo(generateDeadlines, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set(['nav_report', 'nav_payment', 'internal', 'other']));
@@ -109,15 +109,27 @@ export default function NavDeadlinesPage() {
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg shadow-red-500/25">
-          <Clock className="w-5 h-5 text-white" />
+      {!hideHeader && (
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg shadow-red-500/25">
+            <Clock className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">NAV határidők</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Bejelentési, bevallási és befizetési naptár</p>
+          </div>
+          <div className="ml-auto">
+            <ExportButton
+              filename={`nav_hataridok_${new Date().getFullYear()}`}
+              headers={['Dátum', 'Határidő', 'Típus', 'Leírás', 'Státusz']}
+              getRows={() => filtered.map(d => [d.date, d.title, TYPE_CONFIG[d.type]?.label || '', d.description, d.status === 'completed' ? 'Teljesítve' : d.status === 'due_today' ? 'Ma esedékes' : d.status === 'overdue' ? 'Lejárt' : 'Közelgő'])}
+              size="sm"
+            />
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">NAV határidők</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Bejelentési, bevallási és befizetési naptár</p>
-        </div>
-        <div className="ml-auto">
+      )}
+      {hideHeader && (
+        <div className="flex justify-end -mb-2">
           <ExportButton
             filename={`nav_hataridok_${new Date().getFullYear()}`}
             headers={['Dátum', 'Határidő', 'Típus', 'Leírás', 'Státusz']}
@@ -125,7 +137,7 @@ export default function NavDeadlinesPage() {
             size="sm"
           />
         </div>
-      </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">

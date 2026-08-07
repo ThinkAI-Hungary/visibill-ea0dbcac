@@ -14,7 +14,8 @@ import { getPayslipPreviewUrl, downloadPayslipPdf, type PayslipPdfData } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function PayslipGeneratorPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const [template, setTemplate] = useState<'official' | 'custom'>('official');
   const [language, setLanguage] = useState<'hu' | 'en'>('hu');
   const [avdh, setAvdh] = useState(false);

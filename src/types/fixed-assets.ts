@@ -33,6 +33,9 @@ export interface FixedAsset {
   disposal_date: string | null;
   useful_life_months: number;
   depreciation_method: string;
+  performance_unit: string | null;
+  total_planned_performance: number | null;
+  depreciation_schedule: number[] | null;
   tao_template_id: string | null;
   tao_rate_override: number | null;
   location_id: string | null;
@@ -58,7 +61,7 @@ export interface AssetEvent {
   asset_id: string;
   company_id: string;
   user_id: string;
-  event_type: 'activation' | 'transfer' | 'reactivation' | 'disposal' | 'inventory_check' | 'value_change' | 'document_upload';
+  event_type: 'activation' | 'transfer' | 'reactivation' | 'disposal' | 'inventory_check' | 'value_change' | 'document_upload' | 'performance_log';
   event_date: string;
   description: string | null;
   old_values: Record<string, any> | null;

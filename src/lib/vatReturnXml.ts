@@ -41,9 +41,23 @@ function buildVatReturnXml(data: XmlExportData): string {
   const taxNumVat = taxParts[1] || '';
   const taxNumCounty = taxParts[2] || '';
 
-  const periodFrom = `${data.periodYear}-${String(data.periodMonth).padStart(2, '0')}-01`;
-  const lastDay = new Date(data.periodYear, data.periodMonth, 0).getDate();
-  const periodTo = `${data.periodYear}-${String(data.periodMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  let periodFrom = '';
+  let periodTo = '';
+  if (data.frequency === 'H') {
+    periodFrom = `${data.periodYear}-${String(data.periodMonth).padStart(2, '0')}-01`;
+    const lastDay = new Date(data.periodYear, data.periodMonth, 0).getDate();
+    periodTo = `${data.periodYear}-${String(data.periodMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  } else if (data.frequency === 'N') {
+    const startMonth = (data.periodMonth - 1) * 3 + 1;
+    const endMonth = startMonth + 2;
+    periodFrom = `${data.periodYear}-${String(startMonth).padStart(2, '0')}-01`;
+    const lastDay = new Date(data.periodYear, endMonth, 0).getDate();
+    periodTo = `${data.periodYear}-${String(endMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  } else {
+    // data.frequency === 'E' (Annual)
+    periodFrom = `${data.periodYear}-01-01`;
+    periodTo = `${data.periodYear}-12-31`;
+  }
 
   // All A-lap rows that have data
   const aLapRows = data.lines
@@ -98,7 +112,7 @@ function buildVatReturnXml(data: XmlExportData): string {
     <bevallasiIdoszak>
       <idoszak_kezdet>${periodFrom}</idoszak_kezdet>
       <idoszak_veg>${periodTo}</idoszak_veg>
-      <gyakorisag>${data.frequency === 'H' ? 'HAVI' : 'NEGYEDEVES'}</gyakorisag>
+      <gyakorisag>${data.frequency === 'H' ? 'HAVI' : data.frequency === 'N' ? 'NEGYEDEVES' : 'EVES'}</gyakorisag>
     </bevallasiIdoszak>
     <adozo>
       <nev>${escapeXml(data.companyName)}</nev>

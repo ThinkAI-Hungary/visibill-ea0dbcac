@@ -25,7 +25,7 @@ interface VatCode {
 /* ────────────────────────────────────────── */
 /*  Invoice Items Drill-Down                   */
 /* ────────────────────────────────────────── */
-function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNumber: string; companyId: string }) {
+export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNumber: string; companyId: string }) {
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['nav_invoice_items_drill', companyId, invoiceNumber],
     queryFn: async () => {
@@ -91,13 +91,14 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
   companyId: string;
   year: number;
   month: number;
-  frequency: 'H' | 'N';
+  frequency: 'H' | 'N' | 'E';
 }) {
   const [expandedInv, setExpandedInv] = useState<string | null>(null);
 
   // Compute date range same as RPC
   const dateFrom = useMemo(() => {
     if (frequency === 'H') return `${year}-${String(month).padStart(2,'0')}-01`;
+    if (frequency === 'E') return `${year}-01-01`;
     const startMonth = (month - 1) * 3 + 1;
     return `${year}-${String(startMonth).padStart(2,'0')}-01`;
   }, [year, month, frequency]);
@@ -105,9 +106,10 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
   const dateTo = useMemo(() => {
     const d = new Date(dateFrom);
     if (frequency === 'H') { d.setMonth(d.getMonth() + 1); d.setDate(0); }
+    else if (frequency === 'E') return `${year}-12-31`;
     else { d.setMonth(d.getMonth() + 3); d.setDate(0); }
     return d.toISOString().split('T')[0];
-  }, [dateFrom, frequency]);
+  }, [dateFrom, frequency, year]);
 
   // Fetch VAT codes config to know which direction/rate to query
   const { data: vatCodes = [] } = useQuery({

@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Shield, FileText, Clock, AlertTriangle, CheckCircle,
-  Upload, Trash2, Eye, Download, Database, Plus, Save, Loader2, Pencil, X
+  Upload, Trash2, Eye, Download, Database, Plus, Save, Loader2, Pencil, X, ChevronLeft
 } from 'lucide-react';
+import { useAccountyClient } from '@/hooks/accounty';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
@@ -23,8 +24,10 @@ const REQUEST_TYPE_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 export default function DataRetentionPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { toast } = useToast();
+  const { data: client, isLoading: clientLoading } = useAccountyClient(id || '');
   const [tab, setTab] = useState<'retention' | 'contracts' | 'requests'>('retention');
   const [dragging, setDragging] = useState(false);
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
@@ -146,16 +149,24 @@ export default function DataRetentionPage() {
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link to={`/accounty/client/${id}`} className="p-2 rounded-lg hover:bg-muted transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+      <div className="flex items-start gap-4">
+        <Link 
+          to={`/accounty/${companyId}/${dateRange}/settings`}
+          className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+          title="Vissza a beállításokhoz"
+        >
+          <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
         </Link>
-        <div className="p-2.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-lg shadow-red-500/25">
-          <Shield className="w-5 h-5 text-white" />
-        </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Iratkezelés és GDPR</h1>
-          <p className="text-sm text-slate-500">Megőrzési szabályzat, adatfeldolgozói szerződések, érintetti kérelmek</p>
+          <div className="flex items-center gap-1.5 mb-1">
+            {clientLoading ? (
+              <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+            ) : (
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client?.name || 'Ügyfél'}</span>
+            )}
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Iratkezelés és GDPR</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-normal">Megőrzési szabályzat, adatfeldolgozói szerződések, érintetti kérelmek</p>
         </div>
       </div>
 

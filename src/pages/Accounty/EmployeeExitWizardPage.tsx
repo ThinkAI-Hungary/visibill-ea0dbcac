@@ -30,7 +30,8 @@ const EXIT_DOCS = [
 ];
 
 export default function EmployeeExitWizardPage() {
-  const { id, empId } = useParams<{ id: string; empId: string }>();
+  const { companyId, empId } = useParams<{ companyId: string; empId: string }>();
+  const id = companyId;
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();

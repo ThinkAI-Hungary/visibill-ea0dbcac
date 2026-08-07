@@ -35,7 +35,8 @@ const SAMPLE_ROWS = [
 ];
 
 export default function EmployeeImportPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<'upload' | 'preview' | 'importing' | 'done'>('upload');

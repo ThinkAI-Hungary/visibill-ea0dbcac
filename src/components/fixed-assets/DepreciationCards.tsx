@@ -5,9 +5,21 @@ import { formatCurrency } from '@/lib/utils';
 
 interface DepreciationCardsProps {
   asset: FixedAsset;
+  performanceLogs?: Array<{ date: string | Date; amount: number }> | null;
 }
 
-export function DepreciationCards({ asset }: DepreciationCardsProps) {
+const METHOD_LABELS: Record<string, string> = {
+  linear: 'Lineáris',
+  degressive_syd: 'Degresszív (Évek száma)',
+  degressive_declining: 'Degresszív (Nettó érték)',
+  progressive: 'Progresszív',
+  performance: 'Teljesítményarányos',
+  absolute: 'Abszolút összegű',
+  multiplier: 'Szorzószámos',
+  immediate: 'Azonnali',
+};
+
+export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsProps) {
   const taoRate = asset.tao_rate_override ?? asset.tao_template?.tao_rate_percent ?? 14.5;
 
   const result = useMemo(() => calculateDepreciation({
@@ -17,7 +29,12 @@ export function DepreciationCards({ asset }: DepreciationCardsProps) {
     usefulLifeMonths: asset.useful_life_months,
     taoRatePercent: taoRate,
     disposalDate: asset.disposal_date ? new Date(asset.disposal_date) : undefined,
-  }), [asset, taoRate]);
+    depreciationMethod: asset.depreciation_method,
+    performanceUnit: asset.performance_unit,
+    totalPlannedPerformance: asset.total_planned_performance,
+    depreciationSchedule: asset.depreciation_schedule,
+    performanceLogs,
+  }), [asset, taoRate, performanceLogs]);
 
   const usefulLifeYears = Math.floor(asset.useful_life_months / 12);
   const usefulLifeRemMonths = asset.useful_life_months % 12;
@@ -36,15 +53,21 @@ export function DepreciationCards({ asset }: DepreciationCardsProps) {
           <h5 className="text-sm font-bold mb-3 text-foreground">Számviteli ÉCS</h5>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Élettüll. időtana:</span>
+              <span className="text-muted-foreground">Élettartam:</span>
               <span className="font-medium">{usefulLifeLabel}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Módszer:</span>
-              <span className="font-medium">Lineáris</span>
+              <span className="font-medium">{METHOD_LABELS[asset.depreciation_method] || asset.depreciation_method || 'Lineáris'}</span>
             </div>
+            {asset.depreciation_method === 'performance' && asset.performance_unit && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Mértékegység:</span>
+                <span className="font-medium">{asset.performance_unit}</span>
+              </div>
+            )}
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Residuál érték:</span>
+              <span className="text-muted-foreground">Maradványérték:</span>
               <span className="font-medium">{formatCurrency(asset.residual_value, asset.currency)}</span>
             </div>
             <div className="flex justify-between">
@@ -53,7 +76,7 @@ export function DepreciationCards({ asset }: DepreciationCardsProps) {
             </div>
             <div className="h-px bg-border/50 my-2" />
             <div className="flex justify-between">
-              <span className="text-foreground font-medium">Jelenlegi Könyvsz. Érték:</span>
+              <span className="text-foreground font-medium">Könyvsz. Érték:</span>
               <span className="font-bold text-primary">{formatCurrency(result.accounting.bookValue, asset.currency)}</span>
             </div>
           </div>
@@ -75,7 +98,7 @@ export function DepreciationCards({ asset }: DepreciationCardsProps) {
             </div>
             <div className="h-px bg-border/50 my-2" />
             <div className="flex justify-between">
-              <span className="text-foreground font-medium">Jelenlegi Tax Value:</span>
+              <span className="text-foreground font-medium">Tao Érték:</span>
               <span className="font-bold text-primary">{formatCurrency(result.tax.bookValue, asset.currency)}</span>
             </div>
           </div>
@@ -84,3 +107,4 @@ export function DepreciationCards({ asset }: DepreciationCardsProps) {
     </div>
   );
 }
+

@@ -22,7 +22,8 @@ const TAX_PARAMS_2026 = {
 };
 
 export default function FamilyDeclarationPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const [searchParams] = useSearchParams();
   const empId = searchParams.get('empId');
   const [children, setChildren] = useState<Child[]>([

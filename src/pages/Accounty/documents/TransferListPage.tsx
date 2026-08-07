@@ -15,7 +15,8 @@ import { usePayrollCycles, usePayrollCalculations } from '@/hooks/usePayrollData
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 export default function TransferListPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const currentPeriod = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
   const { data: transfers, isLoading } = useTransfers(id || '', currentPeriod);
   const { data: clients } = useAccountyClients();

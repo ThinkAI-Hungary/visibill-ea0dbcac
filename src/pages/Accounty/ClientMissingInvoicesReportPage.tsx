@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, TrendingUp, CheckCircle2, Clock, Zap } from 'lucide-react';
+import { ArrowLeft, Download, TrendingUp, CheckCircle2, Clock, Zap, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,7 +26,8 @@ const COLORS = ['hsl(173, 80%, 40%)', '#334155', '#64748B', '#94A3B8'];
 
 export default function ClientMissingInvoicesReportPage() {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   
   const { data: clients } = useAccountyClients();
   const { data: missingItems } = useAccountyMissingItems(id || '');
@@ -80,13 +81,21 @@ export default function ClientMissingInvoicesReportPage() {
       <div className="flex justify-between items-start">
         <div className="flex items-start gap-4">
           <button 
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-full transition-colors mt-1"
+            onClick={() => navigate(`/accounty/${companyId}/${dateRange}/reports`)}
+            className="flex items-center justify-center w-8 h-8 mt-1 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            title="Vissza a riportokhoz"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{clientName} - Hiányzó számlák riport</h1>
+            <div className="flex items-center gap-1.5 mb-1">
+              {clientName === 'Betöltés...' ? (
+                <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+              ) : (
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{clientName}</span>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Hiányzó számlák riport</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Ügyfél-specifikus statisztikák és elemzések</p>
           </div>
         </div>

@@ -400,7 +400,7 @@ export function useUpdateEvTaxReturn() {
     mutationFn: async (taxReturn: Partial<EvTaxReturn> & { company_id: string; tax_year: number; return_type: any }) => {
       const { data, error } = await supabase
         .from('accounty_ev_tax_returns')
-        .upsert(taxReturn)
+        .upsert(taxReturn as any)
         .select()
         .single();
       if (error) throw error;
@@ -1063,7 +1063,7 @@ export function useEvVatReturns(companyId: string | undefined, taxYear: number =
     queryKey: ['ev-vat-returns', companyId, taxYear],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('accounty_ev_vat_returns')
+        .from('accounty_ev_vat_returns' as any)
         .select('*')
         .eq('company_id', companyId!)
         .eq('tax_year', taxYear)
@@ -1091,7 +1091,7 @@ export function useEvChamberPayments(companyId: string | undefined) {
     queryKey: ['ev-chamber-payments', companyId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('accounty_ev_chamber_payments')
+        .from('accounty_ev_chamber_payments' as any)
         .select('*')
         .eq('company_id', companyId!)
         .order('tax_year', { ascending: false });
@@ -1119,7 +1119,7 @@ export function useOrgReportLines(companyId: string | undefined, taxYear: number
     queryKey: ['org-report-lines', companyId, taxYear, reportType],
     queryFn: async () => {
       let query = supabase
-        .from('accounty_org_report_lines')
+        .from('accounty_org_report_lines' as any)
         .select('*')
         .eq('company_id', companyId!)
         .eq('tax_year', taxYear)
@@ -1290,6 +1290,7 @@ export function useImportTenyToEcs() {
         acquisitionCost: number;
         depreciationRate: number;
         isBelowThreshold: boolean;
+        notes?: string;
       }>;
       createdBy?: string;
     }) => {
@@ -1305,6 +1306,7 @@ export function useImportTenyToEcs() {
         is_below_threshold: item.isBelowThreshold,
         source_fixed_asset_id: item.sourceId,
         created_by: params.createdBy ?? null,
+        notes: item.notes ?? null,
       }));
 
       const { data, error } = await supabase
@@ -1430,7 +1432,7 @@ export function useUpsertCondoUnit() {
     mutationFn: async (unit: Partial<CondoUnit> & { company_id: string }) => {
       const { data, error } = await supabase
         .from('accounty_condo_units')
-        .upsert({ ...unit, updated_at: new Date().toISOString() })
+        .upsert({ ...unit, updated_at: new Date().toISOString() } as any)
         .select()
         .single();
       if (error) throw error;
@@ -1464,7 +1466,7 @@ export function useUpsertCondoFund() {
     mutationFn: async (fund: Partial<CondoFund> & { company_id: string }) => {
       const { data, error } = await supabase
         .from('accounty_condo_funds')
-        .upsert({ ...fund, updated_at: new Date().toISOString() })
+        .upsert({ ...fund, updated_at: new Date().toISOString() } as any)
         .select()
         .single();
       if (error) throw error;
@@ -1482,7 +1484,7 @@ export function useUpsertCondoMaintenance() {
     mutationFn: async (item: Partial<CondoMaintenance> & { company_id: string }) => {
       const { data, error } = await supabase
         .from('accounty_condo_maintenance')
-        .upsert({ ...item, updated_at: new Date().toISOString() })
+        .upsert({ ...item, updated_at: new Date().toISOString() } as any)
         .select()
         .single();
       if (error) throw error;

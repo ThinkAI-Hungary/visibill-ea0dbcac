@@ -16,7 +16,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 export default function EPayslipPortalPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
    const [sending, setSending] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);

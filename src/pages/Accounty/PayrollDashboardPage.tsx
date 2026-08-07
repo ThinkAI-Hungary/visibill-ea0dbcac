@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Users, Calculator, FileText, Calendar, Clock, TrendingUp,
   Plus, Search, ArrowUpRight, Banknote, UserPlus, ChevronRight,
-  AlertTriangle, CheckCircle2, Loader2, Building2, Settings
+  AlertTriangle, CheckCircle2, Loader2, Building2, Settings, ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -112,7 +112,7 @@ function CycleStatusBadge({ status }: { status: string }) {
 const MONTHS = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
 
 export default function PayrollDashboardPage() {
-  const { id: companyId } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -120,7 +120,7 @@ export default function PayrollDashboardPage() {
   const { data: cycles = [], isLoading: cyclesLoading, isError: cyclesError } = usePayrollCycles(companyId || '');
   const { data: filings = [], isLoading: filingsLoading, isError: filingsError } = usePayrollFilings(companyId || '');
   const { data: taxParams } = useTaxParameters(2026);
-  const { data: allClients } = useAccountyClients();
+  const { data: allClients, isLoading: clientLoading } = useAccountyClients();
   const currentClientName = allClients?.find(c => c.companyId === companyId)?.name || 'Cég';
 
   const isLoading = empLoading || cyclesLoading || filingsLoading;
@@ -176,20 +176,27 @@ export default function PayrollDashboardPage() {
 
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500">
-      {/* Breadcrumb */}
-      <Breadcrumb
-        items={[
-          { label: 'Portfólió', href: '/accounty' },
-          { label: currentClientName, href: `/accounty/client/${companyId}` },
-          { label: 'Bérszámfejtés' },
-        ]}
-        onNavigate={navigate}
-      />
       {/* Header */}
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Bérszámfejtés</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Foglalkoztatottak, havi ciklusok és bevallások kezelése</p>
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4">
+          <button 
+            onClick={() => navigate(`/accounty/${companyId}/${dateRange}/overview`)}
+            className="flex items-center justify-center w-8 h-8 mt-1.5 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            title="Vissza az áttekintéshez"
+          >
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          </button>
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              {clientLoading ? (
+                <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+              ) : (
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{currentClientName}</span>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Bérszámfejtés</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Foglalkoztatottak, havi ciklusok és bevallások kezelése</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Button

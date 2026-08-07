@@ -124,7 +124,7 @@ const CONFIGS: Record<FilingType, FilingConfig> = {
 };
 
 export default function GenericFilingPage() {
-  const { id: companyId, filingType } = useParams<{ id: string; filingType: string }>();
+  const { companyId, filingType } = useParams<{ companyId: string; filingType: string }>();
   const config = CONFIGS[filingType as FilingType];
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
