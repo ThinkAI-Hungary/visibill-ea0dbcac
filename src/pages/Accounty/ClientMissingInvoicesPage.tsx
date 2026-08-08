@@ -17,7 +17,6 @@ import {
 } from './generateRequestEmail';
 import HistoryView from './missing-invoices/HistoryView';
 import InvoiceDetailModal, { type InvoiceItem } from './missing-invoices/InvoiceDetailModal';
-import { MissingInvoicesTimeline } from './missing-invoices/MissingInvoicesTimeline';
 import { MissingInvoicesBulkBar } from './missing-invoices/MissingInvoicesBulkBar';
 import { AddMissingInvoiceModal } from './missing-invoices/AddMissingInvoiceModal';
 import { MissingInvoicesKpiCards } from './missing-invoices/MissingInvoicesKpiCards';
@@ -443,8 +442,6 @@ export default function ClientMissingInvoicesPage() {
         onPageChange={handlePageChange}
       />
 
-
-      <MissingInvoicesTimeline />
 
       {/* Floating Action Bar */}
       <MissingInvoicesBulkBar selectedIds={selectedIds} invoices={invoices} onSendToApprovalQueue={handleSendToApprovalQueue} onBulkDelete={handleBulkDelete} onClearSelection={() => setSelectedIds([])} />

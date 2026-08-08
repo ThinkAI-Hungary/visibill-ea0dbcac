@@ -736,5 +736,5 @@ Magyar és angol nyelven is.
 
 ---
 
-*Utolsó frissítés: 2026. augusztus*  
-*Verzió: 1.5 (A60 keresztellenőrzés és Tárgyi eszközök)*
+*Utolsó frissítés: 2026. augusztus (v1.6)*  
+*Verzió: 1.6 (Eaisybooks UI frissítések és CSV import javítások)*

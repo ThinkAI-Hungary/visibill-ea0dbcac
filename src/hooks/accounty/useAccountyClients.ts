@@ -23,6 +23,7 @@ import {
   computeProgress,
   invalidateAccountyCache,
   useMyAssignedCompanyIds,
+  fetchAllMissingItems,
 } from './useAccountyHelpers';
 
 // ── Clients ──
@@ -77,20 +78,15 @@ export function useAccountyClients() {
 
       if (compErr) throw compErr;
 
-      // Get missing items counts per company (single query — replaces N+1 loop)
+      // Get missing items counts per company (paginated query to bypass PostgREST 1000-row limit)
       const missingCountMap: Record<string, number> = {};
-      const { data: openMissingItems, error: countErr } = await supabase
-        .from('accounty_missing_items')
-        .select('company_id')
-        .in('company_id', uniqueCompanyIds)
-        .in('status', ['open', 'notified']);
-      if (countErr) {
-        // Silent fail — missing counts will be 0
-        reportError({ type: 'db_query', component: 'useAccountyClients', action: 'missing_counts', message: countErr.message, error: countErr });
-      } else {
-        (openMissingItems || []).forEach((r: MissingItemRow) => {
+      try {
+        const openMissingItems = await fetchAllMissingItems(uniqueCompanyIds);
+        (openMissingItems || []).forEach((r) => {
           missingCountMap[r.company_id] = (missingCountMap[r.company_id] || 0) + 1;
         });
+      } catch (countErr: any) {
+        reportError({ type: 'db_query', component: 'useAccountyClients', action: 'missing_counts', message: countErr.message || String(countErr), error: countErr });
       }
 
       // Get nearest deadline per company

@@ -771,7 +771,16 @@ npm run preview      # Preview production build
 
 ## Changelog
 
-### Version 1.5.0 (Current - 2026-08-07)
+### Version 1.6.0 (2026-08-08)
+- **BinX CSV Bank Statement Processing:**
+  - Fixed CSV converter column truncation bug by dynamically computing `max_cols` across all CSV rows instead of defaulting to the first row (which was often metadata / 2 columns), preserving all columns in the converted Markdown table.
+  - Implemented automatic double-UTF-8 decoding recovery in the CSV parser to resolve corrupted Hungarian accent characters (e.g., recovering `ó` from `Ã³`) common in email forwarding.
+  - This resolved the issue where BinX CSV bank statements were incorrectly routed to the GLS report pipeline by Mailgun/Eaisybooks due to extraction failing on missing column data.
+- **Eaisybooks (Accounty) UI Improvements:**
+  - **Removed Mock Timeline:** Cleaned up the mock `<MissingInvoicesTimeline />` section showing hardcoded notifications timeline (e.g., "Felszólítás küldve") from the client missing invoices page ([ClientMissingInvoicesPage.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/ClientMissingInvoicesPage.tsx)).
+  - **Repositioned Invoice Summaries:** Moved the invoice totals summary bar from the bottom of the table card to the top (directly below the toolbar, above the table) in the scoped company invoices page ([ClientInvoicesPage.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/ClientInvoicesPage.tsx)) for better scannability.
+
+### Version 1.5.0 (2026-08-07)
 - **Advanced Depreciation (ÉCS) Module:**
   - Integrated 8 advanced depreciation methods (Linear, Declining Balance, Sum of Years' Digits, Progressive, Performance-based, Multiplier-based, Absolute amount, Immediate write-off) into fixed assets calculations.
   - Stored ÉCS settings as serialized JSON metadata within the notes column of the fixed assets table for backward compatibility.
@@ -856,5 +865,5 @@ npm run preview      # Preview production build
 
 ---
 
-**Last Updated:** 2026-08-07  
+**Last Updated:** 2026-08-08  
 **Maintained By:** VisiBill Development Team

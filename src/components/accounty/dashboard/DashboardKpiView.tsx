@@ -147,16 +147,16 @@ export default function DashboardKpiView({
             </h3>
             <div className="flex-1 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dynamicBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <BarChart data={dynamicBarData} margin={{ top: 20, right: 10, left: 20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-slate-100 dark:[&>line]:stroke-slate-800" stroke="#f1f5f9" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} width={75} tickFormatter={(v) => `${v} db`} />
                   <RechartsTooltip cursor={{ fill: 'rgba(100,116,139,0.1)' }} content={({ active, payload, label }) => {
                     if (!active || !payload?.length) return null;
                     return (
                       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">{label}</p>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">{Number(payload[0].value).toLocaleString('hu-HU')}</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white">{Number(payload[0].value).toLocaleString('hu-HU')} db</p>
                       </div>
                     );
                   }} />
@@ -180,7 +180,7 @@ export default function DashboardKpiView({
                     cy="50%"
                     innerRadius={80}
                     outerRadius={110}
-                    paddingAngle={2}
+                    paddingAngle={dynamicPieData.filter(d => d.value > 0).length > 1 ? 2 : 0}
                     dataKey="value"
                     stroke="none"
                   >
