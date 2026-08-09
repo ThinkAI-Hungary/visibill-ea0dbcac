@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import {
   Landmark, ArrowLeft, FileText, TrendingUp, Calculator, Shield,
   Globe, ChevronRight, BarChart2, Scale, CheckCircle, AlertTriangle,
-  Briefcase, Clock
+  Briefcase, Clock, ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -33,8 +33,9 @@ interface TaoTab {
 }
 
 export default function ClientTaoMainPage() {
-  const { id } = useParams<{ id: string }>();
-  const { data: clients = [] } = useAccountyClients();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
+  const { data: clients = [], isLoading: clientLoading } = useAccountyClients();
   const client = clients.find((c: any) => c.companyId === id);
   const { data: taxProfile } = useAccountyTaxProfile(id || '');
   const [taxYear] = useState(2025);
@@ -51,27 +52,35 @@ export default function ClientTaoMainPage() {
   const creditAmount = taoData?.tax_credits_total || 0;
 
   const tabs: TaoTab[] = [
-    { id: 'overview',  label: 'Áttekintés',     icon: Landmark,    to: `/accounty/client/${id}/tao` },
-    { id: 'status',    label: 'Adóalany',       icon: Shield,      to: `/accounty/client/${id}/tao/setup` },
-    { id: 'master',    label: 'Törzsadatok',     icon: FileText,    to: `/accounty/client/${id}/tao/master-data` },
-    { id: 'year-end',  label: 'Éves zárás',     icon: Calculator,  to: `/accounty/client/${id}/tao/year-end/${taxYear}` },
-    { id: 'lifecycle', label: 'Életciklus',      icon: Clock,       to: `/accounty/client/${id}/tao/lifecycle` },
+    { id: 'overview',  label: 'Áttekintés',     icon: Landmark,    to: `/accounty/${companyId}/${dateRange}/tao` },
+    { id: 'status',    label: 'Adóalany',       icon: Shield,      to: `/accounty/${companyId}/${dateRange}/tao/setup` },
+    { id: 'master',    label: 'Törzsadatok',     icon: FileText,    to: `/accounty/${companyId}/${dateRange}/tao/master-data` },
+    { id: 'year-end',  label: 'Éves zárás',     icon: Calculator,  to: `/accounty/${companyId}/${dateRange}/tao/year-end/${taxYear}` },
+    { id: 'lifecycle', label: 'Életciklus',      icon: Clock,       to: `/accounty/${companyId}/${dateRange}/tao/lifecycle` },
   ];
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link to="/accounty/tao" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-          <ArrowLeft className="w-4 h-4 text-slate-400" />
+      <div className="flex items-start gap-4">
+        <Link 
+          to={`/accounty/${companyId}/${dateRange}/overview`}
+          className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+          title="Vissza az áttekintéshez"
+        >
+          <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
         </Link>
-        <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25">
-          <Landmark className="w-5 h-5 text-white" />
-        </div>
-        <div className="flex-1">
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            {clientLoading ? (
+              <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+            ) : (
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client?.name || 'Ügyfél'}</span>
+            )}
+          </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {client?.name || 'Ügyfél'} — TAO
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+              Társasági adó (TAO)
             </h1>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
               Belföldi Kft. (GFO 113)
@@ -92,7 +101,7 @@ export default function ClientTaoMainPage() {
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-500 mt-0.5">{taxYear}. adóév</p>
+          <p className="text-sm text-slate-500 mt-1">{taxYear}. adóév</p>
         </div>
       </div>
 
@@ -110,7 +119,7 @@ export default function ClientTaoMainPage() {
             </p>
             <div className="flex gap-3 mt-2">
               <Button size="sm" variant="outline" className="h-7 text-xs border-orange-300 text-orange-800 hover:bg-orange-100 dark:border-orange-800 dark:text-orange-300 dark:hover:bg-orange-950/40" asChild>
-                <Link to={`/accounty/client/${id}/tao/kiva`}>KIVA kalkulátor megnyitása</Link>
+                <Link to={`/accounty/${companyId}/${dateRange}/tao/kiva`}>KIVA kalkulátor megnyitása</Link>
               </Button>
             </div>
           </div>
@@ -176,7 +185,7 @@ export default function ClientTaoMainPage() {
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             {taxYear}. adóévi TAO-zárás
           </h2>
-          <Link to={`/accounty/client/${id}/tao/year-end/${taxYear}?step=${currentStep}`}>
+          <Link to={`/accounty/${companyId}/${dateRange}/tao/year-end/${taxYear}?step=${currentStep}`}>
             <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
               Folytatás — {currentStep}. lépés
             </Button>
@@ -223,7 +232,7 @@ export default function ClientTaoMainPage() {
       {/* Quick links */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <Link
-          to={`/accounty/client/${id}/tao/master-data`}
+          to={`/accounty/${companyId}/${dateRange}/tao/master-data`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -238,7 +247,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/accounty/client/${id}/tao/setup`}
+          to={`/accounty/${companyId}/${dateRange}/tao/setup`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -253,7 +262,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/accounty/client/${id}/tao/lifecycle`}
+          to={`/accounty/${companyId}/${dateRange}/tao/lifecycle`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -268,7 +277,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/accounty/client/${id}/tao/kiva`}
+          to={`/accounty/${companyId}/${dateRange}/tao/kiva`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-orange-400/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -283,7 +292,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/accounty/client/${id}/tao/compare`}
+          to={`/accounty/${companyId}/${dateRange}/tao/compare`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-violet-400/30 transition-all group"
         >
           <div className="flex items-center gap-3">

@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { FixedAsset, AssetEvent, TaoTemplate } from '@/types/fixed-assets';
 import { reportError } from '@/lib/errorReporter';
@@ -113,6 +113,10 @@ export function useCreateFixedAsset() {
       purchaseDate: string;
       activationDate: string;
       usefulLifeMonths: number;
+      depreciationMethod: string;
+      performanceUnit?: string | null;
+      totalPlannedPerformance?: number | null;
+      depreciationSchedule?: number[] | null;
       taoTemplateId: string | null;
       locationId: string | null;
       activatedByUserId: string;
@@ -138,6 +142,10 @@ export function useCreateFixedAsset() {
           purchase_date: params.purchaseDate,
           activation_date: params.activationDate,
           useful_life_months: params.usefulLifeMonths,
+          depreciation_method: params.depreciationMethod,
+          performance_unit: params.performanceUnit || null,
+          total_planned_performance: params.totalPlannedPerformance || null,
+          depreciation_schedule: params.depreciationSchedule || null,
           tao_template_id: params.taoTemplateId,
           location_id: params.locationId,
           activated_by_user_id: params.activatedByUserId,

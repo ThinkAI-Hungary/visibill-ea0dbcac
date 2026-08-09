@@ -11,7 +11,8 @@ import { formatHuf, formatPercent, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS } fr
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvEntrepreneurialDividendPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { data: client } = useAccountyClient(id);
   const [searchParams] = useSearchParams();
   const yearParam = Number(searchParams.get('year') || '2026');
@@ -42,7 +43,7 @@ export default function EvEntrepreneurialDividendPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />

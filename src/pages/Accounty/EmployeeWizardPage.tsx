@@ -178,7 +178,7 @@ const INITIAL_FORM: FormData = {
 import { supabase } from '@/integrations/supabase/client';
 
 export default function EmployeeWizardPage() {
-  const { id: companyId } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(INITIAL_FORM);

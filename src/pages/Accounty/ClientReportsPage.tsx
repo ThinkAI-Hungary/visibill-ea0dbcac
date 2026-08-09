@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Calendar, FileText, PieChart, TrendingUp, Users, FileWarning, 
-  Download, FileJson, Mail, ChevronRight, X, ArrowLeft, Eye
+  Download, FileJson, Mail, ChevronRight, X, ArrowLeft, Eye, ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,8 @@ const reportTypes = [
 ];
 
 export default function ClientReportsPage() {
-  const { id } = useParams();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<ReportType>('havi');
@@ -50,16 +51,24 @@ export default function ClientReportsPage() {
   return (
     <div className="w-full space-y-8 animate-in fade-in slide-in-from-right-8 duration-500 relative pb-24">
       {/* Header */}
-      <div className="flex flex-col gap-1">
+      <div className="flex items-start gap-4">
         <button 
-          onClick={() => navigate(-1)}
-          className="flex items-center text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors w-fit"
+          onClick={() => navigate(`/accounty/${companyId}/${dateRange}/overview`)}
+          className="flex items-center justify-center w-8 h-8 mt-1 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
+          title="Vissza az áttekintéshez"
         >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Vissza
+          <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
         </button>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Riportok</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{clientName} riportjai</p>
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            {clientName === 'Betöltés...' ? (
+              <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+            ) : (
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{clientName}</span>
+            )}
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Riportok</h1>
+        </div>
       </div>
 
       {/* Report Types Grid */}

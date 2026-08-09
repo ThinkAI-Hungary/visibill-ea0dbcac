@@ -21,7 +21,7 @@ const fmt = (n: number) => n.toLocaleString('hu-HU') + ' Ft';
 const MONTHS = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'Aug', 'Szep', 'Okt', 'Nov', 'Dec'];
 
 export default function Filing2608Page() {
-  const { id: companyId } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();

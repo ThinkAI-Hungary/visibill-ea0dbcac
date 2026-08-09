@@ -181,7 +181,8 @@ const JOB_TYPES: JobTypeConfig[] = [
 ];
 
 export default function SpecialJobFormsPage() {
-  const { id, empId, jobType } = useParams<{ id: string; empId: string; jobType: string }>();
+  const { companyId, empId, jobType } = useParams<{ companyId: string; empId: string; jobType: string }>();
+  const id = companyId;
   const config = JOB_TYPES.find(j => j.id === jobType);
   const { toast } = useToast();
   const [formData, setFormData] = useState<Record<string, string | boolean>>({});

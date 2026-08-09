@@ -362,6 +362,20 @@ Az adófizetéseket is rögzítheti a rendszerben:
 
 A VisiBill támogatja a **pénzforgalmi szemléletű** adózást. A rendszer figyeli, hogy egy számla mikor lett ténylegesen kifizetve (banki bizonylat alapján), és az ÁFA-t csak a kifizetés napjával veszi figyelembe a bevallás tervezetben.
 
+### ÁFA Bevallás (2665) és A60-as Keresztellenőrzés
+
+Az ÁFA Bevallás főlapján elérhető a **Közösségi Ügyletek (A60) Keresztellenőrzése** funkció:
+- **Automatikus egyezőség-vizsgálat**: Összeveti az EU-s partnereknek kiállított/befogadott számlák nettó összegeit a bevallás főlapján feltüntetett 91-92. (termékértékesítés) és 93-94. (szolgáltatásnyújtás) sorok értékeivel.
+- **Interaktív típus-felülbírálás**: Ha egy számla automatikus besorolása helytelen (pl. termék helyett szolgáltatás), a számlalista táblázatában a **Termék / Szolg.** gombokkal manuálisan módosítható a besorolás. A módosítás azonnal, valós időben frissíti a főlappal való egyezőséget és az eltérést.
+- **Közösségi adószám validáció**: Figyelmeztetést küld, ha egy közösségi ügylethez nem tartozik partner-adószám, vagy ha az megadott formátum érvénytelen.
+
+### Tárgyi Eszközök és Értékcsökkenés (ÉCS)
+
+Az egyéni vállalkozások (EV) moduljában elérhető a komplex **Tárgyi eszköz és Értékcsökkenési nyilvántartás**:
+- **8 értékcsökkenési módszer támogatása**: Lineáris, Degresszív (Nettó érték szerinti), Degresszív (Évek száma összege), Progresszív, Teljesítményarányos (pl. futott kilométer), Szorzószámos, Abszolút összegű és Azonnali (egyösszegű) leírás.
+- **AI-alapú leírási javaslatok**: Eszköz rögzítésekor (és importálásakor) az **"AI javaslat"** gomb segítségével a mesterséges intelligencia (Deepseek / OpenAI) elemzi az eszköz megnevezését és bekerülési értékét, majd javaslatot tesz az optimális ÉCS módszerre, a leírási kulcsra és részletes magyar nyelvű jogszabályi indoklást jelenít meg.
+- **Teljesítménynapló**: A teljesítményarányos eszközöknél (pl. gépjárművek) időszakonként rögzíthető az aktuális teljesítmény (pl. lefutott kilométer), amely alapján a rendszer automatikusan kalkulálja az időszaki értékcsökkenést.
+
 ---
 
 ## Email integráció
@@ -722,5 +736,5 @@ Magyar és angol nyelven is.
 
 ---
 
-*Utolsó frissítés: 2026. július*  
-*Verzió: 1.3 (Tranzakciós fájlok és feljegyzések)*
+*Utolsó frissítés: 2026. augusztus (v1.6)*  
+*Verzió: 1.6 (Eaisybooks UI frissítések és CSV import javítások)*

@@ -10,7 +10,8 @@ import { formatHuf } from '@/lib/evCalculations';
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvInnovationLevyPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { data: client } = useAccountyClient(id);
 
   // Innovation contribution typically applies to companies, not EV
@@ -28,7 +29,7 @@ export default function EvInnovationLevyPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/${id}/${dateRange}/ev`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />

@@ -24,7 +24,8 @@ const DOC_CATEGORIES = [
 ];
 
 export default function DocumentCenterPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const { toast } = useToast();
   const { data: allDocs, isLoading } = useAccountyDocuments(id || '');
   const generateDocs = useGenerateDocuments();

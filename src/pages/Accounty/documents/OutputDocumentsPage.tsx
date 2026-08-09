@@ -84,7 +84,7 @@ const CONFIGS: Record<DocType, DocConfig> = {
 const fmt = (n: number) => n.toLocaleString('hu-HU');
 
 export default function OutputDocumentsPage() {
-  const { id: companyId, docType } = useParams<{ id: string; docType: string }>();
+  const { companyId, docType } = useParams<{ companyId: string; docType: string }>();
   const config = CONFIGS[docType as DocType];
 
   const [currentPage, setCurrentPage] = useState(1);

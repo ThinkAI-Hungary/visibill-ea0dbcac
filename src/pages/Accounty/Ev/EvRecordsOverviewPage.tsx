@@ -38,7 +38,8 @@ const RECORDS: RecordType[] = [
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvRecordsOverviewPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { data: client } = useAccountyClient(id);
   const [searchParams] = useSearchParams();
   const taxYear = Number(searchParams.get('year') || '2026');
@@ -64,7 +65,7 @@ export default function EvRecordsOverviewPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -111,8 +112,8 @@ export default function EvRecordsOverviewPage() {
           {requiredRecords.map(rec => {
             const Icon = rec.icon;
             const targetPath = rec.id === 'penztarkonyv'
-              ? `/accounty/client/${id}/ev/cashbook?year=${taxYear}`
-              : `/accounty/client/${id}/ev/records/${rec.id}?year=${taxYear}`;
+              ? `/accounty/${id}/${dateRange}/ev/cashbook?year=${taxYear}`
+              : `/accounty/${id}/${dateRange}/ev/records/${rec.id}?year=${taxYear}`;
             return (
               <Link key={rec.id} to={targetPath} className="bg-card rounded-xl border border-border shadow-soft hover:shadow-md transition-all cursor-pointer group overflow-hidden">
                 <div className="flex items-center gap-4 px-5 py-4">
@@ -145,7 +146,7 @@ export default function EvRecordsOverviewPage() {
           {optionalRecords.map(rec => {
             const Icon = rec.icon;
             const isEmpty = rec.entryCount === 0;
-            const targetPath = `/accounty/client/${id}/ev/records/${rec.id}?year=${taxYear}`;
+            const targetPath = `/accounty/${id}/${dateRange}/ev/records/${rec.id}?year=${taxYear}`;
             return (
               <Link key={rec.id} to={targetPath} className={cn(
                 'bg-card rounded-xl border shadow-soft hover:shadow-md transition-all cursor-pointer group overflow-hidden',

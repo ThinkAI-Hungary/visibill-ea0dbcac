@@ -51,7 +51,7 @@ interface Row08E {
 }
 
 export default function Filing08EPage() {
-  const { id: companyId } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();

@@ -20,7 +20,8 @@ function calculateInsurance(jobs: EmployeeJob[]) {
 }
 
 export default function MultiJobPage() {
-  const { id, empId } = useParams<{ id: string; empId: string }>();
+  const { companyId, empId } = useParams<{ companyId: string; empId: string }>();
+  const id = companyId;
   const navigate = useNavigate();
   const { data: jobs, isLoading } = useEmployeeJobs(id || '', empId || '');
   const [showInsurance, setShowInsurance] = useState(false);

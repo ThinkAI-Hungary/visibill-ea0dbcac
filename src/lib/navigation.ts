@@ -171,3 +171,37 @@ export function useUrlTab<T extends string>(
 
   return [currentTab, setTab];
 }
+
+/**
+ * Build a fully-qualified scoped path for Eaisybooks (Accounty).
+ *
+ *   generateAccountyScopedPath('abc-123', '2026-01-01', '2026-12-31', 'invoices')
+ *   → '/accounty/abc-123/2026-01-01_2026-12-31/invoices'
+ */
+export function generateAccountyScopedPath(
+  companyId: string,
+  dateFrom: string,
+  dateTo: string,
+  page: string = '',
+): string {
+  const dateRange = `${dateFrom}_${dateTo}`;
+  const suffix = page ? `/${page}` : '';
+  return `/accounty/${companyId}/${dateRange}${suffix}`;
+}
+
+/**
+ * Extract the "page" segment from a full scoped Eaisybooks pathname.
+ *
+ *   extractAccountyPageSegment('/accounty/abc-123/2026-01-01_2026-12-31/invoices')
+ *   → '/invoices'
+ */
+export function extractAccountyPageSegment(pathname: string): string {
+  const parts = pathname.split('/').filter(Boolean); // ['accounty', 'companyId', 'dateRange', 'invoices']
+  if (parts.length >= 4 && parts[0] === 'accounty') {
+    return '/' + parts.slice(3).join('/');
+  }
+  if (parts.length === 3 && parts[0] === 'accounty') {
+    return '/';
+  }
+  return pathname;
+}

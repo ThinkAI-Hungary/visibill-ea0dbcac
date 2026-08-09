@@ -39,7 +39,9 @@ function buildVatReturnHtml(data: VatReturnPdfData): string {
   const lineMap = new Map(data.lines.map(l => [l.row_number, l]));
   const periodLabel = data.frequency === 'H'
     ? `${data.periodYear}. ${MONTHS[data.periodMonth - 1]} hó`
-    : `${data.periodYear}. ${Math.ceil(data.periodMonth / 3)}. negyedév`;
+    : data.frequency === 'N'
+    ? `${data.periodYear}. ${Math.ceil(data.periodMonth / 3)}. negyedév`
+    : `${data.periodYear}. év`;
 
   const renderSection = (sectionKey: string) => {
     const rows = data.formRows.filter(r => r.section === sectionKey);
@@ -269,7 +271,7 @@ function buildVatReturnHtml(data: VatReturnPdfData): string {
     <div><span class="label">Adózó neve:</span> <span class="value">${esc(data.companyName)}</span></div>
     <div><span class="label">Adószám:</span> <span class="value">${esc(data.companyTaxNumber || '—')}</span></div>
     <div><span class="label">Székhely:</span> <span class="value">${esc(data.companyAddress || '—')}</span></div>
-    <div><span class="label">Bevallás típusa:</span> <span class="value">${data.frequency === 'H' ? 'Havi' : 'Negyedéves'}</span></div>
+    <div><span class="label">Bevallás típusa:</span> <span class="value">${data.frequency === 'H' ? 'Havi' : data.frequency === 'N' ? 'Negyedéves' : 'Éves'}</span></div>
   </div>
 
   ${SECTIONS.filter(s => s.key === 'payable').map(sec => `

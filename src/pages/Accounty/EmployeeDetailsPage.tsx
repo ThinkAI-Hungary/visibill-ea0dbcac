@@ -45,7 +45,7 @@ const TABS = [
 ];
 
 export default function EmployeeDetailsPage() {
-  const { id: companyId, empId } = useParams<{ id: string; empId: string }>();
+  const { companyId, empId } = useParams<{ companyId: string; empId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');

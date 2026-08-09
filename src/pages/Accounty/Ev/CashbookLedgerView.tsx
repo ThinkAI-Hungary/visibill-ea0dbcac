@@ -54,7 +54,8 @@ type ViewMode = 'monthly' | 'columns' | 'chart';
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function CashbookLedgerView() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { data: client } = useAccountyClient(id);
   const [viewMode, setViewMode] = useState<ViewMode>('monthly');
   const [selectedYear] = useState(2026);
@@ -136,7 +137,7 @@ export default function CashbookLedgerView() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev/cashbook`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/${id}/${dateRange}/ev/cashbook`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />

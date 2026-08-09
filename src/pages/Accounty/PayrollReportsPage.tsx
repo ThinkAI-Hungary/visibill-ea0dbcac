@@ -30,7 +30,7 @@ interface MonthlyData {
 }
 
 export default function PayrollReportsPage() {
-  const { id: companyId } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 

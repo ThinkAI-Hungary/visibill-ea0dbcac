@@ -4,7 +4,8 @@ import { useEvClientSettings } from '@/hooks/useEvData';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function AccountingRedirectPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const navigate = useNavigate();
   
   // Fetch EV settings to determine if they are EV or TAO

@@ -18,7 +18,7 @@ import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 export default function EmployeesPage() {
-  const { id: companyId } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

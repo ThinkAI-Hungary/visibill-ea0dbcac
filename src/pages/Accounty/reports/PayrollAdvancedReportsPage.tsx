@@ -23,7 +23,8 @@ const REPORT_TYPES: { id: ReportType; title: string; icon: React.ElementType; de
 ];
 
 export default function PayrollReportsPage2() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const [selectedReport, setSelectedReport] = useState<ReportType | null>(null);
   const [period, setPeriod] = useState(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
   const [exportFormat, setExportFormat] = useState<'xlsx' | 'csv' | 'pdf'>('xlsx');

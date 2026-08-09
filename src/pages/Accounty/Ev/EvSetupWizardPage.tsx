@@ -42,7 +42,8 @@ const STEPS = [
 ];
 
 export default function EvSetupWizardPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { data: client } = useAccountyClient(id);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -116,7 +117,7 @@ export default function EvSetupWizardPage() {
             title: 'Beállítások mentve',
             description: 'Az EV beállítások sikeresen elmentésre kerültek.',
           });
-          navigate(`/accounty/client/${id}/ev?year=${form.taxYear}`);
+          navigate(`/accounty/${id}/${dateRange}/ev?year=${form.taxYear}`);
         },
         onError: (err) => {
           toast({
@@ -444,7 +445,7 @@ export default function EvSetupWizardPage() {
     <div className="w-full max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev?year=${defaultTaxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/${id}/${dateRange}/ev?year=${defaultTaxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" />
           EV Főoldal
         </Link>

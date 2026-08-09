@@ -27,7 +27,8 @@ const PRIORITY_ORDER = [
 ];
 
 export default function DeclarationsOverviewPage() {
-  const { id, empId } = useParams<{ id: string; empId: string }>();
+  const { companyId, empId } = useParams<{ companyId: string; empId: string }>();
+  const id = companyId;
   const [showPriority, setShowPriority] = useState(false);
   const { data: declarations, isLoading } = useDeclarations(id || '');
 

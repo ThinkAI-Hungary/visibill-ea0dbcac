@@ -77,6 +77,10 @@ export function AssetActivationDialog({
     taoTemplateId: string;
     locationId: string;
     glAccountId: string;
+    depreciationMethod: string;
+    performanceUnit: string;
+    totalPlannedPerformance: string;
+    depreciationScheduleString: string;
   }>>([]);
 
   // Initialize forms when dialog opens
@@ -93,6 +97,10 @@ export function AssetActivationDialog({
         taoTemplateId: '',
         locationId: '',
         glAccountId: '',
+        depreciationMethod: 'linear',
+        performanceUnit: '',
+        totalPlannedPerformance: '',
+        depreciationScheduleString: '',
       })));
     }
   }, [open, selectedItems]);
@@ -120,6 +128,10 @@ export function AssetActivationDialog({
           invoiceInfo.invoiceNumber
         );
 
+        const schedule = (form.depreciationMethod === 'absolute' || form.depreciationMethod === 'multiplier')
+          ? form.depreciationScheduleString.split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v))
+          : null;
+
         await createAsset.mutateAsync({
           companyId: selectedCompany.id,
           userId: user.id,
@@ -131,6 +143,10 @@ export function AssetActivationDialog({
           purchaseDate: invoiceInfo.invoiceDate,
           activationDate: form.activationDate,
           usefulLifeMonths: usefulMonths,
+          depreciationMethod: form.depreciationMethod,
+          performanceUnit: form.depreciationMethod === 'performance' ? form.performanceUnit || null : null,
+          totalPlannedPerformance: form.depreciationMethod === 'performance' ? parseFloat(form.totalPlannedPerformance) || null : null,
+          depreciationSchedule: schedule,
           taoTemplateId: form.taoTemplateId || null,
           locationId: form.locationId || null,
           activatedByUserId: user.id,
@@ -308,7 +324,70 @@ export function AssetActivationDialog({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 border-t pt-4">
+                  <Label>Értékcsökkenési leírás módszere</Label>
+                  <Select
+                    value={form.depreciationMethod}
+                    onValueChange={v => updateForm(index, 'depreciationMethod', v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Lineáris (Egyenletes)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="linear">Lineáris (Egyenletes)</SelectItem>
+                      <SelectItem value="degressive_syd">Degresszív (Évek száma összege)</SelectItem>
+                      <SelectItem value="degressive_declining">Degresszív (Nettó érték alapú)</SelectItem>
+                      <SelectItem value="progressive">Progresszív (Növekvő)</SelectItem>
+                      <SelectItem value="performance">Teljesítményarányos</SelectItem>
+                      <SelectItem value="absolute">Abszolút összegű</SelectItem>
+                      <SelectItem value="multiplier">Szorzószámos</SelectItem>
+                      <SelectItem value="immediate">Azonnali (Kisértékű eszköz)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {form.depreciationMethod === 'performance' && (
+                  <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-1 duration-200">
+                    <div className="space-y-2">
+                      <Label htmlFor={`perf-unit-${index}`}>Mértékegység (pl. km, gépóra)</Label>
+                      <Input
+                        id={`perf-unit-${index}`}
+                        value={form.performanceUnit}
+                        onChange={e => updateForm(index, 'performanceUnit', e.target.value)}
+                        placeholder="km"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`perf-total-${index}`}>Tervezett teljesítmény</Label>
+                      <Input
+                        id={`perf-total-${index}`}
+                        type="number"
+                        value={form.totalPlannedPerformance}
+                        onChange={e => updateForm(index, 'totalPlannedPerformance', e.target.value)}
+                        placeholder="300000"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {(form.depreciationMethod === 'absolute' || form.depreciationMethod === 'multiplier') && (
+                  <div className="space-y-2 animate-in slide-in-from-top-1 duration-200">
+                    <Label htmlFor={`schedule-${index}`}>
+                      {form.depreciationMethod === 'absolute'
+                        ? 'Éves leírási összegek (vesszővel elválasztva, pl. 500000, 300000, 200000)'
+                        : 'Éves szorzók (vesszővel elválasztva, pl. 1.5, 1.2, 1.0, 0.8, 0.5)'
+                      }
+                    </Label>
+                    <Input
+                      id={`schedule-${index}`}
+                      value={form.depreciationScheduleString}
+                      onChange={e => updateForm(index, 'depreciationScheduleString', e.target.value)}
+                      placeholder={form.depreciationMethod === 'absolute' ? '500000, 300000, 200000' : '1.5, 1.2, 1.0'}
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4 border-t pt-4">
                   <div className="space-y-2">
                     <Label>Tao ÉCS sablon *</Label>
                     <Select

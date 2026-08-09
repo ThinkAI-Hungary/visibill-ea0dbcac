@@ -22,10 +22,11 @@ import { generateVatReturnXml } from '@/lib/vatReturnXml';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { reportError } from '@/lib/errorReporter';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { FormRow } from '@/components/vat/vatTypes';
 
-// V5: Extracted components
 import { VatCodeConfigTab } from '@/components/vat/VatCodeConfigTab';
-import { VatRowDrillDown } from '@/components/vat/VatRowDrillDown';
+import { VatRowDrillDown, InvoiceItemsDrillDown } from '@/components/vat/VatRowDrillDown';
 import { VatTrendChart } from '@/components/vat/VatTrendChart';
 import { ReturnHistoryTable } from '@/components/vat/ReturnHistoryTable';
 
@@ -131,10 +132,11 @@ function VatReturnViewTab() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() || 12); // prev month
-  const [frequency, setFrequency] = useState<'H' | 'N'>('H'); // H=havi, N=negyedéves
+  const [frequency, setFrequency] = useState<'H' | 'N' | 'E'>('H'); // H=havi, N=negyedéves, E=éves
   const [expandedPartners, setExpandedPartners] = useState<Set<string>>(new Set());
   const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
   const [expandedFormRow, setExpandedFormRow] = useState<string | null>(null);
+  const [euTypeOverrides, setEuTypeOverrides] = useState<Record<string, 'product' | 'service'>>({});
   const togglePartner = (id: string) => setExpandedPartners(prev => {
     const next = new Set(prev);
     if (next.has(id)) { next.delete(id); } else { next.add(id); }
@@ -251,12 +253,16 @@ function VatReturnViewTab() {
         dateFrom = `${year}-${String(month).padStart(2, '0')}-01`;
         const lastDay = new Date(year, month, 0).getDate();
         dateTo = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
-      } else {
+      } else if (frequency === 'N') {
         const startMonth = (month - 1) * 3 + 1;
         dateFrom = `${year}-${String(startMonth).padStart(2, '0')}-01`;
         const endMonth = startMonth + 2;
         const lastDay = new Date(year, endMonth, 0).getDate();
         dateTo = `${year}-${String(endMonth).padStart(2, '0')}-${lastDay}`;
+      } else {
+        // frequency === 'E' (Annual)
+        dateFrom = `${year}-01-01`;
+        dateTo = `${year}-12-31`;
       }
 
       // Get all OUTBOUND NAV invoices in this period that have no transaction (unpaid)
@@ -290,20 +296,148 @@ function VatReturnViewTab() {
     enabled: !!selectedCompany?.id && !!vatReturn,
   });
 
-  // Deadline countdown (deadline is the 20th of the following month)
+  // Fetch all invoices for EU/Community partner check
+  const { data: euInvoices = [], isLoading: isEuInvoicesLoading } = useQuery({
+    queryKey: ['vat_eu_invoices', selectedCompany?.id, year, month, frequency],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+
+      let dateFrom: string, dateTo: string;
+      if (frequency === 'H') {
+        dateFrom = `${year}-${String(month).padStart(2, '0')}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        dateTo = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+      } else if (frequency === 'N') {
+        const startMonth = (month - 1) * 3 + 1;
+        dateFrom = `${year}-${String(startMonth).padStart(2, '0')}-01`;
+        const endMonth = startMonth + 2;
+        const lastDay = new Date(year, endMonth, 0).getDate();
+        dateTo = `${year}-${String(endMonth).padStart(2, '0')}-${lastDay}`;
+      } else {
+        dateFrom = `${year}-01-01`;
+        dateTo = `${year}-12-31`;
+      }
+
+      // Fetch all invoices (INBOUND and OUTBOUND) for this period
+      const { data: rawInvoices, error } = await supabase
+        .from('nav_invoices')
+        .select('id, invoice_number, invoice_direction, supplier_tax_number, customer_tax_number, supplier_name, customer_name, invoice_delivery_date, invoice_net_amount, currency')
+        .eq('company_id', selectedCompany.id)
+        .gte('invoice_delivery_date', dateFrom)
+        .lte('invoice_delivery_date', dateTo);
+
+      if (error || !rawInvoices) {
+        if (error) console.error('Error fetching raw invoices:', error);
+        return [];
+      }
+
+      // EU Country Prefixes list
+      const euPrefixes = [
+        'AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'EL', 'GR', 'ES', 'FI', 'FR', 'HR',
+        'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK'
+      ];
+
+      // Helper to check if a tax number starts with an EU prefix
+      const isEuTaxNumber = (taxNum: string | null | undefined): boolean => {
+        if (!taxNum) return false;
+        const clean = taxNum.trim().toUpperCase();
+        return euPrefixes.some(pref => clean.startsWith(pref)) && !clean.startsWith('HU');
+      };
+
+      // Filter for Community/EU invoices
+      const filtered = rawInvoices.filter(inv => {
+        const partnerTaxNum = inv.invoice_direction === 'OUTBOUND' ? inv.customer_tax_number : inv.supplier_tax_number;
+        return isEuTaxNumber(partnerTaxNum);
+      });
+
+      if (filtered.length === 0) return [];
+
+      // Now query nav_invoice_items in batches to determine if they contain services
+      const invoiceIds = filtered.map(inv => inv.id);
+      const itemsMap: Record<string, any[]> = {};
+      
+      for (let i = 0; i < invoiceIds.length; i += 50) {
+        const chunk = invoiceIds.slice(i, i + 50);
+        const { data: items } = await supabase
+          .from('nav_invoice_items')
+          .select('nav_invoice_id, vat_rate, line_description')
+          .in('nav_invoice_id', chunk);
+        
+        if (items) {
+          items.forEach(item => {
+            if (!itemsMap[item.nav_invoice_id]) {
+              itemsMap[item.nav_invoice_id] = [];
+            }
+            itemsMap[item.nav_invoice_id].push(item);
+          });
+        }
+      }
+
+      // Map invoices with default classification
+      return filtered.map(inv => {
+        const items = itemsMap[inv.id] || [];
+        
+        // Default classification logic:
+        // If items exist, check their vat_rate or line_description
+        let isService = false;
+        if (items.length > 0) {
+          isService = items.some(item => {
+            const rate = (item.vat_rate || '').toUpperCase();
+            const desc = (item.line_description || '').toLowerCase();
+            return (
+              rate === 'ATHK' || rate === 'EUK' || rate === 'EUF' || rate === 'EUT' || rate === 'HO' ||
+              desc.includes('szolgáltatás') || desc.includes('szolg') || desc.includes('díj') ||
+              desc.includes('fejlesztés') || desc.includes('hosting') ||
+              desc.includes('licenc') || desc.includes('bérlet') || desc.includes('consulting') ||
+              desc.includes('service') || desc.includes('support')
+            );
+          });
+        }
+
+        const partnerName = inv.invoice_direction === 'OUTBOUND' ? inv.customer_name : inv.supplier_name;
+        const partnerTaxNum = inv.invoice_direction === 'OUTBOUND' ? inv.customer_tax_number : inv.supplier_tax_number;
+
+        return {
+          id: inv.id,
+          invoice_number: inv.invoice_number,
+          invoice_direction: inv.invoice_direction,
+          partner_name: partnerName || 'Ismeretlen Partner',
+          partner_tax_number: partnerTaxNum || '',
+          invoice_delivery_date: inv.invoice_delivery_date,
+          invoice_net_amount: inv.invoice_net_amount || 0,
+          currency: inv.currency,
+          defaultIsService: isService,
+        };
+      });
+    },
+    enabled: !!selectedCompany?.id && !!vatReturn,
+  });
+
+  // Deadline countdown (deadline is the 20th of the following month, or Feb 25 for annual)
   const deadlineCountdown = React.useMemo(() => {
     const today = new Date();
-    let deadlineMonth = month + 1;
-    let deadlineYear = year;
-    if (frequency === 'N') {
+    let deadlineDate: Date;
+    if (frequency === 'H') {
+      let deadlineMonth = month + 1;
+      let deadlineYear = year;
+      if (deadlineMonth > 12) {
+        deadlineMonth = 1;
+        deadlineYear += 1;
+      }
+      deadlineDate = new Date(deadlineYear, deadlineMonth - 1, 20);
+    } else if (frequency === 'N') {
       const endMonth = month * 3;
-      deadlineMonth = endMonth + 1;
+      let deadlineMonth = endMonth + 1;
+      let deadlineYear = year;
+      if (deadlineMonth > 12) {
+        deadlineMonth = 1;
+        deadlineYear += 1;
+      }
+      deadlineDate = new Date(deadlineYear, deadlineMonth - 1, 20);
+    } else {
+      // frequency === 'E' (Annual) - deadline is February 25th of the following year
+      deadlineDate = new Date(year + 1, 1, 25); // February is index 1
     }
-    if (deadlineMonth > 12) {
-      deadlineMonth = 1;
-      deadlineYear += 1;
-    }
-    const deadlineDate = new Date(deadlineYear, deadlineMonth - 1, 20);
     const diffTime = deadlineDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return {
@@ -484,6 +618,68 @@ function VatReturnViewTab() {
     return val ?? 0;
   };
 
+  // Calculate A60 EU community totals and crosscheck validations
+  const a60Calculations = useMemo(() => {
+    let goodsSum = 0;
+    let servicesSum = 0;
+    const itemsList: any[] = [];
+    const taxErrors: string[] = [];
+
+    euInvoices.forEach(inv => {
+      const isService = euTypeOverrides[inv.id] !== undefined
+        ? euTypeOverrides[inv.id] === 'service'
+        : inv.defaultIsService;
+
+      // EU invoice net amount is stored in HUF. Convert to eFt (rounded to thousands)
+      const amountEft = Math.round((inv.invoice_net_amount || 0) / 1000);
+
+      if (inv.invoice_direction === 'OUTBOUND') {
+        if (isService) {
+          servicesSum += amountEft;
+        } else {
+          goodsSum += amountEft;
+        }
+      }
+
+      // Check partner tax number format (starts with EU country code, min 5 chars, valid format)
+      const hasTaxNumber = !!inv.partner_tax_number;
+      const cleanTaxNumber = (inv.partner_tax_number || '').trim().toUpperCase();
+      const isValidFormat = /^[A-Z]{2}[A-Z0-9]{2,15}$/.test(cleanTaxNumber);
+      
+      if (!hasTaxNumber) {
+        taxErrors.push(`${inv.invoice_number} sz. számla: Hiányzik a partner közösségi adószáma!`);
+      } else if (!isValidFormat) {
+        taxErrors.push(`${inv.invoice_number} sz. számla: Hibás formátumú közösségi adószám (${inv.partner_tax_number})!`);
+      }
+
+      itemsList.push({
+        ...inv,
+        isService,
+        amountEft,
+        hasTaxNumber,
+        isValidFormat,
+      });
+    });
+
+    const expectedGoods = getVal('91', 'base') + getVal('92', 'base');
+    const expectedServices = getVal('93', 'base') + getVal('94', 'base');
+
+    const goodsMismatch = goodsSum !== expectedGoods;
+    const servicesMismatch = servicesSum !== expectedServices;
+
+    return {
+      goodsSum,
+      servicesSum,
+      expectedGoods,
+      expectedServices,
+      goodsMismatch,
+      servicesMismatch,
+      itemsList,
+      taxErrors,
+      isValid: !goodsMismatch && !servicesMismatch && taxErrors.length === 0,
+    };
+  }, [euInvoices, euTypeOverrides, lines]);
+
   const hasPrevData = prevLines.length > 0;
 
   const DeltaBadge = ({ current, prev }: { current: number; prev: number }) => {
@@ -602,12 +798,33 @@ function VatReturnViewTab() {
           <div className="flex bg-muted/50 border rounded-lg p-0.5">
             <button
               className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-all", frequency === 'H' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground')}
-              onClick={() => { if (frequency === 'N') { setMonth((month - 1) * 3 + 1); } setFrequency('H'); }}
+              onClick={() => {
+                if (frequency === 'N') {
+                  setMonth((month - 1) * 3 + 1);
+                } else if (frequency === 'E') {
+                  setMonth(1);
+                }
+                setFrequency('H');
+              }}
             >Havi</button>
             <button
               className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-all", frequency === 'N' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground')}
-              onClick={() => { setFrequency('N'); setMonth(Math.ceil(month / 3)); }}
+              onClick={() => {
+                if (frequency === 'H') {
+                  setMonth(Math.ceil(month / 3));
+                } else if (frequency === 'E') {
+                  setMonth(1);
+                }
+                setFrequency('N');
+              }}
             >Negyedéves</button>
+            <button
+              className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-all", frequency === 'E' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground')}
+              onClick={() => {
+                setFrequency('E');
+                setMonth(12); // Lock month to 12 for annual returns
+              }}
+            >Éves</button>
           </div>
           <div className="border-l pl-3 border-border/60 flex items-center gap-2">
             <Select value={String(year)} onValueChange={v => setYear(+v)}>
@@ -616,7 +833,7 @@ function VatReturnViewTab() {
                 {[2024, 2025, 2026].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
               </SelectContent>
             </Select>
-            {frequency === 'H' ? (
+            {frequency === 'H' && (
               <Select value={String(month)} onValueChange={v => setMonth(+v)}>
                 <SelectTrigger className="w-40 h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -627,7 +844,8 @@ function VatReturnViewTab() {
                   ))}
                 </SelectContent>
               </Select>
-            ) : (
+            )}
+            {frequency === 'N' && (
               <Select value={String(month)} onValueChange={v => setMonth(+v)}>
                 <SelectTrigger className="w-40 h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -713,6 +931,187 @@ function VatReturnViewTab() {
             </span>
           </div>
         )
+      )}
+
+      {/* ── Közösségi (A60) Keresztellenőrzés ── */}
+      {vatReturn && euInvoices.length > 0 && (
+        <Card className="border border-border/80 shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <Shield className={cn("w-4 h-4", a60Calculations.isValid ? "text-emerald-500" : "text-amber-500")} />
+              Közösségi Ügyletek (A60) Keresztellenőrzése
+            </CardTitle>
+            <CardDescription className="text-xs">
+              A60-as összesítő nyilatkozat számláinak összevetése a főlap 91-92. és 93-94. soraival
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Status Info Banner */}
+            {a60Calculations.isValid ? (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 p-3 rounded-lg text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>Minden közösségi tranzakció helyes, az összesített összegek egyeznek a bevallással és minden adószám érvényes.</span>
+              </div>
+            ) : (
+              <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 p-3 rounded-lg text-xs space-y-1">
+                <div className="flex items-center gap-2 font-semibold">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>Eltérés vagy hiányzó közösségi adószám észlelhető!</span>
+                </div>
+                {a60Calculations.taxErrors.length > 0 && (
+                  <ul className="list-disc pl-5 mt-1 space-y-0.5 text-[11px] text-amber-600 dark:text-amber-300">
+                    {a60Calculations.taxErrors.map((err, idx) => <li key={idx}>{err}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {/* Goods and Services Crosscheck comparison grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Goods Comparison */}
+              <div className={cn(
+                "p-3 rounded-lg border text-xs space-y-2",
+                a60Calculations.goodsMismatch ? "border-amber-500/20 bg-amber-500/5" : "border-border/60 bg-muted/30"
+              )}>
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-muted-foreground">Közösségi Termékértékesítés</span>
+                  <Badge className={cn("text-[10px]", a60Calculations.goodsMismatch ? "bg-amber-500/10 text-amber-600 border-amber-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20")}>
+                    {a60Calculations.goodsMismatch ? "Eltérés!" : "Egyezik"}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                  <div>
+                    <span className="text-muted-foreground">Számlák alapján:</span>
+                    <p className="font-bold font-mono text-sm mt-0.5">{a60Calculations.goodsSum.toLocaleString('hu-HU')} eFt</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Bevallás (91+92. sor):</span>
+                    <p className="font-bold font-mono text-sm mt-0.5">{a60Calculations.expectedGoods.toLocaleString('hu-HU')} eFt</p>
+                  </div>
+                </div>
+                {a60Calculations.goodsMismatch && (
+                  <p className="text-[10px] text-amber-600 dark:text-amber-300 pt-1 border-t border-amber-500/10">
+                    Eltérés: {Math.abs(a60Calculations.goodsSum - a60Calculations.expectedGoods).toLocaleString('hu-HU')} eFt
+                  </p>
+                )}
+              </div>
+
+              {/* Services Comparison */}
+              <div className={cn(
+                "p-3 rounded-lg border text-xs space-y-2",
+                a60Calculations.servicesMismatch ? "border-amber-500/20 bg-amber-500/5" : "border-border/60 bg-muted/30"
+              )}>
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-muted-foreground">Közösségi Szolgáltatásnyújtás</span>
+                  <Badge className={cn("text-[10px]", a60Calculations.servicesMismatch ? "bg-amber-500/10 text-amber-600 border-amber-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20")}>
+                    {a60Calculations.servicesMismatch ? "Eltérés!" : "Egyezik"}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                  <div>
+                    <span className="text-muted-foreground">Számlák alapján:</span>
+                    <p className="font-bold font-mono text-sm mt-0.5">{a60Calculations.servicesSum.toLocaleString('hu-HU')} eFt</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Bevallás (93+94. sor):</span>
+                    <p className="font-bold font-mono text-sm mt-0.5">{a60Calculations.expectedServices.toLocaleString('hu-HU')} eFt</p>
+                  </div>
+                </div>
+                {a60Calculations.servicesMismatch && (
+                  <p className="text-[10px] text-amber-600 dark:text-amber-300 pt-1 border-t border-amber-500/10">
+                    Eltérés: {Math.abs(a60Calculations.servicesSum - a60Calculations.expectedServices).toLocaleString('hu-HU')} eFt
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Invoices list and toggle actions */}
+            <div className="border border-border/60 rounded-lg overflow-hidden">
+              <div className="bg-muted/40 p-2 text-xs font-semibold border-b border-border/60 flex justify-between items-center">
+                <span>Észlelt közösségi (EU) bizonylatok listája ({a60Calculations.itemsList.length})</span>
+                <span className="text-[10px] text-muted-foreground font-normal">Kattints a típus gombra a besorolás megváltoztatásához</span>
+              </div>
+              <ScrollArea className="max-h-60 overflow-y-auto">
+                <Table className="text-xs">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Számlaszám</TableHead>
+                      <TableHead>Partner neve</TableHead>
+                      <TableHead>Közösségi adószám</TableHead>
+                      <TableHead className="text-right">Nettó összeg</TableHead>
+                      <TableHead className="text-right">A60 Típus</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {a60Calculations.itemsList.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium font-mono">{item.invoice_number}</TableCell>
+                        <TableCell>{item.partner_name}</TableCell>
+                        <TableCell className="font-mono">
+                          <span className={cn(
+                            "px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 w-max",
+                            item.isValidFormat
+                              ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+                              : "bg-red-500/10 text-red-600 dark:bg-red-950/40 dark:text-red-400"
+                          )}>
+                            {item.isValidFormat ? (
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                            ) : (
+                              <AlertTriangle className="w-3 h-3 text-red-500" />
+                            )}
+                            {item.partner_tax_number || "HIÁNYZIK!"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-semibold">
+                          {item.invoice_net_amount.toLocaleString('hu-HU')} {item.currency}
+                          <span className="block text-[10px] text-muted-foreground">({item.amountEft.toLocaleString('hu-HU')} eFt)</span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="inline-flex bg-muted/60 border border-border/80 rounded-md p-0.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEuTypeOverrides(prev => ({
+                                  ...prev,
+                                  [item.id]: 'product'
+                                }));
+                              }}
+                              className={cn(
+                                "px-2 py-1 text-[10px] font-bold rounded transition-all",
+                                !item.isService
+                                  ? "bg-background shadow-sm text-foreground font-semibold"
+                                  : "text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              Termék
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEuTypeOverrides(prev => ({
+                                  ...prev,
+                                  [item.id]: 'service'
+                                }));
+                              }}
+                              className={cn(
+                                "px-2 py-1 text-[10px] font-bold rounded transition-all",
+                                item.isService
+                                  ? "bg-background shadow-sm text-foreground font-semibold"
+                                  : "text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              Szolg.
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Status Bar */}
@@ -1354,7 +1753,7 @@ export default function VatReturnPage() {
         companyName={selectedCompany?.name}
         breadcrumb="ÁFA Bevallás (2665)"
         title="ÁFA Bevallás"
-        description="2665-ös nyomtatvány — havi és negyedéves ÁFA bevallás generálás"
+        description="2665-ös nyomtatvány — havi, negyedéves és éves ÁFA bevallás generálás"
       />
 
       <Tabs defaultValue="return" className="space-y-4">

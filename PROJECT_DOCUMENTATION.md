@@ -63,8 +63,20 @@ src/
 │   ├── Settings.tsx     # User settings (/settings)
 │   ├── Pricing.tsx      # Subscription pricing (/pricing)
 │   ├── ExchangeRates.tsx # Currency rates (/exchange-rates)
-│   ├── ManualUpload.tsx # Manual invoice upload (/manual-upload)
-│   ├── NavTesting.tsx   # NAV API testing (/nav-testing)
+│   ├── ManualUpload.tsx # Manual invoice file upload
+│   ├── NavTesting.tsx   # NAV API testing interface
+│   ├── Accounty/        # Eaisybooks (Accounty) module pages (/accounty)
+│   │   ├── AccountyApp.tsx  # Unified portfolio dashboard page
+│   │   ├── AccountyScopedLayout.tsx # Scoped client layout wrapper
+│   │   ├── ClientDetailsPage.tsx  # Scoped client overview dashboard
+│   │   ├── ClientInvoicesPage.tsx # Scoped client invoices dashboard
+│   │   ├── FilingsPage.tsx        # NAV Filings subpage
+│   │   ├── EmployeesPage.tsx      # Payroll employees dashboard
+│   │   ├── Ev/          # Egyéni Vállalkozás (EV) specific pages
+│   │   │   ├── ClientEvMainPage.tsx      # EV Main page
+│   │   │   └── EvDepreciationPage.tsx    # Fixed Assets Depreciation
+│   │   └── Tao/         # Társasági adó (TAO) specific pages
+│   │       └── ClientTaoMainPage.tsx     # TAO Main page
 │   └── NotFound.tsx     # 404 page
 ├── contexts/            # React Context providers
 │   ├── AuthContext.tsx  # Authentication state management
@@ -399,6 +411,14 @@ NAV (Nemzeti Adó- és Vámhivatal) is the Hungarian National Tax and Customs Ad
 - **`salary`**: Salary entries
 - **`salary_files`**: Salary payment files
 - **`tax`**: Tax payment records
+
+### Eaisybooks (Accounty) & Payroll
+- **`accounty_assignments`**: Accountant-to-company assignments and status tracking
+- **`accounty_employees`**: Employee data for payroll calculation
+- **`accounty_employments`**: Employment contracts and status tracking
+- **`accounty_payroll_calculations`**: Periodical payroll details and tax computations
+- **`accounty_ev_records_fixed_assets`**: EV fixed asset records and ÉCS settings
+- **`accounty_ev_performance_logs`**: Mileage and performance logs for EV assets
 
 ### Bank Integration
 - **`bank_statements`**: Bank statement files
@@ -751,7 +771,30 @@ npm run preview      # Preview production build
 
 ## Changelog
 
-### Version 1.4.1 (Current - 2026-07-28)
+### Version 1.6.0 (2026-08-08)
+- **BinX CSV Bank Statement Processing:**
+  - Fixed CSV converter column truncation bug by dynamically computing `max_cols` across all CSV rows instead of defaulting to the first row (which was often metadata / 2 columns), preserving all columns in the converted Markdown table.
+  - Implemented automatic double-UTF-8 decoding recovery in the CSV parser to resolve corrupted Hungarian accent characters (e.g., recovering `ó` from `Ã³`) common in email forwarding.
+  - This resolved the issue where BinX CSV bank statements were incorrectly routed to the GLS report pipeline by Mailgun/Eaisybooks due to extraction failing on missing column data.
+- **Eaisybooks (Accounty) UI Improvements:**
+  - **Removed Mock Timeline:** Cleaned up the mock `<MissingInvoicesTimeline />` section showing hardcoded notifications timeline (e.g., "Felszólítás küldve") from the client missing invoices page ([ClientMissingInvoicesPage.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/ClientMissingInvoicesPage.tsx)).
+  - **Repositioned Invoice Summaries:** Moved the invoice totals summary bar from the bottom of the table card to the top (directly below the toolbar, above the table) in the scoped company invoices page ([ClientInvoicesPage.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/ClientInvoicesPage.tsx)) for better scannability.
+
+### Version 1.5.0 (2026-08-07)
+- **Advanced Depreciation (ÉCS) Module:**
+  - Integrated 8 advanced depreciation methods (Linear, Declining Balance, Sum of Years' Digits, Progressive, Performance-based, Multiplier-based, Absolute amount, Immediate write-off) into fixed assets calculations.
+  - Stored ÉCS settings as serialized JSON metadata within the notes column of the fixed assets table for backward compatibility.
+  - Developed `accounty-ai-depreciation` Edge Function to suggest optimal depreciation methods and rates based on asset description/cost, integrating it into import dialogs and manual forms.
+- **Unified Navigation & Layouts:**
+  - Consolidated portfolio dashboards at `/accounty` (Clients list, Payroll portfolio, TAO/KIVA overview, EV portfolio).
+  - Scoped client-centric routes under `/accounty/:companyId/:dateRange/` using `AccountyScopedLayout` to handle client/date context.
+  - Standardized visual layout headers, square back buttons, and gray pulse skeleton loading indicators across all client dashboards.
+- **A60 Community VAT Cross-Check Validation:**
+  - Automated cross-check validation in `VatReturnPage.tsx` comparing outbound/inbound EU invoices against lines 91-92 and 93-94 of the VAT Return.
+  - Added interactive client-side overrides to toggle invoice type (Product vs Service) in real-time.
+  - Highlighted VIES tax number format errors and missing partner tax numbers on the A60 summary list.
+
+### Version 1.4.1 (2026-07-28)
 - **OTP Bank Statement Extractor Fixes:**
   - *Deviza (EUR) Parsing:* Fixed extraction of OTP Bank statements in foreign currencies (e.g. EUR) by updating the column limits (shifted `X_ERTEKNAP` from `140` to `110` to handle layout changes) and updating amount parsing to support commas for decimal points.
   - *Dynamic Currency Detection:* Enabled automatic detection of statement currency (e.g., `EUR`, `HUF`) from the statement header instead of assuming HUF.
@@ -822,5 +865,5 @@ npm run preview      # Preview production build
 
 ---
 
-**Last Updated:** 2026-07-28  
+**Last Updated:** 2026-08-08  
 **Maintained By:** VisiBill Development Team

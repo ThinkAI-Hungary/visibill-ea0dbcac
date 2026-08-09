@@ -33,7 +33,8 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
 };
 
 export default function DeclarationArchivePage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');

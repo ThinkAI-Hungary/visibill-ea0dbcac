@@ -24,7 +24,8 @@ function escapeXml(str: string): string {
 }
 
 export default function EvKataPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { data: client } = useAccountyClient(id);
   const [searchParams] = useSearchParams();
   const yearParam = Number(searchParams.get('year') || '2026');
@@ -171,7 +172,7 @@ export default function EvKataPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />

@@ -25,7 +25,8 @@ const QUARTER_LABELS = ['I.', 'II.', 'III.', 'IV.'];
 const QUARTER_DEADLINES = ['ápr. 12.', 'júl. 12.', 'okt. 12.', 'jan. 12.'];
 
 export default function EvContributionsPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const [searchParams] = useSearchParams();
   const taxYear = Number(searchParams.get('year') || '2026');
   const { data: client } = useAccountyClient(id);
@@ -143,7 +144,7 @@ export default function EvContributionsPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />

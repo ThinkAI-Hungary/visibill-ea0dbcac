@@ -82,7 +82,7 @@ const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function PayrollCyclePage() {
-  const { id: companyId, cycleId } = useParams<{ id: string; cycleId: string }>();
+  const { companyId, cycleId } = useParams<{ companyId: string; cycleId: string }>();
   const navigate = useNavigate();
 
   const isNewCycle = !cycleId || cycleId === 'new';

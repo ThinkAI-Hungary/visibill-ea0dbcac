@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2, FileText, Coins, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,9 +19,10 @@ import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 
 export default function ClientInvoicesPage() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   
-  const { data: supabaseClients } = useAccountyClients();
+  const { data: supabaseClients, isLoading: clientLoading } = useAccountyClients();
   const client = useMemo(() => {
     const found = supabaseClients?.find((c) => c.id === id);
     if (found) return { id: found.id, name: found.name, taxNumber: found.taxNumber || '' };
@@ -204,18 +205,20 @@ export default function ClientInvoicesPage() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex items-start gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="w-8 h-8 mt-1.5 shrink-0 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800"
-            onClick={() => navigate(-1)}
+          <button 
+            onClick={() => navigate(`/accounty/${companyId}/${dateRange}/overview`)}
+            className="flex items-center justify-center w-8 h-8 mt-1 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            title="Vissza az áttekintéshez"
           >
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          </Button>
+          </button>
           <div>
-            <div className="flex items-center gap-1.5 mb-1 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 px-2 py-0.5 -ml-2 rounded-md transition-colors w-max">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client.name}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <div className="flex items-center gap-1.5 mb-1">
+              {clientLoading ? (
+                <div className="h-3.5 w-24 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+              ) : (
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client.name}</span>
+              )}
             </div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Számlák</h1>
           </div>
@@ -457,6 +460,78 @@ export default function ClientInvoicesPage() {
           </div>
         </div>
 
+        {/* Summary Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-b border-border bg-slate-50/40 dark:bg-slate-900/20">
+          {/* Card 1: Számlák száma */}
+          <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-blue-500/10 text-blue-600 dark:text-blue-400 p-2.5 rounded-lg shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Számlák száma</div>
+              <div className="text-xl font-bold tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
+                {filteredInvoices.length} <span className="text-xs font-normal text-muted-foreground">db</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Bruttó összesen */}
+          <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-2.5 rounded-lg shrink-0">
+              <Coins className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Bruttó összesen</div>
+              <div className="text-sm font-bold tabular-nums text-slate-900 dark:text-slate-100 mt-1 space-y-0.5">
+                {Object.entries(totalsByCurrency).map(([curr, val]) => (
+                  <div key={curr} className="truncate">{formatCurrency(val.gross, curr)}</div>
+                )) || <div className="text-muted-foreground font-medium">0 Ft</div>}
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: ÁFA összesen */}
+          <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-violet-500/10 text-violet-600 dark:text-violet-400 p-2.5 rounded-lg shrink-0">
+              <Percent className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">ÁFA összesen</div>
+              <div className="text-sm font-bold tabular-nums text-slate-900 dark:text-slate-100 mt-1 space-y-0.5">
+                {Object.entries(totalsByCurrency).map(([curr, val]) => (
+                  <div key={curr} className="truncate">{formatCurrency(val.vat, curr)}</div>
+                )) || <div className="text-muted-foreground font-medium">0 Ft</div>}
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Fordított adózás (FAD) */}
+          <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+            <div className={cn(
+              "p-2.5 rounded-lg shrink-0 transition-colors",
+              fadCount > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
+            )}>
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Fordított adózás</div>
+              <div className="mt-0.5">
+                <div className="text-sm font-bold tabular-nums text-slate-900 dark:text-slate-100">
+                  {fadCount} <span className="text-xs font-normal text-muted-foreground">db FAD számla</span>
+                </div>
+                {fadCount > 0 && (
+                  <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium truncate mt-0.5">
+                    Nettó: {Object.entries(totalsByCurrency)
+                      .filter(([_, val]) => val.fadNet > 0)
+                      .map(([curr, val]) => formatCurrency(val.fadNet, curr))
+                      .join(', ') || '0 Ft'}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -564,29 +639,6 @@ export default function ClientInvoicesPage() {
             />
           </div>
         )}
-
-        {/* Footer Summary */}
-        <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 border-t border-border flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-slate-400">
-          <div>Számlák: <span className="font-bold text-slate-900 dark:text-slate-100">{filteredInvoices.length}</span></div>
-          <div>Összesen: <span className="font-bold text-slate-900 dark:text-slate-100">
-            {Object.entries(totalsByCurrency).map(([curr, val]) => formatCurrency(val.gross, curr)).join(', ') || '0 Ft'}
-          </span></div>
-          <div>ÁFA: <span className="font-bold text-slate-900 dark:text-slate-100">
-            {Object.entries(totalsByCurrency).map(([curr, val]) => formatCurrency(val.vat, curr)).join(', ') || '0 Ft'}
-          </span></div>
-          {fadCount > 0 && (
-            <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">
-              <ShieldAlert className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-              <span className="text-amber-700 dark:text-amber-400 font-semibold">{fadCount} FAD számla</span>
-              <span className="text-amber-600/70 dark:text-amber-400/70">
-                ({Object.entries(totalsByCurrency)
-                  .filter(([_, val]) => val.fadNet > 0)
-                  .map(([curr, val]) => formatCurrency(val.fadNet, curr))
-                  .join(', ') || '0 Ft'} nettó)
-              </span>
-            </div>
-          )}
-        </div>
 
       </div>
       

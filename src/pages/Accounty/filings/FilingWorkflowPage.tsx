@@ -33,7 +33,7 @@ const FILING_TYPE_LABELS: Record<string, string> = {
 const fmt = (n: number) => n.toLocaleString('hu-HU') + ' Ft';
 
 export default function FilingWorkflowPage() {
-  const { id: companyId, filingId } = useParams<{ id: string; filingId: string }>();
+  const { companyId, filingId } = useParams<{ companyId: string; filingId: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<Step>('preview');

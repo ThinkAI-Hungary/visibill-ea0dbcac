@@ -6,7 +6,8 @@ import {
   ArrowLeft, Settings, FileText, UploadCloud, RefreshCcw, FileCheck,
   Clock, AlertTriangle, FileWarning, TrendingUp, CheckCircle2, ChevronRight,
   Bell, ChevronDown, EyeOff, Wrench, Calendar, Hash, Info, Plus, X,
-  Phone, MessageCircle, Mail, Globe, PhoneCall, PhoneOff, Mic, Link2, Check, Loader2
+  Phone, MessageCircle, Mail, Globe, PhoneCall, PhoneOff, Mic, Link2, Check, Loader2,
+  ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -29,23 +30,11 @@ import ClientSettingsTab from '@/components/accounty/client-details/ClientSettin
 
 export default function ClientDetailsPage() {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { pathname } = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const defaultTab = pathname.endsWith('/settings') ? 'Beállítások' : 'Áttekintés';
-  const [activeTab, setActiveTab] = useState(defaultTab);
-
-  useEffect(() => {
-    if (pathname.endsWith('/settings')) {
-      setActiveTab('Beállítások');
-    } else if (pathname.endsWith('/overview')) {
-      if (activeTab === 'Beállítások') {
-        setActiveTab('Áttekintés');
-      }
-    }
-  }, [pathname]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [navSyncError, setNavSyncError] = useState<string | null>(null);
 
@@ -156,7 +145,7 @@ export default function ClientDetailsPage() {
   // Fetch client from Supabase
   const { data: supabaseClients, isLoading: clientLoading } = useAccountyClients();
   const { data: supabaseMissingData } = useAccountyMissingItems(id || '');
-  const supabaseMissing = supabaseMissingData?.items;
+  const supabaseMissing = (supabaseMissingData as any)?.items;
   const ignoreMutation = useIgnoreMissingItem();
   const addMutation = useAddMissingItem();
 
@@ -230,8 +219,6 @@ export default function ClientDetailsPage() {
   const missingCount = supabaseMissing?.length || 0;
   const upcomingDeadlineCount = companyDeadlines.length;
 
-  const tabs = ['Áttekintés', 'Profil', 'Számlák', 'Bérszámfejtés', 'Riportok', 'Beállítások'];
-
   // Real invoices
   const { data: companyInvoices } = useCompanyInvoices(id || '');
   const invoiceData = useMemo(() => {
@@ -266,14 +253,24 @@ export default function ClientDetailsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-full transition-colors"
+            onClick={() => navigate('/accounty')}
+            className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+            title="Vissza a portfólióhoz"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{client.name}</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{client.taxNumber}</p>
+            {clientLoading ? (
+              <>
+                <div className="h-7 w-48 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse mt-1" />
+              </>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{client.name}</h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{client.taxNumber}</p>
+              </>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -344,7 +341,7 @@ export default function ClientDetailsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(`/accounty/client/${id}/settings`)}
+              onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'settings'))}
               className="bg-card border-red-200 hover:bg-red-50 dark:border-red-800/40 dark:hover:bg-red-900/20 text-red-800 dark:text-red-300 text-xs font-semibold px-3 py-1.5 h-auto rounded-lg transition-colors shadow-soft"
             >
               NAV API Beállítások
@@ -359,49 +356,17 @@ export default function ClientDetailsPage() {
         </div>
       )}
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-full w-fit">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              if (tab === 'Számlák') {
-                navigate(`/accounty/client/${id}/invoices`);
-              } else if (tab === 'Bérszámfejtés') {
-                navigate(`/accounty/client/${id}/payroll`);
-              } else if (tab === 'Riportok') {
-                navigate(`/accounty/client/${id}/reports`);
-              } else if (tab === 'Beállítások') {
-                navigate(`/accounty/client/${id}/settings`);
-              } else {
-                if (pathname.endsWith('/settings')) {
-                  navigate(`/accounty/client/${id}/overview`);
-                }
-                setActiveTab(tab);
-              }
-            }}
-            className={cn(
-              "px-4 py-2 rounded-full text-sm font-medium transition-all",
-              activeTab === tab 
-                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" 
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
-            )}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
       {/* TABS CONTENT */}
-      
-      {/* Áttekintés Tab */}
-      {activeTab === 'Áttekintés' && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {(() => {
+        const isOverview = pathname.endsWith('/overview') || (!pathname.endsWith('/settings') && !pathname.endsWith('/profile'));
+        if (isOverview) {
+          return (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* KPI Cards */}
           <div className="grid grid-cols-4 gap-4">
             <div 
               className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1"
-              onClick={() => setActiveTab('Számlák')}
+              onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Feldolgozatlan számlák</h3>
@@ -414,7 +379,7 @@ export default function ClientDetailsPage() {
 
             <div 
               className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1"
-              onClick={() => setActiveTab('Számlák')}
+              onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Kontírozásra vár</h3>
@@ -427,7 +392,7 @@ export default function ClientDetailsPage() {
 
             <div 
               className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1"
-              onClick={() => navigate(`/accounty/missing-invoices/${client.id}`)}
+              onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'missing-invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Hiányzó számlák</h3>
@@ -452,7 +417,7 @@ export default function ClientDetailsPage() {
           {/* Action Buttons */}
           <div className="grid grid-cols-3 gap-4">
             <Button 
-              onClick={() => navigate(`/accounty/client/${client.id}/invoices`)}
+              onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
               className="h-14 bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 text-white rounded-xl text-base font-semibold flex items-center justify-center gap-2"
             >
               <FileCheck className="w-5 h-5" />
@@ -461,7 +426,7 @@ export default function ClientDetailsPage() {
             <Button 
               variant="outline" 
               className="h-14 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl text-base font-semibold flex items-center justify-center gap-2"
-              onClick={() => navigate(`/accounty/client/${client.id}/missing-invoices`)}
+              onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'missing-invoices'))}
             >
               <AlertTriangle className="w-5 h-5 text-slate-400" />
               Hiányzók bekérése
@@ -469,7 +434,7 @@ export default function ClientDetailsPage() {
             <Button 
               variant="outline" 
               className="h-14 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl text-base font-semibold flex items-center justify-center gap-2"
-              onClick={() => navigate(`/accounty/client/${client.id}/reports`)}
+              onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'reports'))}
             >
               <UploadCloud className="w-5 h-5 text-slate-400" />
               Riport generálása
@@ -479,12 +444,12 @@ export default function ClientDetailsPage() {
           {/* Gyors elérés — korábban csak a Bérszámfejtés fülről volt elérhető */}
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
             {[
-              { label: 'Cégkapu / KÜNY', path: `/accounty/client/${client.id}/settings#cegkapu`, icon: '' },
-              { label: 'NAV meghatalmazás', path: `/accounty/client/${client.id}/representation`, icon: '' },
-              { label: 'Iratkezelés & GDPR', path: `/accounty/client/${client.id}/data-retention`, icon: '' },
-              { label: 'NAV bevallások', path: `/accounty/payroll/${client.id}/filings`, icon: '' },
-              { label: 'Bérezési struktúra', path: `/accounty/client/${client.id}/structure`, icon: '' },
-              { label: 'Paramétertábla', path: `/accounty/payroll/${client.id}/tax-params`, icon: '' },
+              { label: 'Cégkapu / KÜNY', path: pathname.replace(/(?:overview|settings|profile)$/, 'settings#cegkapu'), icon: '' },
+              { label: 'NAV meghatalmazás', path: pathname.replace(/(?:overview|settings|profile)$/, 'representation'), icon: '' },
+              { label: 'Iratkezelés & GDPR', path: pathname.replace(/(?:overview|settings|profile)$/, 'data-retention'), icon: '' },
+              { label: 'NAV bevallások', path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/filings'), icon: '' },
+              { label: 'Bérezési struktúra', path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/structure'), icon: '' },
+              { label: 'Paramétertábla', path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/tax-params'), icon: '' },
             ].map((link) => (
               <button
                 key={link.label}
@@ -807,7 +772,7 @@ export default function ClientDetailsPage() {
                                           const missingItemForEmail: MissingItemForEmail = {
                                             title: item.title + (item.subtitle ? ` – ${item.subtitle}` : ''),
                                             category: item.category,
-                                            deadline: item.itemDate ? new Date(item.itemDate).toLocaleDateString('hu-HU') : undefined,
+                                            deadline: item.date ? new Date(item.date).toLocaleDateString('hu-HU') : undefined,
                                           };
                                           const generated = generateRequestEmail({
                                             companyName: client?.name || 'Ismeretlen',
@@ -858,7 +823,7 @@ export default function ClientDetailsPage() {
           <div className="grid grid-cols-2 gap-6">
             
             {/* Recent Activities — from audit log */}
-            <RecentActivities companyId={client?.companyId} />
+            <RecentActivities companyId={client?.id} />
 
             {/* Upcoming Deadlines */}
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
@@ -930,54 +895,32 @@ export default function ClientDetailsPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Profil Tab */}
-      {activeTab === 'Profil' && (
-        <ClientProfileTab
-          clientId={id || ''}
-          client={client}
-          notifPrefs={notifPrefs}
-          setNotifPrefs={setNotifPrefs}
-          taxProfileData={taxProfileData}
-        />
-      )}
-
-      {/* Számlák Tab */}
-      {activeTab === 'Számlák' && (
-        <ClientInvoicesTab
-          clientId={id || ''}
-          companyInvoices={companyInvoices}
-        />
-      )}
-
-      {/* Bérszámfejtés Tab */}
-      {activeTab === 'Bérszámfejtés' && (
-        <ClientPayrollTab
-          client={client}
-        />
-      )}
-
-      {/* Riportok Tab */}
-      {activeTab === 'Riportok' && (
-        <ClientReportsTab
-          client={client}
-          companyInvoices={companyInvoices}
-          supabaseMissing={supabaseMissing}
-          companyDeadlines={companyDeadlines}
-        />
-      )}
-
-      {/* Beállítások Tab */}
-      {activeTab === 'Beállítások' && (
-        <ClientSettingsTab
-          clientId={id || ''}
-          notifPrefs={notifPrefs}
-          setNotifPrefs={setNotifPrefs}
-          commPrefsData={commPrefsData}
-          taxProfileData={taxProfileData}
-        />
-      )}
+      );
+    }
+        if (pathname.endsWith('/profile')) {
+          return (
+            <ClientProfileTab
+              clientId={id || ''}
+              client={client}
+              notifPrefs={notifPrefs}
+              setNotifPrefs={setNotifPrefs}
+              taxProfileData={taxProfileData}
+            />
+          );
+        }
+        if (pathname.endsWith('/settings')) {
+          return (
+            <ClientSettingsTab
+              clientId={id || ''}
+              notifPrefs={notifPrefs}
+              setNotifPrefs={setNotifPrefs}
+              commPrefsData={commPrefsData}
+              taxProfileData={taxProfileData}
+            />
+          );
+        }
+        return null;
+      })()}
 
 
       {/* Floating AI Call Panel */}
@@ -1164,7 +1107,8 @@ function RecentActivities({ companyId }: { companyId?: string }) {
         {logs.map(log => {
           const meta = ACTION_META[log.action] || DEFAULT_META;
           const Icon = meta.icon;
-          const detailText = log.details?.description || log.details?.item_title || log.details?.deadline_title || '';
+          const details = log.details as any;
+          const detailText = (details?.description || details?.item_title || details?.deadline_title || '') as string;
           return (
             <div key={log.id} className="flex items-start gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
               <div className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5', meta.bg)}>

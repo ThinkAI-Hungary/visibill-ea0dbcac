@@ -137,6 +137,8 @@ export default function ClientSettingsTab({
       setActiveSubTab('payroll');
     } else if (hash === '#tax_profile') {
       setActiveSubTab('tax_profile');
+    } else if (hash === '#notifications' || !hash) {
+      setActiveSubTab('notifications');
     }
   }, [hash]);
 
@@ -196,7 +198,7 @@ export default function ClientSettingsTab({
     setPayrollLoading(true);
     supabase
       .from('accounty_tax_profiles')
-      .select('payroll_settings, nav_api_key, nav_technical_user, nav_environment')
+      .select('payroll_settings')
       .eq('company_id', clientId)
       .maybeSingle()
       .then(({ data }) => {
@@ -204,9 +206,6 @@ export default function ClientSettingsTab({
           if (data.payroll_settings && typeof data.payroll_settings === 'object') {
             setPayrollSettings(s => ({ ...s, ...(data.payroll_settings as Record<string, any>) }));
           }
-          if (data.nav_api_key) setNavApiKey(data.nav_api_key);
-          if (data.nav_technical_user) setNavTechnicalUser(data.nav_technical_user);
-          if (data.nav_environment) setNavEnv(data.nav_environment as 'production' | 'sandbox');
         }
         setPayrollDirty(false);
         setPayrollLoading(false);
@@ -289,9 +288,6 @@ export default function ClientSettingsTab({
         .upsert({
           company_id: clientId,
           payroll_settings: payrollSettings as any,
-          nav_api_key: navApiKey || null,
-          nav_technical_user: navTechnicalUser || null,
-          nav_environment: navEnv,
           has_payroll: true,
         }, { onConflict: 'company_id' });
       if (error) throw error;

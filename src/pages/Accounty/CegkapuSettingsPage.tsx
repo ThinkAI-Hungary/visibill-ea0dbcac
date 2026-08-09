@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Shield, Building2, Key, Clock, CheckCircle, AlertTriangle,
-  Monitor, RefreshCw, Save, TestTube, User, Loader2
+  Monitor, RefreshCw, Save, TestTube, User, Loader2, ChevronLeft
 } from 'lucide-react';
+import { useAccountyClient } from '@/hooks/accounty';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCegkapuSettings, useUpsertCegkapuSettings, type CegkapuSettings } from '@/hooks/accounty';
@@ -46,9 +47,11 @@ const DEFAULTS: FormData = {
 };
 
 export default function CegkapuSettingsPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { data: client, isLoading: clientLoading } = useAccountyClient(id || '');
   const { data: saved, isLoading } = useCegkapuSettings(id || '');
   const upsertMutation = useUpsertCegkapuSettings();
   const [data, setData] = useState<FormData>(DEFAULTS);
@@ -120,19 +123,27 @@ export default function CegkapuSettingsPage() {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-muted transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+      <div className="flex items-start gap-4">
+        <button 
+          onClick={() => navigate(`/accounty/${companyId}/${dateRange}/settings`)}
+          className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+          title="Vissza a beállításokhoz"
+        >
+          <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
         </button>
-        <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg shadow-blue-500/25">
-          <Shield className="w-5 h-5 text-white" />
-        </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Cégkapu / KÜNY-tárhely</h1>
-          <p className="text-sm text-slate-500">Hivatalos állami tárhely és KAÜ aláírás beállítás</p>
+          <div className="flex items-center gap-1.5 mb-1">
+            {clientLoading ? (
+              <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+            ) : (
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client?.name || 'Ügyfél'}</span>
+            )}
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Cégkapu / KÜNY-tárhely</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Hivatalos állami tárhely és KAÜ aláírás beállítás</p>
         </div>
         {!saved && (
-          <span className="ml-auto px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">ÚJ — nincs még mentve</span>
+          <span className="ml-auto px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shrink-0">ÚJ — nincs még mentve</span>
         )}
       </div>
 
@@ -353,7 +364,7 @@ export default function CegkapuSettingsPage() {
 
       {/* Mentés */}
       <div className="flex justify-end gap-3">
-        <Button variant="outline" onClick={() => navigate(-1)}>
+        <Button variant="outline" onClick={() => navigate(`/accounty/${companyId}/${dateRange}/settings`)}>
           Mégse
         </Button>
         <Button

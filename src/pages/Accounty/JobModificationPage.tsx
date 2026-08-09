@@ -42,7 +42,8 @@ const EMPTY_PER_TYPE: Record<ChangeType, { newValue: string; reason: string }> =
 };
 
 export default function JobModificationPage() {
-  const { id, empId } = useParams<{ id: string; empId: string }>();
+  const { companyId, empId } = useParams<{ companyId: string; empId: string }>();
+  const id = companyId;
   const { toast } = useToast();
   const { data: employments, isLoading, isError: empError, refetch: refetchEmp } = usePayrollEmployments(empId || '');
   const addModMut = useAddJobModification();

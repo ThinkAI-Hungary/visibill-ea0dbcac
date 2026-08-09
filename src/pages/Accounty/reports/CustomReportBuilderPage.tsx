@@ -51,7 +51,8 @@ interface FilterDef {
 }
 
 export default function CustomReportBuilderPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const [columns, setColumns] = useState(AVAILABLE_COLUMNS);
   const [filters, setFilters] = useState<FilterDef[]>([]);
   const [reportName, setReportName] = useState('Egyedi riport');

@@ -58,7 +58,8 @@ const STATUS_BADGE: Record<string, { label: string; color: string; icon: React.E
 };
 
 export default function ExitDocumentsPage() {
-  const { id, empId } = useParams<{ id: string; empId: string }>();
+  const { companyId, empId } = useParams<{ companyId: string; empId: string }>();
+  const id = companyId;
   const { data: jobs, isLoading, isError: jobsError, refetch: refetchJobs } = useEmployeeJobs(id || '', empId || '');
   const { data: employee } = usePayrollEmployee(empId || '');
   const { data: employments = [] } = usePayrollEmployments(empId || '');

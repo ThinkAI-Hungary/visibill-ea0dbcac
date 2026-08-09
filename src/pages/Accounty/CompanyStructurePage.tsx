@@ -15,7 +15,8 @@ import {
 } from '@/hooks/accounty';
 
 export default function CompanyStructurePage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId } = useParams<{ companyId: string }>();
+  const id = companyId;
   const { toast } = useToast();
   const [tab, setTab] = useState<'sites' | 'costcenters' | 'departments'>('sites');
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());

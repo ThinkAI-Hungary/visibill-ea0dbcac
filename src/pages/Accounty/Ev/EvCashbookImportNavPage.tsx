@@ -51,7 +51,8 @@ interface GridRow {
 }
 
 export default function EvCashbookImportNavPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -333,7 +334,7 @@ export default function EvCashbookImportNavPage() {
       });
 
       // Clear the grid and navigate back to cashbook
-      navigate(`/accounty/client/${id}/ev/cashbook?year=${taxYear}`);
+      navigate(`/accounty/${id}/${dateRange}/ev/cashbook?year=${taxYear}`);
     } catch (err: any) {
       toast({
         title: 'Hiba történt',
@@ -355,7 +356,7 @@ export default function EvCashbookImportNavPage() {
     <div className="w-full space-y-6 pb-24 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/client/${id}/ev/cashbook?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -592,7 +593,7 @@ export default function EvCashbookImportNavPage() {
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
-              onClick={() => navigate(`/accounty/client/${id}/ev/cashbook?year=${taxYear}`)}
+              onClick={() => navigate(`/accounty/${id}/${dateRange}/ev/cashbook?year=${taxYear}`)}
               className="border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               Mégse

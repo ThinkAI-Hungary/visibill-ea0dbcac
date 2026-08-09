@@ -32,7 +32,8 @@ function escapeXml(str: string): string {
 }
 
 export default function EvHipaReturnPage() {
-  const { id } = useParams<{ id: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const id = companyId;
   const { data: client } = useAccountyClient(id);
   const { data: company } = useQuery({
     queryKey: ['company-detail', id],
@@ -265,7 +266,7 @@ export default function EvHipaReturnPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/client/${id}/ev`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
+        <Link to={`/accounty/${id}/${dateRange}/ev`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
         <ChevronRight className="w-3 h-3" />
         <span className="text-slate-900 dark:text-slate-100 font-medium">HIPA bevallás</span>
       </div>

@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
-import { PreviewTable, type FullReportData } from './ReportHelpers';
+import { PreviewTable } from './ReportHelpers';
+import { type FullReportData } from '@/hooks/accounty';
 
 type ReportType = 'havi' | 'afa' | 'koltseg' | 'cashflow' | 'partner' | 'hianyzo';
 
