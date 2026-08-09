@@ -129,3 +129,10 @@
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-049 | NAV Szinkronizálás Dátumtartomány Választó Modal UX (preset gombok, progress bar) | ✅ Decided | [P-049](./P-049-nav-sync-dialog-ux.md) |
+
+## 💼 Projektek
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-050 | Projekt interaktív folyamatábra (Flowchart) UX és logika | ✅ Decided | [P-050](./P-050-project-flowchart-ux.md) |
+

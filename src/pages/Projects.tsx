@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users, BarChart3, FileText, Settings, Search, Check, ChevronDown } from 'lucide-react';
+import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users, BarChart3, FileText, Settings, Search, Check, ChevronDown, GitBranch } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -28,6 +28,7 @@ import { useProjectLaborCosts } from '@/hooks/useProjectLaborCosts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { IconPicker, ColorPicker, resolveIcon } from '@/components/IconPicker';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProjectFlowchart } from '@/components/ProjectFlowchart';
 
 const ProjectSkeleton = () => {
   return (
@@ -45,7 +46,7 @@ const ProjectSkeleton = () => {
         </div>
 
         {/* Cards Grid Skeleton */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="flex flex-col overflow-hidden border shadow-sm h-[435px]">
               <div className="flex flex-1">
@@ -152,6 +153,7 @@ const Projects = () => {
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [modalSelectedInvoices, setModalSelectedInvoices] = useState<Set<string>>(new Set());
+  const [selectedFlowchartProject, setSelectedFlowchartProject] = useState<Project | null>(null);
   
   // Track active tab for each project (defaulting to 'overview')
   const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'invoices' | 'settings'>>({});
@@ -304,6 +306,7 @@ const Projects = () => {
           .from('projects')
           .update({
             name: targetProj.name,
+            project_code: targetProj.project_code?.trim() || null,
             description: targetProj.description,
             client_name: targetProj.client_name,
             status: targetProj.status,
@@ -331,6 +334,7 @@ const Projects = () => {
             user_id: user.id,
             company_id: selectedCompany?.id,
             name: targetProj.name,
+            project_code: targetProj.project_code?.trim() || undefined,
             description: targetProj.description,
             client_name: targetProj.client_name,
             status: targetProj.status,
@@ -555,6 +559,17 @@ const Projects = () => {
     return <ProjectSkeleton />;
   }
 
+  if (selectedFlowchartProject) {
+    return (
+      <div className="container mx-auto px-4 py-8 page-animate">
+        <ProjectFlowchart
+          project={selectedFlowchartProject}
+          onBack={() => setSelectedFlowchartProject(null)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 page-animate">
       <div className="space-y-6">
@@ -574,7 +589,7 @@ const Projects = () => {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <p className="text-muted-foreground font-medium text-sm">A projekt kártyán tabfülek választják szét az áttekintést és a számla-kezelést</p>
+            <p className="text-muted-foreground font-medium text-sm">A projekt kártyán tabfülek választják szét az áttekintést és a számla-kezelést. A projektek nevére kattintva egy részletesebb nézetre lehet navigálni.</p>
           </div>
           <Button
             onClick={() => {
@@ -592,7 +607,7 @@ const Projects = () => {
 
 
         {/* Projects List with Concept 3 tabs styling */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
           {projects.length === 0 ? (
             <Card className="col-span-full">
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -654,7 +669,7 @@ const Projects = () => {
                     
                     <div className="flex-1 flex flex-col">
                       {/* Card Header area */}
-                      <div className="p-4 border-b">
+                      <div className="p-4 border-b group">
                         <div className="flex items-start justify-between">
                           <div className="min-w-0 flex-1 flex items-center gap-3">
                             {/* Icon container */}
@@ -672,11 +687,15 @@ const Projects = () => {
                             })()}
 
                             <div className="min-w-0 flex-1">
-                              <h3 className="text-base font-semibold truncate text-foreground">{project.name}</h3>
+                              <h3 
+                                className="text-base font-semibold truncate text-foreground flex items-center gap-1.5 cursor-pointer hover:text-primary transition-colors w-fit"
+                                onClick={() => setSelectedFlowchartProject(project)}
+                              >
+                                {project.name}
+                                <GitBranch className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-100 transition-all duration-200 transform -translate-x-1 group-hover:translate-x-0 shrink-0" />
+                              </h3>
                               <div className="flex flex-wrap gap-x-2 gap-y-0.5 items-center mt-1 text-xs text-muted-foreground font-medium">
                                 <span className="font-mono">{project.project_code || 'Kód nélkül'}</span>
-                                <span>•</span>
-                                <span>{project.client_name || 'Belső projekt'}</span>
                                 {project.start_date && (
                                   <>
                                     <span>•</span>
@@ -982,6 +1001,31 @@ const Projects = () => {
                 placeholder="pl. Weboldal fejlesztés"
                 value={editingProject?.name || ''}
                 onChange={(e) => setEditingProject(prev => prev ? { ...prev, name: e.target.value } : null)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="edit-code">Projekt kód (opcionális)</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[280px]">
+                      <p className="text-xs">
+                        Ha üresen hagyod, a rendszer automatikusan legenerál egy egyedi kódot (pl. PRJ-202606-0022). Kitöltve megadhatod a saját belső projektazonosítódat.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Input
+                id="edit-code"
+                placeholder="pl. PRJ-2026-001 (üresen hagyva automatikus)"
+                value={editingProject?.project_code || ''}
+                onChange={(e) => setEditingProject(prev => prev ? { ...prev, project_code: e.target.value } : null)}
+                disabled={!!editingProject?.id}
               />
             </div>
 
