@@ -1351,7 +1351,7 @@ const Auth = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className={cn(
                       "pl-10 bg-white dark:bg-secondary/30 border focus:ring-2 focus:ring-primary/20 transition-colors",
-                      password.length > 0 && !(/[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[._?@>]/.test(password))
+                      password.length > 0 && !(/[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[._?@>!#$~%^&*()\-+=]/.test(password))
                         ? "border-amber-400 dark:border-amber-500"
                         : "border-slate-200 dark:border-slate-800 focus:border-primary"
                     )}
@@ -1365,7 +1365,7 @@ const Auth = () => {
                       { label: 'Nagybetű (A-Z)', valid: /[A-Z]/.test(password) },
                       { label: 'Kisbetű (a-z)', valid: /[a-z]/.test(password) },
                       { label: 'Szám (0-9)', valid: /\d/.test(password) },
-                      { label: 'Speciális (._?@>)', valid: /[._?@>]/.test(password) },
+                      { label: 'Speciális (._?@>!#$~%^&*()+-=)', valid: /[._?@>!#$~%^&*()\-+=]/.test(password) },
                     ].map((rule) => (
                       <div key={rule.label} className="flex items-center gap-1.5">
                         <div className={cn(
@@ -1418,7 +1418,7 @@ const Auth = () => {
                   /[A-Z]/.test(password) &&
                   /[a-z]/.test(password) &&
                   /\d/.test(password) &&
-                  /[._?@>]/.test(password) &&
+                  /[._?@>!#$~%^&*()\-+=]/.test(password) &&
                   password === confirmPassword
                 )}
               >

@@ -94,12 +94,12 @@ const ResetPassword = () => {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumber = /\d/.test(password);
-    const hasSpecialChar = /[._?@>]/.test(password);
+    const hasSpecialChar = /[._?@>!#$~%^&*()\-+=]/.test(password);
 
     if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
       toast({
         title: 'Gyenge jelszó',
-        description: 'A jelszónak tartalmaznia kell kisbetűt, nagybetűt, számot és speciális karaktert (._?@>).',
+        description: 'A jelszónak tartalmaznia kell kisbetűt, nagybetűt, számot és speciális karaktert (._?@>!#$~%^&*()+-=).',
         variant: 'destructive'
       });
       return;
@@ -262,7 +262,7 @@ const ResetPassword = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className={cn(
                   "pl-10 h-11 bg-white/80 dark:bg-[#0a1512] border focus:ring-2 focus:ring-primary/20 rounded-xl transition-colors",
-                  password.length > 0 && !(/[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[._?@>]/.test(password))
+                  password.length > 0 && !(/[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[._?@>!#$~%^&*()\-+=]/.test(password))
                     ? "border-amber-400 dark:border-amber-500"
                     : "border-slate-200 dark:border-border focus:border-primary"
                 )}
@@ -278,7 +278,7 @@ const ResetPassword = () => {
                   { label: 'Nagybetű (A-Z)', valid: /[A-Z]/.test(password) },
                   { label: 'Kisbetű (a-z)', valid: /[a-z]/.test(password) },
                   { label: 'Szám (0-9)', valid: /\d/.test(password) },
-                  { label: 'Speciális (._?@>)', valid: /[._?@>]/.test(password) },
+                  { label: 'Speciális (._?@>!#$~%^&*()+-=)', valid: /[._?@>!#$~%^&*()\-+=]/.test(password) },
                 ].map((rule) => (
                   <div key={rule.label} className="flex items-center gap-1.5">
                     <div className={cn(

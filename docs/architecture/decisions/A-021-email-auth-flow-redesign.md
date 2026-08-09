@@ -132,7 +132,7 @@ Ez teszi lehetővé, hogy a Supabase "Confirm email" setting BE legyen kapcsolva
 
 ### 7. Jelszó Komplexitás Kiterjesztése a Jelszó-visszaállításra
 
-**Döntés:** Bevezettük ugyanazt a szigorú jelszókomplexitási szabályt (nagybetű, kisbetű, szám, speciális karakter `[._?@>]`, minimum 6 karakter) a jelszó-visszaállító felületen (`ResetPassword.tsx`), amelyet regisztrációkor is megkövetelünk.
+**Döntés:** Bevezettük ugyanazt a szigorú jelszókomplexitási szabályt (nagybetű, kisbetű, szám, speciális karakter `[._?@>!#$~%^&*()\-+=]`, minimum 6 karakter) a jelszó-visszaállító felületen (`ResetPassword.tsx`), amelyet regisztrációkor is megkövetelünk.
 
 **Implementáció:**
 - Valós idejű komplexitási indikátor pöttyöket biztosítunk a jelszómező alatt.
