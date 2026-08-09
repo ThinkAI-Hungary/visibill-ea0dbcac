@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "src/components/AppSidebar.tsx": {
-    "mtime": 1784871484.779505,
-    "ast_hash": "540a9006aa1266c2111546513bc0623e",
+    "mtime": 1786281451.8714173,
+    "ast_hash": "98c912e442444c434a0afe682361354e",
     "semantic_hash": ""
   },
   "src/components/AssetActivationDialog.tsx": {
@@ -190,8 +190,8 @@
     "semantic_hash": ""
   },
   "src/components/ProductTour.tsx": {
-    "mtime": 1781445891.2928543,
-    "ast_hash": "bec2715927d927f0558a15767ea7270c",
+    "mtime": 1786281590.1045802,
+    "ast_hash": "6a5979594418440fb2623ffc770dbc72",
     "semantic_hash": ""
   },
   "src/components/ProductTourTooltip.tsx": {
@@ -1450,8 +1450,8 @@
     "semantic_hash": ""
   },
   "src/pages/Auth.tsx": {
-    "mtime": 1784407354.4509275,
-    "ast_hash": "3e9cc2371222a1073e70cf978661394d",
+    "mtime": 1786280634.7981253,
+    "ast_hash": "72d03ba5271415d8073b947cf401ac9f",
     "semantic_hash": ""
   },
   "src/pages/AuthCallback.tsx": {
@@ -1545,8 +1545,8 @@
     "semantic_hash": ""
   },
   "src/pages/ResetPassword.tsx": {
-    "mtime": 1784407377.9006035,
-    "ast_hash": "f62806817ea1e2c6a03ec1f68e53b7d6",
+    "mtime": 1786280639.7400024,
+    "ast_hash": "48665960969a3f665c2ebd754c664d8e",
     "semantic_hash": ""
   },
   "src/pages/SalariesPage.tsx": {
@@ -2660,7 +2660,7 @@
     "semantic_hash": "eb1b0189aa876d93fca5ec06e33daa9d"
   },
   "test-results/.last-run.json": {
-    "mtime": 1781452498.3714051,
+    "mtime": 1786280763.4793665,
     "ast_hash": "f196824657d8858bc7fa44eecbba38b1",
     "semantic_hash": "f196824657d8858bc7fa44eecbba38b1"
   },
@@ -2785,8 +2785,8 @@
     "semantic_hash": ""
   },
   "playwright-report/index.html": {
-    "mtime": 1781452498.3700998,
-    "ast_hash": "ae279ef0f2d5b65c797683374d8bd295",
+    "mtime": 1786280763.4788516,
+    "ast_hash": "6082a5b9b4ff7762bf367d46cfef09f8",
     "semantic_hash": ""
   },
   "public/robots.txt": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1785408744.8981912,
-    "ast_hash": "1a9c7fd46f003dd45d794ed9ffc0317a",
+    "mtime": 1786280829.1098526,
+    "ast_hash": "4c64e3d665063bb8da3b928126910cf4",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3410,8 +3410,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-002-product-tour.md": {
-    "mtime": 1780305936.248238,
-    "ast_hash": "605448e3c95bc6e74d0098a412788c31",
+    "mtime": 1786281519.8985393,
+    "ast_hash": "a996ccd5465a458b2256e18b2a183809",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-003-empty-state.md": {
@@ -4395,8 +4395,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-021-email-auth-flow-redesign.md": {
-    "mtime": 1784408176.4622183,
-    "ast_hash": "85dd2e9d958f9f8286ed5ab327bc5985",
+    "mtime": 1786280645.486629,
+    "ast_hash": "5288a9faa16c407da700282664888601",
     "semantic_hash": ""
   },
   "docs/architecture/shipment-matching.md": {
@@ -6725,8 +6725,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-050-project-flowchart-ux.md": {
-    "mtime": 1786277751.049169,
-    "ast_hash": "70a1849abe0f56b34ab73d6bc22ec5b6",
+    "mtime": 1786280103.0555341,
+    "ast_hash": "05a2b296284d6affa3021e4d3303cfc4",
     "semantic_hash": ""
   }
 }

@@ -215,7 +215,7 @@ function findGroupForUrl(url: string): string | null {
  * The nav items are immediately correct on first render.
  */
 export const AppSidebar = React.memo(function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpen } = useSidebar();
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { selectedCompany } = useCompany();
@@ -233,6 +233,8 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const hasNoCompany = !selectedCompany;
   const isDark = theme === "dark";
+
+  const [tourActive, setTourActive] = useState(false);
 
   // ── Open/closed state for collapsible groups ──
   // Initialize from localStorage, fallback to opening the active group
@@ -265,6 +267,22 @@ export const AppSidebar = React.memo(function AppSidebar() {
       setOpenGroups(prev => new Set([...prev, activeGroup]));
     }
   }, [pageSegment]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Listen to visibill:tour-active event to open all groups and expand sidebar
+  useEffect(() => {
+    const handleTourActive = (e: Event) => {
+      const active = (e as CustomEvent).detail;
+      setTourActive(active);
+      if (active) {
+        setOpenGroups(new Set(navigationGroups.map(g => g.key)));
+        setOpen(true);
+      }
+    };
+    window.addEventListener('visibill:tour-active', handleTourActive);
+    return () => {
+      window.removeEventListener('visibill:tour-active', handleTourActive);
+    };
+  }, [setOpen]);
 
   const toggleGroup = useCallback((key: string) => {
     setOpenGroups(prev => {
@@ -348,7 +366,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
     <Sidebar collapsible="icon" className="print:hidden">
       <SidebarContent className="select-none flex flex-col h-full overflow-hidden">
         {/* Header */}
-        <div className={`p-4 border-b border-border ${isCollapsed ? 'flex justify-center' : ''}`}>
+        <div className={`p-4 border-b border-border ${isCollapsed ? 'flex justify-center' : ''}`} data-tour="app-mode-switcher">
           <AppModeSwitcher activeMode="eaisybill" isCollapsed={isCollapsed} showToggle={hasAccountyAccess === true} />
         </div>
 
@@ -724,7 +742,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                 {!isEmployee && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                      <Button data-tour="settings" variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
                         <Link to="/settings">
                           <Settings className="h-5 w-5" />
                         </Link>
@@ -764,7 +782,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
               {!isEmployee && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" asChild className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                    <Button data-tour="settings" variant="outline" asChild className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
                       <Link to="/settings">
                         <Settings className="h-4 w-4" />
                       </Link>
@@ -786,7 +804,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
           
           {/* Sidebar Toggle */}
           <div className={`p-2 border-t border-border ${isCollapsed ? 'flex justify-center' : ''}`}>
-            <SidebarTrigger className={`hover:bg-primary/10 hover:text-primary ${isCollapsed ? '' : 'w-full'}`} />
+            <SidebarTrigger data-tour="sidebar-trigger" className={`hover:bg-primary/10 hover:text-primary ${isCollapsed ? '' : 'w-full'}`} />
           </div>
         </div>
       </SidebarContent>

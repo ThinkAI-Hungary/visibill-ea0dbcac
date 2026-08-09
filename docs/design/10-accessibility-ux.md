@@ -205,12 +205,15 @@ Külön dark mode verzió: `hsl(222 37% 10%)` háttér.
 
 **Fájl:** `components/ProductTour.tsx` + `components/ProductTourTooltip.tsx`
 
-A sidebar elemeken `data-tour` attribútumok jelölik a tour lépéseket:
+A sidebar és layout elemeken `data-tour` attribútumok jelölik a tour lépéseket:
 
 ```tsx
-<SidebarMenuItem data-tour="dashboard">
-<SidebarMenuItem data-tour="invoices">
-<div data-tour="company-selector">
+<div data-tour="app-mode-switcher">  {/* AppModeSwitcher wrapper */}
+<div data-tour="company-selector">   {/* Cégválasztó */}
+<SidebarMenuItem data-tour="dashboard"> {/* Irányítópult link */}
+<SidebarMenuItem data-tour="invoices">  {/* Számlák link */}
+<Button data-tour="settings">        {/* Beállítások gomb */}
+<SidebarTrigger data-tour="sidebar-trigger"> {/* Menü elrejtése gomb */}
 ```
 
 ---
