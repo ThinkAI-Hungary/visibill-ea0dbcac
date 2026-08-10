@@ -771,6 +771,16 @@ npm run preview      # Preview production build
 
 ## Changelog
 
+### Version 1.7.1 (2026-08-10)
+- **Tax Document Extraction Blacklist:**
+  - Implemented a content-based blacklist in the transaction extractor to reject municipal/state tax documents (such as municipal tax account statements (`adószámla kivonat`), tax directorate letters (`adóügyi igazgatóság`), or dunning letters (`fizetési felszólítás`)) from being processed as bank statements.
+  - Returns a clear rejection reason `Is this really a transaction?` which forces the job into the error/ignored state on the correct pipeline instead of generating false bank transactions.
+- **Customer/Client Number Exclusion in Invoice Extraction:**
+  - Added strict warnings to all invoice extraction system prompts (`sima_szamla.md`, `vegszamla.md`, `egyszerusitett_szamla.md`, `dijbekero_proforma.md`) to explicitly forbid extracting customer/client numbers (e.g. `customer no.`, `Kunde Nr.`, `customer ID`, `partner no.`) as the invoice number (`szamlaszam`).
+- **Min OCR Quality Fallback in MarkItDown:**
+  - Fixed a critical fallback bug in `ocr_markitdown.py` where plain text extraction returning less than 30 characters (such as basic page headers on scanned PDFs, e.g. "## Page 1") was accepted as valid and returned immediately, triggering the worker's quality gate and failing the job.
+  - Added a strict length check (`len(text.strip()) >= 30`) to force fallback to LLM Vision OCR or Direct Vision OCR when plain text extraction yields insufficient text.
+
 ### Version 1.7.0 (2026-08-10)
 - **Portfolio Page Slate & Blue Colors Realignment:**
   - Fully eliminated remaining hardcoded `slate`, `blue`, and `sky` background, border, and text classes across the main Portfolio dashboard, sub-pages, and tab modules, replacing them with dynamic design system theme variables to create a premium onyx look.
