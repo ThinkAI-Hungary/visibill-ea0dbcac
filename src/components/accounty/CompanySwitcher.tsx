@@ -20,7 +20,20 @@ export function CompanySwitcher() {
 
   // Extract current company ID from URL patterns:
   // /accounty/client/:id, /accounty/payroll/:id, /accounty/missing-invoices/:id, /accounty/client/:id/...
+  // and the dynamic scoped pattern: /accounty/:companyId/:dateRange/...
   const currentCompanyId = useMemo(() => {
+    // 1. Check scoped layout format: /accounty/:companyId/:dateRange/...
+    // companyId is the first parameter after /accounty/ and it's a UUID
+    const parts = location.pathname.split('/').filter(Boolean);
+    if (parts.length >= 3 && parts[0] === 'accounty') {
+      const possibleUuid = parts[1];
+      const uuidRegex = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+      if (uuidRegex.test(possibleUuid)) {
+        return possibleUuid;
+      }
+    }
+
+    // 2. Legacy fallback
     const match = location.pathname.match(/\/accounty\/(?:client|payroll|missing-invoices)\/([^/]+)/);
     return match?.[1] ?? null;
   }, [location.pathname]);

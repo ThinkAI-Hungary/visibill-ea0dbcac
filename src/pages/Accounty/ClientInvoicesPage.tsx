@@ -16,6 +16,9 @@ import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import { exportToRLB60, exportToKulcsSoft } from '@/lib/bookkeepingExports';
+import { TAccountLedger } from '@/components/accounty/invoices/TAccountLedger';
+import { ArrowLeftRight } from 'lucide-react';
 
 export default function ClientInvoicesPage() {
   const navigate = useNavigate();
@@ -143,6 +146,7 @@ export default function ClientInvoicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [previewInvoice, setPreviewInvoice] = useState<any>(null);
+  const [selectedLedgerInvoice, setSelectedLedgerInvoice] = useState<CompanyInvoice | null>(null);
 
   // Reset page when filters change
   useEffect(() => {
@@ -169,7 +173,7 @@ export default function ClientInvoicesPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Új':
-        return <span className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold">Új</span>;
+        return <span className="px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs font-semibold">Új</span>;
       case 'Kontírozásra vár':
         return <span className="px-2.5 py-1 rounded-md bg-amber-100 text-amber-700 text-xs font-semibold">Kontírozásra vár</span>;
       case 'Kontírozott':
@@ -179,7 +183,7 @@ export default function ClientInvoicesPage() {
       case 'Problémás':
         return <span className="px-2.5 py-1 rounded-md bg-red-100 text-red-700 text-xs font-semibold">Problémás</span>;
       default:
-        return <span className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold">{status}</span>;
+        return <span className="px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs font-semibold">{status}</span>;
     }
   };
 
@@ -207,48 +211,48 @@ export default function ClientInvoicesPage() {
         <div className="flex items-start gap-4">
           <button 
             onClick={() => navigate(`/accounty/${companyId}/${dateRange}/overview`)}
-            className="flex items-center justify-center w-8 h-8 mt-1 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            className="flex items-center justify-center w-8 h-8 mt-1 shrink-0 rounded-lg border border-border bg-card text-foreground hover:bg-accent transition-colors shadow-sm"
             title="Vissza az áttekintéshez"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
           </button>
           <div>
             <div className="flex items-center gap-1.5 mb-1">
               {clientLoading ? (
-                <div className="h-3.5 w-24 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                <div className="h-3.5 w-24 bg-muted rounded animate-pulse" />
               ) : (
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client.name}</span>
+                <span className="text-xs font-semibold text-muted-foreground">{client.name}</span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Számlák</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Számlák</h1>
           </div>
         </div>
 
         <div className="flex gap-3">
           <Dialog open={isNavSyncOpen} onOpenChange={setIsNavSyncOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <Button variant="outline" className="gap-2 bg-card border-border text-foreground hover:bg-accent">
                 <RefreshCcw className="w-4 h-4" /> NAV szinkron
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden bg-card">
               <div className="p-6">
                 <DialogHeader className="mb-6">
-                  <DialogTitle className="flex items-center gap-2 text-lg text-slate-900 dark:text-slate-100 font-bold">
+                  <DialogTitle className="flex items-center gap-2 text-lg text-foreground font-bold">
                     <RefreshCcw className="w-5 h-5" />
                     NAV Online Számla szinkronizálás
                   </DialogTitle>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Számlák importálása a NAV Online Számla rendszerből</p>
+                  <p className="text-sm text-muted-foreground mt-1">Számlák importálása a NAV Online Számla rendszerből</p>
                 </DialogHeader>
 
                 {/* Status Box */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 border border-border rounded-xl p-4 mb-6">
+                <div className="bg-muted/10 border border-border rounded-xl p-4 mb-6">
                   <div className="flex justify-between items-center mb-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                      <Clock className="w-4 h-4 text-slate-400" />
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                      <Clock className="w-4 h-4 text-muted-foreground/60" />
                       Utolsó szinkronizálás:
                     </div>
-                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">2024-01-15 10:30</span>
+                    <span className="text-sm font-bold text-foreground">2024-01-15 10:30</span>
                   </div>
                   <div className="flex gap-4 text-sm font-medium">
                     <span className="text-primary">12 importálva</span>
@@ -259,10 +263,10 @@ export default function ClientInvoicesPage() {
 
                 {/* Time Range */}
                 <div className="space-y-3 mb-6">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Időszak</h3>
+                  <h3 className="text-sm font-bold text-foreground">Időszak</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Kezdő dátum</label>
+                      <label className="text-xs font-semibold text-muted-foreground">Kezdő dátum</label>
                       <Input
                         type="date"
                         value={syncDateFrom}
@@ -271,7 +275,7 @@ export default function ClientInvoicesPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Záró dátum</label>
+                      <label className="text-xs font-semibold text-muted-foreground">Záró dátum</label>
                       <Input
                         type="date"
                         value={syncDateTo}
@@ -284,21 +288,21 @@ export default function ClientInvoicesPage() {
 
                 {/* Invoice Types */}
                 <div className="space-y-3 mb-8">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Számla típusok</h3>
+                  <h3 className="text-sm font-bold text-foreground">Számla típusok</h3>
                   <div className="space-y-2.5">
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 rounded-full bg-card flex items-center justify-center shrink-0">
                         <Check className="w-3 h-3 text-white" />
                       </div>
                       <Download className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Bejövő számlák (vásárlások)</span>
+                      <span className="text-sm font-medium text-foreground">Bejövő számlák (vásárlások)</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 rounded-full bg-card flex items-center justify-center shrink-0">
                         <Check className="w-3 h-3 text-white" />
                       </div>
                       <Upload className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Kimenő számlák (értékesítések)</span>
+                      <span className="text-sm font-medium text-foreground">Kimenő számlák (értékesítések)</span>
                     </div>
                   </div>
                 </div>
@@ -306,14 +310,14 @@ export default function ClientInvoicesPage() {
                 {/* Footer Buttons */}
                 <div className="flex items-center justify-between pt-2">
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="bg-card border-border text-slate-700 dark:text-slate-300 px-6 h-10">
+                    <Button variant="outline" className="bg-card border-border text-foreground px-6 h-10">
                       Mégse
                     </Button>
                   </DialogTrigger>
                   <div className="flex items-center gap-3">
                     <Button
                       variant="outline"
-                      className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 h-10"
+                      className="gap-2 bg-card border-border text-foreground h-10"
                       onClick={() => {
                         setIsNavSyncOpen(false);
                         setIsSyncSettingsOpen(true);
@@ -343,6 +347,44 @@ export default function ClientInvoicesPage() {
             </DialogContent>
           </Dialog>
 
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2 bg-card border-border text-foreground hover:bg-accent">
+                <Download className="w-4 h-4" /> Könyvelési export <ChevronDown className="w-3.5 h-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-card border-border">
+              <DropdownMenuItem 
+                className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
+                onClick={() => {
+                  if (filteredInvoices.length === 0) {
+                    toast({ title: 'Hiba', description: 'Nincsenek exportálható számlák a jelenlegi szűrésben.', variant: 'destructive' });
+                    return;
+                  }
+                  exportToRLB60(filteredInvoices);
+                  toast({ title: 'RLB60 export sikeres', description: `${filteredInvoices.length} számla exportálva.` });
+                }}
+              >
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                RLB60 formátum (.csv)
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
+                onClick={() => {
+                  if (filteredInvoices.length === 0) {
+                    toast({ title: 'Hiba', description: 'Nincsenek exportálható számlák a jelenlegi szűrésben.', variant: 'destructive' });
+                    return;
+                  }
+                  exportToKulcsSoft(filteredInvoices);
+                  toast({ title: 'Kulcs-Soft export sikeres', description: `${filteredInvoices.length} számla exportálva.` });
+                }}
+              >
+                <Cloud className="w-4 h-4 text-muted-foreground" />
+                Kulcs-Soft formátum (.xml)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <NavSyncSettingsDialog
             open={isSyncSettingsOpen}
             onOpenChange={setIsSyncSettingsOpen}
@@ -357,17 +399,17 @@ export default function ClientInvoicesPage() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] p-6">
               <DialogHeader>
-                <DialogTitle className="text-lg text-slate-900 dark:text-slate-100 font-semibold mb-2">Számlák feltöltése</DialogTitle>
+                <DialogTitle className="text-lg text-foreground font-semibold mb-2">Számlák feltöltése</DialogTitle>
               </DialogHeader>
 
               {/* Drag & Drop Area */}
-              <div className="border border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center justify-center bg-transparent mt-2 mb-6">
-                <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                  <Cloud className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              <div className="border border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center bg-muted/5 mt-2 mb-6">
+                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <Cloud className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1.5 text-sm">Húzd ide a fájlokat vagy kattints a tallózáshoz</h3>
-                <p className="text-xs text-slate-400 mb-4">PDF, JPG, PNG (max 10 MB / fájl)</p>
-                <Button variant="outline" className="bg-card border-border text-slate-700 dark:text-slate-300 h-9 px-6 font-medium text-xs">
+                <h3 className="font-semibold text-foreground mb-1.5 text-sm">Húzd ide a fájlokat vagy kattints a tallózáshoz</h3>
+                <p className="text-xs text-muted-foreground mb-4">PDF, JPG, PNG (max 10 MB / fájl)</p>
+                <Button variant="outline" className="bg-card border-border text-foreground h-9 px-6 font-medium text-xs">
                   Tallózás
                 </Button>
               </div>
@@ -375,28 +417,28 @@ export default function ClientInvoicesPage() {
               {/* Email Option */}
               <div className="space-y-4 mb-2">
                 <div className="flex items-center gap-3 cursor-pointer group">
-                  <div className="w-4 h-4 rounded-full border border-slate-400 group-hover:border-slate-500 transition-colors flex items-center justify-center shrink-0"></div>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">E-mailből importálás</span>
+                  <div className="w-4 h-4 rounded-full border border-border group-hover:border-border/80 transition-colors flex items-center justify-center shrink-0"></div>
+                  <span className="text-sm font-semibold text-foreground">E-mailből importálás</span>
                 </div>
                 <button 
                   onClick={() => {
                     setIsUploadOpen(false);
                     setTimeout(() => setIsNavSyncOpen(true), 150); // slight delay to allow smooth transition
                   }}
-                  className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors text-left flex items-center gap-2 font-medium"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left flex items-center gap-2 font-medium"
                 >
                   NAV szinkronizálás indítása
                 </button>
               </div>
 
               {/* Footer Actions */}
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-50">
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="bg-card border-border text-slate-700 dark:text-slate-300 px-6">
+                  <Button variant="outline" className="bg-card border-border text-foreground px-6">
                     Mégse
                   </Button>
                 </DialogTrigger>
-                <Button disabled className="bg-[#8A95A5] text-white hover:bg-[#8A95A5] cursor-not-allowed px-6 opacity-80">
+                <Button disabled className="bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed px-6 opacity-80">
                   Feltöltés
                 </Button>
               </div>
@@ -410,7 +452,7 @@ export default function ClientInvoicesPage() {
         {/* Toolbar */}
         <div className="p-4 border-b border-border flex justify-between items-center bg-card">
           <div className="w-96 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Keresés számla szám, szállító..." 
               className="pl-9 bg-card border-border" 
@@ -449,27 +491,27 @@ export default function ClientInvoicesPage() {
               className={cn(
                 'flex items-center gap-1.5 px-3 h-10 rounded-md border text-xs font-semibold transition-colors',
                 fadFilter
-                  ? 'bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-400'
-                  : 'bg-card border-border text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  ? 'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300'
+                  : 'bg-card border-border text-muted-foreground hover:bg-accent'
               )}
             >
               <ShieldAlert className="w-3.5 h-3.5" />
               FAD
-              {fadCount > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 text-[10px] font-bold">{fadCount}</span>}
+              {fadCount > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] font-bold">{fadCount}</span>}
             </button>
           </div>
         </div>
 
         {/* Summary Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-b border-border bg-slate-50/40 dark:bg-slate-900/20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-b border-border bg-muted/5">
           {/* Card 1: Számlák száma */}
           <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-            <div className="bg-blue-500/10 text-blue-600 dark:text-blue-400 p-2.5 rounded-lg shrink-0">
+            <div className="bg-primary/10 text-primary p-2.5 rounded-lg shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div>
               <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Számlák száma</div>
-              <div className="text-xl font-bold tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
+              <div className="text-xl font-bold tabular-nums text-foreground mt-0.5">
                 {filteredInvoices.length} <span className="text-xs font-normal text-muted-foreground">db</span>
               </div>
             </div>
@@ -477,12 +519,12 @@ export default function ClientInvoicesPage() {
 
           {/* Card 2: Bruttó összesen */}
           <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-            <div className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-2.5 rounded-lg shrink-0">
+            <div className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 p-2.5 rounded-lg shrink-0">
               <Coins className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Bruttó összesen</div>
-              <div className="text-sm font-bold tabular-nums text-slate-900 dark:text-slate-100 mt-1 space-y-0.5">
+              <div className="text-sm font-bold tabular-nums text-foreground mt-1 space-y-0.5">
                 {Object.entries(totalsByCurrency).map(([curr, val]) => (
                   <div key={curr} className="truncate">{formatCurrency(val.gross, curr)}</div>
                 )) || <div className="text-muted-foreground font-medium">0 Ft</div>}
@@ -492,12 +534,12 @@ export default function ClientInvoicesPage() {
 
           {/* Card 3: ÁFA összesen */}
           <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-            <div className="bg-violet-500/10 text-violet-600 dark:text-violet-400 p-2.5 rounded-lg shrink-0">
+            <div className="bg-violet-500/10 text-violet-600 dark:text-violet-500 p-2.5 rounded-lg shrink-0">
               <Percent className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">ÁFA összesen</div>
-              <div className="text-sm font-bold tabular-nums text-slate-900 dark:text-slate-100 mt-1 space-y-0.5">
+              <div className="text-sm font-bold tabular-nums text-foreground mt-1 space-y-0.5">
                 {Object.entries(totalsByCurrency).map(([curr, val]) => (
                   <div key={curr} className="truncate">{formatCurrency(val.vat, curr)}</div>
                 )) || <div className="text-muted-foreground font-medium">0 Ft</div>}
@@ -509,18 +551,18 @@ export default function ClientInvoicesPage() {
           <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
             <div className={cn(
               "p-2.5 rounded-lg shrink-0 transition-colors",
-              fadCount > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
+              fadCount > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-500" : "bg-muted text-muted-foreground"
             )}>
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Fordított adózás</div>
               <div className="mt-0.5">
-                <div className="text-sm font-bold tabular-nums text-slate-900 dark:text-slate-100">
+                <div className="text-sm font-bold tabular-nums text-foreground">
                   {fadCount} <span className="text-xs font-normal text-muted-foreground">db FAD számla</span>
                 </div>
                 {fadCount > 0 && (
-                  <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium truncate mt-0.5">
+                  <div className="text-[10px] text-amber-600 dark:text-amber-500 font-medium truncate mt-0.5">
                     Nettó: {Object.entries(totalsByCurrency)
                       .filter(([_, val]) => val.fadNet > 0)
                       .map(([curr, val]) => formatCurrency(val.fadNet, curr))
@@ -535,42 +577,42 @@ export default function ClientInvoicesPage() {
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-card border-b border-border text-slate-500 dark:text-slate-400 font-medium text-xs">
+            <thead className="bg-muted/50 border-b border-border text-muted-foreground font-semibold text-xs">
               <tr>
-                <th className="px-6 py-4 w-12 text-center font-medium"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></th>
-                <th className="px-6 py-4 font-medium">Számla sorszám</th>
-                <th className="px-6 py-4 font-medium">Szállító/Vevő</th>
-                <th className="px-6 py-4 font-medium">Dátum</th>
-                <th className="px-6 py-4 font-medium text-right">Bruttó</th>
-                <th className="px-6 py-4 font-medium text-right">ÁFA</th>
-                <th className="px-6 py-4 font-medium">Státusz</th>
-                <th className="px-6 py-4 w-12 text-center font-medium"></th>
+                <th className="px-6 py-4 w-12 text-center font-semibold"><input type="checkbox" className="rounded border-border w-4 h-4 accent-primary" /></th>
+                <th className="px-6 py-4 font-semibold">Számla sorszám</th>
+                <th className="px-6 py-4 font-semibold">Szállító/Vevő</th>
+                <th className="px-6 py-4 font-semibold">Dátum</th>
+                <th className="px-6 py-4 font-semibold text-right">Bruttó</th>
+                <th className="px-6 py-4 font-semibold text-right">ÁFA</th>
+                <th className="px-6 py-4 font-semibold">Státusz</th>
+                <th className="px-6 py-4 w-12 text-center font-semibold"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border/50">
               {invoicesLoading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-500 dark:text-slate-400">
+                  <td colSpan={8} className="text-center py-12 text-muted-foreground">
                     <div className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-border border-t-primary rounded-full animate-spin"></div>
                       Számlák betöltése...
                     </div>
                   </td>
                 </tr>
               ) : filteredInvoices.length > 0 ? (
                 paginatedInvoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-slate-50/50 dark:bg-slate-900/50 transition-colors group">
-                    <td className="px-6 py-4 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></td>
-                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{inv.invoiceNumber}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{inv.partnerName}</td>
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{inv.date}</td>
-                    <td className="px-6 py-4 text-slate-900 dark:text-slate-100 font-semibold text-right">{formatCurrency(inv.grossAmount, inv.currency)}</td>
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-right">{formatCurrency(inv.vatAmount, inv.currency)}</td>
+                  <tr key={inv.id} className="hover:bg-accent/50 transition-colors group">
+                    <td className="px-6 py-4 text-center"><input type="checkbox" className="rounded border-border w-4 h-4 accent-primary" /></td>
+                    <td className="px-6 py-4 font-medium text-foreground">{inv.invoiceNumber}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{inv.partnerName}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{inv.date}</td>
+                    <td className="px-6 py-4 text-foreground font-semibold text-right">{formatCurrency(inv.grossAmount, inv.currency)}</td>
+                    <td className="px-6 py-4 text-muted-foreground text-right">{formatCurrency(inv.vatAmount, inv.currency)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5">
                         {getStatusBadge(inv.status)}
                         {inv.isReverseCharge && (
-                          <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20 whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-bold border border-amber-200 dark:border-amber-800 whitespace-nowrap">
                             FAD
                           </span>
                         )}
@@ -579,7 +621,7 @@ export default function ClientInvoicesPage() {
                     <td className="px-6 py-4 text-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 p-1 transition-colors opacity-0 group-hover:opacity-100">
+                          <button className="text-muted-foreground hover:text-foreground p-1 transition-colors opacity-0 group-hover:opacity-100">
                             <MoreVertical className="w-4 h-4" />
                           </button>
                         </DropdownMenuTrigger>
@@ -608,8 +650,15 @@ export default function ClientInvoicesPage() {
                           >
                             Megtekintés
                           </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer gap-2"
+                            onClick={() => setSelectedLedgerInvoice(inv)}
+                          >
+                            <ArrowLeftRight className="w-3.5 h-3.5 text-muted-foreground" />
+                            Főkönyvi napló (T-számlák)
+                          </DropdownMenuItem>
                           <DropdownMenuItem className="cursor-pointer">Kontírozás</DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600">Törlés</DropdownMenuItem>
+                          <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">Törlés</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -617,7 +666,7 @@ export default function ClientInvoicesPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-500 dark:text-slate-400">
+                  <td colSpan={8} className="text-center py-12 text-muted-foreground">
                     Nincs találat a megadott szűrésre.
                   </td>
                 </tr>
@@ -647,6 +696,20 @@ export default function ClientInvoicesPage() {
         open={previewInvoice !== null}
         onClose={() => setPreviewInvoice(null)}
       />
+
+      <Dialog open={selectedLedgerInvoice !== null} onOpenChange={(open) => !open && setSelectedLedgerInvoice(null)}>
+        <DialogContent className="sm:max-w-[700px] p-6 bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+              <ArrowLeftRight className="w-5 h-5 text-indigo-500" />
+              Számla főkönyvi tételei – {selectedLedgerInvoice?.invoiceNumber}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedLedgerInvoice && (
+            <TAccountLedger invoice={selectedLedgerInvoice} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

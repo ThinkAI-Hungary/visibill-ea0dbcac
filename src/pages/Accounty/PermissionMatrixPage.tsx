@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { cn } from '@/lib/utils';
 
 // ── Types ──
 interface AccountantUser {
@@ -626,21 +627,24 @@ export default function PermissionMatrixPage() {
       {activeTab === 'roles' && (
         <>
           <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
-              <table className="w-full text-sm table-fixed">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
-                    <th className="px-4 py-3 text-left font-semibold text-foreground w-[180px]">
-                      <div className="flex items-center gap-2">
+                    <th className="sticky left-0 z-20 px-4 py-3 text-left font-semibold text-foreground w-[180px] min-w-[180px] border-r border-border overflow-hidden">
+                      <div className="absolute inset-0 bg-card -z-10" />
+                      <div className="absolute inset-0 bg-muted/50 -z-10" />
+                      <div className="relative z-10 flex items-center gap-2">
                         <Users className="w-4 h-4 text-muted-foreground" />
                         Könyvelő
                       </div>
                     </th>
                     {companies.map(company => (
-                      <th key={company.id} className="px-2 py-3 text-center font-medium text-foreground">
-                        <div className="flex flex-col items-center gap-0.5">
-                          <div className="flex items-center gap-1 truncate">
+                      <th key={company.id} className="px-2 py-3 text-center font-medium text-foreground min-w-[160px] w-[160px]">
+                        <div className="flex flex-col items-center gap-0.5 max-w-[150px] mx-auto">
+                          <div className="flex items-center gap-1 w-full justify-center">
                             <Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="truncate text-xs">{company.name}</span>
+                            <span className="truncate text-xs font-semibold" title={company.name}>{company.name}</span>
                           </div>
                           {company.taxNumber && (
                             <span className="text-[10px] text-muted-foreground font-normal">{company.taxNumber}</span>
@@ -654,14 +658,20 @@ export default function PermissionMatrixPage() {
                   {filteredUsers.map((user, idx) => (
                     <tr
                       key={user.id}
-                      className={`border-b border-border/50 transition-colors hover:bg-muted/30
+                      className={`border-b border-border/50 transition-colors hover:bg-muted/30 group
                         ${idx % 2 === 0 ? '' : 'bg-muted/10'}
                       `}
                     >
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        <div>
-                          <div className="font-medium truncate">{user.name}</div>
-                          {user.email && <div className="text-[11px] text-muted-foreground">{user.email}</div>}
+                      <td className="sticky left-0 z-10 px-4 py-3 font-medium text-foreground border-r border-border overflow-hidden">
+                        <div className="absolute inset-0 bg-card -z-10" />
+                        <div className={cn(
+                          "absolute inset-0 -z-10 transition-colors",
+                          idx % 2 === 0 ? "bg-transparent" : "bg-muted/5 dark:bg-muted/10",
+                          "group-hover:bg-muted/30"
+                        )} />
+                        <div className="relative z-10">
+                          <div className="font-medium truncate max-w-[160px]">{user.name}</div>
+                          {user.email && <div className="text-[11px] text-muted-foreground truncate max-w-[160px]">{user.email}</div>}
                         </div>
                       </td>
                       {companies.map(company => {
@@ -670,7 +680,7 @@ export default function PermissionMatrixPage() {
                         const isEditing = editingCell === cellKey;
 
                         return (
-                          <td key={company.id} className="px-3 py-3 text-center relative">
+                          <td key={company.id} className="px-3 py-3 text-center relative min-w-[160px]">
                             {assignment ? (
                               <div className="relative inline-block">
                                 <RoleBadge
@@ -719,6 +729,7 @@ export default function PermissionMatrixPage() {
                   )}
                 </tbody>
               </table>
+            </div>
           </div>
 
           {/* Legend */}
@@ -744,8 +755,10 @@ export default function PermissionMatrixPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
-                    <th className="sticky left-0 z-20 bg-muted/80 backdrop-blur px-4 py-3 text-left font-semibold text-foreground min-w-[200px]">
-                      <div className="flex items-center gap-2">
+                    <th className="sticky left-0 z-20 px-4 py-3 text-left font-semibold text-foreground min-w-[200px] border-r border-border overflow-hidden">
+                      <div className="absolute inset-0 bg-card -z-10" />
+                      <div className="absolute inset-0 bg-muted/50 -z-10" />
+                      <div className="relative z-10 flex items-center gap-2">
                         <Users className="w-4 h-4 text-muted-foreground" />
                         Könyvelő
                       </div>
@@ -763,13 +776,21 @@ export default function PermissionMatrixPage() {
                     return (
                       <tr
                         key={user.id}
-                        className={`border-b border-border/50 transition-colors hover:bg-muted/30
+                        className={`border-b border-border/50 transition-colors hover:bg-muted/30 group
                           ${idx % 2 === 0 ? '' : 'bg-muted/10'}
                         `}
                       >
-                        <td className="sticky left-0 z-10 bg-card px-4 py-3 font-medium text-foreground">
-                          <div className="font-medium">{user.name}</div>
-                          <div className="text-[10px] text-muted-foreground">{ROLE_LABELS[role]}</div>
+                        <td className="sticky left-0 z-10 px-4 py-3 font-medium text-foreground border-r border-border overflow-hidden">
+                          <div className="absolute inset-0 bg-card -z-10" />
+                          <div className={cn(
+                            "absolute inset-0 -z-10 transition-colors",
+                            idx % 2 === 0 ? "bg-transparent" : "bg-muted/5 dark:bg-muted/10",
+                            "group-hover:bg-muted/30"
+                          )} />
+                          <div className="relative z-10">
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-[10px] text-muted-foreground">{ROLE_LABELS[role]}</div>
+                          </div>
                         </td>
                         {CONFIGURABLE_MODULES.map(mod => {
                           const perm = getModulePerm(user.id, mod.key);

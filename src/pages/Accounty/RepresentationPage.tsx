@@ -411,9 +411,9 @@ export default function RepresentationPage() {
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <Link 
-            to={`/accounty/${companyId}/${dateRange}/settings`}
+            to={`/accounty/${companyId}/${dateRange}/overview`}
             className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
-            title="Vissza a beállításokhoz"
+            title="Vissza az áttekintéshez"
           >
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </Link>

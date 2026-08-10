@@ -166,7 +166,17 @@ export default function ClientDetailsPage() {
   // Deadlines for this company
   const { data: allDeadlines } = useAccountyDeadlines();
   const companyDeadlines = useMemo(() => {
-    return (allDeadlines || []).filter(d => d.companyId === id && d.status !== 'completed');
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return (allDeadlines || []).filter(d => {
+      if (d.companyId !== id || d.status === 'completed') return false;
+      const dueDate = new Date(d.dueDate);
+      const diffMs = dueDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      // If overdue by more than 30 days, it is no longer relevant
+      if (diffDays < -30) return false;
+      return true;
+    });
   }, [allDeadlines, id]);
 
   // Sync Supabase comm prefs → local state
@@ -221,6 +231,31 @@ export default function ClientDetailsPage() {
 
   // Real invoices
   const { data: companyInvoices } = useCompanyInvoices(id || '');
+
+  const unprocessedCount = useMemo(() => {
+    if (!companyInvoices) return 0;
+    return companyInvoices.filter(inv => inv.status === 'Új').length;
+  }, [companyInvoices]);
+
+  const awaitingCodingCount = useMemo(() => {
+    if (!companyInvoices) return 0;
+    return companyInvoices.filter(inv => inv.status === 'Kontírozásra vár').length;
+  }, [companyInvoices]);
+
+  const estimatedVatBalance = useMemo(() => {
+    if (!companyInvoices) return 0;
+    let balance = 0;
+    companyInvoices.forEach(inv => {
+      const val = inv.vatAmount || 0;
+      if (inv.type === 'kimeno') {
+        balance += val;
+      } else if (inv.type === 'bejovo') {
+        balance -= val;
+      }
+    });
+    return balance;
+  }, [companyInvoices]);
+
   const invoiceData = useMemo(() => {
     if (!companyInvoices) return [];
     return companyInvoices.slice(0, 5).map((inv) => {
@@ -365,52 +400,54 @@ export default function ClientDetailsPage() {
           {/* KPI Cards */}
           <div className="grid grid-cols-4 gap-4">
             <div 
-              className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1"
+              className="bg-card rounded-xl border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1"
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Feldolgozatlan számlák</h3>
-                <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                <h3 className="text-sm font-medium text-muted-foreground">Feldolgozatlan számlák</h3>
+                <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center">
                   <FileText className="w-4 h-4 text-amber-500" />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">0</div>
+              <div className="text-3xl font-bold text-foreground">{unprocessedCount}</div>
             </div>
 
             <div 
-              className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1"
+              className="bg-card rounded-xl border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1"
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Kontírozásra vár</h3>
-                <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                <h3 className="text-sm font-medium text-muted-foreground">Kontírozásra vár</h3>
+                <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
                   <FileCheck className="w-4 h-4 text-blue-500" />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">0</div>
+              <div className="text-3xl font-bold text-foreground">{awaitingCodingCount}</div>
             </div>
 
             <div 
-              className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1"
+              className="bg-card rounded-xl border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1"
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'missing-invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Hiányzó számlák</h3>
-                <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
+                <h3 className="text-sm font-medium text-muted-foreground">Hiányzó számlák</h3>
+                <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/40 flex items-center justify-center">
                   <FileWarning className="w-4 h-4 text-red-500" />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{missingCount}</div>
+              <div className="text-3xl font-bold text-foreground">{missingCount}</div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1">
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">ÁFA egyenleg (becsült)</h3>
-                <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                <h3 className="text-sm font-medium text-muted-foreground">ÁFA egyenleg (becsült)</h3>
+                <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center">
                   <TrendingUp className="w-4 h-4 text-emerald-500" />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">245,000 Ft</div>
+              <div className="text-3xl font-bold text-foreground">
+                {new Intl.NumberFormat('hu-HU').format(estimatedVatBalance)} Ft
+              </div>
             </div>
           </div>
 
@@ -418,25 +455,25 @@ export default function ClientDetailsPage() {
           <div className="grid grid-cols-3 gap-4">
             <Button 
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
-              className="h-14 bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 text-white rounded-xl text-base font-semibold flex items-center justify-center gap-2"
+              className="h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-base font-semibold flex items-center justify-center gap-2"
             >
               <FileCheck className="w-5 h-5" />
               Számlák feldolgozása
             </Button>
             <Button 
               variant="outline" 
-              className="h-14 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl text-base font-semibold flex items-center justify-center gap-2"
+              className="h-14 bg-card border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl text-base font-semibold flex items-center justify-center gap-2"
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'missing-invoices'))}
             >
-              <AlertTriangle className="w-5 h-5 text-slate-400" />
+              <AlertTriangle className="w-5 h-5 text-muted-foreground" />
               Hiányzók bekérése
             </Button>
             <Button 
               variant="outline" 
-              className="h-14 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl text-base font-semibold flex items-center justify-center gap-2"
+              className="h-14 bg-card border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl text-base font-semibold flex items-center justify-center gap-2"
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'reports'))}
             >
-              <UploadCloud className="w-5 h-5 text-slate-400" />
+              <UploadCloud className="w-5 h-5 text-muted-foreground" />
               Riport generálása
             </Button>
           </div>
@@ -444,20 +481,21 @@ export default function ClientDetailsPage() {
           {/* Gyors elérés — korábban csak a Bérszámfejtés fülről volt elérhető */}
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
             {[
-              { label: 'Cégkapu / KÜNY', path: pathname.replace(/(?:overview|settings|profile)$/, 'settings#cegkapu'), icon: '' },
-              { label: 'NAV meghatalmazás', path: pathname.replace(/(?:overview|settings|profile)$/, 'representation'), icon: '' },
-              { label: 'Iratkezelés & GDPR', path: pathname.replace(/(?:overview|settings|profile)$/, 'data-retention'), icon: '' },
-              { label: 'NAV bevallások', path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/filings'), icon: '' },
-              { label: 'Bérezési struktúra', path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/structure'), icon: '' },
-              { label: 'Paramétertábla', path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/tax-params'), icon: '' },
+              { label: 'Cégkapu / KÜNY', path: pathname.replace(/(?:overview|settings|profile)$/, 'cegkapu') },
+              { label: 'NAV meghatalmazás', path: pathname.replace(/(?:overview|settings|profile)$/, 'representation') },
+              { label: 'Iratkezelés & GDPR', path: pathname.replace(/(?:overview|settings|profile)$/, 'data-retention') },
+              { label: 'NAV bevallások', path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/filings') },
+              { label: 'Bérezési struktúra', path: pathname.replace(/(?:overview|settings|profile)$/, 'structure') },
+              { label: 'Paramétertábla', path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/tax-params') },
             ].map((link) => (
               <button
                 key={link.label}
                 onClick={() => navigate(link.path)}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-200 group"
+                className="flex items-center justify-center p-3 h-14 rounded-xl bg-card border border-border shadow-sm hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-200 group text-center"
               >
-                <span className="text-xl">{link.icon}</span>
-                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 group-hover:text-primary transition-colors text-center leading-tight">{link.label}</span>
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors text-center leading-tight">
+                  {link.label}
+                </span>
               </button>
             ))}
           </div>
@@ -621,7 +659,7 @@ export default function ClientDetailsPage() {
                   {grouped.map(({ category, meta, items }) => (
                     <div
                       key={category}
-                      className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-3 min-h-[200px]"
+                      className="bg-muted/30 border border-border rounded-xl p-4 flex flex-col gap-3 min-h-[200px]"
                     >
                       {/* Column header with count */}
                       <div className="flex items-center justify-between mb-1">
@@ -651,10 +689,10 @@ export default function ClientDetailsPage() {
                               <div
                                 key={item.id}
                                 className={cn(
-                                  'bg-white dark:bg-slate-900 border rounded-lg transition-all duration-200',
+                                  'bg-card border rounded-lg transition-all duration-200',
                                   isExpanded
-                                    ? 'border-slate-300 dark:border-slate-700 shadow-md'
-                                    : 'border-slate-200 dark:border-slate-800 shadow-sm hover:border-slate-300 dark:hover:border-slate-700'
+                                    ? 'border-border/80 shadow-md'
+                                    : 'border-border shadow-sm hover:border-border/80'
                                 )}
                               >
                                 {/* Card header – always visible */}
@@ -826,13 +864,13 @@ export default function ClientDetailsPage() {
             <RecentActivities companyId={client?.id} />
 
             {/* Upcoming Deadlines */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-              <div className="p-5 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100">Következő határidők</h3>
+            <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col">
+              <div className="p-5 border-b border-border">
+                <h3 className="font-semibold text-foreground">Következő határidők</h3>
               </div>
               <div className="p-4 space-y-3 flex-1">
                 {companyDeadlines.length === 0 ? (
-                  <div className="flex items-center justify-center h-32 text-sm text-slate-400 dark:text-slate-500">
+                  <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
                     Nincs közelgő határidő
                   </div>
                 ) : (
@@ -850,20 +888,20 @@ export default function ClientDetailsPage() {
                         className={cn(
                           "border rounded-xl p-4 flex items-center justify-between",
                           isOverdue
-                            ? "border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-900/20"
-                            : "border-slate-100 dark:border-slate-800 dark:bg-slate-900/50"
+                            ? "border-red-200 dark:border-red-950/40 bg-red-50/10 dark:bg-red-950/20"
+                            : "border-border bg-muted/20"
                         )}
                       >
                         <div className="flex items-center gap-4">
                           <div className={cn(
-                            "w-10 h-10 rounded-full bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center shrink-0",
-                            isOverdue ? "border border-red-100 dark:border-red-900/50" : "border border-slate-200 dark:border-slate-800"
+                            "w-10 h-10 rounded-full bg-card shadow-sm flex items-center justify-center shrink-0 border",
+                            isOverdue ? "border-red-100 dark:border-red-950/50" : "border-border"
                           )}>
-                            <Clock className={cn("w-5 h-5", isOverdue ? "text-red-500" : "text-slate-500 dark:text-slate-400")} />
+                            <Clock className={cn("w-5 h-5", isOverdue ? "text-red-500" : "text-muted-foreground")} />
                           </div>
                           <div>
-                            <p className={cn("text-sm font-semibold", isOverdue ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-slate-100")}>{label}</p>
-                            <p className={cn("text-xs", isOverdue ? "text-red-500/80 dark:text-red-400/60" : "text-slate-500 dark:text-slate-400")}>
+                            <p className={cn("text-sm font-semibold", isOverdue ? "text-red-600 dark:text-red-400" : "text-foreground")}>{label}</p>
+                            <p className={cn("text-xs", isOverdue ? "text-red-500/80 dark:text-red-400/60" : "text-muted-foreground")}>
                               {dueDate.toLocaleDateString('hu-HU')}
                             </p>
                           </div>
@@ -875,13 +913,13 @@ export default function ClientDetailsPage() {
                               ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400"
                               : diffDays <= 3
                                 ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
-                                : "bg-slate-200/50 text-slate-600 dark:text-slate-400"
+                                : "bg-muted text-muted-foreground"
                           )}>
                             {isOverdue ? `${Math.abs(diffDays)} napja lejárt` : `${diffDays} nap`}
                           </div>
                           <button
                             onClick={() => completeDeadlineMutation.mutate(dl.id)}
-                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
                             title="Megjelölés késznek"
                           >
                             <Check className="w-4 h-4" />
@@ -1085,23 +1123,23 @@ function RecentActivities({ companyId }: { companyId?: string }) {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-      <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100">Legutóbbi tevékenységek</h3>
+    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col">
+      <div className="p-5 border-b border-border flex justify-between items-center">
+        <h3 className="font-semibold text-foreground">Legutóbbi tevékenységek</h3>
         {logs.length > 0 && (
-          <span className="text-[10px] font-bold text-slate-400 uppercase">{logs.length} bejegyzés</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase">{logs.length} bejegyzés</span>
         )}
       </div>
       <div className="p-2 flex-1">
         {isLoading && (
           <div className="flex items-center justify-center py-6">
-            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         )}
         {!isLoading && logs.length === 0 && (
           <div className="text-center py-6">
-            <Clock className="w-6 h-6 mx-auto mb-2 text-slate-300" />
-            <p className="text-sm text-slate-400">Még nincs tevékenység</p>
+            <Clock className="w-6 h-6 mx-auto mb-2 text-muted-foreground/60" />
+            <p className="text-sm text-muted-foreground">Még nincs tevékenység</p>
           </div>
         )}
         {logs.map(log => {
@@ -1110,16 +1148,16 @@ function RecentActivities({ companyId }: { companyId?: string }) {
           const details = log.details as any;
           const detailText = (details?.description || details?.item_title || details?.deadline_title || '') as string;
           return (
-            <div key={log.id} className="flex items-start gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
+            <div key={log.id} className="flex items-start gap-4 p-3 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors">
               <div className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5', meta.bg)}>
                 <Icon className={cn('w-4 h-4', meta.iconColor)} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {meta.label}
-                  {detailText && <span className="font-normal text-slate-500"> — {detailText}</span>}
+                  {detailText && <span className="font-normal text-muted-foreground"> — {detailText}</span>}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   {formatDate(log.createdAt)}
                   {log.userName && log.userName !== 'Ismeretlen' && <span className="ml-1.5">· {log.userName}</span>}
                 </p>

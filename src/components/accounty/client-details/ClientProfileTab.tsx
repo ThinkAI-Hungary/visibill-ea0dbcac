@@ -81,23 +81,23 @@ export default function ClientProfileTab({
       <div className="grid grid-cols-2 gap-6">
         {/* Cég adatok */}
         <div className="bg-card rounded-xl border border-border shadow-soft p-6">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Cég adatok</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">Cég adatok</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Cégnév</label>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-border">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Cégnév</label>
+              <p className="text-sm font-semibold text-foreground bg-muted/20 px-3 py-2 rounded-lg border border-border">
                 {client.name}
               </p>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Adószám</label>
-              <p className="text-sm font-mono font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-border">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Adószám</label>
+              <p className="text-sm font-mono font-semibold text-foreground bg-muted/20 px-3 py-2 rounded-lg border border-border">
                 {client.taxNumber || '–'}
               </p>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Visibill azonosító</label>
-              <p className="text-xs font-mono text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-border">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Visibill azonosító</label>
+              <p className="text-xs font-mono text-muted-foreground bg-muted/20 px-3 py-2 rounded-lg border border-border">
                 {client.id}
               </p>
             </div>
@@ -106,35 +106,35 @@ export default function ClientProfileTab({
 
         {/* Kapcsolattartó */}
         <div className="bg-card rounded-xl border border-border shadow-soft p-6">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Kapcsolattartó</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">Kapcsolattartó</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Kapcsolattartó neve</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Kapcsolattartó neve</label>
               <input
                 type="text"
                 value={notifPrefs.contactName}
                 onChange={(e) => setNotifPrefs({ ...notifPrefs, contactName: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg border border-border bg-card text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="Kapcsolattartó neve"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">E-mail cím</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">E-mail cím</label>
               <input
                 type="email"
                 value={notifPrefs.contactEmail}
                 onChange={(e) => setNotifPrefs({ ...notifPrefs, contactEmail: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg border border-border bg-card text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="ugyfel@pelda.hu"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Telefonszám</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Telefonszám</label>
               <input
                 type="tel"
                 value={notifPrefs.contactPhone}
                 onChange={(e) => setNotifPrefs({ ...notifPrefs, contactPhone: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg border border-border bg-card text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="+36 30 123 4567"
               />
             </div>
@@ -153,23 +153,23 @@ export default function ClientProfileTab({
       {/* Tax profile summary */}
       {taxProfileData && (
         <div className="bg-card rounded-xl border border-border shadow-soft p-6">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Adóprofil összefoglaló</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">Adóprofil összefoglaló</h3>
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">ÁFA típus</p>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <div className="bg-muted/10 border border-border rounded-lg p-4">
+              <p className="text-xs font-medium text-muted-foreground mb-1">ÁFA típus</p>
+              <p className="text-sm font-semibold text-foreground">
                 {taxProfileData.vatType === 'normal' ? 'Általános' : taxProfileData.vatType === 'kata' ? 'KATA' : taxProfileData.vatType}
               </p>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">ÁFA gyakoriság</p>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <div className="bg-muted/10 border border-border rounded-lg p-4">
+              <p className="text-xs font-medium text-muted-foreground mb-1">ÁFA gyakoriság</p>
+              <p className="text-sm font-semibold text-foreground">
                 {taxProfileData.vatFrequency === 'monthly' ? 'Havi' : taxProfileData.vatFrequency === 'quarterly' ? 'Negyedéves' : taxProfileData.vatFrequency === 'annual' ? 'Éves' : taxProfileData.vatFrequency}
               </p>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Iparűzési adó</p>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <div className="bg-muted/10 border border-border rounded-lg p-4">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Iparűzési adó</p>
+              <p className="text-sm font-semibold text-foreground">
                 {taxProfileData.localTaxLiable ? 'Igen' : 'Nem'}
               </p>
             </div>

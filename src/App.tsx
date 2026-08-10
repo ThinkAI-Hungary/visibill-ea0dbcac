@@ -628,6 +628,12 @@ const App = () => (
                        <Route index element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyApp /></Suspense>} />
                        
                        {/* Legacy redirects & fallbacks */}
+                       <Route path="client/:id" element={<AccountyLegacyClientRedirect />} />
+                       <Route path="client/:id/*" element={<AccountyLegacyClientRedirect />} />
+                       <Route path="payroll/:id" element={<PayrollLegacyRedirect />} />
+                       <Route path="payroll/:id/*" element={<PayrollLegacyRedirect />} />
+                       <Route path="missing-invoices/:id" element={<MissingInvoicesLegacyRedirect />} />
+                       <Route path="missing-invoices/:id/*" element={<MissingInvoicesLegacyRedirect />} />
                        <Route path="client/:id/ev" element={<AccountyLegacyClientRedirect />} />
                        <Route path="client/:id/ev/*" element={<AccountyLegacyClientRedirect />} />
                        <Route path="client/:id/tao" element={<AccountyLegacyClientRedirect />} />
@@ -742,6 +748,7 @@ const App = () => (
                          <Route path="ev/cashbook/import-nav" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvCashbookImportNavPage /></Suspense>} />
                          <Route path="ev/depreciation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvDepreciationPage /></Suspense>} />
                          <Route path="ev/kata" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvKataPage /></Suspense>} />
+                         <Route path="ev/thresholds" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvThresholdMonitorPage /></Suspense>} />
                          <Route path="ev/compare" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvComparePage /></Suspense>} />
                          <Route path="ev/contributions" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvContributionsPage /></Suspense>} />
                          <Route path="ev/hipa" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvHipaPage /></Suspense>} />

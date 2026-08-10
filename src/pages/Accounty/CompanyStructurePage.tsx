@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Building, MapPin, Plus, Edit2, Trash2, ChevronDown, ChevronRight,
-  Users, FolderTree, Layers, Save, X, Loader2
+  Users, FolderTree, Layers, Save, X, Loader2, ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,8 +15,9 @@ import {
 } from '@/hooks/accounty';
 
 export default function CompanyStructurePage() {
-  const { companyId } = useParams<{ companyId: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [tab, setTab] = useState<'sites' | 'costcenters' | 'departments'>('sites');
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
@@ -195,16 +196,22 @@ export default function CompanyStructurePage() {
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link to={`/accounty/client/${id}`} className="p-2 rounded-lg hover:bg-muted transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg shadow-amber-500/25">
-          <Building className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Bérezési struktúra</h1>
-          <p className="text-sm text-slate-500">Telephelyek, költséghelyek, részlegek</p>
+      <div className="flex items-start gap-4">
+        <button 
+          onClick={() => navigate(`/accounty/${id}/${dateRange}/overview`)}
+          className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+          title="Vissza az áttekintéshez"
+        >
+          <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+        </button>
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg shadow-amber-500/25">
+            <Building className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Bérezési struktúra</h1>
+            <p className="text-sm text-slate-500">Telephelyek, költséghelyek, részlegek</p>
+          </div>
         </div>
       </div>
 

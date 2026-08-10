@@ -2,6 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Settings, Clock, ChevronRight } from 'lucide-react';
 
+import { SzochoAdvisor } from '@/components/accounty/payroll/SzochoAdvisor';
+
 interface ClientPayrollTabProps {
   client: { id: string; name: string };
 }
@@ -11,6 +13,9 @@ export default function ClientPayrollTab({ client }: ClientPayrollTabProps) {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* SzochoAdvisor */}
+      <SzochoAdvisor companyId={client.id} />
+
       {/* Quick actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <button

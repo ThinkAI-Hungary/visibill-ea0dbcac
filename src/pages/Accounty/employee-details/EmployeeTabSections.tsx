@@ -330,7 +330,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                     <div className="mt-1 space-y-0.5 text-[11px] text-slate-600 dark:text-slate-400">
                       <div>Nyugdíjas: {emp.is_pensioner ? `Igen (${emp.pension_type === 'old_age' ? 'Öregségi' : emp.pension_type === 'rehab' ? 'Rehab' : emp.pension_type === 'disability' ? 'Rokkantsági' : 'Egyéb'})` : 'Nem'}</div>
                       <div>EKHO: {emp.is_ekho ? `Igen (Fizeti: ${emp.ekho_payer === 'employee' ? 'Dolgozó' : 'Munkáltató'}, kategória: ${emp.ekho_category === 'normal' ? 'Normál' : emp.ekho_category === 'athlete' ? 'Sportoló' : 'EGT'})` : 'Nem'}</div>
-                      <div>SZOCHO kedvezmény: {emp.is_szocho_discount ? `Igen (${emp.szocho_discount_type === 'agriculture' ? 'Mezőgazdasági' : emp.szocho_discount_type === 'market_entry' ? 'Piacra lépő' : emp.szocho_discount_type === 'mother_market_entry' ? 'Anya piacra lépő' : 'PhD kutató'}, eltelt: ${emp.szocho_discount_start ? Math.max(0, (new Date().getFullYear() - new Date(emp.szocho_discount_start).getFullYear()) * 12 + (new Date().getMonth() - new Date(emp.szocho_discount_start).getMonth())) : 0} hó)` : 'Nem'}</div>
+                      <div>SZOCHO kedvezmény: {emp.is_szocho_discount ? `Igen (${emp.szocho_discount_type === 'agriculture' ? 'Mezőgazdasági' : emp.szocho_discount_type === 'market_entry' ? 'Piacra lépő' : emp.szocho_discount_type === 'mother_market_entry' ? 'Anya piacra lépő' : emp.szocho_discount_type === 'fiatalkoru' ? '25 év alatti' : emp.szocho_discount_type === '55_feletti' ? '55 év feletti' : emp.szocho_discount_type === 'szakkepzetlen' ? 'Szakképzetlen (FEOR 9)' : 'PhD kutató'}, eltelt: ${emp.szocho_discount_start ? Math.max(0, (new Date().getFullYear() - new Date(emp.szocho_discount_start).getFullYear()) * 12 + (new Date().getMonth() - new Date(emp.szocho_discount_start).getMonth())) : 0} hó)` : 'Nem'}</div>
                     </div>
                   </div>
                 </div>
@@ -523,6 +523,9 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                                 <option value="market_entry">Piacra lépő (Y1-Y2: 100%, Y3: 50%)</option>
                                 <option value="mother_market_entry">Anya piacra lépő</option>
                                 <option value="phd_researcher">K+F / PhD kutató</option>
+                                <option value="fiatalkoru">25 év alatti fiatal</option>
+                                <option value="55_feletti">55 év feletti</option>
+                                <option value="szakkepzetlen">Szakképzetlen (FEOR 9)</option>
                               </select>
                             </div>
                             <div>

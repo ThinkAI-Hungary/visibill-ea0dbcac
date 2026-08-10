@@ -826,6 +826,9 @@ export default function EmployeeWizardPage() {
                         <SelectItem value="market_entry">Munkaerőpiacra lépő (Y1-Y2: 100%, Y3: 50%)</SelectItem>
                         <SelectItem value="mother_market_entry">3+ gyermekes anya piacra lépő (Y1-Y3: 100%, Y4-Y5: 50%)</SelectItem>
                         <SelectItem value="phd_researcher">K+F / PhD kutató (50% szocho)</SelectItem>
+                        <SelectItem value="fiatalkoru">25 év alatti fiatalok kedvezménye (100% szocho)</SelectItem>
+                        <SelectItem value="55_feletti">55 év felettiek kedvezménye (50% szocho)</SelectItem>
+                        <SelectItem value="szakkepzetlen">Szakképzetlen munkakör (FEOR 9) kedvezmény (50% szocho)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

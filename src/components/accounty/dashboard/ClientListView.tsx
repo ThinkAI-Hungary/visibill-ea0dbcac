@@ -63,13 +63,13 @@ export default function ClientListView({
           <span className="text-sm font-semibold text-primary">{selectedIds.size} kijelölve</span>
           <button 
             onClick={() => selectAll(filteredClients.map(c => c.id))} 
-            className="text-xs text-slate-500 hover:text-primary transition-colors"
+            className="text-xs text-muted-foreground hover:text-primary transition-colors"
           >
             Mind kijelölés
           </button>
           <button 
             onClick={clearSelection} 
-            className="text-xs text-slate-500 hover:text-red-500 transition-colors"
+            className="text-xs text-muted-foreground hover:text-red-500 transition-colors"
           >
             Törlés
           </button>
@@ -77,12 +77,12 @@ export default function ClientListView({
       )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-border text-slate-500 dark:text-slate-400 font-medium text-xs uppercase tracking-wider">
+          <thead className="bg-muted/50 border-b border-border text-muted-foreground font-semibold text-xs uppercase tracking-wider">
             <tr>
               <th className="px-3 py-4 w-10">
                 <input 
                   type="checkbox" 
-                  className="rounded border-slate-300 dark:border-slate-600 focus:ring-primary" 
+                  className="rounded border-border focus:ring-primary" 
                   checked={selectedIds.size === filteredClients.length && filteredClients.length > 0} 
                   onChange={(e) => e.target.checked ? selectAll(filteredClients.map(c => c.id)) : clearSelection()} 
                 />
@@ -97,14 +97,14 @@ export default function ClientListView({
               <th className="px-6 py-4 w-12 text-center"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-border">
             {filteredClients.length > 0 ? (
               filteredClients.map((client, idx) => (
                 <tr 
                   key={client.id} 
                   onClick={() => navigate(`/accounty/client/${client.id}`)}
                   className={cn(
-                    "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer",
+                    "hover:bg-accent/50 transition-colors group cursor-pointer",
                     selectedIds.has(client.id) && "bg-primary/5",
                     focusedIndex === idx && "ring-2 ring-primary/30 ring-inset"
                   )}
@@ -112,7 +112,7 @@ export default function ClientListView({
                   <td className="px-3 py-4 w-10" onClick={(e) => e.stopPropagation()}>
                     <input 
                       type="checkbox" 
-                      className="rounded border-slate-300 dark:border-slate-600 focus:ring-primary" 
+                      className="rounded border-border focus:ring-primary" 
                       checked={selectedIds.has(client.id)} 
                       onChange={() => toggleSelect(client.id)} 
                     />
@@ -122,19 +122,19 @@ export default function ClientListView({
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${client.colorHex} shrink-0`}>
                         <Building2 className="w-4 h-4" />
                       </div>
-                      <span className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors">
+                      <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
                         {client.name}
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center text-slate-500 dark:text-slate-400">{client.taxNumber}</td>
-                  <td className="px-6 py-4 text-center font-medium text-slate-900 dark:text-slate-100">{client.unprocessedCount}</td>
+                  <td className="px-6 py-4 text-center text-muted-foreground">{client.taxNumber}</td>
+                  <td className="px-6 py-4 text-center font-medium text-foreground">{client.unprocessedCount}</td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`font-medium ${client.missingCount > 0 ? 'text-red-600' : 'text-slate-900 dark:text-slate-100'}`}>
+                    <span className={`font-medium ${client.missingCount > 0 ? 'text-red-600' : 'text-foreground'}`}>
                       {client.missingCount}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center text-slate-500 dark:text-slate-400">
+                  <td className="px-6 py-4 text-center text-muted-foreground">
                     <span className={`${client.status === 'Kritikus' ? 'text-red-600 font-medium' : ''}`}>
                       {client.deadline}
                     </span>
@@ -146,7 +146,7 @@ export default function ClientListView({
                     <StatusBadge status={client.status} />
                   </td>
                   <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                    <button className="text-slate-300 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button className="text-muted-foreground/60 hover:text-foreground p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <MoreVertical className="w-4 h-4" />
                     </button>
                   </td>
@@ -154,7 +154,7 @@ export default function ClientListView({
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={9} className="py-12 text-center text-muted-foreground">
                   Nincs találat a következőre: "{searchQuery}" {statusFilter !== 'Minden' && `és státusz: ${statusFilter}`}
                 </td>
               </tr>

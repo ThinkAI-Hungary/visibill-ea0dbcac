@@ -23,8 +23,8 @@ type TaskStatus = 'done' | 'in_progress' | 'pending' | 'blocked';
 
 const STATUS_BADGE: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
   done: { label: 'Kész', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400', icon: CheckCircle },
-  in_progress: { label: 'Folyamatban', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400', icon: Clock },
-  pending: { label: 'Várakozik', color: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400', icon: Clock },
+  in_progress: { label: 'Folyamatban', color: 'bg-primary/10 text-primary', icon: Clock },
+  pending: { label: 'Várakozik', color: 'bg-muted/10 text-muted-foreground', icon: Clock },
   blocked: { label: 'Blokkolva', color: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400', icon: AlertTriangle },
 };
 
@@ -79,7 +79,7 @@ export default function YearEndDashboardPage() {
         <div className="p-2.5 bg-gradient-to-br from-amber-500 to-red-500 rounded-xl shadow-lg shadow-amber-500/25"><Star className="w-5 h-5 text-white" /></div>
         <div>
           <h1 className="text-2xl font-bold">Év végi feladatok — {currentYear}</h1>
-          <p className="text-sm text-slate-500">Bérszámfejtési éves zárás teendők és határidők</p>
+          <p className="text-sm text-muted-foreground">Bérszámfejtési éves zárás teendők és határidők</p>
         </div>
         <div className="flex gap-2">
           <ExportButton
@@ -100,8 +100,8 @@ export default function YearEndDashboardPage() {
         <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
       ) : taskList.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
-          <Database className="w-10 h-10 mx-auto text-slate-400" />
-          <p className="text-sm text-slate-500">Nincsenek évzárási feladatok rögzítve erre az évre.</p>
+          <Database className="w-10 h-10 mx-auto text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">Nincsenek évzárási feladatok rögzítve erre az évre.</p>
           <Button onClick={handleSeed} disabled={seedMut.isPending} className="gap-1.5">
             {seedMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             Alapértelmezett feladatok betöltése
@@ -119,10 +119,10 @@ export default function YearEndDashboardPage() {
               <div className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
             </div>
             <div className="grid grid-cols-4 gap-3 mt-4">
-              <div className="text-center"><p className="text-2xl font-bold text-emerald-600">{doneCount}</p><p className="text-[10px] text-slate-500">Kész</p></div>
-              <div className="text-center"><p className="text-2xl font-bold text-blue-600">{taskList.filter(t => t.status === 'in_progress').length}</p><p className="text-[10px] text-slate-500">Folyamatban</p></div>
-              <div className="text-center"><p className="text-2xl font-bold text-slate-500">{taskList.filter(t => t.status === 'pending').length}</p><p className="text-[10px] text-slate-500">Várakozik</p></div>
-              <div className="text-center"><p className="text-2xl font-bold">{taskList.length}</p><p className="text-[10px] text-slate-500">Összesen</p></div>
+              <div className="text-center"><p className="text-2xl font-bold text-emerald-600">{doneCount}</p><p className="text-[10px] text-muted-foreground">Kész</p></div>
+              <div className="text-center"><p className="text-2xl font-bold text-primary">{taskList.filter(t => t.status === 'in_progress').length}</p><p className="text-[10px] text-muted-foreground">Folyamatban</p></div>
+              <div className="text-center"><p className="text-2xl font-bold text-muted-foreground">{taskList.filter(t => t.status === 'pending').length}</p><p className="text-[10px] text-muted-foreground">Várakozik</p></div>
+              <div className="text-center"><p className="text-2xl font-bold">{taskList.length}</p><p className="text-[10px] text-muted-foreground">Összesen</p></div>
             </div>
           </div>
 
@@ -136,7 +136,7 @@ export default function YearEndDashboardPage() {
 
               return (
                 <div key={task.id} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-                  <button onClick={() => setExpandedTask(isExpanded ? null : task.id)} className="w-full flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left">
+                  <button onClick={() => setExpandedTask(isExpanded ? null : task.id)} className="w-full flex items-center gap-4 px-5 py-4 hover:bg-accent/50 transition-colors text-left">
                     <div className={cn('w-10 h-10 rounded-xl bg-gradient-to-br text-white flex items-center justify-center shrink-0', task.color)}>
                       <IconComp className="w-5 h-5" />
                     </div>
@@ -145,33 +145,33 @@ export default function YearEndDashboardPage() {
                         <p className="text-sm font-bold">{task.title}</p>
                         <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', badge.color)}>{badge.label}</span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">{task.subtitle}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{task.subtitle}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-xs text-slate-400">Határidő</p>
+                      <p className="text-xs text-muted-foreground">Határidő</p>
                       <p className="text-sm font-bold">{task.deadline || '—'}</p>
                     </div>
                     <div className="text-right shrink-0 w-16">
-                      <p className="text-xs text-slate-400">Haladás</p>
+                      <p className="text-xs text-muted-foreground">Haladás</p>
                       <p className="text-sm font-bold">{taskDoneChecks}/{task.checklist.length}</p>
                     </div>
-                    <ChevronRight className={cn('w-4 h-4 text-slate-400 transition-transform', isExpanded && 'rotate-90')} />
+                    <ChevronRight className={cn('w-4 h-4 text-muted-foreground transition-transform', isExpanded && 'rotate-90')} />
                   </button>
 
                   {isExpanded && (
                     <div className="px-5 pb-5 pl-20 space-y-2 border-t border-border/50 pt-3">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">{task.legalRef}</p>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase">{task.legalRef}</p>
                       {task.checklist.map((check, ci) => (
                         <button key={ci} onClick={() => toggleCheckItem(task, ci)} className={cn(
                           'w-full flex items-center gap-2 p-2 rounded-lg text-left text-sm transition-all',
-                          check.done ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                          check.done ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'hover:bg-accent/50'
                         )}>
                           <div className={cn('w-4 h-4 rounded flex items-center justify-center shrink-0',
-                            check.done ? 'bg-emerald-500 text-white' : 'border border-slate-300'
+                            check.done ? 'bg-emerald-500 text-white' : 'border border-border'
                           )}>
                             {check.done && <CheckCircle className="w-3 h-3" />}
                           </div>
-                          <span className={cn(check.done && 'line-through text-slate-400')}>{check.item}</span>
+                          <span className={cn(check.done && 'line-through text-muted-foreground')}>{check.item}</span>
                         </button>
                       ))}
                       {task.outputLabel && (

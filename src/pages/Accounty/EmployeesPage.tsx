@@ -16,6 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { SzochoAdvisor } from '@/components/accounty/payroll/SzochoAdvisor';
 
 export default function EmployeesPage() {
   const { companyId } = useParams<{ companyId: string }>();
@@ -179,6 +180,8 @@ export default function EmployeesPage() {
           </Button>
         </div>
       </div>
+
+      <SzochoAdvisor companyId={companyId || ''} />
 
       {/* Status tabs */}
       <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-900/80 p-1 rounded-xl border border-border/60">

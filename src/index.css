@@ -601,6 +601,25 @@ All colors MUST be HSL.
   .dark table tbody tr {
     box-shadow: inset 0 -1px 0 0 hsl(var(--foreground) / 0.1);
   }
+
+  /* Global table header theme styling */
+  table thead tr,
+  table thead th {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+  }
+
+  .dark table thead tr,
+  .dark table thead th {
+    background-color: #121315 !important;
+    color: #94a3b8 !important;
+  }
+
+  /* Make sort icons and muted foreground elements inside the header match the text color */
+  table thead .text-muted-foreground {
+    color: inherit !important;
+    opacity: 0.8;
+  }
 }
 
 /* ── Global: ban hover-based elevation shadows (but preserve functional box-shadow like row separators) ── */

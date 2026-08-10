@@ -98,6 +98,7 @@ export default function ClientEvMainPage() {
         { to: `/accounty/${companyId}/${dateRange}/ev/entrepreneurial/dividend?year=${taxYear}`, label: 'Vállalkozói SZJA – osztalékalap', icon: Wallet },
         { to: `/accounty/${companyId}/${dateRange}/ev/kata?year=${taxYear}`, label: 'KATA kisadózó', icon: Shield },
         { to: `/accounty/${companyId}/${dateRange}/ev/depreciation?year=${taxYear}`, label: 'Értékcsökkenési leírás (ÉCS)', icon: BarChart3 },
+        { to: `/accounty/${companyId}/${dateRange}/ev/thresholds?year=${taxYear}`, label: 'Értékhatár-figyelő (Keretfigyelő)', icon: AlertTriangle },
         { to: `/accounty/${companyId}/${dateRange}/ev/compare?year=${taxYear}`, label: 'Adóforma-összehasonlítás', icon: Scale },
       ],
     },

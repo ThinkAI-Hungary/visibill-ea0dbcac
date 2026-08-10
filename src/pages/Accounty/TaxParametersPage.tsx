@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, Settings, BookOpen, Calculator,
-  Edit3, Check, X, Loader2
+  Edit3, Check, X, Loader2, ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -278,7 +278,7 @@ function formatParamValue(key: string, value: number): string {
 }
 
 export default function TaxParametersPage() {
-  const { companyId } = useParams<{ companyId: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState(2026);
@@ -357,14 +357,18 @@ export default function TaxParametersPage() {
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/accounty/payroll/${companyId}`)} className="h-9 w-9">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4">
+          <button 
+            onClick={() => navigate(`/accounty/${companyId}/${dateRange}/overview`)}
+            className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+            title="Vissza az áttekintéshez"
+          >
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Paramétertábla</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Jogszabályi paraméterek — {selectedYear}</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Paramétertábla</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Jogszabályi paraméterek — {selectedYear}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

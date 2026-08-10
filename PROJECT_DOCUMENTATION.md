@@ -771,6 +771,25 @@ npm run preview      # Preview production build
 
 ## Changelog
 
+### Version 1.7.0 (2026-08-10)
+- **Portfolio Page Slate & Blue Colors Realignment:**
+  - Fully eliminated remaining hardcoded `slate`, `blue`, and `sky` background, border, and text classes across the main Portfolio dashboard, sub-pages, and tab modules, replacing them with dynamic design system theme variables to create a premium onyx look.
+  - Standardized color badges, background borders, and loading skeleton colors in `AccountyApp.tsx` (the main Portfolio container).
+  - Swapped hardcoded border lines (`slate-100`, `slate-200`, `slate-300`) with dynamic border tokens (`border-border`) and updated chart grid stroke properties (`#f1f5f9` and slate) in `DashboardKpiView.tsx`.
+  - Standardized `KpiCard` titles, icons, and values, and updated `OwnerDropdown` select popups, hover states, and text in `DashboardShared.tsx`.
+  - Cleaned up table head rows (`thead`), checkboxes, row dividing lines, and row hover highlights in `ClientListView.tsx`.
+  - Refactored state labels, taxpayer tables, and search controls in `TaoPortfolioPage.tsx` to eliminate hardcoded slate/blue colors.
+  - Refactored task cards, badge labels, and checklist buttons in `YearEndDashboardPage.tsx` to use design system theme variables.
+- **Permission Matrix Page Restructuring:**
+  - Fixed the Roles matrix table breakdown on `PermissionMatrixPage.tsx` by wrapping it in an `overflow-x-auto` horizontal scroll container and pinning the first column containing accountant names (`sticky left-0`).
+  - Added a solid `absolute inset-0 bg-card -z-10` layer inside the headers and row cells of the sticky column to prevent scrolled company cell badges and drop-down buttons from displaying through or on top of the sticky column when scrolling.
+- **Unified Table Header Theme:**
+  - Enforced a premium steel-blue / slate-blue color scheme on all table headers globally in `index.css` (using `#121315` as row background and `#94a3b8` as label text in dark mode).
+  - Updated the `TableHead` component in `table.tsx` from `font-medium` to `font-semibold` to achieve a bold, modern look.
+- **Client Profile & Invoices Table Row Color Alignment:**
+  - Replaced hardcoded blue backgrounds and label colors in `ClientProfileTab.tsx` with dynamic theme design system tokens.
+  - Removed `dark:bg-slate-900/50` from table rows and standardized row styling in `ClientInvoicesPage.tsx` to use neutral onyx cards and row hover highlights.
+
 ### Version 1.6.0 (2026-08-08)
 - **BinX CSV Bank Statement Processing:**
   - Fixed CSV converter column truncation bug by dynamically computing `max_cols` across all CSV rows instead of defaulting to the first row (which was often metadata / 2 columns), preserving all columns in the converted Markdown table.
@@ -865,5 +884,5 @@ npm run preview      # Preview production build
 
 ---
 
-**Last Updated:** 2026-08-08  
+**Last Updated:** 2026-08-10  
 **Maintained By:** VisiBill Development Team

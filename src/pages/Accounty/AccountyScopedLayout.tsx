@@ -23,9 +23,41 @@ export default function AccountyScopedLayout() {
   const syncingFromUrl = useRef(false);
   const [accessDenied, setAccessDenied] = useState(false);
 
-  // 1. URL ➔ Context Sync
+  const isLegacyKeyword = ['payroll', 'client', 'missing-invoices'].includes(urlCompanyId || '');
+
+  // 1. URL ➔ Context Sync & Legacy Redirect
   useEffect(() => {
     if (!urlCompanyId || !urlDateRange || clientsLoading || !clients) return;
+
+    // Intercept legacy keywords matched as companyId and redirect to the correct scoped layout
+    if (isLegacyKeyword) {
+      const uuidRegex = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+      const isDateRangeUuid = uuidRegex.test(urlDateRange);
+
+      if (isDateRangeUuid) {
+        const pageSegment = extractAccountyPageSegment(location.pathname);
+        const cleanPage = pageSegment.startsWith('/') ? pageSegment.slice(1) : pageSegment;
+        
+        let targetPath = '';
+        if (urlCompanyId === 'payroll') {
+          targetPath = `/accounty/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/payroll/${cleanPage}`;
+        } else if (urlCompanyId === 'client') {
+          targetPath = `/accounty/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/${cleanPage || 'overview'}`;
+        } else if (urlCompanyId === 'missing-invoices') {
+          targetPath = `/accounty/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/missing-invoices/${cleanPage}`;
+        }
+
+        if (targetPath) {
+          navigate(targetPath, { replace: true });
+          return;
+        }
+      } else {
+        // Fallback for corrupted URLs (e.g. /accounty/payroll/2026-01-01_2026-12-31/settings)
+        navigate('/accounty', { replace: true });
+        return;
+      }
+    }
+
     syncingFromUrl.current = true;
 
     // Check client permission
@@ -51,11 +83,11 @@ export default function AccountyScopedLayout() {
     requestAnimationFrame(() => {
       syncingFromUrl.current = false;
     });
-  }, [urlCompanyId, urlDateRange, clients, clientsLoading]);
+  }, [urlCompanyId, urlDateRange, clients, clientsLoading, isLegacyKeyword, dateFromFormatted, dateToFormatted, location.pathname, navigate]);
 
   // 2. Context ➔ URL Sync (when date changes via UI)
   useEffect(() => {
-    if (syncingFromUrl.current || accessDenied || !urlCompanyId) return;
+    if (syncingFromUrl.current || accessDenied || !urlCompanyId || isLegacyKeyword) return;
 
     const currentDateRange = `${dateFromFormatted}_${dateToFormatted}`;
     const expectedPrefix = `/accounty/${urlCompanyId}/${currentDateRange}`;
@@ -71,7 +103,7 @@ export default function AccountyScopedLayout() {
         ) + location.search + location.hash;
       navigate(newPath, { replace: true });
     }
-  }, [urlCompanyId, dateFromFormatted, dateToFormatted, location.pathname, accessDenied]);
+  }, [urlCompanyId, dateFromFormatted, dateToFormatted, location.pathname, accessDenied, isLegacyKeyword, navigate]);
 
   if (clientsLoading) {
     return (

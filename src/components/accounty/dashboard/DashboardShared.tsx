@@ -47,7 +47,7 @@ export function KpiCard({
   title, 
   value, 
   icon: Icon, 
-  valueClass = "text-slate-900 dark:text-slate-100", 
+  valueClass = "text-foreground", 
   accentColor = "teal", 
   onClick 
 }: { 
@@ -77,7 +77,7 @@ export function KpiCard({
       onClick={onClick}
       className={cn(
         "relative overflow-hidden bg-gradient-to-br rounded-xl p-5 border border-border shadow-soft flex flex-col justify-between h-32 card-ripple",
-        "hover:shadow-lg hover:scale-[1.02] hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-300 group",
+        "hover:shadow-lg hover:scale-[1.02] hover:border-border transition-all duration-300 group",
         onClick ? "cursor-pointer" : "cursor-default",
         colorMap[accentColor] || colorMap.emerald,
         "bg-card"
@@ -89,7 +89,7 @@ export function KpiCard({
       }}
     >
       <div className="flex items-start justify-between">
-        <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
         <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110", iconColorMap[accentColor] || iconColorMap.emerald)}>
           <Icon className="w-4.5 h-4.5" />
         </div>
@@ -132,11 +132,11 @@ export function OwnerDropdown({
 
   if (!isAdmin) {
     return (
-      <div className="h-8 px-2 flex items-center gap-2 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-border/30 cursor-default select-none">
-        <div className="w-5 h-5 rounded-full bg-slate-400 flex items-center justify-center text-[10px] font-bold text-white">
+      <div className="h-8 px-2 flex items-center gap-2 bg-muted/10 rounded-lg border border-border/30 cursor-default select-none">
+        <div className="w-5 h-5 rounded-full bg-muted-foreground/30 flex items-center justify-center text-[10px] font-bold text-white">
           {owner.initial}
         </div>
-        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{owner.name}</span>
+        <span className="text-xs font-semibold text-muted-foreground">{owner.name}</span>
       </div>
     );
   }
@@ -145,12 +145,12 @@ export function OwnerDropdown({
     <div onClick={(e) => e.stopPropagation()}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 px-2 flex items-center gap-2 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-700 data-[state=open]:bg-slate-100 shadow-soft border border-border/50">
-            <div className="w-5 h-5 rounded-full bg-slate-500 flex items-center justify-center text-[10px] font-bold text-white">
+          <Button variant="ghost" size="sm" className="h-8 px-2 flex items-center gap-2 hover:bg-muted/20 dark:bg-muted/10 dark:hover:bg-muted/20 data-[state=open]:bg-muted/20 shadow-soft border border-border/50">
+            <div className="w-5 h-5 rounded-full bg-muted-foreground/30 flex items-center justify-center text-[10px] font-bold text-white">
               {owner.initial}
             </div>
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{owner.name}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-xs font-semibold text-foreground">{owner.name}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0" align="start">
@@ -170,7 +170,7 @@ export function OwnerDropdown({
                      className="flex items-center justify-between text-xs cursor-pointer py-2"
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full bg-slate-500 flex items-center justify-center text-[10px] font-bold text-white">
+                      <div className="w-5 h-5 rounded-full bg-muted-foreground/30 flex items-center justify-center text-[10px] font-bold text-white">
                         {acc.initial}
                       </div>
                       <span>{acc.name}</span>
@@ -209,15 +209,15 @@ export function MissingItemsTooltip({ companyId }: { companyId: string }) {
 
   return (
     <div className="absolute right-0 top-1/2 -translate-y-1/2 z-50 opacity-0 group-hover/row:opacity-100 pointer-events-none transition-opacity duration-200">
-      <div className="bg-slate-900 dark:bg-slate-800 text-white rounded-lg shadow-xl p-3 ml-2 min-w-[220px] border border-slate-700">
-        <p className="text-[10px] uppercase tracking-wider text-slate-400 mb-2 font-semibold">Top tételek</p>
+      <div className="bg-popover text-popover-foreground rounded-lg shadow-xl p-3 ml-2 min-w-[220px] border border-border">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Top tételek</p>
         {items.map((item, i) => (
           <div key={i} className="flex items-center justify-between gap-3 py-1">
-            <span className="text-xs text-slate-200 truncate max-w-[140px]">{item.title}</span>
+            <span className="text-xs text-foreground truncate max-w-[140px]">{item.title}</span>
             {item.amount ? (
               <span className="text-xs font-bold text-primary whitespace-nowrap">{item.amount.toLocaleString('hu-HU')} Ft</span>
             ) : (
-              <span className="text-xs text-slate-500">–</span>
+              <span className="text-xs text-muted-foreground">–</span>
             )}
           </div>
         ))}
@@ -280,7 +280,7 @@ export function ClientCard({
       onClick={() => navigate(`/accounty/client/${client.id}`)}
       className={cn(
         "bg-card rounded-xl border border-border shadow-soft flex flex-col group cursor-pointer h-full overflow-hidden", 
-        "hover:shadow-lg hover:border-slate-200 dark:hover:border-slate-700 hover:-translate-y-0.5 transition-all duration-300",
+        "hover:shadow-lg hover:border-border hover:-translate-y-0.5 transition-all duration-300",
         "animate-in fade-in slide-in-from-bottom-2 duration-300",
         draggable && "cursor-grab active:cursor-grabbing",
         isDragged && "opacity-50 scale-[0.98] shadow-none border-dashed border-2 ring-2 ring-primary/20"
@@ -299,35 +299,35 @@ export function ClientCard({
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-semibold text-slate-900 dark:text-slate-100 leading-tight">{client.name}</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{client.taxNumber}</p>
+              <h4 className="font-semibold text-foreground leading-tight">{client.name}</h4>
+              <p className="text-xs text-muted-foreground mt-0.5">{client.taxNumber}</p>
             </div>
           </div>
         </div>
 
         <div className="flex justify-between items-center mb-4">
-          <span className="text-xs text-slate-500 dark:text-slate-400">Státusz</span>
+          <span className="text-xs text-muted-foreground">Státusz</span>
           <StatusBadge status={client.status} />
         </div>
 
         <div className="mb-4">
           <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Havi zárás</span>
-            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{client.progress}%</span>
+            <span className="text-[11px] text-muted-foreground font-medium">Havi zárás</span>
+            <span className="text-[11px] font-bold text-foreground">{client.progress}%</span>
           </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
+          <div className="w-full bg-muted/20 dark:bg-muted/10 rounded-full h-1.5">
             <div className={cn('h-1.5 rounded-full transition-all duration-500', progressColor)} style={{ width: `${client.progress}%` }} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Feldolgozatlan</p>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{client.unprocessedCount} számla</p>
+            <p className="text-xs text-muted-foreground mb-1">Feldolgozatlan</p>
+            <p className="font-semibold text-foreground">{client.unprocessedCount} számla</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Hiányzó</p>
-            <p className={`font-semibold ${client.missingCount > 0 ? 'text-red-600' : 'text-slate-900 dark:text-slate-100'}`}>
+            <p className="text-xs text-muted-foreground mb-1">Hiányzó</p>
+            <p className={`font-semibold ${client.missingCount > 0 ? 'text-red-600' : 'text-foreground'}`}>
               {client.missingCount} számla
             </p>
           </div>
@@ -336,7 +336,7 @@ export function ClientCard({
         <div className="mt-auto pt-4 border-t border-border flex justify-between items-center">
           <OwnerDropdown client={client} onUpdateOwner={onUpdateOwner} />
           <div className="flex items-center gap-1.5">
-            <Clock className={cn('w-3.5 h-3.5', isOverdue ? 'text-red-500' : daysLeft <= 3 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-500' : 'text-slate-400')} />
+            <Clock className={cn('w-3.5 h-3.5', isOverdue ? 'text-red-500' : daysLeft <= 3 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-500' : 'text-muted-foreground')} />
             <span className={cn('text-[11px] font-bold px-2 py-0.5 rounded-full', deadlineBadgeStyle)}>
               {deadlineText}
             </span>
@@ -369,19 +369,19 @@ export function WidgetWrapper({
   return (
     <div className={cn("relative transition-all duration-300", editingLayout && "p-4 border-2 border-dashed border-primary/40 rounded-xl bg-primary/5")} style={{ order }}>
       {editingLayout && (
-        <div className="absolute -left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white dark:bg-slate-800 shadow-md rounded-lg p-1 z-10 border border-slate-200 dark:border-slate-700">
+        <div className="absolute -left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-card shadow-md rounded-lg p-1 z-10 border border-border">
           <button 
             onClick={onMoveUp} 
             disabled={isFirst}
-            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 disabled:opacity-30"
+            className="p-1 hover:bg-muted/20 rounded text-muted-foreground disabled:opacity-30"
           >
             <ChevronUp className="w-4 h-4" />
           </button>
-          <div className="w-full h-px bg-slate-100 dark:bg-slate-700"></div>
+          <div className="w-full h-px bg-border"></div>
           <button 
             onClick={onMoveDown} 
             disabled={isLast}
-            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 disabled:opacity-30"
+            className="p-1 hover:bg-muted/20 rounded text-muted-foreground disabled:opacity-30"
           >
             <ChevronDown className="w-4 h-4" />
           </button>

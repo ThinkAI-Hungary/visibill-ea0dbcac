@@ -1,20 +1,31 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useSearchParams, useParams } from 'react-router-dom';
 import {
   Gauge, ArrowLeft, ChevronRight, AlertTriangle, CheckCircle2,
-  TrendingUp, Zap, Info, ArrowUpRight, Loader2
+  TrendingUp, Zap, Info, ArrowUpRight, Loader2, Mail, Send
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   formatHuf, formatPercent, formatMillionHuf,
   getEvThresholds, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS,
-  type ThresholdCheck, type ThresholdStatus,
+  type ThresholdCheck, type ThresholdStatus, checkThresholdStatus
 } from '@/lib/evCalculations';
 import { useAllEvClientSettings, useEvYtdRevenue } from '@/hooks/useEvData';
-import { useEvTaxParams } from '@/hooks/accounty';
+import { useEvTaxParams, useGeneratePortalToken } from '@/hooks/accounty';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { addToApprovalQueue, type OutgoingMessage } from '@/pages/Accounty/generateRequestEmail';
+import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types & Constants ──────────────────────────────────────────────────────
+
+interface ProjectedThresholdCheck extends ThresholdCheck {
+  projectedValue: number;
+  projectedPercentage: number;
+  projectedStatus: ThresholdStatus;
+}
 
 interface ClientThresholdRow {
   clientId: string;
@@ -23,13 +34,13 @@ interface ClientThresholdRow {
   taxpayerForm: 'atalany' | 'vszja' | 'kata';
   isRetail: boolean;
   ytdRevenue: number;
-  thresholds: ThresholdCheck[];
+  thresholds: ProjectedThresholdCheck[];
   worstStatus: ThresholdStatus;
 }
 
-function worstOf(checks: ThresholdCheck[]): ThresholdStatus {
-  if (checks.some(c => c.status === 'red')) return 'red';
-  if (checks.some(c => c.status === 'yellow')) return 'yellow';
+function worstOf(checks: ProjectedThresholdCheck[]): ThresholdStatus {
+  if (checks.some(c => c.status === 'red' || c.projectedStatus === 'red')) return 'red';
+  if (checks.some(c => c.status === 'yellow' || c.projectedStatus === 'yellow')) return 'yellow';
   return 'green';
 }
 
@@ -42,33 +53,70 @@ const STATUS_CONFIG = {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvThresholdMonitorPage() {
+  const { companyId, dateRange } = useParams<{ companyId?: string; dateRange?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2025');
+  const taxYear = Number(searchParams.get('year') || '2026');
   const [filter, setFilter] = useState<ThresholdStatus | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  const { toast } = useToast();
+  const generateTokenMutation = useGeneratePortalToken();
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [filter, taxYear]);
 
+  // Calculate days elapsed in the year
+  const daysElapsed = useMemo(() => {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const diffMs = now.getTime() - startOfYear.getTime();
+    return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  }, []);
+
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawSettings, isLoading: settingsLoading } = useAllEvClientSettings(taxYear);
   const { data: revenueMap, isLoading: revenueLoading } = useEvYtdRevenue(taxYear);
   const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(taxYear);
-  const isLoading = settingsLoading || revenueLoading || paramsLoading;
+  const { data: company, isLoading: companyLoading } = useQuery({
+    queryKey: ['company-details', companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name, tax_number')
+        .eq('id', companyId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId,
+  });
+  const isLoading = settingsLoading || revenueLoading || paramsLoading || (!!companyId && companyLoading);
 
   const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
   const clients = useMemo((): ClientThresholdRow[] => {
-    return (rawSettings || []).map((s: any) => {
+    const list = (rawSettings || []).map((s: any) => {
       const companyName = s.companies?.name || 'Ismeretlen ügyfél';
       const taxNumber = s.companies?.tax_number || '';
       const form = s.taxpayer_form || 'atalany';
       const isRetail = s.cost_ratio_category === 'retail_90';
       const ytdRevenue = revenueMap?.get(s.company_id) || 0;
-      const thresholds = getEvThresholds(ytdRevenue, form, isRetail, params);
+      
+      const thresholds = getEvThresholds(ytdRevenue, form, isRetail, params).map(t => {
+        const projectedValue = (t.currentValue / daysElapsed) * 365;
+        const projectedPercentage = t.limit > 0 ? (projectedValue / t.limit) * 100 : 0;
+        const projectedStatus = checkThresholdStatus(projectedValue, t.limit);
+        return {
+          ...t,
+          projectedValue,
+          projectedPercentage,
+          projectedStatus,
+        };
+      });
+
       return {
         clientId: s.company_id,
         clientName: companyName,
@@ -80,12 +128,158 @@ export default function EvThresholdMonitorPage() {
         worstStatus: worstOf(thresholds),
       };
     });
-  }, [rawSettings, revenueMap]);
+
+    if (companyId && company && !list.some(c => c.clientId === companyId)) {
+      const form = 'atalany';
+      const isRetail = false;
+      const ytdRevenue = revenueMap?.get(companyId) || 0;
+      
+      const thresholds = getEvThresholds(ytdRevenue, form, isRetail, params).map(t => {
+        const projectedValue = (t.currentValue / daysElapsed) * 365;
+        const projectedPercentage = t.limit > 0 ? (projectedValue / t.limit) * 100 : 0;
+        const projectedStatus = checkThresholdStatus(projectedValue, t.limit);
+        return {
+          ...t,
+          projectedValue,
+          projectedPercentage,
+          projectedStatus,
+        };
+      });
+
+      list.push({
+        clientId: companyId,
+        clientName: company.name || 'Ismeretlen ügyfél',
+        taxNumber: company.tax_number || '',
+        taxpayerForm: form,
+        isRetail,
+        ytdRevenue,
+        thresholds,
+        worstStatus: worstOf(thresholds),
+      });
+    }
+
+    return list;
+  }, [rawSettings, revenueMap, daysElapsed, params, companyId, company]);
+
+  const handleSendAlert = async (client: ClientThresholdRow) => {
+    try {
+      toast({
+        title: 'Token generálása...',
+        description: 'Magic Link létrehozása az ügyfél számára.',
+      });
+
+      const tokenResult = await generateTokenMutation.mutateAsync({
+        companyId: client.clientId,
+      });
+
+      const portalLink = `https://app.visibill.hu/portal/${tokenResult.token}`;
+      
+      // Look up contact email for this company from preferences
+      const { data: commPrefs } = await supabase
+        .from('accounty_communication_preferences')
+        .select('contact_email, contact_name')
+        .eq('company_id', client.clientId)
+        .maybeSingle();
+
+      const contactEmail = commPrefs?.contact_email || 'client@example.com';
+      const contactName = commPrefs?.contact_name || client.clientName;
+
+      // Find the threshold that is critical or warning
+      const criticalCheck = client.thresholds.find(t => t.percentage >= 80) || client.thresholds[0];
+      const limitVal = criticalCheck?.limit || 12000000;
+      const currentValue = criticalCheck?.currentValue || client.ytdRevenue;
+      const projectedVal = (currentValue / daysElapsed) * 365;
+
+      const subject = `⚠️ Keret túllépési figyelmeztetés – ${client.clientName}`;
+      
+      const greeting = contactName ? `Kedves ${contactName}!` : `Tisztelt ${client.clientName}!`;
+      const body = `${greeting}
+
+Ezúton értesítjük, hogy könyvelője értékhatár-ellenőrzést futtatott le vállalkozásánál. 
+A jelenlegi adatok alapján a(z) "${criticalCheck.name}" keretének túllépése várható az év végéig:
+
+• Eddigi (YTD) bevétel: ${formatHuf(currentValue)}
+• Éves keret / limit: ${formatHuf(limitVal)}
+• Év végére vetített (projektált) bevétel: ${formatHuf(projectedVal)} (${((projectedVal / limitVal) * 100).toFixed(0)}%)
+
+Kérjük, egyeztesse könyvelőjével a szükséges teendőket. Számláit az alábbi Magic Linken keresztül tudja feltölteni:
+${portalLink}
+
+Üdvözlettel,
+eaisybooks`;
+
+      const htmlPreview = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
+        <div style="background:#111827;padding:24px 28px;border-radius:8px 8px 0 0">
+          <div style="color:#ffffff;font-size:20px;font-weight:700">eaisybooks</div>
+          <div style="color:#9ca3af;font-size:12px;margin-top:2px">Riasztás és Figyelmeztetés</div>
+        </div>
+        <div style="padding:28px;background:#ffffff;border:1px solid #e5e7eb;border-top:none">
+          <p style="font-size:15px;color:#374151">${greeting}</p>
+          <p style="font-size:14px;color:#374151;line-height:1.6">
+            Ezúton értesítjük, hogy könyvelője értékhatár-ellenőrzést futtatott le vállalkozásánál. 
+            A jelenlegi adatok alapján a(z) <strong>${criticalCheck.name}</strong> keretének túllépése várható az év végéig:
+          </p>
+          <div style="margin:20px 0;border-radius:6px;overflow:hidden;border:1px solid #e5e7eb">
+            <table style="width:100%;border-collapse:collapse">
+              <tbody>
+                <tr style="background:#f3f4f6"><td style="padding:10px 12px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase">Bevétel YTD</td><td style="padding:10px 12px;font-size:14px;color:#111827;font-weight:500">${formatHuf(currentValue)}</td></tr>
+                <tr><td style="padding:10px 12px;border-top:1px solid #e5e7eb;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase">Limithatár</td><td style="padding:10px 12px;border-top:1px solid #e5e7eb;font-size:14px;color:#111827;font-weight:500">${formatHuf(limitVal)}</td></tr>
+                <tr style="background:#fee2e2"><td style="padding:10px 12px;border-top:1px solid #e5e7eb;font-size:12px;font-weight:600;color:#991b1b;text-transform:uppercase">Projektált Éves</td><td style="padding:10px 12px;border-top:1px solid #e5e7eb;font-size:14px;color:#991b1b;font-weight:700">${formatHuf(projectedVal)} (${((projectedVal / limitVal) * 100).toFixed(0)}%)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="text-align:center;margin:28px 0">
+            <a href="${portalLink}" style="display:inline-block;padding:14px 32px;background:#dc2626;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600">
+               Ügyfélportál megnyitása
+            </a>
+          </div>
+          <p style="font-size:14px;color:#374151">
+            Üdvözlettel,<br/><strong>eaisybooks</strong>
+          </p>
+        </div>
+      </div>`;
+
+      const message: OutgoingMessage = {
+        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        companyId: client.clientId,
+        companyName: client.clientName,
+        contactEmail,
+        channel: 'email',
+        category: 'urgent',
+        subject,
+        originalContext: `Keret túllépési riasztás – YTD: ${formatHuf(currentValue)} (limit: ${formatHuf(limitVal)})`,
+        aiGeneratedBody: body,
+        htmlPreview,
+        portalLink,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        missingItemIds: [],
+      };
+
+      addToApprovalQueue(message);
+
+      toast({
+        title: '✉ Riasztás a jóváhagyási sorban',
+        description: `A riasztási levél sikeresen bekerült az Approval Queue-ba.`,
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: 'Hiba',
+        description: 'Nem sikerült legenerálni a riasztó levelet.',
+        variant: 'destructive'
+      });
+    }
+  };
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return clients;
-    return clients.filter(c => c.worstStatus === filter);
-  }, [clients, filter]);
+    let list = clients;
+    if (companyId) {
+      list = list.filter(c => c.clientId === companyId);
+    }
+    if (filter === 'all') return list;
+    return list.filter(c => c.worstStatus === filter);
+  }, [clients, filter, companyId]);
 
   const totalItems = filtered.length;
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -105,9 +299,15 @@ export default function EvThresholdMonitorPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/accounty/ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
-          <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
-        </Link>
+        {companyId ? (
+          <Link to={`/accounty/${companyId}/${dateRange || '2026-01-01_2026-12-31'}/ev`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+            <ArrowLeft className="w-3.5 h-3.5" /> Egyéni vállalkozás (EV)
+          </Link>
+        ) : (
+          <Link to="/accounty/ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+            <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
+          </Link>
+        )}
         <ChevronRight className="w-3 h-3" />
         <span className="text-slate-900 dark:text-slate-100 font-medium">Értékhatár-figyelő</span>
       </div>
@@ -124,39 +324,41 @@ export default function EvThresholdMonitorPage() {
       </div>
 
       {/* Status cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <button
-          onClick={() => setFilter('all')}
-          className={cn(
-            'bg-card rounded-xl border p-4 shadow-soft text-left transition-all hover:shadow-md',
-            filter === 'all' ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-border'
-          )}
-        >
-          <p className="text-xs text-slate-500 mb-1">Összes ügyfél</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{isLoading ? '...' : clients.length}</p>
-        </button>
-        {(['red', 'yellow', 'green'] as ThresholdStatus[]).map(status => {
-          const cfg = STATUS_CONFIG[status];
-          const Icon = cfg.icon;
-          return (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={cn(
-                'rounded-xl border p-4 shadow-soft text-left transition-all hover:shadow-md',
-                cfg.bgColor, cfg.borderColor,
-                filter === status ? 'ring-2 ring-indigo-500/20' : ''
-              )}
-            >
-              <div className="flex items-center gap-1.5 mb-1">
-                <Icon className={cn('w-3.5 h-3.5', cfg.color)} />
-                <p className={cn('text-xs font-medium', cfg.color)}>{cfg.label}</p>
-              </div>
-              <p className={cn('text-2xl font-bold', cfg.color)}>{isLoading ? '...' : countByStatus[status]}</p>
-            </button>
-          );
-        })}
-      </div>
+      {!companyId && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <button
+            onClick={() => setFilter('all')}
+            className={cn(
+              'bg-card rounded-xl border p-4 shadow-soft text-left transition-all hover:shadow-md',
+              filter === 'all' ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-border'
+            )}
+          >
+            <p className="text-xs text-slate-500 mb-1">Összes ügyfél</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{isLoading ? '...' : clients.length}</p>
+          </button>
+          {(['red', 'yellow', 'green'] as ThresholdStatus[]).map(status => {
+            const cfg = STATUS_CONFIG[status];
+            const Icon = cfg.icon;
+            return (
+              <button
+                key={status}
+                onClick={() => setFilter(status)}
+                className={cn(
+                  'rounded-xl border p-4 shadow-soft text-left transition-all hover:shadow-md',
+                  cfg.bgColor, cfg.borderColor,
+                  filter === status ? 'ring-2 ring-indigo-500/20' : ''
+                )}
+              >
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Icon className={cn('w-3.5 h-3.5', cfg.color)} />
+                  <p className={cn('text-xs font-medium', cfg.color)}>{cfg.label}</p>
+                </div>
+                <p className={cn('text-2xl font-bold', cfg.color)}>{isLoading ? '...' : countByStatus[status]}</p>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
@@ -210,25 +412,70 @@ export default function EvThresholdMonitorPage() {
                         {formatMillionHuf(c.ytdRevenue)}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="space-y-1.5">
+                        <div className="space-y-3">
                           {c.thresholds.map(t => {
-                            const tCfg = STATUS_CONFIG[t.status];
+                            const isProjectedDanger = t.projectedPercentage >= 100;
+                            const isProjectedWarning = t.projectedPercentage >= 80 && t.projectedPercentage < 100;
                             return (
-                              <div key={t.name} className="flex items-center gap-2">
-                                <div className="w-24 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex-shrink-0">
-                                  <div
-                                    className={cn(
-                                      'h-full rounded-full',
-                                      t.status === 'red' ? 'bg-red-500'
-                                        : t.status === 'yellow' ? 'bg-amber-500'
-                                        : 'bg-green-500'
-                                    )}
-                                    style={{ width: `${Math.min(100, t.percentage)}%` }}
-                                  />
+                              <div key={t.name} className="space-y-1.5">
+                                <div className="flex items-center justify-between text-[10px] w-full max-w-[280px]">
+                                  <span className="font-semibold text-slate-700 dark:text-slate-300">{t.name}</span>
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                    Limit: {formatMillionHuf(t.limit)}
+                                  </span>
                                 </div>
-                                <span className="text-[10px] text-slate-500 whitespace-nowrap">
-                                  {t.name}: {t.percentage.toFixed(0)}%
-                                </span>
+                                <div className="flex flex-col gap-1 w-full max-w-[280px]">
+                                  {/* Single stacked progress bar */}
+                                  <div className="relative w-full h-2.5 bg-slate-100 dark:bg-slate-800/60 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-850 shadow-inner">
+                                    {/* Projected Part: Semi-transparent background that extends further */}
+                                    <div
+                                      className={cn(
+                                        'absolute left-0 top-0 bottom-0 transition-all duration-500 opacity-40',
+                                        t.projectedStatus === 'red' ? 'bg-red-500'
+                                          : t.projectedStatus === 'yellow' ? 'bg-amber-500'
+                                          : 'bg-emerald-500'
+                                      )}
+                                      style={{ width: `${Math.min(100, t.projectedPercentage)}%` }}
+                                    />
+                                    {/* YTD Part: Solid, bright color indicating actual progress */}
+                                    <div
+                                      className={cn(
+                                        'absolute left-0 top-0 bottom-0 rounded-full transition-all duration-500 shadow-[inset_-1px_0_2px_rgba(0,0,0,0.1)]',
+                                        t.status === 'red' ? 'bg-red-500'
+                                          : t.status === 'yellow' ? 'bg-amber-500'
+                                          : 'bg-emerald-500'
+                                      )}
+                                      style={{ width: `${Math.min(100, t.percentage)}%` }}
+                                    />
+                                  </div>
+                                  
+                                  {/* Dynamic badges / percentages right under the bar */}
+                                  <div className="flex items-center justify-between text-[9px] text-slate-500 dark:text-slate-400 font-medium font-sans">
+                                    <span className="flex items-center gap-1">
+                                      <span className={cn(
+                                        'w-1.5 h-1.5 rounded-full',
+                                        t.status === 'red' ? 'bg-red-500' : t.status === 'yellow' ? 'bg-amber-500' : 'bg-emerald-500'
+                                      )} />
+                                      Tény (YTD): <strong className="text-slate-700 dark:text-slate-200">{t.percentage.toFixed(0)}%</strong>
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <span className={cn(
+                                        'w-1.5 h-1.5 rounded-full border border-dashed opacity-60',
+                                        t.projectedStatus === 'red' ? 'bg-red-400 border-red-500' : t.projectedStatus === 'yellow' ? 'bg-amber-400 border-amber-500' : 'bg-emerald-400 border-emerald-500'
+                                      )} />
+                                      Projektált: <strong className={cn(
+                                        isProjectedDanger ? "text-red-600 dark:text-red-400 font-bold" 
+                                          : isProjectedWarning ? "text-amber-600 dark:text-amber-400 font-bold" 
+                                          : "text-slate-700 dark:text-slate-200"
+                                      )}>{t.projectedPercentage.toFixed(0)}%</strong>
+                                    </span>
+                                    {isProjectedDanger && (
+                                      <span className="px-1 py-0.2 rounded bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 text-[8px] font-bold uppercase shrink-0">
+                                        Túllépés
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             );
                           })}
@@ -244,12 +491,25 @@ export default function EvThresholdMonitorPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <Link
-                          to={`/accounty/client/${c.clientId}/ev?year=${taxYear}`}
-                          className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-indigo-600 inline-flex"
-                        >
-                          <ArrowUpRight className="w-4 h-4" />
-                        </Link>
+                        <div className="flex items-center gap-1 justify-center">
+                          {c.thresholds.some(t => t.projectedPercentage >= 80) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                              onClick={() => handleSendAlert(c)}
+                              title="Riasztó levél küldése az ügyfélnek"
+                            >
+                              <Mail className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Link
+                            to={`/accounty/client/${c.clientId}/ev?year=${taxYear}`}
+                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-indigo-600 inline-flex"
+                          >
+                            <ArrowUpRight className="w-4 h-4" />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );

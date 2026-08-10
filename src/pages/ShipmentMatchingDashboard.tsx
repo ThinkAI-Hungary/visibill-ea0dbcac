@@ -245,7 +245,7 @@ export default function ShipmentMatchingDashboard() {
   // Fetch Shipments with joined Matches and CMRs
   const { data: shipments = [], isLoading } = useQuery<DashboardShipment[]>({
     queryKey: ['shipments-matching', selectedCompany?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<DashboardShipment[]> => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
         .from('shipments')
@@ -273,7 +273,7 @@ export default function ShipmentMatchingDashboard() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data as any) || [];
     },
     enabled: !!selectedCompany?.id,
     staleTime: 0,                 // Always refetch on invalidation or mount

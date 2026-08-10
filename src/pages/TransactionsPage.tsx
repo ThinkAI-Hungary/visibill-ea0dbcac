@@ -56,8 +56,10 @@ const COURIER_TABS = new Set(['gls', 'mpl', 'mixpack']);
 
 const fmtHuf = (val: number) => new Intl.NumberFormat('hu-HU').format(Math.round(val));
 
+type TabValue = string;
+
 const TransactionsPage = () => {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState<TabValue>('general');
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [filesDialogOpen, setFilesDialogOpen] = useState(false);
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
