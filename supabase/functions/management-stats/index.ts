@@ -160,6 +160,18 @@ async function listAllAuthUsers(admin: ReturnType<typeof createClient>): Promise
     page++;
   }
 
+  // Fallback: if Admin API returned nothing, query auth.users via SQL (service_role)
+  if (emailByUserId.size === 0) {
+    try {
+      const { data: rows } = await admin.rpc("get_auth_emails" as any);
+      if (rows && Array.isArray(rows)) {
+        for (const r of rows as Array<{ id: string; email: string }>) {
+          emailByUserId.set(r.id, r.email || "");
+        }
+      }
+    } catch { /* ignore — best-effort fallback */ }
+  }
+
   return emailByUserId;
 }
 
@@ -304,6 +316,12 @@ serve(async (req) => {
       if (req.method !== "POST") return json({ error: "POST required" });
       const body = await req.json().catch(() => ({}));
       return json(await updatePermissions(admin, body));
+    }
+
+    if (action === "delete-user") {
+      if (req.method !== "POST") return json({ error: "POST required" });
+      const body = await req.json().catch(() => ({}));
+      return json(await deleteUser(admin, body));
     }
 
     if (action === "superadmin-module-data") {
@@ -960,7 +978,7 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
     if (companyId) {
       companyErrorCounts.set(companyId, (companyErrorCounts.get(companyId) || 0) + 1);
     }
-    if (userId) {
+    if (userId && profileByUserId.get(userId)?.name !== "Törölt Felhasználó") {
       userErrorCounts.set(userId, (userErrorCounts.get(userId) || 0) + 1);
     }
   };
@@ -1008,14 +1026,14 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
   } : null;
 
   return {
-    usersCount: profiles.filter((profile) => profile.role !== "management" && profile.role !== "thinkai").length,
+    usersCount: profiles.filter((profile) => profile.role !== "management" && profile.role !== "thinkai" && profile.name !== "Törölt Felhasználó").length,
     companiesCount: companies.length,
     totalErrors,
     mostErrorCompany,
     mostErrorUser,
     companies: companySummaries,
     users: profiles
-      .filter((profile) => profile.role !== "management" && profile.role !== "thinkai")
+      .filter((profile) => profile.role !== "management" && profile.role !== "thinkai" && profile.name !== "Törölt Felhasználó")
       .map((profile) => ({
         id: profile.id,
         user_id: profile.user_id,
@@ -1049,19 +1067,61 @@ async function buildCompanyDetail(admin: ReturnType<typeof createClient>, compan
   const dateFrom = url.searchParams.get("dateFrom") || "";
   const dateTo = url.searchParams.get("dateTo") || "";
 
-  // Phase 1: Fetch non-LLM base data in parallel
+  // Detect which project contains this companyId
+  interface PC { name: string; client: ReturnType<typeof createClient> }
+  const projectClients: PC[] = [{ name: "PROD", client: admin }];
+  const vswebUrl = Deno.env.get("VSWEB_SUPABASE_URL");
+  const vswebKey = Deno.env.get("VSWEB_SERVICE_ROLE_KEY");
+  if (vswebUrl && vswebKey) {
+    try { projectClients.push({ name: "VSWEB", client: createClient(vswebUrl, vswebKey) }); } catch {}
+  }
+  const thinkUrl = Deno.env.get("THINKERMAN_SUPABASE_URL");
+  const thinkKey = Deno.env.get("THINKERMAN_SERVICE_ROLE_KEY");
+  if (thinkUrl && thinkKey) {
+    try { projectClients.push({ name: "THINKERMAN", client: createClient(thinkUrl, thinkKey) }); } catch {}
+  }
+
+  let activeClient = admin;
+  let detectedProject = "PROD";
+
+  const checks = await Promise.all(
+    projectClients.map(async (pc) => {
+      try {
+        const { data, error } = await pc.client
+          .from("companies")
+          .select("id")
+          .eq("id", companyId)
+          .maybeSingle();
+        if (data && !error) {
+          return { name: pc.name, client: pc.client };
+        }
+      } catch (_) {}
+      return null;
+    })
+  );
+
+  const found = checks.find(Boolean);
+  if (found) {
+    activeClient = found.client;
+    detectedProject = found.name;
+    console.log(`[buildCompanyDetail] Detected project for companyId ${companyId}: ${detectedProject}`);
+  } else {
+    console.warn(`[buildCompanyDetail] CompanyId ${companyId} not found in any project database, defaulting to PROD`);
+  }
+
+  // Phase 1: Fetch non-LLM base data in parallel using activeClient
   const [invoicesRes, navInvoicesRes, membersRes, profilesRes, auditRes, emailByUserId] = await Promise.all([
-    admin.from("invoices").select("id").eq("company_id", companyId),
-    admin.from("nav_invoices").select("id").eq("company_id", companyId),
-    admin.from("company_members").select("company_id, user_id, role, created_at").eq("company_id", companyId),
-    admin.from("profiles").select("user_id, name, role"),
-    admin
+    activeClient.from("invoices").select("id").eq("company_id", companyId),
+    activeClient.from("nav_invoices").select("id").eq("company_id", companyId),
+    activeClient.from("company_members").select("company_id, user_id, role, created_at").eq("company_id", companyId),
+    activeClient.from("profiles").select("user_id, name, role"),
+    activeClient
       .from("audit_logs")
       .select("action, entity, entity_name, user_id, created_at")
       .eq("company_id", companyId)
       .order("created_at", { ascending: false })
       .limit(1),
-    listAllAuthUsers(admin),
+    listAllAuthUsers(activeClient),
   ]);
 
   for (const res of [invoicesRes, navInvoicesRes, membersRes, profilesRes, auditRes]) {
@@ -1116,15 +1176,15 @@ async function buildCompanyDetail(admin: ReturnType<typeof createClient>, compan
   const allowedSort = new Set(["created_at", "input_tokens", "output_tokens", "estimated_cost_usd"]);
   const dbSortCol = allowedSort.has(sortBy) ? sortBy : "created_at";
 
-  // Run lightweight aggregate + paginated detail queries in parallel
+  // Run lightweight aggregate + paginated detail queries in parallel using activeClient
   const [aggRes, detailRes] = await Promise.all([
     // Aggregate: only 3 numeric columns, no pagination — lightweight even for many rows
     applyLlmFilters(
-      admin.from("llm_koltsegek").select("estimated_cost_usd, total_tokens, llm_calls"),
+      activeClient.from("llm_koltsegek").select("estimated_cost_usd, total_tokens, llm_calls"),
     ),
     // Detail: full columns, DB-level sort + pagination + count
     applyLlmFilters(
-      admin
+      activeClient
         .from("llm_koltsegek")
         .select(
           "input_tokens, output_tokens, total_tokens, estimated_cost_usd, model_name, created_at, user_id, file_name, llm_calls",
@@ -2241,6 +2301,7 @@ async function updatePermissions(
   }
 
   if (body.eaisybooksAccess !== undefined) {
+    // 1. Update the profile flag
     const { error } = await admin
       .from("profiles")
       .update({ eaisybooks_access: body.eaisybooksAccess })
@@ -2250,6 +2311,82 @@ async function updatePermissions(
       errors.push(`eaisybooks_access: ${error.message}`);
     } else {
       updated++;
+    }
+
+    // 2. Full eaisyBooks activation / deactivation
+    if (body.eaisybooksAccess === true) {
+      // Find all companies where the user is a member
+      const { data: memberships } = await admin
+        .from("company_members")
+        .select("company_id")
+        .eq("user_id", body.userId);
+
+      const companyIds = (memberships || []).map((m: any) => m.company_id as string);
+
+      for (const companyId of companyIds) {
+        // Check if there's already a main_accountant for this company (unique partial index)
+        const { data: existingMain } = await admin
+          .from("accounty_assignments")
+          .select("id")
+          .eq("company_id", companyId)
+          .eq("is_main_accountant", true)
+          .neq("accountant_user_id", body.userId)
+          .limit(1);
+        const hasOtherMain = (existingMain || []).length > 0;
+
+        // Upsert accounty_assignments (iroda_admin role)
+        const { error: assignErr } = await admin
+          .from("accounty_assignments")
+          .upsert(
+            {
+              accountant_user_id: body.userId,
+              company_id: companyId,
+              accounting_firm_id: companyId,
+              role: "iroda_admin",
+              is_primary: true,
+              is_main_accountant: !hasOtherMain,
+              source: "management_dashboard",
+            },
+            { onConflict: "accountant_user_id,company_id" },
+          );
+        if (assignErr) {
+          errors.push(`accounty_assignment(${companyId}): ${assignErr.message}`);
+        } else {
+          updated++;
+        }
+
+        // Ensure accounty_tax_profiles exists (insert if missing)
+        const { error: taxErr } = await admin
+          .from("accounty_tax_profiles")
+          .upsert(
+            {
+              company_id: companyId,
+              vat_frequency: "monthly",
+              contribution_frequency: "monthly",
+              is_kata: false,
+              is_kiva: false,
+              has_payroll: false,
+              payroll_settings: {},
+            },
+            { onConflict: "company_id", ignoreDuplicates: true },
+          );
+        if (taxErr) {
+          errors.push(`accounty_tax_profile(${companyId}): ${taxErr.message}`);
+        } else {
+          updated++;
+        }
+      }
+    } else {
+      // Deactivation: remove accounty_assignments for this user
+      const { error: delErr } = await admin
+        .from("accounty_assignments")
+        .delete()
+        .eq("accountant_user_id", body.userId);
+      if (delErr) {
+        errors.push(`delete_assignments: ${delErr.message}`);
+      } else {
+        updated++;
+      }
     }
   }
 
@@ -2309,6 +2446,118 @@ async function updatePermissions(
     updated,
     error: errors.length > 0 ? errors.join("; ") : null,
   };
+}
+
+async function deleteUser(
+  admin: ReturnType<typeof createClient>,
+  body: { userId?: string },
+) {
+  if (!body.userId) {
+    return { error: "Missing required field: userId" };
+  }
+
+  // 1. Check if the user is the owner of any company
+  const { data: ownedCompanies, error: ownedErr } = await admin
+    .from("companies")
+    .select("id, name")
+    .eq("owner_id", body.userId);
+
+  if (ownedErr) {
+    return { error: `Failed to check company ownership: ${ownedErr.message}` };
+  }
+
+  if (ownedCompanies && ownedCompanies.length > 0) {
+    const companyNames = ownedCompanies.map((c: any) => c.name).join(", ");
+    return {
+      error: `A felhasználó a következő cégek tulajdonosa: ${companyNames}. A törlés előtt kérjük, ruházza át a cég tulajdonjogát egy másik tagra a Cégbeállításokban.`,
+    };
+  }
+
+  // 2. Remove memberships and assignments
+  // - company_members
+  const { error: memErr } = await admin
+    .from("company_members")
+    .delete()
+    .eq("user_id", body.userId);
+
+  if (memErr) {
+    return { error: `Failed to remove company memberships: ${memErr.message}` };
+  }
+
+  // - accounty_assignments
+  const { error: assignErr } = await admin
+    .from("accounty_assignments")
+    .delete()
+    .eq("accountant_user_id", body.userId);
+
+  if (assignErr) {
+    return { error: `Failed to remove accounty assignments: ${assignErr.message}` };
+  }
+
+  // - eaisybill_module_permissions
+  const { error: ebPermErr } = await admin
+    .from("eaisybill_module_permissions")
+    .delete()
+    .eq("user_id", body.userId);
+
+  if (ebPermErr) {
+    return { error: `Failed to remove eaisybill permissions: ${ebPermErr.message}` };
+  }
+
+  // - accounty_module_permissions
+  const { error: acPermErr } = await admin
+    .from("accounty_module_permissions")
+    .delete()
+    .eq("user_id", body.userId);
+
+  if (acPermErr) {
+    return { error: `Failed to remove accounty permissions: ${acPermErr.message}` };
+  }
+
+  // 3. Anonymize user profile in `profiles`
+  const anonymizedName = "Törölt Felhasználó";
+  const { error: profileErr } = await admin
+    .from("profiles")
+    .update({
+      name: anonymizedName,
+      avatar_url: null,
+      position: null,
+      company: null,
+      is_support_admin: false,
+      eaisybill_access: false,
+      eaisybooks_access: false,
+      role: "user",
+    })
+    .eq("user_id", body.userId);
+
+  if (profileErr) {
+    return { error: `Failed to anonymize profile: ${profileErr.message}` };
+  }
+
+  // 4. Invalidate/anonymize auth.users in Supabase Auth
+  const anonymizedEmail = `deleted_${body.userId.substring(0, 8)}@visibill.hu`;
+  const randomPass = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+  const { error: authErr } = await admin.auth.admin.updateUserById(
+    body.userId,
+    {
+      email: anonymizedEmail,
+      email_confirm: false,
+      password: randomPass,
+      user_metadata: {},
+      app_metadata: {},
+      banDuration: "876000h", // Ban for 100 years
+    }
+  );
+
+  if (authErr) {
+    console.error("Auth anonymization failed:", authErr.message);
+    return {
+      success: true,
+      warning: `A profil sikeresen anonimizálva lett, de az autentikációs fiók letiltása meghiúsult: ${authErr.message}`,
+    };
+  }
+
+  return { success: true };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2985,13 +3234,32 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
         }
       }
 
-      // Resolve upload statuses
+      // Resolve upload statuses and aggregate costs
       const uploadIds = [...new Set((data || []).map((r: any) => r.upload_id).filter(Boolean))];
       const uploadStatusMap = new Map<string, string>();
       const uploadUrlMap = new Map<string, string>();
       const uploadSourceMap = new Map<string, string>();
+      const llmDetailsMap = new Map<string, { cost: number; duration: number }>();
 
       if (uploadIds.length > 0) {
+        // Query llm_koltsegek to get total aggregated cost and max duration per upload_id
+        try {
+          const { data: llmCosts } = await pc.client
+            .from("llm_koltsegek")
+            .select("upload_id, estimated_cost_usd, processing_duration_ms")
+            .in("upload_id", uploadIds);
+          for (const l of (llmCosts || [])) {
+            if (l.upload_id) {
+              const current = llmDetailsMap.get(l.upload_id) || { cost: 0, duration: 0 };
+              current.cost += parseFloat(l.estimated_cost_usd) || 0;
+              if (l.processing_duration_ms) {
+                current.duration = Math.max(current.duration, l.processing_duration_ms);
+              }
+              llmDetailsMap.set(l.upload_id, current);
+            }
+          }
+        } catch (_) {}
+
         // Query invoice_uploads
         try {
           const { data: invUploads } = await pc.client
@@ -3050,23 +3318,26 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
       }
 
       return (data || [])
-        .map((r: any) => ({
-          id: r.id,
-          created_at: r.created_at,
-          pipeline: r.pipeline,
-          file_name: r.file_name,
-          company_name: companyNameMap.get(r.company_id) || null,
-          model_name: r.model_name,
-          total_tokens: r.total_tokens || 0,
-          estimated_cost_usd: parseFloat(r.estimated_cost_usd) || 0,
-          processing_duration_ms: r.processing_duration_ms || 0,
-          worker_id: r.worker_id || `worker-${pc.name.toLowerCase()}`,
-          project: pc.name,
-          upload_id: r.upload_id || null,
-          status: r.upload_id ? (uploadStatusMap.get(r.upload_id) || "OK") : "OK",
-          file_url: r.upload_id ? (uploadUrlMap.get(r.upload_id) || null) : null,
-          source: r.upload_id ? (uploadSourceMap.get(r.upload_id) || null) : null,
-        }))
+        .map((r: any) => {
+          const llm = r.upload_id ? llmDetailsMap.get(r.upload_id) : null;
+          return {
+            id: r.id,
+            created_at: r.created_at,
+            pipeline: r.pipeline,
+            file_name: r.file_name,
+            company_name: companyNameMap.get(r.company_id) || null,
+            model_name: r.model_name,
+            total_tokens: r.total_tokens || 0,
+            estimated_cost_usd: llm ? llm.cost : (parseFloat(r.estimated_cost_usd) || 0),
+            processing_duration_ms: llm ? llm.duration : (r.processing_duration_ms || 0),
+            worker_id: r.worker_id || `worker-${pc.name.toLowerCase()}`,
+            project: pc.name,
+            upload_id: r.upload_id || null,
+            status: r.upload_id ? (uploadStatusMap.get(r.upload_id) || "OK") : "OK",
+            file_url: r.upload_id ? (uploadUrlMap.get(r.upload_id) || null) : null,
+            source: r.upload_id ? (uploadSourceMap.get(r.upload_id) || null) : null,
+          };
+        })
         .filter((r: any) => !r.upload_id || r.source !== null);
     } catch (e) {
       return [];
@@ -3074,7 +3345,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
   });
   const recentResults = await Promise.all(recentFetches);
   // Keep top 20 per project so every container always has recent jobs
-  const recent_jobs = recentResults
+  const raw_recent_jobs = recentResults
     .map(projectJobs => 
       projectJobs
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -3082,6 +3353,19 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
     )
     .flat()
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // Deduplicate by upload_id to avoid showing multiple entries for the same job run
+  const seenUploadIds = new Set<string>();
+  const recent_jobs: any[] = [];
+  for (const job of raw_recent_jobs) {
+    if (job.upload_id) {
+      if (seenUploadIds.has(job.upload_id)) {
+        continue;
+      }
+      seenUploadIds.add(job.upload_id);
+    }
+    recent_jobs.push(job);
+  }
 
   // ── 5c. Fetch error uploads (up to 100 per project) ──
   const errorJobsFetches = projectClients.map(async (pc) => {

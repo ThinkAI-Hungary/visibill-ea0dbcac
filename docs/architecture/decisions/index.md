@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-08-09  
-> **Összesen:** 47 döntés | ✅ Decided: 46 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-08-11  
+> **Összesen:** 48 döntés | ✅ Decided: 47 | ⛔ Superseded: 1
 
 ---
 
@@ -56,7 +56,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-010 | Credential titkosĂ­tĂˇs (AES-256-GCM, per-user) | âś… Decided | [A-010](./A-010-credential-encryption.md) |
 | A-017 | BiztonsĂˇgi architektĂşra (5 rĂ©teg, audit trail) | âś… Decided | [A-017](./A-017-security-architecture.md) |
 | A-020 | Auth Trigger Chain â€” Signup Incident Ă©s TanulsĂˇgok | âś… Decided | [A-020](./A-020-auth-trigger-chain-incident.md) |
-| A-021 | Email Auth Flow Redesign â€” Email change, signup single email, hash interception, sessionStorage security | âś… Decided | [A-021](./A-021-email-auth-flow-redesign.md) |
+| A-021 | Email Auth Flow Redesign — Email change, signup single email, hash interception, sessionStorage security | ✅ Decided | [A-021](./A-021-email-auth-flow-redesign.md) |
+| A-049 | Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete) | ✅ Decided | [A-049](./A-049-user-deletion-soft-delete-strategy.md) |
 
 ## đź“§ Email & IntegrĂˇciĂł
 

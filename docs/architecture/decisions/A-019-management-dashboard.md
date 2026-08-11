@@ -46,7 +46,7 @@ if (requesterProfile?.role !== "management" && requesterProfile?.role !== "think
 
 ### API Design: Action-based Query Params
 
-Egyetlen Edge Function, 15 action:
+Egyetlen Edge Function, 16 action:
 
 | Action | Params | Visszatérés |
 |---|---|---|
@@ -55,6 +55,7 @@ Egyetlen Edge Function, 15 action:
 | `user-detail` | `userId` | companyCount, companies[] |
 | `user-permissions` | `userId` | Felhasználó modul jogosultságai (eaisybill + accounty modulok, read/write) |
 | `update-permissions` | POST body: `{ userId, permissions[] }` | Jogosultságok frissítése |
+| `delete-user` | POST body: `{ userId }` | Felhasználó törlése/anonimizálása és hozzáféréseinek megvonása |
 | `errors` | `page`, `pageSize`, `sortCol`, `sortDir`, `search`, `filterSource`, `filterCategory`, `filterCompanyId`, `filterUserId` | totalErrors, last24hErrors, mostAffectedCompany, mostAffectedUser, topErrorCategory, errors[], totalRows |
 | `delete-errors` | POST body: `{ ids }` | Hibák törlése (app_error_logs: DELETE, upload táblák: dismissed) |
 | `delete-all-errors` | POST (no body) | Összes hiba törlése: app_error_logs DELETE + upload táblák error→dismissed |
@@ -705,3 +706,28 @@ const handleBulkRetry = async () => {
 - Ha van kijelölés: lebegő bulk action toolbar jelenik meg a lista felett
 - Pipeline-választó dropdown: melyik queue-ba kerüljön az újraküldés
 - Egyszerre max. 100 hibás feldolgozás jelölhető ki (API limit)
+
+---
+
+## Legutóbbi Feldolgozások Költség-egységesítés & Deduplikáció (2026-08-11)
+
+### Probléma
+A "Worker hibák" (Hibás feldolgozások) listában a fájlok a teljes életútjuk összesített költségével jelentek meg (az összes korábbi futás és modell-hívás költsége összeadva). Ezzel szemben az "Utolsó feldolgozások" (Recent Jobs) listában a fájlok egyedileg szerepeltek minden modell-log sorhoz (mivel a `llm_koltsegek` raw soraira épült), így a rész-költségek különálló sorokban jelentek meg, ami eltérést és duplikációt okozott a dashboardon.
+
+### Megoldás
+1. **Aggregáció:** A `management-stats` Edge Function a `worker-status` lekérdezésben a `recentFetches` során is lekéri és összeadja a `estimated_cost_usd` értékeket, illetve a maximális `processing_duration_ms` időt minden `upload_id` szerint (hasonlóan a `getActiveErrors` logikájához).
+2. **Deduplikáció:** A `recent_jobs` tömb a backend oldalon deduplikálva lett `upload_id` alapján. Így a legutóbbi feldolgozások listájában minden fájl futás pontosan egyszer szerepel (a legfrissebb futása szerint), és a hozzá tartozó pontos, összesített feldolgozási költség jelenik meg.
+
+---
+
+## Dinamikus Cross-Project Cég Adatlekérdezés (2026-08-11)
+
+### Probléma
+A külön adatbázis-példányon futó cégek (pl. **VSWEB Kft**, amely a VSWEB Supabase projektjén fut) kattintásakor a cég adatlapja (`company-detail` action) üresen töltődött be (0 számla, 0 tag, 0 LLM költség). Ennek oka, hogy a backend alapértelmezetten a PROD Supabase adatbázisában kereste a cég rekordjait és az auth felhasználóit.
+
+### Megoldás
+- **Dinamikus detektálás:** A `buildCompanyDetail` függvény elején egy párhuzamos lekérdezés fut le az összes konfigurált projekt adatbázisán (`PROD`, `VSWEB`, `THINKERMAN`) a `companies` táblán a `companyId` alapján.
+- **Kliens átirányítás (`activeClient`):** Amelyik adatbázisban megtalálható a cég, a backend azt a projekt-klienst jelöli ki mint `activeClient`.
+- **Tenant-specifikus adatok:** A céghez kapcsolódó összes részletes adat (számlák, tagok, audit logok, LLM költségek, és a felhasználók email címeit feloldó Auth userek listája) az `activeClient` kapcsolaton keresztül kérdeződik le, így az adatok zökkenőmentesen és helyesen jelennek meg a dashboardon.
+
+

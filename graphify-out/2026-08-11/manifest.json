@@ -1505,8 +1505,8 @@
     "semantic_hash": ""
   },
   "src/pages/ManagementDashboard.tsx": {
-    "mtime": 1786464632.731779,
-    "ast_hash": "911ed1f4ab3118f570bf58baeb5fc250",
+    "mtime": 1786048611.9321043,
+    "ast_hash": "fe52bd40e070a45a7d2a4ada3d419119",
     "semantic_hash": ""
   },
   "src/pages/ManualUpload.tsx": {
@@ -1700,8 +1700,8 @@
     "semantic_hash": "ff7983437ae5d07804815e4662ebd916"
   },
   "supabase/functions/management-stats/index.ts": {
-    "mtime": 1786464574.440785,
-    "ast_hash": "c15b51d2ae8a2ea573e63342a1b7e421",
+    "mtime": 1786457097.27362,
+    "ast_hash": "efe0d6c79990d05aaa17c5c4cedba573",
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
@@ -3085,8 +3085,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
-    "mtime": 1786464814.005735,
-    "ast_hash": "cf6a5b879dc33afad47393eb05894bf9",
+    "mtime": 1786457158.8163192,
+    "ast_hash": "5412873629fcc9382ecff971dac80cf6",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-020-auth-trigger-chain-incident.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1786464853.009542,
-    "ast_hash": "fc192b59033ff85f28096ee790fe028b",
+    "mtime": 1786280829.1098526,
+    "ast_hash": "4c64e3d665063bb8da3b928126910cf4",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -6747,11 +6747,6 @@
   "src/lib/bookkeepingExports.ts": {
     "mtime": 1786370091.0091121,
     "ast_hash": "2711397deb3124539dbca1bd952a7a0d",
-    "semantic_hash": ""
-  },
-  "docs/architecture/decisions/A-049-user-deletion-soft-delete-strategy.md": {
-    "mtime": 1786464830.3236144,
-    "ast_hash": "d02519a3ddb353bdcd4fa6f020f4066b",
     "semantic_hash": ""
   }
 }

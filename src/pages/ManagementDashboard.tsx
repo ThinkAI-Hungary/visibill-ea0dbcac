@@ -4147,10 +4147,13 @@ function WorkerPanel() {
   const [dismissedQueues, setDismissedQueues] = useState<Set<string>>(new Set());
   const showProcessing = searchParams.get('wrk_show_processing') === 'true';
   const showWorkerErrors = searchParams.get('wrk_show_errors') === 'true';
+  const showCompleted = searchParams.get('wrk_show_completed') === 'true';
   const [expandedErrorRowId, setExpandedErrorRowId] = useState<string | null>(null);
   const [workerErrorSearch, setWorkerErrorSearch] = useState('');
+  const [completedSearch, setCompletedSearch] = useState('');
   const [selectedErrorIds, setSelectedErrorIds] = useState<Set<string>>(new Set());
   const ERROR_PAGE_SIZE = 10;
+  const COMPLETED_PAGE_SIZE = 15;
 
   const { previewFile, openPreview, closePreview } = useFilePreview();
   const [retryModalOpen, setRetryModalOpen] = useState(false);
@@ -4307,6 +4310,28 @@ function WorkerPanel() {
     return filteredErrorJobs.slice((errorPage - 1) * ERROR_PAGE_SIZE, errorPage * ERROR_PAGE_SIZE);
   }, [filteredErrorJobs, errorPage]);
 
+  // Completed jobs: filter recent_jobs for OK status
+  const completedJobs = useMemo(() => {
+    return groupedRecentJobs.filter((j: any) => j.status === 'OK');
+  }, [groupedRecentJobs]);
+
+  const filteredCompletedJobs = useMemo(() => {
+    if (!completedSearch) return completedJobs;
+    const term = completedSearch.toLowerCase().trim();
+    return completedJobs.filter((j: any) =>
+      (j.file_name || '').toLowerCase().includes(term) ||
+      (j.company_name || '').toLowerCase().includes(term) ||
+      (j.pipeline || '').toLowerCase().includes(term)
+    );
+  }, [completedJobs, completedSearch]);
+
+  const completedPage = Math.max(1, Number(searchParams.get('wrk_ok_page') || 1));
+  const completedTotalPages = Math.max(1, Math.ceil(filteredCompletedJobs.length / COMPLETED_PAGE_SIZE));
+
+  const paginatedCompletedJobs = useMemo(() => {
+    return filteredCompletedJobs.slice((completedPage - 1) * COMPLETED_PAGE_SIZE, completedPage * COMPLETED_PAGE_SIZE);
+  }, [filteredCompletedJobs, completedPage]);
+
   const prevPeriodRef = React.useRef(workerPeriod);
   useEffect(() => {
     if (prevPeriodRef.current !== workerPeriod) {
@@ -4452,21 +4477,27 @@ function WorkerPanel() {
           const isQueueKpi = kpi.label === 'Queue várakozó';
           const isProcessingKpi = kpi.label === 'Feldolgozás alatt';
           const isErrorKpi = kpi.label.startsWith('Worker hibák');
+          const isCompletedKpi = kpi.label.startsWith('Feldolgozva');
           const isQueueClickable = isQueueKpi && (summary.total_queue_pending || 0) > 0;
           const isProcessingClickable = isProcessingKpi;
           const isErrorClickable = isErrorKpi && (summary.total_errors_24h || 0) > 0;
-          const isClickable = isQueueClickable || isProcessingClickable || isErrorClickable;
-          const isActive = (showAllQueues && isQueueKpi) || (showProcessing && isProcessingKpi) || (showWorkerErrors && isErrorKpi);
+          const isCompletedClickable = isCompletedKpi && (summary.total_jobs_24h || 0) > 0;
+          const isClickable = isQueueClickable || isProcessingClickable || isErrorClickable || isCompletedClickable;
+          const isActive = (showAllQueues && isQueueKpi) || (showProcessing && isProcessingKpi) || (showWorkerErrors && isErrorKpi) || (showCompleted && isCompletedKpi);
           const activeColor = isQueueKpi 
             ? 'border-amber-500/50 bg-amber-500/5' 
             : isProcessingKpi 
               ? 'border-cyan-500/50 bg-cyan-500/5' 
-              : 'border-red-500/50 bg-red-500/5';
+              : isCompletedKpi
+                ? 'border-emerald-500/50 bg-emerald-500/5'
+                : 'border-red-500/50 bg-red-500/5';
           const hoverColor = isQueueKpi 
             ? 'hover:border-amber-500/50 hover:bg-amber-500/5' 
             : isProcessingKpi 
               ? 'hover:border-cyan-500/50 hover:bg-cyan-500/5' 
-              : 'hover:border-red-500/50 hover:bg-red-500/5';
+              : isCompletedKpi
+                ? 'hover:border-emerald-500/50 hover:bg-emerald-500/5'
+                : 'hover:border-red-500/50 hover:bg-red-500/5';
           return (
           <Card
             key={kpi.label}
@@ -4479,16 +4510,31 @@ function WorkerPanel() {
                   wrk_show_queues: showAllQueues ? null : 'true',
                   wrk_show_processing: null,
                   wrk_show_errors: null,
+                  wrk_show_completed: null,
                   wrk_err_page: null,
+                  wrk_ok_page: null,
                 });
                 setSelectedQueue(null);
                 setDismissedQueues(new Set());
+              } else if (isCompletedClickable) {
+                updateParams({
+                  wrk_show_completed: showCompleted ? null : 'true',
+                  wrk_show_queues: null,
+                  wrk_show_processing: null,
+                  wrk_show_errors: null,
+                  wrk_err_page: null,
+                  wrk_ok_page: null,
+                });
+                setSelectedQueue(null);
+                setCompletedSearch('');
               } else if (isProcessingClickable) {
                 updateParams({
                   wrk_show_processing: showProcessing ? null : 'true',
                   wrk_show_queues: null,
                   wrk_show_errors: null,
+                  wrk_show_completed: null,
                   wrk_err_page: null,
+                  wrk_ok_page: null,
                 });
                 setSelectedQueue(null);
               } else if (isErrorClickable) {
@@ -4496,7 +4542,9 @@ function WorkerPanel() {
                   wrk_show_errors: showWorkerErrors ? null : 'true',
                   wrk_show_queues: null,
                   wrk_show_processing: null,
+                  wrk_show_completed: null,
                   wrk_err_page: null,
+                  wrk_ok_page: null,
                 });
                 setSelectedQueue(null);
               }
@@ -4954,6 +5002,142 @@ function WorkerPanel() {
                     <CheckCircle2 className="h-8 w-8 text-emerald-500/40 mx-auto" />
                     <p className="text-muted-foreground text-sm">Nincs hibás feldolgozás</p>
                     <p className="text-muted-foreground/60 text-xs">Minden feladat sikeresen lefutott</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            );
+          })() : showCompleted ? (() => {
+            return (
+            <Card className="border-emerald-500/30 bg-emerald-500/5">
+              <CardHeader className="pb-2 pt-3 px-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    Sikeres feldolgozások (Összes projekt)
+                    <Badge className="text-[10px] px-1.5 py-0 bg-emerald-500/15 text-emerald-400">
+                      {filteredCompletedJobs.length} kész
+                    </Badge>
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        value={completedSearch}
+                        onChange={e => { updateParams({ wrk_ok_page: '1' }); setCompletedSearch(e.target.value); }}
+                        placeholder="Keresés (fájl, cég, pipeline)..."
+                        className="pl-8 h-7 text-xs w-64 bg-background/50 border-border/30 focus-visible:bg-background"
+                      />
+                    </div>
+                    <button onClick={() => { updateParams({ wrk_show_completed: null, wrk_ok_page: null }); setCompletedSearch(''); }} className="text-muted-foreground hover:text-foreground p-1">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="px-0 pb-2">
+                {filteredCompletedJobs.length > 0 ? (
+                  <>
+                    <table className="w-full text-xs table-fixed">
+                      <thead>
+                        <tr className="border-b border-border/30 text-muted-foreground">
+                          <th className="text-left px-4 py-1.5 font-medium w-[110px]">Dátum</th>
+                          <th className="text-left px-3 py-1.5 font-medium w-[110px]">Pipeline</th>
+                          <th className="text-left px-3 py-1.5 font-medium">Fájl</th>
+                          <th className="text-left px-3 py-1.5 font-medium w-[160px]">Cég</th>
+                          <th className="text-right px-3 py-1.5 font-medium w-[70px]">Idő</th>
+                          <th className="text-right px-3 py-1.5 font-medium w-[80px]">$</th>
+                          <th className="text-left px-3 py-1.5 font-medium w-[180px]">Worker</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedCompletedJobs.map((j: any) => {
+                          const time = new Date(j.created_at);
+                          const dateStr = `${(time.getMonth() + 1).toString().padStart(2, '0')}.${time.getDate().toString().padStart(2, '0')}`;
+                          const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+                          return (
+                            <tr key={j.id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
+                              <td className="px-4 py-1.5 font-mono text-muted-foreground whitespace-nowrap">{dateStr} - {timeStr}</td>
+                              <td className="px-3 py-1.5">
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 w-[75px] justify-center">{j.pipeline}</Badge>
+                              </td>
+                              <td className="px-3 py-1.5 max-w-[180px] truncate" title={j.file_name}>
+                                {j.file_url ? (
+                                  <button
+                                    className="font-medium hover:underline text-left truncate flex items-center gap-1.5 w-full text-foreground/90"
+                                    onClick={() => openPreview({ url: j.file_url, name: j.file_name })}
+                                  >
+                                    <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                    <span className="truncate">{j.file_name}</span>
+                                  </button>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 truncate text-muted-foreground/80">
+                                    <FileText className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                                    <span className="truncate">{j.file_name}</span>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-3 py-1.5 text-muted-foreground max-w-[120px] truncate">{j.company_name || '—'}</td>
+                              <td className="text-right px-3 py-1.5 font-mono text-muted-foreground">{formatDuration(j.processing_duration_ms)}</td>
+                              <td className="text-right px-3 py-1.5 font-mono text-purple-500">${j.estimated_cost_usd?.toFixed(4)}</td>
+                              <td className="px-3 py-1.5 text-[10px] text-muted-foreground/60 font-mono">
+                                <div className="truncate">
+                                  {j.project && j.project !== 'PROD' && <span className="text-primary/50 mr-1">[{j.project}]</span>}
+                                  {j.worker_id || '—'}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    <div className="flex items-center justify-between px-4 pt-2">
+                      <span className="text-[11px] text-muted-foreground">
+                        {filteredCompletedJobs.length} sikeres feldolgozás
+                      </span>
+                      {completedTotalPages > 1 && (
+                        <div className="flex items-center gap-1">
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_ok_page: 1 })} disabled={completedPage === 1} aria-label="Első">
+                            <ChevronLeft className="h-3.5 w-3.5" /><ChevronLeft className="h-3.5 w-3.5 -ml-2" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_ok_page: Math.max(1, completedPage - 1) })} disabled={completedPage === 1} aria-label="Előző">
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                          </Button>
+                          {Array.from({ length: completedTotalPages }, (_, i) => i + 1).map(pNum => {
+                            if (completedTotalPages <= 7 || pNum === 1 || pNum === completedTotalPages || Math.abs(pNum - completedPage) <= 1) {
+                              return (
+                                <Button
+                                  key={pNum}
+                                  variant={pNum === completedPage ? 'default' : 'outline'}
+                                  size="icon"
+                                  className="h-7 w-7 text-xs"
+                                  onClick={() => updateParams({ wrk_ok_page: pNum })}
+                                  aria-label={`${pNum}. oldal`}
+                                  aria-current={pNum === completedPage ? 'page' : undefined}
+                                >
+                                  {pNum}
+                                </Button>
+                              );
+                            }
+                            if (pNum === 2 || pNum === completedTotalPages - 1) {
+                              return <span key={pNum} className="text-xs text-muted-foreground px-1">…</span>;
+                            }
+                            return null;
+                          })}
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_ok_page: Math.min(completedTotalPages, completedPage + 1) })} disabled={completedPage === completedTotalPages} aria-label="Következő">
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateParams({ wrk_ok_page: completedTotalPages })} disabled={completedPage === completedTotalPages} aria-label="Utolsó">
+                            <ChevronRight className="h-3.5 w-3.5" /><ChevronRight className="h-3.5 w-3.5 -ml-2" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8 space-y-2">
+                    <Clock className="h-8 w-8 text-muted-foreground/40 mx-auto" />
+                    <p className="text-muted-foreground text-sm">Nincs sikeres feldolgozás ebben az időszakban</p>
                   </div>
                 )}
               </CardContent>
@@ -6864,6 +7048,45 @@ interface UsersControlPanelProps {
 function UsersControlPanel({ allUsers, overviewLoading, companyCostMap, onOpenCompany }: UsersControlPanelProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const USER_PAGE_SIZE = 15;
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Deletion state
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [deleteUserName, setDeleteUserName] = useState<string>('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  const handleDeleteUser = async () => {
+    if (!deleteUserId) return;
+    setIsDeleting(true);
+    try {
+      const result = await postManagementData('delete-user', { userId: deleteUserId });
+      if (result?.error) {
+        toast({
+          title: "Törlés sikertelen",
+          description: result.error,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Felhasználó anonimizálva",
+          description: "A felhasználó sikeresen anonimizálva és letiltva."
+        });
+        setIsDeleteOpen(false);
+        setDeleteUserId(null);
+        queryClient.invalidateQueries({ queryKey: ['management-overview'] });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Törlés sikertelen",
+        description: `Hiba történt a törlés során: ${err.message || err}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Deriving state from URL search params
   const searchUser = searchParams.get('usr_q') || '';
@@ -6944,6 +7167,7 @@ function UsersControlPanel({ allUsers, overviewLoading, companyCostMap, onOpenCo
                 <th className="text-left py-3 px-5 font-medium" style={{ width: 40 }}></th>
                 <th className="text-left py-3 px-2 font-medium">Név</th>
                 <th className="text-center py-3 px-4 font-medium" style={{ width: 80 }}>Cégek</th>
+                <th className="text-center py-3 px-4 font-medium" style={{ width: 80 }}>Műveletek</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -6953,11 +7177,12 @@ function UsersControlPanel({ allUsers, overviewLoading, companyCostMap, onOpenCo
                     <td className="py-3 px-5"><Skeleton className="h-4 w-4" /></td>
                     <td className="py-3 px-2"><Skeleton className="h-4 w-40" /></td>
                     <td className="py-3 px-4 text-center"><Skeleton className="h-5 w-8 mx-auto rounded-full" /></td>
+                    <td className="py-3 px-4 text-center"><Skeleton className="h-8 w-8 mx-auto rounded-md" /></td>
                   </tr>
                 ))
               ) : paginatedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="text-center py-8 text-muted-foreground text-sm">Nincs találat</td>
+                  <td colSpan={4} className="text-center py-8 text-muted-foreground text-sm">Nincs találat</td>
                 </tr>
               ) : paginatedUsers.map(u => {
                 const isExpanded = expandedUserId === u.user_id;
@@ -6995,10 +7220,25 @@ function UsersControlPanel({ allUsers, overviewLoading, companyCostMap, onOpenCo
                           <span className="text-muted-foreground italic text-xs">0</span>
                         )}
                       </td>
+                      <td className="py-3 px-4 text-center" onClick={e => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          onClick={() => {
+                            setDeleteUserId(u.user_id);
+                            setDeleteUserName(u.name || u.email);
+                            setIsDeleteOpen(true);
+                          }}
+                          title="Felhasználó törlése/anonimizálása"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
                     </tr>
                     {isExpanded && u.companies.length > 0 && (
                       <tr>
-                        <td colSpan={3} className="p-0">
+                        <td colSpan={4} className="p-0">
                           <div className="bg-muted/20 border-t border-border animate-in slide-in-from-top-1 duration-200">
                             <table className="w-full text-xs">
                               <thead>
@@ -7061,6 +7301,7 @@ function UsersControlPanel({ allUsers, overviewLoading, companyCostMap, onOpenCo
                       </div>
                     </td>
                     <td className="py-3 px-4"></td>
+                    <td className="py-3 px-4"></td>
                   </tr>
                 ))
               }
@@ -7086,6 +7327,43 @@ function UsersControlPanel({ allUsers, overviewLoading, companyCostMap, onOpenCo
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={isDeleteOpen} onOpenChange={open => { if (!isDeleting) setIsDeleteOpen(open); }}>
+        <AlertDialogContent className="sm:max-w-md border-destructive/20 bg-background">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Felhasználó törlése/anonimizálása
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 pt-2 text-sm text-muted-foreground" asChild>
+              <div className="space-y-3 pt-2 text-sm text-muted-foreground">
+                <p>
+                  Biztosan el akarod távolítani és anonimizálni a következő felhasználót:
+                  <strong className="block text-foreground mt-1 text-sm font-semibold">{deleteUserName}</strong>?
+                </p>
+                <p className="bg-destructive/5 text-destructive border border-destructive/10 p-3 rounded-lg text-xs leading-relaxed">
+                  <strong>FIGYELEM:</strong> Ez a művelet visszavonhatatlan. A felhasználó minden jogosultsága és cégtagsága megsemmisül, a fiókja véglegesen letiltásra kerül. A korábbi naplókban és adatokban a neve helyén <em>"Törölt Felhasználó"</em> fog szerepelni.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Ha a felhasználó egyedüli tulajdonosa egy cégnek, a törlést a rendszer biztonsági okokból megtagadja, amíg a tulajdonjogot át nem ruházod egy másik tagra.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0 mt-4">
+            <AlertDialogCancel disabled={isDeleting}>Mégsem</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteUser}
+              disabled={isDeleting}
+              className="gap-2"
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {isDeleting ? 'Törlés...' : 'Törlés és anonimizálás'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
