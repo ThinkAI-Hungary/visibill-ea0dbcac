@@ -16,7 +16,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
-import { exportToRLB60, exportToKulcsSoft } from '@/lib/bookkeepingExports';
+import { exportToRLB60, exportToKulcsSoft, exportToNovitax } from '@/lib/bookkeepingExports';
 import { TAccountLedger } from '@/components/accounty/invoices/TAccountLedger';
 import { ArrowLeftRight } from 'lucide-react';
 
@@ -36,6 +36,7 @@ export default function ClientInvoicesPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [fadFilter, setFadFilter] = useState(false);
+  const [missingImageFilter, setMissingImageFilter] = useState(false);
   
   const [isNavSyncOpen, setIsNavSyncOpen] = useState(false);
   const [isSyncSettingsOpen, setIsSyncSettingsOpen] = useState(false);
@@ -138,9 +139,10 @@ export default function ClientInvoicesPage() {
       const matchStatus = statusFilter === 'all' || inv.status === statusFilter;
       const matchType = typeFilter === 'all' || inv.type === typeFilter;
       const matchFad = !fadFilter || inv.isReverseCharge === true;
-      return matchSearch && matchStatus && matchType && matchFad;
+      const matchMissingImage = !missingImageFilter || (inv.isNav && inv.submitted !== true);
+      return matchSearch && matchStatus && matchType && matchFad && matchMissingImage;
     });
-  }, [invoicesData, searchQuery, statusFilter, typeFilter, fadFilter]);
+  }, [invoicesData, searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter]);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -151,7 +153,7 @@ export default function ClientInvoicesPage() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, typeFilter, fadFilter]);
+  }, [searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter]);
 
   const totalItems = filteredInvoices.length;
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -382,6 +384,20 @@ export default function ClientInvoicesPage() {
                 <Cloud className="w-4 h-4 text-muted-foreground" />
                 Kulcs-Soft formátum (.xml)
               </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
+                onClick={() => {
+                  if (filteredInvoices.length === 0) {
+                    toast({ title: 'Hiba', description: 'Nincsenek exportálható számlák a jelenlegi szűrésben.', variant: 'destructive' });
+                    return;
+                  }
+                  exportToNovitax(filteredInvoices);
+                  toast({ title: 'Novitax export sikeres', description: `${filteredInvoices.length} számla exportálva.` });
+                }}
+              >
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                Novitax formátum (.csv)
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -499,6 +515,25 @@ export default function ClientInvoicesPage() {
               FAD
               {fadCount > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] font-bold">{fadCount}</span>}
             </button>
+
+            <button
+              onClick={() => setMissingImageFilter(!missingImageFilter)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 h-10 rounded-md border text-xs font-semibold transition-colors',
+                missingImageFilter
+                  ? 'bg-rose-100 border-rose-300 text-rose-800 dark:bg-rose-900/30 dark:border-rose-700 dark:text-rose-300'
+                  : 'bg-card border-border text-muted-foreground hover:bg-accent'
+              )}
+              title="Csak a bizonylatkép nélküli NAV számlák mutatása"
+            >
+              <Cloud className="w-3.5 h-3.5 animate-pulse text-rose-500" />
+              Hiányzó kép
+              {invoicesData?.filter(inv => inv.isNav && inv.submitted !== true).length ? (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-855 dark:text-rose-300 text-[10px] font-bold">
+                  {invoicesData.filter(inv => inv.isNav && inv.submitted !== true).length}
+                </span>
+              ) : null}
+            </button>
           </div>
         </div>
 
@@ -614,6 +649,11 @@ export default function ClientInvoicesPage() {
                         {inv.isReverseCharge && (
                           <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-bold border border-amber-200 dark:border-amber-800 whitespace-nowrap">
                             FAD
+                          </span>
+                        )}
+                        {inv.isNav && inv.submitted !== true && (
+                          <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 text-[10px] font-bold border border-rose-200 dark:border-rose-800 whitespace-nowrap flex items-center gap-1" title="A fizikai bizonylatkép hiányzik a NAV adathoz képest">
+                            ⚠️ Hiányzó kép
                           </span>
                         )}
                       </div>

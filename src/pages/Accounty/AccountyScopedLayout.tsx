@@ -23,6 +23,11 @@ export default function AccountyScopedLayout() {
   const syncingFromUrl = useRef(false);
   const [accessDenied, setAccessDenied] = useState(false);
 
+  // Clear switch pending flag on mount when landing on a valid scoped route
+  useEffect(() => {
+    localStorage.removeItem('visibill_switch_pending');
+  }, []);
+
   const isLegacyKeyword = ['payroll', 'client', 'missing-invoices'].includes(urlCompanyId || '');
 
   // 1. URL ➔ Context Sync & Legacy Redirect
@@ -84,6 +89,13 @@ export default function AccountyScopedLayout() {
       syncingFromUrl.current = false;
     });
   }, [urlCompanyId, urlDateRange, clients, clientsLoading, isLegacyKeyword, dateFromFormatted, dateToFormatted, location.pathname, navigate]);
+
+  // 1b. Store selected Accounty company in localStorage to remember it when switching to eaisybill
+  useEffect(() => {
+    if (urlCompanyId && !isLegacyKeyword && !accessDenied) {
+      localStorage.setItem('eaisybooks_selected_company_id', urlCompanyId);
+    }
+  }, [urlCompanyId, isLegacyKeyword, accessDenied]);
 
   // 2. Context ➔ URL Sync (when date changes via UI)
   useEffect(() => {

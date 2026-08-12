@@ -1,18 +1,23 @@
 import React from 'react';
+import { SzochoAdvisor } from './SzochoAdvisor';
 
 interface PayrollStep6Props {
   calculations: any[];
   getCalcName: (calc: any) => string;
+  companyId: string;
 }
 
 export default function PayrollStep6({
   calculations,
   getCalcName,
+  companyId,
 }: PayrollStep6Props) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {companyId && <SzochoAdvisor companyId={companyId} />}
+      
       <p className="text-sm text-slate-600 dark:text-slate-300">
-        SZJA (15%), TB járulék (18.5%), SZOCHO (13%) kalkuláció az adómotor segítségével.
+        SZJA (15%), TB Járulék (18.5%), SZOCHO (13%) kalkuláció az adómotor segítségével.
       </p>
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 text-center border border-red-200 dark:border-red-800">

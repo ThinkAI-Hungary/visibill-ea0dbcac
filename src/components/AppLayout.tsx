@@ -5,6 +5,7 @@ import { Suspense, memo, useEffect } from "react";
 import { GlobalDatePicker } from "@/components/GlobalDatePicker";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePdfExportNotifications } from "@/hooks/usePdfExportNotifications";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface AppLayoutProps {
   children?: React.ReactNode;
@@ -89,6 +90,17 @@ function useIdleRoutePrefetch() {
 export function AppLayout({ children }: AppLayoutProps) {
   useIdleRoutePrefetch();
   usePdfExportNotifications();
+
+  const switchPending = localStorage.getItem('visibill_switch_pending');
+
+  if (switchPending === 'eaisybill') {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <LoadingSpinner message="eaisyBill betöltése..." />
+        <div className="hidden"><Outlet /></div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider

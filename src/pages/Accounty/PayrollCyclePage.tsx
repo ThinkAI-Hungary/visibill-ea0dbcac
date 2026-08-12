@@ -728,6 +728,7 @@ export default function PayrollCyclePage() {
             <PayrollStep6
               calculations={calculations}
               getCalcName={getCalcName}
+              companyId={companyId || ''}
             />
           )}
           {currentStep === 7 && (

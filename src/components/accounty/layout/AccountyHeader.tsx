@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Bell, AlertTriangle, Clock, FileWarning, Calendar } from 'lucide-react';
+import { Menu, Bell, AlertTriangle, Clock, FileWarning, Calendar, HelpCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CompanySwitcher } from '@/components/accounty/CompanySwitcher';
 import { GlobalDatePicker } from '@/components/GlobalDatePicker';
@@ -10,6 +10,7 @@ interface AccountyHeaderProps {
   notifDismissed: boolean;
   setNotifDismissed: (v: boolean) => void;
   navigate: (path: string) => void;
+  onHelpClick: () => void;
 }
 
 export default function AccountyHeader({
@@ -18,6 +19,7 @@ export default function AccountyHeader({
   notifDismissed,
   setNotifDismissed,
   navigate,
+  onHelpClick,
 }: AccountyHeaderProps) {
   return (
     <div className="flex items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 relative z-10">
@@ -33,7 +35,16 @@ export default function AccountyHeader({
           <GlobalDatePicker />
         </div>
       </div>
-      <div className="flex items-center pr-4 lg:pr-6">
+      <div className="flex items-center pr-4 lg:pr-6 gap-1">
+        <button
+          onClick={onHelpClick}
+          className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors focus:outline-none rounded-md"
+          title="Segítség és bemutató"
+          data-tour="help-trigger"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
+
         <Popover>
           <PopoverTrigger asChild>
             <button className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-md">

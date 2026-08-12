@@ -71,6 +71,7 @@ interface AccountySidebarProps {
   toggleSection: (key: string) => void;
   isActive: (path: string) => boolean;
   navigate: (path: string) => void;
+  hoveredHelpSection?: string | null;
 }
 
 export default function AccountySidebar({
@@ -99,6 +100,7 @@ export default function AccountySidebar({
   toggleSection,
   isActive,
   navigate,
+  hoveredHelpSection = null,
 }: AccountySidebarProps) {
   const [expandedSubSections, setExpandedSubSections] = React.useState<Set<string>>(new Set());
   const { dateFromFormatted, dateToFormatted } = useDateRange();
@@ -139,7 +141,7 @@ export default function AccountySidebar({
       label: 'Iroda & Beállítások',
       icon: Settings,
       items: [
-        { to: '/accounty/settings', icon: Settings, label: 'Beállítások' },
+        { to: '/accounty/settings', icon: Settings, label: 'Beállítások', id: 'settings' },
         { to: '/accounty/profile/settings', icon: User, label: 'Profilbeállítások' },
         { to: '/accounty/admin/permissions', icon: Shield, label: 'Jogosultságkezelő' },
         { to: '/accounty/admin/accountants', icon: Users, label: 'Könyvelők kezelése' },
@@ -232,10 +234,13 @@ export default function AccountySidebar({
       sidebarOpen ? "translate-x-0" : "-translate-x-full"
     )}>
       {/* Logo Area */}
-      <div className={cn(
-        "border-b border-border shrink-0",
-        isCollapsed ? "p-2 py-4 flex justify-center" : "p-4"
-      )}>
+      <div 
+        data-tour="app-mode-switcher"
+        className={cn(
+          "border-b border-border shrink-0",
+          isCollapsed ? "p-2 py-4 flex justify-center" : "p-4"
+        )}
+      >
         <AppModeSwitcher
           activeMode="accounty"
           isCollapsed={isCollapsed}
@@ -434,18 +439,17 @@ export default function AccountySidebar({
               </div>
             </div>
 
-            {/* Client Navigation Items */}
             <ul className="flex flex-col gap-1">
               {[
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/overview`, label: 'Áttekintés', icon: Briefcase, exact: true },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/profile`, label: 'Profil', icon: User },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/invoices`, label: 'Számlák', icon: FileText },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/missing-invoices`, label: 'Hiányzó számlák', icon: FileWarning },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/ev`, label: 'Egyéni Vállalkozás', icon: Coins },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/tao`, label: 'Társasági Adó', icon: Landmark },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/payroll`, label: 'Bérszámfejtés', icon: Calculator },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/payroll/filings`, label: 'NAV bevallások', icon: ClipboardList },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/settings#notifications`, label: 'Beállítások / Cégkapu', icon: Settings },
+                { to: `/accounty/${selectedClientId}/${currentDateRange}/overview`, label: 'Áttekintés', icon: Briefcase, exact: true, id: 'portfolio' },
+                { to: `/accounty/${selectedClientId}/${currentDateRange}/profile`, label: 'Profil', icon: User, id: 'profile' },
+                { to: `/accounty/${selectedClientId}/${currentDateRange}/invoices`, label: 'Számlák', icon: FileText, id: 'invoices' },
+                { to: `/accounty/${selectedClientId}/${currentDateRange}/missing-invoices`, label: 'Hiányzó számlák', icon: FileWarning, id: 'missing-invoices' },
+                { to: `/accounty/${selectedClientId}/${currentDateRange}/ev`, label: 'Egyéni Vállalkozás', icon: Coins, id: 'ev' },
+                { to: `/accounty/${selectedClientId}/${currentDateRange}/tao`, label: 'Társasági Adó', icon: Landmark, id: 'tao' },
+                { to: `/accounty/${selectedClientId}/${currentDateRange}/payroll`, label: 'Bérszámfejtés', icon: Calculator, id: 'payroll' },
+                { to: `/accounty/${selectedClientId}/${currentDateRange}/payroll/filings`, label: 'NAV bevallások', icon: ClipboardList, id: 'filings' },
+                { to: `/accounty/${selectedClientId}/${currentDateRange}/settings#notifications`, label: 'Beállítások / Cégkapu', icon: Settings, id: 'settings' },
               ].map(item => {
                 const pathWithoutHash = item.to.split('#')[0];
                 const active = item.exact 
@@ -458,8 +462,12 @@ export default function AccountySidebar({
                     <Link
                       to={item.to}
                       className={cn(
-                        "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-all duration-150",
-                        active ? "bg-primary/15 font-semibold text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground/80"
+                        "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-all duration-200",
+                        hoveredHelpSection === item.id
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border-l-4 border-l-emerald-500 ring-1 ring-emerald-500/30 animate-help-glow transition-all duration-300"
+                          : active
+                            ? "bg-primary/15 font-semibold text-primary scale-[1.02] shadow-sm ring-1 ring-primary/20"
+                            : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground/80"
                       )}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -478,13 +486,13 @@ export default function AccountySidebar({
               const groupKey = 'portfolio';
               const isOpen = expandedSections.has(groupKey);
               const allPortfolioItems = [
-                { to: '/accounty', icon: Briefcase, label: 'Portfólió', exact: true },
-                { to: '/accounty/missing-invoices', icon: FileWarning, label: 'Hiányzó számlák', badge: kpis?.missingItems },
-                { to: '/accounty/tax-calendar', icon: Calendar, label: 'Naptár & Határidők' },
-                { to: '/accounty/reports', icon: BarChart2, label: 'Riportok' },
-                { to: '/accounty/approval-queue', icon: MailCheck, label: 'Jóváhagyó rendszer' },
-                { to: '/accounty/alerts', icon: AlertTriangle, label: 'Riasztások' },
-                { to: '/accounty/onboarding', icon: Rocket, label: 'Onboarding' },
+                { to: '/accounty', icon: Briefcase, label: 'Portfólió', exact: true, id: 'portfolio' },
+                { to: '/accounty/missing-invoices', icon: FileWarning, label: 'Hiányzó számlák', badge: kpis?.missingItems, id: 'missing-invoices' },
+                { to: '/accounty/tax-calendar', icon: Calendar, label: 'Naptár & Határidők', id: 'calendar' },
+                { to: '/accounty/reports', icon: BarChart2, label: 'Riportok', id: 'reports' },
+                { to: '/accounty/approval-queue', icon: MailCheck, label: 'Jóváhagyó rendszer', id: 'approval-queue' },
+                { to: '/accounty/alerts', icon: AlertTriangle, label: 'Riasztások', id: 'alerts' },
+                { to: '/accounty/onboarding', icon: Rocket, label: 'Onboarding', id: 'onboarding' },
               ];
               const items = allPortfolioItems.filter(item => {
                 const cleanPath = item.to.split('?')[0];
@@ -517,8 +525,12 @@ export default function AccountySidebar({
                             <Link
                               to={item.to}
                               className={cn(
-                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
-                                active ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-all duration-200",
+                                hoveredHelpSection === item.id
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border-l-4 border-l-emerald-500 ring-1 ring-emerald-500/30 animate-help-glow transition-all duration-300"
+                                  : active
+                                    ? "bg-primary/15 font-semibold text-primary scale-[1.02] shadow-sm ring-1 ring-primary/20"
+                                    : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
                               )}
                             >
                               <item.icon className="h-4 w-4 shrink-0" />
@@ -588,8 +600,12 @@ export default function AccountySidebar({
                                       <Link
                                         to={item.to}
                                         className={cn(
-                                          "flex w-full items-center gap-2 rounded-md px-2 py-1 pl-10 text-left text-sm transition-colors",
-                                          active ? "bg-primary/10 font-medium text-primary" : "hover:bg-primary/5 hover:text-primary text-sidebar-foreground/80"
+                                          "flex w-full items-center gap-2 rounded-md px-2 py-1 pl-10 text-left text-sm transition-all duration-200",
+                                          hoveredHelpSection === (item as any).id
+                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border-l-4 border-l-emerald-500 ring-1 ring-emerald-500/30 animate-help-glow transition-all duration-300"
+                                            : active
+                                              ? "bg-primary/10 font-semibold text-primary scale-[1.02] shadow-sm ring-1 ring-primary/20"
+                                              : "hover:bg-primary/5 hover:text-primary text-sidebar-foreground/80"
                                         )}
                                       >
                                         <item.icon className="h-3.5 w-3.5 shrink-0" />

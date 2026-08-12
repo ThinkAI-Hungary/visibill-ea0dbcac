@@ -18,6 +18,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { addToApprovalQueue, type OutgoingMessage } from '@/pages/Accounty/generateRequestEmail';
 import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { AamTransitionModal } from '@/components/accounty/ev/AamTransitionModal';
 
 // ─── Types & Constants ──────────────────────────────────────────────────────
 
@@ -60,6 +63,9 @@ export default function EvThresholdMonitorPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const { toast } = useToast();
+  const [predictionModel, setPredictionModel] = useState<'linear' | 'seasonal' | 'manual'>('linear');
+  const [manualTarget, setManualTarget] = useState<number>(18000000);
+  const [transitionClient, setTransitionClient] = useState<ClientThresholdRow | null>(null);
   const generateTokenMutation = useGeneratePortalToken();
 
   // Reset page when filters change
@@ -97,6 +103,20 @@ export default function EvThresholdMonitorPage() {
 
   const params = dbParams || (taxYear === 2026 ? DEFAULT_2026_PARAMS : DEFAULT_2025_PARAMS);
 
+  const seasonalProgressRatio = useMemo(() => {
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const weights = [0.05, 0.06, 0.08, 0.09, 0.10, 0.11, 0.11, 0.10, 0.10, 0.08, 0.06, 0.06]; // sum = 1.0
+    let cumulative = 0;
+    for (let i = 0; i < currentMonth - 1; i++) {
+      cumulative += weights[i];
+    }
+    const currentDate = new Date().getDate();
+    const daysInMonth = new Date(new Date().getFullYear(), currentMonth, 0).getDate();
+    const monthWeight = weights[currentMonth - 1] || 0.08;
+    cumulative += monthWeight * (currentDate / daysInMonth);
+    return Math.max(0.01, Math.min(1.0, cumulative));
+  }, []);
+
   const clients = useMemo((): ClientThresholdRow[] => {
     const list = (rawSettings || []).map((s: any) => {
       const companyName = s.companies?.name || 'Ismeretlen ügyfél';
@@ -106,7 +126,15 @@ export default function EvThresholdMonitorPage() {
       const ytdRevenue = revenueMap?.get(s.company_id) || 0;
       
       const thresholds = getEvThresholds(ytdRevenue, form, isRetail, params).map(t => {
-        const projectedValue = (t.currentValue / daysElapsed) * 365;
+        let projectedValue = 0;
+        if (predictionModel === 'linear') {
+          projectedValue = (t.currentValue / daysElapsed) * 365;
+        } else if (predictionModel === 'seasonal') {
+          projectedValue = t.currentValue / seasonalProgressRatio;
+        } else {
+          projectedValue = manualTarget;
+        }
+
         const projectedPercentage = t.limit > 0 ? (projectedValue / t.limit) * 100 : 0;
         const projectedStatus = checkThresholdStatus(projectedValue, t.limit);
         return {
@@ -135,7 +163,15 @@ export default function EvThresholdMonitorPage() {
       const ytdRevenue = revenueMap?.get(companyId) || 0;
       
       const thresholds = getEvThresholds(ytdRevenue, form, isRetail, params).map(t => {
-        const projectedValue = (t.currentValue / daysElapsed) * 365;
+        let projectedValue = 0;
+        if (predictionModel === 'linear') {
+          projectedValue = (t.currentValue / daysElapsed) * 365;
+        } else if (predictionModel === 'seasonal') {
+          projectedValue = t.currentValue / seasonalProgressRatio;
+        } else {
+          projectedValue = manualTarget;
+        }
+
         const projectedPercentage = t.limit > 0 ? (projectedValue / t.limit) * 100 : 0;
         const projectedStatus = checkThresholdStatus(projectedValue, t.limit);
         return {
@@ -159,7 +195,7 @@ export default function EvThresholdMonitorPage() {
     }
 
     return list;
-  }, [rawSettings, revenueMap, daysElapsed, params, companyId, company]);
+  }, [rawSettings, revenueMap, daysElapsed, params, companyId, company, predictionModel, seasonalProgressRatio, manualTarget]);
 
   const handleSendAlert = async (client: ClientThresholdRow) => {
     try {
@@ -323,6 +359,43 @@ eaisybooks`;
         </div>
       </div>
 
+      {/* Prediction Model Toolbar */}
+      <div className="bg-card border border-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-soft">
+        <div className="flex items-center gap-3">
+          <TrendingUp className="w-5 h-5 text-indigo-500" />
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Vetítési modell beállítása</h3>
+            <p className="text-xs text-slate-400">Válaszd ki, hogyan becsülje meg a rendszer az év végi bevételeket</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Select value={predictionModel} onValueChange={(v: any) => setPredictionModel(v)}>
+            <SelectTrigger className="w-48 bg-card border-border h-9 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              <SelectItem value="linear" className="text-xs">Lineáris (pro-rata)</SelectItem>
+              <SelectItem value="seasonal" className="text-xs">Szezonális (Q4 súlyozott)</SelectItem>
+              <SelectItem value="manual" className="text-xs">Manuális célbevétel</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {predictionModel === 'manual' && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold text-slate-500">Célösszeg:</label>
+              <Input
+                type="number"
+                value={manualTarget}
+                onChange={(e) => setManualTarget(Number(e.target.value))}
+                className="w-36 h-9 text-xs bg-card border-border font-mono"
+                placeholder="Célbevétel Ft"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+ 
       {/* Status cards */}
       {!companyId && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -491,7 +564,19 @@ eaisybooks`;
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-1 justify-center">
+                        <div className="flex items-center gap-1.5 justify-center">
+                          {c.worstStatus !== 'green' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/20 gap-1 font-bold"
+                              onClick={() => setTransitionClient(c)}
+                              title="ÁFA-kör átlépési transition workflow"
+                            >
+                              <Zap className="w-3.5 h-3.5" />
+                              Átlépés
+                            </Button>
+                          )}
                           {c.thresholds.some(t => t.projectedPercentage >= 80) && (
                             <Button
                               variant="ghost"
@@ -547,6 +632,15 @@ eaisybooks`;
           </div>
         </div>
       </div>
+      {transitionClient && (
+        <AamTransitionModal
+          open={transitionClient !== null}
+          onOpenChange={(open) => !open && setTransitionClient(null)}
+          clientName={transitionClient.clientName}
+          clientTaxNumber={transitionClient.taxNumber}
+          ytdRevenue={transitionClient.ytdRevenue}
+        />
+      )}
     </div>
   );
 }

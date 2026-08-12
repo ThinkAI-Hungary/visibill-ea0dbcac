@@ -24,6 +24,8 @@ export interface Company {
 
 interface CompanyContextType {
   companies: Company[];
+  eaisybillCompanyIds: string[];
+  eaisybooksCompanyIds: string[];
   selectedCompany: Company | null;
   setSelectedCompany: (company: Company | null) => void;
   loading: boolean;
@@ -49,7 +51,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const [selectedCompany, setSelectedCompanyState] = useState<Company | null>(null);
 
-  const { data: companies = [], isPending, isFetching } = useQuery({
+  const { data: queryData, isPending, isFetching } = useQuery({
     queryKey: queryKeys.companies(user?.id || ''),
     queryFn: async () => {
       // 1. Get company IDs from company_members (eaisybill members)
@@ -59,6 +61,8 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
         .eq('user_id', user!.id);
 
       if (memberError) throw memberError;
+
+      const memberIds = (memberData || []).map(m => m.company_id);
 
       // 2. Check if user is an iroda_admin in accounty
       const { data: roleData } = await supabase
@@ -87,11 +91,12 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // 4. Merge & deduplicate company IDs
-      const memberIds = (memberData || []).map(m => m.company_id);
       const assignmentIds = (assignmentData || []).map(a => a.company_id);
       const allCompanyIds = [...new Set([...memberIds, ...assignmentIds])];
 
-      if (allCompanyIds.length === 0) return [] as Company[];
+      if (allCompanyIds.length === 0) {
+        return { companies: [] as Company[], eaisybillCompanyIds: [] as string[], eaisybooksCompanyIds: [] as string[] };
+      }
 
       // 5. Fetch company details — try with vat_regime columns first,
       //    fall back to base columns if migration hasn't been deployed yet
@@ -119,11 +124,19 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (error) throw error;
-      return (data || []) as Company[];
+      return {
+        companies: (data || []) as Company[],
+        eaisybillCompanyIds: memberIds,
+        eaisybooksCompanyIds: assignmentIds,
+      };
     },
 
     enabled: !!user,
   });
+
+  const companies = queryData?.companies || [];
+  const eaisybillCompanyIds = queryData?.eaisybillCompanyIds || [];
+  const eaisybooksCompanyIds = queryData?.eaisybooksCompanyIds || [];
 
   // True while we have a user but the companies query hasn't resolved yet.
   // This prevents premature "no company" decisions (onboarding redirect).
@@ -176,6 +189,8 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
     <CompanyContext.Provider
       value={{
         companies,
+        eaisybillCompanyIds,
+        eaisybooksCompanyIds,
         selectedCompany,
         setSelectedCompany,
         loading: isCompanyLoading,

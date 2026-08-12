@@ -8,8 +8,9 @@ import {
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
-import { useEvTaxReturns, useEvClientSettings, useUpdateEvTaxReturn, type EvTaxReturn, type EvClientSettings } from '@/hooks/useEvData';
+import { useEvTaxReturns, useEvClientSettings, useUpdateEvTaxReturn, useEvContributions, type EvTaxReturn, type EvClientSettings } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
+import { buildContrib2658Xml } from '@/lib/contrib2658Xml';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -174,6 +175,7 @@ export default function EvSzjaReturnPage() {
   // ─── Real data ────────────────────────────────────────────────────────────
   const { data: allReturns, isLoading } = useEvTaxReturns(id, taxYear);
   const { data: evSettings } = useEvClientSettings(id, taxYear);
+  const { data: contributions } = useEvContributions(id, taxYear);
 
   const handlePrepareAndDownload = async (ret: any) => {
     if (!id) return;
@@ -193,19 +195,37 @@ export default function EvSzjaReturnPage() {
       }
 
       // 1. Generate XML
-      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-      xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
-      xml += `  <fejlec>\n`;
-      xml += `    <nyomtatvany>${ret.code}</nyomtatvany>\n`;
-      xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
-      xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
-      xml += `    <idoszak>${ret.period}</idoszak>\n`;
-      xml += `  </fejlec>\n`;
-      xml += `  <tartalom>\n`;
-      xml += `    <statusz>vegleges</statusz>\n`;
-      xml += `    <osszeg>${ret.amount || 0}</osszeg>\n`;
-      xml += `  </tartalom>\n`;
-      xml += `</nav_bevallassablon>\n`;
+      let xml = '';
+      if (rType === 'contrib') {
+        const quarterNum = ret.period.includes('Q1') ? 1 : ret.period.includes('Q2') ? 2 : ret.period.includes('Q3') ? 3 : 4;
+        const currentCalc = contributions?.find((c: any) => c.quarter === quarterNum);
+        
+        xml = buildContrib2658Xml({
+          companyName: client?.name || 'Egyéni Vállalkozó',
+          companyTaxNumber: client?.taxNumber || client?.tax_number || '',
+          periodYear: taxYear,
+          periodQuarter: quarterNum,
+          tbBase: currentCalc?.current_quarter_base || 0,
+          tbAmount: currentCalc?.tb_amount || 0,
+          szochoBase: currentCalc?.current_quarter_base || 0,
+          szochoAmount: currentCalc?.szocho_amount || 0,
+          isFoallasu: evSettings?.employment_status === 'foallasu',
+        });
+      } else {
+        xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+        xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
+        xml += `  <fejlec>\n`;
+        xml += `    <nyomtatvany>${ret.code}</nyomtatvany>\n`;
+        xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+        xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
+        xml += `    <idoszak>${ret.period}</idoszak>\n`;
+        xml += `  </fejlec>\n`;
+        xml += `  <tartalom>\n`;
+        xml += `    <statusz>vegleges</statusz>\n`;
+        xml += `    <osszeg>${ret.amount || 0}</osszeg>\n`;
+        xml += `  </tartalom>\n`;
+        xml += `</nav_bevallassablon>\n`;
+      }
 
       // 2. Save/upsert return to db
       await updateReturn.mutateAsync({

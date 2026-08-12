@@ -37,6 +37,11 @@ export function ScopedLayout() {
   // ── Guard: prevent infinite sync loops ──
   const syncingFromUrl = useRef(false);
 
+  // Clear switch pending flag on mount when landing on a valid scoped route
+  useEffect(() => {
+    localStorage.removeItem('visibill_switch_pending');
+  }, []);
+
   // ── Access denied state ──
   // Ref provides a synchronous signal so the Context→URL effect below
   // can read the latest value without waiting for a React re-render.
@@ -93,6 +98,13 @@ export function ScopedLayout() {
       syncingFromUrl.current = false;
     });
   }, [urlCompanyId, urlDateRange]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 1b. Store selected eaisybill company in localStorage to remember it when switching to eaisybooks ──
+  useEffect(() => {
+    if (urlCompanyId && !accessDenied) {
+      localStorage.setItem('eaisybill_selected_company_id', urlCompanyId);
+    }
+  }, [urlCompanyId, accessDenied]);
 
   // ── 2. Context → URL sync (date or company changed via UI) ──
   useEffect(() => {

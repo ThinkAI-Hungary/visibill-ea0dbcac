@@ -378,7 +378,7 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
  * Uses the currently selected company and date range from context.
  */
 function RootRedirect() {
-  const { selectedCompany, companies, isInitialLoading } = useCompany();
+  const { selectedCompany, companies, setSelectedCompany, isInitialLoading } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const { user } = useAuth();
 
@@ -416,6 +416,28 @@ function RootRedirect() {
     staleTime: 30_000,
   });
 
+  // True while we are still initializing
+  const isInitializing = roleLoading || accessLoading || isInitialLoading;
+
+  useEffect(() => {
+    if (isInitializing || !selectedCompany) return;
+
+    const switchPending = localStorage.getItem('visibill_switch_pending');
+    if (switchPending === 'eaisybill') {
+      localStorage.removeItem('visibill_switch_pending');
+      const eaisybooksCompanyId = localStorage.getItem('eaisybooks_selected_company_id');
+      const eaisybillCompanyId = localStorage.getItem('eaisybill_selected_company_id');
+
+      if (eaisybooksCompanyId && eaisybooksCompanyId !== eaisybillCompanyId && companies.some(c => c.id === eaisybooksCompanyId)) {
+        localStorage.setItem('eaisybill_selected_company_id', eaisybooksCompanyId);
+        const targetCompany = companies.find(c => c.id === eaisybooksCompanyId);
+        if (targetCompany && selectedCompany.id !== eaisybooksCompanyId) {
+          setSelectedCompany(targetCompany);
+        }
+      }
+    }
+  }, [isInitializing, selectedCompany, companies, setSelectedCompany]);
+
   if (roleLoading || accessLoading) return <LoadingSpinner message="" />;
 
   // ThinkAI / management role → management dashboard (but NOT when impersonating)
@@ -447,8 +469,80 @@ function RootRedirect() {
   // Has companies but selectedCompany not yet resolved — wait
   if (!selectedCompany) return null;
 
-  const target = generateScopedPath(selectedCompany.id, dateFromFormatted, dateToFormatted, '');
+  // Determine the active company to redirect to, prioritizing the eaisybooks choice if they have access to it in eaisybill
+  const switchPending = localStorage.getItem('visibill_switch_pending');
+  const eaisybooksCompanyId = localStorage.getItem('eaisybooks_selected_company_id');
+  const eaisybillCompanyId = localStorage.getItem('eaisybill_selected_company_id');
+  let activeCompany = selectedCompany;
+
+  if (switchPending === 'eaisybill') {
+    if (eaisybooksCompanyId && eaisybooksCompanyId !== eaisybillCompanyId && companies.some(c => c.id === eaisybooksCompanyId)) {
+      const targetCompany = companies.find(c => c.id === eaisybooksCompanyId);
+      if (targetCompany) {
+        activeCompany = targetCompany;
+      }
+    } else if (eaisybillCompanyId && companies.some(c => c.id === eaisybillCompanyId)) {
+      const targetCompany = companies.find(c => c.id === eaisybillCompanyId);
+      if (targetCompany) {
+        activeCompany = targetCompany;
+      }
+    }
+  } else {
+    // If not switching, default to the last viewed eaisybill company if valid
+    if (eaisybillCompanyId && companies.some(c => c.id === eaisybillCompanyId)) {
+      const targetCompany = companies.find(c => c.id === eaisybillCompanyId);
+      if (targetCompany) {
+        activeCompany = targetCompany;
+      }
+    }
+  }
+
+  const target = generateScopedPath(activeCompany.id, dateFromFormatted, dateToFormatted, '');
   return <Navigate to={target} replace />;
+}
+
+function AccountyRootRedirect() {
+  const { selectedCompany, eaisybooksCompanyIds, isInitialLoading } = useCompany();
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
+
+  // Determine synchronously if we need to redirect
+  const switchPending = localStorage.getItem('visibill_switch_pending');
+  let redirectTarget: string | null = null;
+
+  if (!isInitialLoading && eaisybooksCompanyIds && switchPending === 'eaisybooks') {
+    const eaisybooksCompanyId = localStorage.getItem('eaisybooks_selected_company_id');
+    const eaisybillCompanyId = localStorage.getItem('eaisybill_selected_company_id');
+
+    if (eaisybillCompanyId && eaisybillCompanyId !== eaisybooksCompanyId && eaisybooksCompanyIds.includes(eaisybillCompanyId)) {
+      redirectTarget = `/accounty/${eaisybillCompanyId}/${dateFromFormatted}_${dateToFormatted}/overview`;
+    } else if (eaisybooksCompanyId && eaisybooksCompanyIds.includes(eaisybooksCompanyId)) {
+      redirectTarget = `/accounty/${eaisybooksCompanyId}/${dateFromFormatted}_${dateToFormatted}/overview`;
+    }
+  }
+
+  useEffect(() => {
+    if (isInitialLoading || !eaisybooksCompanyIds) return;
+
+    if (switchPending === 'eaisybooks') {
+      localStorage.removeItem('visibill_switch_pending');
+      const eaisybooksCompanyId = localStorage.getItem('eaisybooks_selected_company_id');
+      const eaisybillCompanyId = localStorage.getItem('eaisybill_selected_company_id');
+
+      if (eaisybillCompanyId && eaisybillCompanyId !== eaisybooksCompanyId && eaisybooksCompanyIds.includes(eaisybillCompanyId)) {
+        localStorage.setItem('eaisybooks_selected_company_id', eaisybillCompanyId);
+      }
+    }
+  }, [isInitialLoading, selectedCompany, eaisybooksCompanyIds, switchPending]);
+
+  if (isInitialLoading) {
+    return <LoadingSpinner message="Betöltés..." />;
+  }
+
+  if (redirectTarget) {
+    return <Navigate to={redirectTarget} replace />;
+  }
+
+  return <Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyApp /></Suspense>;
 }
 
 /**
@@ -625,7 +719,7 @@ const App = () => (
                           </Suspense>
                       </ProtectedPage>
                     }>
-                       <Route index element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyApp /></Suspense>} />
+                       <Route index element={<AccountyRootRedirect />} />
                        
                        {/* Legacy redirects & fallbacks */}
                        <Route path="client/:id" element={<AccountyLegacyClientRedirect />} />

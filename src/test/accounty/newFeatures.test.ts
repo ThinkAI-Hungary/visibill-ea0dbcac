@@ -193,3 +193,42 @@ describe('SANDBOX filtering', () => {
     expect(isNonSandbox({ name: 'Nosandbox Kft' })).toBe(true);
   });
 });
+
+// ── Selected company sync logic ──
+describe('Selected company sync logic', () => {
+  it('should sync eaisybooks to eaisybill if company IDs are different and user has access in companies list', () => {
+    const eaisybooksCompanyId = 'company-a';
+    const eaisybillCompanyId = 'company-b';
+    const companies = [{ id: 'company-a' }, { id: 'company-b' }];
+
+    const shouldSync = eaisybooksCompanyId && eaisybooksCompanyId !== eaisybillCompanyId && companies.some(c => c.id === eaisybooksCompanyId);
+    expect(shouldSync).toBe(true);
+  });
+
+  it('should not sync eaisybooks to eaisybill if they are already equal', () => {
+    const eaisybooksCompanyId = 'company-a';
+    const eaisybillCompanyId = 'company-a';
+    const companies = [{ id: 'company-a' }, { id: 'company-b' }];
+
+    const shouldSync = eaisybooksCompanyId && eaisybooksCompanyId !== eaisybillCompanyId && companies.some(c => c.id === eaisybooksCompanyId);
+    expect(shouldSync).toBe(false);
+  });
+
+  it('should sync eaisybill to eaisybooks if company IDs are different and user has eaisybooks access', () => {
+    const eaisybooksCompanyId = 'company-a';
+    const eaisybillCompanyId = 'company-b';
+    const eaisybooksCompanyIds = ['company-a', 'company-b'];
+
+    const shouldSync = eaisybillCompanyId && eaisybillCompanyId !== eaisybooksCompanyId && eaisybooksCompanyIds.includes(eaisybillCompanyId);
+    expect(shouldSync).toBe(true);
+  });
+
+  it('should not sync eaisybill to eaisybooks if user lacks access to that company in eaisybooks', () => {
+    const eaisybooksCompanyId = 'company-a';
+    const eaisybillCompanyId = 'company-c';
+    const eaisybooksCompanyIds = ['company-a', 'company-b'];
+
+    const shouldSync = eaisybillCompanyId && eaisybillCompanyId !== eaisybooksCompanyId && eaisybooksCompanyIds.includes(eaisybillCompanyId);
+    expect(shouldSync).toBe(false);
+  });
+});

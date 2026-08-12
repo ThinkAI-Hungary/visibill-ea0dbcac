@@ -31,6 +31,7 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
       <div className="flex flex-col items-center gap-2 p-1 bg-muted/30 dark:bg-muted/20 border border-border/40 rounded-full select-none w-9 pb-2">
         <Link
           to="/"
+          onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybill')}
           title="eaisyBill"
           className={cn(
             "w-7 h-7 flex items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200 border",
@@ -46,6 +47,7 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
         </Link>
         <Link
           to="/accounty"
+          onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybooks')}
           title="eaisyBooks"
           className={cn(
             "w-7 h-7 flex items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200 border",
@@ -69,6 +71,7 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
       {/* Option 1: eaisyBill */}
       <Link
         to="/"
+        onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybill')}
         className={cn(
           "relative flex-1 py-2 text-center text-base font-semibold tracking-tight transition-all duration-200 rounded-full border",
           activeMode === "eaisybill"
@@ -89,6 +92,7 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
       {/* Option 2: eaisyBooks */}
       <Link
         to="/accounty"
+        onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybooks')}
         className={cn(
           "relative flex-1 py-2 text-center text-base font-semibold tracking-tight transition-all duration-200 rounded-full border",
           activeMode === "accounty"

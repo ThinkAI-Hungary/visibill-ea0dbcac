@@ -589,6 +589,7 @@ export interface CompanyInvoice {
   id: string;
   invoiceNumber: string;
   partnerName: string;
+  partnerTaxNumber?: string | null;
   date: string;
   rawDate: string;
   grossAmount: number;
@@ -600,6 +601,10 @@ export interface CompanyInvoice {
   currency: string;
   imageUrl?: string | null;
   mellekletUrl?: string | null;
+  glNumber?: string | null;
+  glName?: string | null;
+  submitted?: boolean | null;
+  isNav: boolean;
 }
 
 const mapDbStatus = (s: string | null): InvoiceStatus => {
@@ -620,7 +625,27 @@ export function useCompanyInvoices(companyId: string) {
       // 1. Uploaded invoices
       const { data: uploaded, error: err1 } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, elado_nev, vevo_nev, kibocsatas_datuma, brutto_vegosszeg, afa_osszeg_osszesen, adoalap_osszesen, statusz, invoice_direction, forditott_adozas, reverse_charge_category, penznem, image_url, melleklet_url')
+        .select(`
+          id, 
+          bizonylatsorszam, 
+          elado_nev, 
+          vevo_nev, 
+          elado_vat_id, 
+          vevo_vat_id, 
+          kibocsatas_datuma, 
+          brutto_vegosszeg, 
+          afa_osszeg_osszesen, 
+          adoalap_osszesen, 
+          statusz, 
+          invoice_direction, 
+          forditott_adozas, 
+          reverse_charge_category, 
+          penznem, 
+          image_url, 
+          melleklet_url,
+          gl_account_id,
+          gl_account:gl_accounts(id, gl_number, short_name)
+        `)
         .eq('company_id', companyId)
         .order('kibocsatas_datuma', { ascending: false })
         .limit(500);
@@ -629,7 +654,24 @@ export function useCompanyInvoices(companyId: string) {
       // 2. NAV invoices
       const { data: navData, error: err2 } = await supabase
         .from('nav_invoices')
-        .select('id, invoice_number, supplier_name, customer_name, invoice_issue_date, invoice_gross_amount, invoice_vat_amount, invoice_direction, is_reverse_charge, reverse_charge_category, currency')
+        .select(`
+          id, 
+          invoice_number, 
+          supplier_name, 
+          customer_name, 
+          supplier_tax_number, 
+          customer_tax_number, 
+          invoice_issue_date, 
+          invoice_gross_amount, 
+          invoice_vat_amount, 
+          invoice_direction, 
+          is_reverse_charge, 
+          reverse_charge_category, 
+          currency,
+          submitted,
+          gl_account_id,
+          gl_account:gl_accounts(id, gl_number, short_name)
+        `)
         .eq('company_id', companyId)
         .order('invoice_issue_date', { ascending: false })
         .limit(500);
@@ -640,12 +682,15 @@ export function useCompanyInvoices(companyId: string) {
       // Map uploaded invoices
       for (const inv of (uploaded || [])) {
         const isInbound = inv.invoice_direction === 'INBOUND';
+        // Safe cast gl_account join
+        const glAcc = inv.gl_account as any;
         results.push({
           id: inv.id,
           invoiceNumber: inv.bizonylatsorszam || '-',
           partnerName: isInbound ? (inv.elado_nev || '-') : (inv.vevo_nev || '-'),
+          partnerTaxNumber: isInbound ? inv.elado_vat_id : inv.vevo_vat_id,
           date: inv.kibocsatas_datuma
-            ? new Date(inv.kibocsatas_datuma).toLocaleDateString('hu-HU')
+             ? new Date(inv.kibocsatas_datuma).toLocaleDateString('hu-HU')
             : '-',
           rawDate: inv.kibocsatas_datuma || '',
           grossAmount: Number(inv.brutto_vegosszeg) || 0,
@@ -657,16 +702,22 @@ export function useCompanyInvoices(companyId: string) {
           currency: inv.penznem || 'HUF',
           imageUrl: inv.image_url,
           mellekletUrl: inv.melleklet_url,
+          glNumber: glAcc?.gl_number || null,
+          glName: glAcc?.short_name || null,
+          submitted: true, // Physical invoices uploaded directly are always submitted
+          isNav: false,
         });
       }
 
       // Map NAV invoices (these have direction)
       for (const nav of (navData || [])) {
         const isInbound = nav.invoice_direction === 'INBOUND';
+        const glAcc = nav.gl_account as any;
         results.push({
           id: nav.id,
           invoiceNumber: nav.invoice_number || '-',
           partnerName: isInbound ? (nav.supplier_name || '-') : (nav.customer_name || '-'),
+          partnerTaxNumber: isInbound ? nav.supplier_tax_number : nav.customer_tax_number,
           date: nav.invoice_issue_date
             ? new Date(nav.invoice_issue_date).toLocaleDateString('hu-HU')
             : '-',
@@ -678,11 +729,15 @@ export function useCompanyInvoices(companyId: string) {
           isReverseCharge: nav.is_reverse_charge === true,
           reverseChargeCategory: nav.reverse_charge_category || null,
           currency: nav.currency || 'HUF',
+          glNumber: glAcc?.gl_number || null,
+          glName: glAcc?.short_name || null,
+          submitted: nav.submitted === true,
+          isNav: true,
         });
       }
 
       // Sort by date descending
-      results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      results.sort((a, b) => (b.rawDate || '').localeCompare(a.rawDate || ''));
       return results;
     },
     enabled: !!companyId,

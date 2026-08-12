@@ -23,7 +23,11 @@ export function TAccountLedger({ invoice }: TAccountLedgerProps) {
   // Define Hungarian accounts based on direction
   const debitAccounts = isExpense
     ? [
-        { code: '511', name: 'Vásárolt anyagok és szolgáltatások', amount: net },
+        { 
+          code: invoice.glNumber || '511', 
+          name: invoice.glName || 'Vásárolt anyagok és szolgáltatások', 
+          amount: net 
+        },
         ...(invoice.vatAmount > 0
           ? [{ code: '466', name: 'Előzetesen felszámított ÁFA', amount: invoice.vatAmount }]
           : []),
@@ -37,7 +41,11 @@ export function TAccountLedger({ invoice }: TAccountLedgerProps) {
         { code: '454', name: 'Szállítók (Belföldi)', amount: invoice.grossAmount },
       ]
     : [
-        { code: '911', name: 'Belföldi értékesítés nettó árbevétele', amount: net },
+        { 
+          code: invoice.glNumber || '911', 
+          name: invoice.glName || 'Belföldi értékesítés nettó árbevétele', 
+          amount: net 
+        },
         ...(invoice.vatAmount > 0
           ? [{ code: '467', name: 'Fizetendő ÁFA', amount: invoice.vatAmount }]
           : []),
