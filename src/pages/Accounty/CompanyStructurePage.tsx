@@ -198,9 +198,15 @@ export default function CompanyStructurePage() {
       {/* Header */}
       <div className="flex items-start gap-4">
         <button 
-          onClick={() => navigate(`/accounty/${id}/${dateRange}/overview`)}
+          onClick={() => {
+            if (window.history.state && window.history.state.idx > 0) {
+              navigate(-1);
+            } else {
+              navigate(`/accounty/${id}/${dateRange}/overview`);
+            }
+          }}
           className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
-          title="Vissza az áttekintéshez"
+          title="Vissza"
         >
           <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
         </button>

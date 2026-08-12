@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Plus, Shield, Clock, CheckCircle, AlertTriangle,
   ChevronRight, X, Calendar, Users, Trash2, Loader2, ChevronLeft
@@ -40,6 +40,7 @@ const SCOPE_OPTIONS = [
 
 export default function RepresentationPage() {
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const navigate = useNavigate();
   const id = companyId;
   const { toast } = useToast();
   const { data: client, isLoading: clientLoading } = useAccountyClient(id || '');
@@ -410,13 +411,19 @@ export default function RepresentationPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <Link 
-            to={`/accounty/${companyId}/${dateRange}/overview`}
+          <button 
+            onClick={() => {
+              if (window.history.state && window.history.state.idx > 0) {
+                navigate(-1);
+              } else {
+                navigate(`/accounty/${companyId}/${dateRange}/overview`);
+              }
+            }}
             className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
-            title="Vissza az áttekintéshez"
+            title="Vissza"
           >
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          </Link>
+          </button>
           <div>
             <div className="flex items-center gap-1.5 mb-1">
               {clientLoading ? (

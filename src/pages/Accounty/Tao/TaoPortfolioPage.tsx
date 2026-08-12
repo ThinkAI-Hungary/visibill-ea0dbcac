@@ -2,9 +2,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Landmark, Search, ChevronRight, CheckCircle, AlertTriangle, Clock,
-  FileText, TrendingUp, Building2, Globe, Calendar, BarChart2
+  FileText, TrendingUp, Building2, Globe, Calendar, BarChart2, Users
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAccountyClients, type AccountyClient } from '@/hooks/accounty';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
@@ -131,11 +132,24 @@ export default function TaoPortfolioPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <Link to="/accounty/tao/calendar">
+            <Button variant="outline" size="sm" className="gap-2 h-9 text-xs border-border font-semibold bg-card hover:bg-muted/30">
+              <Calendar className="w-3.5 h-3.5 text-primary" />
+              TAO Naptár
+            </Button>
+          </Link>
+          <Link to="/accounty/tao/taxpayer-types">
+            <Button variant="outline" size="sm" className="gap-2 h-9 text-xs border-border font-semibold bg-card hover:bg-muted/30">
+              <Users className="w-3.5 h-3.5 text-primary" />
+              TAO Adózói Körök
+            </Button>
+          </Link>
+
           <select
             value={taxYear}
             onChange={(e) => setTaxYear(Number(e.target.value))}
-            className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
+            className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground h-9"
           >
             <option value={2025}>2025. adóév</option>
             <option value={2024}>2024. adóév</option>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +55,7 @@ const MONTH_NAMES = ['Január','Február','Március','Április','Május','Júniu
 const Q_LABELS = ['Q1 (Jan–Már)', 'Q2 (Ápr–Jún)', 'Q3 (Júl–Szep)', 'Q4 (Okt–Dec)'];
 
 export default function TaoCalendarPage() {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [year, setYear] = useState(2026);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-indexed
@@ -253,17 +255,28 @@ export default function TaoCalendarPage() {
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">
-            <Calendar className="w-5 h-5 text-white" />
-          </div>
+      <div className="flex justify-between items-start flex-wrap gap-4">
+        <div className="flex items-start gap-4">
+          <button
+            onClick={() => {
+              if (window.history.state && window.history.state.idx > 0) {
+                navigate(-1);
+              } else {
+                navigate('/accounty?tab=tao');
+              }
+            }}
+            className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+            title="Vissza"
+          >
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">TAO-zárási Kalendárium</h1>
-            <p className="text-sm text-slate-500">TAO, KIVA, HIPA, Inno, Pillar Two határidők</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">TAO-zárási Kalendárium</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">TAO, KIVA, HIPA, Inno, Pillar Two határidők</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-2 mt-1">
           <Button variant="outline" size="sm" onClick={() => setYear(y => y - 1)}><ChevronLeft className="w-4 h-4" /></Button>
           <span className="text-sm font-bold px-3">{year}</span>
           <Button variant="outline" size="sm" onClick={() => setYear(y => y + 1)}><ChevronRight className="w-4 h-4" /></Button>

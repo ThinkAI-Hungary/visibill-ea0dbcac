@@ -65,6 +65,19 @@ export default function AccountyApp() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'companies';
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (!tabParam) {
+      const savedTab = localStorage.getItem('accounty-active-tab');
+      if (savedTab && savedTab !== 'companies') {
+        setSearchParams({ tab: savedTab }, { replace: true });
+      }
+    } else {
+      localStorage.setItem('accounty-active-tab', tabParam);
+    }
+  }, [searchParams, setSearchParams]);
+
   const { toast } = useToast();
   const { data: supabaseClients, isLoading: clientsLoading, isError: clientsError, refetch: refetchClients } = useAccountyClients();
   const { data: supabaseKpis } = useAccountyKpis();

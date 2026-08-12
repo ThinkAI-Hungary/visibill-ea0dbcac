@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   Landmark, ArrowLeft, FileText, TrendingUp, Calculator, Shield,
   Globe, ChevronRight, BarChart2, Scale, CheckCircle, AlertTriangle,
@@ -34,6 +34,7 @@ interface TaoTab {
 
 export default function ClientTaoMainPage() {
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const navigate = useNavigate();
   const id = companyId;
   const { data: clients = [], isLoading: clientLoading } = useAccountyClients();
   const client = clients.find((c: any) => c.companyId === id);
@@ -63,13 +64,19 @@ export default function ClientTaoMainPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Link 
-          to={`/accounty/${companyId}/${dateRange}/overview`}
+        <button 
+          onClick={() => {
+            if (window.history.state && window.history.state.idx > 0) {
+              navigate(-1);
+            } else {
+              navigate('/accounty?tab=tao');
+            }
+          }}
           className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
-          title="Vissza az áttekintéshez"
+          title="Vissza"
         >
           <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-        </Link>
+        </button>
         <div>
           <div className="flex items-center gap-1.5 mb-1">
             {clientLoading ? (

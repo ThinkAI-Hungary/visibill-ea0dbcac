@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Users, ChevronRight, Landmark, PieChart, Building } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Users, ChevronRight, Landmark, PieChart, Building, ArrowLeft, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClients } from '@/hooks/accounty';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,7 @@ function getCompanyGfo(companyName: string, companyId: string): string {
 }
 
 export default function TaoTaxpayerTypesPage() {
+  const navigate = useNavigate();
   const { data: clients = [] } = useAccountyClients();
   const [selectedGfo, setSelectedGfo] = useState<typeof GFO_TYPES[number] | null>(null);
 
@@ -86,13 +87,24 @@ export default function TaoTaxpayerTypesPage() {
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-violet-500/25">
-          <Users className="w-5 h-5 text-white" />
-        </div>
+      {/* Header */}
+      <div className="flex items-start gap-4">
+        <button
+          onClick={() => {
+            if (window.history.state && window.history.state.idx > 0) {
+              navigate(-1);
+            } else {
+              navigate('/accounty?tab=tao');
+            }
+          }}
+          className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+          title="Vissza"
+        >
+          <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+        </button>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Adózói Körök</h1>
-          <p className="text-sm text-slate-500">Portfólió bontása GFO-kód és adózói típus szerint</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Adózói Körök</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Portfólió bontása GFO-kód és adózói típus szerint</p>
         </div>
       </div>
 

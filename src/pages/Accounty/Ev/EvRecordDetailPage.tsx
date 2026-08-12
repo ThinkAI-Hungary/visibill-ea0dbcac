@@ -293,7 +293,7 @@ function formatCell(value: any, type: string): React.ReactNode {
     case 'date': return <span className="tabular-nums">{String(value).substring(0, 10)}</span>;
     case 'badge': {
       const label = BADGE_LABELS[String(value)] || String(value);
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">{label}</span>;
+      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground">{label}</span>;
     }
     default: return String(value);
   }
@@ -387,8 +387,8 @@ function QuickDistanceCalculator({ onUseDistance }: QuickDistanceCalculatorProps
   };
 
   return (
-    <div className="bg-card rounded-xl border border-indigo-100 dark:border-indigo-900/50 p-4 shadow-soft space-y-3">
-      <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+    <div className="bg-card rounded-xl border border-primary/20 dark:border-primary/10 p-4 shadow-soft space-y-3">
+      <div className="flex items-center gap-2 text-primary">
         <Car className="w-4 h-4" />
         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Gyors Távolság-kalkulátor (OSRM / OpenStreetMap)</h3>
       </div>
@@ -416,7 +416,7 @@ function QuickDistanceCalculator({ onUseDistance }: QuickDistanceCalculatorProps
             type="button"
             onClick={handleCalculate}
             disabled={loading}
-            className="flex-1 h-9 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold"
+            className="flex-1 h-9 bg-primary hover:bg-primary/90 text-white text-xs font-semibold"
           >
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Car className="w-3.5 h-3.5 mr-1" />}
             Számítás
@@ -425,10 +425,10 @@ function QuickDistanceCalculator({ onUseDistance }: QuickDistanceCalculatorProps
       </div>
 
       {distance !== null && (
-        <div className="flex items-center justify-between bg-indigo-50/50 dark:bg-indigo-950/20 p-3 rounded-lg border border-indigo-100/50 dark:border-indigo-900/30 animate-in fade-in duration-300">
+        <div className="flex items-center justify-between bg-primary/5 dark:bg-primary/10 p-3 rounded-lg border border-primary/10 dark:border-primary/20 animate-in fade-in duration-300">
           <div className="text-sm text-slate-700 dark:text-slate-300">
             <span className="text-slate-500">Útvonal távolsága:</span>{' '}
-            <strong className="text-indigo-600 dark:text-indigo-400 font-bold font-mono text-base">{distance} km</strong>
+            <strong className="text-primary font-bold font-mono text-base">{distance} km</strong>
           </div>
           <div className="flex gap-2">
             <Button
@@ -445,7 +445,7 @@ function QuickDistanceCalculator({ onUseDistance }: QuickDistanceCalculatorProps
                 type="button"
                 size="sm"
                 onClick={() => onUseDistance(departure, arrival, distance)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8"
+                className="bg-primary hover:bg-primary/90 text-white text-xs h-8"
               >
                 Felvitel tételként
               </Button>
@@ -515,7 +515,7 @@ function RecordForm({ fields, initialValues, onSave, onCancel, saving, recordTyp
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-card rounded-xl border-2 border-indigo-200 dark:border-indigo-800 shadow-soft p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+    <form onSubmit={handleSubmit} className="bg-card rounded-xl border-2 border-primary/20 dark:border-primary/10 shadow-soft p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
           {initialValues ? 'Bejegyzés szerkesztése' : 'Új bejegyzés rögzítése'}
@@ -600,7 +600,7 @@ function RecordForm({ fields, initialValues, onSave, onCancel, saving, recordTyp
                     }
                   }}
                   disabled={isCalculatingDistance}
-                  className="w-full gap-1.5 text-xs font-semibold py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 border-indigo-200"
+                  className="w-full gap-1.5 text-xs font-semibold py-1 bg-primary/5 dark:bg-primary/10 text-primary hover:bg-primary/10 border-primary/20"
                 >
                   {isCalculatingDistance ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -619,7 +619,7 @@ function RecordForm({ fields, initialValues, onSave, onCancel, saving, recordTyp
         <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
           Mégse
         </button>
-        <button type="submit" disabled={saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50">
+        <button type="submit" disabled={saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors disabled:opacity-50">
           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
           Mentés
         </button>
@@ -843,11 +843,11 @@ export default function EvRecordDetailPage() {
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/${id}/${dateRange}/ev/records?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/accounty/${id}/${dateRange}/ev/records?year=${taxYear}`} className="hover:text-primary transition-colors">
           Nyilvántartások
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -878,7 +878,7 @@ export default function EvRecordDetailPage() {
                 'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors shadow-sm',
                 showAddForm
                   ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  : 'bg-primary text-white hover:bg-primary/90'
               )}
             >
               {showAddForm ? <><X className="w-3 h-3" /> Mégse</> : <><Plus className="w-3 h-3" /> Új bejegyzés</>}
@@ -927,7 +927,7 @@ export default function EvRecordDetailPage() {
                 placeholder="Keresés..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-slate-800 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-slate-800 border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
             <button
@@ -935,13 +935,13 @@ export default function EvRecordDetailPage() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-2 text-xs border rounded-lg transition-colors',
                 showFilters
-                  ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600'
+                  ? 'border-primary bg-primary/5 dark:bg-primary/10 text-primary hover:bg-primary/10'
                   : 'text-slate-500 border-border hover:bg-slate-50 dark:hover:bg-slate-800'
               )}
             >
               <Filter className="w-3 h-3" /> Szűrők
               {(filterDateFrom || filterDateTo) && (
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               )}
             </button>
             <span className="text-xs text-slate-400">
@@ -986,7 +986,7 @@ export default function EvRecordDetailPage() {
       {/* Data table or empty state */}
       {isLoading ? (
         <div className="bg-card rounded-xl border border-border shadow-soft p-16 text-center">
-          <Loader2 className="w-8 h-8 mx-auto mb-3 text-indigo-400 animate-spin" />
+          <Loader2 className="w-8 h-8 mx-auto mb-3 text-primary animate-spin" />
           <p className="text-sm text-slate-400">Betöltés...</p>
         </div>
       ) : isEmpty && !showAddForm ? (
@@ -1003,7 +1003,7 @@ export default function EvRecordDetailPage() {
           {!isReadOnly && (
             <button
               onClick={() => setShowAddForm(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" /> Első bejegyzés rögzítése
             </button>
@@ -1027,7 +1027,7 @@ export default function EvRecordDetailPage() {
                     >
                       <div className={cn('flex items-center gap-1', col.align === 'right' && 'justify-end')}>
                         {col.label}
-                        <ArrowUpDown className={cn('w-3 h-3', sortKey === col.key ? 'text-indigo-500' : 'text-slate-300')} />
+                        <ArrowUpDown className={cn('w-3 h-3', sortKey === col.key ? 'text-primary' : 'text-slate-300')} />
                       </div>
                     </th>
                   ))}
@@ -1054,7 +1054,7 @@ export default function EvRecordDetailPage() {
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => { setEditingRow(row); setShowAddForm(false); }}
-                            className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-indigo-600 transition-colors"
+                            className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-primary transition-colors"
                             title="Szerkesztés"
                           >
                             <Edit2 className="w-3.5 h-3.5" />

@@ -252,7 +252,7 @@ function AccountyLayoutInner() {
     { name: 'Jóváhagyó rendszer', path: '/accounty/approval-queue', icon: MailCheck },
     { name: 'Riasztások', path: '/accounty/alerts', icon: AlertTriangle },
     { name: 'NAV határidők', path: '/accounty/nav-deadlines', icon: Clock },
-    { name: 'Bérszámfejtés portfólió', path: '/accounty/payroll-portfolio', icon: Calculator },
+    { name: 'Bérszámfejtés portfólió', path: '/accounty?tab=payroll', icon: Calculator },
     { name: 'Onboarding', path: '/accounty/onboarding', icon: Rocket },
     { name: 'Beállítások', path: '/accounty/settings', icon: Settings },
     { name: 'Felhasználói beállítások', path: '/accounty/profile/settings', icon: User },
@@ -264,10 +264,10 @@ function AccountyLayoutInner() {
     { name: 'Jogviszonykódok', path: '/accounty/admin/job-codes', icon: BookOpen },
     { name: 'Adómértékek', path: '/accounty/admin/tax-parameters', icon: Calculator },
     { name: 'Jogszabály-frissítések', path: '/accounty/admin/legal-updates', icon: Scale },
-    { name: 'TAO Portfólió', path: '/accounty/tao', icon: Landmark },
+    { name: 'TAO Portfólió', path: '/accounty?tab=tao', icon: Landmark },
     { name: 'TAO Naptár', path: '/accounty/tao/calendar', icon: Calendar },
     { name: 'TAO Adózói Körök', path: '/accounty/tao/taxpayer-types', icon: Users },
-    { name: 'EV Portfólió', path: '/accounty/ev', icon: PiggyBank },
+    { name: 'EV Portfólió', path: '/accounty?tab=ev', icon: PiggyBank },
   ];
 
   const filteredPages = cmdQuery ? cmdPages.filter(p => p.name.toLowerCase().includes(cmdQuery.toLowerCase())) : cmdPages;

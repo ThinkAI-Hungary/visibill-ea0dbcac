@@ -67,7 +67,7 @@ export default function AccountyCommandPalette({
 
   return (
     <Dialog open={cmdOpen} onOpenChange={(v) => { setCmdOpen(v); if (!v) setCmdQuery(''); }}>
-      <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden [&>button]:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800/40 shadow-2xl">
+      <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden [&>button]:hidden bg-background/80 dark:bg-background/80 backdrop-blur-md border border-border shadow-2xl">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
@@ -149,7 +149,7 @@ export default function AccountyCommandPalette({
           )}
         </div>
         {combinedItems.length > 0 && (
-          <div className="border-t border-border px-4 py-2 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between text-[10px] text-muted-foreground">
+          <div className="border-t border-border px-4 py-2 bg-muted/40 dark:bg-muted/10 flex items-center justify-between text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1">
               <span className="px-1.5 py-0.5 bg-card border border-border rounded font-mono shadow-sm">↑↓</span> navigálás
             </span>

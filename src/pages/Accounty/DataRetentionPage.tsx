@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Shield, FileText, Clock, AlertTriangle, CheckCircle,
   Upload, Trash2, Eye, Download, Database, Plus, Save, Loader2, Pencil, X, ChevronLeft
@@ -25,6 +25,7 @@ const REQUEST_TYPE_LABELS: Record<string, { label: string; color: string }> = {
 
 export default function DataRetentionPage() {
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const navigate = useNavigate();
   const id = companyId;
   const { toast } = useToast();
   const { data: client, isLoading: clientLoading } = useAccountyClient(id || '');
@@ -150,13 +151,19 @@ export default function DataRetentionPage() {
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Link 
-          to={`/accounty/${companyId}/${dateRange}/overview`}
+        <button 
+          onClick={() => {
+            if (window.history.state && window.history.state.idx > 0) {
+              navigate(-1);
+            } else {
+              navigate(`/accounty/${companyId}/${dateRange}/overview`);
+            }
+          }}
           className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
-          title="Vissza az áttekintéshez"
+          title="Vissza"
         >
           <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-        </Link>
+        </button>
         <div>
           <div className="flex items-center gap-1.5 mb-1">
             {clientLoading ? (

@@ -340,7 +340,7 @@ eaisybooks`;
             <ArrowLeft className="w-3.5 h-3.5" /> Egyéni vállalkozás (EV)
           </Link>
         ) : (
-          <Link to="/accounty/ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+          <Link to="/accounty?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
           </Link>
         )}

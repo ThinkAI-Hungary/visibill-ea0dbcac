@@ -288,9 +288,15 @@ export default function ClientDetailsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => navigate('/accounty')}
+            onClick={() => {
+              if (window.history.state && window.history.state.idx > 0) {
+                navigate(-1);
+              } else {
+                navigate('/accounty?tab=companies');
+              }
+            }}
             className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
-            title="Vissza a portfólióhoz"
+            title="Vissza"
           >
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
