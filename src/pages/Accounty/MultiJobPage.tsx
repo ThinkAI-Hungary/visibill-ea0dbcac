@@ -74,7 +74,7 @@ export default function MultiJobPage() {
         </div>
         <div className="flex gap-2">
           {jobList.length > 0 && <Button variant="outline" onClick={() => setShowInsurance(!showInsurance)} className="gap-1.5 text-sm"><Shield className="w-4 h-4" /> Biztosítási elbírálás</Button>}
-          <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-sm" onClick={() => navigate(`/accounty/payroll/${id}/employees/${empId}/special`)}>
+          <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-sm" onClick={() => navigate(`/eaisybooks/payroll/${id}/employees/${empId}/special`)}>
             <Plus className="w-4 h-4" /> Új jogviszony
           </Button>
         </div>

@@ -83,7 +83,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   const { toast } = useToast();
 
   // Detect context for list navigation
-  const isAccounty = location.pathname.startsWith("/accounty");
+  const isAccounty = location.pathname.startsWith("/eaisybooks");
   const isStandalone = location.pathname.startsWith("/tickets");
 
 
@@ -207,7 +207,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
     if (embeddedInManagement) {
       updateParams({ subView: "console", id });
     } else if (isAccounty) {
-      navigate(`/accounty/tickets/${id}`);
+      navigate(`/eaisybooks/tickets/${id}`);
     } else if (isStandalone) {
       navigate(`/tickets/${id}`);
     } else {

@@ -298,7 +298,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-1.5 text-xs"
-                    onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${empId}/modification`)}
+                    onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/${empId}/modification`)}
                   >
                     <Edit3 className="w-3 h-3" /> Módosítás
                   </Button>
@@ -561,13 +561,13 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
 
       {/* Quick action buttons */}
       <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border/50">
-        <Button variant="outline" size="sm" className="flex items-center gap-1.5 text-xs" onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${empId}/multi-job`)}>
+        <Button variant="outline" size="sm" className="flex items-center gap-1.5 text-xs" onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/${empId}/multi-job`)}>
           <Users className="w-3 h-3" /> Több jogviszony
         </Button>
-        <Button variant="outline" size="sm" className="flex items-center gap-1.5 text-xs" onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${empId}/exit`)}>
+        <Button variant="outline" size="sm" className="flex items-center gap-1.5 text-xs" onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/${empId}/exit`)}>
           <LogOut className="w-3 h-3" /> Kilépés indítása
         </Button>
-        <Button variant="outline" size="sm" className="flex items-center gap-1.5 text-xs" onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${empId}/exit-docs`)}>
+        <Button variant="outline" size="sm" className="flex items-center gap-1.5 text-xs" onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/${empId}/exit-docs`)}>
           <FolderOpen className="w-3 h-3" /> Kilépő dokumentumok
         </Button>
       </div>

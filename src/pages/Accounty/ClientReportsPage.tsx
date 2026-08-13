@@ -41,7 +41,7 @@ export default function ClientReportsPage() {
 
   const openModal = (type: ReportType) => {
     if (type === 'hianyzo') {
-      navigate(`/accounty/client/${id}/reports/missing-invoices`);
+      navigate(`/eaisybooks/client/${id}/reports/missing-invoices`);
       return;
     }
     setSelectedType(type);
@@ -57,7 +57,7 @@ export default function ClientReportsPage() {
             if (window.history.state && window.history.state.idx > 0) {
               navigate(-1);
             } else {
-              navigate(`/accounty/${companyId}/${dateRange}/overview`);
+              navigate(`/eaisybooks/${companyId}/${dateRange}/overview`);
             }
           }}
           className="flex items-center justify-center w-8 h-8 mt-1 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"

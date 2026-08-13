@@ -130,14 +130,14 @@ function AccountyLayoutInner() {
   }, [kpis?.missingItems]);
 
   const isActive = (path: string) => {
-    if (path === '/accounty') {
-      return pathname === '/accounty' || pathname.startsWith('/accounty/client');
+    if (path === '/eaisybooks') {
+      return pathname === '/eaisybooks' || pathname.startsWith('/eaisybooks/client');
     }
-    if (path === '/accounty/tao') {
-      return pathname === '/accounty/tao';
+    if (path === '/eaisybooks/tao') {
+      return pathname === '/eaisybooks/tao';
     }
-    if (path === '/accounty/ev') {
-      return pathname === '/accounty/ev';
+    if (path === '/eaisybooks/ev') {
+      return pathname === '/eaisybooks/ev';
     }
     return pathname.startsWith(path);
   };
@@ -193,7 +193,7 @@ function AccountyLayoutInner() {
 
   useEffect(() => {
     if (payrollInitialized || !allClients) return;
-    const activeClient = allClients.find(c => location.pathname.startsWith(`/accounty/payroll/${c.companyId}`));
+    const activeClient = allClients.find(c => location.pathname.startsWith(`/eaisybooks/payroll/${c.companyId}`));
     if (activeClient) {
       setExpandedPayroll(new Set([activeClient.companyId]));
     }
@@ -245,29 +245,29 @@ function AccountyLayoutInner() {
   }
 
   const cmdPages = [
-    { name: 'Portfólió', path: '/accounty', icon: Briefcase },
-    { name: 'Hiányzó számlák', path: '/accounty/missing-invoices', icon: FileWarning },
-    { name: 'Adó naptár', path: '/accounty/tax-calendar', icon: Calendar },
-    { name: 'Riportok', path: '/accounty/reports', icon: BarChart2 },
-    { name: 'Jóváhagyó rendszer', path: '/accounty/approval-queue', icon: MailCheck },
-    { name: 'Riasztások', path: '/accounty/alerts', icon: AlertTriangle },
-    { name: 'NAV határidők', path: '/accounty/nav-deadlines', icon: Clock },
-    { name: 'Bérszámfejtés portfólió', path: '/accounty?tab=payroll', icon: Calculator },
-    { name: 'Onboarding', path: '/accounty/onboarding', icon: Rocket },
-    { name: 'Beállítások', path: '/accounty/settings', icon: Settings },
-    { name: 'Felhasználói beállítások', path: '/accounty/profile/settings', icon: User },
-    { name: 'Segítség', path: '/accounty/help', icon: HelpCircle },
-    { name: 'AI Asszisztens', path: '/accounty/ai-assistant', icon: Sparkles },
-    { name: 'Audit napló', path: '/accounty/admin/audit', icon: ShieldCheck },
-    { name: 'GDPR', path: '/accounty/admin/gdpr', icon: ShieldCheck },
-    { name: 'Sablonok', path: '/accounty/admin/templates', icon: FileText },
-    { name: 'Jogviszonykódok', path: '/accounty/admin/job-codes', icon: BookOpen },
-    { name: 'Adómértékek', path: '/accounty/admin/tax-parameters', icon: Calculator },
-    { name: 'Jogszabály-frissítések', path: '/accounty/admin/legal-updates', icon: Scale },
-    { name: 'TAO Portfólió', path: '/accounty?tab=tao', icon: Landmark },
-    { name: 'TAO Naptár', path: '/accounty/tao/calendar', icon: Calendar },
-    { name: 'TAO Adózói Körök', path: '/accounty/tao/taxpayer-types', icon: Users },
-    { name: 'EV Portfólió', path: '/accounty?tab=ev', icon: PiggyBank },
+    { name: 'Portfólió', path: '/eaisybooks', icon: Briefcase },
+    { name: 'Hiányzó számlák', path: '/eaisybooks/missing-invoices', icon: FileWarning },
+    { name: 'Adó naptár', path: '/eaisybooks/tax-calendar', icon: Calendar },
+    { name: 'Riportok', path: '/eaisybooks/reports', icon: BarChart2 },
+    { name: 'Jóváhagyó rendszer', path: '/eaisybooks/approval-queue', icon: MailCheck },
+    { name: 'Riasztások', path: '/eaisybooks/alerts', icon: AlertTriangle },
+    { name: 'NAV határidők', path: '/eaisybooks/nav-deadlines', icon: Clock },
+    { name: 'Bérszámfejtés portfólió', path: '/eaisybooks?tab=payroll', icon: Calculator },
+    { name: 'Onboarding', path: '/eaisybooks/onboarding', icon: Rocket },
+    { name: 'Beállítások', path: '/eaisybooks/settings', icon: Settings },
+    { name: 'Felhasználói beállítások', path: '/eaisybooks/profile/settings', icon: User },
+    { name: 'Segítség', path: '/eaisybooks/help', icon: HelpCircle },
+    { name: 'AI Asszisztens', path: '/eaisybooks/ai-assistant', icon: Sparkles },
+    { name: 'Audit napló', path: '/eaisybooks/admin/audit', icon: ShieldCheck },
+    { name: 'GDPR', path: '/eaisybooks/admin/gdpr', icon: ShieldCheck },
+    { name: 'Sablonok', path: '/eaisybooks/admin/templates', icon: FileText },
+    { name: 'Jogviszonykódok', path: '/eaisybooks/admin/job-codes', icon: BookOpen },
+    { name: 'Adómértékek', path: '/eaisybooks/admin/tax-parameters', icon: Calculator },
+    { name: 'Jogszabály-frissítések', path: '/eaisybooks/admin/legal-updates', icon: Scale },
+    { name: 'TAO Portfólió', path: '/eaisybooks?tab=tao', icon: Landmark },
+    { name: 'TAO Naptár', path: '/eaisybooks/tao/calendar', icon: Calendar },
+    { name: 'TAO Adózói Körök', path: '/eaisybooks/tao/taxpayer-types', icon: Users },
+    { name: 'EV Portfólió', path: '/eaisybooks?tab=ev', icon: PiggyBank },
   ];
 
   const filteredPages = cmdQuery ? cmdPages.filter(p => p.name.toLowerCase().includes(cmdQuery.toLowerCase())) : cmdPages;
@@ -275,7 +275,7 @@ function AccountyLayoutInner() {
 
   if (switchPending === 'eaisybooks') {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex h-screen w-full items-center justify-center bg-background animate-in fade-in duration-500">
         <LoadingSpinner message="eaisybooks betöltése..." />
         <div className="hidden"><Outlet /></div>
       </div>
@@ -366,7 +366,7 @@ function AccountyLayoutInner() {
                     <span className="text-amber-600 dark:text-amber-400"> — Az adatvédelmi követelmények teljesítéséhez fogadja el a süti beállításokat és az adatkezelési tájékoztatót.</span>
                   </p>
                   <Link
-                    to="/accounty/settings"
+                    to="/eaisybooks/settings"
                     className="shrink-0 px-3 py-1 bg-amber-100 dark:bg-amber-800/40 text-amber-700 dark:text-amber-300 text-xs font-bold rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800/60 transition-colors"
                   >
                     Beállítások
@@ -546,7 +546,7 @@ function AccountyLayoutInner() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Link
-                      to="/accounty/ai-assistant"
+                      to="/eaisybooks/ai-assistant"
                       onClick={() => setAiDrawerOpen(false)}
                       className="text-xs text-primary hover:text-primary/80 px-2 py-1 rounded-md hover:bg-primary/10 transition-colors"
                     >

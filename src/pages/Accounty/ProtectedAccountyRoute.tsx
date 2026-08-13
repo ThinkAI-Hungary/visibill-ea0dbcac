@@ -11,7 +11,7 @@ interface ProtectedAccountyRouteProps {
    * Example: requiredRoles={['iroda_admin', 'senior_könyvelő']} — both can access.
    */
   requiredRoles?: AccountyRole[];
-  /** Where to redirect if the user doesn't have the required role. Defaults to '/accounty'. */
+  /** Where to redirect if the user doesn't have the required role. Defaults to '/eaisybooks'. */
   redirectTo?: string;
   /** If true, show nothing instead of redirecting (useful for conditional UI blocks). */
   hideOnly?: boolean;
@@ -36,7 +36,7 @@ interface ProtectedAccountyRouteProps {
 export function ProtectedAccountyRoute({
   children,
   requiredRoles,
-  redirectTo = '/accounty',
+  redirectTo = '/eaisybooks',
   hideOnly = false,
 }: ProtectedAccountyRouteProps) {
   const { role, isLoading } = useAccountyRole();

@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -42,7 +43,8 @@ export default function EvRecordsOverviewPage() {
   const id = companyId;
   const { data: client } = useAccountyClient(id);
   const [searchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
   const { data: counts = {} } = useEvRecordCounts(id, taxYear);
 
   const records = useMemo(() => {
@@ -61,11 +63,11 @@ export default function EvRecordsOverviewPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty?tab=ev&year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/eaisybooks?tab=ev&year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -112,8 +114,8 @@ export default function EvRecordsOverviewPage() {
           {requiredRecords.map(rec => {
             const Icon = rec.icon;
             const targetPath = rec.id === 'penztarkonyv'
-              ? `/accounty/${id}/${dateRange}/ev/cashbook?year=${taxYear}`
-              : `/accounty/${id}/${dateRange}/ev/records/${rec.id}?year=${taxYear}`;
+              ? `/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`
+              : `/eaisybooks/${id}/${dateRange}/ev/records/${rec.id}?year=${taxYear}`;
             return (
               <Link key={rec.id} to={targetPath} className="bg-card rounded-xl border border-border shadow-soft hover:shadow-md transition-all cursor-pointer group overflow-hidden">
                 <div className="flex items-center gap-4 px-5 py-4">
@@ -146,7 +148,7 @@ export default function EvRecordsOverviewPage() {
           {optionalRecords.map(rec => {
             const Icon = rec.icon;
             const isEmpty = rec.entryCount === 0;
-            const targetPath = `/accounty/${id}/${dateRange}/ev/records/${rec.id}?year=${taxYear}`;
+            const targetPath = `/eaisybooks/${id}/${dateRange}/ev/records/${rec.id}?year=${taxYear}`;
             return (
               <Link key={rec.id} to={targetPath} className={cn(
                 'bg-card rounded-xl border shadow-soft hover:shadow-md transition-all cursor-pointer group overflow-hidden',

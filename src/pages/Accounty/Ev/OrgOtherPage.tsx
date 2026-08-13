@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -98,7 +99,8 @@ export default function OrgOtherPage() {
   const id = companyId;
   const { data: client } = useAccountyClient(id);
   const [searchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
   const { data: settings } = useEvClientSettings(id, taxYear);
   const navigate = useNavigate();
   const updateSettings = useUpdateEvSettings();
@@ -112,7 +114,7 @@ export default function OrgOtherPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -233,7 +235,7 @@ export default function OrgOtherPage() {
                 }, {
                   onSuccess: () => {
                     toast({ title: 'Konfiguráció mentve', description: `${selectedOrg.name} — ${bookkeepingMode === 'egyszeres' ? 'Egyszeres' : 'Kettős'} könyvvitel` });
-                    navigate(`/accounty/${id}/${dateRange}/ev?year=${taxYear}`);
+                    navigate(`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`);
                   },
                   onError: (err: any) => {
                     toast({ title: 'Hiba', description: err?.message || 'Mentés sikertelen', variant: 'destructive' });

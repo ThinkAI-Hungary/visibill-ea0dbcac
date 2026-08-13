@@ -150,7 +150,7 @@ Deno.serve(async (req: Request) => {
     if (user_id && type && title) {
       // Create a plain text excerpt from HTML
       const plainBody = (body_html || '').replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim().substring(0, 150);
-      const targetUrl = company_id ? `/accounty/client/${company_id}` : '/accounty/dashboard';
+      const targetUrl = company_id ? `/eaisybooks/client/${company_id}` : '/eaisybooks/dashboard';
       
       supabase.functions.invoke('send-web-push', {
         body: {

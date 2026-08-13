@@ -109,7 +109,7 @@ export default function EvAlertsCenter({ alerts }: EvAlertsCenterProps) {
                 </p>
               </div>
               <Link
-                to={alert.targetUrl || `/accounty/client/${alert.companyId}/ev`}
+                to={alert.targetUrl || `/eaisybooks/client/${alert.companyId}/ev`}
                 className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors shrink-0 pt-0.5"
               >
                 Megnyitás <ExternalLink className="w-3.5 h-3.5" />
@@ -139,7 +139,7 @@ export default function EvAlertsCenter({ alerts }: EvAlertsCenterProps) {
                 </p>
               </div>
               <Link
-                to={alert.targetUrl || `/accounty/client/${alert.companyId}/ev`}
+                to={alert.targetUrl || `/eaisybooks/client/${alert.companyId}/ev`}
                 className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors shrink-0 pt-0.5"
               >
                 Megnyitás <ExternalLink className="w-3.5 h-3.5" />

@@ -296,7 +296,7 @@ export default function EmployeeImportPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/employees`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+          <Link to={`/eaisybooks/payroll/${id}/employees`} className="p-2 rounded-lg hover:bg-muted transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg shadow-green-500/25">
@@ -540,7 +540,7 @@ export default function EmployeeImportPage() {
           <div className="flex gap-3 justify-center mt-4">
             <Button variant="outline" onClick={() => { setPhase('upload'); setRows([]); }}>Új importálás</Button>
             <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-              <Link to={`/accounty/payroll/${id}/employees`}>Vissza a listához</Link>
+              <Link to={`/eaisybooks/payroll/${id}/employees`}>Vissza a listához</Link>
             </Button>
           </div>
         </div>

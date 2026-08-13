@@ -19,10 +19,26 @@ interface Message {
 }
 
 const QUICK_ACTIONS = [
-  { label: 'Kedvezmény-optimalizáció', icon: Zap, prompt: 'Kérlek elemezd a 2026-os családi kedvezmény szabályokat 2 gyermek esetén. Hogyan optimalizálható a szülők között?' },
-  { label: 'Anomália-detekció', icon: BarChart3, prompt: 'Mire figyeljek a havi bértömeg-ellenőrzésnél? Milyen anomáliákat érdemes keresni?' },
-  { label: 'Bevallás előellenőrzés', icon: FileCheck, prompt: 'Milyen gyakori hibákra figyeljek a 2608-as havi bevallás beadása előtt?' },
-  { label: 'Jogszabály kérdés', icon: BookOpen, prompt: '' },
+  { 
+    label: 'Családi kedvezmény optimalizáció', 
+    icon: Zap, 
+    prompt: 'Kérlek elemezd a 2026-os családi kedvezmény szabályokat 2 gyermek esetén. Hogyan lehet ezt optimálisan megosztani a szülők között?' 
+  },
+  { 
+    label: 'Bér anomália-detekció', 
+    icon: BarChart3, 
+    prompt: 'Milyen anomáliákat és eltéréseket érdemes leginkább ellenőrizni a havi bérszámfejtési adatokban a beküldés előtt?' 
+  },
+  { 
+    label: 'KIVA vs TAO adótervezés', 
+    icon: FileCheck, 
+    prompt: 'Milyen szempontok alapján érdemes egy cégnek a kisvállalati adót (KIVA) választania a társasági adó (TAO) helyett?' 
+  },
+  { 
+    label: '2608-as bevallás ellenőrzés', 
+    icon: BookOpen, 
+    prompt: 'Melyek a leggyakoribb hibák a havi 08-as járulékbevallás összeállításakor, és hogyan kerülhetem el őket?' 
+  },
 ];
 
 /* ─── Relative time helper ─── */
@@ -167,9 +183,20 @@ interface AiAssistantChatProps {
 export function AiAssistantChat({ fullPage = false }: AiAssistantChatProps) {
   const { session: authSession } = useAuth();
   const { sessions, createSession, deleteSession, updateTitle, addMessage } = useAiChatSessions();
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
+    return localStorage.getItem('eaisybooks_active_chat_session_id');
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!fullPage);
   const { data: dbMessages } = useAiChatMessages(activeSessionId);
+
+  // Sync activeSessionId to localStorage to persist context across page changes
+  useEffect(() => {
+    if (activeSessionId) {
+      localStorage.setItem('eaisybooks_active_chat_session_id', activeSessionId);
+    } else {
+      localStorage.removeItem('eaisybooks_active_chat_session_id');
+    }
+  }, [activeSessionId]);
 
   // Local message state (for real-time display during streaming)
   const [messages, setMessages] = useState<Message[]>([]);
@@ -464,12 +491,26 @@ export function AiAssistantChat({ fullPage = false }: AiAssistantChatProps) {
           {messages.map(msg => (
             <div key={msg.id} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
               <div className={cn(
-                'max-w-[85%] rounded-2xl px-4 py-3',
+                'max-w-[85%] rounded-2xl px-4 py-3 relative group/msg',
                 msg.role === 'user'
                   ? 'bg-primary text-white rounded-br-md'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-md'
               )}>
-                <div className="text-sm leading-relaxed space-y-1">
+                {msg.role === 'assistant' && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(msg.content);
+                      toast({ title: 'Másolva', description: 'Az üzenet szövege a vágólapra másolva.' });
+                    }}
+                    className="absolute top-2 right-2 p-1 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-300 opacity-0 group-hover/msg:opacity-100 transition-all duration-200"
+                    title="Szöveg másolása"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                  </button>
+                )}
+                <div className={cn("text-sm leading-relaxed space-y-1", msg.role === 'assistant' && "pr-6")}>
                   {renderContent(msg.content)}
                 </div>
                 <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-1.5">

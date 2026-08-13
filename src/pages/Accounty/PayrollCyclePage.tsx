@@ -468,7 +468,7 @@ export default function PayrollCyclePage() {
     if (!companyId) return;
     try {
       const result = await createCycle.mutateAsync({ company_id: companyId, year: newYear, month: newMonth });
-      navigate(`/accounty/payroll/${companyId}/cycle/${result.id}`, { replace: true });
+      navigate(`/eaisybooks/payroll/${companyId}/cycle/${result.id}`, { replace: true });
     } catch {
       // Error handled by mutation
     }
@@ -570,7 +570,7 @@ export default function PayrollCyclePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/accounty/payroll/${companyId}`)} className="h-9 w-9">
+          <Button variant="ghost" size="icon" onClick={() => navigate(`/eaisybooks/payroll/${companyId}`)} className="h-9 w-9">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
@@ -757,7 +757,7 @@ export default function PayrollCyclePage() {
       <div className="flex items-center justify-between">
         <Button
           variant="outline"
-          onClick={() => currentStep > 1 ? handleStepChange(currentStep - 1) : navigate(`/accounty/payroll/${companyId}`)}
+          onClick={() => currentStep > 1 ? handleStepChange(currentStep - 1) : navigate(`/eaisybooks/payroll/${companyId}`)}
           className="flex items-center gap-2"
           disabled={updateStep.isPending}
         >
@@ -788,7 +788,7 @@ export default function PayrollCyclePage() {
               if (!cycle?.id) return;
               await supabase.from('payroll_cycles').update({ status: 'closed', current_step: 8 }).eq('id', cycle.id);
               toast({ title: ' Ciklus lezárva', description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva.` });
-              navigate(`/accounty/payroll/${companyId}`);
+              navigate(`/eaisybooks/payroll/${companyId}`);
             }}
           >
             <Check className="w-4 h-4" />

@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import {
@@ -50,14 +51,12 @@ export default function ClientEvMainPage() {
   const id = companyId;
   const { data: client, isLoading: clientLoading } = useAccountyClient(id);
   const [searchParams, setSearchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
   
   const setTaxYear = (year: number) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      next.set('year', String(year));
-      return next;
-    });
+    setDateFrom(new Date(year, 0, 1));
+    setDateTo(new Date(year, 11, 31));
   };
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
@@ -83,9 +82,9 @@ export default function ClientEvMainPage() {
       icon: Settings,
       color: 'indigo',
       items: [
-        { to: `/accounty/${companyId}/${dateRange}/ev/master-data?year=${taxYear}`, label: 'Törzsadatok', icon: ClipboardList },
-        { to: `/accounty/${companyId}/${dateRange}/ev/lifecycle?year=${taxYear}`, label: 'Életciklus', icon: Calendar },
-        { to: `/accounty/${companyId}/${dateRange}/ev/setup?year=${taxYear}`, label: 'Beállítás varázsló', icon: Settings },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/master-data?year=${taxYear}`, label: 'Törzsadatok', icon: ClipboardList },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/lifecycle?year=${taxYear}`, label: 'Életciklus', icon: Calendar },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/setup?year=${taxYear}`, label: 'Beállítás varázsló', icon: Settings },
       ],
     },
     {
@@ -94,13 +93,13 @@ export default function ClientEvMainPage() {
       icon: Calculator,
       color: 'indigo',
       items: [
-        { to: `/accounty/${companyId}/${dateRange}/ev/flat-rate?year=${taxYear}`, label: 'Átalányadó kalkulátor', icon: PiggyBank },
-        { to: `/accounty/${companyId}/${dateRange}/ev/entrepreneurial/base?year=${taxYear}`, label: 'Vállalkozói SZJA – adóalap', icon: TrendingUp },
-        { to: `/accounty/${companyId}/${dateRange}/ev/entrepreneurial/dividend?year=${taxYear}`, label: 'Vállalkozói SZJA – osztalékalap', icon: Wallet },
-        { to: `/accounty/${companyId}/${dateRange}/ev/kata?year=${taxYear}`, label: 'KATA kisadózó', icon: Shield },
-        { to: `/accounty/${companyId}/${dateRange}/ev/depreciation?year=${taxYear}`, label: 'Értékcsökkenési leírás (ÉCS)', icon: BarChart3 },
-        { to: `/accounty/${companyId}/${dateRange}/ev/thresholds?year=${taxYear}`, label: 'Értékhatár-figyelő (Keretfigyelő)', icon: AlertTriangle },
-        { to: `/accounty/${companyId}/${dateRange}/ev/compare?year=${taxYear}`, label: 'Adóforma-összehasonlítás', icon: Scale },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/flat-rate?year=${taxYear}`, label: 'Átalányadó kalkulátor', icon: PiggyBank },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/entrepreneurial/base?year=${taxYear}`, label: 'Vállalkozói SZJA – adóalap', icon: TrendingUp },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/entrepreneurial/dividend?year=${taxYear}`, label: 'Vállalkozói SZJA – osztalékalap', icon: Wallet },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/kata?year=${taxYear}`, label: 'KATA kisadózó', icon: Shield },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/depreciation?year=${taxYear}`, label: 'Értékcsökkenési leírás (ÉCS)', icon: BarChart3 },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/thresholds?year=${taxYear}`, label: 'Értékhatár-figyelő (Keretfigyelő)', icon: AlertTriangle },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/compare?year=${taxYear}`, label: 'Adóforma-összehasonlítás', icon: Scale },
       ],
     },
     {
@@ -109,9 +108,9 @@ export default function ClientEvMainPage() {
       icon: BookOpen,
       color: 'violet',
       items: [
-        { to: `/accounty/${companyId}/${dateRange}/ev/cashbook?year=${taxYear}`, label: 'Pénztárkönyv', icon: BookOpen },
-        { to: `/accounty/${companyId}/${dateRange}/ev/cashbook/ledger?year=${taxYear}`, label: 'Főkönyvi nézet', icon: BarChart3 },
-        { to: `/accounty/${companyId}/${dateRange}/ev/cashbook/close?year=${taxYear}`, label: 'Időszaki zárás', icon: ClipboardList },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/cashbook?year=${taxYear}`, label: 'Pénztárkönyv', icon: BookOpen },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/cashbook/ledger?year=${taxYear}`, label: 'Főkönyvi nézet', icon: BarChart3 },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/cashbook/close?year=${taxYear}`, label: 'Időszaki zárás', icon: ClipboardList },
       ],
     },
     {
@@ -120,11 +119,11 @@ export default function ClientEvMainPage() {
       icon: FileText,
       color: 'teal',
       items: [
-        { to: `/accounty/${companyId}/${dateRange}/ev/records?year=${taxYear}`, label: 'Nyilvántartások áttekintő', icon: FileText },
-        { to: `/accounty/${companyId}/${dateRange}/ev/records/receivables?year=${taxYear}`, label: 'Vevői követelések', icon: Users },
-        { to: `/accounty/${companyId}/${dateRange}/ev/records/payables?year=${taxYear}`, label: 'Szállítói tartozások', icon: Package },
-        { to: `/accounty/${companyId}/${dateRange}/ev/records/fixed-assets?year=${taxYear}`, label: 'Tárgyi eszközök', icon: Landmark },
-        { to: `/accounty/${companyId}/${dateRange}/ev/records/vehicle-log?year=${taxYear}`, label: 'Útnyilvántartás', icon: Car },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/records?year=${taxYear}`, label: 'Nyilvántartások áttekintő', icon: FileText },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/records/receivables?year=${taxYear}`, label: 'Vevői követelések', icon: Users },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/records/payables?year=${taxYear}`, label: 'Szállítói tartozások', icon: Package },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/records/fixed-assets?year=${taxYear}`, label: 'Tárgyi eszközök', icon: Landmark },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/records/vehicle-log?year=${taxYear}`, label: 'Útnyilvántartás', icon: Car },
       ],
     },
     {
@@ -133,12 +132,12 @@ export default function ClientEvMainPage() {
       icon: Landmark,
       color: 'rose',
       items: [
-        { to: `/accounty/${companyId}/${dateRange}/ev/contributions?year=${taxYear}`, label: 'TB-járulék & szocho', icon: Calculator },
-        { to: `/accounty/${companyId}/${dateRange}/ev/hipa?year=${taxYear}`, label: 'Helyi iparűzési adó', icon: Landmark },
-        { to: `/accounty/${companyId}/${dateRange}/ev/vat?year=${taxYear}`, label: 'ÁFA kezelés', icon: Receipt },
-        { to: `/accounty/${companyId}/${dateRange}/ev/chamber?year=${taxYear}`, label: 'Kamarai hozzájárulás', icon: Shield },
-        { to: `/accounty/${companyId}/${dateRange}/ev/car-tax?year=${taxYear}`, label: 'Cégautóadó', icon: Car },
-        { to: `/accounty/${companyId}/${dateRange}/ev/innovation?year=${taxYear}`, label: 'Innovációs járulék', icon: TrendingUp },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/contributions?year=${taxYear}`, label: 'TB-járulék & szocho', icon: Calculator },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/hipa?year=${taxYear}`, label: 'Helyi iparűzési adó', icon: Landmark },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/vat?year=${taxYear}`, label: 'ÁFA kezelés', icon: Receipt },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/chamber?year=${taxYear}`, label: 'Kamarai hozzájárulás', icon: Shield },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/car-tax?year=${taxYear}`, label: 'Cégautóadó', icon: Car },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/innovation?year=${taxYear}`, label: 'Innovációs járulék', icon: TrendingUp },
       ],
     },
     {
@@ -147,13 +146,13 @@ export default function ClientEvMainPage() {
       icon: ClipboardList,
       color: 'cyan',
       items: [
-        { to: `/accounty/${companyId}/${dateRange}/ev/returns?year=${taxYear}`, label: 'SZJA bevallás (25SZJA)', icon: FileText },
-        { to: `/accounty/${companyId}/${dateRange}/ev/returns/contrib?year=${taxYear}`, label: 'Járulékbevallás (2658)', icon: Calculator },
-        { to: `/accounty/${companyId}/${dateRange}/ev/returns/kata?year=${taxYear}`, label: 'KATA bevallás', icon: Shield },
-        { to: `/accounty/${companyId}/${dateRange}/ev/returns/hipa?year=${taxYear}`, label: 'HIPA bevallás', icon: Landmark },
-        { to: `/accounty/${companyId}/${dateRange}/ev/returns/vat-car?year=${taxYear}`, label: 'ÁFA / cégautóadó bevallás', icon: Car },
-        { to: `/accounty/${companyId}/${dateRange}/ev/income-report?year=${taxYear}`, label: 'Jövedelem-kimutatás', icon: TrendingUp },
-        { to: `/accounty/${companyId}/${dateRange}/ev/optimization?year=${taxYear}`, label: 'Adóoptimalizálás', icon: BarChart3 },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/returns?year=${taxYear}`, label: 'SZJA bevallás (25SZJA)', icon: FileText },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/returns/contrib?year=${taxYear}`, label: 'Járulékbevallás (2658)', icon: Calculator },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/returns/kata?year=${taxYear}`, label: 'KATA bevallás', icon: Shield },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/returns/hipa?year=${taxYear}`, label: 'HIPA bevallás', icon: Landmark },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/returns/vat-car?year=${taxYear}`, label: 'ÁFA / cégautóadó bevallás', icon: Car },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/income-report?year=${taxYear}`, label: 'Jövedelem-kimutatás', icon: TrendingUp },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/optimization?year=${taxYear}`, label: 'Adóoptimalizálás', icon: BarChart3 },
       ],
     },
     {
@@ -162,11 +161,11 @@ export default function ClientEvMainPage() {
       icon: Users,
       color: 'indigo',
       items: [
-        { to: `/accounty/${companyId}/${dateRange}/ev/org/bookkeeping?year=${taxYear}`, label: 'Könyvvezetés mód', icon: BookOpen },
-        { to: `/accounty/${companyId}/${dateRange}/ev/org/civil?year=${taxYear}`, label: 'Civil szervezet', icon: Users },
-        { to: `/accounty/${companyId}/${dateRange}/ev/org/condominium?year=${taxYear}`, label: 'Társasház', icon: Landmark },
-        { to: `/accounty/${companyId}/${dateRange}/ev/org/other?year=${taxYear}`, label: 'Egyéb szervezet', icon: Package },
-        { to: `/accounty/${companyId}/${dateRange}/ev/org/simplified-report?year=${taxYear}`, label: 'Egyszerűsített beszámoló', icon: FileText },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/org/bookkeeping?year=${taxYear}`, label: 'Könyvvezetés mód', icon: BookOpen },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/org/civil?year=${taxYear}`, label: 'Civil szervezet', icon: Users },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/org/condominium?year=${taxYear}`, label: 'Társasház', icon: Landmark },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/org/other?year=${taxYear}`, label: 'Egyéb szervezet', icon: Package },
+        { to: `/eaisybooks/${companyId}/${dateRange}/ev/org/simplified-report?year=${taxYear}`, label: 'Egyszerűsített beszámoló', icon: FileText },
       ],
     },
   ], [id, taxYear]);
@@ -206,7 +205,7 @@ export default function ClientEvMainPage() {
               if (window.history.state && window.history.state.idx > 0) {
                 navigate(-1);
               } else {
-                navigate('/accounty?tab=ev');
+                navigate('/eaisybooks?tab=ev');
               }
             }}
             className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
@@ -250,14 +249,14 @@ export default function ClientEvMainPage() {
         <div className="flex items-center gap-2">
           <select
             value={taxYear}
-            onChange={(e) => setTaxYear(Number(e.target.value))}
+            onChange={(e) => ((y) => { setDateFrom(new Date(y, 0, 1)); setDateTo(new Date(y, 11, 31)); })(Number(e.target.value))}
             className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
           >
             <option value={2026}>2026. adóév</option>
             <option value={2025}>2025. adóév</option>
           </select>
           <Link
-            to={`/accounty/${companyId}/${dateRange}/ev/setup`}
+            to={`/eaisybooks/${companyId}/${dateRange}/ev/setup`}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <Settings className="w-3.5 h-3.5" /> Beállítások

@@ -340,7 +340,7 @@ export default function Filing08EPage() {
                     <tr
                       key={idx}
                       className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
-                      onClick={() => navigate(`/accounty/payroll/${companyId}/filings/${row.id}/workflow`)}
+                      onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/${row.id}/workflow`)}
                     >
                       <td className="px-5 py-2.5">
                         <div className="flex items-center gap-2">

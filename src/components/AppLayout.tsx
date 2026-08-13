@@ -95,7 +95,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (switchPending === 'eaisybill') {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex h-screen w-full items-center justify-center bg-background animate-in fade-in duration-500">
         <LoadingSpinner message="eaisyBill betöltése..." />
         <div className="hidden"><Outlet /></div>
       </div>

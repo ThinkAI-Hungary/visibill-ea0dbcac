@@ -46,7 +46,7 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
           )}
         </Link>
         <Link
-          to="/accounty"
+          to="/eaisybooks"
           onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybooks')}
           title="eaisyBooks"
           className={cn(
@@ -91,7 +91,7 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
 
       {/* Option 2: eaisyBooks */}
       <Link
-        to="/accounty"
+        to="/eaisybooks"
         onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybooks')}
         className={cn(
           "relative flex-1 py-2 text-center text-base font-semibold tracking-tight transition-all duration-200 rounded-full border",

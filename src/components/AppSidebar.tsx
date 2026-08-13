@@ -523,7 +523,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                             >
                               <TicketCheck className="h-4 w-4 shrink-0" />
                               {unreadTicketCount > 0 && (
-                                <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                                <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground animate-pulse shadow-[0_0_8px_rgba(20,212,184,0.5)]">
                                   {unreadTicketCount > 9 ? '9+' : unreadTicketCount}
                                 </span>
                               )}
@@ -695,7 +695,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                         Hibajegyek
                       </span>
                       {unreadTicketCount > 0 && (
-                        <span className="h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                        <span className="h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground animate-pulse shadow-[0_0_8px_rgba(20,212,184,0.5)]">
                           {unreadTicketCount > 9 ? '9+' : unreadTicketCount}
                         </span>
                       )}

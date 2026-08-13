@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -83,14 +84,12 @@ export default function EvFormsOverviewPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchParams, setSearchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
 
   const setTaxYear = (year: number) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      next.set('year', String(year));
-      return next;
-    });
+    setDateFrom(new Date(year, 0, 1));
+    setDateTo(new Date(year, 11, 31));
   };
 
   // ─── Real data: portfolio-wide tax returns ────────────────────────────────
@@ -204,7 +203,7 @@ export default function EvFormsOverviewPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/accounty?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -279,7 +278,7 @@ export default function EvFormsOverviewPage() {
         </select>
         <select
           value={taxYear}
-          onChange={e => setTaxYear(Number(e.target.value))}
+          onChange={e => ((y) => { setDateFrom(new Date(y, 0, 1)); setDateTo(new Date(y, 11, 31)); })(Number(e.target.value))}
           className="text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground"
         >
           <option value={2026}>2026</option>

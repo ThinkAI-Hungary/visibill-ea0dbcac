@@ -615,7 +615,7 @@ const Auth = () => {
       // Respect the eaisybooks toggle for routing
       const target = returnTo && returnTo !== '/'
         ? returnTo
-        : isEaisybooks ? '/accounty' : '/';
+        : isEaisybooks ? '/eaisybooks' : '/';
       navigate(target);
     }
   }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess, authSearchParams, isRecoverySession]);
@@ -889,7 +889,7 @@ const Auth = () => {
       // Otherwise navigate to '/' (or returnTo) — RootRedirect handles the rest.
       const target = returnTo && returnTo !== '/'
         ? returnTo
-        : isEaisybooks ? '/accounty' : '/';
+        : isEaisybooks ? '/eaisybooks' : '/';
       navigate(target);
     }
 

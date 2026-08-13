@@ -204,7 +204,7 @@ export default function Filing2608Page() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['payroll', 'filings'] });
-      navigate(`/accounty/payroll/${companyId}/filings/${filingId}/workflow`);
+      navigate(`/eaisybooks/payroll/${companyId}/filings/${filingId}/workflow`);
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Hiba', description: err.message });
     } finally {

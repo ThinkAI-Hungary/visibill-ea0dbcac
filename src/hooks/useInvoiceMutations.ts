@@ -344,6 +344,107 @@ export function useInvoiceMutations({
     }
   };
 
+  const handleBulkCategoryChange = async (categoryId: string | null) => {
+    if (selectedInvoiceIds.size === 0) {
+      toast({ title: 'Nincs kijelölt számla', variant: 'destructive' });
+      return;
+    }
+    const ids = Array.from(selectedInvoiceIds);
+    const value = categoryId === 'none' ? null : categoryId;
+    try {
+      if (isSubmittedTab) {
+        const { error } = await supabase
+          .from('invoices')
+          .update({ category_id: value })
+          .in('id', ids);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('nav_invoices')
+          .update({ category_id: value })
+          .in('id', ids);
+        if (error) throw error;
+
+        // Also update twin invoices in `invoices` table
+        const selectedInvoices = filteredAndSortedNavInvoices.filter(inv => selectedInvoiceIds.has(inv.id));
+        const invoiceNumbers = selectedInvoices.map(inv => inv.invoice_number).filter(Boolean);
+        if (invoiceNumbers.length > 0) {
+          await supabase
+            .from('invoices')
+            .update({ category_id: value })
+            .in('bizonylatsorszam', invoiceNumbers);
+        }
+      }
+      setSelectedInvoiceIds(new Set());
+      invalidateInvoiceData();
+      toast({ title: `${ids.length} db számla kategóriája frissítve` });
+    } catch (error) {
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error bulk updating category:', error });
+      toast({ title: 'Hiba a csoportos kategória hozzárendelésnél', variant: 'destructive' });
+    }
+  };
+
+  const handleBulkProjectChange = async (projectId: string | null) => {
+    if (selectedInvoiceIds.size === 0) {
+      toast({ title: 'Nincs kijelölt számla', variant: 'destructive' });
+      return;
+    }
+    const ids = Array.from(selectedInvoiceIds);
+    const value = projectId === 'none' ? null : projectId;
+    try {
+      if (isSubmittedTab) {
+        const { error } = await supabase
+          .from('invoices')
+          .update({ project_id: value })
+          .in('id', ids);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('nav_invoices')
+          .update({ project_id: value })
+          .in('id', ids);
+        if (error) throw error;
+
+        // Also update twin invoices in `invoices` table
+        const selectedInvoices = filteredAndSortedNavInvoices.filter(inv => selectedInvoiceIds.has(inv.id));
+        const invoiceNumbers = selectedInvoices.map(inv => inv.invoice_number).filter(Boolean);
+        if (invoiceNumbers.length > 0) {
+          await supabase
+            .from('invoices')
+            .update({ project_id: value })
+            .in('bizonylatsorszam', invoiceNumbers);
+        }
+      }
+      setSelectedInvoiceIds(new Set());
+      invalidateInvoiceData();
+      toast({ title: `${ids.length} db számla projektje frissítve` });
+    } catch (error) {
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error bulk updating project:', error });
+      toast({ title: 'Hiba a csoportos projekt hozzárendelésnél', variant: 'destructive' });
+    }
+  };
+
+  const handleBulkDeleteSubmitted = async () => {
+    if (selectedInvoiceIds.size === 0) {
+      toast({ title: 'Nincs kijelölt számla', variant: 'destructive' });
+      return;
+    }
+    const ids = Array.from(selectedInvoiceIds);
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+      setSelectedInvoiceIds(new Set());
+      invalidateInvoiceData();
+      toast({ title: `${ids.length} db számla sikeresen törölve` });
+    } catch (error) {
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error bulk deleting invoices:', error });
+      toast({ title: 'Hiba a csoportos törléskor', variant: 'destructive' });
+    }
+  };
+
   return {
     syncing,
     canSync,
@@ -354,5 +455,8 @@ export function useInvoiceMutations({
     handleCategoryChange,
     handleToggleSubmitted,
     handleExport,
+    handleBulkCategoryChange,
+    handleBulkProjectChange,
+    handleBulkDeleteSubmitted,
   };
 }

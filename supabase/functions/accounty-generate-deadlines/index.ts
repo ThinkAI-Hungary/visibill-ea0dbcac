@@ -459,7 +459,7 @@ Deno.serve(async (req: Request) => {
             status: 'open',
             details: `A ${targetYear}. ${monthNames[targetMonth]}i bérszámfejtéshez szükséges adatok (jelenléti ív, szabadságok, túlórák, egyéb változások) bekérése.`,
             item_date: berDueDate,
-            resolve_route: `/accounty/client/${companyId}`,
+            resolve_route: `/eaisybooks/client/${companyId}`,
           })
 
         if (!berErr) {

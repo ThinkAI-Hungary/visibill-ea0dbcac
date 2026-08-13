@@ -212,7 +212,7 @@ export default function ClientInvoicesPage() {
       <div className="flex justify-between items-start">
         <div className="flex items-start gap-4">
           <button 
-            onClick={() => navigate(`/accounty/${companyId}/${dateRange}/overview`)}
+            onClick={() => navigate(`/eaisybooks/${companyId}/${dateRange}/overview`)}
             className="flex items-center justify-center w-8 h-8 mt-1 shrink-0 rounded-lg border border-border bg-card text-foreground hover:bg-accent transition-colors shadow-sm"
             title="Vissza az áttekintéshez"
           >

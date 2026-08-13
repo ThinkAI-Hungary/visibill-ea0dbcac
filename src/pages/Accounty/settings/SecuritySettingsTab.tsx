@@ -62,7 +62,7 @@ export default function SecuritySettingsTab({
   }, []);
 
   const gdprItems = [
-    { key: 'privacyPolicy' as const, label: 'Adatkezelési tájékoztató', desc: 'Elfogadott adatkezelési nyilatkozat elérhető a felhasználók számára', autoDesc: 'A tájékoztató el lett fogadva', missingDesc: 'Nyissa meg és fogadja el az adatkezelési tájékoztatót', actionPath: '/accounty/privacy-policy' },
+    { key: 'privacyPolicy' as const, label: 'Adatkezelési tájékoztató', desc: 'Elfogadott adatkezelési nyilatkozat elérhető a felhasználók számára', autoDesc: 'A tájékoztató el lett fogadva', missingDesc: 'Nyissa meg és fogadja el az adatkezelési tájékoztatót', actionPath: '/eaisybooks/privacy-policy' },
     { key: 'cookieConsent' as const, label: 'Cookie hozzájárulás', desc: 'Süti-kezelési banner konfigurálva belépéskor', autoDesc: 'Cookie hozzájárulás rögzítve', missingDesc: 'A süti banner megjelenik újratöltéskor — fogadja el' },
     { key: 'auditLog' as const, label: 'Hozzáférési napló', desc: 'Felhasználói műveletek naplózása aktív', autoDesc: 'Az audit napló aktív (accounty_audit_log)' },
     { key: 'dataRetention' as const, label: 'Adatmegőrzési szabályzat', desc: 'Meghatározott megőrzési idők és automatikus törlés', autoDesc: '8 év számviteli / 5 év bérszámfejtési / 1 év napló' },

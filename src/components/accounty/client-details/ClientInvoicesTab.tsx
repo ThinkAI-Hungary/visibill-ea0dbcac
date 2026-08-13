@@ -83,7 +83,7 @@ export default function ClientInvoicesTab({
             variant="outline" 
             size="sm" 
             className="bg-white dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-400 h-8"
-            onClick={() => navigate(`/accounty/client/${clientId}/invoices`)}
+            onClick={() => navigate(`/eaisybooks/client/${clientId}/invoices`)}
           >
             Összes megtekintése <ChevronRight className="w-3 h-3 ml-1" />
           </Button>

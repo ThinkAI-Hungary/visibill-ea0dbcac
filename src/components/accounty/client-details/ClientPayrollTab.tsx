@@ -19,7 +19,7 @@ export default function ClientPayrollTab({ client }: ClientPayrollTabProps) {
       {/* Quick actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <button
-          onClick={() => navigate(`/accounty/payroll/${client.id}`)}
+          onClick={() => navigate(`/eaisybooks/payroll/${client.id}`)}
           className="bg-card rounded-xl border border-border shadow-soft p-6 text-left hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all group"
         >
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -30,7 +30,7 @@ export default function ClientPayrollTab({ client }: ClientPayrollTabProps) {
         </button>
 
         <button
-          onClick={() => navigate(`/accounty/payroll/${client.id}/employees`)}
+          onClick={() => navigate(`/eaisybooks/payroll/${client.id}/employees`)}
           className="bg-card rounded-xl border border-border shadow-soft p-6 text-left hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all group"
         >
           <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -41,7 +41,7 @@ export default function ClientPayrollTab({ client }: ClientPayrollTabProps) {
         </button>
 
         <button
-          onClick={() => navigate(`/accounty/payroll/${client.id}/cycle/new`)}
+          onClick={() => navigate(`/eaisybooks/payroll/${client.id}/cycle/new`)}
           className="bg-card rounded-xl border border-border shadow-soft p-6 text-left hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all group"
         >
           <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -65,13 +65,13 @@ export default function ClientPayrollTab({ client }: ClientPayrollTabProps) {
         <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Gyors navigáció</h3>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { label: 'Paramétertábla 2026', path: `/accounty/payroll/${client.id}/tax-params` },
-            { label: 'NAV bevallások', path: `/accounty/payroll/${client.id}/filings` },
-            { label: 'Új foglalkoztatott', path: `/accounty/payroll/${client.id}/employees/new` },
-            { label: 'Cégkapu / KÜNY-tárhely', path: `/accounty/client/${client.id}/settings#cegkapu` },
-            { label: 'NAV-meghatalmazás', path: `/accounty/client/${client.id}/representation` },
-            { label: 'Iratkezelés és GDPR', path: `/accounty/client/${client.id}/data-retention` },
-            { label: 'Bérezési struktúra', path: `/accounty/client/${client.id}/structure` },
+            { label: 'Paramétertábla 2026', path: `/eaisybooks/payroll/${client.id}/tax-params` },
+            { label: 'NAV bevallások', path: `/eaisybooks/payroll/${client.id}/filings` },
+            { label: 'Új foglalkoztatott', path: `/eaisybooks/payroll/${client.id}/employees/new` },
+            { label: 'Cégkapu / KÜNY-tárhely', path: `/eaisybooks/client/${client.id}/settings#cegkapu` },
+            { label: 'NAV-meghatalmazás', path: `/eaisybooks/client/${client.id}/representation` },
+            { label: 'Iratkezelés és GDPR', path: `/eaisybooks/client/${client.id}/data-retention` },
+            { label: 'Bérezési struktúra', path: `/eaisybooks/client/${client.id}/structure` },
           ].map((link) => (
             <button
               key={link.label}

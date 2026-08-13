@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
@@ -39,7 +40,8 @@ export default function ClientTaoMainPage() {
   const { data: clients = [], isLoading: clientLoading } = useAccountyClients();
   const client = clients.find((c: any) => c.companyId === id);
   const { data: taxProfile } = useAccountyTaxProfile(id || '');
-  const [taxYear] = useState(2025);
+  const { dateFrom } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
 
   // Load real data from DB
   const companyUuid = client?.id;
@@ -53,11 +55,11 @@ export default function ClientTaoMainPage() {
   const creditAmount = taoData?.tax_credits_total || 0;
 
   const tabs: TaoTab[] = [
-    { id: 'overview',  label: 'Áttekintés',     icon: Landmark,    to: `/accounty/${companyId}/${dateRange}/tao` },
-    { id: 'status',    label: 'Adóalany',       icon: Shield,      to: `/accounty/${companyId}/${dateRange}/tao/setup` },
-    { id: 'master',    label: 'Törzsadatok',     icon: FileText,    to: `/accounty/${companyId}/${dateRange}/tao/master-data` },
-    { id: 'year-end',  label: 'Éves zárás',     icon: Calculator,  to: `/accounty/${companyId}/${dateRange}/tao/year-end/${taxYear}` },
-    { id: 'lifecycle', label: 'Életciklus',      icon: Clock,       to: `/accounty/${companyId}/${dateRange}/tao/lifecycle` },
+    { id: 'overview',  label: 'Áttekintés',     icon: Landmark,    to: `/eaisybooks/${companyId}/${dateRange}/tao` },
+    { id: 'status',    label: 'Adóalany',       icon: Shield,      to: `/eaisybooks/${companyId}/${dateRange}/tao/setup` },
+    { id: 'master',    label: 'Törzsadatok',     icon: FileText,    to: `/eaisybooks/${companyId}/${dateRange}/tao/master-data` },
+    { id: 'year-end',  label: 'Éves zárás',     icon: Calculator,  to: `/eaisybooks/${companyId}/${dateRange}/tao/year-end/${taxYear}` },
+    { id: 'lifecycle', label: 'Életciklus',      icon: Clock,       to: `/eaisybooks/${companyId}/${dateRange}/tao/lifecycle` },
   ];
 
   return (
@@ -69,7 +71,7 @@ export default function ClientTaoMainPage() {
             if (window.history.state && window.history.state.idx > 0) {
               navigate(-1);
             } else {
-              navigate('/accounty?tab=tao');
+              navigate('/eaisybooks?tab=tao');
             }
           }}
           className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
@@ -126,7 +128,7 @@ export default function ClientTaoMainPage() {
             </p>
             <div className="flex gap-3 mt-2">
               <Button size="sm" variant="outline" className="h-7 text-xs border-orange-300 text-orange-800 hover:bg-orange-100 dark:border-orange-800 dark:text-orange-300 dark:hover:bg-orange-950/40" asChild>
-                <Link to={`/accounty/${companyId}/${dateRange}/tao/kiva`}>KIVA kalkulátor megnyitása</Link>
+                <Link to={`/eaisybooks/${companyId}/${dateRange}/tao/kiva`}>KIVA kalkulátor megnyitása</Link>
               </Button>
             </div>
           </div>
@@ -192,7 +194,7 @@ export default function ClientTaoMainPage() {
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             {taxYear}. adóévi TAO-zárás
           </h2>
-          <Link to={`/accounty/${companyId}/${dateRange}/tao/year-end/${taxYear}?step=${currentStep}`}>
+          <Link to={`/eaisybooks/${companyId}/${dateRange}/tao/year-end/${taxYear}?step=${currentStep}`}>
             <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
               Folytatás — {currentStep}. lépés
             </Button>
@@ -239,7 +241,7 @@ export default function ClientTaoMainPage() {
       {/* Quick links */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <Link
-          to={`/accounty/${companyId}/${dateRange}/tao/master-data`}
+          to={`/eaisybooks/${companyId}/${dateRange}/tao/master-data`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -254,7 +256,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/accounty/${companyId}/${dateRange}/tao/setup`}
+          to={`/eaisybooks/${companyId}/${dateRange}/tao/setup`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -269,7 +271,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/accounty/${companyId}/${dateRange}/tao/lifecycle`}
+          to={`/eaisybooks/${companyId}/${dateRange}/tao/lifecycle`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -284,7 +286,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/accounty/${companyId}/${dateRange}/tao/kiva`}
+          to={`/eaisybooks/${companyId}/${dateRange}/tao/kiva`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-orange-400/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -299,7 +301,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/accounty/${companyId}/${dateRange}/tao/compare`}
+          to={`/eaisybooks/${companyId}/${dateRange}/tao/compare`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-violet-400/30 transition-all group"
         >
           <div className="flex items-center gap-3">

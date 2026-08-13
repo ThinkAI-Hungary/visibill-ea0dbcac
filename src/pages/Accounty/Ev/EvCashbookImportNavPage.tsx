@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo, useEffect } from 'react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
@@ -56,7 +57,8 @@ export default function EvCashbookImportNavPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
   const [gridData, setGridData] = useState<GridRow[]>([]);
   const [dataInitialized, setDataInitialized] = useState(false);
   const [isPredictingAll, setIsPredictingAll] = useState(false);
@@ -334,7 +336,7 @@ export default function EvCashbookImportNavPage() {
       });
 
       // Clear the grid and navigate back to cashbook
-      navigate(`/accounty/${id}/${dateRange}/ev/cashbook?year=${taxYear}`);
+      navigate(`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`);
     } catch (err: any) {
       toast({
         title: 'Hiba történt',
@@ -356,7 +358,7 @@ export default function EvCashbookImportNavPage() {
     <div className="w-full space-y-6 pb-24 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -593,7 +595,7 @@ export default function EvCashbookImportNavPage() {
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
-              onClick={() => navigate(`/accounty/${id}/${dateRange}/ev/cashbook?year=${taxYear}`)}
+              onClick={() => navigate(`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`)}
               className="border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               Mégse

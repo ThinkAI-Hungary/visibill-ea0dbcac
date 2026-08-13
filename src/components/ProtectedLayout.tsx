@@ -59,7 +59,7 @@ export function ProtectedLayout() {
     } catch {}
 
     const returnTo = location.pathname + location.search;
-    const isEaisybooks = returnTo && (returnTo.startsWith('/accounty') || returnTo.includes('/accounty'));
+    const isEaisybooks = returnTo && (returnTo.startsWith('/eaisybooks') || returnTo.includes('/eaisybooks'));
     
     let authUrl = '/auth';
     if (!postSignout && returnTo && returnTo !== '/') {

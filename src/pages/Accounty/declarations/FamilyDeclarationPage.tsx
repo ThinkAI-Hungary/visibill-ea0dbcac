@@ -78,7 +78,7 @@ export default function FamilyDeclarationPage() {
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/accounty/payroll/${id}/declarations`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`/eaisybooks/payroll/${id}/declarations`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/25">
@@ -211,7 +211,7 @@ export default function FamilyDeclarationPage() {
 
       {/* Actions */}
       <div className="flex justify-end gap-3">
-        <Button variant="outline" asChild><Link to={`/accounty/payroll/${id}/declarations`}>Mégse</Link></Button>
+        <Button variant="outline" asChild><Link to={`/eaisybooks/payroll/${id}/declarations`}>Mégse</Link></Button>
         <Button onClick={handleSave} className="gap-1.5 bg-blue-600 hover:bg-blue-700" disabled={childCount === 0 || !empId || addDeclaration.isPending}>
           {addDeclaration.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saved ? 'Mentve ' : 'Nyilatkozat mentése'}
         </Button>

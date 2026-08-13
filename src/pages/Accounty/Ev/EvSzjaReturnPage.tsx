@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -170,7 +171,8 @@ export default function EvSzjaReturnPage() {
   const [tab, setTab] = useState<'all' | 'pending' | 'submitted'>('all');
   const updateReturn = useUpdateEvTaxReturn();
   const [searchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
 
   // ─── Real data ────────────────────────────────────────────────────────────
   const { data: allReturns, isLoading } = useEvTaxReturns(id, taxYear);
@@ -312,11 +314,11 @@ export default function EvSzjaReturnPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty?tab=ev&year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/eaisybooks?tab=ev&year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -395,18 +397,18 @@ export default function EvSzjaReturnPage() {
             let linkPath = "";
             const codeLower = ret.code.toLowerCase();
             if (codeLower.includes('2658') || codeLower.includes('58')) {
-              linkPath = `/accounty/${id}/${dateRange}/ev/returns/contrib?year=${taxYear}`;
+              linkPath = `/eaisybooks/${id}/${dateRange}/ev/returns/contrib?year=${taxYear}`;
             } else if (codeLower.includes('kata')) {
-              linkPath = `/accounty/${id}/${dateRange}/ev/returns/kata?year=${taxYear}`;
+              linkPath = `/eaisybooks/${id}/${dateRange}/ev/returns/kata?year=${taxYear}`;
             } else if (codeLower.includes('hipa')) {
-              linkPath = `/accounty/${id}/${dateRange}/ev/returns/hipa?year=${taxYear}`;
+              linkPath = `/eaisybooks/${id}/${dateRange}/ev/returns/hipa?year=${taxYear}`;
             } else if (codeLower.includes('65') || codeLower.includes('car')) {
-              linkPath = `/accounty/${id}/${dateRange}/ev/returns/vat-car?year=${taxYear}`;
+              linkPath = `/eaisybooks/${id}/${dateRange}/ev/returns/vat-car?year=${taxYear}`;
             } else if (codeLower.includes('2553') || codeLower.includes('szja') || codeLower.includes('53')) {
               const isAtalany = evSettings?.taxpayer_form === 'atalany';
               linkPath = isAtalany 
-                ? `/accounty/${id}/${dateRange}/ev/flat-rate?year=${taxYear}`
-                : `/accounty/${id}/${dateRange}/ev/entrepreneurial/base?year=${taxYear}`;
+                ? `/eaisybooks/${id}/${dateRange}/ev/flat-rate?year=${taxYear}`
+                : `/eaisybooks/${id}/${dateRange}/ev/entrepreneurial/base?year=${taxYear}`;
             }
 
             const InnerContent = (

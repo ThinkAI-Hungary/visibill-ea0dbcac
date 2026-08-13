@@ -115,8 +115,8 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Detect if we're in Accounty context
-  const isAccounty = location.pathname.startsWith("/accounty");
-  const ticketsBase = isAccounty ? "/accounty/tickets" : `${eaisybillBasePath}/tickets`;
+  const isAccounty = location.pathname.startsWith("/eaisybooks");
+  const ticketsBase = isAccounty ? "/eaisybooks/tickets" : `${eaisybillBasePath}/tickets`;
 
   // Mark as read on mount
   useEffect(() => {

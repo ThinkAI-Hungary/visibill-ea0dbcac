@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -30,7 +31,8 @@ export default function EvComparePage() {
   const id = companyId;
   const { data: client } = useAccountyClient(id);
   const [searchParams] = useSearchParams();
-  const yearParam = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const yearParam = dateFrom.getFullYear();
   const [taxYear, setTaxYear] = useState(yearParam);
 
   const { data: dbParams } = useEvTaxParams(taxYear);
@@ -55,7 +57,7 @@ export default function EvComparePage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -75,7 +77,7 @@ export default function EvComparePage() {
         </div>
         <select
           value={taxYear}
-          onChange={e => setTaxYear(Number(e.target.value))}
+          onChange={e => ((y) => { setDateFrom(new Date(y, 0, 1)); setDateTo(new Date(y, 11, 31)); })(Number(e.target.value))}
           className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
         >
           <option value={2026}>2026</option>
@@ -100,11 +102,13 @@ export default function EvComparePage() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Ténylegesen felmerülő költségek (VSZJA-hoz)</label>
               <Input type="number" min={0} value={costs} onChange={e => setCosts(Math.max(0, Number(e.target.value)))} className="bg-card font-mono" />
+              <input type="range" min={0} max={Math.max(revenue, 30_000_000)} step={100_000} value={costs} onChange={e => setCosts(Number(e.target.value))} className="w-full accent-indigo-600" />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Vállalkozói kivét (VSZJA-hoz)</label>
               <Input type="number" min={0} value={kivet} onChange={e => setKivet(Math.max(0, Number(e.target.value)))} className="bg-card font-mono" />
+              <input type="range" min={0} max={Math.max(revenue, 20_000_000)} step={100_000} value={kivet} onChange={e => setKivet(Number(e.target.value))} className="w-full accent-indigo-600" />
             </div>
 
             <div className="space-y-1.5">

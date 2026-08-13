@@ -49,6 +49,8 @@ interface DashboardKpiViewProps {
   colleagueStats: any[] | null;
   auditLog: any[] | null;
   isAdmin: boolean;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
 export default function DashboardKpiView({
@@ -65,8 +67,35 @@ export default function DashboardKpiView({
   colleagueStats,
   auditLog,
   isAdmin,
+  dateFrom,
+  dateTo,
 }: DashboardKpiViewProps) {
   const navigate = useNavigate();
+
+  const periodLabel = React.useMemo(() => {
+    if (!dateFrom || !dateTo) {
+      return new Date().toLocaleDateString('hu-HU', { month: 'long' }).replace(/^./, c => c.toUpperCase());
+    }
+    const fromYear = dateFrom.getFullYear();
+    const toYear = dateTo.getFullYear();
+    const fromMonth = dateFrom.getMonth();
+    const toMonth = dateTo.getMonth();
+    const fromDay = dateFrom.getDate();
+    const toDay = dateTo.getDate();
+
+    // Single month (e.g. 2026-07-01 to 2026-07-31)
+    if (fromYear === toYear && fromMonth === toMonth) {
+      return dateFrom.toLocaleDateString('hu-HU', { month: 'long' }).replace(/^./, c => c.toUpperCase());
+    }
+
+    // Whole year (e.g. 2026-01-01 to 2026-12-31)
+    if (fromMonth === 0 && fromDay === 1 && toMonth === 11 && toDay === 31) {
+      return `${fromYear}. év`;
+    }
+
+    const formatCompact = (d: Date) => d.toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    return `${formatCompact(dateFrom)} – ${formatCompact(dateTo)}`;
+  }, [dateFrom, dateTo]);
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
@@ -83,7 +112,7 @@ export default function DashboardKpiView({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-card rounded-xl p-6 border border-border shadow-soft flex flex-col justify-center">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">
-              {`Zárási státusz (${new Date().toLocaleDateString('hu-HU', { month: 'long' }).replace(/^./, c => c.toUpperCase())}):`}
+              {`Zárási státusz (${periodLabel}):`}
             </h3>
             <div className="flex items-baseline gap-4">
               <span className="text-4xl font-bold text-foreground">{dynamicKpiStats.zarasiSzazalek}%</span>
@@ -481,7 +510,7 @@ export default function DashboardKpiView({
                         .slice(0, 5)
                         .filter(c => c.missingCount > 0)
                         .map(c => (
-                          <tr key={c.id} className="hover:bg-accent/50 transition-colors cursor-pointer group/row relative" onClick={() => navigate(`/accounty/missing-invoices/${c.id}`)}>
+                          <tr key={c.id} className="hover:bg-accent/50 transition-colors cursor-pointer group/row relative" onClick={() => navigate(`/eaisybooks/missing-invoices/${c.id}`)}>
                             <td className="py-3 pr-4 font-semibold text-foreground">{c.name}</td>
                             <td className="py-3 px-4 text-center font-bold text-foreground">{c.missingCount}</td>
                             <td className="py-3 pl-4 text-right">

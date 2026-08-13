@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Search, Download, ArrowUpDown, FileText, FileSpreadsheet, FileDown, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon, ChevronsUpDown, ChevronsDownUp, Link2, Link2Off, Lightbulb, Scale } from 'lucide-react';
+import { Search, Download, ArrowUpDown, FileText, FileSpreadsheet, FileDown, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon, ChevronsUpDown, ChevronsDownUp, Link2, Link2Off, Lightbulb, Scale, Trash2 } from 'lucide-react';
 import { usePdfExport } from '@/hooks/usePdfExport';
 import { PdfExportDialog } from '@/components/invoices/PdfExportDialog';
 import { PdfExportBanner } from '@/components/invoices/PdfExportBanner';
@@ -23,6 +23,7 @@ import { exportToFile } from '@/lib/exportUtils';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { RefreshCw } from 'lucide-react';
 import { InvoiceFilesDialog } from '@/components/invoices/InvoiceFilesDialog';
 import { NavSyncDialog } from '@/components/nav/NavSyncDialog';
@@ -230,16 +231,22 @@ const InvoicesPage = () => {
     }, { replace: true });
   }, [filters, kpiFilter, sortField, sortDirection, navCurrentPage, submittedCurrentPage, navPageSize, submittedPageSize, isSubmittedTab, setSearchParams]);
 
+  // ── Bulk Actions state ──
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const activeSelection = isSubmittedTab ? selectedSubmittedIds : selectedInvoiceIds;
+  const activeSetSelected = isSubmittedTab ? setSelectedSubmittedIds : setSelectedInvoiceIds;
+
   // ── Mutations hook ──
   const {
     syncing, canSync, cooldownSeconds, formatCooldown,
     handleSync, handleProjectChange, handleCategoryChange, handleToggleSubmitted, handleExport,
+    handleBulkCategoryChange, handleBulkProjectChange, handleBulkDeleteSubmitted,
   } = useInvoiceMutations({
     companyId,
     selectedCompany,
     invalidateInvoiceData,
-    selectedInvoiceIds,
-    setSelectedInvoiceIds,
+    selectedInvoiceIds: activeSelection,
+    setSelectedInvoiceIds: activeSetSelected,
     filteredAndSortedNavInvoices,
     filteredAndSortedSubmittedInvoices,
     getInvoicePartnerName,
@@ -1947,15 +1954,6 @@ const InvoicesPage = () => {
                     onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
                     className="mt-3"
                   />
-
-                  {selectedInvoiceIds.size > 0 && (
-                    <div className="flex items-center gap-2 text-sm text-primary px-2">
-                      <span className="font-medium">{selectedInvoiceIds.size} számla kijelölve újrakategorizálásra</span>
-                      <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground hover:text-foreground" onClick={() => setSelectedInvoiceIds(new Set())}>
-                        <X className="h-3 w-3 mr-1" />Törlés
-                      </Button>
-                    </div>
-                  )}
                 </TabsContent>
               )}
 
@@ -2297,15 +2295,6 @@ const InvoicesPage = () => {
                     onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
                     className="mt-3"
                   />
-
-                  {selectedSubmittedIds.size > 0 && (
-                    <div className="flex items-center gap-2 text-sm text-primary px-2">
-                      <span className="font-medium">{selectedSubmittedIds.size} számla kijelölve</span>
-                      <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground hover:text-foreground" onClick={() => setSelectedSubmittedIds(new Set())}>
-                        <X className="h-3 w-3 mr-1" />Törlés
-                      </Button>
-                    </div>
-                  )}
                 </TabsContent>
               )}
             </Tabs>
@@ -2360,6 +2349,87 @@ const InvoicesPage = () => {
           supplierName={selectedSubmittedForItems?.elado_nev || undefined}
         />
       )}
+
+      {activeSelection.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-background/90 dark:bg-slate-900/90 backdrop-blur-md border border-border/80 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-5 duration-300">
+          <span className="text-xs font-semibold text-foreground whitespace-nowrap">
+            {activeSelection.size} db számla kijelölve
+          </span>
+          <div className="h-5 w-px bg-border/60" />
+          
+          <div className="flex items-center gap-2">
+            <Select onValueChange={(val) => handleBulkCategoryChange(val)}>
+              <SelectTrigger className="h-8 text-xs min-w-[130px] bg-background/50 border-border/60">
+                <SelectValue placeholder="Kategória..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nincs kategória</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select onValueChange={(val) => handleBulkProjectChange(val)}>
+              <SelectTrigger className="h-8 text-xs min-w-[130px] bg-background/50 border-border/60">
+                <SelectValue placeholder="Projekt..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nincs projekt</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {isSubmittedTab && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => setBulkDeleteDialogOpen(true)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Törlés
+              </Button>
+            )}
+          </div>
+
+          <div className="h-5 w-px bg-border/60" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => activeSetSelected(new Set())}
+          >
+            Mégse
+          </Button>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Biztosan törölni szeretnéd a kijelölt bizonylatokat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ez a művelet nem vonható vissza. A kijelölt {activeSelection.size} db számla véglegesen törlődik a rendszerből.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              onClick={async () => {
+                await handleBulkDeleteSubmitted();
+                setBulkDeleteDialogOpen(false);
+              }}
+            >
+              Törlés
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

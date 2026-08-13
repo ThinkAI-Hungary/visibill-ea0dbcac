@@ -457,13 +457,13 @@ function RootRedirect() {
   // - eaisybill users (or unknown) → show eaisybill onboarding wizard
   if (!isInitialLoading && companies.length === 0) {
     if (registrationSource === 'eaisybooks') {
-      return <Navigate to="/accounty" replace />;
+      return <Navigate to="/eaisybooks" replace />;
     }
     return <Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Index /></Suspense>;
   }
 
   if (hasEaisybillAccess === false) {
-    return <Navigate to="/accounty" replace />;
+    return <Navigate to="/eaisybooks" replace />;
   }
 
   // Has companies but selectedCompany not yet resolved — wait
@@ -514,9 +514,9 @@ function AccountyRootRedirect() {
     const eaisybillCompanyId = localStorage.getItem('eaisybill_selected_company_id');
 
     if (eaisybillCompanyId && eaisybillCompanyId !== eaisybooksCompanyId && eaisybooksCompanyIds.includes(eaisybillCompanyId)) {
-      redirectTarget = `/accounty/${eaisybillCompanyId}/${dateFromFormatted}_${dateToFormatted}/overview`;
+      redirectTarget = `/eaisybooks/${eaisybillCompanyId}/${dateFromFormatted}_${dateToFormatted}/overview`;
     } else if (eaisybooksCompanyId && eaisybooksCompanyIds.includes(eaisybooksCompanyId)) {
-      redirectTarget = `/accounty/${eaisybooksCompanyId}/${dateFromFormatted}_${dateToFormatted}/overview`;
+      redirectTarget = `/eaisybooks/${eaisybooksCompanyId}/${dateFromFormatted}_${dateToFormatted}/overview`;
     }
   }
 
@@ -641,7 +641,7 @@ function AccountyLegacyClientRedirect() {
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const suffix = location.pathname.split(new RegExp(`/client/${resolvedId}`, 'i'))[1] || '';
   const page = suffix.startsWith('/') ? suffix.slice(1) : suffix;
-  return <Navigate to={`/accounty/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/${page}${location.search}`} replace />;
+  return <Navigate to={`/eaisybooks/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/${page}${location.search}`} replace />;
 }
 
 function PayrollLegacyRedirect() {
@@ -652,7 +652,7 @@ function PayrollLegacyRedirect() {
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const suffix = location.pathname.split(new RegExp(`/payroll/${resolvedId}`, 'i'))[1] || '';
   const page = suffix.startsWith('/') ? suffix.slice(1) : suffix;
-  return <Navigate to={`/accounty/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/payroll/${page}${location.search}`} replace />;
+  return <Navigate to={`/eaisybooks/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/payroll/${page}${location.search}`} replace />;
 }
 
 function MissingInvoicesLegacyRedirect() {
@@ -661,7 +661,7 @@ function MissingInvoicesLegacyRedirect() {
   const match = location.pathname.match(/\/missing-invoices\/([^\/]+)/);
   const resolvedId = match ? match[1] : (params.id || '');
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  return <Navigate to={`/accounty/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/missing-invoices${location.search}`} replace />;
+  return <Navigate to={`/eaisybooks/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/missing-invoices${location.search}`} replace />;
 }
 
 const App = () => (
@@ -700,8 +700,12 @@ const App = () => (
                     {/* Client Portal – standalone, no auth (magic link) */}
                     <Route path="/portal/:token" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><ClientPortalPage /></Suspense>} />
 
+                    {/* Legacy redirects from /accounty to /eaisybooks */}
+                    <Route path="/accounty" element={<Navigate to="/eaisybooks" replace />} />
+                    <Route path="/accounty/*" element={<Navigate to={window.location.pathname.replace(/^\/accounty/, '/eaisybooks') + window.location.search} replace />} />
+
                     {/* Accounty New Client Wizard (No Layout) */}
-                    <Route path="/accounty/new-client" element={
+                    <Route path="/eaisybooks/new-client" element={
                       <ProtectedPage>
                         <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
                           <RemoveInitialLoader />
@@ -711,7 +715,7 @@ const App = () => (
                     } />
 
                     {/* Accounty frontend – standalone layout */}
-                    <Route path="/accounty" element={
+                    <Route path="/eaisybooks" element={
                       <ProtectedPage>
                           <RemoveInitialLoader />
                           <Suspense fallback={<LoadingSpinner message="eaisybooks betöltése..." />}>
@@ -897,16 +901,16 @@ const App = () => (
                       {/* Portfolio pages */}
                       <Route path="alerts" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AlertsCenterPage /></Suspense></ProtectedAccountyRoute>} />
                       <Route path="nav-deadlines" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NavDeadlinesPage /></Suspense></ProtectedAccountyRoute>} />
-                      <Route path="payroll-portfolio" element={<Navigate to="/accounty?tab=payroll" replace />} />
+                      <Route path="payroll-portfolio" element={<Navigate to="/eaisybooks?tab=payroll" replace />} />
                       <Route path="onboarding" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyOnboardingPage /></Suspense></ProtectedAccountyRoute>} />
                       <Route path="ai-assistant" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAssistantPage /></Suspense>} />
                       <Route path="profile/settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ProfileSettingsPage /></Suspense>} />
                       {/* TAO/KIVA module */}
-                      <Route path="tao" element={<Navigate to="/accounty?tab=tao" replace />} />
+                      <Route path="tao" element={<Navigate to="/eaisybooks?tab=tao" replace />} />
                       <Route path="tao/calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoCalendarPage2 /></Suspense>} />
                       <Route path="tao/taxpayer-types" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoTaxpayerTypesPage /></Suspense>} />
                       {/* EV / Egyszeres könyvvitel module — portfolio */}
-                      <Route path="ev" element={<Navigate to="/accounty?tab=ev" replace />} />
+                      <Route path="ev" element={<Navigate to="/eaisybooks?tab=ev" replace />} />
                       <Route path="ev/calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvCalendarPage /></Suspense>} />
                       <Route path="ev/forms" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvFormsOverviewPage /></Suspense>} />
                       <Route path="ev/thresholds" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvThresholdMonitorPage /></Suspense>} />

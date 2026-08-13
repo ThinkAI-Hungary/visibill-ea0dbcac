@@ -229,7 +229,7 @@ export default function SpecialJobFormsPage() {
       toast({ title: 'Jogviszony létrehozva ', description: `${config.label} — ${config.code}` });
       setSaved(true);
       setTimeout(() => {
-        window.location.href = `/accounty/payroll/${id}/employees/${empId}`;
+        window.location.href = `/eaisybooks/payroll/${id}/employees/${empId}`;
       }, 1500);
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Hiba a mentésnél', description: err.message });
@@ -410,7 +410,7 @@ function JobTypePicker({ id, empId }: { id: string; empId: string }) {
         {filtered.map(type => (
           <Link
             key={type.value}
-            to={`/accounty/payroll/${id}/employees/${empId}/special/${getFormId(type.value)}`}
+            to={`/eaisybooks/payroll/${id}/employees/${empId}/special/${getFormId(type.value)}`}
             className="relative flex items-start gap-3 p-4 rounded-xl border-2 border-border text-left transition-all duration-200 hover:border-primary/30 hover:shadow-md group"
           >
             <span className="text-2xl">{type.icon}</span>

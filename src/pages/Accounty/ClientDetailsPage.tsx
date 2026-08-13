@@ -203,30 +203,35 @@ export default function ClientDetailsPage() {
     return { id: id || '1', name: 'Betöltés...', taxNumber: '' };
   }, [supabaseClients, id]);
 
-  // Map Supabase missing items → BlockingItem format for UI compatibility
+  // Map Supabase missing items → BlockingItem format for UI compatibility (filtering out resolved items)
   const supabaseBlockingItems: BlockingItem[] = useMemo(() => {
     if (!supabaseMissing) return [];
-    return supabaseMissing.map(mi => ({
-      id: mi.id,
-      clientId: mi.companyId,
-      category: mi.category,
-      title: mi.title,
-      subtitle: mi.subtitle || '',
-      source: mi.source === 'nav_detektor' ? 'NAV Online Számla'
-        : mi.source === 'bank_detektor' ? 'Bankkivonat-figyelő'
-        : mi.source === 'ber_cron' ? 'Havi kötelező nyilatkozat'
-        : 'Kézi rögzítés',
-      amount: mi.amount ? `${mi.amount.toLocaleString('hu-HU')} Ft` : undefined,
-      date: mi.itemDate || undefined,
-      priority: mi.priority,
-      details: mi.details || '',
-      invoiceNumber: mi.invoiceNumber || undefined,
-      resolveRoute: mi.resolveRoute || undefined,
-    }));
+    return supabaseMissing
+      .filter(mi => mi.status === 'open' || mi.status === 'notified')
+      .map(mi => ({
+        id: mi.id,
+        clientId: mi.companyId,
+        category: mi.category,
+        title: mi.title,
+        subtitle: mi.subtitle || '',
+        source: mi.source === 'nav_detektor' ? 'NAV Online Számla'
+          : mi.source === 'bank_detektor' ? 'Bankkivonat-figyelő'
+          : mi.source === 'ber_cron' ? 'Havi kötelező nyilatkozat'
+          : 'Kézi rögzítés',
+        amount: mi.amount ? `${mi.amount.toLocaleString('hu-HU')} Ft` : undefined,
+        date: mi.itemDate || undefined,
+        priority: mi.priority,
+        details: mi.details || '',
+        invoiceNumber: mi.invoiceNumber || undefined,
+        resolveRoute: mi.resolveRoute || undefined,
+      }));
   }, [supabaseMissing]);
 
   // Dynamic KPI values
-  const missingCount = supabaseMissing?.length || 0;
+  const missingCount = useMemo(() => {
+    if (!supabaseMissing) return 0;
+    return supabaseMissing.filter(mi => mi.status === 'open' || mi.status === 'notified').length;
+  }, [supabaseMissing]);
   const upcomingDeadlineCount = companyDeadlines.length;
 
   // Real invoices
@@ -292,7 +297,7 @@ export default function ClientDetailsPage() {
               if (window.history.state && window.history.state.idx > 0) {
                 navigate(-1);
               } else {
-                navigate('/accounty?tab=companies');
+                navigate('/eaisybooks?tab=companies');
               }
             }}
             className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
@@ -364,7 +369,22 @@ export default function ClientDetailsPage() {
             {generateToken.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : linkCopied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
             {generateToken.isPending ? 'Generálás...' : linkCopied ? 'Másolt!' : 'Magic Link'}
           </button>
-          <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400">
+          <button 
+            onClick={() => {
+              if (pathname.endsWith('/settings')) {
+                navigate(pathname.replace(/(?:overview|settings|profile)$/, 'overview'));
+              } else {
+                navigate(pathname.replace(/(?:overview|settings|profile)$/, 'settings'));
+              }
+            }}
+            className={cn(
+              "p-2 rounded-full transition-all duration-200 shadow-sm border hover:scale-105 active:scale-95",
+              pathname.endsWith('/settings')
+                ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            )}
+            title={pathname.endsWith('/settings') ? "Vissza az áttekintéshez" : "Beállítások"}
+          >
             <Settings className="w-5 h-5" />
           </button>
         </div>
@@ -841,7 +861,7 @@ export default function ClientDetailsPage() {
                                             missingItemIds: [item.id],
                                           };
                                           addToApprovalQueue(msg);
-                                          navigate('/accounty/approval-queue');
+                                          navigate('/eaisybooks/approval-queue');
                                         }}
                                         className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
                                       >

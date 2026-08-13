@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -73,7 +74,8 @@ export default function TaoPortfolioPage() {
   const { data: clients = [] } = useAccountyClients();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
-  const [taxYear, setTaxYear] = useState(2025);
+  const { dateFrom, setDateFrom, setDateTo } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
 
@@ -133,13 +135,13 @@ export default function TaoPortfolioPage() {
           </div>
         </div>
         <div className="flex items-center gap-2.5">
-          <Link to="/accounty/tao/calendar">
+          <Link to="/eaisybooks/tao/calendar">
             <Button variant="outline" size="sm" className="gap-2 h-9 text-xs border-border font-semibold bg-card hover:bg-muted/30">
               <Calendar className="w-3.5 h-3.5 text-primary" />
               TAO Naptár
             </Button>
           </Link>
-          <Link to="/accounty/tao/taxpayer-types">
+          <Link to="/eaisybooks/tao/taxpayer-types">
             <Button variant="outline" size="sm" className="gap-2 h-9 text-xs border-border font-semibold bg-card hover:bg-muted/30">
               <Users className="w-3.5 h-3.5 text-primary" />
               TAO Adózói Körök
@@ -148,7 +150,7 @@ export default function TaoPortfolioPage() {
 
           <select
             value={taxYear}
-            onChange={(e) => setTaxYear(Number(e.target.value))}
+            onChange={(e) => ((y) => { setDateFrom(new Date(y, 0, 1)); setDateTo(new Date(y, 11, 31)); })(Number(e.target.value))}
             className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground h-9"
           >
             <option value={2025}>2025. adóév</option>
@@ -254,7 +256,7 @@ export default function TaoPortfolioPage() {
                     <tr key={client.id} className="hover:bg-accent/50 transition-colors group">
                       <td className="px-4 py-3">
                         <Link
-                          to={`/accounty/client/${client.companyId}/tao`}
+                          to={`/eaisybooks/client/${client.companyId}/tao`}
                           className="text-sm font-bold text-foreground hover:text-primary transition-colors"
                         >
                           {client.name}
@@ -300,7 +302,7 @@ export default function TaoPortfolioPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
-                          to={`/accounty/client/${client.companyId}/tao`}
+                          to={`/eaisybooks/client/${client.companyId}/tao`}
                           className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80"
                         >
                           Megnyit <ChevronRight className="w-3 h-3" />

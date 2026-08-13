@@ -156,7 +156,7 @@ export default function DataRetentionPage() {
             if (window.history.state && window.history.state.idx > 0) {
               navigate(-1);
             } else {
-              navigate(`/accounty/${companyId}/${dateRange}/overview`);
+              navigate(`/eaisybooks/${companyId}/${dateRange}/overview`);
             }
           }}
           className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
@@ -547,14 +547,14 @@ export default function DataRetentionPage() {
           <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Érintetti kérelmek</h2>
             <Button variant="outline" size="sm" className="text-xs" asChild>
-              <Link to="/accounty/admin/gdpr">Rendszerszintű GDPR modul →</Link>
+              <Link to="/eaisybooks/admin/gdpr">Rendszerszintű GDPR modul →</Link>
             </Button>
           </div>
           <div className="py-12 text-center text-sm text-slate-400 space-y-2">
             <Database className="w-8 h-8 mx-auto text-slate-400" />
             <p>Az érintetti kérelmek kezelése a rendszerszintű GDPR modulból érhető el.</p>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/accounty/admin/gdpr">Megnyitás →</Link>
+              <Link to="/eaisybooks/admin/gdpr">Megnyitás →</Link>
             </Button>
           </div>
         </div>

@@ -170,7 +170,7 @@ export function HelpOverviewSection({ filteredFaqs, searchActive }: OverviewProp
               <span className="text-muted-foreground">Utolsó frissítés</span>
               <span className="font-semibold text-foreground">{new Date().toLocaleDateString('hu-HU')}</span>
             </div>
-            <Link to="/accounty/privacy-policy" className="flex items-center gap-2 p-3 rounded-lg hover:bg-accent/50 transition-colors text-muted-foreground hover:text-primary">
+            <Link to="/eaisybooks/privacy-policy" className="flex items-center gap-2 p-3 rounded-lg hover:bg-accent/50 transition-colors text-muted-foreground hover:text-primary">
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Adatvédelmi tájékoztató</span>
             </Link>

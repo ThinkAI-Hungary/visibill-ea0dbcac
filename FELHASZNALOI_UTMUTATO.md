@@ -736,5 +736,5 @@ Magyar és angol nyelven is.
 
 ---
 
-*Utolsó frissítés: 2026. augusztus (v1.6)*  
-*Verzió: 1.6 (Eaisybooks UI frissítések és CSV import javítások)*
+*Utolsó frissítés: 2026. augusztus (v1.7.2)*  
+*Verzió: 1.7.2 (Eaisybooks UI/UX frissítések és EV adótervezési funkciók)*

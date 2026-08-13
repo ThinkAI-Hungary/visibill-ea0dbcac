@@ -176,7 +176,7 @@ export function useUrlTab<T extends string>(
  * Build a fully-qualified scoped path for Eaisybooks (Accounty).
  *
  *   generateAccountyScopedPath('abc-123', '2026-01-01', '2026-12-31', 'invoices')
- *   → '/accounty/abc-123/2026-01-01_2026-12-31/invoices'
+ *   → '/eaisybooks/abc-123/2026-01-01_2026-12-31/invoices'
  */
 export function generateAccountyScopedPath(
   companyId: string,
@@ -186,21 +186,21 @@ export function generateAccountyScopedPath(
 ): string {
   const dateRange = `${dateFrom}_${dateTo}`;
   const suffix = page ? `/${page}` : '';
-  return `/accounty/${companyId}/${dateRange}${suffix}`;
+  return `/eaisybooks/${companyId}/${dateRange}${suffix}`;
 }
 
 /**
  * Extract the "page" segment from a full scoped Eaisybooks pathname.
  *
- *   extractAccountyPageSegment('/accounty/abc-123/2026-01-01_2026-12-31/invoices')
+ *   extractAccountyPageSegment('/eaisybooks/abc-123/2026-01-01_2026-12-31/invoices')
  *   → '/invoices'
  */
 export function extractAccountyPageSegment(pathname: string): string {
-  const parts = pathname.split('/').filter(Boolean); // ['accounty', 'companyId', 'dateRange', 'invoices']
-  if (parts.length >= 4 && parts[0] === 'accounty') {
+  const parts = pathname.split('/').filter(Boolean); // ['eaisybooks', 'companyId', 'dateRange', 'invoices']
+  if (parts.length >= 4 && parts[0] === 'eaisybooks') {
     return '/' + parts.slice(3).join('/');
   }
-  if (parts.length === 3 && parts[0] === 'accounty') {
+  if (parts.length === 3 && parts[0] === 'eaisybooks') {
     return '/';
   }
   return pathname;

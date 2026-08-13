@@ -2,7 +2,7 @@
  * Accounty Client hooks — client list, KPIs, kanban, accountants.
  * Split from useAccountyData.ts for maintainability.
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +28,7 @@ import {
 
 // ── Clients ──
 
-export function useAccountyClients() {
+export function useAccountyClients(dateFrom?: string, dateTo?: string) {
   const { user } = useAuth();
   const userId = user?.id || '';
   const { data: myAssignsData, isPending: myAssignsPending } = useMyAssignedCompanyIds();
@@ -37,7 +37,7 @@ export function useAccountyClients() {
   const firmId = myAssignsData?.firmId;
 
   const queryResult = useQuery({
-    queryKey: queryKeys.accountyClients(userId),
+    queryKey: queryKeys.accountyClients(userId, dateFrom, dateTo),
     queryFn: async (): Promise<AccountyClient[]> => {
       if (companyIds.length === 0) return [];
 
@@ -81,7 +81,7 @@ export function useAccountyClients() {
       // Get missing items counts per company (paginated query to bypass PostgREST 1000-row limit)
       const missingCountMap: Record<string, number> = {};
       try {
-        const openMissingItems = await fetchAllMissingItems(uniqueCompanyIds);
+        const openMissingItems = await fetchAllMissingItems(uniqueCompanyIds, dateFrom, dateTo);
         (openMissingItems || []).forEach((r) => {
           missingCountMap[r.company_id] = (missingCountMap[r.company_id] || 0) + 1;
         });
@@ -90,12 +90,20 @@ export function useAccountyClients() {
       }
 
       // Get nearest deadline per company
-      const { data: deadlines, error: deadErr } = await supabase
+      let deadlinesQuery = supabase
         .from('accounty_deadlines')
         .select('company_id, due_date')
         .in('company_id', uniqueCompanyIds)
-        .in('status', ['pending', 'in_progress'])
-        .order('due_date', { ascending: true });
+        .in('status', ['pending', 'in_progress']);
+
+      if (dateFrom) {
+        deadlinesQuery = deadlinesQuery.gte('due_date', dateFrom);
+      }
+      if (dateTo) {
+        deadlinesQuery = deadlinesQuery.lte('due_date', dateTo);
+      }
+
+      const { data: deadlines, error: deadErr } = await deadlinesQuery.order('due_date', { ascending: true });
 
       if (deadErr) throw deadErr;
 
@@ -148,6 +156,7 @@ export function useAccountyClients() {
     },
     enabled: !!userId && !!myAssignsData,
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 
   return {
@@ -176,14 +185,14 @@ export function useAccountyClient(companyId: string | undefined) {
 
 // ── KPIs ──
 
-export function useAccountyKpis() {
+export function useAccountyKpis(dateFrom?: string, dateTo?: string) {
   const { user } = useAuth();
   const userId = user?.id || '';
   const { data: myAssignsData } = useMyAssignedCompanyIds();
   const companyIds = myAssignsData?.companyIds || [];
 
   return useQuery({
-    queryKey: queryKeys.accountyKpis(userId),
+    queryKey: queryKeys.accountyKpis(userId, dateFrom, dateTo),
     queryFn: async (): Promise<AccountyKpis> => {
       if (companyIds.length === 0) {
         return { totalClients: 0, unprocessedInvoices: 0, missingItems: 0, upcomingDeadlines: 0, criticalClients: 0, todayDeadlines: 0 };
@@ -191,16 +200,17 @@ export function useAccountyKpis() {
 
       const totalClients = companyIds.length;
 
-      const now = new Date();
-      const weekFromNow = new Date(now);
-      weekFromNow.setDate(weekFromNow.getDate() + 7);
-      const nowStr = now.toISOString().split('T')[0];
-      const weekStr = weekFromNow.toISOString().split('T')[0];
+      const defaultFrom = new Date();
+      const defaultTo = new Date(defaultFrom);
+      defaultTo.setDate(defaultTo.getDate() + 7);
+      
+      const fromStr = dateFrom || defaultFrom.toISOString().split('T')[0];
+      const toStr = dateTo || defaultTo.toISOString().split('T')[0];
 
       const { data, error } = await supabase.rpc('get_accounty_dashboard_kpis', {
         p_company_ids: companyIds,
-        p_now_date: nowStr,
-        p_week_date: weekStr,
+        p_now_date: fromStr,
+        p_week_date: toStr,
       });
 
       if (error) throw error;
@@ -217,6 +227,7 @@ export function useAccountyKpis() {
     },
     enabled: !!userId && !!myAssignsData,
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 }
 

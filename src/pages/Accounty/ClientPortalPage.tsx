@@ -597,7 +597,7 @@ export default function ClientPortalPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {!isMagicLink && (
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/accounty/payroll/${companyId}`)} className="h-9 w-9">
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/eaisybooks/payroll/${companyId}`)} className="h-9 w-9">
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}

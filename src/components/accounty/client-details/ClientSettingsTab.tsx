@@ -1059,6 +1059,7 @@ export default function ClientSettingsTab({
                         type="text"
                         value={navTechnicalUser}
                         onChange={e => { setNavTechnicalUser(e.target.value); setPayrollDirty(true); }}
+                        autoComplete="off"
                         className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-primary outline-none text-foreground"
                         placeholder="technikai_felhasznalo"
                       />
@@ -1069,6 +1070,7 @@ export default function ClientSettingsTab({
                         type="password"
                         value={navApiKey}
                         onChange={e => { setNavApiKey(e.target.value); setPayrollDirty(true); }}
+                        autoComplete="new-password"
                         className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-primary outline-none text-foreground"
                         placeholder="••••••••"
                       />

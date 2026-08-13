@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { Link, useParams, Navigate, useSearchParams } from 'react-router-dom';
@@ -691,10 +692,11 @@ export default function EvRecordDetailPage() {
 
   const config = recordType ? CONFIGS[recordType] : null;
 
-  if (!config) return <Navigate to={`/accounty/${id}/${dateRange}/ev/records`} replace />;
+  if (!config) return <Navigate to={`/eaisybooks/${id}/${dateRange}/ev/records`} replace />;
 
   const [searchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
 
   // Hooks
   const { data: dbRecords = [], isLoading } = useEvRecords(id, recordType || '', taxYear);
@@ -843,11 +845,11 @@ export default function EvRecordDetailPage() {
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/${id}/${dateRange}/ev/records?year=${taxYear}`} className="hover:text-primary transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev/records?year=${taxYear}`} className="hover:text-primary transition-colors">
           Nyilvántartások
         </Link>
         <ChevronRight className="w-3 h-3" />

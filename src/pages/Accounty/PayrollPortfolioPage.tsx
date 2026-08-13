@@ -297,7 +297,7 @@ export default function PayrollPortfolioPage() {
                   return (
                     <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                       <td className="px-4 py-3">
-                        <Link to={`/accounty/payroll/${client.companyId}`} className="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-primary transition-colors">
+                        <Link to={`/eaisybooks/payroll/${client.companyId}`} className="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-primary transition-colors">
                           {client.name}
                         </Link>
                         {client.taxNumber && <p className="text-[10px] text-slate-400 font-mono">{client.taxNumber}</p>}
@@ -339,7 +339,7 @@ export default function PayrollPortfolioPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
-                          to={`/accounty/payroll/${client.companyId}`}
+                          to={`/eaisybooks/payroll/${client.companyId}`}
                           className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80"
                         >
                           Megnyit <ChevronRight className="w-3 h-3" />

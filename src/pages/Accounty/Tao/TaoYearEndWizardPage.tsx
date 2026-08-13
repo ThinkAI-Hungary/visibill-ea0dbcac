@@ -252,7 +252,7 @@ export default function TaoYearEndWizardPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/accounty/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
           <ArrowLeft className="w-4 h-4 text-slate-400" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25">
@@ -264,7 +264,7 @@ export default function TaoYearEndWizardPage() {
           </h1>
           <p className="text-sm text-slate-500">{client?.name || 'Ügyfél'}</p>
         </div>
-        <Link to={`/accounty/${id}/${dateRange}/tao/kiva`}>
+        <Link to={`/eaisybooks/${id}/${dateRange}/tao/kiva`}>
           <Button variant="outline" size="sm" className="gap-1.5">
             <Calculator className="w-3.5 h-3.5" /> KIVA összehasonlítás
           </Button>

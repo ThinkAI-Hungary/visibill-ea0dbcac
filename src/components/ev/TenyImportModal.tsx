@@ -415,6 +415,15 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
                 const method = getMethod(asset);
                 const hasAiSuggestion = !!aiSuggestions[asset.id];
 
+                const defaultRate = aiSuggestions[asset.id]?.rate ?? suggestSzjaRate(asset.name, asset.taoRatePercent);
+                const defaultMethod = aiSuggestions[asset.id]?.method ?? (asset.acquisitionValue < THRESHOLD ? 'immediate' : 'linear');
+
+                const isMethodOverridden = methodOverrides[asset.id] !== undefined && methodOverrides[asset.id] !== defaultMethod;
+                const isRateOverridden = rateOverrides[asset.id] !== undefined && rateOverrides[asset.id] !== defaultRate;
+                const isAnyOverridden = isMethodOverridden || isRateOverridden;
+
+                const isInvalidImmediate = method === 'immediate' && asset.acquisitionValue >= THRESHOLD;
+
                 return (
                   <div
                     key={asset.id}
@@ -455,12 +464,29 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
 
                       {/* SZJA ÉCS Method & Rate input */}
                       <div className="shrink-0 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                        {isAnyOverridden && (
+                          <div 
+                            className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse shrink-0" 
+                            title="Manuálisan módosított érték" 
+                          />
+                        )}
+
+                        {isInvalidImmediate && (
+                          <div 
+                            className="text-amber-500 dark:text-amber-400 shrink-0 flex items-center" 
+                            title="Figyelem: 200 000 Ft feletti értékű eszköz nem írható le azonnal 100%-ban!"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+
                         <select
                           value={method}
                           onChange={e => setMethod(asset.id, e.target.value)}
                           className={cn(
                             "text-xs border rounded px-1.5 py-1 bg-card text-foreground focus:ring-2 focus:ring-teal-500",
-                            hasAiSuggestion ? "border-indigo-300 dark:border-indigo-800 ring-1 ring-indigo-500/20" : "border-border"
+                            hasAiSuggestion ? "border-indigo-300 dark:border-indigo-800 ring-1 ring-indigo-500/20" : "border-border",
+                            isAnyOverridden && "border-blue-400 dark:border-blue-700 focus:ring-blue-500/35"
                           )}
                         >
                           <option value="linear">Lineáris</option>
@@ -475,7 +501,7 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
 
                         {method === 'immediate' || isBelowThreshold ? (
                           <span className="text-xs text-amber-600 font-semibold flex items-center gap-1 w-16 justify-end">
-                            <AlertTriangle className="w-3.5 h-3.5" /> 100%
+                            {isBelowThreshold ? <Check className="w-3 h-3 text-emerald-500" /> : <AlertTriangle className="w-3.5 h-3.5" />} 100%
                           </span>
                         ) : method === 'absolute' ? (
                           <div className="relative w-20">
@@ -486,7 +512,8 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
                               placeholder="Összeg"
                               className={cn(
                                 "w-full text-xs border rounded px-2 py-1 bg-card text-right font-mono focus:ring-2 focus:ring-teal-500",
-                                hasAiSuggestion ? "border-indigo-300 dark:border-indigo-800" : "border-border"
+                                hasAiSuggestion ? "border-indigo-300 dark:border-indigo-800" : "border-border",
+                                isAnyOverridden && "border-blue-400 dark:border-blue-700 focus:ring-blue-500/35"
                               )}
                             />
                           </div>
@@ -501,7 +528,8 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
                               step={0.1}
                               className={cn(
                                 "w-full text-xs border rounded pl-2 pr-5 py-1 bg-card text-right font-mono focus:ring-2 focus:ring-teal-500",
-                                hasAiSuggestion ? "border-indigo-300 dark:border-indigo-800" : "border-border"
+                                hasAiSuggestion ? "border-indigo-300 dark:border-indigo-800" : "border-border",
+                                isAnyOverridden && "border-blue-400 dark:border-blue-700 focus:ring-blue-500/35"
                               )}
                             />
                             <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-slate-400">%</span>

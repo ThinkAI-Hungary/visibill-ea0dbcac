@@ -12,7 +12,7 @@ export default function TaoAccountingRegimePage() {
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500 max-w-3xl">
       <div className="flex items-center gap-3">
-        <Link to={`/accounty/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
           <ArrowLeft className="w-4 h-4 text-slate-400" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">

@@ -57,7 +57,7 @@ export default function AccountyCommandPalette({
         if (selected.type === 'page' && selected.path) {
           navigate(selected.path);
         } else if (selected.type === 'client' && selected.id) {
-          navigate(`/accounty/client/${selected.id}/overview`);
+          navigate(`/eaisybooks/client/${selected.id}/overview`);
         }
         setCmdOpen(false);
         setCmdQuery('');
@@ -121,7 +121,7 @@ export default function AccountyCommandPalette({
                 return (
                   <button
                     key={c.id}
-                    onClick={() => { navigate(`/accounty/client/${c.id}/overview`); setCmdOpen(false); setCmdQuery(''); }}
+                    onClick={() => { navigate(`/eaisybooks/client/${c.id}/overview`); setCmdOpen(false); setCmdQuery(''); }}
                     className={cn(
                       "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-150 text-left",
                       isSelected

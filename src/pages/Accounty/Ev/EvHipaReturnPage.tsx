@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -52,7 +53,8 @@ export default function EvHipaReturnPage() {
 
   const updateReturn = useUpdateEvTaxReturn();
   const [searchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
 
   // Real data
   const { data: allReturns, isLoading } = useEvTaxReturns(id, taxYear);
@@ -262,11 +264,11 @@ export default function EvHipaReturnPage() {
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/accounty?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/${id}/${dateRange}/ev`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
         <ChevronRight className="w-3 h-3" />
         <span className="text-slate-900 dark:text-slate-100 font-medium">HIPA bevallás</span>
       </div>

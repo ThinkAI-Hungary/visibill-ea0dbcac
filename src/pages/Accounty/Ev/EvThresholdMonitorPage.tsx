@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams, useParams } from 'react-router-dom';
@@ -58,7 +59,8 @@ const STATUS_CONFIG = {
 export default function EvThresholdMonitorPage() {
   const { companyId, dateRange } = useParams<{ companyId?: string; dateRange?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
   const [filter, setFilter] = useState<ThresholdStatus | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -336,11 +338,11 @@ eaisybooks`;
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
         {companyId ? (
-          <Link to={`/accounty/${companyId}/${dateRange || '2026-01-01_2026-12-31'}/ev`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+          <Link to={`/eaisybooks/${companyId}/${dateRange || '2026-01-01_2026-12-31'}/ev`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> Egyéni vállalkozás (EV)
           </Link>
         ) : (
-          <Link to="/accounty?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+          <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
           </Link>
         )}
@@ -589,7 +591,7 @@ eaisybooks`;
                             </Button>
                           )}
                           <Link
-                            to={`/accounty/client/${c.clientId}/ev?year=${taxYear}`}
+                            to={`/eaisybooks/client/${c.clientId}/ev?year=${taxYear}`}
                             className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-indigo-600 inline-flex"
                           >
                             <ArrowUpRight className="w-4 h-4" />

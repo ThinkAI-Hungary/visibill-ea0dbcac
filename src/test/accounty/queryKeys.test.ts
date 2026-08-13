@@ -11,7 +11,7 @@ describe('Accounty Query Keys', () => {
   describe('accountyClients', () => {
     it('includes user ID for per-user scoping', () => {
       const key = queryKeys.accountyClients('user-123');
-      expect(key).toEqual(['accounty-clients', 'user-123']);
+      expect(key).toEqual(['accounty-clients', 'user-123', undefined, undefined]);
     });
 
     it('produces different keys for different users', () => {
@@ -22,7 +22,7 @@ describe('Accounty Query Keys', () => {
 
     it('returns readonly tuple', () => {
       const key = queryKeys.accountyClients('user-1');
-      expect(key).toHaveLength(2);
+      expect(key).toHaveLength(4);
     });
   });
 
@@ -68,7 +68,7 @@ describe('Accounty Query Keys', () => {
   describe('accountyKpis', () => {
     it('includes user ID', () => {
       const key = queryKeys.accountyKpis('user-xyz');
-      expect(key).toEqual(['accounty-kpis', 'user-xyz']);
+      expect(key).toEqual(['accounty-kpis', 'user-xyz', undefined, undefined]);
     });
   });
 

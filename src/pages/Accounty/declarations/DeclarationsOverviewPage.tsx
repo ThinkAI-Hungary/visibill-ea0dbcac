@@ -49,7 +49,7 @@ export default function DeclarationsOverviewPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link to={`/accounty/payroll/${id}/declarations/archive`}>
+          <Link to={`/eaisybooks/payroll/${id}/declarations/archive`}>
             <Button variant="outline" className="gap-1.5 text-sm"><Database className="w-4 h-4" /> Archívum</Button>
           </Link>
           <Button variant="outline" onClick={() => setShowPriority(!showPriority)} className="gap-1.5 text-sm"><Shield className="w-4 h-4" /> Érvényesítési sorrend</Button>
@@ -96,7 +96,7 @@ export default function DeclarationsOverviewPage() {
         <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4">Új nyilatkozat hozzáadása</h3>
         <div className="grid grid-cols-3 gap-3">
           {DECLARATION_TYPES.map(dt => (
-            <Link key={dt.id} to={`/accounty/payroll/${id}/declarations/${dt.route}${empId ? `?empId=${empId}` : ''}`} className="p-4 rounded-xl border border-border hover:border-blue-300 hover:shadow-lg hover:-translate-y-0.5 transition-all group">
+            <Link key={dt.id} to={`/eaisybooks/payroll/${id}/declarations/${dt.route}${empId ? `?empId=${empId}` : ''}`} className="p-4 rounded-xl border border-border hover:border-blue-300 hover:shadow-lg hover:-translate-y-0.5 transition-all group">
               <div className={cn('w-8 h-8 rounded-lg bg-gradient-to-br text-white flex items-center justify-center mb-2 group-hover:scale-110 transition-transform', dt.color)}><dt.icon className="w-4 h-4" /></div>
               <p className="text-sm font-bold">{dt.label}</p>
               <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{dt.desc}</p>
@@ -137,7 +137,7 @@ export default function DeclarationsOverviewPage() {
                     <p className="text-[10px] text-slate-400">{decl.data?.startDate || ''} → {decl.data?.endDate || 'visszavonásig'}</p>
                   </div>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" asChild>
-                    <Link to={`/accounty/payroll/${id}/declarations/${dt?.route || decl.type}${decl.employeeId ? `?empId=${decl.employeeId}` : ''}`}><Eye className="w-3.5 h-3.5" /></Link>
+                    <Link to={`/eaisybooks/payroll/${id}/declarations/${dt?.route || decl.type}${decl.employeeId ? `?empId=${decl.employeeId}` : ''}`}><Eye className="w-3.5 h-3.5" /></Link>
                   </Button>
                 </div>
               );

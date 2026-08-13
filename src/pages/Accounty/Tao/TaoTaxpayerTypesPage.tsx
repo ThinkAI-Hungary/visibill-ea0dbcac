@@ -94,7 +94,7 @@ export default function TaoTaxpayerTypesPage() {
             if (window.history.state && window.history.state.idx > 0) {
               navigate(-1);
             } else {
-              navigate('/accounty?tab=tao');
+              navigate('/eaisybooks?tab=tao');
             }
           }}
           className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
@@ -220,7 +220,7 @@ export default function TaoTaxpayerTypesPage() {
                       <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{c.name}</h4>
                       <p className="text-[10px] font-mono text-slate-500 mt-0.5">Adószám: {c.taxNumber || 'Nincs megadva'}</p>
                     </div>
-                    <Link to={`/accounty/client/${c.companyId}/tao`} onClick={() => setSelectedGfo(null)}>
+                    <Link to={`/eaisybooks/client/${c.companyId}/tao`} onClick={() => setSelectedGfo(null)}>
                       <Button size="sm" variant="outline" className="h-8 text-xs gap-1 border-border whitespace-nowrap bg-card">
                         Megnyitás
                         <ChevronRight className="w-3.5 h-3.5" />

@@ -107,7 +107,7 @@ function generateAlerts(
             description: `A vállalkozás bevétele (${revenue.toLocaleString('hu-HU')} Ft) átlépte az alanyi ÁFA mentesség ${afaLimit.toLocaleString('hu-HU')} Ft-os határértékét!`,
             client: c.name,
             createdAt: new Date(now.getTime() - 86400000),
-            action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/vat` }
+            action: { label: 'Megtekint', path: `/eaisybooks/client/${c.companyId}/ev/vat` }
           });
         } else if (revenue >= afaLimit * 0.85) {
           alerts.push({
@@ -118,7 +118,7 @@ function generateAlerts(
             description: `A vállalkozás bevétele (${revenue.toLocaleString('hu-HU')} Ft) megközelítette az alanyi ÁFA mentességi határt (a limit ${(revenue / afaLimit * 100).toFixed(0)}%-ánál jár).`,
             client: c.name,
             createdAt: new Date(now.getTime() - 86400000),
-            action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/vat` }
+            action: { label: 'Megtekint', path: `/eaisybooks/client/${c.companyId}/ev/vat` }
           });
         }
       }
@@ -135,7 +135,7 @@ function generateAlerts(
             description: `A vállalkozás bevétele (${revenue.toLocaleString('hu-HU')} Ft) átlépte a KATA éves ${kataLimit.toLocaleString('hu-HU')} Ft-os keretét!`,
             client: c.name,
             createdAt: new Date(now.getTime() - 86400000),
-            action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/kata` }
+            action: { label: 'Megtekint', path: `/eaisybooks/client/${c.companyId}/ev/kata` }
           });
         } else if (revenue >= kataLimit * 0.85) {
           alerts.push({
@@ -146,7 +146,7 @@ function generateAlerts(
             description: `A vállalkozás bevétele (${revenue.toLocaleString('hu-HU')} Ft) megközelítette a KATA éves keretet (a limit ${(revenue / kataLimit * 100).toFixed(0)}%-ánál jár).`,
             client: c.name,
             createdAt: new Date(now.getTime() - 86400000),
-            action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/kata` }
+            action: { label: 'Megtekint', path: `/eaisybooks/client/${c.companyId}/ev/kata` }
           });
         }
 
@@ -162,7 +162,7 @@ function generateAlerts(
               description: `A(z) "${cust.customerName}" partner felé kiállított számlák összege (${cust.total.toLocaleString('hu-HU')} Ft) átlépte a 3 millió Ft-os KATA limitet (40%-os adófizetési kötelezettség keletkezett).`,
               client: c.name,
               createdAt: new Date(now.getTime() - 86400000),
-              action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/kata` }
+              action: { label: 'Megtekint', path: `/eaisybooks/client/${c.companyId}/ev/kata` }
             });
           } else if (cust.total >= 2_500_000) {
             alerts.push({
@@ -173,7 +173,7 @@ function generateAlerts(
               description: `A(z) "${cust.customerName}" partner felé kiállított számlák összege (${cust.total.toLocaleString('hu-HU')} Ft) megközelítette a 3 millió Ft-os KATA limitet (a limit ${(cust.total / 30000).toFixed(0)}%-ánál jár).`,
               client: c.name,
               createdAt: new Date(now.getTime() - 86400000),
-              action: { label: 'Megtekint', path: `/accounty/client/${c.companyId}/ev/kata` }
+              action: { label: 'Megtekint', path: `/eaisybooks/client/${c.companyId}/ev/kata` }
             });
           }
         });
@@ -189,13 +189,13 @@ function generateAlerts(
       const isNotDone = ret.status !== 'submitted' && ret.status !== 'accepted';
       const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-      let targetUrl = `/accounty/client/${c.companyId}/ev/returns`;
+      let targetUrl = `/eaisybooks/client/${c.companyId}/ev/returns`;
       if (ret.form_code === '2658') {
-        targetUrl = `/accounty/client/${c.companyId}/ev/returns/contrib`;
+        targetUrl = `/eaisybooks/client/${c.companyId}/ev/returns/contrib`;
       } else if (ret.form_code === 'KATA') {
-        targetUrl = `/accounty/client/${c.companyId}/ev/returns/kata`;
+        targetUrl = `/eaisybooks/client/${c.companyId}/ev/returns/kata`;
       } else if (ret.form_code === 'HIPAK') {
-        targetUrl = `/accounty/client/${c.companyId}/ev/returns/hipa`;
+        targetUrl = `/eaisybooks/client/${c.companyId}/ev/returns/hipa`;
       }
 
       if (isPastDue && isNotDone) {

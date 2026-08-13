@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Upload, CheckCircle2, Clock,
@@ -246,7 +247,7 @@ export default function FilingsPage() {
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <button 
-            onClick={() => navigate(`/accounty/${companyId}/${dateRange}/overview`)}
+            onClick={() => navigate(`/eaisybooks/${companyId}/${dateRange}/overview`)}
             className="flex items-center justify-center w-8 h-8 mt-1.5 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
             title="Vissza az áttekintéshez"
           >
@@ -266,21 +267,21 @@ export default function FilingsPage() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={() => navigate(`/accounty/payroll/${companyId}/filings/08e`)}
+            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/08e`)}
             className="flex items-center gap-1.5 text-sm"
           >
             <FileText className="w-4 h-4" /> 08E
           </Button>
           <Button
             variant="outline"
-            onClick={() => navigate(`/accounty/payroll/${companyId}/filings/2608`)}
+            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/2608`)}
             className="flex items-center gap-1.5 text-sm"
           >
             <FileText className="w-4 h-4" /> 2608
           </Button>
           <Button
             variant="outline"
-            onClick={() => navigate(`/accounty/payroll/${companyId}/filings/all`)}
+            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/all`)}
             className="flex items-center gap-1.5 text-sm"
           >
             <Filter className="w-4 h-4" /> Összes típus
@@ -438,7 +439,7 @@ export default function FilingsPage() {
                   const StatusIcon = statusInfo.icon;
 
                   return (
-                    <tr key={filing.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={() => navigate(`/accounty/payroll/${companyId}/filings/${filing.id}/workflow`)}>
+                    <tr key={filing.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/${filing.id}/workflow`)}>
                       <td className="px-5 py-3">
                         <span className={cn('px-2.5 py-1 rounded-full text-[10px] font-bold uppercase', typeInfo.color)}>
                           {typeInfo.label}

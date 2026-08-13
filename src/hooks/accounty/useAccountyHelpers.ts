@@ -186,7 +186,7 @@ export function computeProgress(missingCount: number, totalInvoices: number): nu
 }
 
 /** Paginated fetch for missing items (summary columns only) */
-export async function fetchAllMissingItems(companyIds: string[]) {
+export async function fetchAllMissingItems(companyIds: string[], dateFrom?: string, dateTo?: string) {
   const PAGE_SIZE = 1000;
   let allItems: { company_id: string; priority: string; last_notified_at: string | null; notification_count: number }[] = [];
   let page = 0;
@@ -195,12 +195,20 @@ export async function fetchAllMissingItems(companyIds: string[]) {
   while (hasMore) {
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    const { data, error } = await supabase
+    let query = supabase
       .from('accounty_missing_items')
       .select('company_id, priority, last_notified_at, notification_count')
       .in('company_id', companyIds)
-      .in('status', ['open', 'notified'])
-      .range(from, to);
+      .in('status', ['open', 'notified']);
+
+    if (dateFrom) {
+      query = query.gte('item_date', dateFrom);
+    }
+    if (dateTo) {
+      query = query.lte('item_date', dateTo);
+    }
+
+    const { data, error } = await query.range(from, to);
 
     if (error) throw error;
     if (data && data.length > 0) {

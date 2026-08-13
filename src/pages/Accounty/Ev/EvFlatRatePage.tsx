@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -19,7 +20,8 @@ export default function EvFlatRatePage() {
   const id = companyId;
   const { data: client } = useAccountyClient(id);
   const [searchParams] = useSearchParams();
-  const yearParam = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const yearParam = dateFrom.getFullYear();
   const [taxYear, setTaxYear] = useState(yearParam);
   const updateReturn = useUpdateEvTaxReturn();
   const [saving, setSaving] = useState(false);
@@ -118,7 +120,7 @@ export default function EvFlatRatePage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -139,7 +141,7 @@ export default function EvFlatRatePage() {
         <div className="flex items-center gap-2">
           <select
             value={taxYear}
-            onChange={(e) => setTaxYear(Number(e.target.value))}
+            onChange={(e) => ((y) => { setDateFrom(new Date(y, 0, 1)); setDateTo(new Date(y, 11, 31)); })(Number(e.target.value))}
             className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
           >
             <option value={2026}>2026</option>

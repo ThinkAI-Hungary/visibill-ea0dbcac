@@ -69,7 +69,7 @@ export default function AccountyHeader({
             {(kpis?.criticalClients ?? 0) > 0 || (kpis?.missingItems ?? 0) > 0 || (kpis?.todayDeadlines ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0 ? (
               <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-64 overflow-y-auto">
                 {(kpis?.criticalClients ?? 0) > 0 && (
-                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/accounty')}>
+                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/eaisybooks')}>
                     <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 mt-0.5">
                       <AlertTriangle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
                     </div>
@@ -80,7 +80,7 @@ export default function AccountyHeader({
                   </div>
                 )}
                 {(kpis?.todayDeadlines ?? 0) > 0 && (
-                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/accounty/tax-calendar')}>
+                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/eaisybooks/tax-calendar')}>
                     <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 mt-0.5">
                       <Clock className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
                     </div>
@@ -91,7 +91,7 @@ export default function AccountyHeader({
                   </div>
                 )}
                 {(kpis?.missingItems ?? 0) > 0 && (
-                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/accounty/missing-invoices')}>
+                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/eaisybooks/missing-invoices')}>
                     <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center shrink-0 mt-0.5">
                       <FileWarning className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
                     </div>
@@ -102,7 +102,7 @@ export default function AccountyHeader({
                   </div>
                 )}
                 {(kpis?.upcomingDeadlines ?? 0) > 0 && (
-                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/accounty/tax-calendar')}>
+                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/eaisybooks/tax-calendar')}>
                     <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0 mt-0.5">
                       <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                     </div>

@@ -107,7 +107,7 @@ export default function EmployeeExitWizardPage() {
       queryClient.invalidateQueries({ queryKey: ['accounty'] });
 
       toast({ title: 'Kilépés rögzítve', description: `${activeJob.job_title || 'Jogviszony'} — Utolsó nap: ${lastDay}. 08E kijelentés generálva.` });
-      navigate(`/accounty/payroll/${id}/employees/${empId}/exit-docs`);
+      navigate(`/eaisybooks/payroll/${id}/employees/${empId}/exit-docs`);
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Hiba', description: err.message });
     } finally {

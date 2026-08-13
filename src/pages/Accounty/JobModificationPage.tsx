@@ -245,7 +245,7 @@ export default function JobModificationPage() {
               </p>
             ) : <div />}
             <div className="flex gap-3">
-              <Button variant="outline" asChild><Link to={`/accounty/payroll/${id}/employees/${empId || ''}`}>Mégse</Link></Button>
+              <Button variant="outline" asChild><Link to={`/eaisybooks/payroll/${id}/employees/${empId || ''}`}>Mégse</Link></Button>
               <Button onClick={handleSaveAll} disabled={addModMut.isPending || pendingCount === 0} className="gap-1.5 bg-violet-600 hover:bg-violet-700">
                 {addModMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {pendingCount > 1 ? `Összes mentése (${pendingCount})` : 'Módosítás mentése'}

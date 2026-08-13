@@ -95,7 +95,7 @@ export default function KivaCalculatorPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500 max-w-4xl">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/accounty/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
           <ArrowLeft className="w-4 h-4 text-slate-400" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-lg shadow-orange-500/25">
@@ -105,7 +105,7 @@ export default function KivaCalculatorPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">KIVA Kalkulátor</h1>
           <p className="text-sm text-slate-500">{client?.name || 'Ügyfél'} — Kisvállalati adó szimuláció</p>
         </div>
-        <Link to={`/accounty/${id}/${dateRange}/tao/compare`}>
+        <Link to={`/eaisybooks/${id}/${dateRange}/tao/compare`}>
           <Button variant="outline" size="sm" className="gap-1.5">
             <BarChart2 className="w-3.5 h-3.5" /> TAO összehasonlítás
           </Button>
@@ -200,7 +200,7 @@ export default function KivaCalculatorPage() {
             </div>
 
             <div className="pt-2">
-              <Link to={`/accounty/${id}/${dateRange}/tao/compare`}>
+              <Link to={`/eaisybooks/${id}/${dateRange}/tao/compare`}>
                 <Button variant="outline" className="w-full gap-2">
                   <BarChart2 className="w-4 h-4" /> TAO vs KIVA összehasonlítás
                 </Button>

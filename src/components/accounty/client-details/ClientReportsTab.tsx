@@ -150,9 +150,9 @@ export default function ClientReportsTab({
         </div>
         <div className="grid grid-cols-2 gap-3 p-5">
           {[
-            { label: 'Hiányzó számlák riport', path: '/accounty/reports/missing-invoices', icon: FileWarning },
-            { label: 'AI Anomália riport', path: '/accounty/reports/ai-anomaly', icon: AlertTriangle },
-            { label: 'Összes riport', path: '/accounty/reports', icon: FileText },
+            { label: 'Hiányzó számlák riport', path: '/eaisybooks/reports/missing-invoices', icon: FileWarning },
+            { label: 'AI Anomália riport', path: '/eaisybooks/reports/ai-anomaly', icon: AlertTriangle },
+            { label: 'Összes riport', path: '/eaisybooks/reports', icon: FileText },
           ].map(link => (
             <button
               key={link.path}

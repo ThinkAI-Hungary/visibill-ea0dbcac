@@ -45,11 +45,11 @@ export default function AccountyScopedLayout() {
         
         let targetPath = '';
         if (urlCompanyId === 'payroll') {
-          targetPath = `/accounty/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/payroll/${cleanPage}`;
+          targetPath = `/eaisybooks/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/payroll/${cleanPage}`;
         } else if (urlCompanyId === 'client') {
-          targetPath = `/accounty/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/${cleanPage || 'overview'}`;
+          targetPath = `/eaisybooks/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/${cleanPage || 'overview'}`;
         } else if (urlCompanyId === 'missing-invoices') {
-          targetPath = `/accounty/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/missing-invoices/${cleanPage}`;
+          targetPath = `/eaisybooks/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/missing-invoices/${cleanPage}`;
         }
 
         if (targetPath) {
@@ -58,7 +58,7 @@ export default function AccountyScopedLayout() {
         }
       } else {
         // Fallback for corrupted URLs (e.g. /accounty/payroll/2026-01-01_2026-12-31/settings)
-        navigate('/accounty', { replace: true });
+        navigate('/eaisybooks', { replace: true });
         return;
       }
     }
@@ -102,7 +102,7 @@ export default function AccountyScopedLayout() {
     if (syncingFromUrl.current || accessDenied || !urlCompanyId || isLegacyKeyword) return;
 
     const currentDateRange = `${dateFromFormatted}_${dateToFormatted}`;
-    const expectedPrefix = `/accounty/${urlCompanyId}/${currentDateRange}`;
+    const expectedPrefix = `/eaisybooks/${urlCompanyId}/${currentDateRange}`;
 
     if (!location.pathname.startsWith(expectedPrefix)) {
       const page = extractAccountyPageSegment(location.pathname);
@@ -144,7 +144,7 @@ export default function AccountyScopedLayout() {
             variant="outline"
             onClick={() => {
               setAccessDenied(false);
-              navigate('/accounty', { replace: true });
+              navigate('/eaisybooks', { replace: true });
             }}
             className="px-6"
           >

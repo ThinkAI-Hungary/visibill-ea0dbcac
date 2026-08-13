@@ -123,7 +123,7 @@ export default function GenericDeclarationPage() {
     return (
       <div className="text-center py-20">
         <p className="text-slate-500">Ismeretlen nyilatkozat típus: {type}</p>
-        <Button asChild className="mt-4"><Link to={`/accounty/payroll/${id}/declarations`}>Vissza</Link></Button>
+        <Button asChild className="mt-4"><Link to={`/eaisybooks/payroll/${id}/declarations`}>Vissza</Link></Button>
       </div>
     );
   }
@@ -165,7 +165,7 @@ export default function GenericDeclarationPage() {
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/accounty/payroll/${id}/declarations`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`/eaisybooks/payroll/${id}/declarations`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className={cn('p-2.5 bg-gradient-to-br rounded-xl shadow-lg', config.color)}>
@@ -277,7 +277,7 @@ export default function GenericDeclarationPage() {
 
       {/* Actions */}
       <div className="flex justify-end gap-3">
-        <Button variant="outline" asChild><Link to={`/accounty/payroll/${id}/declarations`}>Mégse</Link></Button>
+        <Button variant="outline" asChild><Link to={`/eaisybooks/payroll/${id}/declarations`}>Mégse</Link></Button>
         <Button onClick={handleSave} className={cn('gap-1.5', `bg-gradient-to-r ${config.color} hover:opacity-90`)} disabled={!isComplete || !empId || addDeclaration.isPending}>
           {addDeclaration.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saved ? 'Mentve ' : 'Nyilatkozat mentése'}
         </Button>

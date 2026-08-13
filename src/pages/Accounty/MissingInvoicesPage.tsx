@@ -169,7 +169,7 @@ export default function MissingInvoicesPage() {
              variant="outline" 
              size="sm" 
              className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 h-9 px-4"
-             onClick={() => navigate('/accounty/reports/missing-invoices')}
+             onClick={() => navigate('/eaisybooks/reports/missing-invoices')}
            >
              <FileText className="w-4 h-4"/> Riportok
            </Button>
@@ -274,7 +274,7 @@ export default function MissingInvoicesPage() {
                {modalData.items.length > 0 ? modalData.items.map((row: any) => (
                    <button
                      key={row.id}
-                     onClick={() => { setKpiModal(null); navigate(`/accounty/missing-invoices/${row.id}`); }}
+                     onClick={() => { setKpiModal(null); navigate(`/eaisybooks/missing-invoices/${row.id}`); }}
                      className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group text-left"
                    >
                      <div className="flex items-center gap-3 min-w-0">
@@ -490,7 +490,7 @@ export default function MissingInvoicesPage() {
                paginatedData.map((row) => (
                <tr 
                  key={row.id} 
-                 onClick={() => navigate(`/accounty/missing-invoices/${row.id}`)}
+                 onClick={() => navigate(`/eaisybooks/missing-invoices/${row.id}`)}
                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                >
                  <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></td>
@@ -526,7 +526,7 @@ export default function MissingInvoicesPage() {
                        </button>
                      </DropdownMenuTrigger>
                      <DropdownMenuContent align="end" className="w-48">
-                       <DropdownMenuItem onClick={() => navigate(`/accounty/missing-invoices/${row.id}`)} className="cursor-pointer">
+                       <DropdownMenuItem onClick={() => navigate(`/eaisybooks/missing-invoices/${row.id}`)} className="cursor-pointer">
                          <ChevronRight className="w-4 h-4 mr-2" />
                          R&#233;szletek
                        </DropdownMenuItem>

@@ -42,6 +42,7 @@ import {
 import { useAccountyRole } from './AccountyRoleContext';
 import { seedAccountyAssignments } from '@/utils/seedAccounty';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -63,6 +64,7 @@ const EvPortfolioDashboard = lazy(() => import('./Ev/EvPortfolioDashboard'));
 
 export default function AccountyApp() {
   const { user } = useAuth();
+  const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'companies';
 
@@ -79,8 +81,8 @@ export default function AccountyApp() {
   }, [searchParams, setSearchParams]);
 
   const { toast } = useToast();
-  const { data: supabaseClients, isLoading: clientsLoading, isError: clientsError, refetch: refetchClients } = useAccountyClients();
-  const { data: supabaseKpis } = useAccountyKpis();
+  const { data: supabaseClients, isLoading: clientsLoading, isError: clientsError, refetch: refetchClients } = useAccountyClients(dateFromFormatted, dateToFormatted);
+  const { data: supabaseKpis } = useAccountyKpis(dateFromFormatted, dateToFormatted);
   const { data: monthlyTrendData } = useAccountyMonthlyTrend();
   const { data: colleagueStats } = useAccountyColleagueStats();
   const { data: auditLog } = useAccountyAuditLog(10);
@@ -507,7 +509,7 @@ export default function AccountyApp() {
               </span>
             )}
           </div>
-          <Link to="/accounty/new-client">
+          <Link to="/eaisybooks/new-client">
             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Új ügyfél
@@ -552,8 +554,8 @@ export default function AccountyApp() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="stagger-1"><KpiCard title="Összes ügyfél" value={kpis.totalClients} icon={Users} accentColor="teal" /></div>
                 <div className="stagger-2"><KpiCard title="Feldolgozatlan számlák" value={kpis.unprocessedInvoices} icon={FileText} accentColor="blue" /></div>
-                <div className="stagger-3"><KpiCard title="Hiányzó számlák" value={kpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" accentColor="red" onClick={() => navigate('/accounty/missing-invoices')} /></div>
-                <div className="stagger-4"><KpiCard title="Közeledő határidők" value={kpis.upcomingDeadlines} icon={Clock} accentColor="amber" onClick={() => navigate('/accounty/tax-calendar')} /></div>
+                <div className="stagger-3"><KpiCard title="Hiányzó számlák" value={kpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" accentColor="red" onClick={() => navigate('/eaisybooks/missing-invoices')} /></div>
+                <div className="stagger-4"><KpiCard title="Közeledő határidők" value={kpis.upcomingDeadlines} icon={Clock} accentColor="amber" onClick={() => navigate('/eaisybooks/tax-calendar')} /></div>
               </div>
             )}
 
@@ -676,6 +678,8 @@ export default function AccountyApp() {
                 colleagueStats={colleagueStats}
                 auditLog={auditLog}
                 isAdmin={isAdmin}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
               />
             ) : viewMode === 'kanban' ? (
               <ClientKanbanView

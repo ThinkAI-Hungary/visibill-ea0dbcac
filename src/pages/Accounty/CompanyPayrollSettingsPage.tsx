@@ -145,15 +145,15 @@ export default function CompanyPayrollSettingsPage() {
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
       <Breadcrumb
         items={[
-          { label: 'Portfólió', href: '/accounty' },
-          { label: companyName, href: `/accounty/payroll/${companyId}` },
+          { label: 'Portfólió', href: '/eaisybooks' },
+          { label: companyName, href: `/eaisybooks/payroll/${companyId}` },
           { label: 'Beállítások' },
         ]}
         onNavigate={navigate}
       />
 
       <div className="flex items-center gap-3">
-        <Link to={`/accounty/payroll/${companyId}`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`/eaisybooks/payroll/${companyId}`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl shadow-lg">
@@ -515,7 +515,7 @@ export default function CompanyPayrollSettingsPage() {
         )}
         <div className="flex gap-3 ml-auto">
           <Button variant="outline" asChild>
-            <Link to={`/accounty/payroll/${companyId}`}>Vissza</Link>
+            <Link to={`/eaisybooks/payroll/${companyId}`}>Vissza</Link>
           </Button>
           <Button onClick={handleSave} disabled={saving} className="gap-1.5 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

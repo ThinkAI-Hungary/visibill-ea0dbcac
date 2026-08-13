@@ -58,7 +58,7 @@ export default function DocumentCenterPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Link to={`/accounty/payroll/${id}/documents/all`}>
+          <Link to={`/eaisybooks/payroll/${id}/documents/all`}>
             <Button variant="outline" className="gap-1.5"><Eye className="w-4 h-4" /> Összes dokumentum</Button>
           </Link>
           <Button
@@ -116,7 +116,7 @@ export default function DocumentCenterPage() {
               const badge = STATUS_BADGE[status];
 
               return (
-                <Link key={cat.id} to={`/accounty/payroll/${id}/documents/${cat.route}`} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
+                <Link key={cat.id} to={`/eaisybooks/payroll/${id}/documents/${cat.route}`} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
                   <div className="p-5 flex items-start gap-4">
                     <div className={cn('w-12 h-12 rounded-xl bg-gradient-to-br text-white flex items-center justify-center shrink-0', cat.color)}>
                       <cat.icon className="w-6 h-6" />
@@ -133,8 +133,8 @@ export default function DocumentCenterPage() {
                     </div>
                   </div>
                   <div className="px-5 pb-4 flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="text-xs gap-1" disabled={count === 0} onClick={(e) => { e.preventDefault(); window.location.href = `/accounty/payroll/${id}/documents/${cat.route}`; }}><Eye className="w-3 h-3" /> Előnézet</Button>
-                    <Button variant="outline" size="sm" className="text-xs gap-1" disabled={count === 0} onClick={(e) => { e.preventDefault(); window.location.href = `/accounty/payroll/${id}/documents/${cat.route}`; }}><Download className="w-3 h-3" /> Letöltés</Button>
+                    <Button variant="outline" size="sm" className="text-xs gap-1" disabled={count === 0} onClick={(e) => { e.preventDefault(); window.location.href = `/eaisybooks/payroll/${id}/documents/${cat.route}`; }}><Eye className="w-3 h-3" /> Előnézet</Button>
+                    <Button variant="outline" size="sm" className="text-xs gap-1" disabled={count === 0} onClick={(e) => { e.preventDefault(); window.location.href = `/eaisybooks/payroll/${id}/documents/${cat.route}`; }}><Download className="w-3 h-3" /> Letöltés</Button>
                     <Button 
                       variant="ghost" 
                       size="sm" 

@@ -83,7 +83,7 @@ export default function PrivacyPolicyPage() {
     <div className="w-full max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to="/accounty/settings" className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to="/eaisybooks/settings" className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-primary to-primary/70 rounded-xl shadow-lg">

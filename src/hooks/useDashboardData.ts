@@ -135,9 +135,69 @@ export function useDashboardData() {
   const { data: exchangeRates = {} } = useQuery({
     queryKey: queryKeys.exchangeRates(),
     queryFn: async () => {
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/HUF');
-      const data = await response.json();
-      return data.rates as { [key: string]: number };
+      // 1. Query rates from database
+      let { data: dbRates, error } = await supabase
+        .from('daily_exchange_rates')
+        .select('currency, rate, rate_date')
+        .eq('source', 'MNB')
+        .order('rate_date', { ascending: false })
+        .limit(200);
+
+      if (error) throw error;
+
+      // 2. If database has no rates, trigger the fetch-mnb-rates Edge Function to seed it
+      if (!dbRates || dbRates.length === 0) {
+        try {
+          const { data: session } = await supabase.auth.getSession();
+          const token = session?.session?.access_token;
+          if (token) {
+            await supabase.functions.invoke('fetch-mnb-rates', {
+              headers: { Authorization: `Bearer ${token}` },
+              body: {
+                date_from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                date_to: new Date().toISOString().split('T')[0],
+              }
+            });
+
+            // Re-query database after seeding
+            const refetched = await supabase
+              .from('daily_exchange_rates')
+              .select('currency, rate, rate_date')
+              .eq('source', 'MNB')
+              .order('rate_date', { ascending: false })
+              .limit(200);
+            
+            dbRates = refetched.data || [];
+          }
+        } catch (e) {
+          console.error('Failed to auto-seed MNB rates on dashboard:', e);
+        }
+      }
+
+      // Group rates by currency to find today's and yesterday's rates
+      const ratesMap: { [key: string]: number } = {};
+      
+      // Seed default/fallback rates so we always have basic currency codes
+      const defaultRates: { [key: string]: number } = {
+        EUR: 0.00244,
+        USD: 0.00263,
+        GBP: 0.00208,
+        CHF: 0.00233,
+        PLN: 0.0105,
+        CZK: 0.0617,
+        RON: 0.0121,
+        HUF: 1.0,
+      };
+      Object.assign(ratesMap, defaultRates);
+
+      (dbRates || []).forEach(row => {
+        // We only want the latest date's rate
+        if (row.currency && (!ratesMap[row.currency] || ratesMap[row.currency] === defaultRates[row.currency])) {
+          ratesMap[row.currency] = 1 / Number(row.rate); // Frontend expects 1 HUF = X DEV (e.g. 0.00244 EUR)
+        }
+      });
+
+      return ratesMap;
     },
     staleTime: 60 * 60 * 1000,
     placeholderData: keepPreviousData,

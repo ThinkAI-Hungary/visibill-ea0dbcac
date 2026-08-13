@@ -276,7 +276,7 @@ export default function OutputDocumentsPage() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           {Object.entries(CONFIGS).map(([key, cfg]) => (
-            <Link key={key} to={`/accounty/payroll/${companyId}/documents/${key}`}
+            <Link key={key} to={`/eaisybooks/payroll/${companyId}/documents/${key}`}
               className="p-4 rounded-xl border border-border hover:border-blue-300 hover:shadow-lg hover:-translate-y-0.5 transition-all group bg-card">
               <div className={cn('w-8 h-8 rounded-lg bg-gradient-to-br text-white flex items-center justify-center mb-2', cfg.color)}>
                 <cfg.icon className="w-4 h-4" />

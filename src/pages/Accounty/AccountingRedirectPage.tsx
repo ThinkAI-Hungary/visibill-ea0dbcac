@@ -19,9 +19,9 @@ export default function AccountingRedirectPage() {
     const isEv = !!evSettings;
     
     if (isEv) {
-      navigate(`/accounty/client/${id}/ev`, { replace: true });
+      navigate(`/eaisybooks/client/${id}/ev`, { replace: true });
     } else {
-      navigate(`/accounty/client/${id}/tao`, { replace: true });
+      navigate(`/eaisybooks/client/${id}/tao`, { replace: true });
     }
   }, [id, evSettings, isLoading, navigate]);
 

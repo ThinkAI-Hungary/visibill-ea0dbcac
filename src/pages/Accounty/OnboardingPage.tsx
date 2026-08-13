@@ -505,7 +505,7 @@ export default function OnboardingPage() {
     setShowCelebration(true);
     setTimeout(() => {
       setShowCelebration(false);
-      navigate('/accounty');
+      navigate('/eaisybooks');
     }, 2000);
   };
 
@@ -815,7 +815,7 @@ export default function OnboardingPage() {
                             variant="outline"
                             className="w-full text-xs h-8"
                           >
-                            <Link to="/accounty/new-client">
+                            <Link to="/eaisybooks/new-client">
                               Új ügyfél felvétele
                               <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                             </Link>

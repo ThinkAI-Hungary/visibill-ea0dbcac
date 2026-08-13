@@ -441,7 +441,7 @@ export default function FilingWorkflowPage() {
                 ],
               })}><Download className="w-4 h-4" /> Nyugta letöltése</Button>
               <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-                <Link to={`/accounty/payroll/${companyId}/filings`}>Vissza a bevallásokhoz</Link>
+                <Link to={`/eaisybooks/payroll/${companyId}/filings`}>Vissza a bevallásokhoz</Link>
               </Button>
             </div>
           </div>

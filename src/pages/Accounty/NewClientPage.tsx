@@ -83,7 +83,7 @@ export default function NewClientPage() {
       if (data?.error) { setCodeStatus('invalid'); return; }
       queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
       queryClient.invalidateQueries({ queryKey: ['accounty-kpis'] });
-      navigate('/accounty');
+      navigate('/eaisybooks');
     } catch (err) {
       reportError({ type: 'edge_function', component: 'NewClientPage', action: 'error', message: 'Failed to join as accountant:', error: err });
       setCodeStatus('invalid');
@@ -168,7 +168,7 @@ export default function NewClientPage() {
               {step === 1 ? "Első ügyfél" : step === 2 ? "Integráció" : "Kész"}
             </span>
           </div>
-          <button onClick={() => navigate('/accounty')} className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 transition-colors">
+          <button onClick={() => navigate('/eaisybooks')} className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 transition-colors">
             Kihagyás
           </button>
         </div>
@@ -251,7 +251,7 @@ export default function NewClientPage() {
                 </ul>
               </div>
 
-              <Button onClick={() => navigate('/accounty')} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mb-3">
+              <Button onClick={() => navigate('/eaisybooks')} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mb-3">
                 Irány a Dashboard &rarr;
               </Button>
               

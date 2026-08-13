@@ -79,48 +79,145 @@ export function generatePayslipHtml(data: PayslipData): string {
 <head>
 <meta charset="UTF-8">
 <title>Bérjegyzék - ${data.employeeName} - ${data.year}. ${MONTHS_HU[data.month - 1]}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   @page { size: A4; margin: 15mm; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #1a1a2e; line-height: 1.5; }
-  .payslip { max-width: 700px; margin: 0 auto; padding: 20px; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2d3436; padding-bottom: 12px; margin-bottom: 16px; }
-  .header h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #2d3436; }
-  .header .period { font-size: 13px; color: #636e72; text-align: right; }
-  .header .period strong { color: #2d3436; font-size: 15px; }
-  .section { margin-bottom: 14px; }
-  .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #636e72; margin-bottom: 6px; border-bottom: 1px solid #dfe6e9; padding-bottom: 3px; }
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; }
-  .info-row { display: flex; justify-content: space-between; }
-  .info-row .label { color: #636e72; }
-  .info-row .value { font-weight: 600; font-family: 'Consolas', 'Courier New', monospace; }
-  table { width: 100%; border-collapse: collapse; }
-  table th { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #636e72; text-align: left; padding: 6px 8px; border-bottom: 2px solid #dfe6e9; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 11px;
+    color: #1e293b;
+    line-height: 1.5;
+    background-color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+  }
+  .payslip { max-width: 700px; margin: 0 auto; padding: 10px; }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  .brand-logo-container {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .brand-logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: #1e293b;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  .brand-logo .highlight {
+    color: #0f7467;
+    font-weight: 800;
+  }
+  .brand-logo-sub { font-size: 9px; font-weight: 600; color: #64748b; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f7467;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .header .period { font-size: 12px; color: #64748b; text-align: right; }
+  .header .period strong { color: #1e293b; font-size: 14px; font-family: 'Outfit', sans-serif; }
+  
+  .section { margin-bottom: 18px; }
+  .section-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #0f7467;
+    margin-bottom: 8px;
+    border-left: 3px solid #0f7467;
+    padding-left: 6px;
+  }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; padding-left: 9px; }
+  .info-row { display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 2px; }
+  .info-row .label { color: #64748b; }
+  .info-row .value { font-weight: 600; color: #334155; font-family: 'Courier New', Courier, monospace; }
+  
+  table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+  table th {
+    font-family: 'Outfit', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+    text-align: left;
+    padding: 8px 10px;
+    background-color: #f1f5f9;
+    border-bottom: 2px solid #e2e8f0;
+  }
   table th.right { text-align: right; }
-  table td { padding: 5px 8px; border-bottom: 1px solid #f1f2f6; }
-  table td.right { text-align: right; font-family: 'Consolas', 'Courier New', monospace; font-weight: 600; }
-  table td.negative { color: #d63031; }
-  table td.positive { color: #00b894; }
-  table tr.total { border-top: 2px solid #2d3436; }
-  table tr.total td { font-weight: 800; font-size: 12px; padding: 8px; }
-  .net-box { background: #2d3436; color: #fff; padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
-  .net-box .label { font-size: 14px; font-weight: 600; }
-  .net-box .amount { font-size: 24px; font-weight: 800; font-family: 'Consolas', 'Courier New', monospace; }
-  .footer { margin-top: 24px; font-size: 9px; color: #b2bec3; text-align: center; border-top: 1px solid #dfe6e9; padding-top: 8px; }
-  .stamp-area { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; }
-  .stamp-area .box { border-top: 1px solid #636e72; padding-top: 4px; text-align: center; font-size: 9px; color: #636e72; }
-  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  table td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; color: #334155; }
+  table td.right { text-align: right; font-family: 'Courier New', Courier, monospace; font-weight: 600; }
+  table td.negative { color: #dc2626; }
+  table td.positive { color: #16a34a; }
+  table tr.total { border-top: 2px solid #cbd5e1; background-color: #f8fafc; }
+  table tr.total td { font-weight: 700; font-size: 11px; padding: 8px 10px; color: #1e293b; }
+  
+  .net-box {
+    background: linear-gradient(135deg, #0f7467 0%, #0d6459 100%);
+    color: #fff;
+    padding: 16px 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    box-shadow: 0 4px 12px rgba(15,116,103,0.15);
+  }
+  .net-box .label { font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
+  .net-box .amount { font-size: 22px; font-weight: 800; font-family: 'Outfit', sans-serif; }
+  
+  .footer {
+    margin-top: 28px;
+    font-size: 9px;
+    color: #94a3b8;
+    text-align: center;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 10px;
+  }
+  .stamp-area { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; }
+  .stamp-area .box { border-top: 1px solid #cbd5e1; padding-top: 6px; text-align: center; font-size: 9px; color: #64748b; }
+  @page { size: A4; margin: 0; }
+  @media print {
+    body {
+      padding: 20mm 15mm !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
 </style>
 </head>
 <body>
 <div class="payslip">
   <div class="header">
     <div>
-      <h1>BÉRJEGYZÉK</h1>
-      <div style="font-size:11px; color:#636e72; margin-top:4px;">${escHtml(data.companyName)}</div>
-      <div style="font-size:10px; color:#b2bec3;">${escHtml(data.companyTaxNumber)} · ${escHtml(data.companyAddress)}</div>
+      <div class="brand-logo-container">
+        <div class="brand-logo">
+          e<span class="highlight">ai</span>sy<span class="highlight">Books</span>
+        </div>
+        <div class="brand-logo-sub">Bérszámfejtés</div>
+      </div>
+      <div style="font-size:11px; color:#1e293b; font-weight: 600; margin-top:10px;">${escHtml(data.companyName)}</div>
+      <div style="font-size:10px; color:#64748b; margin-top:2px;">Adószám: ${escHtml(data.companyTaxNumber)} · Székhely: ${escHtml(data.companyAddress)}</div>
     </div>
     <div class="period">
+      <h1>Bérjegyzék</h1>
       <strong>${data.year}. ${MONTHS_HU[data.month - 1]}</strong><br>
       Kiadás dátuma: ${new Date().toLocaleDateString('hu-HU')}
     </div>
@@ -187,7 +284,7 @@ export function generatePayslipHtml(data: PayslipData): string {
     <span class="amount">${fmt(data.netSalary)} Ft</span>
   </div>
 
-  <div class="section" style="margin-top: 16px;">
+  <div class="section" style="margin-top: 20px;">
     <div class="section-title">Munkáltatói közterhek (tájékoztató)</div>
     <div class="info-grid">
       <div class="info-row"><span class="label">SZOCHO (13%)</span><span class="value">${fmt(data.szochoAmount)} Ft</span></div>

@@ -159,7 +159,7 @@ export default function MissingInvoicesReportPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground stagger-1">
-        <button onClick={() => navigate('/accounty/missing-invoices')} className="hover:text-primary transition-colors">Hiányzó számlák</button>
+        <button onClick={() => navigate('/eaisybooks/missing-invoices')} className="hover:text-primary transition-colors">Hiányzó számlák</button>
         <ChevronRight className="w-3.5 h-3.5" />
         <span className="text-foreground font-medium">Riport</span>
       </nav>

@@ -277,7 +277,7 @@ export function ClientCard({
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      onClick={() => navigate(`/accounty/client/${client.id}`)}
+      onClick={() => navigate(`/eaisybooks/client/${client.id}`)}
       className={cn(
         "bg-card rounded-xl border border-border shadow-soft flex flex-col group cursor-pointer h-full overflow-hidden", 
         "hover:shadow-lg hover:border-border hover:-translate-y-0.5 transition-all duration-300",

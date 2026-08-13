@@ -234,7 +234,7 @@ export default function GenericFilingPage() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           {Object.entries(CONFIGS).map(([key, cfg]) => (
-            <Link key={key} to={`/accounty/payroll/${companyId}/filings/${key}`}
+            <Link key={key} to={`/eaisybooks/payroll/${companyId}/filings/${key}`}
               className="p-4 rounded-xl border border-border hover:border-violet-300 hover:shadow-lg hover:-translate-y-0.5 transition-all bg-card">
               <p className="text-sm font-bold">{cfg.title}</p>
               <p className="text-xs text-slate-400 mt-0.5">{cfg.subtitle}</p>

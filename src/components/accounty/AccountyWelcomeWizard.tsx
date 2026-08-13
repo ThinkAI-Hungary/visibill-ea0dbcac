@@ -501,7 +501,7 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
                 onClick={() => {
                   // Mark onboarding as done and navigate to new client wizard
                   onComplete();
-                  navigate('/accounty/new-client');
+                  navigate('/eaisybooks/new-client');
                 }}
                 className="shrink-0 gap-2"
               >
@@ -561,9 +561,9 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
       {/* Quick links */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mb-8 animate-in fade-in slide-in-from-bottom-3 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
         {[
-          { icon: Briefcase, label: 'Portfólió', desc: 'Ügyfelek áttekintése', path: '/accounty' },
-          { icon: Sparkles, label: 'AI Asszisztens', desc: 'Intelligens segítség', path: '/accounty/ai-assistant' },
-          { icon: Shield, label: 'Segítség', desc: 'Dokumentáció és FAQ', path: '/accounty/help' },
+          { icon: Briefcase, label: 'Portfólió', desc: 'Ügyfelek áttekintése', path: '/eaisybooks' },
+          { icon: Sparkles, label: 'AI Asszisztens', desc: 'Intelligens segítség', path: '/eaisybooks/ai-assistant' },
+          { icon: Shield, label: 'Segítség', desc: 'Dokumentáció és FAQ', path: '/eaisybooks/help' },
         ].map((link) => (
           <button
             key={link.path}

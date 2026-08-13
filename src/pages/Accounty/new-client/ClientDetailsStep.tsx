@@ -135,7 +135,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
           </div>
 
           <div className="flex justify-end gap-3 pt-2 border-t border-border mt-4">
-            <Button variant="outline" onClick={() => navigate('/accounty')} className="border-border text-slate-700 dark:text-slate-300">
+            <Button variant="outline" onClick={() => navigate('/eaisybooks')} className="border-border text-slate-700 dark:text-slate-300">
               Mégse
             </Button>
             {codeStatus === 'valid' ? (

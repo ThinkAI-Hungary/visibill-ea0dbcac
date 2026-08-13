@@ -50,7 +50,7 @@ export default function ClientListView({
           e.preventDefault();
           setFocusedIndex(prev => Math.max(prev - 1, 0));
         } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < filteredClients.length) {
-          navigate(`/accounty/client/${filteredClients[focusedIndex].id}`);
+          navigate(`/eaisybooks/client/${filteredClients[focusedIndex].id}`);
         } else if (e.key === 'Escape') {
           setFocusedIndex(-1);
           clearSelection();
@@ -102,7 +102,7 @@ export default function ClientListView({
               filteredClients.map((client, idx) => (
                 <tr 
                   key={client.id} 
-                  onClick={() => navigate(`/accounty/client/${client.id}`)}
+                  onClick={() => navigate(`/eaisybooks/client/${client.id}`)}
                   className={cn(
                     "hover:bg-accent/50 transition-colors group cursor-pointer",
                     selectedIds.has(client.id) && "bg-primary/5",

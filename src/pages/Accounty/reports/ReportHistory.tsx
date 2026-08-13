@@ -45,10 +45,59 @@ interface ReportHistoryListProps {
 }
 
 export function ReportHistoryList({ reportHistory, reportTypes, onRedownload, onDelete }: ReportHistoryListProps) {
+  const [search, setSearch] = React.useState('');
+  const [filter, setFilter] = React.useState<'all' | 'pdf' | 'excel' | 'sent'>('all');
+
+  const filteredHistory = React.useMemo(() => {
+    return reportHistory.filter(entry => {
+      // 1. Text filter
+      const matchesSearch = 
+        entry.typeLabel.toLowerCase().includes(search.toLowerCase()) ||
+        entry.dateFrom.includes(search) ||
+        entry.dateTo.includes(search);
+      
+      // 2. Tab filter
+      if (!matchesSearch) return false;
+      if (filter === 'pdf') return entry.format === 'pdf';
+      if (filter === 'excel') return entry.format === 'excel';
+      if (filter === 'sent') return entry.sentToApproval;
+      return true;
+    });
+  }, [reportHistory, search, filter]);
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Legutóbbi riportok</h2>
+        
+        {/* Search & Filters */}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
+          <input
+            type="text"
+            placeholder="Keresés..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 px-3 text-xs bg-card border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30 w-full sm:w-44"
+          />
+          <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/60">
+            {(['all', 'pdf', 'excel', 'sent'] as const).map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setFilter(opt)}
+                className={cn(
+                  "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap",
+                  filter === opt
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {opt === 'all' ? 'Mind' :
+                 opt === 'pdf' ? 'PDF' :
+                 opt === 'excel' ? 'Excel' : 'Jóváhagyó'}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
@@ -58,11 +107,16 @@ export function ReportHistoryList({ reportHistory, reportTypes, onRedownload, on
               <FileText className="w-6 h-6 text-slate-400" />
             </div>
             <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Még nincs generált riport</p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">A generált riportok itt fognak megjelenni</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">A generált riportok itt fognak megjelennem</p>
+          </div>
+        ) : filteredHistory.length === 0 ? (
+          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
+            <p className="text-sm font-medium">Nincs a szűrésnek megfelelő riport</p>
+            <p className="text-xs text-slate-400 mt-1">Próbáld megváltoztatni a szűrőket vagy a keresőszót.</p>
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {reportHistory.slice(0, 10).map((entry) => {
+            {filteredHistory.slice(0, 10).map((entry) => {
               const icon = reportTypes.find(r => r.id === entry.type);
               const IconComp = icon?.icon || FileText;
               const genDate = new Date(entry.generatedAt);

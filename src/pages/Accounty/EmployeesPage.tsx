@@ -128,7 +128,7 @@ export default function EmployeesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/accounty/payroll/${companyId}`)} className="h-9 w-9">
+          <Button variant="ghost" size="icon" onClick={() => navigate(`/eaisybooks/payroll/${companyId}`)} className="h-9 w-9">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
@@ -166,13 +166,13 @@ export default function EmployeesPage() {
           <Button
             variant="outline"
             className="flex items-center gap-2 text-sm"
-            onClick={() => navigate(`/accounty/payroll/${companyId}/employees/import`)}
+            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/import`)}
           >
             <Upload className="w-4 h-4" />
             Excel importálás
           </Button>
           <Button
-            onClick={() => navigate(`/accounty/payroll/${companyId}/employees/new`)}
+            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/new`)}
             className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
           >
             <UserPlus className="w-4 h-4" />
@@ -224,7 +224,7 @@ export default function EmployeesPage() {
             </p>
             {employees.length === 0 && (
               <Button
-                onClick={() => navigate(`/accounty/payroll/${companyId}/employees/new`)}
+                onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/new`)}
                 className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
@@ -250,7 +250,7 @@ export default function EmployeesPage() {
                 {paginatedEmployees.map((emp) => (
                   <tr
                     key={emp.id}
-                    onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${emp.id}`)}
+                    onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/${emp.id}`)}
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors group"
                   >
                     <td className="px-5 py-3.5">

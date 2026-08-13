@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -85,14 +86,12 @@ export default function EvPortfolioDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [searchParams, setSearchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
 
   const setTaxYear = (year: number) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      next.set('year', String(year));
-      return next;
-    });
+    setDateFrom(new Date(year, 0, 1));
+    setDateTo(new Date(year, 11, 31));
   };
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
@@ -230,7 +229,7 @@ export default function EvPortfolioDashboard() {
             type: 'danger',
             title: 'ÁFA alanyi mentesség határ túllépés',
             message: `A vállalkozás bevétele (${c.ytdRevenue.toLocaleString('hu-HU')} Ft) átlépte az alanyi ÁFA mentesség ${afaLimit.toLocaleString('hu-HU')} Ft-os határértékét!`,
-            targetUrl: `/accounty/client/${c.companyId}/ev/vat`,
+            targetUrl: `/eaisybooks/client/${c.companyId}/ev/vat`,
           });
         } else if (c.ytdRevenue >= afaLimit * 0.85) {
           list.push({
@@ -240,7 +239,7 @@ export default function EvPortfolioDashboard() {
             type: 'warning',
             title: 'ÁFA alanyi mentesség határ közelít',
             message: `A vállalkozás bevétele (${c.ytdRevenue.toLocaleString('hu-HU')} Ft) megközelítette az alanyi ÁFA mentességi határt (a limit ${(c.ytdRevenue / afaLimit * 100).toFixed(0)}%-ánál jár).`,
-            targetUrl: `/accounty/client/${c.companyId}/ev/vat`,
+            targetUrl: `/eaisybooks/client/${c.companyId}/ev/vat`,
           });
         }
       }
@@ -256,7 +255,7 @@ export default function EvPortfolioDashboard() {
             type: 'danger',
             title: 'KATA éves keret túllépés',
             message: `A vállalkozás bevétele (${c.ytdRevenue.toLocaleString('hu-HU')} Ft) átlépte a KATA éves ${kataLimit.toLocaleString('hu-HU')} Ft-os keretét!`,
-            targetUrl: `/accounty/client/${c.companyId}/ev/kata`,
+            targetUrl: `/eaisybooks/client/${c.companyId}/ev/kata`,
           });
         } else if (c.ytdRevenue >= kataLimit * 0.85) {
           list.push({
@@ -266,7 +265,7 @@ export default function EvPortfolioDashboard() {
             type: 'warning',
             title: 'KATA éves keret közelít',
             message: `A vállalkozás bevétele (${c.ytdRevenue.toLocaleString('hu-HU')} Ft) megközelítette a KATA éves keretet (a limit ${(c.ytdRevenue / kataLimit * 100).toFixed(0)}%-ánál jár).`,
-            targetUrl: `/accounty/client/${c.companyId}/ev/kata`,
+            targetUrl: `/eaisybooks/client/${c.companyId}/ev/kata`,
           });
         }
 
@@ -281,7 +280,7 @@ export default function EvPortfolioDashboard() {
               type: 'danger',
               title: 'KATA partner 3M Ft limit túllépés',
               message: `A(z) "${cust.customerName}" partner felé kiállított számlák összege (${cust.total.toLocaleString('hu-HU')} Ft) átlépte a 3 millió Ft-os KATA limitet (40%-os adófizetési kötelezettség keletkezett).`,
-              targetUrl: `/accounty/client/${c.companyId}/ev/kata`,
+              targetUrl: `/eaisybooks/client/${c.companyId}/ev/kata`,
             });
           } else if (cust.total >= 2_500_000) {
             list.push({
@@ -291,7 +290,7 @@ export default function EvPortfolioDashboard() {
               type: 'warning',
               title: 'KATA partner 3M Ft limit közelít',
               message: `A(z) "${cust.customerName}" partner felé kiállított számlák összege (${cust.total.toLocaleString('hu-HU')} Ft) megközelítette a 3 millió Ft-os KATA limitet (a limit ${(cust.total / 30000).toFixed(0)}%-ánál jár).`,
-              targetUrl: `/accounty/client/${c.companyId}/ev/kata`,
+              targetUrl: `/eaisybooks/client/${c.companyId}/ev/kata`,
             });
           }
         });
@@ -310,15 +309,15 @@ export default function EvPortfolioDashboard() {
       
       const diffDays = Math.ceil((deadlineDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
       
-      let targetUrl = `/accounty/client/${compId}/ev/returns`;
+      let targetUrl = `/eaisybooks/client/${compId}/ev/returns`;
       if (ret.form_code === '2658') {
-        targetUrl = `/accounty/client/${compId}/ev/returns/contrib`;
+        targetUrl = `/eaisybooks/client/${compId}/ev/returns/contrib`;
       } else if (ret.form_code === 'KATA') {
-        targetUrl = `/accounty/client/${compId}/ev/returns/kata`;
+        targetUrl = `/eaisybooks/client/${compId}/ev/returns/kata`;
       } else if (ret.form_code === 'HIPAK') {
-        targetUrl = `/accounty/client/${compId}/ev/returns/hipa`;
+        targetUrl = `/eaisybooks/client/${compId}/ev/returns/hipa`;
       } else if (ret.form_code === '2553') {
-        targetUrl = `/accounty/client/${compId}/ev/returns`;
+        targetUrl = `/eaisybooks/client/${compId}/ev/returns`;
       }
 
       if (isPastDue && isNotDone) {
@@ -411,7 +410,7 @@ export default function EvPortfolioDashboard() {
         <div className="flex items-center gap-2">
           <select
             value={taxYear}
-            onChange={(e) => setTaxYear(Number(e.target.value))}
+            onChange={(e) => ((y) => { setDateFrom(new Date(y, 0, 1)); setDateTo(new Date(y, 11, 31)); })(Number(e.target.value))}
             className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
           >
             <option value={2026}>2026. adóév</option>
@@ -571,7 +570,7 @@ export default function EvPortfolioDashboard() {
                     <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                       <td className="px-4 py-3">
                         <Link
-                          to={`/accounty/client/${client.companyId}/ev`}
+                          to={`/eaisybooks/client/${client.companyId}/ev`}
                           className="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 transition-colors"
                         >
                           {client.name}
@@ -633,7 +632,7 @@ export default function EvPortfolioDashboard() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
-                          to={`/accounty/client/${client.companyId}/ev`}
+                          to={`/eaisybooks/client/${client.companyId}/ev`}
                           className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-500"
                         >
                           Megnyit <ChevronRight className="w-3 h-3" />

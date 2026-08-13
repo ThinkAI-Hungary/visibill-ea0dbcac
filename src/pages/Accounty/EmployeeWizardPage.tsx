@@ -357,7 +357,7 @@ export default function EmployeeWizardPage() {
         feor_description: form.feor_description || null,
       } as any);
 
-      navigate(`/accounty/payroll/${companyId}/employees`);
+      navigate(`/eaisybooks/payroll/${companyId}/employees`);
     } catch {
       // Error handled by mutation's onError
     }

@@ -78,7 +78,7 @@ export default function ReportsPage() {
 
   const openModal = (type: ReportType) => {
     if (type === 'hianyzo') {
-      navigate('/accounty/reports/missing-invoices');
+      navigate('/eaisybooks/reports/missing-invoices');
       return;
     }
     setSelectedType(type);

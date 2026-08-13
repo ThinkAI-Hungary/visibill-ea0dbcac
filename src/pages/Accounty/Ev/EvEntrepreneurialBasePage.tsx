@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -22,7 +23,8 @@ export default function EvEntrepreneurialBasePage() {
   const updateReturn = useUpdateEvTaxReturn();
   const [saving, setSaving] = useState(false);
   const [searchParams] = useSearchParams();
-  const yearParam = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const yearParam = dateFrom.getFullYear();
   const [taxYear, setTaxYear] = useState(yearParam);
 
   const { data: dbParams } = useEvTaxParams(taxYear);
@@ -131,11 +133,11 @@ export default function EvEntrepreneurialBasePage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/accounty?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -156,7 +158,7 @@ export default function EvEntrepreneurialBasePage() {
         <div className="flex items-center gap-2">
           <select
             value={taxYear}
-            onChange={(e) => setTaxYear(Number(e.target.value))}
+            onChange={(e) => ((y) => { setDateFrom(new Date(y, 0, 1)); setDateTo(new Date(y, 11, 31)); })(Number(e.target.value))}
             className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
           >
             <option value={2026}>2026</option>
@@ -326,7 +328,7 @@ export default function EvEntrepreneurialBasePage() {
                   Az adóalap-megállapítás után a vállalkozói jövedelemből osztalékalap kerül megállapításra (15% SZJA + 13% szocho).
                 </p>
                 <Link
-                  to={`/accounty/${id}/${dateRange}/ev/entrepreneurial/dividend?year=${taxYear}`}
+                  to={`/eaisybooks/${id}/${dateRange}/ev/entrepreneurial/dividend?year=${taxYear}`}
                   className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors"
                 >
                   Osztalékalap számítás <ChevronRight className="w-3 h-3" />

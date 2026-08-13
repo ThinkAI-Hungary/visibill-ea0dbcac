@@ -34,7 +34,7 @@ export function CompanySwitcher() {
     }
 
     // 2. Legacy fallback
-    const match = location.pathname.match(/\/accounty\/(?:client|payroll|missing-invoices)\/([^/]+)/);
+    const match = location.pathname.match(/\/eaisybooks\/(?:client|payroll|missing-invoices)\/([^/]+)/);
     return match?.[1] ?? null;
   }, [location.pathname]);
 
@@ -62,7 +62,7 @@ export function CompanySwitcher() {
       const newPath = location.pathname.replace(uuidRegex, client.id);
       navigate(newPath);
     } else {
-      navigate(`/accounty/client/${client.id}`);
+      navigate(`/eaisybooks/client/${client.id}`);
     }
     setOpen(false);
     setSearchQuery('');
@@ -152,7 +152,7 @@ export function CompanySwitcher() {
         {/* Footer: back to portfolio */}
         <div className="border-t border-border px-3 py-2">
           <button
-            onClick={() => { navigate('/accounty'); setOpen(false); }}
+            onClick={() => { navigate('/eaisybooks'); setOpen(false); }}
             className="w-full text-center text-xs font-medium text-primary hover:text-primary/80 transition-colors py-1"
           >
             ← Vissza a portfólióhoz

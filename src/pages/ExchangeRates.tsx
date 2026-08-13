@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TrendingUp, TrendingDown, RefreshCw, Clock, ArrowRightLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContentSkeleton } from "@/components/ui/content-skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ExchangeRate {
   currency: string;
@@ -50,19 +51,75 @@ export default function ExchangeRates() {
   const { data: ratesData, isLoading: initialLoading, refetch } = useQuery({
     queryKey: queryKeys.exchangeRatesPage('HUF'),
     queryFn: async () => {
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/HUF');
-      if (!response.ok) throw new Error('Failed to fetch exchange rates');
-      const data = await response.json();
-      
-      const formattedRates: ExchangeRate[] = currencyData.map(curr => ({
-        currency: curr.code,
-        currencyName: curr.name,
-        rate: data.rates[curr.code] || 0,
-        flag: curr.flag,
-        mockChange: parseFloat(((Math.random() - 0.5) * 4 * (1 / (data.rates[curr.code] || 1)) / 100).toFixed(2))
-      }));
-      
-      return { rates: formattedRates, lastUpdate: new Date().toLocaleString('hu-HU') };
+      // 1. Query rates from database
+      let { data: dbRates, error } = await supabase
+        .from('daily_exchange_rates')
+        .select('currency, rate, rate_date')
+        .eq('source', 'MNB')
+        .order('rate_date', { ascending: false })
+        .limit(200);
+
+      if (error) throw error;
+
+      // 2. If database has no rates, trigger the fetch-mnb-rates Edge Function to seed it
+      if (!dbRates || dbRates.length === 0) {
+        try {
+          const { data: session } = await supabase.auth.getSession();
+          const token = session?.session?.access_token;
+          if (token) {
+            await supabase.functions.invoke('fetch-mnb-rates', {
+              headers: { Authorization: `Bearer ${token}` },
+              body: {
+                date_from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                date_to: new Date().toISOString().split('T')[0],
+              }
+            });
+
+            // Re-query database after seeding
+            const refetched = await supabase
+              .from('daily_exchange_rates')
+              .select('currency, rate, rate_date')
+              .eq('source', 'MNB')
+              .order('rate_date', { ascending: false })
+              .limit(200);
+            
+            dbRates = refetched.data || [];
+          }
+        } catch (e) {
+          console.error('Failed to auto-seed MNB rates:', e);
+        }
+      }
+
+      // Group rates by currency to find today's and yesterday's rates
+      const ratesByCurrency: Record<string, { rates: number[]; dates: string[] }> = {};
+      (dbRates || []).forEach(row => {
+        if (!ratesByCurrency[row.currency]) {
+          ratesByCurrency[row.currency] = { rates: [], dates: [] };
+        }
+        ratesByCurrency[row.currency].rates.push(Number(row.rate));
+        ratesByCurrency[row.currency].dates.push(row.rate_date);
+      });
+
+      const formattedRates: ExchangeRate[] = currencyData.map(curr => {
+        const history = ratesByCurrency[curr.code];
+        const rateToday = history?.rates[0] || 400; // fallback if no MNB rate
+        const rateYesterday = history?.rates[1] || rateToday;
+        const change = rateToday - rateYesterday;
+
+        return {
+          currency: curr.code,
+          currencyName: curr.name,
+          rate: 1 / rateToday, // Frontend expects 1 HUF = X DEV (e.g. 0.00244 EUR)
+          flag: curr.flag,
+          mockChange: change, // using real daily change instead of mock
+        };
+      });
+
+      const latestDateStr = dbRates?.[0]?.rate_date
+        ? new Date(dbRates[0].rate_date).toLocaleDateString('hu-HU')
+        : new Date().toLocaleDateString('hu-HU');
+
+      return { rates: formattedRates, lastUpdate: latestDateStr };
     },
     staleTime: 60 * 60 * 1000, // 1 hour
     placeholderData: keepPreviousData,
@@ -73,6 +130,21 @@ export default function ExchangeRates() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session?.session?.access_token;
+      if (token) {
+        await supabase.functions.invoke('fetch-mnb-rates', {
+          headers: { Authorization: `Bearer ${token}` },
+          body: {
+            date_from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            date_to: new Date().toISOString().split('T')[0],
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Failed to trigger fetch-mnb-rates Edge Function during refresh:', e);
+    }
     await refetch();
     setIsRefreshing(false);
   };

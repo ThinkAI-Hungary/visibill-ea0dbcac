@@ -42,12 +42,12 @@ export default function CashbookMainPage() {
   const id = companyId;
   const { data: client } = useAccountyClient(id);
   const [searchParams, setSearchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDirection, setFilterDirection] = useState<FilterDirection>('all');
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
-  const { dateFromFormatted, dateToFormatted } = useDateRange();
   
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -91,14 +91,14 @@ export default function CashbookMainPage() {
     try {
       await exportEvCashbookAnykXml({
         companyName: client?.name || 'Egyéni Vállalkozó',
-        companyTaxNumber: client?.taxNumber || client?.tax_number || '',
-        companyAddress: client?.address || '',
+        companyTaxNumber: client?.taxNumber || '',
+        companyAddress: (client as any)?.address || '1054 Budapest, Alkotmány utca 4.',
         taxYear,
         periodFrom: dateFromFormatted || `${taxYear}-01-01`,
         periodTo: dateToFormatted || `${taxYear}-12-31`,
         entries: filtered,
       });
-      toast({ title: 'Siker', description: 'ÁNYK XML sikeresen legenerálva és letöltve.' });
+      toast({ title: 'Sikeres export', description: 'ÁNYK XML sikeresen legenerálva és letöltve.' });
     } catch (err: any) {
       toast({
         title: 'Hiba történt',
@@ -113,8 +113,8 @@ export default function CashbookMainPage() {
     try {
       await exportEvCashbookOnyaXml({
         companyName: client?.name || 'Egyéni Vállalkozó',
-        companyTaxNumber: client?.taxNumber || client?.tax_number || '',
-        companyAddress: client?.address || '',
+        companyTaxNumber: client?.taxNumber || '',
+        companyAddress: (client as any)?.address || '1054 Budapest, Alkotmány utca 4.',
         taxYear,
         periodFrom: dateFromFormatted || `${taxYear}-01-01`,
         periodTo: dateToFormatted || `${taxYear}-12-31`,
@@ -205,7 +205,7 @@ export default function CashbookMainPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -226,20 +226,20 @@ export default function CashbookMainPage() {
         <div className="flex items-center gap-2">
           <select
             value={taxYear}
-            onChange={(e) => setSearchParams({ year: e.target.value })}
+            onChange={(e) => ((y) => { setDateFrom(new Date(y, 0, 1)); setDateTo(new Date(y, 11, 31)); })(Number(e.target.value))}
             className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground mr-2"
           >
             <option value={2026}>2026. adóév</option>
             <option value={2025}>2025. adóév</option>
           </select>
           <Link
-            to={`/accounty/${id}/${dateRange}/ev/cashbook/ledger?year=${taxYear}`}
+            to={`/eaisybooks/${id}/${dateRange}/ev/cashbook/ledger?year=${taxYear}`}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
             <FileText className="w-3.5 h-3.5" /> Főkönyvi nézet
           </Link>
           <Link
-            to={`/accounty/${id}/${dateRange}/ev/cashbook/close?year=${taxYear}`}
+            to={`/eaisybooks/${id}/${dateRange}/ev/cashbook/close?year=${taxYear}`}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
             <Lock className="w-3.5 h-3.5" /> Periódus zárás
@@ -286,7 +286,7 @@ export default function CashbookMainPage() {
             )}
           </div>
           <Link
-            to={`/accounty/${id}/${dateRange}/ev/cashbook/import-nav?year=${taxYear}`}
+            to={`/eaisybooks/${id}/${dateRange}/ev/cashbook/import-nav?year=${taxYear}`}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
             <Import className="w-3.5 h-3.5" /> NAV számlák
@@ -535,7 +535,9 @@ export default function CashbookMainPage() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         {entry.periodClosed && (
-                          <Lock className="w-3.5 h-3.5 text-slate-300 mx-auto" title="Lezárt időszak" />
+                          <span title="Lezárt időszak">
+                            <Lock className="w-3.5 h-3.5 text-slate-300 mx-auto" />
+                          </span>
                         )}
                       </td>
                     </tr>

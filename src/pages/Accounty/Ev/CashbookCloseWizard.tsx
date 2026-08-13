@@ -1,3 +1,4 @@
+import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -88,7 +89,8 @@ export default function CashbookCloseWizard() {
   const { data: client } = useAccountyClient(id);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const taxYear = Number(searchParams.get('year') || '2026');
+  const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const taxYear = dateFrom.getFullYear();
   const [step, setStep] = useState<WizardStep>('select');
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
@@ -191,7 +193,7 @@ export default function CashbookCloseWizard() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/accounty/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -459,7 +461,7 @@ export default function CashbookCloseWizard() {
               <Calendar className="w-3.5 h-3.5" /> Következő hónap
             </button>
             <Link
-              to={`/accounty/${id}/${dateRange}/ev/cashbook?year=${taxYear}`}
+              to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
               <FileText className="w-3.5 h-3.5" /> Vissza a pénztárkönyvhöz

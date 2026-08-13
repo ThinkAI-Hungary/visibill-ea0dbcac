@@ -771,6 +771,22 @@ npm run preview      # Preview production build
 
 ## Changelog
 
+### Version 1.7.2 (2026-08-13)
+- **Eaisybooks UI/UX Improvements:**
+  - **Smooth Mode Switcher:** Implemented a smooth fade-in loading state transition for switching between eaisyBill and eaisyBooks modes.
+  - **Pulsing Sidebar Notification:** Added a glowing, pulsing notifications badge for unread tickets in the sidebar.
+  - **Side-by-Side Report Preview:** Redesigned the report generation modal to present a responsive split screen with real-time PDF/preview rendering.
+  - **History Search & Filters:** Added instant text search and format type tab filters (All, PDF, Excel, Sent) to recent report history list.
+  - **Resolved Deficiencies Filtering:** Fixed a duplicate list view issue in `ClientDetailsPage.tsx` by filtering out past resolved items from closing blocking deficiencies and KPI counts.
+- **AI Assistant Enhancements:**
+  - **Local Session Persistence:** Saved active AI chat session ID in `localStorage` to keep conversation thread active during routing.
+  - **Floating Copy Button:** Positioned a hover copy button on assistant message cards for easy clipboard copy.
+  - **Hungarian Quick Actions:** Standardized initial chat prompts to target specific Hungarian tax advice questions.
+- **Fixed Asset & Tax Customization:**
+  - **Compliance Warning:** Added an inline tax compliance warning flag (yellow triangle) on immediate write-offs of assets valued over 200,000 HUF.
+  - **Override Indicators:** Implemented manual change indicator dots (blue) when user edits recommended method or ÉCS rates.
+  - **Interactive Tax Form Sliders:** Added range sliders for costs and entrepreneurial drawings (kivét) to make the tax form planner fully interactive.
+
 ### Version 1.7.1 (2026-08-10)
 - **Tax Document Extraction Blacklist:**
   - Implemented a content-based blacklist in the transaction extractor to reject municipal/state tax documents (such as municipal tax account statements (`adószámla kivonat`), tax directorate letters (`adóügyi igazgatóság`), or dunning letters (`fizetési felszólítás`)) from being processed as bank statements.
@@ -894,5 +910,5 @@ npm run preview      # Preview production build
 
 ---
 
-**Last Updated:** 2026-08-10  
+**Last Updated:** 2026-08-13  
 **Maintained By:** VisiBill Development Team

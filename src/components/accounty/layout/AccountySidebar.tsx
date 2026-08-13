@@ -117,8 +117,8 @@ export default function AccountySidebar({
     if (itemTab) {
       return pathname.startsWith(cleanTo) && currentTab === itemTab;
     }
-    if (to === '/accounty') {
-      return pathname === '/accounty' && !currentTab;
+    if (to === '/eaisybooks') {
+      return pathname === '/eaisybooks' && !currentTab;
     }
     return exact ? pathname === cleanTo : isActive(cleanTo);
   }, [pathname, isActive]);
@@ -141,10 +141,10 @@ export default function AccountySidebar({
       label: 'Iroda & Beállítások',
       icon: Settings,
       items: [
-        { to: '/accounty/settings', icon: Settings, label: 'Beállítások', id: 'settings' },
-        { to: '/accounty/profile/settings', icon: User, label: 'Profilbeállítások' },
-        { to: '/accounty/admin/permissions', icon: Shield, label: 'Jogosultságkezelő' },
-        { to: '/accounty/admin/accountants', icon: Users, label: 'Könyvelők kezelése' },
+        { to: '/eaisybooks/settings', icon: Settings, label: 'Beállítások', id: 'settings' },
+        { to: '/eaisybooks/profile/settings', icon: User, label: 'Profilbeállítások' },
+        { to: '/eaisybooks/admin/permissions', icon: Shield, label: 'Jogosultságkezelő' },
+        { to: '/eaisybooks/admin/accountants', icon: Users, label: 'Könyvelők kezelése' },
       ].filter(item => {
         const module = PATH_TO_MODULE[item.to];
         return !module || canAccess(module);
@@ -155,10 +155,10 @@ export default function AccountySidebar({
       label: 'Szakmai Törzsadatok',
       icon: BookOpen,
       items: [
-        { to: '/accounty/admin/templates', icon: FileText, label: 'Sablonok' },
-        { to: '/accounty/admin/job-codes', icon: BookOpen, label: 'Jogviszonykódok' },
-        { to: '/accounty/admin/tax-parameters', icon: Calculator, label: 'Adómértékek' },
-        { to: '/accounty/admin/legal-updates', icon: Scale, label: 'Jogszabály-frissítések' },
+        { to: '/eaisybooks/admin/templates', icon: FileText, label: 'Sablonok' },
+        { to: '/eaisybooks/admin/job-codes', icon: BookOpen, label: 'Jogviszonykódok' },
+        { to: '/eaisybooks/admin/tax-parameters', icon: Calculator, label: 'Adómértékek' },
+        { to: '/eaisybooks/admin/legal-updates', icon: Scale, label: 'Jogszabály-frissítések' },
       ].filter(item => {
         const module = PATH_TO_MODULE[item.to];
         return !module || canAccess(module);
@@ -169,8 +169,8 @@ export default function AccountySidebar({
       label: 'Biztonság & GDPR',
       icon: ShieldCheck,
       items: [
-        { to: '/accounty/admin/audit', icon: ShieldCheck, label: 'Audit napló' },
-        { to: '/accounty/admin/gdpr', icon: ShieldCheck, label: 'GDPR' },
+        { to: '/eaisybooks/admin/audit', icon: ShieldCheck, label: 'Audit napló' },
+        { to: '/eaisybooks/admin/gdpr', icon: ShieldCheck, label: 'GDPR' },
       ].filter(item => {
         const module = PATH_TO_MODULE[item.to];
         return !module || canAccess(module);
@@ -181,9 +181,9 @@ export default function AccountySidebar({
       label: 'Támogatás & AI',
       icon: HelpCircle,
       items: [
-        { to: '/accounty/ai-assistant', icon: Sparkles, label: 'AI Asszisztens' },
-        { to: '/accounty/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
-        { to: '/accounty/help', icon: HelpCircle, label: 'Segítség' },
+        { to: '/eaisybooks/ai-assistant', icon: Sparkles, label: 'AI Asszisztens' },
+        { to: '/eaisybooks/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
+        { to: '/eaisybooks/help', icon: HelpCircle, label: 'Segítség' },
       ].filter(item => {
         const module = PATH_TO_MODULE[item.to];
         return !module || canAccess(module);
@@ -214,7 +214,7 @@ export default function AccountySidebar({
     return user?.email?.substring(0, 2).toUpperCase() || 'U';
   };
 
-  const clientMatch = pathname.match(/\/accounty\/([a-f0-9-]{36})/i);
+  const clientMatch = pathname.match(/\/eaisybooks\/([a-f0-9-]{36})/i);
   const selectedClientId = clientMatch ? clientMatch[1] : null;
   const selectedClient = allClients?.find(c => c.companyId === selectedClientId);
   const { data: evSettings } = useEvClientSettings(selectedClientId || undefined);
@@ -256,9 +256,9 @@ export default function AccountySidebar({
             value={selectedClientId || '_portfolio'}
             onValueChange={(val) => {
               if (val === '_portfolio') {
-                navigate('/accounty');
+                navigate('/eaisybooks');
               } else {
-                navigate(`/accounty/${val}/${currentDateRange}/overview`);
+                navigate(`/eaisybooks/${val}/${currentDateRange}/overview`);
               }
             }}
           >
@@ -316,17 +316,17 @@ export default function AccountySidebar({
             /* Client Context Collapsed Mode */
             <ul className="flex w-full min-w-0 flex-col gap-1 animate-in fade-in duration-300">
               {[
-                { path: '/accounty', name: 'Vissza a portfólióhoz', icon: ArrowLeft },
+                { path: '/eaisybooks', name: 'Vissza a portfólióhoz', icon: ArrowLeft },
                 { type: 'divider' as const },
-                { path: `/accounty/${selectedClientId}/${currentDateRange}/overview`, name: 'Áttekintés', icon: Briefcase, exact: true },
-                { path: `/accounty/${selectedClientId}/${currentDateRange}/profile`, name: 'Profil', icon: User },
-                { path: `/accounty/${selectedClientId}/${currentDateRange}/invoices`, name: 'Számlák', icon: FileText },
-                { path: `/accounty/${selectedClientId}/${currentDateRange}/missing-invoices`, name: 'Hiányzó számlák', icon: FileWarning },
-                { path: `/accounty/${selectedClientId}/${currentDateRange}/ev`, name: 'Egyéni Vállalkozás', icon: Coins },
-                { path: `/accounty/${selectedClientId}/${currentDateRange}/tao`, name: 'Társasági Adó', icon: Landmark },
-                { path: `/accounty/${selectedClientId}/${currentDateRange}/payroll`, name: 'Bérszámfejtés', icon: Calculator },
-                { path: `/accounty/${selectedClientId}/${currentDateRange}/payroll/filings`, name: 'NAV bevallások', icon: ClipboardList },
-                { path: `/accounty/${selectedClientId}/${currentDateRange}/settings#notifications`, name: 'Beállítások / Cégkapu', icon: Settings },
+                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/overview`, name: 'Áttekintés', icon: Briefcase, exact: true },
+                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/profile`, name: 'Profil', icon: User },
+                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/invoices`, name: 'Számlák', icon: FileText },
+                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/missing-invoices`, name: 'Hiányzó számlák', icon: FileWarning },
+                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/ev`, name: 'Egyéni Vállalkozás', icon: Coins },
+                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/tao`, name: 'Társasági Adó', icon: Landmark },
+                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, name: 'Bérszámfejtés', icon: Calculator },
+                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/filings`, name: 'NAV bevallások', icon: ClipboardList },
+                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, name: 'Beállítások / Cégkapu', icon: Settings },
               ].map((item, idx) => {
                 if ('type' in item) return <li key={`div-${idx}`} className="my-1 mx-2 h-px bg-border/50" />;
                 const pathWithoutHash = item.path.split('#')[0];
@@ -355,19 +355,19 @@ export default function AccountySidebar({
             /* Collapsed mode: icon-only with tooltip */
             <ul className="flex w-full min-w-0 flex-col gap-1">
               {[
-                { path: '/accounty', name: 'Portfólió', icon: Briefcase },
-                { path: '/accounty/missing-invoices', name: 'Hiányzó számlák', icon: FileWarning, badge: kpis?.missingItems },
-                { path: '/accounty/tax-calendar', name: 'Naptár & Határidők', icon: Calendar },
-                { path: '/accounty/reports', name: 'Riportok', icon: BarChart2 },
-                { path: '/accounty/approval-queue', name: 'Jóváhagyó rendszer', icon: MailCheck },
-                { path: '/accounty/alerts', name: 'Riasztások', icon: AlertTriangle },
-                { path: '/accounty/onboarding', name: 'Onboarding', icon: Rocket },
+                { path: '/eaisybooks', name: 'Portfólió', icon: Briefcase },
+                { path: '/eaisybooks/missing-invoices', name: 'Hiányzó számlák', icon: FileWarning, badge: kpis?.missingItems },
+                { path: '/eaisybooks/tax-calendar', name: 'Naptár & Határidők', icon: Calendar },
+                { path: '/eaisybooks/reports', name: 'Riportok', icon: BarChart2 },
+                { path: '/eaisybooks/approval-queue', name: 'Jóváhagyó rendszer', icon: MailCheck },
+                { path: '/eaisybooks/alerts', name: 'Riasztások', icon: AlertTriangle },
+                { path: '/eaisybooks/onboarding', name: 'Onboarding', icon: Rocket },
                 { type: 'divider' as const },
-                { path: '/accounty/settings', name: 'Beállítások', icon: Settings },
-                { path: '/accounty/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
-                { path: '/accounty/help', name: 'Segítség', icon: HelpCircle },
-                { path: '/accounty/ai-assistant', name: 'AI Asszisztens', icon: Sparkles },
-                { path: '/accounty/admin/audit', name: 'Audit', icon: ShieldCheck },
+                { path: '/eaisybooks/settings', name: 'Beállítások', icon: Settings },
+                { path: '/eaisybooks/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
+                { path: '/eaisybooks/help', name: 'Segítség', icon: HelpCircle },
+                { path: '/eaisybooks/ai-assistant', name: 'AI Asszisztens', icon: Sparkles },
+                { path: '/eaisybooks/admin/audit', name: 'Audit', icon: ShieldCheck },
               ].filter(item => {
                 if ('type' in item) return true;
                 const cleanPath = (item as any).path.split('?')[0];
@@ -407,7 +407,7 @@ export default function AccountySidebar({
           <div className="flex flex-col gap-1 px-1 animate-in fade-in duration-300">
             {/* Back to Portfolio */}
             <button
-              onClick={() => navigate('/accounty')}
+              onClick={() => navigate('/eaisybooks')}
               className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm transition-all duration-150 h-8 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/70 mb-2 border border-border/40"
             >
               <ArrowLeft className="h-4 w-4 shrink-0" />
@@ -441,15 +441,15 @@ export default function AccountySidebar({
 
             <ul className="flex flex-col gap-1">
               {[
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/overview`, label: 'Áttekintés', icon: Briefcase, exact: true, id: 'portfolio' },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/profile`, label: 'Profil', icon: User, id: 'profile' },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/invoices`, label: 'Számlák', icon: FileText, id: 'invoices' },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/missing-invoices`, label: 'Hiányzó számlák', icon: FileWarning, id: 'missing-invoices' },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/ev`, label: 'Egyéni Vállalkozás', icon: Coins, id: 'ev' },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/tao`, label: 'Társasági Adó', icon: Landmark, id: 'tao' },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/payroll`, label: 'Bérszámfejtés', icon: Calculator, id: 'payroll' },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/payroll/filings`, label: 'NAV bevallások', icon: ClipboardList, id: 'filings' },
-                { to: `/accounty/${selectedClientId}/${currentDateRange}/settings#notifications`, label: 'Beállítások / Cégkapu', icon: Settings, id: 'settings' },
+                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/overview`, label: 'Áttekintés', icon: Briefcase, exact: true, id: 'portfolio' },
+                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/profile`, label: 'Profil', icon: User, id: 'profile' },
+                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/invoices`, label: 'Számlák', icon: FileText, id: 'invoices' },
+                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/missing-invoices`, label: 'Hiányzó számlák', icon: FileWarning, id: 'missing-invoices' },
+                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/ev`, label: 'Egyéni Vállalkozás', icon: Coins, id: 'ev' },
+                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/tao`, label: 'Társasági Adó', icon: Landmark, id: 'tao' },
+                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, label: 'Bérszámfejtés', icon: Calculator, id: 'payroll' },
+                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/filings`, label: 'NAV bevallások', icon: ClipboardList, id: 'filings' },
+                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, label: 'Beállítások / Cégkapu', icon: Settings, id: 'settings' },
               ].map(item => {
                 const pathWithoutHash = item.to.split('#')[0];
                 const active = item.exact 
@@ -486,13 +486,13 @@ export default function AccountySidebar({
               const groupKey = 'portfolio';
               const isOpen = expandedSections.has(groupKey);
               const allPortfolioItems = [
-                { to: '/accounty', icon: Briefcase, label: 'Portfólió', exact: true, id: 'portfolio' },
-                { to: '/accounty/missing-invoices', icon: FileWarning, label: 'Hiányzó számlák', badge: kpis?.missingItems, id: 'missing-invoices' },
-                { to: '/accounty/tax-calendar', icon: Calendar, label: 'Naptár & Határidők', id: 'calendar' },
-                { to: '/accounty/reports', icon: BarChart2, label: 'Riportok', id: 'reports' },
-                { to: '/accounty/approval-queue', icon: MailCheck, label: 'Jóváhagyó rendszer', id: 'approval-queue' },
-                { to: '/accounty/alerts', icon: AlertTriangle, label: 'Riasztások', id: 'alerts' },
-                { to: '/accounty/onboarding', icon: Rocket, label: 'Onboarding', id: 'onboarding' },
+                { to: '/eaisybooks', icon: Briefcase, label: 'Portfólió', exact: true, id: 'portfolio' },
+                { to: '/eaisybooks/missing-invoices', icon: FileWarning, label: 'Hiányzó számlák', badge: kpis?.missingItems, id: 'missing-invoices' },
+                { to: '/eaisybooks/tax-calendar', icon: Calendar, label: 'Naptár & Határidők', id: 'calendar' },
+                { to: '/eaisybooks/reports', icon: BarChart2, label: 'Riportok', id: 'reports' },
+                { to: '/eaisybooks/approval-queue', icon: MailCheck, label: 'Jóváhagyó rendszer', id: 'approval-queue' },
+                { to: '/eaisybooks/alerts', icon: AlertTriangle, label: 'Riasztások', id: 'alerts' },
+                { to: '/eaisybooks/onboarding', icon: Rocket, label: 'Onboarding', id: 'onboarding' },
               ];
               const items = allPortfolioItems.filter(item => {
                 const cleanPath = item.to.split('?')[0];
@@ -611,9 +611,12 @@ export default function AccountySidebar({
                                         <item.icon className="h-3.5 w-3.5 shrink-0" />
                                         <span className="truncate flex-1">{item.label}</span>
                                         {(item as any).badge && (item as any).badge > 0 ? (
-                                          <span className="h-4.5 min-w-4.5 px-1 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                                            {(item as any).badge > 9 ? '9+' : (item as any).badge}
-                                          </span>
+                                           <span className={cn(
+                                             "h-4.5 min-w-4.5 px-1 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground",
+                                             item.to.includes('tickets') && "animate-pulse shadow-[0_0_8px_rgba(20,212,184,0.5)]"
+                                           )}>
+                                             {(item as any).badge > 9 ? '9+' : (item as any).badge}
+                                           </span>
                                         ) : null}
                                       </Link>
                                     </li>
@@ -656,7 +659,7 @@ export default function AccountySidebar({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" asChild className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
-                  <Link to="/accounty/profile/settings">
+                  <Link to="/eaisybooks/profile/settings">
                     <Settings className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -702,7 +705,7 @@ export default function AccountySidebar({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
-                    <Link to="/accounty/profile/settings">
+                    <Link to="/eaisybooks/profile/settings">
                       <Settings className="h-5 w-5" />
                     </Link>
                   </Button>
