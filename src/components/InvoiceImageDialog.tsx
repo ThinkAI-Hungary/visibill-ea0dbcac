@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface InvoiceForDialog {
   id: string;
@@ -46,14 +47,76 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
   const displayUrl = invoice.image_url || invoice.melleklet_url;
 
   if (!displayUrl) {
+    const formattedAmount = (invoice as any).amount ? new Intl.NumberFormat('hu-HU').format(Math.abs((invoice as any).amount)) : '—';
+    const currency = (invoice as any).currency || 'HUF';
+    const invoiceDate = (invoice as any).date || '—';
+
     return createPortal(
       <div
-        className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-150"
+        className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150"
         onClick={onClose}
       >
-        <div className="bg-card rounded-xl border border-border p-8 text-center space-y-2" onClick={e => e.stopPropagation()}>
-          <p className="text-muted-foreground text-sm">Nincs elérhető kép ehhez a számlához</p>
-          <button className="text-xs text-primary underline" onClick={onClose}>Bezárás</button>
+        <div 
+          className="bg-background text-foreground rounded-2xl border border-border shadow-2xl p-6 md:p-8 max-w-lg w-full space-y-6 relative" 
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Close button */}
+          <button 
+            onClick={onClose} 
+            className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+
+          {/* Header */}
+          <div className="flex justify-between items-start border-b pb-4">
+            <div>
+              <h3 className="text-lg font-bold text-primary">Elektronikus Bizonylat</h3>
+              <p className="text-xs text-muted-foreground">NAV Online Számlarendszerből importált adatok</p>
+            </div>
+            <span className="text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded-full border border-emerald-500/20">
+              Hitelesített adat
+            </span>
+          </div>
+
+          {/* Details */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Eladó (Szállító)</p>
+              <p className="font-semibold">{invoice.elado_nev}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Vevő (Megrendelő)</p>
+              <p className="font-semibold">{invoice.vevo_nev}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-sm border-t pt-4">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Bizonylatszám</p>
+              <p className="font-mono">{invoice.bizonylatsorszam || invoice.dokumentum_azonosito || 'N/A'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Teljesítés / Kelt</p>
+              <p className="font-semibold">{invoiceDate}</p>
+            </div>
+          </div>
+
+          {/* Amount Box */}
+          <div className="bg-muted/40 border rounded-xl p-4 flex justify-between items-center text-sm">
+            <span className="font-semibold text-muted-foreground">Nettó végösszeg:</span>
+            <span className="text-lg font-bold tabular-nums text-primary">{formattedAmount} {currency}</span>
+          </div>
+
+          {/* Info footer */}
+          <div className="text-[10px] text-muted-foreground bg-muted/20 p-3 rounded-lg border border-border/40 text-center leading-relaxed">
+            Ez a számla nem rendelkezik fizikai képfájllal, mivel közvetlenül a NAV Online Számla rendszeréből, XML adatformátumban került strukturált feldolgozásra.
+          </div>
+
+          {/* Action button */}
+          <div className="flex justify-end pt-2">
+            <Button size="sm" onClick={onClose} className="w-full">Bezárás</Button>
+          </div>
         </div>
       </div>,
       document.body

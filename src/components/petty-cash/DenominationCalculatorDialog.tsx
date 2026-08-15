@@ -154,15 +154,91 @@ export default function DenominationCalculatorDialog({
   const notes = useMemo(() => denoms.filter((d) => d.isNote), [denoms]);
   const coins = useMemo(() => denoms.filter((d) => !d.isNote), [denoms]);
 
+  const getDenomVisual = (value: number, isNote: boolean) => {
+    if (activeCurrency !== 'HUF') return null;
+    
+    // HUF Banknote colors
+    const banknoteColors: Record<number, { bg: string, text: string }> = {
+      20000: { bg: 'bg-[#b8860b]/20 border-[#b8860b]/60 dark:bg-[#b8860b]/30', text: 'text-[#b8860b] dark:text-[#ffd700]' },
+      10000: { bg: 'bg-purple-500/20 border-purple-500/60 dark:bg-purple-500/30', text: 'text-purple-600 dark:text-purple-300' },
+      5000: { bg: 'bg-orange-600/20 border-orange-600/60 dark:bg-orange-600/30', text: 'text-orange-700 dark:text-orange-300' },
+      2000: { bg: 'bg-emerald-600/20 border-emerald-600/60 dark:bg-emerald-600/30', text: 'text-emerald-700 dark:text-emerald-300' },
+      1000: { bg: 'bg-blue-500/20 border-blue-500/60 dark:bg-blue-500/30', text: 'text-blue-600 dark:text-blue-300' },
+      500: { bg: 'bg-pink-500/20 border-pink-500/60 dark:bg-pink-500/30', text: 'text-pink-600 dark:text-pink-300' }
+    };
+
+    if (isNote) {
+      const col = banknoteColors[value] || { bg: 'bg-muted border-muted-foreground/30', text: 'text-muted-foreground' };
+      return (
+        <div className={cn("w-10 h-6 rounded flex items-center justify-center border font-mono text-[8px] font-bold shadow-sm select-none", col.bg)}>
+          <span className={cn("opacity-95 leading-none", col.text)}>{value.toLocaleString('hu-HU')}</span>
+        </div>
+      );
+    } else {
+      if (value === 200) {
+        return (
+          <div className="w-6 h-6 rounded-full border border-gray-400/80 bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-inner relative select-none">
+            <div className="w-3.5 h-3.5 rounded-full bg-yellow-500/40 border border-yellow-600/50 flex items-center justify-center text-[6px] font-extrabold text-yellow-800 dark:text-yellow-300 font-mono leading-none">
+              200
+            </div>
+          </div>
+        );
+      }
+      if (value === 100) {
+        return (
+          <div className="w-6 h-6 rounded-full border border-yellow-500/50 bg-yellow-500/10 dark:bg-yellow-500/20 flex items-center justify-center shadow-inner relative select-none">
+            <div className="w-3.5 h-3.5 rounded-full bg-gray-200 dark:bg-gray-700 border border-gray-400/40 flex items-center justify-center text-[6px] font-extrabold text-gray-700 dark:text-gray-300 font-mono leading-none">
+              100
+            </div>
+          </div>
+        );
+      }
+      if (value === 50) {
+        return (
+          <div className="w-6 h-6 rounded-full border border-gray-400 bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-inner text-[8px] font-extrabold text-gray-600 dark:text-gray-300 font-mono leading-none select-none">
+            50
+          </div>
+        );
+      }
+      if (value === 20) {
+        return (
+          <div className="w-6 h-6 rounded-full border border-amber-600/70 bg-amber-500/15 flex items-center justify-center shadow-inner text-[8px] font-extrabold text-amber-800 dark:text-amber-400 font-mono leading-none select-none">
+            20
+          </div>
+        );
+      }
+      if (value === 10) {
+        return (
+          <div className="w-6 h-6 rounded-full border border-gray-400 bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-inner text-[8px] font-extrabold text-gray-600 dark:text-gray-300 font-mono leading-none select-none">
+            10
+          </div>
+        );
+      }
+      if (value === 5) {
+        return (
+          <div className="w-5.5 h-5.5 rounded-full border border-amber-600/70 bg-amber-500/15 flex items-center justify-center shadow-inner text-[8px] font-extrabold text-amber-800 dark:text-amber-400 font-mono leading-none select-none">
+            5
+          </div>
+        );
+      }
+    }
+    return null;
+  };
+
   const renderDenomRow = (d: Denomination) => {
     const count = counts[d.value] || '';
     const subtotal = d.value * (parseInt(count || '0', 10));
 
     return (
       <div key={d.value} className="flex items-center justify-between gap-3 py-1.5 border-b border-border/30 hover:bg-muted/10 px-1.5 rounded transition-colors">
-        <Label htmlFor={`denom-${d.value}`} className="w-16 text-xs font-semibold select-none text-foreground/80">
-          {d.label}
-        </Label>
+        <div className="flex items-center gap-2 w-28">
+          <div className="w-10 flex justify-center shrink-0">
+            {getDenomVisual(d.value, d.isNote)}
+          </div>
+          <Label htmlFor={`denom-${d.value}`} className="text-xs font-semibold select-none text-foreground/80 truncate">
+            {d.label}
+          </Label>
+        </div>
         <div className="flex items-center gap-1 shrink-0">
           <Button
             type="button"
@@ -189,7 +265,7 @@ export default function DenominationCalculatorDialog({
             +
           </Button>
         </div>
-        <div className="w-24 text-right text-xs font-mono font-medium tabular-nums text-foreground/70">
+        <div className="w-20 text-right text-xs font-mono font-medium tabular-nums text-foreground/70">
           {subtotal > 0 ? fmtBalance(subtotal, currency) : '—'}
         </div>
       </div>

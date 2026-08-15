@@ -25,7 +25,10 @@ import {
   Building,
   HelpCircle,
   History,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays
 } from 'lucide-react';
 import {
   Dialog,
@@ -45,6 +48,8 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import {
   Table,
   TableHeader,
@@ -87,6 +92,49 @@ export default function TransfersPage() {
   const [groupByPartner, setGroupByPartner] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingBankAccounts, setEditingBankAccounts] = useState<Record<string, string>>({});
+
+  // IBAN Validation Modulo 97 check
+  const validateIban = (iban: string): boolean => {
+    const clean = iban.replace(/[\s-]/g, '').toUpperCase();
+    if (!/^[A-Z]{2}\d{2}[A-Z0-9]{12,30}$/.test(clean)) return false;
+    const rearranged = clean.slice(4) + clean.slice(0, 4);
+    const digits = rearranged.split('').map(char => {
+      const code = char.charCodeAt(0);
+      if (code >= 65 && code <= 90) return String(code - 55);
+      return char;
+    }).join('');
+    let remainder = 0;
+    for (let i = 0; i < digits.length; i++) {
+      remainder = (remainder * 10 + parseInt(digits[i], 10)) % 97;
+    }
+    return remainder === 1;
+  };
+
+  // Hungarian CDV & Format Check
+  const getAccountError = (account: string): string | null => {
+    if (!account) return 'Hiányzó bankszámlaszám!';
+    const clean = account.replace(/[\s-]/g, '').toUpperCase();
+    if (!clean) return 'Hiányzó bankszámlaszám!';
+    if (/^[A-Z]/.test(clean)) {
+      if (!validateIban(clean)) return 'Hibás IBAN formátum vagy CDV kód!';
+      return null;
+    }
+    if (!/^\d+$/.test(clean)) return 'Csak számjegyek és kötőjelek!';
+    if (clean.length !== 16 && clean.length !== 24) {
+      return 'GIRO számlaszámnak 16 vagy 24 számjegyűnek kell lennie!';
+    }
+    const digits = clean.split('').map(Number);
+    const checkBlock = (block: number[]) => {
+      const weights = [9, 7, 3, 1, 9, 7, 3, 1];
+      let sum = 0;
+      for (let i = 0; i < 8; i++) sum += block[i] * weights[i];
+      return sum % 10 === 0;
+    };
+    if (!checkBlock(digits.slice(0, 8))) return 'Hibás 1. blokk CDV!';
+    if (!checkBlock(digits.slice(8, 16))) return 'Hibás 2. blokk CDV!';
+    if (clean.length === 24 && !checkBlock(digits.slice(16, 24))) return 'Hibás 3. blokk CDV!';
+    return null;
+  };
 
   // Export Wizard Dialog State
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -459,6 +507,35 @@ export default function TransfersPage() {
     },
     enabled: !!selectedCompany
   });
+
+  const [activeTab, setActiveTab] = useState<'list' | 'calendar'>('list');
+  const [calendarDate, setCalendarDate] = useState<Date>(new Date());
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<string | null>(null);
+
+  const calendarMonthData = useMemo(() => {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const invoicesByDate: Record<string, typeof invoices> = {};
+    invoices.forEach(inv => {
+      const dateStr = inv.due_date;
+      if (!invoicesByDate[dateStr]) invoicesByDate[dateStr] = [];
+      invoicesByDate[dateStr].push(inv);
+    });
+    return { year, month, startDayOfWeek, totalDays, invoicesByDate };
+  }, [calendarDate, invoices]);
+
+  const handlePrevMonth = () => {
+    setCalendarDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setSelectedCalendarDay(null);
+  };
+  
+  const handleNextMonth = () => {
+    setCalendarDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setSelectedCalendarDay(null);
+  };
 
   // Fetch previous transfers history
   const { data: transferHistory = [], refetch: refetchTransferHistory } = useQuery({
@@ -1187,186 +1264,352 @@ export default function TransfersPage() {
         </Card>
       </div>
 
-      {/* Main View */}
-      <Card className="border-border/60 shadow-lg">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            {/* Filters / Search */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative w-72">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Keresés partnerre vagy számlára..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="pl-9 bg-background/50 focus:bg-background h-9 rounded-lg"
-                />
+      {/* Main View Tabs */}
+      <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="w-full">
+        <div className="flex justify-between items-center mb-2">
+          <TabsList className="grid w-80 grid-cols-2">
+            <TabsTrigger value="list" className="gap-1.5 text-xs font-bold">
+              <FileText className="w-4 h-4" /> Utalandó tételek
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="gap-1.5 text-xs font-bold">
+              <Calendar className="w-4 h-4" /> Fizetési naptár
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="list" className="mt-0">
+          <Card className="border-border/60 shadow-lg">
+            <CardHeader className="pb-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                {/* Filters / Search */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative w-72">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Keresés partnerre vagy számlára..."
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      className="pl-9 bg-background/50 focus:bg-background h-9 rounded-lg"
+                    />
+                  </div>
+
+                  {/* Tabs */}
+                  <div className="flex items-center bg-muted/60 p-0.5 rounded-lg border text-xs">
+                    <button
+                      onClick={() => setFilterTab('all')}
+                      className={`px-3 py-1.5 rounded-md font-medium transition-all ${filterTab === 'all' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      Összes esedékes
+                    </button>
+                    <button
+                      onClick={() => setFilterTab('overdue')}
+                      className={`px-3 py-1.5 rounded-md font-medium transition-all ${filterTab === 'overdue' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      Csak lejárt
+                    </button>
+                    <button
+                      onClick={() => setFilterTab('due_today')}
+                      className={`px-3 py-1.5 rounded-md font-medium transition-all ${filterTab === 'due_today' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      Mai esedékes
+                    </button>
+                  </div>
+                </div>
+
+                {/* Toggle grouping */}
+                <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-lg border border-border/40">
+                  <Switch
+                    id="group-toggle"
+                    checked={groupByPartner}
+                    onCheckedChange={(checked) => {
+                      setGroupByPartner(checked);
+                      setSelectedIds([]);
+                    }}
+                  />
+                  <Label htmlFor="group-toggle" className="text-xs font-semibold text-muted-foreground cursor-pointer">
+                    Számlák összevonása partnerenként
+                  </Label>
+                </div>
               </div>
-
-              {/* Tabs */}
-              <div className="flex items-center bg-muted/60 p-0.5 rounded-lg border text-xs">
-                <button
-                  onClick={() => setFilterTab('all')}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-all ${filterTab === 'all' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Összes esedékes
-                </button>
-                <button
-                  onClick={() => setFilterTab('overdue')}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-all ${filterTab === 'overdue' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Csak lejárt
-                </button>
-                <button
-                  onClick={() => setFilterTab('due_today')}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-all ${filterTab === 'due_today' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Mai esedékes
-                </button>
-              </div>
-            </div>
-
-            {/* Toggle grouping */}
-            <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-lg border border-border/40">
-              <Switch
-                id="group-toggle"
-                checked={groupByPartner}
-                onCheckedChange={(checked) => {
-                  setGroupByPartner(checked);
-                  setSelectedIds([]);
-                }}
-              />
-              <Label htmlFor="group-toggle" className="text-xs font-semibold text-muted-foreground cursor-pointer">
-                Számlák összevonása partnerenként
-              </Label>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="py-12 text-center text-sm text-muted-foreground animate-pulse">Számlák betöltése...</div>
-          ) : displayItems.length === 0 ? (
-            <div className="py-16 text-center border-t border-border/40">
-              <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
-              <p className="text-sm font-semibold">Minden számla rendezve!</p>
-              <p className="text-xs text-muted-foreground mt-1">Nincs lejárt vagy ma esedékes kifizetetlen számlád.</p>
-            </div>
-          ) : (
-            <>
-              <div className="rounded-lg border border-border/50 overflow-x-auto">
-                <Table className="compact-table min-w-max">
-                  <TableHeader>
-                    <TableRow className="bg-muted/40 text-muted-foreground font-medium text-xs select-none hover:bg-muted/40">
-                      <TableHead className="w-12 text-center">
-                        <Checkbox
-                          checked={displayItems.length > 0 && selectedIds.length === displayItems.length}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead>Partner</TableHead>
-                      <TableHead className="min-w-[200px] whitespace-nowrap">Számlaszám(ok)</TableHead>
-                      <TableHead className="w-32 whitespace-nowrap">Határidő</TableHead>
-                      <TableHead className="w-40 text-right whitespace-nowrap">Összeg</TableHead>
-                      <TableHead className="w-72">Partner Bankszámlaszáma</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedActiveItems.map(item => {
-                      const isSelected = selectedIds.includes(item.key);
-                      const todayStr = new Date().toISOString().split('T')[0];
-                      const isOverdue = item.due_date < todayStr;
-                      const hasBank = item.partner_bank_account.trim().length > 0;
-
-                      return (
-                        <TableRow
-                          key={item.key}
-                          className={isSelected ? 'bg-primary/10 hover:bg-primary/15' : ''}
-                        >
-                          <TableCell className="text-center">
+            </CardHeader>
+            <CardContent className="p-0">
+              {isLoading ? (
+                <div className="py-12 text-center text-sm text-muted-foreground animate-pulse">Számlák betöltése...</div>
+              ) : displayItems.length === 0 ? (
+                <div className="py-16 text-center border-t border-border/40">
+                  <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
+                  <p className="text-sm font-semibold">Minden számla rendezve!</p>
+                  <p className="text-xs text-muted-foreground mt-1">Nincs lejárt vagy ma esedékes kifizetetlen számlád.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-lg border border-border/50 overflow-x-auto">
+                    <Table className="compact-table min-w-max">
+                      <TableHeader>
+                        <TableRow className="bg-muted/40 text-muted-foreground font-medium text-xs select-none hover:bg-muted/40">
+                          <TableHead className="w-12 text-center">
                             <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => handleSelectRow(item.key)}
+                              checked={displayItems.length > 0 && selectedIds.length === displayItems.length}
+                              onCheckedChange={handleSelectAll}
                             />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground/80" />
-                              <CopyableCell
-                                value={item.partner_name}
-                                displayValue={item.partner_name.length > 13 ? item.partner_name.slice(0, 13) + '…' : item.partner_name}
-                                truncate
-                                maxWidth="100%"
-                                className="font-semibold text-foreground text-xs"
-                                ariaLabel={`${item.partner_name} másolása`}
-                              />
-                            </div>
-                            <div className="text-[10px] text-muted-foreground font-mono mt-1 max-w-[200px] truncate" title={`Szamlak: ${item.invoice_numbers.join(', ')}`}>
-                              Közlemény: {`Szamlak: ${item.invoice_numbers.join(', ')}`.slice(0, 140)}
-                            </div>
-                          </TableCell>
-                          <TableCell className="min-w-[200px] whitespace-nowrap">
-                            <div className="flex flex-wrap gap-1 max-w-xs">
-                              {item.invoice_numbers.map((num, i) => (
-                                <span key={i} className="inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded text-xs text-muted-foreground font-mono">
-                                  <FileText className="h-3 w-3" />
-                                  {num || 'Sorszám nélkül'}
-                                </span>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold ${isOverdue ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700'}`}>
-                              <Calendar className="h-3.5 w-3.5" />
-                              {new Date(item.due_date).toLocaleDateString('hu-HU')}
-                            </span>
-                          </TableCell>
-                          <TableCell className="font-mono tabular-nums text-right whitespace-nowrap font-bold text-foreground">
-                            {item.amount.toLocaleString('hu-HU')} {item.currency}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1 w-full max-w-[240px]">
-                              <div className="relative flex items-center">
-                                <Input
-                                  value={editingBankAccounts[item.key] !== undefined ? editingBankAccounts[item.key] : item.partner_bank_account}
-                                  onChange={e => handleBankChange(item.key, e.target.value)}
-                                  onBlur={() => handleBankBlur(item.key, item.original_invoices[0])}
-                                  placeholder="Pl: 11773000-00000000"
-                                  className={`h-8 font-mono text-xs pl-2.5 pr-8 rounded w-full ${!hasBank && !editingBankAccounts[item.key] ? 'border-destructive/40 bg-destructive/5 focus-visible:ring-destructive' : 'bg-background'}`}
-                                />
-                                {!hasBank && !editingBankAccounts[item.key] && (
-                                  <AlertTriangle className="absolute right-2.5 h-3.5 w-3.5 text-destructive pointer-events-none animate-pulse" />
-                                )}
-                              </div>
-                              {!hasBank && !editingBankAccounts[item.key] && (
-                                <span className="text-[10px] text-destructive/80 font-bold flex items-center gap-1 px-1">
-                                  Hiányzó bankszámlaszám!
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
+                          </TableHead>
+                          <TableHead>Partner</TableHead>
+                          <TableHead className="min-w-[200px] whitespace-nowrap">Számlaszám(ok)</TableHead>
+                          <TableHead className="w-32 whitespace-nowrap">Határidő</TableHead>
+                          <TableHead className="w-40 text-right whitespace-nowrap">Összeg</TableHead>
+                          <TableHead className="w-72">Partner Bankszámlaszáma</TableHead>
                         </TableRow>
-                      );
-                    })}
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedActiveItems.map(item => {
+                          const isSelected = selectedIds.includes(item.key);
+                          const todayStr = new Date().toISOString().split('T')[0];
+                          const isOverdue = item.due_date < todayStr;
 
-                  </TableBody>
-                </Table>
+                          return (
+                            <TableRow
+                              key={item.key}
+                              className={isSelected ? 'bg-primary/10 hover:bg-primary/15' : ''}
+                            >
+                              <TableCell className="text-center">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => handleSelectRow(item.key)}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground/80" />
+                                  <CopyableCell
+                                    value={item.partner_name}
+                                    displayValue={item.partner_name.length > 13 ? item.partner_name.slice(0, 13) + '…' : item.partner_name}
+                                    truncate
+                                    maxWidth="100%"
+                                    className="font-semibold text-foreground text-xs"
+                                    ariaLabel={`${item.partner_name} másolása`}
+                                  />
+                                </div>
+                                <div className="text-[10px] text-muted-foreground font-mono mt-1 max-w-[200px] truncate" title={`Szamlak: ${item.invoice_numbers.join(', ')}`}>
+                                  Közlemény: {`Szamlak: ${item.invoice_numbers.join(', ')}`.slice(0, 140)}
+                                </div>
+                              </TableCell>
+                              <TableCell className="min-w-[200px] whitespace-nowrap">
+                                <div className="flex flex-wrap gap-1 max-w-xs">
+                                  {item.invoice_numbers.map((num, i) => (
+                                    <span key={i} className="inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded text-xs text-muted-foreground font-mono">
+                                      <FileText className="h-3 w-3" />
+                                      {num || 'Sorszám nélkül'}
+                                    </span>
+                                  ))}
+                                </div>
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap">
+                                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold ${isOverdue ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700'}`}>
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  {new Date(item.due_date).toLocaleDateString('hu-HU')}
+                                </span>
+                              </TableCell>
+                              <TableCell className="font-mono tabular-nums text-right whitespace-nowrap font-bold text-foreground">
+                                {item.amount.toLocaleString('hu-HU')} {item.currency}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-1 w-full max-w-[240px]">
+                                  <div className="relative flex items-center">
+                                    <Input
+                                      value={editingBankAccounts[item.key] !== undefined ? editingBankAccounts[item.key] : item.partner_bank_account}
+                                      onChange={e => handleBankChange(item.key, e.target.value)}
+                                      onBlur={() => handleBankBlur(item.key, item.original_invoices[0])}
+                                      placeholder="Pl: 11773000-00000000"
+                                      className={`h-8 font-mono text-xs pl-2.5 pr-8 rounded w-full ${getAccountError(editingBankAccounts[item.key] !== undefined ? editingBankAccounts[item.key] : item.partner_bank_account) ? 'border-destructive/40 bg-destructive/5 focus-visible:ring-destructive' : 'bg-background'}`}
+                                    />
+                                    {getAccountError(editingBankAccounts[item.key] !== undefined ? editingBankAccounts[item.key] : item.partner_bank_account) && (
+                                      <AlertTriangle className="absolute right-2.5 h-3.5 w-3.5 text-destructive pointer-events-none animate-pulse" />
+                                    )}
+                                  </div>
+                                  {(() => {
+                                    const err = getAccountError(editingBankAccounts[item.key] !== undefined ? editingBankAccounts[item.key] : item.partner_bank_account);
+                                    if (!err) return null;
+                                    return (
+                                      <span className="text-[10px] text-destructive/80 font-bold flex items-center gap-1 px-1">
+                                        {err}
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="p-4 border-t border-border/40">
+                    <UnifiedPagination
+                      currentPage={activePage}
+                      totalPages={Math.ceil(displayItems.length / activePageSize)}
+                      totalItems={displayItems.length}
+                      pageSize={activePageSize}
+                      onPageChange={setActivePage}
+                      onPageSizeChange={(size) => { setActivePageSize(size); setActivePage(1); }}
+                    />
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="calendar" className="mt-0">
+          <Card className="border-border/60 shadow-lg">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <CalendarDays className="h-5 w-5 text-primary" />
+                    Fizetési határidők naptári bontásban
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Válaszd ki a napot a naptárban az arra a napra esedékes bejövő számlák megtekintéséhez.
+                  </CardDescription>
+                </div>
+                {/* Month navigation */}
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={handlePrevMonth}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm font-bold min-w-[120px] text-center">
+                    {calendarDate.getFullYear()}. {[
+                      'Január', 'Február', 'Március', 'Április', 'Május', 'Június',
+                      'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'
+                    ][calendarDate.getMonth()]}
+                  </span>
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleNextMonth}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="p-4 border-t border-border/40">
-                <UnifiedPagination
-                  currentPage={activePage}
-                  totalPages={Math.ceil(displayItems.length / activePageSize)}
-                  totalItems={displayItems.length}
-                  pageSize={activePageSize}
-                  onPageChange={setActivePage}
-                  onPageSizeChange={(size) => { setActivePageSize(size); setActivePage(1); }}
-                />
+            </CardHeader>
+            <CardContent className="p-4 pt-0 space-y-4">
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1 text-center font-medium text-xs mb-2">
+                {['H', 'K', 'Sz', 'Cs', 'P', 'Sz', 'V'].map((d, idx) => (
+                  <div key={idx} className="py-2 text-muted-foreground/80 font-bold border-b">
+                    {d}
+                  </div>
+                ))}
               </div>
-            </>
+              <div className="grid grid-cols-7 gap-1">
+                {/* Offset empty cells */}
+                {Array.from({ length: calendarMonthData.startDayOfWeek }).map((_, i) => (
+                  <div key={`empty-${i}`} className="min-h-[50px] border border-border/10 bg-muted/5 opacity-30 rounded-lg" />
+                ))}
 
+                {/* Days of month */}
+                {Array.from({ length: calendarMonthData.totalDays }).map((_, i) => {
+                  const day = i + 1;
+                  const dateStr = `${calendarMonthData.year}-${String(calendarMonthData.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const dayInvoices = calendarMonthData.invoicesByDate[dateStr] || [];
+                  const daySum = dayInvoices.reduce((s, inv) => s + inv.amount, 0);
+                  const isSelected = selectedCalendarDay === dateStr;
+                  const isToday = new Date().toISOString().split('T')[0] === dateStr;
 
-          )}
-        </CardContent>
-      </Card>
+                  return (
+                    <div
+                      key={day}
+                      onClick={() => dayInvoices.length > 0 && setSelectedCalendarDay(dateStr)}
+                      className={cn(
+                        "min-h-[60px] p-1 border rounded-lg flex flex-col justify-between transition-all select-none",
+                        dayInvoices.length > 0 ? "cursor-pointer hover:bg-primary/5 hover:border-primary/30" : "opacity-40",
+                        isSelected && "border-primary bg-primary/5 shadow-inner ring-1 ring-primary",
+                        isToday && !isSelected && "border-amber-500 bg-amber-500/5"
+                      )}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className={cn(
+                          "text-xs font-bold",
+                          isToday && "text-amber-600 dark:text-amber-400 font-extrabold"
+                        )}>
+                          {day}
+                        </span>
+                        {dayInvoices.length > 0 && (
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            dateStr < new Date().toISOString().split('T')[0] ? "bg-destructive animate-pulse" : "bg-primary"
+                          )} />
+                        )}
+                      </div>
+                      {dayInvoices.length > 0 && (
+                        <div className="text-[9px] text-right font-mono font-bold leading-tight truncate">
+                          <span className="block text-primary">{dayInvoices.length} db</span>
+                          <span className="block text-muted-foreground">{Math.round(daySum / 1000).toLocaleString('hu-HU')} E Ft</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Day Invoices List Panel */}
+              {selectedCalendarDay ? (
+                <div className="border border-border/40 rounded-xl p-4 bg-muted/5 space-y-3 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-foreground">
+                      Esedékes számlák ezen a napon: <span className="font-mono text-primary">{selectedCalendarDay.replace(/-/g, '. ') + '.'}</span>
+                    </h4>
+                    <Button 
+                      size="sm" 
+                      onClick={() => {
+                        const dayInvoices = calendarMonthData.invoicesByDate[selectedCalendarDay] || [];
+                        const keys = dayInvoices.map(inv => inv.id);
+                        setSelectedIds(prev => Array.from(new Set([...prev, ...keys])));
+                        setActiveTab('list');
+                        toast({ title: 'Tételek kijelölve!', description: `${keys.length} tétel hozzáadva az utalandókhoz.` });
+                      }}
+                      className="h-8 text-xs font-semibold"
+                    >
+                      Összes kijelölése utalásra
+                    </Button>
+                  </div>
+
+                  <div className="rounded-lg border bg-background overflow-hidden">
+                    <Table className="compact-table">
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead>Partner</TableHead>
+                          <TableHead>Számlaszám</TableHead>
+                          <TableHead className="text-right">Összeg</TableHead>
+                          <TableHead>Bankszámlaszám</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(calendarMonthData.invoicesByDate[selectedCalendarDay] || []).map(inv => {
+                          const hasErr = getAccountError(editingBankAccounts[inv.id] !== undefined ? editingBankAccounts[inv.id] : inv.partner_bank_account);
+                          return (
+                            <TableRow key={inv.id}>
+                              <TableCell className="font-semibold text-xs">{inv.partner_name}</TableCell>
+                              <TableCell className="font-mono text-xs text-muted-foreground">{inv.invoice_number}</TableCell>
+                              <TableCell className="font-mono text-xs text-right font-bold">{inv.amount.toLocaleString('hu-HU')} {inv.currency}</TableCell>
+                              <TableCell className="font-mono text-xs">
+                                <span className={hasErr ? "text-destructive font-bold" : "text-muted-foreground"}>
+                                  {inv.partner_bank_account || 'Nincs rögzítve!'}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-xs text-muted-foreground italic border border-dashed rounded-xl">
+                  Kattints egy napra a naptárban a részletek megtekintéséhez.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Export History Card */}
       <Card className="border-border/60 shadow-lg mt-8">

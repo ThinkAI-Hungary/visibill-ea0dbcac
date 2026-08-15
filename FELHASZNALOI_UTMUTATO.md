@@ -376,6 +376,19 @@ Az egyéni vállalkozások (EV) moduljában elérhető a komplex **Tárgyi eszk�
 - **AI-alapú leírási javaslatok**: Eszköz rögzítésekor (és importálásakor) az **"AI javaslat"** gomb segítségével a mesterséges intelligencia (Deepseek / OpenAI) elemzi az eszköz megnevezését és bekerülési értékét, majd javaslatot tesz az optimális ÉCS módszerre, a leírási kulcsra és részletes magyar nyelvű jogszabályi indoklást jelenít meg.
 - **Teljesítménynapló**: A teljesítményarányos eszközöknél (pl. gépjárművek) időszakonként rögzíthető az aktuális teljesítmény (pl. lefutott kilométer), amely alapján a rendszer automatikusan kalkulálja az időszaki értékcsökkenést.
 
+### Éves Beszámoló és Kiegészítő Melléklet
+
+A könyvelési modulban elérhető az **Éves Beszámoló** készítésének és szerkesztésének folyamata:
+- **Zökkenőmentes szövegszerkesztés**: A kiegészítő melléklet (4. lépés) egyes szekcióinak szerkesztése közben az automatikus mentések nem zavarják meg a munkát: a szövegszerkesztő nem veszíti el a fókuszt, és a kurzor nem ugrik el a gépelt szöveg közepéről.
+- **Interaktív előnézet gördülési pozíció megőrzése**: A jobb oldali élő beszámoló-előnézet gépelés közbeni automatikus frissülésekor az iframe megőrzi és automatikusan visszaállítja a korábbi függőleges gördülési pozíciót, így folyamatosan figyelemmel kísérhető az éppen szerkesztett szakasz.
+- **eaisyBill Arculat**: A generált éves beszámoló fedőlapján a frissített `eaisyBill` logó jelenik meg a felesleges harmadik féltől származó láblécek nélkül.
+
+### M-lap Partner Adószám Validáció
+
+Az ÁFA-bevallások M-lapjainak ellenőrzése és összeállítása során:
+- **8 jegyű törzsszám támogatása**: A rendszer a 11 jegyű teljes adószám mellett natívan elfogadja és validálja a partnerek 8 jegyű adószámát (törzsszámát) is, amelyek az M-lapon szerepelnek.
+- **CDV ellenőrzés**: A 8 jegyű törzsszámokra is lefut a NAV-kompatibilis súlyozott CDV (ellenőrző összeg) validációs algoritmus, kiszűrve a hibás/nem létező partner adószámokat a bevallás benyújtása előtt.
+
 ---
 
 ## Email integráció
@@ -736,5 +749,5 @@ Magyar és angol nyelven is.
 
 ---
 
-*Utolsó frissítés: 2026. augusztus (v1.7.2)*  
-*Verzió: 1.7.2 (Eaisybooks UI/UX frissítések és EV adótervezési funkciók)*
+*Utolsó frissítés: 2026. augusztus (v1.7.3)*  
+*Verzió: 1.7.3 (Éves beszámoló és M-lap adószám validációs fejlesztések)*

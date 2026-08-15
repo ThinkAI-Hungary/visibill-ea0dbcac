@@ -89,12 +89,24 @@ Deno.serve(async (req) => {
       throw new Error('Messages array is required');
     }
 
+    const deepseekKey = Deno.env.get('DEEPSEEK_API_KEY');
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiKey) {
+
+    if (!deepseekKey && !openaiKey) {
       return new Response(
-        JSON.stringify({ error: 'OpenAI API key not configured' }),
+        JSON.stringify({ error: 'No API key configured (neither DEEPSEEK_API_KEY nor OPENAI_API_KEY)' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    let apiUrl = "https://api.openai.com/v1/chat/completions";
+    let apiModel = "gpt-4o-mini";
+    let apiKey = openaiKey || "";
+
+    if (deepseekKey) {
+      apiUrl = "https://api.deepseek.com/chat/completions";
+      apiModel = "deepseek-chat";
+      apiKey = deepseekKey;
     }
 
     // Build context-aware system prompt
@@ -106,15 +118,15 @@ Deno.serve(async (req) => {
       systemPrompt += `\nAz aktuális oldal: ${context.page}`;
     }
 
-    // Call OpenAI with streaming
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call AI API with streaming
+    const openaiResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openaiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: apiModel,
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages.map((m: any) => ({ role: m.role, content: m.content })),
@@ -188,14 +200,17 @@ Deno.serve(async (req) => {
 
           // Log cost asynchronously (don't block response)
           try {
+            const isDs = apiModel === 'deepseek-chat';
             supabaseClient.from('llm_koltsegek').insert({
               file_name: 'ai-chat',
               pipeline: 'accounty_ai_chat',
-              model_name: 'gpt-4o-mini',
+              model_name: apiModel,
               input_tokens: inputTokens,
               output_tokens: outputTokens,
               llm_calls: 1,
-              estimated_cost_usd: (inputTokens / 1_000_000) * 0.15 + (outputTokens / 1_000_000) * 0.60,
+              estimated_cost_usd: isDs
+                ? (inputTokens / 1_000_000) * 0.14 + (outputTokens / 1_000_000) * 0.28
+                : (inputTokens / 1_000_000) * 0.15 + (outputTokens / 1_000_000) * 0.60,
               user_id: user.id,
             }).then(() => {}).catch(() => {});
           } catch {}

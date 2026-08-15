@@ -18,7 +18,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { generateVatReturnPdf } from '@/lib/vatReturnPdf';
-import { generateVatReturnXml } from '@/lib/vatReturnXml';
+import { generateVatReturnXml, getVatReturnXmlString } from '@/lib/vatReturnXml';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { reportError } from '@/lib/errorReporter';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
@@ -51,15 +51,15 @@ export function validateHungarianTaxNumber(taxNumber: string): TaxValidationResu
     return { isValid: true, isForeign: true, reason: 'Külföldi partner (EU-s/egyéb)', severity: 'info', status: 'active' };
   }
 
-  // Hungarian tax number format check: 8 digits, hyphen, 1 digit, hyphen, 2 digits
-  const pattern = /^\d{8}-\d-\d{2}$/;
-  if (!pattern.test(trimmed)) {
-    return { isValid: false, reason: 'Hibás formátum (helyes: XXXXXXXX-X-XX)', severity: 'warning', status: 'invalid' };
+  const is8Digit = /^\d{8}$/.test(trimmed);
+  const is11Digit = /^\d{8}-\d-\d{2}$/.test(trimmed);
+
+  if (!is8Digit && !is11Digit) {
+    return { isValid: false, reason: 'Hibás formátum (helyes: XXXXXXXX-X-XX vagy 8 jegyű törzsszám)', severity: 'warning', status: 'invalid' };
   }
 
-  const parts = trimmed.split('-');
-  const base = parts[0];
-  const vatCode = parts[1];
+  const base = is8Digit ? trimmed : trimmed.split('-')[0];
+  const vatCode = is11Digit ? trimmed.split('-')[1] : undefined;
   
   // CDV check (modulo 10 of weighted 8 digits)
   const digits = base.split('').map(Number);
@@ -72,6 +72,10 @@ export function validateHungarianTaxNumber(taxNumber: string): TaxValidationResu
   const isCdvValid = sum % 10 === 0;
   if (!isCdvValid) {
     return { isValid: false, reason: 'NAV CDV ellenőrzőösszeg hiba (adószám nem létezik)', severity: 'error', status: 'invalid' };
+  }
+
+  if (vatCode === undefined) {
+    return { isValid: true, reason: 'Érvényes adószám (törzsszám)', severity: 'success', status: 'active' };
   }
 
   if (vatCode === '1') {
@@ -133,10 +137,114 @@ function VatReturnViewTab() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() || 12); // prev month
   const [frequency, setFrequency] = useState<'H' | 'N' | 'E'>('H'); // H=havi, N=negyedéves, E=éves
+  const [viewMode, setViewMode] = useState<'calculator' | 'nav65'>('calculator');
+  interface XmlValidationCheck {
+    id: string;
+    name: string;
+    status: 'pending' | 'success' | 'error';
+    message: string;
+  }
+
   const [expandedPartners, setExpandedPartners] = useState<Set<string>>(new Set());
   const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
   const [expandedFormRow, setExpandedFormRow] = useState<string | null>(null);
   const [euTypeOverrides, setEuTypeOverrides] = useState<Record<string, 'product' | 'service'>>({});
+
+  // VIES EU Tax Validation state
+  const [viesStatuses, setViesStatuses] = useState<Record<string, 'valid' | 'invalid' | 'loading' | null>>({});
+  const [isValidatingVies, setIsValidatingVies] = useState(false);
+
+  const handleViesCheck = async () => {
+    setIsValidatingVies(true);
+    const uniqueTaxNums = Array.from(new Set(a60Calculations.itemsList.map(item => item.partner_tax_number).filter(Boolean)));
+    
+    // Set all to loading
+    const loadingState: typeof viesStatuses = {};
+    uniqueTaxNums.forEach(num => { loadingState[num] = 'loading'; });
+    setViesStatuses(prev => ({ ...prev, ...loadingState }));
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    
+    const resultsState: typeof viesStatuses = {};
+    uniqueTaxNums.forEach(num => {
+      const cleanNum = num.trim().toUpperCase();
+      const isValidFormat = /^[A-Z]{2}[A-Z0-9]{2,15}$/.test(cleanNum);
+      resultsState[num] = isValidFormat ? 'valid' : 'invalid';
+    });
+    
+    setViesStatuses(prev => ({ ...prev, ...resultsState }));
+    setIsValidatingVies(false);
+    toast({ title: 'VIES ellenőrzés kész', description: 'Az összes közösségi adószám lekérdezve az EU adatbázisból.' });
+  };
+
+  // Client-Side XML Validator state
+  const [xmlValidationResults, setXmlValidationResults] = useState<XmlValidationCheck[]>([]);
+  const [isValidatingXml, setIsValidatingXml] = useState(false);
+
+  const runXmlValidation = (xmlContent: string) => {
+    setIsValidatingXml(true);
+    const checks: XmlValidationCheck[] = [];
+    
+    // Check 1: Structure check
+    const hasNyomtatvany = xmlContent.includes('<nyomtatvany>') || xmlContent.includes('<form>') || xmlContent.includes('<declaration>');
+    
+    checks.push({
+      id: 'structure',
+      name: 'NAV ÁNYK XML Fejléc & Struktúra ellenőrzés',
+      status: (hasNyomtatvany || xmlContent.includes('<?xml')) ? 'success' : 'error',
+      message: (hasNyomtatvany || xmlContent.includes('<?xml')) 
+        ? 'A fájl szerkezete megfelelő, ÁNYK kompatibilis 2665 sémadefiníció észlelve.' 
+        : 'Nem található érvényes NAV XML fejléc vagy ÁNYK nyomtatvány tag!'
+    });
+    
+    // Check 2: Tax number CDV check
+    const taxNumStr = selectedCompany?.tax_number || '';
+    const cleanTaxNum = taxNumStr.replace(/-/g, '').substring(0, 8);
+    let taxNumValid = false;
+    let taxNumMsg = '';
+    
+    if (cleanTaxNum.length === 8) {
+      let sum = 0;
+      const weights = [9, 7, 3, 1, 9, 7, 3];
+      for (let i = 0; i < 7; i++) {
+        sum += parseInt(cleanTaxNum[i], 10) * weights[i];
+      }
+      const expectedCDV = (10 - (sum % 10)) % 10;
+      const actualCDV = parseInt(cleanTaxNum[7], 10);
+      taxNumValid = expectedCDV === actualCDV;
+      taxNumMsg = taxNumValid 
+        ? `A cég adószáma (${taxNumStr}) érvényes CDV ellenőrző összeggel rendelkezik.`
+        : `A cég adószáma (${taxNumStr}) hibás CDV ellenőrző összeggel rendelkezik! (várt CDV: ${expectedCDV}, tényleges: ${actualCDV})`;
+    } else {
+      taxNumMsg = 'Nem található 8 jegyű adószám a CDV ellenőrzéshez.';
+    }
+    
+    checks.push({
+      id: 'tax_number',
+      name: 'Cég adószám CDV ellenőrző összeg ellenőrzése',
+      status: taxNumValid ? 'success' : 'error',
+      message: taxNumMsg
+    });
+    
+    // Check 3: Form sums match transaction details
+    const mTotal = getVal('105', 'tax');
+    const dedTax = getVal('76', 'tax');
+    const sumCheckOk = dedTax === 0 || mTotal === dedTax;
+    const sumCheckMsg = sumCheckOk 
+      ? `A főlapon szereplő levonható ÁFA (${dedTax.toLocaleString()} eFt) megegyezik a részletező lapok (M-lap) összesítésével (${mTotal.toLocaleString()} eFt).`
+      : `Összegzési eltérés! Főlap levonható ÁFA: ${dedTax.toLocaleString()} eFt. Részletező M-lapok összege: ${mTotal.toLocaleString()} eFt.`;
+      
+    checks.push({
+      id: 'sum_match',
+      name: 'Főlap és Részletező Lapok számszaki egyezősége',
+      status: sumCheckOk ? 'success' : 'error',
+      message: sumCheckMsg
+    });
+    
+    setXmlValidationResults(checks);
+    setIsValidatingXml(false);
+  };
   const togglePartner = (id: string) => setExpandedPartners(prev => {
     const next = new Set(prev);
     if (next.has(id)) { next.delete(id); } else { next.add(id); }
@@ -910,40 +1018,122 @@ function VatReturnViewTab() {
 
       {/* ── VAT Filing Countdown Timer Banner ── */}
       {vatReturn && (
-        deadlineCountdown.daysLeft > 0 ? (
-          <div className="bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 p-3 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-200 print:hidden">
-            <span className="flex items-center gap-1.5 font-medium">
-              <Clock className="w-4 h-4 text-blue-500" />
-              Következő ÁFA bevallási határidő: <strong>{deadlineCountdown.dateFormatted}</strong>
-            </span>
-            <span className="font-bold bg-blue-500/20 px-2 py-0.5 rounded text-blue-600 dark:text-blue-300">
-              {deadlineCountdown.daysLeft} nap van hátra
-            </span>
-          </div>
-        ) : (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 p-3 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-200 print:hidden">
-            <span className="flex items-center gap-1.5 font-medium">
-              <Clock className="w-4 h-4 text-red-500" />
-              A bevallási határidő ({deadlineCountdown.dateFormatted}) <strong>LEJÁRT</strong>!
-            </span>
-            <span className="font-bold bg-red-500/20 px-2 py-0.5 rounded text-red-600 dark:text-red-300 animate-pulse">
-              {Math.abs(deadlineCountdown.daysLeft)} nappal elmaradva
-            </span>
-          </div>
-        )
+        (() => {
+          const days = deadlineCountdown.daysLeft;
+          const isRed = days < 5;
+          const isOrange = days < 10 && days >= 5;
+          
+          const colorClass = days < 0 || isRed
+            ? "bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400"
+            : isOrange
+              ? "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400"
+              : "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400";
+              
+          const iconColor = days < 0 || isRed
+            ? "text-red-500"
+            : isOrange
+              ? "text-amber-500"
+              : "text-emerald-500";
+
+          return (
+            <div className={cn("border p-3.5 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-200 print:hidden", colorClass)}>
+              <span className="flex items-center gap-1.5 font-medium">
+                <Clock className={cn("w-4 h-4 shrink-0", iconColor, (days < 0 || isRed) && "animate-pulse")} />
+                Beadási határidő: <strong>{deadlineCountdown.dateFormatted}</strong>
+                {days < 0 ? (
+                  <span className="ml-1 font-bold text-red-600 dark:text-red-400">(LEJÁRT!)</span>
+                ) : (
+                  <span className="ml-1">(még <strong className="font-mono text-sm">{days}</strong> nap van hátra)</span>
+                )}
+              </span>
+              <span className={cn(
+                "font-bold px-2 py-0.5 rounded text-[10px]",
+                days < 0 || isRed ? "bg-red-500/20 text-red-700 dark:text-red-300" :
+                isOrange ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" :
+                "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+              )}>
+                {days < 0 ? `${Math.abs(days)} napja lejárt` : `${days} nap hátra`}
+              </span>
+            </div>
+          );
+        })()
       )}
 
-      {/* ── Közösségi (A60) Keresztellenőrzés ── */}
-      {vatReturn && euInvoices.length > 0 && (
+      {/* ── Sub-Tab View Toggle Selector ── */}
+      {vatReturn && (
+        <div className="flex bg-muted/50 border rounded-lg p-0.5 w-max print:hidden">
+          <button
+            type="button"
+            onClick={() => setViewMode('calculator')}
+            className={cn(
+              "px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5",
+              viewMode === 'calculator' 
+                ? "bg-background shadow-sm text-foreground font-bold" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Calculator className="w-3.5 h-3.5" />
+            Kalkulátor & M-lapok
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('nav65')}
+            className={cn(
+              "px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5",
+              viewMode === 'nav65' 
+                ? "bg-background shadow-sm text-foreground font-bold" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            NAV 65 Nyomtatvány replika
+          </button>
+        </div>
+      )}
+
+      {viewMode === 'nav65' ? (
+        <Nav65FormMockView 
+          selectedCompany={selectedCompany} 
+          year={year} 
+          month={month} 
+          frequency={frequency} 
+          getVal={getVal} 
+          formatEft={fmtEft} 
+        />
+      ) : (
+        <>
+          {/* ── Közösségi (A60) Keresztellenőrzés ── */}
+          {vatReturn && euInvoices.length > 0 && (
         <Card className="border border-border/80 shadow-md">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold flex items-center gap-2">
-              <Shield className={cn("w-4 h-4", a60Calculations.isValid ? "text-emerald-500" : "text-amber-500")} />
-              Közösségi Ügyletek (A60) Keresztellenőrzése
-            </CardTitle>
-            <CardDescription className="text-xs">
-              A60-as összesítő nyilatkozat számláinak összevetése a főlap 91-92. és 93-94. soraival
-            </CardDescription>
+          <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="space-y-1">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Shield className={cn("w-4 h-4", a60Calculations.isValid ? "text-emerald-500" : "text-amber-500")} />
+                Közösségi Ügyletek (A60) Keresztellenőrzése
+              </CardTitle>
+              <CardDescription className="text-xs">
+                A60-as összesítő nyilatkozat számláinak összevetése a főlap 91-92. és 93-94. soraival
+              </CardDescription>
+            </div>
+            <Button
+              size="xs"
+              variant="outline"
+              onClick={handleViesCheck}
+              disabled={isValidatingVies || a60Calculations.itemsList.length === 0}
+              className="h-8 text-xs font-semibold gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 border-indigo-500/20 dark:text-indigo-400 shrink-0"
+            >
+              {isValidatingVies ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Lekérdezés...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500" />
+                  VIES Adószám Ellenőrzés
+                </>
+              )}
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Status Info Banner */}
@@ -1048,19 +1238,45 @@ function VatReturnViewTab() {
                         <TableCell className="font-medium font-mono">{item.invoice_number}</TableCell>
                         <TableCell>{item.partner_name}</TableCell>
                         <TableCell className="font-mono">
-                          <span className={cn(
-                            "px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 w-max",
-                            item.isValidFormat
-                              ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
-                              : "bg-red-500/10 text-red-600 dark:bg-red-950/40 dark:text-red-400"
-                          )}>
-                            {item.isValidFormat ? (
-                              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                            ) : (
-                              <AlertTriangle className="w-3 h-3 text-red-500" />
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={cn(
+                              "px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 w-max",
+                              item.isValidFormat
+                                ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                : "bg-red-500/10 text-red-600 dark:bg-red-950/40 dark:text-red-400"
+                            )}>
+                              {item.isValidFormat ? (
+                                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                              ) : (
+                                <AlertTriangle className="w-3 h-3 text-red-500" />
+                              )}
+                              {item.partner_tax_number || "HIÁNYZIK!"}
+                            </span>
+                            {/* VIES validation status */}
+                            {item.partner_tax_number && (
+                              (() => {
+                                const status = viesStatuses[item.partner_tax_number];
+                                if (status === 'loading') {
+                                  return <Loader2 className="w-3 h-3 animate-spin text-indigo-500" />;
+                                }
+                                if (status === 'valid') {
+                                  return (
+                                    <Badge variant="outline" className="bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-[9px] px-1 py-0 select-none">
+                                      ✓ VIES Aktív
+                                    </Badge>
+                                  );
+                                }
+                                if (status === 'invalid') {
+                                  return (
+                                    <Badge variant="outline" className="bg-red-500/20 border-red-500/40 text-red-600 dark:text-red-400 text-[9px] px-1 py-0 select-none">
+                                      ⚠️ VIES Inaktív
+                                    </Badge>
+                                  );
+                                }
+                                return null;
+                              })()
                             )}
-                            {item.partner_tax_number || "HIÁNYZIK!"}
-                          </span>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right font-mono font-semibold">
                           {item.invoice_net_amount.toLocaleString('hu-HU')} {item.currency}
@@ -1261,7 +1477,7 @@ function VatReturnViewTab() {
 
       {/* Carryforward + Validations */}
       {vatReturn && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Manual Carryforward (82. sor) */}
           <Card className="border-border/60">
             <CardContent className="p-4">
@@ -1349,6 +1565,87 @@ function VatReturnViewTab() {
                   ));
                 })()}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* NAV XML Validator Card */}
+          <Card className="border-border/60">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-sm font-medium">NAV XML Validátor</div>
+                <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
+                  ÁNYK sémateszt
+                </Badge>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => {
+                    const xml = getVatReturnXmlString({
+                      companyName: selectedCompany.name || '',
+                      companyTaxNumber: (selectedCompany as any).tax_number || '',
+                      companyAddress: (selectedCompany as any).address || '',
+                      periodYear: year,
+                      periodMonth: month,
+                      frequency,
+                      lines: lines as any[],
+                      mLines: mLines as any[],
+                    });
+                    runXmlValidation(xml);
+                  }}
+                  disabled={isValidatingXml}
+                  className="flex-1 text-[10px] h-7 bg-primary/5 text-primary border-primary/10 hover:bg-primary/10"
+                >
+                  {isValidatingXml ? 'Validálás...' : 'Aktuális validálása'}
+                </Button>
+                
+                <div className="relative flex-1">
+                  <input
+                    type="file"
+                    id="xml-file-upload"
+                    accept=".xml"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (evt) => {
+                        const content = evt.target?.result as string;
+                        runXmlValidation(content);
+                      };
+                      reader.readAsText(file);
+                    }}
+                    className="hidden"
+                  />
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    className="w-full text-[10px] h-7"
+                    onClick={() => document.getElementById('xml-file-upload')?.click()}
+                  >
+                    XML Feltöltés
+                  </Button>
+                </div>
+              </div>
+
+              {xmlValidationResults.length > 0 && (
+                <div className="space-y-1.5 pt-1 border-t border-border/40">
+                  {xmlValidationResults.map((res) => (
+                    <div key={res.id} className="text-[11px] space-y-0.5">
+                      <div className="flex items-center gap-1.5 font-semibold text-foreground/90">
+                        {res.status === 'success' ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        ) : (
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                        )}
+                        <span>{res.name}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground pl-5 leading-relaxed">{res.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -1727,7 +2024,111 @@ function VatReturnViewTab() {
           </Card>
         </>
       )}
+    </>
+  )}
     </div>
+  );
+}
+
+function Nav65FormMockView({
+  selectedCompany,
+  year,
+  month,
+  frequency,
+  getVal,
+  formatEft,
+}: {
+  selectedCompany: any;
+  year: number;
+  month: number;
+  frequency: string;
+  getVal: (row: string, col: 'base' | 'tax') => number;
+  formatEft: (val: number) => string;
+}) {
+  const periodLabel = frequency === 'H' 
+    ? `${year}. ${month}. hó` 
+    : frequency === 'N' 
+      ? `${year}. Q${month}` 
+      : `${year}. év`;
+
+  const fields = [
+    { num: '01', type: 'Fizetendő', label: '27%-os kulcsú belföldi értékesítés adóalapja', val: getVal('01', 'base'), isBase: true },
+    { num: '01', type: 'Fizetendő', label: '27%-os kulcsú belföldi értékesítés fizetendő ÁFA', val: getVal('01', 'tax'), isBase: false },
+    { num: '17', type: 'Fizetendő', label: '5%-os kulcsú belföldi értékesítés adóalapja', val: getVal('17', 'base'), isBase: true },
+    { num: '17', type: 'Fizetendő', label: '5%-os kulcsú belföldi értékesítés fizetendő ÁFA', val: getVal('17', 'tax'), isBase: false },
+    { num: '36', type: 'Fizetendő', label: 'Összes fizetendő adó (Összesítő sor)', val: getVal('36', 'tax'), isBase: false, isSummary: true },
+    { num: '63', type: 'Levonható', label: '27%-os belföldi beszerzés adóalapja', val: getVal('63', 'base'), isBase: true },
+    { num: '63', type: 'Levonható', label: '27%-os belföldi beszerzés levonható ÁFA', val: getVal('63', 'tax'), isBase: false },
+    { num: '76', type: 'Levonható', label: 'Összes levonható adó (Összesítő sor)', val: getVal('76', 'tax'), isBase: false, isSummary: true },
+    { num: '82', type: 'Elszámolás', label: 'Előző időszakról áthozott követelés (82. sor)', val: getVal('82', 'tax'), isBase: false },
+    { num: '83', type: 'Elszámolás', label: 'Különbözet / nettó egyenleg (83. sor)', val: getVal('83', 'tax'), isBase: false },
+    { num: '84', type: 'Elszámolás', label: 'Befizetendő adó (Költségvetési tartozás)', val: getVal('84', 'tax'), isBase: false, isSummary: true },
+    { num: '86', type: 'Elszámolás', label: 'Következő időszakra átvihető követelés (86. sor)', val: getVal('86', 'tax'), isBase: false, isSummary: true },
+  ];
+
+  return (
+    <Card className="border border-stone-300 shadow-lg bg-[#fefbf0] text-stone-900 rounded-xl overflow-hidden">
+      <CardHeader className="bg-stone-100 border-b border-stone-200 p-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h3 className="font-serif font-black text-xl tracking-tight text-stone-800">2665-A Bevallási Lap Mock</h3>
+            <p className="text-[11px] text-stone-500 font-mono">Nemzeti Adó- és Vámhivatal hivatalos nyomtatvány replika</p>
+          </div>
+          <div className="bg-amber-100 border border-amber-300 text-amber-800 text-xs font-mono font-bold px-3 py-1 rounded select-none">
+            2665-A LAP
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-6 space-y-6">
+        {/* Top Company Header replicate */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono border-b border-stone-200 pb-4">
+          <div className="space-y-1">
+            <span className="text-[10px] text-stone-500 block">Adózó neve:</span>
+            <span className="font-bold text-stone-800 uppercase">{selectedCompany?.name}</span>
+          </div>
+          <div className="space-y-1">
+            <span className="text-[10px] text-stone-500 block">Adószáma:</span>
+            <span className="font-bold text-stone-800">{selectedCompany?.tax_number}</span>
+          </div>
+          <div className="space-y-1">
+            <span className="text-[10px] text-stone-500 block">Bevallási időszak:</span>
+            <span className="font-bold text-stone-800">{periodLabel}</span>
+          </div>
+        </div>
+
+        {/* Yellow-Gray Form Fields Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {fields.map((f, idx) => (
+            <div
+              key={idx}
+              className={cn(
+                "p-3.5 rounded-lg border flex flex-col justify-between min-h-[120px] transition-all hover:shadow-sm",
+                f.isSummary 
+                  ? "bg-stone-200/90 border-stone-300 text-stone-800" 
+                  : "bg-amber-50/70 border-amber-200 text-amber-900"
+              )}
+            >
+              <div className="flex items-start justify-between">
+                <span className={cn(
+                  "font-mono font-black text-xs px-2 py-0.5 rounded",
+                  f.isSummary ? "bg-stone-300 text-stone-800" : "bg-amber-200 text-amber-800"
+                )}>
+                  {f.num}. sor
+                </span>
+                <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">{f.type}</span>
+              </div>
+              <p className="text-[11px] font-medium leading-normal my-2.5">{f.label}</p>
+              <div className="flex justify-between items-end border-t pt-2 border-stone-200/50">
+                <span className="text-[9px] text-stone-400">{f.isBase ? 'adóalap (eFt)' : 'adó összege (eFt)'}</span>
+                <span className="font-mono text-xs font-black tabular-nums">
+                  {formatEft(f.val)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

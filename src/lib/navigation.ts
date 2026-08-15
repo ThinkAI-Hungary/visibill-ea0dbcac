@@ -19,7 +19,8 @@ export function generateScopedPath(
   page: string = '',
 ): string {
   const dateRange = `${dateFrom}_${dateTo}`;
-  const suffix = page ? `/${page}` : '';
+  const cleanPage = page.startsWith('/') ? page.slice(1) : page;
+  const suffix = cleanPage ? `/${cleanPage}` : '';
   return `/${companyId}/${dateRange}${suffix}`;
 }
 
@@ -185,7 +186,8 @@ export function generateAccountyScopedPath(
   page: string = '',
 ): string {
   const dateRange = `${dateFrom}_${dateTo}`;
-  const suffix = page ? `/${page}` : '';
+  const cleanPage = page.startsWith('/') ? page.slice(1) : page;
+  const suffix = cleanPage ? `/${cleanPage}` : '';
   return `/eaisybooks/${companyId}/${dateRange}${suffix}`;
 }
 

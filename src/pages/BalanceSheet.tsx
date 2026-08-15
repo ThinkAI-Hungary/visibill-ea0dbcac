@@ -26,6 +26,7 @@ import { reportError } from '@/lib/errorReporter';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { BalanceSheetWidgets } from '@/components/balance-sheet/BalanceSheetWidgets';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 // ── Default BS mapping rules based on Hungarian Sztv. "A" variant ──
@@ -584,7 +585,17 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
 //  BsViewTab (U9, U10, F11, F12, P7: onBalanceComputed callback)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalanceComputed?: (isBalanced: boolean) => void }) {
+function BsViewTab({ 
+  presetId, 
+  onBalanceComputed, 
+  unassignedCount = 0, 
+  onAutoFixMappings 
+}: { 
+  presetId?: string; 
+  onBalanceComputed?: (isBalanced: boolean) => void; 
+  unassignedCount?: number; 
+  onAutoFixMappings?: () => void; 
+}) {
   const { selectedCompany } = useCompany();
   const { dateToFormatted: dateTo } = useDateRange();
   const { toast } = useToast();
@@ -592,11 +603,18 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
   const [inThousands, setInThousands] = useState(true);
   const [hideZeroRows, setHideZeroRows] = useState(false);
   const [sideBySide, setSideBySide] = useState(false); // F11
+  const [selectedCurrency, setSelectedCurrency] = useState<'HUF' | 'EUR' | 'USD'>('HUF');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
   const [activeDialogInvoice, setActiveDialogInvoice] = useState<any | null>(null);
   const [isDialogInvoiceOpen, setIsDialogInvoiceOpen] = useState(false);
   const { data: exchangeRates } = useExchangeRates();
+
+  const conversionFactor = React.useMemo(() => {
+    if (selectedCurrency === 'HUF') return 1;
+    const rate = exchangeRates?.[selectedCurrency];
+    return rate ? 1 / rate : 1;
+  }, [selectedCurrency, exchangeRates]);
 
   // Derive fiscal year from the global date picker
   const fiscalYear = dateTo ? new Date(dateTo).getFullYear() : new Date().getFullYear();
@@ -645,9 +663,12 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
 
 
   const formatValue = (val: number) => {
-    const finalVal = inThousands ? Math.round(val / 1000) : val;
+    const valConsolidated = val * conversionFactor;
+    const finalVal = inThousands ? Math.round(valConsolidated / 1000) : Math.round(valConsolidated);
     if (finalVal === 0) return '0';
-    return new Intl.NumberFormat('hu-HU').format(finalVal);
+    const fmt = new Intl.NumberFormat('hu-HU').format(finalVal);
+    const symbol = selectedCurrency === 'EUR' ? ' €' : selectedCurrency === 'USD' ? ' $' : '';
+    return `${fmt}${inThousands && selectedCurrency !== 'HUF' ? ' E' : ''}${symbol}`;
   };
 
   const toggleRow = (id: string) => {
@@ -721,6 +742,7 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
   const rawShortTermLiabilities = liabilities?.find(r => r.row_code === 'F/III.' || r.row_code === 'F/III' || r.name?.toLowerCase().includes('rövid lejáratú'))?.computedBalance || 0;
   const shortTermLiabilities = Math.abs(rawShortTermLiabilities);
   const inventories = assets?.find(r => r.row_code === 'B/I.' || r.row_code === 'B/I' || r.name?.toLowerCase().includes('készletek'))?.computedBalance || 0;
+  const cashAssets = assets?.find(r => r.row_code === 'B/IV.' || r.row_code === 'B/IV' || r.name?.toLowerCase().includes('pénzeszközök'))?.computedBalance || 0;
   
   const quickAssets = currentAssets - inventories;
   const currentRatio = shortTermLiabilities > 0 ? (currentAssets / shortTermLiabilities) : 0;
@@ -995,127 +1017,22 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
 
   return (
     <div className="space-y-4 content-animate">
-      {/* U9: Single balance equality indicator (removed duplicate banner) */}
       {totalAssets !== undefined && totalLiabilities !== undefined && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 print:hidden">
-          {/* Balance Scale Card */}
-          <Card className={cn(
-            "border-2 transition-all duration-300 relative overflow-hidden",
-            isBalanced 
-              ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/10" 
-              : "border-red-500/30 bg-red-500/5 dark:bg-red-950/10"
-          )}>
-            <CardContent className="p-4 flex items-center justify-between gap-4 h-full">
-              <div className="space-y-1">
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mérleg Egyezőség</div>
-                <div className={cn("text-lg font-extrabold flex items-center gap-1.5", isBalanced ? "text-emerald-600" : "text-red-500")}>
-                  {isBalanced ? "Egyensúlyban" : "Eltérés van"}
-                  {isBalanced ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
-                </div>
-                {!isBalanced && (
-                  <div className="text-xs font-semibold tabular-nums text-red-500">
-                    Eltérés: {formatValue(difference)} {inThousands ? 'E Ft' : 'Ft'}
-                  </div>
-                )}
-                <div className="text-[10px] text-muted-foreground flex gap-3 mt-1.5">
-                  <span>Eszköz: <strong className="text-foreground">{formatValue(totalAssets)}</strong></span>
-                  <span>Forrás: <strong className="text-foreground">{formatValue(totalLiabilities)}</strong></span>
-                </div>
-              </div>
-
-              {/* Dynamic CSS balance beam scale */}
-              <div className="flex flex-col items-center justify-center shrink-0 w-[80px] h-[60px] relative select-none">
-                {/* Scale beam */}
-                <div 
-                  className="w-14 h-1 bg-foreground/60 dark:bg-foreground/40 rounded relative transition-transform duration-500"
-                  style={{ transform: `rotate(${isBalanced ? 0 : difference > 0 ? -12 : 12}deg)` }}
-                >
-                  {/* Left plate (Assets) */}
-                  <div className="absolute -left-1 -bottom-5 flex flex-col items-center">
-                    <div className="w-[1px] h-4 bg-foreground/30" />
-                    <div className="w-4 h-1 bg-foreground/60 dark:bg-foreground/40 rounded-t" />
-                  </div>
-                  {/* Right plate (Liabilities) */}
-                  <div className="absolute -right-1 -bottom-5 flex flex-col items-center">
-                    <div className="w-[1px] h-4 bg-foreground/30" />
-                    <div className="w-4 h-1 bg-foreground/60 dark:bg-foreground/40 rounded-t" />
-                  </div>
-                </div>
-                {/* Scale stand */}
-                <div className="w-1 h-8 bg-foreground/50 dark:bg-foreground/30 mt-1" />
-                <div className="w-8 h-1.5 bg-foreground/60 dark:bg-foreground/40 rounded-t" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Current Ratio Card */}
-          <Card className="border border-border/60 bg-card/60 backdrop-blur-sm">
-            <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
-              <div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Likviditási Ráta</div>
-                <div className="flex items-baseline gap-2">
-                  <span className={cn(
-                    "text-2xl font-extrabold tabular-nums",
-                    currentRatio >= 1.5 ? "text-emerald-600" : currentRatio >= 1.0 ? "text-amber-500" : "text-red-500"
-                  )}>
-                    {currentRatio.toFixed(2)}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-medium">
-                    (Cél: &gt;1.5)
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                  <div 
-                    className={cn(
-                      "h-full rounded-full transition-all duration-300", 
-                      currentRatio >= 1.5 ? "bg-emerald-500" : currentRatio >= 1.0 ? "bg-amber-500" : "bg-red-500"
-                    )}
-                    style={{ width: `${Math.min((currentRatio / 2.5) * 100, 100)}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-[9px] text-muted-foreground font-medium">
-                  <span>Forgóeszközök / Rövid kötelezettségek</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Ratio Card */}
-          <Card className="border border-border/60 bg-card/60 backdrop-blur-sm">
-            <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
-              <div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Likviditási Gyorsráta</div>
-                <div className="flex items-baseline gap-2">
-                  <span className={cn(
-                    "text-2xl font-extrabold tabular-nums",
-                    quickRatio >= 1.0 ? "text-emerald-600" : quickRatio >= 0.8 ? "text-amber-500" : "text-red-500"
-                  )}>
-                    {quickRatio.toFixed(2)}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-medium">
-                    (Cél: &gt;1.0)
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                  <div 
-                    className={cn(
-                      "h-full rounded-full transition-all duration-300", 
-                      quickRatio >= 1.0 ? "bg-emerald-500" : quickRatio >= 0.8 ? "bg-amber-500" : "bg-red-500"
-                    )}
-                    style={{ width: `${Math.min((quickRatio / 2.0) * 100, 100)}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-[9px] text-muted-foreground font-medium">
-                  <span>(Forgóeszközök - Készletek) / Rövid kötelezettségek</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <BalanceSheetWidgets
+          totalAssets={totalAssets}
+          totalLiabilities={totalLiabilities}
+          difference={difference}
+          isBalanced={isBalanced}
+          selectedCurrency={selectedCurrency}
+          inThousands={inThousands}
+          currentAssets={currentAssets}
+          inventories={inventories}
+          shortTermLiabilities={shortTermLiabilities}
+          cashAssets={cashAssets}
+          unmappedAccountsCount={unassignedCount}
+          onAutoFixMappings={onAutoFixMappings}
+          conversionFactor={conversionFactor}
+        />
       )}
 
       {/* Controls */}
@@ -1123,7 +1040,9 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
         <div className="flex items-center gap-6">
           <div className="flex items-center space-x-2">
             <Switch id="bs-view-mode" checked={inThousands} onCheckedChange={setInThousands} />
-            <Label htmlFor="bs-view-mode" className="font-medium cursor-pointer">Hivatalos nézet (Ezer Ft)</Label>
+            <Label htmlFor="bs-view-mode" className="font-medium cursor-pointer">
+              Hivatalos nézet (Ezer {selectedCurrency === 'HUF' ? 'Ft' : selectedCurrency})
+            </Label>
           </div>
           <div className="flex items-center space-x-2">
             <Switch id="bs-hide-zero" checked={hideZeroRows} onCheckedChange={setHideZeroRows} />
@@ -1135,6 +1054,17 @@ function BsViewTab({ presetId, onBalanceComputed }: { presetId?: string; onBalan
             <Label htmlFor="bs-side-by-side" className="font-medium cursor-pointer flex items-center gap-1">
               <Columns className="w-3.5 h-3.5" /> Hagyományos nézet
             </Label>
+          </div>
+          <div className="flex items-center space-x-2 border-l pl-4 border-border/60">
+            <Label htmlFor="bs-currency-select" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Deviza Konszolidáció:</Label>
+            <Select value={selectedCurrency} onValueChange={(val: any) => setSelectedCurrency(val)}>
+              <SelectTrigger className="w-[85px] h-8 text-xs bg-muted border-0 font-bold"><SelectValue placeholder="Deviza" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="HUF">HUF</SelectItem>
+                <SelectItem value="EUR">EUR</SelectItem>
+                <SelectItem value="USD">USD</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -1413,7 +1343,12 @@ export default function BalanceSheet() {
             </CardHeader>
             <CardContent className="pt-6">
               {/* P7: onBalanceComputed callback eliminates duplicate query */}
-              <BsViewTab presetId={activePresetId} onBalanceComputed={handleBalanceComputed} />
+              <BsViewTab 
+                presetId={activePresetId} 
+                onBalanceComputed={handleBalanceComputed} 
+                unassignedCount={unassignedCount} 
+                onAutoFixMappings={() => setActiveTab('mapping')}
+              />
             </CardContent>
           </Card>
         </TabsContent>

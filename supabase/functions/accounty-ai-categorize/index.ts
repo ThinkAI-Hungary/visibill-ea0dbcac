@@ -49,12 +49,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    const deepseekKey = Deno.env.get("DEEPSEEK_API_KEY");
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiKey) {
-      return new Response(JSON.stringify({ error: "OpenAI API key not configured" }), {
+
+    if (!deepseekKey && !openaiKey) {
+      return new Response(JSON.stringify({ error: "No API key configured (neither DEEPSEEK_API_KEY nor OPENAI_API_KEY)" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    let apiUrl = "https://api.openai.com/v1/chat/completions";
+    let apiModel = "gpt-4o-mini";
+    let apiKey = openaiKey || "";
+
+    if (deepseekKey) {
+      apiUrl = "https://api.deepseek.com/chat/completions";
+      apiModel = "deepseek-chat";
+      apiKey = deepseekKey;
     }
 
     const systemPrompt = `You are a professional Hungarian accountant AI. Your task is to categorize a list of invoices into the Hungarian Individual Entrepreneur (Egyéni Vállalkozó) Single-Entry Cashbook (Pénztárkönyv) categories.
@@ -80,14 +92,14 @@ Example output:
   ]
 }`;
 
-    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    const openaiResponse = await fetch(apiUrl, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${openaiKey}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: apiModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: JSON.stringify({ invoices }) }

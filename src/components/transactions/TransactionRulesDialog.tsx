@@ -205,19 +205,49 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
     }
   };
 
-  // Test rule locally in JS against unmatched transactions
+  const highlightMatch = (text: string, pattern: string, isRegex: boolean) => {
+    if (!text || !pattern) return text;
+    try {
+      if (isRegex) {
+        const regex = new RegExp(`(${pattern})`, 'gi');
+        const parts = text.split(regex);
+        return parts.map((part, i) => 
+          regex.test(part) 
+            ? <span key={i} className="bg-primary/20 text-primary-foreground font-semibold px-0.5 rounded">{part}</span> 
+            : part
+        );
+      } else {
+        const index = text.toLowerCase().indexOf(pattern.toLowerCase());
+        if (index === -1) return text;
+        const length = pattern.length;
+        return (
+          <>
+            {text.slice(0, index)}
+            <span className="bg-primary/20 text-primary-foreground font-semibold px-0.5 rounded">
+              {text.slice(index, index + length)}
+            </span>
+            {text.slice(index + length)}
+          </>
+        );
+      }
+    } catch (e) {
+      return text;
+    }
+  };
+
+  // Test rule locally in JS against unverified transactions
   const handleTestRule = async () => {
     if (!formPattern || !companyId) return;
     setTesting(true);
 
     try {
-      // Query unmatched transactions
+      // Query unverified transactions (suggested + unmatched)
       const { data: txs, error } = await supabase
         .from('transactions')
         .select('id, description, amount, transaction_date')
-        .is('matched_invoice_id', null)
+        .or('is_verified.is.null,is_verified.eq.false')
         .eq('company_id', companyId)
-        .limit(200);
+        .limit(300);
 
       if (error) throw error;
 
@@ -238,7 +268,6 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
       const matches = (txs || []).filter(tx => {
         // Direction check
         if (formDirection !== 'ALL') {
-          // Normalize INFLOW/OUTFLOW vs transaction amount/type
           const isTxInflow = tx.amount > 0;
           if (formDirection === 'INFLOW' && !isTxInflow) return false;
           if (formDirection === 'OUTFLOW' && isTxInflow) return false;
@@ -261,7 +290,7 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
 
       setTestResults({
         matchedCount: matches.length,
-        samples: matches.slice(0, 5),
+        samples: matches.slice(0, 15),
       });
     } catch (err: any) {
       toast({ title: 'Tesztelési hiba', description: err.message, variant: 'destructive' });
@@ -544,37 +573,60 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
               <div className="border rounded-xl p-5 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 flex flex-col h-full justify-between min-h-[350px]">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-primary">
-                    <Sparkles className="h-5 w-5" />
-                    <h3 className="font-bold">Interaktív szabályszimuláció</h3>
+                    <Sparkles className="h-5 w-5 animate-pulse" />
+                    <h3 className="font-bold text-sm">Interaktív szabályszimuláció</h3>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Tesztelje le a szabályt azonnal a könyvtárában lévő jelenleg párosítatlan tranzakciókon anélkül, hogy elmentené azt.
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Szimulálja a szabály működését valós időben a jelenlegi lekönyveletlen tranzakciókon.
                   </p>
 
                   {testResults !== null && (
-                    <div className="space-y-4 animate-in fade-in duration-200">
-                      <div className="flex items-center gap-2 p-3 bg-white dark:bg-secondary/40 rounded-lg border shadow-sm">
-                        <div className="p-2 rounded bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400">
+                    <div className="space-y-3.5 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900/60 rounded-xl border border-primary/20 shadow-sm">
+                        <div className="p-2 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400">
                           <Check className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Illeszkedő függő tranzakciók:</p>
-                          <p className="text-lg font-bold text-foreground">{testResults.matchedCount} db</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Szimulált találatok:</p>
+                          <p className="text-lg font-bold text-foreground tabular-nums">{testResults.matchedCount} tranzakció</p>
                         </div>
                       </div>
 
                       {testResults.matchedCount > 0 && (
                         <div className="space-y-2">
-                          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Példa találatok leírása:</p>
-                          <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Szimulált illeszkedések:</p>
+                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                             {testResults.samples.map((sample, idx) => (
-                              <div key={idx} className="flex justify-between items-center p-2 bg-muted/30 rounded border text-xs">
-                                <span className="truncate max-w-[180px] font-medium font-mono" title={sample.description}>
-                                  {sample.description}
-                                </span>
-                                <span className="font-mono font-bold whitespace-nowrap">
-                                  {formatCurrency(sample.amount, 'HUF')}
-                                </span>
+                              <div key={idx} className="p-2.5 bg-muted/40 hover:bg-muted/60 dark:bg-secondary/20 dark:hover:bg-secondary/35 rounded-lg border border-border/40 text-xs transition-all">
+                                <div className="flex justify-between items-start gap-1">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    {sample.amount > 0 ? (
+                                      <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded shrink-0">BE</span>
+                                    ) : (
+                                      <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1 py-0.5 rounded shrink-0">KI</span>
+                                    )}
+                                    <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+                                      {sample.transaction_date ? sample.transaction_date.slice(5).replace('-', '.') : ''}
+                                    </span>
+                                    <span className="truncate font-medium text-foreground min-w-0" title={sample.description}>
+                                      {highlightMatch(sample.description, formPattern, formPatternType === 'regex')}
+                                    </span>
+                                  </div>
+                                  <span className="font-mono font-bold whitespace-nowrap text-right shrink-0">
+                                    {formatCurrency(sample.amount, 'HUF')}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/10">
+                                  <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                    <span className="opacity-60">Cél GL:</span>
+                                    <strong>{formGlAccountId ? getGlLabel(formGlAccountId) : 'Nincs rendelve'}</strong>
+                                  </div>
+                                  {formAutoVerify && (
+                                    <span className="text-[9px] font-bold bg-green-500/10 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded">
+                                      Auto-verify
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -588,7 +640,7 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full gap-2 border-primary/20 hover:border-primary/50 text-primary"
+                    className="w-full gap-2 border-primary/20 hover:border-primary/50 text-primary h-9 font-medium"
                     onClick={handleTestRule}
                     disabled={!formPattern || testing}
                   >

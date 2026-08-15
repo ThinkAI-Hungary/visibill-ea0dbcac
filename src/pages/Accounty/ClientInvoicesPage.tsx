@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2, FileText, Coins, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ export default function ClientInvoicesPage() {
   const navigate = useNavigate();
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const { data: supabaseClients, isLoading: clientLoading } = useAccountyClients();
   const client = useMemo(() => {
@@ -32,7 +33,28 @@ export default function ClientInvoicesPage() {
     return { id: id || '1', name: 'Betöltés...', taxNumber: '' };
   }, [supabaseClients, id]);
   
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
+  
+  useEffect(() => {
+    const q = searchParams.get('search') || '';
+    if (q !== searchQuery) {
+      setSearchQuery(q);
+    }
+  }, [searchParams]);
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (val) {
+        next.set('search', val);
+      } else {
+        next.delete('search');
+      }
+      return next;
+    }, { replace: true });
+  };
+
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [fadFilter, setFadFilter] = useState(false);
@@ -473,7 +495,7 @@ export default function ClientInvoicesPage() {
               placeholder="Keresés számla szám, szállító..." 
               className="pl-9 bg-card border-border" 
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
           <div className="flex gap-3">

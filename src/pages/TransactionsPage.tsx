@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { RefreshCw, Download, ChevronDown, FileText, Package, Truck, Mail, ArrowDownRight, ArrowUpRight, Link2, Link2Off, Loader2, Settings, CreditCard, AlertTriangle, Upload, TrendingUp, TrendingDown, Wallet, Copy, X } from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as ChartTooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as ChartTooltip, CartesianGrid, ReferenceArea } from 'recharts';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import TransactionFilters from '@/components/transactions/TransactionFilters';
@@ -59,6 +59,17 @@ const fmtHuf = (val: number) => new Intl.NumberFormat('hu-HU').format(Math.round
 type TabValue = string;
 
 const TransactionsPage = () => {
+  const { dateFrom, dateTo } = useDateRange();
+
+  const [zoomFrom, setZoomFrom] = useState<Date | null>(null);
+  const [zoomTo, setZoomTo] = useState<Date | null>(null);
+
+  const activeDateFrom = zoomFrom || dateFrom;
+  const activeDateTo = zoomTo || dateTo;
+
+  const activeDateFromStr = activeDateFrom ? format(activeDateFrom, 'yyyy-MM-dd') : '';
+  const activeDateToStr = activeDateTo ? format(activeDateTo, 'yyyy-MM-dd') : '';
+
   const [activeTab, setActiveTab] = useState<TabValue>('general');
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [filesDialogOpen, setFilesDialogOpen] = useState(false);
@@ -88,7 +99,7 @@ const TransactionsPage = () => {
     handleBulkExport,
     handleBulkDelete,
     queryClient,
-  } = useTransactionData();
+  } = useTransactionData(zoomFrom || undefined, zoomTo || undefined);
 
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('transactions');
@@ -104,19 +115,28 @@ const TransactionsPage = () => {
   };
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const { dateFrom, dateTo } = useDateRange();
   const dateFromStr = dateFrom ? format(dateFrom, 'yyyy-MM-dd') : '';
   const dateToStr = dateTo ? format(dateTo, 'yyyy-MM-dd') : '';
 
   const { data: exchangeRates } = useExchangeRates();
+
+  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
+  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+
+  const resetZoom = () => {
+    setZoomFrom(null);
+    setZoomTo(null);
+  };
+
+  const isZoomed = zoomFrom !== null && zoomTo !== null;
 
   // Query to fetch all transactions (lightweight, no range/pagination limit) for the chart
   const { data: chartTransactions = [] } = useQuery({
     queryKey: [
       'transactions-chart',
       selectedCompany?.id,
-      dateFromStr,
-      dateToStr,
+      activeDateFromStr,
+      activeDateToStr,
       filters.currency,
       filters.type,
       filters.search,
@@ -129,8 +149,8 @@ const TransactionsPage = () => {
         .eq('company_id', selectedCompany!.id)
         .order('transaction_date', { ascending: true });
 
-      if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
-      if (dateToStr) query = query.lte('transaction_date', dateToStr);
+      if (activeDateFromStr) query = query.gte('transaction_date', activeDateFromStr);
+      if (activeDateToStr) query = query.lte('transaction_date', activeDateToStr);
       if (filters.currency !== 'all') query = query.eq('currency', filters.currency);
       if (filters.type !== 'all') query = query.eq('type', filters.type);
       if (filters.search) {
@@ -173,16 +193,16 @@ const TransactionsPage = () => {
       if (error) throw error;
       return (data || []) as { transaction_date: string; amount: number; currency: string | null }[];
     },
-    enabled: !!selectedCompany?.id && !!dateFromStr && !!dateToStr,
+    enabled: !!selectedCompany?.id && !!activeDateFromStr && !!activeDateToStr,
     staleTime: 30_000,
   });
 
   const isYearlyOrLongRange = useMemo(() => {
-    if (!dateFrom || !dateTo) return false;
-    const diffTime = Math.abs(dateTo.getTime() - dateFrom.getTime());
+    if (!activeDateFrom || !activeDateTo) return false;
+    const diffTime = Math.abs(activeDateTo.getTime() - activeDateFrom.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 35;
-  }, [dateFrom, dateTo]);
+  }, [activeDateFrom, activeDateTo]);
 
   const chartData = useMemo(() => {
     if (!chartTransactions || chartTransactions.length === 0) return [];
@@ -371,14 +391,14 @@ const TransactionsPage = () => {
 
   // ── KPI: query ALL transactions (lightweight, no pagination) ──
   const { data: kpis } = useQuery({
-    queryKey: ['tx-kpis', selectedCompany?.id, dateFromStr, dateToStr, exchangeRates],
+    queryKey: ['tx-kpis', selectedCompany?.id, activeDateFromStr, activeDateToStr, exchangeRates],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transactions')
         .select('matched_invoice_id, is_verified, confidence_score, match_type, type, amount, currency')
         .eq('company_id', selectedCompany!.id)
-        .gte('transaction_date', dateFromStr)
-        .lte('transaction_date', dateToStr);
+        .gte('transaction_date', activeDateFromStr)
+        .lte('transaction_date', activeDateToStr);
       if (error) throw error;
       const rows = data || [];
       let matched = 0, suggested = 0, unmatched = 0, autoSettled = 0, inflow = 0, outflow = 0;
@@ -398,7 +418,7 @@ const TransactionsPage = () => {
       }
       return { matched, suggested, unmatched, autoSettled, inflow, outflow, total: rows.length };
     },
-    enabled: !!selectedCompany?.id && !!dateFromStr && !!dateToStr && !!exchangeRates,
+    enabled: !!selectedCompany?.id && !!activeDateFromStr && !!activeDateToStr && !!exchangeRates,
     staleTime: 30_000,
   });
 
@@ -612,15 +632,77 @@ const TransactionsPage = () => {
           {/* ── Transaction Timeline Chart ── */}
           {activeTab === 'general' && chartData.length > 0 && (
             <Card className="mb-4 overflow-hidden border border-border/60 bg-card/60 backdrop-blur-sm print:hidden">
-              <CardHeader className="py-2.5">
+              <CardHeader className="py-2.5 flex flex-row items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                   Tranzakciós Volumen Idővonal (HUF / Deviza átváltva)
+                  <span className="text-[10px] lowercase text-muted-foreground/60 italic font-normal ml-2 hidden sm:inline">
+                    (Kattints és húzd a kijelöléshez a nagyításhoz)
+                  </span>
                 </CardTitle>
+                {isZoomed && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={resetZoom}
+                    className="h-6 text-xs px-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border-rose-500/20 gap-1 rounded-md transition-colors"
+                  >
+                    Szűrés visszaállítása
+                  </Button>
+                )}
               </CardHeader>
-              <CardContent className="h-[120px] py-1 px-4">
+              <CardContent className="h-[120px] py-1 px-4 select-none">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                  <AreaChart 
+                    data={chartData} 
+                    margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                    onMouseDown={(e) => {
+                      if (e && e.activeLabel) {
+                        setRefAreaLeft(e.activeLabel);
+                      }
+                    }}
+                    onMouseMove={(e) => {
+                      if (refAreaLeft && e && e.activeLabel) {
+                        setRefAreaRight(e.activeLabel);
+                      }
+                    }}
+                    onMouseUp={() => {
+                      if (!refAreaLeft || !refAreaRight) {
+                        setRefAreaLeft(null);
+                        setRefAreaRight(null);
+                        return;
+                      }
+
+                      let left = refAreaLeft;
+                      let right = refAreaRight;
+
+                      const leftIndex = chartData.findIndex(d => d.date === left);
+                      const rightIndex = chartData.findIndex(d => d.date === right);
+
+                      if (leftIndex > rightIndex) {
+                        [left, right] = [right, left];
+                      }
+
+                      const leftItem = chartData.find(d => d.date === left);
+                      const rightItem = chartData.find(d => d.date === right);
+
+                      if (leftItem && rightItem) {
+                        const fromDate = leftItem.dateParsed;
+                        const toDate = rightItem.dateParsed;
+                        if (fromDate && toDate) {
+                          setZoomFrom(fromDate);
+                          setZoomTo(toDate);
+                        }
+                      }
+
+                      setRefAreaLeft(null);
+                      setRefAreaRight(null);
+                    }}
+                    onMouseLeave={() => {
+                      setRefAreaLeft(null);
+                      setRefAreaRight(null);
+                    }}
+                  >
                     <defs>
                       <linearGradient id="colorInflow" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
@@ -631,11 +713,11 @@ const TransactionsPage = () => {
                         <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border)/0.2)" />
-                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
+                    <XAxis dataKey="date" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
                     <ChartTooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                      labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold', fontSize: '11px' }}
+                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
+                      labelStyle={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '11px' }}
                       itemStyle={{ fontSize: '11px' }}
                       formatter={(value: any, name: any) => {
                         const labelName = name === 'inflow' ? 'Bevétel' : 'Kiadás';
@@ -644,6 +726,15 @@ const TransactionsPage = () => {
                     />
                     <Area type="monotone" dataKey="inflow" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorInflow)" name="inflow" />
                     <Area type="monotone" dataKey="outflow" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorOutflow)" name="outflow" />
+                    {refAreaLeft && refAreaRight && (
+                      <ReferenceArea 
+                        x1={refAreaLeft} 
+                        x2={refAreaRight} 
+                        strokeOpacity={0.3} 
+                        fill="hsl(var(--primary))" 
+                        fillOpacity={0.15} 
+                      />
+                    )}
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>

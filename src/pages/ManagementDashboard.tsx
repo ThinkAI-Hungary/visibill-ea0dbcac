@@ -564,6 +564,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargets, setDeleteTargets] = useState<Array<{ source: string; id: string; project?: string }>>([]);
@@ -574,6 +575,11 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
   const [companySearchOpen, setCompanySearchOpen] = useState(false);
   const [userSearchOpen, setUserSearchOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  // Reset last selected index on pagination/sort/filter changes
+  useEffect(() => {
+    setLastSelectedIndex(null);
+  }, [page, sortCol, sortDir, debouncedSearch, filterCompanyId, filterSource, filterCategory, filterUserId, dateFrom, dateTo]);
 
   // Helper function to update search parameters atomically
   const updateParams = useCallback((updates: Record<string, string | number | null>) => {
@@ -659,11 +665,30 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
     }
     setSelected(next);
   };
-  const toggleOne = (r: ErrorRow) => {
+  const toggleOne = (r: ErrorRow, index: number, shiftKey: boolean) => {
     const key = `${r.source}:${r.id}`;
     const next = new Set(selected);
-    if (next.has(key)) next.delete(key); else next.add(key);
+    const isAdding = !selected.has(key);
+
+    if (shiftKey && lastSelectedIndex !== null) {
+      const start = Math.min(lastSelectedIndex, index);
+      const end = Math.max(lastSelectedIndex, index);
+      for (let i = start; i <= end; i++) {
+        const item = errRows[i];
+        if (item) {
+          const itemKey = `${item.source}:${item.id}`;
+          if (isAdding) {
+            next.add(itemKey);
+          } else {
+            next.delete(itemKey);
+          }
+        }
+      }
+    } else {
+      if (next.has(key)) next.delete(key); else next.add(key);
+    }
     setSelected(next);
+    setLastSelectedIndex(index);
   };
 
   const handleDelete = async (ids: Array<{ source: string; id: string; project?: string }>) => {
@@ -1373,7 +1398,7 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                       <td className="py-1.5 px-2"><Skeleton className="h-4 w-8" /></td>
                     </tr>
                   ))
-                ) : errRows.map(r => {
+                ) : errRows.map((r, index) => {
                   const isExpanded = expandedId === `${r.source}:${r.id}`;
                   const key = `${r.source}:${r.id}`;
                   return (
@@ -1385,7 +1410,9 @@ function ErrorControlPanel({ onOpenCompany, allUsers }: { onOpenCompany: (id: st
                       >
                         <td className="py-1.5 px-2" onClick={e => e.stopPropagation()}>
                           <input type="checkbox" checked={selected.has(key)}
-                            onChange={() => toggleOne(r)} className="h-3.5 w-3.5 rounded border-input accent-primary cursor-pointer" />
+                            onClick={(e) => toggleOne(r, index, e.shiftKey)}
+                            onChange={() => {}}
+                            className="h-3.5 w-3.5 rounded border-input accent-primary cursor-pointer" />
                         </td>
                         <td className="py-1.5 px-1">
                           <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -5903,19 +5930,45 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
 
   // Selection state for bulk operations
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteConfirmCounts, setDeleteConfirmCounts] = useState({ withStorage: 0, dbOnly: 0 });
 
-  const toggleFileSelection = useCallback((fileKey: string) => {
+  // Reset last selected index on pagination/sort/filter changes
+  useEffect(() => {
+    setLastSelectedIndex(null);
+  }, [page, sortCol, sortDir, debouncedSearch, filterCompanyId, filterUserId, filterFileType, filterStatus, dateFrom, dateTo]);
+
+  const toggleFileSelection = useCallback((fileKey: string, index: number, shiftKey: boolean) => {
     setSelectedFiles(prev => {
       const next = new Set(prev);
-      if (next.has(fileKey)) next.delete(fileKey);
-      else next.add(fileKey);
+      const isAdding = !next.has(fileKey);
+
+      if (shiftKey && lastSelectedIndex !== null) {
+        const start = Math.min(lastSelectedIndex, index);
+        const end = Math.max(lastSelectedIndex, index);
+        for (let i = start; i <= end; i++) {
+          const item = fileRows[i];
+          if (item) {
+            const itemKey = `${item.source_table}:${item.id}`;
+            if (isAdding) {
+              next.add(itemKey);
+            } else {
+              next.delete(itemKey);
+            }
+          }
+        }
+      } else {
+        if (next.has(fileKey)) next.delete(fileKey);
+        else next.add(fileKey);
+      }
+
+      setLastSelectedIndex(index);
       return next;
     });
-  }, []);
+  }, [fileRows, lastSelectedIndex]);
 
   // Helper function to update search parameters atomically
   const updateParams = useCallback((updates: Record<string, string | number | null>) => {
@@ -6723,7 +6776,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                       Nincs találat
                     </td>
                   </tr>
-                ) : fileRows.map(row => {
+                ) : fileRows.map((row, index) => {
                   const isExpanded = expandedId === row.id;
                   return (
                     <React.Fragment key={`${row.source_table}-${row.id}`}>
@@ -6740,7 +6793,8 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
                             type="checkbox"
                             className="h-3.5 w-3.5 rounded border-input accent-primary cursor-pointer"
                             checked={selectedFiles.has(`${row.source_table}:${row.id}`)}
-                            onChange={() => toggleFileSelection(`${row.source_table}:${row.id}`)}
+                            onClick={(e) => toggleFileSelection(`${row.source_table}:${row.id}`, index, e.shiftKey)}
+                            onChange={() => {}}
                           />
                         </td>
                         <td className="py-2.5 px-4">

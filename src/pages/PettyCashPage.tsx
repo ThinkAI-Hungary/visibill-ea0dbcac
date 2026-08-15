@@ -17,6 +17,10 @@ import EntriesTab from '@/components/petty-cash/EntriesTab';
 import RoutingRulesTab from '@/components/petty-cash/RoutingRulesTab';
 import DenominationCalculatorDialog from '@/components/petty-cash/DenominationCalculatorDialog';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useEffect } from 'react';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  MAIN PAGE
@@ -29,6 +33,19 @@ const PettyCashPage = () => {
 
   const [calcOpen, setCalcOpen] = useState(false);
   const [calcRegister, setCalcRegister] = useState<{ id: string; name: string; balance: number; currency: string } | null>(null);
+  const [customLimit, setCustomLimit] = useState<number>(1500000);
+
+  useEffect(() => {
+    if (companyId) {
+      const saved = localStorage.getItem(`visibill_pettycash_limit_${companyId}`);
+      setCustomLimit(saved ? Number(saved) : 1500000);
+    }
+  }, [companyId]);
+
+  const handleSaveLimit = (val: number) => {
+    setCustomLimit(val);
+    localStorage.setItem(`visibill_pettycash_limit_${companyId}`, String(val));
+  };
 
   const handleOpenCalc = (regId: string, regName: string, balance: number, currency: string) => {
     setCalcRegister({ id: regId, name: regName, balance, currency });
@@ -84,8 +101,8 @@ const PettyCashPage = () => {
   }, [summary]);
 
   const registersExceedingLimit = useMemo(() => {
-    return summary.filter(r => r.currency === 'HUF' && r.current_balance > 1500000);
-  }, [summary]);
+    return summary.filter(r => r.currency === 'HUF' && r.current_balance > customLimit);
+  }, [summary, customLimit]);
 
   if (!selectedCompany) {
     return (
@@ -101,11 +118,38 @@ const PettyCashPage = () => {
     <div className="h-full bg-background page-animate">
       <main className="w-full max-w-none px-4 py-4 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Banknote className="h-7 w-7 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Házipénztár</h1>
-            <p className="text-muted-foreground text-sm">Többpénztáras készpénzforgalom nyilvántartás</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Banknote className="h-7 w-7 text-primary" />
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold">Házipénztár</h1>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
+                      <Settings2 className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-4">
+                      <h4 className="font-medium leading-none">Házipénztár Beállítások</h4>
+                      <p className="text-xs text-muted-foreground">Készpénzállomány limit értékének testreszabása cég szinten.</p>
+                      <div className="space-y-2">
+                        <Label htmlFor="custom-limit-input">HUF készpénz limit figyelmeztetés (Ft)</Label>
+                        <Input
+                          id="custom-limit-input"
+                          type="number"
+                          value={customLimit}
+                          onChange={(e) => handleSaveLimit(Number(e.target.value) || 0)}
+                          className="h-8 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <p className="text-muted-foreground text-sm">Többpénztáras készpénzforgalom nyilvántartás</p>
+            </div>
           </div>
         </div>
 
@@ -113,9 +157,9 @@ const PettyCashPage = () => {
           <div className="bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 p-3.5 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300 print:hidden">
             <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-sm text-amber-900 dark:text-amber-300">Jogszabályi készpénzlimit figyelmeztetés</p>
+              <p className="font-semibold text-sm text-amber-900 dark:text-amber-300">Pénztári limit figyelmeztetés</p>
               <div className="text-xs opacity-90 mt-1 space-y-1">
-                <p>Az alábbi házipénztárak egyenlege meghaladja a megengedett 1.5M Ft-os napi készpénzállományt:</p>
+                <p>Az alábbi házipénztárak egyenlege meghaladja a megengedett {fmtBalance(customLimit, 'HUF')} napi készpénzállományt:</p>
                 {registersExceedingLimit.map(r => (
                   <div key={r.register_id} className="font-semibold pl-2 border-l border-amber-500/30">
                     {r.register_name}: {fmtBalance(r.current_balance, 'HUF')}
@@ -175,7 +219,7 @@ const PettyCashPage = () => {
                 {/* Cash Limit Utilization Progress Bar */}
                 <div className="space-y-2 mt-3 pt-3 border-t border-border/40">
                   {reg.currencies.map(c => {
-                    const limit = c.currency === 'HUF' ? 1500000 : 4000;
+                    const limit = c.currency === 'HUF' ? customLimit : 4000;
                     const pct = Math.min((Math.max(0, c.balance) / limit) * 100, 100);
                     const isHigh = pct >= 80;
                     return (

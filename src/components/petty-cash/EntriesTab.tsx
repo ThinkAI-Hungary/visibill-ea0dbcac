@@ -28,6 +28,8 @@ import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice } from './t
 import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf } from './types';
 import CashClosingDialog from './CashClosingDialog';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import SignatureDialog from './SignatureDialog';
+import { generateCashReceiptPdf } from '@/lib/cashReceiptPdf';
 
 // Add display label for opening balance source type
 const DISPLAY_SOURCE_LABELS: Record<string, string> = {
@@ -75,6 +77,13 @@ export default function EntriesTab() {
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [editingEntry, setEditingEntry] = useState<PettyCashEntry | null>(null);
   const [previewInvoicePending, setPreviewInvoicePending] = useState<any | null>(null);
+  const [printingEntry, setPrintingEntry] = useState<PettyCashEntry | null>(null);
+  const [signatureOpen, setSignatureOpen] = useState(false);
+
+  const handlePrintClick = (entry: PettyCashEntry) => {
+    setPrintingEntry(entry);
+    setSignatureOpen(true);
+  };
 
   const toggleRow = (id: string) => {
     setExpandedEntries(prev => {
@@ -669,6 +678,12 @@ export default function EntriesTab() {
                                 <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
                               </Button>
                             )}
+                            {!isOpening && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary-foreground hover:bg-primary/20"
+                                onClick={() => handlePrintClick(entry)} title="Bizonylat nyomtatása (PDF)">
+                                <FileDown className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                           </div>
                         )}
                       </TableCell>
@@ -984,6 +999,32 @@ export default function EntriesTab() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      )}
+      {printingEntry && (
+        <SignatureDialog
+          open={signatureOpen}
+          onOpenChange={setSignatureOpen}
+          isExpense={printingEntry.amount < 0}
+          onConfirm={({ payerSig, recipientSig }) => {
+            const regName = registerMap[printingEntry.register_id]?.name || 'Főpénztár';
+            const receiptNo = receiptNumbers[printingEntry.id] || 'N/A';
+            const pdfUrl = generateCashReceiptPdf({
+              companyName: selectedCompany?.name || '',
+              companyAddress: selectedCompany?.address || '',
+              companyTaxNumber: selectedCompany?.tax_number || '',
+              receiptNumber: receiptNo,
+              entryDate: printingEntry.entry_date,
+              registerName: regName,
+              description: printingEntry.description || '',
+              amount: printingEntry.amount,
+              currency: printingEntry.currency,
+              payerSig,
+              recipientSig
+            });
+            window.open(pdfUrl, '_blank');
+            setPrintingEntry(null);
+          }}
+        />
       )}
     </div>
   );

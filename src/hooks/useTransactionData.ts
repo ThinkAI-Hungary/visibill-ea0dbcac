@@ -52,11 +52,14 @@ const DEFAULT_FILTERS: TransactionFilters = {
   matchStatus: 'all',
 };
 
-export function useTransactionData() {
+export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Date) {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
-  const { dateFrom, dateTo } = useDateRange();
+  const { dateFrom: contextDateFrom, dateTo: contextDateTo } = useDateRange();
   const queryClient = useQueryClient();
+
+  const dateFrom = overrideDateFrom !== undefined ? overrideDateFrom : contextDateFrom;
+  const dateTo = overrideDateTo !== undefined ? overrideDateTo : contextDateTo;
 
   const [syncing, setSyncing] = useState(false);
   const [sortField, setSortField] = useState<string>('transaction_date');

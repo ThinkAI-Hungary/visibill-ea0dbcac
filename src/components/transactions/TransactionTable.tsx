@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { cn, formatCurrency } from '@/lib/utils';
 import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Settings, Ban, UploadCloud, ChevronDown, Link2, Link2Off, Copy, Download, FileText, X, Trash2, Lock, Users, Loader2, Plus, ClipboardCheck, Pencil, Check, Undo2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { TransactionReasonCell } from '@/components/TransactionReasonCell';
@@ -39,7 +40,15 @@ const getRowBackgroundClass = (transaction: Transaction): string => {
     return 'bg-[var(--row-matched-bg)]';
   }
   if (status === 'suggested') {
-    return 'bg-[var(--row-suggested-bg)]';
+    const score = transaction.confidence_score || 0;
+    const norm = score > 1 ? score / 100 : score;
+    if (norm >= 0.8) {
+      return 'bg-emerald-500/5 hover:bg-emerald-500/10 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 border-l-[3px] border-l-emerald-500/80';
+    } else if (norm >= 0.5) {
+      return 'bg-amber-500/5 hover:bg-amber-500/10 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 border-l-[3px] border-l-amber-500/80';
+    } else {
+      return 'bg-rose-500/5 hover:bg-rose-500/10 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 border-l-[3px] border-l-rose-500/80';
+    }
   }
   if (status === 'auto_settled') {
     return 'bg-[var(--row-settled-bg)]';
@@ -787,18 +796,69 @@ interface TransactionRowProps {
 
 const TransactionRow = React.memo(function TransactionRow({ transaction, exchangeRates, isExpanded, onToggleExpand, onOpenDetails, bankLabel, bankFullName, bankBgClass, isDuplicate, isSelected, onSelect, showCheckbox }: TransactionRowProps) {
   const matchStatus = computeMatchStatus(transaction);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState<number>(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const current = e.targetTouches[0].clientX;
+    const diff = current - touchStart;
+    setSwipeOffset(Math.max(-80, Math.min(80, diff)));
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStart === null) return;
+    if (swipeOffset > 50) {
+      if (matchStatus === 'suggested' && transaction.matched_invoice_id) {
+        (async () => {
+          try {
+            const { error } = await supabase
+              .from('transactions')
+              .update({ is_verified: true })
+              .eq('id', transaction.id);
+            if (error) throw error;
+            toast({ title: 'Sikeres jóváhagyás', description: 'A tranzakció párosítása jóváhagyva.' });
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['tx-kpis'] });
+          } catch (err) {
+            console.error('Failed to verify match via swipe:', err);
+            toast({ title: 'Hiba', description: 'Nem sikerült a jóváhagyás.', variant: 'destructive' });
+          }
+        })();
+      } else {
+        toast({ title: 'Jóváhagyás', description: 'Csak javasolt párosítások hagyhatóak jóvá így.' });
+      }
+    } else if (swipeOffset < -50) {
+      onOpenDetails(transaction);
+    }
+    setSwipeOffset(0);
+    setTouchStart(null);
+  };
 
   return (
     <>
     <TableRow
       data-row-hover
       className={cn(
-        "h-10 cursor-pointer",
+        "h-10 cursor-pointer transition-transform duration-200 select-none",
         getRowBackgroundClass(transaction),
         isExpanded && "border-b-0",
         isSelected && "ring-1 ring-primary/40 ring-inset"
       )}
+      style={{
+        transform: swipeOffset !== 0 ? `translateX(${swipeOffset}px)` : undefined,
+        transition: touchStart === null ? 'transform 0.2s ease-out' : 'none'
+      }}
       onClick={() => onToggleExpand?.(transaction.id)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* F1: Checkbox cell */}
       {showCheckbox && (
@@ -929,11 +989,29 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
                     <CheckCircle2 className="h-3 w-3" />Párosított
                   </span>
                 )}
-                {matchStatus === 'suggested' && (
-                  <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-800 dark:bg-yellow-500/15 dark:text-yellow-400 border border-black/10 dark:border-white/10">
-                    <AlertCircle className="h-3 w-3" />Javasolt
-                  </span>
-                )}
+                {matchStatus === 'suggested' && (() => {
+                  const score = transaction.confidence_score || 0;
+                  const norm = score > 1 ? score / 100 : score;
+                  if (norm >= 0.8) {
+                    return (
+                      <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/15 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/20">
+                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />Javasolt ({Math.round(norm * 100)}%)
+                      </span>
+                    );
+                  }
+                  if (norm >= 0.5) {
+                    return (
+                      <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-800 dark:bg-yellow-500/15 dark:text-yellow-400 border border-amber-500/20">
+                        <AlertCircle className="h-3 w-3 text-amber-600" />Javasolt ({Math.round(norm * 100)}%)
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-rose-500/15 text-rose-800 dark:bg-rose-500/15 dark:text-rose-400 border border-rose-500/20">
+                      <HelpCircle className="h-3 w-3 text-rose-600" />Javasolt ({Math.round(norm * 100)}%)
+                    </span>
+                  );
+                })()}
                 {matchStatus === 'auto_settled' && (
                   <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/15 text-blue-800 dark:bg-blue-500/15 dark:text-blue-400 border border-black/10 dark:border-white/10">
                     <Settings className="h-3 w-3" />Rendezett

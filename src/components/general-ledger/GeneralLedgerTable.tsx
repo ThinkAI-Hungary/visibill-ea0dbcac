@@ -101,10 +101,11 @@ interface GeneralLedgerTableProps {
   globalSearch?: string;
   isPolling?: boolean; // P4: only poll when AI/import is running
   onStatsChange?: (stats: { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number }) => void;
+  printLayoutMode?: 'synthetic' | 'analytical';
 }
 
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
-  const { presetId, dateFrom, dateTo, globalSearch, isPolling, onStatsChange } = props;
+  const { presetId, dateFrom, dateTo, globalSearch, isPolling, onStatsChange, printLayoutMode = 'analytical' } = props;
   const deferredSearch = useDeferredValue(globalSearch);
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
@@ -136,11 +137,43 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     }
   }, [presetId]);
 
-  // By default, expanded top-level items (length 1) to show some data, 
-  // but users can expand/collapse freely. Let's expand '1' to show the tree.
-  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set(['1', '13', '14']));
+  // Cache tree expansion state in localStorage
+  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(`visibill_gl_expanded_${presetId}_${selectedCompany?.id}`);
+      if (stored) {
+        return new Set(JSON.parse(stored));
+      }
+    } catch (e) {}
+    return new Set(['1', '13', '14']);
+  });
+  
   const [savedExpandedRowIds, setSavedExpandedRowIds] = useState<Set<string> | null>(null);
   const lastSearchRef = useRef('');
+
+  useEffect(() => {
+    if (!presetId || !selectedCompany?.id) return;
+    try {
+      const stored = localStorage.getItem(`visibill_gl_expanded_${presetId}_${selectedCompany.id}`);
+      if (stored) {
+        setExpandedRowIds(new Set(JSON.parse(stored)));
+      } else {
+        setExpandedRowIds(new Set(['1', '13', '14']));
+      }
+    } catch (e) {
+      setExpandedRowIds(new Set(['1', '13', '14']));
+    }
+  }, [presetId, selectedCompany?.id]);
+
+  useEffect(() => {
+    if (!presetId || !selectedCompany?.id) return;
+    try {
+      localStorage.setItem(
+        `visibill_gl_expanded_${presetId}_${selectedCompany.id}`,
+        JSON.stringify(Array.from(expandedRowIds))
+      );
+    } catch (e) {}
+  }, [expandedRowIds, presetId, selectedCompany?.id]);
   
   const [hideBannerNextTime, setHideBannerNextTime] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -647,7 +680,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
       if (!lowerQuery) {
         isVisibleOnScreen = isRoot || ancestors.every(a => expandedRowIds.has(a.id));
-        isVisibleDuringPrint = isRoot || ancestors.every(a => categoriesWithItems.has(a.id));
+        isVisibleDuringPrint = isRoot || ancestors.every(a => {
+          if (printLayoutMode === 'synthetic') return true;
+          return categoriesWithItems.has(a.id);
+        });
       } else {
         const isDirectMatch = directMatchIds.has(item.id);
         const ancestorMatches = ancestors.some(a => directMatchIds.has(a.id));
@@ -656,10 +692,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         isVisibleOnScreen = isDirectMatch || ancestorMatches || descendantMatches;
         isVisibleDuringPrint = isVisibleOnScreen;
       }
+
+      if (printLayoutMode === 'synthetic' && item.isItem) {
+        isVisibleDuringPrint = false;
+      }
       
       return { ...item, isVisibleOnScreen, isVisibleDuringPrint, isRoot, depth };
     });
-  }, [expandedRowIds, tableData, deferredSearch, categoriesWithItems]);
+  }, [expandedRowIds, tableData, deferredSearch, categoriesWithItems, printLayoutMode]);
 
   // Calculate generic footer totals by summing root level items
   const footerTotals = useMemo(() => {

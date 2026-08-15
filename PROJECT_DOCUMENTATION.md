@@ -771,6 +771,15 @@ npm run preview      # Preview production build
 
 ## Changelog
 
+### Version 1.7.3 (2026-08-15)
+- **Annual Report & Editor Optimization:**
+  - **Editor Focus Stability:** Replaced dynamic text-length-dependent editor key with a state-controlled reset counter. Debounced auto-saving no longer recreates the editor DOM, resolving cursor jump, focus loss, and document scroll resetting.
+  - **Live Preview Scroll Preservation:** Added a scroll position capture and restoration system on the sticky live preview iframe. The scroll coordinates are preserved during updates and reapplied on load, allowing seamless side-by-side editing.
+  - **eaisyBill Rebranding:** Rebranded the report cover page logo from `eaisyBooks` to `eaisyBill`.
+  - **Cover Badge Cleanups:** Removed the hardcoded `Generálta: eaisybooks.hu` footer badge.
+- **VAT Return (M-Lap) Partner Validation:**
+  - **8-digit Törzsszám Support:** Extended `validateHungarianTaxNumber` to support Hungarian 8-digit partner tax numbers (törzsszám) alongside standard 11-digit hyphenated tax numbers, calculating CDV checksums correctly and resolving incorrect "invalid format" flags on M-lap pages.
+
 ### Version 1.7.2 (2026-08-13)
 - **Eaisybooks UI/UX Improvements:**
   - **Smooth Mode Switcher:** Implemented a smooth fade-in loading state transition for switching between eaisyBill and eaisyBooks modes.

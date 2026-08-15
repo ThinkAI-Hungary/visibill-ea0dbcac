@@ -467,9 +467,11 @@ export function useUpdateTicketAssignee() {
 
 // ── Hook: Fetch support agents ────────────────────────────────
 export function useSupportAgents() {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["support_agents"],
+    queryKey: ["support_agents", user?.id],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from("profiles")
         .select("user_id, name")
@@ -479,6 +481,7 @@ export function useSupportAgents() {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 }

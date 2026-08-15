@@ -6,6 +6,7 @@ import { useActivePreset } from '@/hooks/useActivePreset';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +20,7 @@ import {
   Loader2, CheckCircle2, AlertTriangle, XCircle, Info,
   ChevronRight, ChevronLeft, FileText, Download, RefreshCw,
   ClipboardCheck, BookOpen, DollarSign, Upload, Shield, Database,
-  Lock, Unlock, Plus, Trash2, RotateCcw, ExternalLink, Eye
+  Lock, Unlock, Plus, Trash2, RotateCcw, ExternalLink, Eye, Scale
 } from 'lucide-react';
 import { generateAnnualReportPdf, generateAnnualReportPreviewUrl } from '@/lib/annualReportPdf';
 import { downloadAnnualReportXml } from '@/lib/annualReportXml';
@@ -97,9 +98,14 @@ export default function AnnualReportPage() {
   const scopedNavigate = useScopedNavigate();
 
   const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = useState(currentYear);
+   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [currentStep, setCurrentStep] = useState(1);
   const { data: exchangeRates } = useExchangeRates();
+  const [activeSectionKey, setActiveSectionKey] = useState<string>('');
+  const [livePreviewUrl, setLivePreviewUrl] = useState<string | null>(null);
+  const [resetCounter, setResetCounter] = useState(0);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const iframeScrollRef = useRef(0);
 
   // B11: Fetch all reports for this company (for history/archive)
   const { data: allReports } = useQuery({
@@ -108,7 +114,7 @@ export default function AnnualReportPage() {
       if (!selectedCompany?.id || !activePresetId) return [];
       const { data, error } = await supabase
         .from('annual_reports')
-        .select('id, fiscal_year, status, frozen_at, validated_at, created_at, updated_at')
+        .select('id, fiscal_year, status, net_income, frozen_at, validated_at, created_at, updated_at')
         .eq('company_id', selectedCompany.id)
         .eq('preset_id', activePresetId)
         .order('fiscal_year', { ascending: false });
@@ -166,6 +172,53 @@ export default function AnnualReportPage() {
     }
   });
 
+  // Simple micro-confetti burst animation using canvas or DOM elements
+  const triggerConfetti = () => {
+    const colors = ['#10b981', '#059669', '#34d399', '#6ee7b7', '#f59e0b', '#3b82f6'];
+    for (let i = 0; i < 80; i++) {
+      const el = document.createElement('div');
+      el.style.position = 'fixed';
+      el.style.width = `${Math.random() * 8 + 5}px`;
+      el.style.height = `${Math.random() * 8 + 5}px`;
+      el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      el.style.left = '50%';
+      el.style.top = '60%';
+      el.style.borderRadius = '50%';
+      el.style.pointerEvents = 'none';
+      el.style.zIndex = '9999';
+      el.style.transform = 'translate(-50%, -50%)';
+      document.body.appendChild(el);
+      
+      const angle = Math.random() * Math.PI * 2;
+      const velocity = Math.random() * 12 + 6;
+      let vx = Math.cos(angle) * velocity;
+      let vy = Math.sin(angle) * velocity - 5; // upward bias
+      let x = window.innerWidth / 2;
+      let y = window.innerHeight * 0.6;
+      let opacity = 1;
+      
+      const animate = () => {
+        x += vx;
+        y += vy;
+        vy += 0.35; // gravity
+        vx *= 0.98; // drag
+        opacity -= 0.015;
+        
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        el.style.opacity = String(opacity);
+        
+        if (opacity > 0) {
+          requestAnimationFrame(animate);
+        } else {
+          el.remove();
+        }
+      };
+      
+      requestAnimationFrame(animate);
+    }
+  };
+
   // ── Update report mutation ──
   const updateReport = useMutation({
     mutationFn: async (updates: Partial<AnnualReport>) => {
@@ -175,8 +228,14 @@ export default function AnnualReportPage() {
         .update(updates as any)
         .eq('id', report.id);
       if (error) throw error;
+      return updates;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['annual_report'] })
+    onSuccess: (updates) => {
+      queryClient.invalidateQueries({ queryKey: ['annual_report'] });
+      if (updates?.status === 'finalized') {
+        triggerConfetti();
+      }
+    }
   });
 
   // ── Debounced field editing (prevents lag from per-keystroke DB writes) ──
@@ -334,6 +393,93 @@ export default function AnnualReportPage() {
       r.section === 'liabilities' && (r.row_code || '').startsWith('D') && r.type !== 'total'
     );
   }, [report?.frozen_bs_data]);
+
+  // ── Tax Loss Carryforward (Veszteségelhatárolás) helpers ──
+  const priorLossReports = useMemo(() => {
+    if (!allReports) return [];
+    return allReports
+      .filter((r: any) => r.fiscal_year < selectedYear && (r.net_income || 0) < 0)
+      .sort((a: any, b: any) => a.fiscal_year - b.fiscal_year);
+  }, [allReports, selectedYear]);
+
+  const accumulatedPriorLosses = useMemo(() => {
+    return priorLossReports.reduce((sum, r) => sum + Math.abs(r.net_income || 0), 0);
+  }, [priorLossReports]);
+
+  const maxLossOffset = useMemo(() => {
+    const currentNet = getField('net_income') || 0;
+    return currentNet > 0 ? Math.round(currentNet * 0.5) : 0;
+  }, [draftFields, report?.net_income]);
+
+  const appliedLossOffset = useMemo(() => {
+    const entry = ((report?.notes_sections as any[]) || []).find((s: any) => s.section_key === 'tax_loss_applied');
+    return entry ? Number(entry.text) || 0 : 0;
+  }, [report?.notes_sections]);
+
+  const setAppliedLossOffset = (val: number) => {
+    const sections = [...((report?.notes_sections as any[]) || [])];
+    const idx = sections.findIndex((s: any) => s.section_key === 'tax_loss_applied');
+    const entry = { section_key: 'tax_loss_applied', text: String(val) };
+    if (idx >= 0) sections[idx] = entry; else sections.push(entry);
+    updateReport.mutate({ notes_sections: sections });
+  };
+
+  // ── Complete PDF Data object for live preview and exports ──
+  const pdfData = useMemo(() => {
+    return {
+      companyName: selectedCompany?.name || '',
+      companyAddress: selectedCompany?.address || '',
+      companyTaxNumber: selectedCompany?.tax_number || '',
+      fiscalYear: report?.fiscal_year ?? selectedYear,
+      representativeName: getField('representative_name') || '',
+      representativeRole: getField('representative_role') || 'ügyvezető',
+      reportDate: getField('report_date') || new Date().toISOString().slice(0, 10),
+      frozenBsData: report?.frozen_bs_data || [],
+      frozenPnlData: report?.frozen_pnl_data || [],
+      notesSections: (report?.notes_sections as any[]) || [],
+      notesTemplates: notesTemplates || [],
+      netIncome: getField('net_income') || 0,
+      dividendAmount: getField('dividend_amount') || 0,
+      retainedEarnings: getField('retained_earnings') || 0,
+      dividendResolutionDate: getField('dividend_resolution_date') || '',
+      assetMovement: assetMovement || undefined,
+      salaryMetrics: salaryMetrics || undefined,
+      equityRows: equityRows || undefined,
+    };
+  }, [report, selectedCompany, notesTemplates, assetMovement, salaryMetrics, equityRows, draftFields]);
+
+  // ── Debounced Live Preview Generator ──
+  useEffect(() => {
+    if (currentStep !== 4) return;
+    
+    const debounceTimer = setTimeout(() => {
+      try {
+        if (iframeRef.current && iframeRef.current.contentWindow) {
+          try {
+            iframeScrollRef.current = iframeRef.current.contentWindow.scrollY;
+          } catch (e) {
+            // Ignore
+          }
+        }
+        const url = generateAnnualReportPreviewUrl(pdfData);
+        setLivePreviewUrl(prev => {
+          if (prev) URL.revokeObjectURL(prev);
+          return url;
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }, 500);
+    
+    return () => clearTimeout(debounceTimer);
+  }, [pdfData, currentStep]);
+
+  // ── Initialize active notes tab key ──
+  useEffect(() => {
+    if (notesTemplates && notesTemplates.length > 0 && !activeSectionKey) {
+      setActiveSectionKey(notesTemplates[0].section_key);
+    }
+  }, [notesTemplates, activeSectionKey]);
 
   // ── Financial metrics from frozen data (for variable substitution) ──
   const financialMetrics = useMemo(() => {
@@ -967,247 +1113,347 @@ export default function AnnualReportPage() {
           {/* STEP 4: Supplementary Notes */}
           {currentStep === 4 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary" />
-                4. Kiegészítő Melléklet
-              </h2>
-              <p className="text-muted-foreground text-sm">
-                Jogszabályi szöveges sablonok. Módosítsd a szöveget, ha szükséges.
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                    4. Kiegészítő Melléklet
+                  </h2>
+                  <p className="text-muted-foreground text-xs mt-0.5">
+                    Jogszabályi szöveges sablonok és egyéni mellékletek szerkesztése élő PDF előnézettel.
+                  </p>
+                </div>
+              </div>
 
-              {notesTemplates?.map((tmpl: any) => {
-                const saved = (report.notes_sections as any[])?.find((s: any) => s.section_key === tmpl.section_key);
-                const rawText = saved?.text || tmpl.default_text;
-                const text = replaceVariables(rawText);
-                const isAssetSection = tmpl.section_key === 'asset_movement';
-                const isEquitySection = tmpl.section_key === 'equity_changes';
-                const isSalarySection = tmpl.section_key === 'employee_info';
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left Side: Sidebar + Active Editor */}
+                <div className="lg:col-span-7 space-y-4">
+                  {/* Vertical Tabs Sidebar & Content Area */}
+                  <div className="flex flex-col md:flex-row gap-4 border border-border/40 rounded-2xl p-4 bg-muted/10">
+                    {/* Vertical tab buttons */}
+                    <div className="flex flex-col gap-1 md:w-48 shrink-0">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 pl-2">Szekciók</p>
+                      {(() => {
+                        const templates = (notesTemplates || []).map((t: any) => ({
+                          key: t.section_key,
+                          title: t.section_title,
+                          isCustom: false,
+                          isRequired: t.is_required,
+                          defaultText: t.default_text,
+                        }));
+                        const custom = (((report?.notes_sections as any[]) || []).filter((s: any) => s.is_custom) || []).map((s: any) => ({
+                          key: s.section_key,
+                          title: s.title || 'Egyéni szekció',
+                          isCustom: true,
+                          isRequired: false,
+                          defaultText: '',
+                        }));
+                        const allNotesTabs = [...templates, ...custom];
+                        return (
+                          <>
+                            {allNotesTabs.map((tab) => {
+                              const isActive = activeSectionKey === tab.key;
+                              const saved = (report.notes_sections as any[])?.find((s: any) => s.section_key === tab.key);
+                              return (
+                                <Button
+                                  key={tab.key}
+                                  variant={isActive ? 'default' : 'ghost'}
+                                  size="sm"
+                                  className={cn(
+                                    "justify-start text-xs font-semibold px-3 py-2 h-auto text-left rounded-lg transition-all",
+                                    isActive 
+                                      ? "bg-primary text-primary-foreground shadow" 
+                                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                  )}
+                                  onClick={() => setActiveSectionKey(tab.key)}
+                                >
+                                  <span className="truncate flex-1">{tab.title}</span>
+                                  {saved && <span className="ml-1.5 text-[9px] text-emerald-500 font-bold shrink-0">✓</span>}
+                                </Button>
+                              );
+                            })}
 
-                return (
-                  <div key={tmpl.section_key} className="border border-border/50 rounded-xl overflow-hidden">
-                    <div className="bg-muted/30 px-4 py-3 border-b border-border/50 flex items-center justify-between">
-                      <span className="font-bold text-sm">{tmpl.section_title}</span>
-                      <div className="flex items-center gap-2">
-                        {saved && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground gap-1"
-                            onClick={() => {
-                              const sections = ((report.notes_sections as any[]) || []).filter((s: any) => s.section_key !== tmpl.section_key);
-                              updateReport.mutate({ notes_sections: sections });
-                              // Clear local draft too
-                              setDraftFields(prev => {
-                                const next = { ...prev };
-                                delete next[`note_${tmpl.section_key}`];
-                                return next;
-                              });
-                              toast({ title: 'Visszaállítva', description: `${tmpl.section_title} alapértelmezettre állítva.` });
-                            }}
-                          >
-                            <RotateCcw className="w-3 h-3" />
-                            Alapértelmezett
-                          </Button>
-                        )}
-                        {(isAssetSection || isEquitySection || isSalarySection) && (
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-medium">Auto-fill</span>
-                        )}
-                        {tmpl.is_required && <span className="text-[10px] px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">Kötelező</span>}
-                      </div>
+                            {/* Add custom section button in sidebar */}
+                            <div className="border-t border-border/40 pt-3 mt-2 space-y-2">
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-2">Egyéni szekció</p>
+                              <div className="flex flex-col gap-1.5 px-2">
+                                <Input
+                                  placeholder="Új címe..."
+                                  value={newSectionTitle}
+                                  onChange={(e) => setNewSectionTitle(e.target.value)}
+                                  className="h-7 text-xs"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="xs"
+                                  className="w-full text-[10px] gap-1 h-6"
+                                  disabled={!newSectionTitle.trim()}
+                                  onClick={() => {
+                                    const key = `custom_${Date.now()}`;
+                                    const sections = [...((report.notes_sections as any[]) || []), {
+                                      section_key: key,
+                                      title: newSectionTitle.trim(),
+                                      text: '',
+                                      is_custom: true
+                                    }];
+                                    updateReport.mutate({ notes_sections: sections });
+                                    setActiveSectionKey(key);
+                                    setNewSectionTitle('');
+                                    toast({ title: 'Szekció hozzáadva', description: newSectionTitle.trim() });
+                                  }}
+                                >
+                                  <Plus className="w-3 h-3" /> Hozzáadás
+                                </Button>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
-                    <div className="p-4 space-y-4">
-                      {/* Dynamic table: TENY */}
-                      {isAssetSection && assetMovement && (
-                        <div className="bg-muted/20 rounded-lg border border-border/30 overflow-hidden">
-                          <table className="w-full text-sm">
-                            <thead><tr className="bg-muted/50 text-xs">
-                              <th className="p-2 text-left">Mutató</th>
-                              <th className="p-2 text-right">Érték</th>
-                            </tr></thead>
-                            <tbody className="divide-y divide-border/20">
-                              <tr><td className="p-2">Összes eszköz (db)</td><td className="p-2 text-right tabular-nums">{assetMovement.total}</td></tr>
-                              <tr><td className="p-2">Aktív eszközök</td><td className="p-2 text-right tabular-nums">{assetMovement.active}</td></tr>
-                              <tr><td className="p-2">Kivezetett eszközök</td><td className="p-2 text-right tabular-nums">{assetMovement.disposed}</td></tr>
-                              <tr className="font-medium"><td className="p-2">Bruttó érték összesen</td><td className="p-2 text-right tabular-nums">{new Intl.NumberFormat('hu-HU').format(assetMovement.totalAcquisition)} Ft</td></tr>
-                              <tr><td className="p-2">Aktív eszközök bruttó értéke</td><td className="p-2 text-right tabular-nums">{new Intl.NumberFormat('hu-HU').format(assetMovement.activeAcquisition)} Ft</td></tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
 
-                      {/* Dynamic table: Equity */}
-                      {isEquitySection && equityRows.length > 0 && (
-                        <div className="bg-muted/20 rounded-lg border border-border/30 overflow-hidden">
-                          <table className="w-full text-sm">
-                            <thead><tr className="bg-muted/50 text-xs">
-                              <th className="p-2 text-left">Sor</th>
-                              <th className="p-2 text-left">Megnevezés</th>
-                              <th className="p-2 text-right">Előző év</th>
-                              <th className="p-2 text-right">Tárgyév</th>
-                            </tr></thead>
-                            <tbody className="divide-y divide-border/20">
-                              {equityRows.map((r: any) => (
-                                <tr key={r.bs_structure_id}>
-                                  <td className="p-2 font-mono text-xs">{r.row_code}</td>
-                                  <td className="p-2">{r.name}</td>
-                                  <td className="p-2 text-right tabular-nums">{new Intl.NumberFormat('hu-HU').format(Math.round((Number(r.prior_year_balance) || 0) / 1000))} E</td>
-                                  <td className="p-2 text-right tabular-nums">{new Intl.NumberFormat('hu-HU').format(Math.round((Number(r.current_balance) || 0) / 1000))} E</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                    {/* Active Editor content container */}
+                    <div className="flex-1 min-w-0 bg-background border border-border/30 rounded-xl overflow-hidden shadow-sm p-4 space-y-4">
+                      {(() => {
+                        const templates = (notesTemplates || []).map((t: any) => ({
+                          key: t.section_key,
+                          title: t.section_title,
+                          isCustom: false,
+                          isRequired: t.is_required,
+                          defaultText: t.default_text,
+                        }));
+                        const custom = (((report?.notes_sections as any[]) || []).filter((s: any) => s.is_custom) || []).map((s: any) => ({
+                          key: s.section_key,
+                          title: s.title || 'Egyéni szekció',
+                          isCustom: true,
+                          isRequired: false,
+                          defaultText: '',
+                        }));
+                        const allNotesTabs = [...templates, ...custom];
+                        const tab = allNotesTabs.find(t => t.key === activeSectionKey);
+                        if (!tab) {
+                          return (
+                            <div className="text-center py-8 text-muted-foreground text-xs">
+                              Válassz ki egy szekciót a szerkesztéshez a bal oldali menüből.
+                            </div>
+                          );
+                        }
 
-                      {/* Dynamic table: Salary */}
-                      {isSalarySection && salaryMetrics && (
-                        <div className="bg-muted/20 rounded-lg border border-border/30 overflow-hidden">
-                          <table className="w-full text-sm">
-                            <thead><tr className="bg-muted/50 text-xs">
-                              <th className="p-2 text-left">Mutató</th>
-                              <th className="p-2 text-right">Érték</th>
-                            </tr></thead>
-                            <tbody className="divide-y divide-border/20">
-                              <tr><td className="p-2">Átlagos létszám</td><td className="p-2 text-right tabular-nums">{salaryMetrics.headcount} fő</td></tr>
-                              <tr><td className="p-2">Bérköltség</td><td className="p-2 text-right tabular-nums">{new Intl.NumberFormat('hu-HU').format(salaryMetrics.totalWages)} Ft</td></tr>
-                              <tr><td className="p-2">Bérjárulékok</td><td className="p-2 text-right tabular-nums">{new Intl.NumberFormat('hu-HU').format(salaryMetrics.totalContrib)} Ft</td></tr>
-                              <tr className="font-medium"><td className="p-2">Összes személyi jellegű ráfordítás</td><td className="p-2 text-right tabular-nums">{new Intl.NumberFormat('hu-HU').format(salaryMetrics.total)} Ft</td></tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                        const saved = (report.notes_sections as any[])?.find((s: any) => s.section_key === tab.key);
+                        const isAssetSection = tab.key === 'asset_movement';
+                        const isEquitySection = tab.key === 'equity_changes';
+                        const isSalarySection = tab.key === 'employee_info';
 
-                      {/* Editor and Preview Side-by-side */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Szerkesztés</p>
-                          <RichTextEditor
-                            key={`rte_${tmpl.section_key}_${saved?.text?.length ?? 0}_${!saved ? 'default' : 'saved'}`}
-                            initialContent={saved?.text || tmpl.default_text}
-                            onChange={(newText) => {
-                              // Debounce the DB write — no local draft needed since editor is uncontrolled
-                              if (debounceRef.current) clearTimeout(debounceRef.current);
-                              debounceRef.current = setTimeout(() => {
-                                const sections = [...((report.notes_sections as any[]) || [])];
-                                const idx = sections.findIndex((s: any) => s.section_key === tmpl.section_key);
-                                const entry = { section_key: tmpl.section_key, text: newText };
-                                if (idx >= 0) sections[idx] = entry; else sections.push(entry);
-                                updateReport.mutate({ notes_sections: sections });
-                              }, 1200);
-                            }}
-                            placeholder={tmpl.section_title}
-                             variables={[
-                              { key: '[Cégnév]', label: 'Cég neve' },
-                              { key: '[Székhely]', label: 'Székhely' },
-                              { key: '[Adószám]', label: 'Adószám' },
-                              { key: '[Tárgyév]', label: 'Tárgyév' },
-                              { key: '[Tárgyév+1]', label: 'Tárgyév+1' },
-                              { key: '[Képviselő neve]', label: 'Képviselő' },
-                              { key: '[Képviselő beosztása]', label: 'Beosztás' },
-                              { key: '[Saját tőke]', label: 'Saját tőke (E Ft)' },
-                              { key: '[Saját tőke változás]', label: 'Tőke változás iránya' },
-                              { key: '[Mérlegfőösszeg]', label: 'Mérlegfőösszeg (E Ft)' },
-                              { key: '[ROE]', label: 'ROE %' },
-                              { key: '[Likviditás]', label: 'Likviditási mutató' },
-                              { key: '[Likviditás értékelés]', label: 'Likviditás szöveges értékelés' },
-                              { key: '[Adózott eredmény]', label: 'Adózott eredmény (E Ft)' },
-                              { key: '[Osztalék]', label: 'Osztalék (E Ft)' },
-                              { key: '[Eredménytartalék]', label: 'Eredménytartalék (E Ft)' },
-                              { key: '[AUTOMATIKUS TÁBLÁZAT - TENY MODULBÓL]', label: 'Tárgyi Eszköz Táblázat' },
-                              { key: '[AUTOMATIKUS TÁBLÁZAT - MÉRLEG D. SOROKBÓL]', label: 'Saját Tőke Táblázat' },
-                              { key: '[AUTOMATIKUS TÁBLÁZAT - FOGLALKOZTATOTTI ADATOK]', label: 'Létszám/Bér Táblázat' },
-                            ]}
-                          />
-                        </div>
- 
-                        {/* Live preview with variables replaced */}
-                        <div className="space-y-2 flex flex-col h-full">
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                            <Info className="w-3.5 h-3.5 text-blue-500" /> Előnézet (behelyettesített változókkal)
-                          </p>
-                          <div 
-                            className="flex-1 bg-muted/15 border border-border/40 rounded-lg p-4 min-h-[220px] overflow-y-auto max-h-[350px] text-xs text-foreground/80 leading-relaxed prose prose-sm dark:prose-invert"
-                            dangerouslySetInnerHTML={{ __html: replaceVariables(saved?.text || tmpl.default_text) }}
-                          />
-                        </div>
-                      </div>
+                        return (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between pb-2 border-b border-border/40">
+                              <h3 className="font-bold text-sm text-foreground">{tab.title}</h3>
+                              <div className="flex items-center gap-2">
+                                {saved && (
+                                  <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground gap-1"
+                                    onClick={() => {
+                                      const sections = ((report.notes_sections as any[]) || []).filter((s: any) => s.section_key !== tab.key);
+                                      updateReport.mutate({ notes_sections: sections });
+                                      setResetCounter(prev => prev + 1);
+                                      toast({ title: 'Visszaállítva', description: `${tab.title} alapértelmezettre állítva.` });
+                                    }}
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    Visszaállítás
+                                  </Button>
+                                )}
+                                {tab.isCustom && (
+                                  <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    className="h-6 px-2 text-[10px] text-red-500 hover:text-red-700 gap-1 hover:bg-red-500/5"
+                                    onClick={() => {
+                                      const sections = ((report.notes_sections as any[]) || []).filter((s: any) => s.section_key !== tab.key);
+                                      updateReport.mutate({ notes_sections: sections });
+                                      toast({ title: 'Törölve', description: `${tab.title} eltávolítva.` });
+                                    }}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    Törlés
+                                  </Button>
+                                )}
+                                {(isAssetSection || isEquitySection || isSalarySection) && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-semibold select-none">Auto-fill</span>
+                                )}
+                                {tab.isRequired && <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold select-none">Kötelező</span>}
+                              </div>
+                            </div>
+
+                            {/* Supplementary Tables */}
+                            {isAssetSection && assetMovement && (
+                              <div className="bg-muted/20 rounded-lg border border-border/30 overflow-hidden text-xs">
+                                <table className="w-full text-xs">
+                                  <thead><tr className="bg-muted/50 font-bold border-b text-[10px] uppercase text-muted-foreground">
+                                    <th className="p-2 text-left">Mutató</th>
+                                    <th className="p-2 text-right">Érték</th>
+                                  </tr></thead>
+                                  <tbody className="divide-y divide-border/10">
+                                    <tr><td className="p-2">Összes eszköz (db)</td><td className="p-2 text-right font-mono font-medium">{assetMovement.total}</td></tr>
+                                    <tr><td className="p-2">Aktív eszközök</td><td className="p-2 text-right font-mono font-medium">{assetMovement.active}</td></tr>
+                                    <tr><td className="p-2">Kivezetett eszközök</td><td className="p-2 text-right font-mono font-medium">{assetMovement.disposed}</td></tr>
+                                    <tr className="font-semibold"><td className="p-2">Bruttó érték összesen</td><td className="p-2 text-right font-mono text-primary">{new Intl.NumberFormat('hu-HU').format(assetMovement.totalAcquisition)} Ft</td></tr>
+                                    <tr><td className="p-2">Aktív eszközök bruttó értéke</td><td className="p-2 text-right font-mono font-medium">{new Intl.NumberFormat('hu-HU').format(assetMovement.activeAcquisition)} Ft</td></tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {isEquitySection && equityRows.length > 0 && (
+                              <div className="bg-muted/20 rounded-lg border border-border/30 overflow-hidden text-xs">
+                                <table className="w-full text-xs">
+                                  <thead><tr className="bg-muted/50 font-bold border-b text-[10px] uppercase text-muted-foreground">
+                                    <th className="p-2 text-left">Sor</th>
+                                    <th className="p-2 text-left">Megnevezés</th>
+                                    <th className="p-2 text-right">Előző év</th>
+                                    <th className="p-2 text-right">Tárgyév</th>
+                                  </tr></thead>
+                                  <tbody className="divide-y divide-border/10">
+                                    {equityRows.map((r: any) => (
+                                      <tr key={r.bs_structure_id}>
+                                        <td className="p-2 font-mono text-[10px] text-muted-foreground">{r.row_code}</td>
+                                        <td className="p-2 font-medium">{r.name}</td>
+                                        <td className="p-2 text-right font-mono">{new Intl.NumberFormat('hu-HU').format(Math.round((Number(r.prior_year_balance) || 0) / 1000))} E</td>
+                                        <td className="p-2 text-right font-mono font-semibold text-primary">{new Intl.NumberFormat('hu-HU').format(Math.round((Number(r.current_balance) || 0) / 1000))} E</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {isSalarySection && salaryMetrics && (
+                              <div className="bg-muted/20 rounded-lg border border-border/30 overflow-hidden text-xs">
+                                <table className="w-full text-xs">
+                                  <thead><tr className="bg-muted/50 font-bold border-b text-[10px] uppercase text-muted-foreground">
+                                    <th className="p-2 text-left">Mutató</th>
+                                    <th className="p-2 text-right">Érték</th>
+                                  </tr></thead>
+                                  <tbody className="divide-y divide-border/10">
+                                    <tr><td className="p-2">Átlagos létszám</td><td className="p-2 text-right font-mono font-medium">{salaryMetrics.headcount} fő</td></tr>
+                                    <tr><td className="p-2">Bérköltség</td><td className="p-2 text-right font-mono font-medium">{new Intl.NumberFormat('hu-HU').format(salaryMetrics.totalWages)} Ft</td></tr>
+                                    <tr><td className="p-2">Bérjárulékok</td><td className="p-2 text-right font-mono font-medium">{new Intl.NumberFormat('hu-HU').format(salaryMetrics.totalContrib)} Ft</td></tr>
+                                    <tr className="font-semibold"><td className="p-2">Összes személyi jellegű ráfordítás</td><td className="p-2 text-right font-mono text-primary">{new Intl.NumberFormat('hu-HU').format(salaryMetrics.total)} Ft</td></tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {tab.isCustom ? (
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Szekció szövege</Label>
+                                <Textarea
+                                  value={(draftFields[`note_${tab.key}`] !== undefined) ? draftFields[`note_${tab.key}`] : (saved?.text || '')}
+                                  rows={12}
+                                  className="text-xs font-sans leading-relaxed"
+                                  onChange={(e) => {
+                                    const newText = e.target.value;
+                                    setDraftFields(prev => ({ ...prev, [`note_${tab.key}`]: newText }));
+                                    if (debounceRef.current) clearTimeout(debounceRef.current);
+                                    debounceRef.current = setTimeout(() => {
+                                      const sections = [...((report.notes_sections as any[]) || [])];
+                                      const idx = sections.findIndex((x: any) => x.section_key === tab.key);
+                                      if (idx >= 0) sections[idx] = { ...saved, text: newText };
+                                      updateReport.mutate({ notes_sections: sections });
+                                      setDraftFields(prev => {
+                                        const next = { ...prev };
+                                        delete next[`note_${tab.key}`];
+                                        return next;
+                                      });
+                                    }, 800);
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Szerkesztő (sablon változókkal)</Label>
+                                <RichTextEditor
+                                  key={`rte_${tab.key}_${resetCounter}`}
+                                  initialContent={saved?.text || tab.defaultText}
+                                  onChange={(newText) => {
+                                    if (debounceRef.current) clearTimeout(debounceRef.current);
+                                    debounceRef.current = setTimeout(() => {
+                                      const sections = [...((report.notes_sections as any[]) || [])];
+                                      const idx = sections.findIndex((s: any) => s.section_key === tab.key);
+                                      const entry = { section_key: tab.key, text: newText };
+                                      if (idx >= 0) sections[idx] = entry; else sections.push(entry);
+                                      updateReport.mutate({ notes_sections: sections });
+                                    }, 1000);
+                                  }}
+                                  placeholder={tab.title}
+                                  variables={[
+                                    { key: '[Cégnév]', label: 'Cég neve' },
+                                    { key: '[Székhely]', label: 'Székhely' },
+                                    { key: '[Adószám]', label: 'Adószám' },
+                                    { key: '[Tárgyév]', label: 'Tárgyév' },
+                                    { key: '[Tárgyév+1]', label: 'Tárgyév+1' },
+                                    { key: '[Képviselő neve]', label: 'Képviselő' },
+                                    { key: '[Képviselő beosztása]', label: 'Beosztás' },
+                                    { key: '[Saját tőke]', label: 'Saját tőke (E Ft)' },
+                                    { key: '[Saját tőke változás]', label: 'Tőke változás iránya' },
+                                    { key: '[Mérlegfőösszeg]', label: 'Mérlegfőösszeg (E Ft)' },
+                                    { key: '[ROE]', label: 'ROE %' },
+                                    { key: '[Likviditás]', label: 'Likviditási mutató' },
+                                    { key: '[Likviditás értékelés]', label: 'Likviditás szöveges értékelés' },
+                                    { key: '[Adózott eredmény]', label: 'Adózott eredmény (E Ft)' },
+                                    { key: '[Osztalék]', label: 'Osztalék (E Ft)' },
+                                    { key: '[Eredménytartalék]', label: 'Eredménytartalék (E Ft)' },
+                                    { key: '[AUTOMATIKUS TÁBLÁZAT - TENY MODULBÓL]', label: 'Tárgyi Eszköz Táblázat' },
+                                    { key: '[AUTOMATIKUS TÁBLÁZAT - MÉRLEG D. SOROKBÓL]', label: 'Saját Tőke Táblázat' },
+                                    { key: '[AUTOMATIKUS TÁBLÁZAT - FOGLALKOZTATOTTI ADATOK]', label: 'Létszám/Bér Táblázat' },
+                                  ]}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
-                  </div>
-                );
-              })}
-
-              {/* Custom sections added by user */}
-              {((report.notes_sections as any[]) || []).filter((s: any) => s.is_custom).map((s: any) => (
-                <div key={s.section_key} className="border border-border/50 rounded-xl overflow-hidden">
-                  <div className="bg-muted/30 px-4 py-3 border-b border-border/50 flex items-center justify-between">
-                    <span className="font-bold text-sm">{s.title || 'Egyéni szekció'}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
-                      onClick={() => {
-                        const sections = ((report.notes_sections as any[]) || []).filter((x: any) => x.section_key !== s.section_key);
-                        updateReport.mutate({ notes_sections: sections });
-                      }}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                  <div className="p-4">
-                    <Textarea
-                      value={(draftFields[`note_${s.section_key}`] !== undefined) ? draftFields[`note_${s.section_key}`] : (s.text || '')}
-                      rows={4}
-                      className="text-sm"
-                      onChange={(e) => {
-                        const newText = e.target.value;
-                        setDraftFields(prev => ({ ...prev, [`note_${s.section_key}`]: newText }));
-                        if (debounceRef.current) clearTimeout(debounceRef.current);
-                        debounceRef.current = setTimeout(() => {
-                          const sections = [...((report.notes_sections as any[]) || [])];
-                          const idx = sections.findIndex((x: any) => x.section_key === s.section_key);
-                          if (idx >= 0) sections[idx] = { ...s, text: newText };
-                          updateReport.mutate({ notes_sections: sections });
-                          setDraftFields(prev => {
-                            const next = { ...prev };
-                            delete next[`note_${s.section_key}`];
-                            return next;
-                          });
-                        }, 800);
-                      }}
-                    />
                   </div>
                 </div>
-              ))}
 
-              {/* Add custom section */}
-              <div className="border-2 border-dashed border-border/40 rounded-xl p-4 flex items-center gap-3">
-                <Input
-                  placeholder="Új szekció címe (pl. Egyéb tájékoztatás)"
-                  value={newSectionTitle}
-                  onChange={(e) => setNewSectionTitle(e.target.value)}
-                  className="flex-1 text-sm"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!newSectionTitle.trim()}
-                  onClick={() => {
-                    const key = `custom_${Date.now()}`;
-                    const sections = [...((report.notes_sections as any[]) || []), {
-                      section_key: key,
-                      title: newSectionTitle.trim(),
-                      text: '',
-                      is_custom: true
-                    }];
-                    updateReport.mutate({ notes_sections: sections });
-                    setNewSectionTitle('');
-                    toast({ title: 'Szekció hozzáadva', description: newSectionTitle.trim() });
-                  }}
-                  className="gap-1.5"
-                >
-                  <Plus className="w-4 h-4" />
-                  Hozzáadás
-                </Button>
+                {/* Right Side: Sticky Live Preview Panel */}
+                <div className="lg:col-span-5">
+                  <div className="sticky top-4 h-[75vh] flex flex-col border border-border/80 rounded-2xl overflow-hidden bg-muted/5 shadow-lg">
+                    <div className="bg-muted/40 px-4 py-3 text-xs font-bold border-b border-border/60 flex items-center justify-between shrink-0 select-none">
+                      <span className="flex items-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5 text-primary" />
+                        Éves Beszámoló Élő PDF Előnézet
+                      </span>
+                      <span className="text-[9px] text-muted-foreground font-normal">Gépelésre automatikusan frissül</span>
+                    </div>
+                    <div className="flex-1 bg-white dark:bg-slate-900">
+                      {livePreviewUrl ? (
+                        <iframe
+                          ref={iframeRef}
+                          src={livePreviewUrl}
+                          className="w-full h-full border-0"
+                          title="Éves Beszámoló Élő PDF Előnézet"
+                          onLoad={() => {
+                            if (iframeRef.current && iframeRef.current.contentWindow) {
+                              try {
+                                iframeRef.current.contentWindow.scrollTo(0, iframeScrollRef.current);
+                              } catch (e) {
+                                // Ignore
+                              }
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-xs text-muted-foreground p-4 text-center">
+                          <Loader2 className="w-6 h-6 animate-spin text-primary/50 mb-2" />
+                          <span>Előnézet betöltése...</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1248,59 +1494,177 @@ export default function AnnualReportPage() {
               })()}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label>Adózott eredmény (Ft)</Label>
-                  <Input
-                    type="number"
-                    value={getField('net_income') || 0}
-                    onChange={(e) => {
-                      const ni = Number(e.target.value);
-                      setField('net_income', ni, { retained_earnings: ni - (getField('dividend_amount') || 0) });
-                    }}
-                    className="mt-1.5"
-                  />
+                <div className="space-y-6">
+                  <div>
+                    <Label>Adózott eredmény (Ft)</Label>
+                    <Input
+                      type="number"
+                      value={getField('net_income') || 0}
+                      onChange={(e) => {
+                        const ni = Number(e.target.value);
+                        setField('net_income', ni, { retained_earnings: ni - (getField('dividend_amount') || 0) });
+                      }}
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Osztalék (Ft)</Label>
+                    <Input
+                      type="number"
+                      value={getField('dividend_amount') || 0}
+                      onChange={(e) => {
+                        const div = Number(e.target.value);
+                        const ni = getField('net_income') || 0;
+                        setField('dividend_amount', div, { retained_earnings: ni - div });
+                      }}
+                      className="mt-1.5"
+                    />
+                    {/* B8: Client-side max validation */}
+                    {(getField('dividend_amount') || 0) > (getField('net_income') || 0) && (getField('net_income') || 0) > 0 && (
+                      <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        Az osztalék nem haladhatja meg az adózott eredményt!
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label>Eredménytartalékba (Ft)</Label>
+                    <Input value={getField('retained_earnings') || 0} disabled className="mt-1.5" />
+                  </div>
+                  <div>
+                    <Label>Határozat dátuma</Label>
+                    <Input
+                      type="date"
+                      value={getField('dividend_resolution_date') || ''}
+                      onChange={(e) => setField('dividend_resolution_date', e.target.value)}
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Határozat száma</Label>
+                    <Input
+                      value={getField('dividend_resolution_number') || ''}
+                      onChange={(e) => setField('dividend_resolution_number', e.target.value)}
+                      placeholder="pl. 1/2026. (V.15.)"
+                      className="mt-1.5"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label>Osztalék (Ft)</Label>
-                  <Input
-                    type="number"
-                    value={getField('dividend_amount') || 0}
-                    onChange={(e) => {
-                      const div = Number(e.target.value);
-                      const ni = getField('net_income') || 0;
-                      setField('dividend_amount', div, { retained_earnings: ni - div });
-                    }}
-                    className="mt-1.5"
-                  />
-                  {/* B8: Client-side max validation */}
-                  {(getField('dividend_amount') || 0) > (getField('net_income') || 0) && (getField('net_income') || 0) > 0 && (
-                    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" />
-                      Az osztalék nem haladhatja meg az adózott eredményt!
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label>Eredménytartalékba (Ft)</Label>
-                  <Input value={getField('retained_earnings') || 0} disabled className="mt-1.5" />
-                </div>
-                <div>
-                  <Label>Határozat dátuma</Label>
-                  <Input
-                    type="date"
-                    value={getField('dividend_resolution_date') || ''}
-                    onChange={(e) => setField('dividend_resolution_date', e.target.value)}
-                    className="mt-1.5"
-                  />
-                </div>
-                <div>
-                  <Label>Határozat száma</Label>
-                  <Input
-                    value={getField('dividend_resolution_number') || ''}
-                    onChange={(e) => setField('dividend_resolution_number', e.target.value)}
-                    placeholder="pl. 1/2026. (V.15.)"
-                    className="mt-1.5"
-                  />
+
+                {/* Right side: Tax Loss Carryforward & Summary */}
+                <div className="space-y-4">
+                  {/* Tax Loss Carryforward Panel */}
+                  <div className="bg-muted/30 border border-border/40 rounded-xl p-4 space-y-4">
+                    <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                        Veszteségelhatárolás (Tax Loss Carryforward)
+                      </h3>
+                      <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
+                        Sztv. & TAO Megfelelőség
+                      </Badge>
+                    </div>
+                    
+                    {accumulatedPriorLosses > 0 ? (
+                      <div className="space-y-4">
+                        <div className="text-xs space-y-2">
+                          <p className="leading-relaxed">
+                            A cégnek az előző években felhalmozott vesztesége van: <strong>{new Intl.NumberFormat('hu-HU').format(accumulatedPriorLosses)} Ft</strong>.
+                            A hatályos szabályok szerint a tárgyévi pozitív adóalap maximum <strong>50%-a</strong> csökkenthető a korábbi évek elhatárolt veszteségével.
+                          </p>
+                          
+                          {/* Prior losses history table */}
+                          <div className="border border-border/40 rounded-lg overflow-hidden bg-background">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-muted/50 font-bold border-b text-[10px] uppercase text-muted-foreground">
+                                  <th className="p-2 text-left">Üzleti év</th>
+                                  <th className="p-2 text-right">Veszteség összege</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border/20">
+                                {priorLossReports.map((r: any) => (
+                                  <tr key={r.id}>
+                                    <td className="p-2 font-medium">{r.fiscal_year}</td>
+                                    <td className="p-2 text-right font-mono text-red-500">
+                                      -{new Intl.NumberFormat('hu-HU').format(Math.abs(r.net_income))} Ft
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-3">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">Maximálisan elszámolható elhatárolás (50%):</span>
+                            <span className="font-mono font-bold">{new Intl.NumberFormat('hu-HU').format(maxLossOffset)} Ft</span>
+                          </div>
+                          
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              type="number"
+                              value={appliedLossOffset || ''}
+                              onChange={(e) => {
+                                const val = Math.min(accumulatedPriorLosses, Math.min(maxLossOffset, Number(e.target.value) || 0));
+                                setAppliedLossOffset(val);
+                              }}
+                              placeholder="Felhasznált veszteségelhatárolás (Ft)"
+                              className="text-xs font-mono h-8"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="xs"
+                              onClick={() => setAppliedLossOffset(Math.min(accumulatedPriorLosses, maxLossOffset))}
+                              className="text-[10px] h-8 shrink-0"
+                              disabled={appliedLossOffset === Math.min(accumulatedPriorLosses, maxLossOffset)}
+                            >
+                              Max
+                            </Button>
+                            {appliedLossOffset > 0 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="xs"
+                                onClick={() => setAppliedLossOffset(0)}
+                                className="text-[10px] h-8 text-muted-foreground"
+                              >
+                                Töröl
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Calculation display */}
+                        {appliedLossOffset > 0 && (
+                          <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-3 text-xs space-y-1">
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold">Kalkulált adóalap és megtakarítás:</p>
+                            <div className="flex justify-between font-mono">
+                              <span>Eredeti eredmény:</span>
+                              <span>{new Intl.NumberFormat('hu-HU').format(getField('net_income') || 0)} Ft</span>
+                            </div>
+                            <div className="flex justify-between font-mono text-emerald-600 dark:text-emerald-400">
+                              <span>Veszteségcsökkentés:</span>
+                              <span>-{new Intl.NumberFormat('hu-HU').format(appliedLossOffset)} Ft</span>
+                            </div>
+                            <div className="flex justify-between font-mono font-bold border-t border-emerald-500/20 pt-1 mt-1">
+                              <span>Csökkentett adóalap:</span>
+                              <span>{new Intl.NumberFormat('hu-HU').format((getField('net_income') || 0) - appliedLossOffset)} Ft</span>
+                            </div>
+                            <div className="flex justify-between font-mono text-blue-600 dark:text-blue-400 pt-1">
+                              <span>Társasági adó megtakarítás (9%):</span>
+                              <span>{new Intl.NumberFormat('hu-HU').format(Math.round(appliedLossOffset * 0.09))} Ft</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">
+                        Nem található korábbi veszteséges év ennél a cégnél, így nincs felhasználható veszteségelhatárolás.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1330,6 +1694,31 @@ export default function AnnualReportPage() {
               <p className="text-sm text-muted-foreground -mt-3">
                 Ellenőrizd a beszámoló állapotát, töltsd le a végleges PDF-et, majd zárd le a dokumentumot.
               </p>
+
+              {/* Wax Seal lock banner */}
+              {report.status === 'finalized' && (
+                <div className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 rounded-2xl relative overflow-hidden select-none animate-in zoom-in duration-300">
+                  {/* Wax Seal element */}
+                  <div className="w-28 h-28 rounded-full bg-red-700 dark:bg-red-800 shadow-2xl flex items-center justify-center border-4 border-red-800 dark:border-red-900 ring-4 ring-red-600/20 relative cursor-pointer transform hover:scale-105 hover:rotate-6 transition-all duration-300">
+                    <div className="absolute inset-2 rounded-full border border-dashed border-red-500/30" />
+                    <Scale className="w-12 h-12 text-amber-100 opacity-90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/20 rounded-full" />
+                  </div>
+                  <div className="text-center mt-4">
+                    <h3 className="font-bold text-base text-foreground tracking-wide flex items-center gap-1.5 justify-center">
+                      ⚖️ Hivatalos Zárópecsét
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      A(z) {selectedCompany?.name} {report.fiscal_year}. évi beszámolója hivatalosan lezárva és hitelesítve.
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Hitelesítés ideje: {new Date(report.updated_at || '').toLocaleString('hu-HU')}
+                    </p>
+                  </div>
+                  {/* Subtle diagonal background stripes */}
+                  <div className="absolute inset-0 -z-10 bg-[linear-gradient(45deg,rgba(16,185,129,0.03)_25%,transparent_25%,transparent_50%,rgba(16,185,129,0.03)_50%,rgba(16,185,129,0.03)_75%,transparent_75%,transparent)] bg-[size:40px_40px]" />
+                </div>
+              )}
 
               {/* ── Summary Checklist ── */}
               {(() => {

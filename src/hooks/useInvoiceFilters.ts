@@ -76,6 +76,13 @@ export function useInvoiceFilters(
         initial[key as keyof InvoiceFilters] = value;
       }
     }
+    
+    // Check both 'q' (standard URL key) and 'search' (fallback/alternate key)
+    const altSearch = searchParams.get('search');
+    if (altSearch !== null) {
+      initial.search = altSearch;
+    }
+    
     return initial;
   });
   const [sortField, setSortField] = useState<string>(() =>
@@ -100,6 +107,49 @@ export function useInvoiceFilters(
     const p = searchParams.get('p');
     return p ? (parseInt(p, 10) || 1) : 1;
   });
+
+  // Sync URL search params back to React state when URL changes externally.
+  // Using functional state setters that bail out when values are identical
+  // is critical to prevent infinite searchParams update loops.
+  useEffect(() => {
+    setFilters(prev => {
+      let updated = false;
+      const next = { ...prev };
+      
+      const urlSearch = searchParams.get('q') || searchParams.get('search') || '';
+      if (next.search !== urlSearch) {
+        next.search = urlSearch;
+        updated = true;
+      }
+      
+      for (const [key, urlKey] of Object.entries(FILTER_URL_KEYS)) {
+        if (key === 'search') continue;
+        const val = searchParams.get(urlKey) || defaultFilters[key as keyof InvoiceFilters];
+        if (next[key as keyof InvoiceFilters] !== val) {
+          next[key as keyof InvoiceFilters] = val;
+          updated = true;
+        }
+      }
+      
+      return updated ? next : prev;
+    });
+
+    const sf = searchParams.get('sf') || 'invoice_issue_date';
+    setSortField(prev => prev !== sf ? sf : prev);
+    
+    const sd = (searchParams.get('sd') as 'asc' | 'desc') || 'desc';
+    setSortDirection(prev => prev !== sd ? sd : prev);
+    
+    const ps = searchParams.get('ps');
+    const pageSize = ps ? (parseInt(ps, 10) || 50) : 50;
+    setNavPageSize(prev => prev !== pageSize ? pageSize : prev);
+    setSubmittedPageSize(prev => prev !== pageSize ? pageSize : prev);
+    
+    const p = searchParams.get('p');
+    const pageNum = p ? (parseInt(p, 10) || 1) : 1;
+    setNavCurrentPage(prev => prev !== pageNum ? pageNum : prev);
+    setSubmittedCurrentPage(prev => prev !== pageNum ? pageNum : prev);
+  }, [searchParams]);
 
   // Debounce search with useDeferredValue (single search)
   const deferredSearch = useDeferredValue(filters.search);

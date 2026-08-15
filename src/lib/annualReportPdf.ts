@@ -386,7 +386,7 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
   <!-- COVER -->
   <div class="cover">
     <div class="brand-logo" style="margin-bottom: 24px;">
-      e<span class="highlight">ai</span>sy<span class="highlight">Books</span>
+      e<span class="highlight">ai</span>sy<span class="highlight">Bill</span>
     </div>
     <div class="cover-title">Éves Beszámoló</div>
     <div class="cover-year">${data.fiscalYear}. üzleti év</div>
@@ -397,7 +397,6 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
       Beosztás: ${esc(data.representativeRole)}<br>
       Kelt: ${esc(data.reportDate)}
     </div>
-    <div class="cover-badge">Generálta: eaisybooks.hu</div>
   </div>
 
   <!-- BALANCE SHEET -->

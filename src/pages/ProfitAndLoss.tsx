@@ -28,6 +28,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
 import PnlChart from '@/components/pnl/PnlChart'; // F9
+import { PnlSankeyChart } from '@/components/pnl/PnlSankeyChart';
+import { PnlAiAssistant } from '@/components/pnl/PnlAiAssistant';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -562,6 +564,9 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   const [hideZeroRows, setHideZeroRows] = useState(false);
   const [showChart, setShowChart] = useState(false); // F9
   const [revenueScale, setRevenueScale] = useState(100);
+  const [materialScale, setMaterialScale] = useState(100);
+  const [personnelScale, setPersonnelScale] = useState(100);
+  const [otherScale, setOtherScale] = useState(100);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
   const [activeDialogInvoice, setActiveDialogInvoice] = useState<any | null>(null);
@@ -760,6 +765,15 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
       if (r.row_code === 'I.' || r.row_code === 'I') {
         return bal * (revenueScale / 100);
       }
+      if (r.row_code === 'IV.' || r.row_code === 'IV') {
+        return bal * (materialScale / 100);
+      }
+      if (r.row_code === 'V.' || r.row_code === 'V') {
+        return bal * (personnelScale / 100);
+      }
+      if (r.row_code === 'VII.' || r.row_code === 'VII') {
+        return bal * (otherScale / 100);
+      }
       return bal;
     };
 
@@ -811,7 +825,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
 
       return { ...row, displayBalance, previousYear };
     });
-  }, [pnlData, prevYearMap, revenueScale]);
+  }, [pnlData, prevYearMap, revenueScale, materialScale, personnelScale, otherScale]);
 
   if (isLoading) {
     return <div className="p-12 flex justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
@@ -873,54 +887,185 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
 
       {/* ── What-If Scenario Simulator Panel ── */}
       {processedData.length > 0 && (
-        <Card className="border border-border/60 bg-card/50 backdrop-blur-sm p-4 flex flex-col md:flex-row items-center justify-between gap-4 print:hidden rounded-xl">
-          <div className="space-y-1 max-w-md">
-            <h4 className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
-              <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
-              "What-If" Árbevétel Szimuláció
-            </h4>
-            <p className="text-xs text-muted-foreground">
-              Szimuláld az értékesítés nettó árbevételének (I. sor) változását, és nézd meg annak hatását az üzemi és adózott eredményre.
-            </p>
-          </div>
-          <div className="flex items-center gap-4 w-full md:w-[350px] shrink-0">
-            <span className="text-xs font-semibold text-red-500">-50%</span>
-            <div className="flex-1 flex flex-col items-center gap-1">
-              <input 
-                type="range" 
-                min="50" 
-                max="150" 
-                value={revenueScale} 
-                onChange={(e) => setRevenueScale(Number(e.target.value))} 
-                className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" 
-              />
-              <span className={cn(
-                "text-[10px] font-bold px-2 py-0.5 rounded",
-                revenueScale === 100 ? "bg-muted text-muted-foreground"
-                : revenueScale > 100 ? "bg-emerald-500/10 text-emerald-600"
-                : "bg-red-500/10 text-red-500"
-              )}>
-                {revenueScale === 100 ? "Alapértelmezett" : `${revenueScale > 100 ? '+' : ''}${revenueScale - 100}%`}
-              </span>
+        <Card className="border border-border/60 bg-card/40 backdrop-blur-sm p-4 print:hidden rounded-xl space-y-4">
+          <div className="flex items-center justify-between border-b pb-2">
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
+                <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
+                "What-If" Működési Költség és Árbevétel Szimuláció
+              </h4>
+              <p className="text-[11px] text-muted-foreground">
+                Módosítsa a fő árbevétel és költség kategóriákat a range csúszkákkal, hogy valós időben lássa az adózott eredmény változását.
+              </p>
             </div>
-            <span className="text-xs font-semibold text-emerald-500">+50%</span>
-            {revenueScale !== 100 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 px-2 text-xs shrink-0 text-muted-foreground hover:text-foreground"
-                onClick={() => setRevenueScale(100)}
-              >
-                Visszaállít
-              </Button>
-            )}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-7 text-xs px-2.5"
+              onClick={() => {
+                setRevenueScale(100);
+                setMaterialScale(100);
+                setPersonnelScale(100);
+                setOtherScale(100);
+              }}
+              disabled={revenueScale === 100 && materialScale === 100 && personnelScale === 100 && otherScale === 100}
+            >
+              Szimuláció visszaállítása
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Revenue Slider */}
+            <div className="space-y-1.5 bg-background/35 p-2.5 rounded-lg border border-border/40">
+              <div className="flex justify-between text-xs font-semibold">
+                <span>Értékesítés nettó árbevétele (I.)</span>
+                <span className={cn(
+                  "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                  revenueScale === 100 ? "bg-muted text-muted-foreground"
+                  : revenueScale > 100 ? "bg-emerald-500/10 text-emerald-600"
+                  : "bg-rose-500/10 text-rose-600"
+                )}>
+                  {revenueScale}%
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground">-50%</span>
+                <input 
+                  type="range" 
+                  min="50" 
+                  max="150" 
+                  value={revenueScale} 
+                  onChange={(e) => setRevenueScale(Number(e.target.value))} 
+                  className="flex-1 h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" 
+                />
+                <span className="text-[10px] text-muted-foreground">+50%</span>
+              </div>
+            </div>
+
+            {/* Material Expenses Slider */}
+            <div className="space-y-1.5 bg-background/35 p-2.5 rounded-lg border border-border/40">
+              <div className="flex justify-between text-xs font-semibold">
+                <span>Anyagjellegű ráfordítások (IV.)</span>
+                <span className={cn(
+                  "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                  materialScale === 100 ? "bg-muted text-muted-foreground"
+                  : materialScale < 100 ? "bg-emerald-500/10 text-emerald-600"
+                  : "bg-rose-500/10 text-rose-600"
+                )}>
+                  {materialScale}%
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground">-50%</span>
+                <input 
+                  type="range" 
+                  min="50" 
+                  max="150" 
+                  value={materialScale} 
+                  onChange={(e) => setMaterialScale(Number(e.target.value))} 
+                  className="flex-1 h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" 
+                />
+                <span className="text-[10px] text-muted-foreground">+50%</span>
+              </div>
+            </div>
+
+            {/* Personnel Expenses Slider */}
+            <div className="space-y-1.5 bg-background/35 p-2.5 rounded-lg border border-border/40">
+              <div className="flex justify-between text-xs font-semibold">
+                <span>Személyi jellegű ráfordítások (V.)</span>
+                <span className={cn(
+                  "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                  personnelScale === 100 ? "bg-muted text-muted-foreground"
+                  : personnelScale < 100 ? "bg-emerald-500/10 text-emerald-600"
+                  : "bg-rose-500/10 text-rose-600"
+                )}>
+                  {personnelScale}%
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground">-50%</span>
+                <input 
+                  type="range" 
+                  min="50" 
+                  max="150" 
+                  value={personnelScale} 
+                  onChange={(e) => setPersonnelScale(Number(e.target.value))} 
+                  className="flex-1 h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" 
+                />
+                <span className="text-[10px] text-muted-foreground">+50%</span>
+              </div>
+            </div>
+
+            {/* Other Expenses Slider */}
+            <div className="space-y-1.5 bg-background/35 p-2.5 rounded-lg border border-border/40">
+              <div className="flex justify-between text-xs font-semibold">
+                <span>Egyéb ráfordítások (VII.)</span>
+                <span className={cn(
+                  "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                  otherScale === 100 ? "bg-muted text-muted-foreground"
+                  : otherScale < 100 ? "bg-emerald-500/10 text-emerald-600"
+                  : "bg-rose-500/10 text-rose-600"
+                )}>
+                  {otherScale}%
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground">-50%</span>
+                <input 
+                  type="range" 
+                  min="50" 
+                  max="150" 
+                  value={otherScale} 
+                  onChange={(e) => setOtherScale(Number(e.target.value))} 
+                  className="flex-1 h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" 
+                />
+                <span className="text-[10px] text-muted-foreground">+50%</span>
+              </div>
+            </div>
           </div>
         </Card>
       )}
 
       {/* F9: Waterfall chart (toggle) */}
       {showChart && processedData.length > 0 && (
-        <PnlChart processedData={processedData} inThousands={inThousands} trendData={trendData} />
+        <div className="space-y-4">
+          <PnlChart processedData={processedData} inThousands={inThousands} trendData={trendData} />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="border border-border/60 bg-card/60 backdrop-blur-sm p-4 rounded-xl flex flex-col justify-between h-[350px]">
+              <CardHeader className="py-2.5 border-b bg-muted/20 flex flex-row items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-indigo-500" />
+                  <CardTitle className="text-sm font-semibold">Cash Flow Sankey Folyamatábra</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 flex items-center justify-center p-3 overflow-hidden">
+                <PnlSankeyChart
+                  revenue={processedData.find(r => r.row_code === 'I.')?.displayBalance || 0}
+                  otherIncome={processedData.find(r => r.row_code === 'III.')?.displayBalance || 0}
+                  materials={processedData.find(r => r.row_code === 'IV.')?.displayBalance || 0}
+                  personnel={processedData.find(r => r.row_code === 'V.')?.displayBalance || 0}
+                  depreciation={processedData.find(r => r.row_code === 'VI.')?.displayBalance || 0}
+                  otherExpenses={processedData.find(r => r.row_code === 'VII.')?.displayBalance || 0}
+                  taxes={processedData.find(r => r.row_code === 'X.')?.displayBalance || 0}
+                  netProfit={processedData.find(r => r.row_code === 'D.')?.displayBalance || 0}
+                  inThousands={inThousands}
+                />
+              </CardContent>
+            </Card>
+            
+            <PnlAiAssistant
+              revenue={processedData.find(r => r.row_code === 'I.')?.displayBalance || 0}
+              materials={processedData.find(r => r.row_code === 'IV.')?.displayBalance || 0}
+              personnel={processedData.find(r => r.row_code === 'V.')?.displayBalance || 0}
+              depreciation={processedData.find(r => r.row_code === 'VI.')?.displayBalance || 0}
+              otherExpenses={processedData.find(r => r.row_code === 'VII.')?.displayBalance || 0}
+              taxes={processedData.find(r => r.row_code === 'X.')?.displayBalance || 0}
+              netProfit={processedData.find(r => r.row_code === 'D.')?.displayBalance || 0}
+              inThousands={inThousands}
+            />
+          </div>
+        </div>
       )}
 
       <div className="flex justify-between items-center mb-6 bg-muted/30 p-4 rounded-xl border border-border/50 print:hidden">
@@ -1105,24 +1250,70 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                                         </button>
                                       )}
                                       <span className="truncate">{item.description}</span>
-                                      {item.document_url && (
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveDialogInvoice({
-                                              image_url: item.document_url,
-                                              bizonylatsorszam: item.description || 'Bizonylat',
-                                              elado_nev: item.partner || '-',
-                                              vevo_nev: '-'
-                                            });
-                                            setIsDialogInvoiceOpen(true);
-                                          }} 
-                                          className="ml-auto flex shrink-0 items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors text-[10px] font-medium cursor-pointer"
-                                          title="Eredeti bizonylat megtekintése"
-                                        >
-                                          <FileText className="w-3 h-3" />
-                                          PDF
-                                        </button>
+                                      {/* Részletek / Bizonylat popup trigger */}
+                                      {item.source_table !== 'transactions' && (
+                                        <TooltipProvider>
+                                          <Tooltip delayDuration={200}>
+                                            <TooltipTrigger asChild>
+                                              <button 
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setActiveDialogInvoice({
+                                                    id: item.item_id,
+                                                    image_url: item.document_url || undefined,
+                                                    bizonylatsorszam: item.description || 'Bizonylat',
+                                                    elado_nev: item.invoice_direction === 'OUTBOUND' ? selectedCompany?.name || '-' : item.partner || '-',
+                                                    vevo_nev: item.invoice_direction === 'OUTBOUND' ? item.partner || '-' : selectedCompany?.name || '-',
+                                                    amount: item.amount,
+                                                    date: item.item_date?.substring(0, 10).replace(/-/g, '.'),
+                                                    currency: item.original_currency || 'HUF'
+                                                  });
+                                                  setIsDialogInvoiceOpen(true);
+                                                }} 
+                                                className="ml-auto flex shrink-0 items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors text-[10px] font-medium cursor-pointer"
+                                                title="Bizonylat megtekintése"
+                                              >
+                                                {item.document_url ? <FileText className="w-3 h-3" /> : <ReceiptText className="w-3 h-3" />}
+                                                {item.document_url ? 'PDF' : 'Számla'}
+                                              </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="left" className="p-1 border border-border/80 bg-popover shadow-xl rounded-lg max-w-[240px] overflow-hidden z-[2000]">
+                                              <div className="text-[10px] p-1 font-semibold border-b truncate max-w-full">
+                                                {item.partner || 'Bizonylat'}
+                                              </div>
+                                              {item.document_url ? (
+                                                item.document_url.toLowerCase().endsWith('.pdf') ? (
+                                                  <div className="flex flex-col items-center justify-center p-4 text-[10px] text-muted-foreground w-[180px] h-[120px] bg-slate-100 dark:bg-slate-900">
+                                                    <FileText className="w-8 h-8 text-primary/70 mb-1" />
+                                                    <span>PDF Dokumentum</span>
+                                                  </div>
+                                                ) : (
+                                                  <img 
+                                                    src={item.document_url} 
+                                                    alt="Bizonylat előnézet" 
+                                                    className="w-[180px] h-auto max-h-[160px] object-contain rounded"
+                                                  />
+                                                )
+                                              ) : (
+                                                /* Gorgeous mini mock invoice layout in tooltip */
+                                                <div className="p-3 text-[10px] space-y-2 w-[220px] bg-slate-50 dark:bg-slate-950 rounded">
+                                                  <div className="flex justify-between border-b pb-1">
+                                                    <span className="font-bold text-primary">e-Bizonylat</span>
+                                                    <span className="text-[8px] px-1 bg-emerald-500/10 text-emerald-600 rounded">NAV Online</span>
+                                                  </div>
+                                                  <div className="space-y-1">
+                                                    <p className="truncate text-foreground"><span className="text-muted-foreground">Partner:</span> {item.partner}</p>
+                                                    <p className="truncate text-foreground"><span className="text-muted-foreground">Sorszám:</span> {item.description}</p>
+                                                    <p className="text-foreground"><span className="text-muted-foreground">Dátum:</span> {item.item_date?.substring(0, 10).replace(/-/g, '.')}</p>
+                                                    <p className="font-semibold text-right text-foreground mt-1">
+                                                      Nettó: {new Intl.NumberFormat('hu-HU').format(Math.abs(item.amount))} {item.original_currency || 'HUF'}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
                                       )}
                                     </div>
                                     <div className="col-span-2 text-right opacity-70">
