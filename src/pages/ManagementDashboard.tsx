@@ -5920,6 +5920,27 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   const dateTo = searchParams.get('file_to') || '';
   const debouncedSearch = searchParams.get('file_q') || '';
 
+  const { data, isLoading, isFetching } = useQuery<FilesData>({
+    queryKey: ['management-files', page, PAGE_SIZE, sortCol, sortDir, debouncedSearch, filterCompanyId, filterUserId, filterFileType, filterStatus, dateFrom, dateTo],
+    queryFn: () => fetchManagementData('files', {
+      page: String(page), pageSize: String(PAGE_SIZE),
+      sortBy: sortCol, sortDir,
+      search: debouncedSearch,
+      companyId: filterCompanyId,
+      userId: filterUserId,
+      fileType: filterFileType,
+      status: STATUS_FILTER_VALUES[filterStatus] || filterStatus,
+      dateFrom, dateTo,
+    }),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
+  });
+
+  const fileRows = data?.files || [];
+  const totalRows = data?.totalRows || 0;
+  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+  const stats = data?.stats;
+
   // Local state for the input field to prevent layout/input lag
   const [search, setSearch] = useState(debouncedSearch);
 
@@ -6010,26 +6031,7 @@ function FilesPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     }
   }, [sortCol, sortDir, updateParams]);
 
-  const { data, isLoading, isFetching } = useQuery<FilesData>({
-    queryKey: ['management-files', page, PAGE_SIZE, sortCol, sortDir, debouncedSearch, filterCompanyId, filterUserId, filterFileType, filterStatus, dateFrom, dateTo],
-    queryFn: () => fetchManagementData('files', {
-      page: String(page), pageSize: String(PAGE_SIZE),
-      sortBy: sortCol, sortDir,
-      search: debouncedSearch,
-      companyId: filterCompanyId,
-      userId: filterUserId,
-      fileType: filterFileType,
-      status: STATUS_FILTER_VALUES[filterStatus] || filterStatus,
-      dateFrom, dateTo,
-    }),
-    staleTime: 30_000,
-    placeholderData: keepPreviousData,
-  });
 
-  const fileRows = data?.files || [];
-  const totalRows = data?.totalRows || 0;
-  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
-  const stats = data?.stats;
 
   const selectAllOnPage = useCallback(() => {
     const allKeys = fileRows.map((r: any) => `${r.source_table}:${r.id}`);

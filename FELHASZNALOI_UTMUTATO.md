@@ -749,5 +749,5 @@ Magyar és angol nyelven is.
 
 ---
 
-*Utolsó frissítés: 2026. augusztus (v1.7.3)*  
-*Verzió: 1.7.3 (Éves beszámoló és M-lap adószám validációs fejlesztések)*
+*Utolsó frissítés: 2026. augusztus (v1.7.4)*  
+*Verzió: 1.7.4 (Éves beszámoló, M-lap validáció és számlafeldolgozási hibatűrési fejlesztések)*

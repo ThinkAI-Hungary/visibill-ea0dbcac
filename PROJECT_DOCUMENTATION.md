@@ -771,6 +771,11 @@ npm run preview      # Preview production build
 
 ## Changelog
 
+### Version 1.7.4 (2026-08-17)
+- **AI Invoice Processor Resilience & Pydantic Fallbacks:**
+  - **Pydantic Validation Safeguard:** Added custom pre-validators to `models.py` (specifically for `SimaSzamlaOutput`, `VegszamlaOutput`, `DijbekeroProformaOutput`, and `EgyszerusitettSzlaOutput`) to fallback to `"Ismeretlen vevő"` / `"Ismeretlen eladó"` if the LLM returns `null`/`None` for buyer or seller name fields. This prevents hard Pydantic schema validation failures from halting the entire processing pipeline.
+  - **Rebranding Fix:** Cleaned up temporal dead zone ReferenceErrors in `ManagementDashboard.tsx` that caused page crashes.
+
 ### Version 1.7.3 (2026-08-15)
 - **Annual Report & Editor Optimization:**
   - **Editor Focus Stability:** Replaced dynamic text-length-dependent editor key with a state-controlled reset counter. Debounced auto-saving no longer recreates the editor DOM, resolving cursor jump, focus loss, and document scroll resetting.
