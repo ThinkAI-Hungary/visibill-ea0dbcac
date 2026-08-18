@@ -13,6 +13,8 @@ export interface CategoryInvoice {
   penznem: string | null;
   /** Which DB table this invoice lives in */
   source: 'invoices' | 'nav_invoices';
+  image_url?: string | null;
+  melleklet_url?: string | null;
 }
 
 interface CategoryAccordionItemProps {

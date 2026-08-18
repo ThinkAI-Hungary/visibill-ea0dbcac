@@ -106,11 +106,8 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
         query = query.eq("status", statusFilter);
       }
 
-      // Support admins only see: unassigned + their own assigned tickets
-      // Management role (thinkai) bypasses this — sees ALL tickets
-      if (isSupportAdmin && !isManagement) {
-        query = query.or(`assigned_to.is.null,assigned_to.eq.${user.id}`);
-      }
+      // Support admins can fetch all tickets they have access to;
+      // client-side filtering is applied on the page if they choose to view only own/unassigned.
 
       const { data: tickets, error } = await query;
       if (error) throw error;

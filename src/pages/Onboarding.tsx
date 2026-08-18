@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X, Search, ChevronLeft, ChevronRight, CheckCircle2, Circle, Download, FileText, FileSpreadsheet, File, ChevronDown } from 'lucide-react';
+import { Plus, X, Search, ChevronLeft, ChevronRight, CheckCircle2, Circle, Download, FileText, FileSpreadsheet, File, ChevronDown, Eye, List } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { reportError } from '@/lib/errorReporter';
@@ -24,6 +24,8 @@ import { FolderOpen } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { exportData } from '@/lib/exportCsv';
 import { exportPdf } from '@/lib/exportPdf';
+import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 
 interface Category {
   id?: string;
@@ -176,6 +178,12 @@ const Onboarding = () => {
   // Bulk selection: Set of invoice IDs currently ticked in the search dropdown
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
 
+  // Invoice preview and items dialog states
+  const [previewInvoice, setPreviewInvoice] = useState<any | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [itemsInvoice, setItemsInvoice] = useState<CategoryInvoice | null>(null);
+  const [itemsOpen, setItemsOpen] = useState(false);
+
   // Track initial state for unsaved changes detection
   const [initialCategories, setInitialCategories] = useState<Category[] | null>(null);
   
@@ -230,7 +238,7 @@ const Onboarding = () => {
         const [{ data: uploadedInvoices }, { data: navInvoices }] = await Promise.all([
           supabase
             .from('invoices')
-            .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem')
+            .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem, image_url, melleklet_url')
             .eq('company_id', selectedCompany.id)
             .eq('category_id', cat.id)
             .order('kibocsatas_datuma', { ascending: false }),
@@ -251,6 +259,8 @@ const Onboarding = () => {
           invoice_gross_amount: inv.brutto_vegosszeg,
           penznem: inv.penznem || 'HUF',
           source: 'invoices' as const,
+          image_url: inv.image_url,
+          melleklet_url: inv.melleklet_url,
         }));
 
         const fromNav: CategoryInvoice[] = (navInvoices || []).map((inv: any) => ({
@@ -397,7 +407,7 @@ const Onboarding = () => {
       const [{ data: uploadedData }, { data: navData }] = await Promise.all([
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem')
+          .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem, image_url, melleklet_url')
           .eq('company_id', selectedCompany.id)
           .eq('invoice_direction', 'INBOUND')
           .is('category_id', null)
@@ -420,6 +430,8 @@ const Onboarding = () => {
         invoice_gross_amount: inv.brutto_vegosszeg,
         penznem: inv.penznem || 'HUF',
         source: 'invoices' as const,
+        image_url: inv.image_url,
+        melleklet_url: inv.melleklet_url,
       }));
 
       const fromNav: CategoryInvoice[] = (navData || []).map((inv: any) => ({
@@ -1154,7 +1166,7 @@ const Onboarding = () => {
                         <TableHead>Partner</TableHead>
                         <TableHead className="w-28">Dátum</TableHead>
                         <TableHead className="text-right w-32">Összeg</TableHead>
-                        <TableHead className="w-10"></TableHead>
+                        <TableHead className="text-right w-28">Műveletek</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1169,7 +1181,7 @@ const Onboarding = () => {
                                   inv.invoice_direction === 'INBOUND'
                                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                                     : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                }`}
+                                  }`}
                               >
                                 {inv.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
                               </Badge>
@@ -1182,15 +1194,56 @@ const Onboarding = () => {
                               {formatAmount(inv.invoice_gross_amount, inv.penznem)}
                             </TableCell>
                             <TableCell className="h-12 py-0 align-middle">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                onClick={() => handleRemoveInvoice(inv.id, selectedCategoryForModal)}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </Button>
+                              <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                  title="Bizonylatkép megtekintése"
+                                  onClick={() => {
+                                    const mapped = {
+                                      id: inv.id,
+                                      elado_nev: inv.supplier_name || '—',
+                                      vevo_nev: selectedCompany?.name || '—',
+                                      bizonylatsorszam: inv.invoice_number || undefined,
+                                      invoice_type: 'invoice',
+                                      image_url: inv.image_url || undefined,
+                                      melleklet_url: inv.melleklet_url || undefined,
+                                      amount: inv.invoice_gross_amount || undefined,
+                                      currency: inv.penznem || 'HUF',
+                                      date: inv.invoice_issue_date || '—',
+                                    };
+                                    setPreviewInvoice(mapped);
+                                    setPreviewOpen(true);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                  title="Számlatételek megtekintése"
+                                  onClick={() => {
+                                    setItemsInvoice(inv);
+                                    setItemsOpen(true);
+                                  }}
+                                >
+                                  <List className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                  title="Eltávolítás a kategóriából"
+                                  onClick={() => handleRemoveInvoice(inv.id, selectedCategoryForModal)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
@@ -1349,6 +1402,28 @@ const Onboarding = () => {
           </Dialog>
         );
       })()}
+
+      <InvoiceImageDialog
+        invoice={previewInvoice}
+        open={previewOpen}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewInvoice(null);
+        }}
+      />
+
+      {itemsInvoice && (
+        <InvoiceItemsDialog
+          open={itemsOpen}
+          onOpenChange={setItemsOpen}
+          invoiceId={itemsInvoice.id}
+          invoiceNumber={itemsInvoice.invoice_number || ''}
+          currency={itemsInvoice.penznem || 'HUF'}
+          source={itemsInvoice.source === 'nav_invoices' ? 'nav' : 'submitted'}
+          invoiceDate={itemsInvoice.invoice_issue_date || undefined}
+          supplierName={itemsInvoice.supplier_name || undefined}
+        />
+      )}
 
       <UnsavedChangesDialog
         open={showDialog}

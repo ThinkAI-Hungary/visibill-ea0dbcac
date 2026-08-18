@@ -34,7 +34,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
   // While parent is fetching invoice data — show a minimal loading overlay
   if (externalLoading || !invoice) {
     return createPortal(
-      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-150 pointer-events-auto">
         <div className="flex flex-col items-center gap-4 text-white">
           <Loader2 className="h-10 w-10 animate-spin" />
           <p className="text-sm text-white/80">Számla adatok betöltése...</p>
@@ -53,7 +53,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
 
     return createPortal(
       <div
-        className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+        className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150 pointer-events-auto"
         onClick={onClose}
       >
         <div 
@@ -113,10 +113,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
             Ez a számla nem rendelkezik fizikai képfájllal, mivel közvetlenül a NAV Online Számla rendszeréből, XML adatformátumban került strukturált feldolgozásra.
           </div>
 
-          {/* Action button */}
-          <div className="flex justify-end pt-2">
-            <Button size="sm" onClick={onClose} className="w-full">Bezárás</Button>
-          </div>
+
         </div>
       </div>,
       document.body

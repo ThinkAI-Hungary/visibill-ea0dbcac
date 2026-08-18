@@ -749,5 +749,5 @@ Magyar és angol nyelven is.
 
 ---
 
-*Utolsó frissítés: 2026. augusztus (v1.7.4)*  
-*Verzió: 1.7.4 (Éves beszámoló, M-lap validáció és számlafeldolgozási hibatűrési fejlesztések)*
+*Utolsó frissítés: 2026. augusztus (v1.7.5)*  
+*Verzió: 1.7.5 (Éves beszámoló, M-lap validáció, számlafeldolgozási hibatűrés és számlatükör import fejlesztések)*

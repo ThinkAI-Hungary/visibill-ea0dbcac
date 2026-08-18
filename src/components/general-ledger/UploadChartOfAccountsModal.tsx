@@ -74,11 +74,19 @@ const parsePdfChartOfAccounts = async (file: File): Promise<any[]> => {
         
         // Skip address lines, postal codes, footers
         const nameLower = name.toLowerCase();
+        
+        // Helper to check if a word is standalone (not part of a larger Hungarian word)
+        const hasStandaloneWord = (text: string, word: string) => {
+          const regex = new RegExp(`(?:^|[^a-záéíóöőúüű])${word}(?:[^a-záéíóöőúüű]|$)`, 'i');
+          return regex.test(text);
+        };
+
         if (
           nameLower.includes("budapest") || 
-          nameLower.includes("utca") || 
-          nameLower.includes("út") || 
-          nameLower.includes("tér") || 
+          hasStandaloneWord(nameLower, "utca") || 
+          hasStandaloneWord(nameLower, "út") || 
+          hasStandaloneWord(nameLower, "tér") || 
+          hasStandaloneWord(nameLower, "tere") || 
           nameLower.includes("kft.") || 
           nameLower.includes("bt.") || 
           nameLower.includes("adószám") ||

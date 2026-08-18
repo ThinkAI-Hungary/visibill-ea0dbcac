@@ -64,6 +64,7 @@ import { useScopedBasePath } from "@/lib/navigation";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TicketsPageProps {
   embeddedInManagement?: boolean;
@@ -92,6 +93,8 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   const [serviceFilter, setServiceFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
 
+  const { user } = useAuth();
+  const [showAllTickets, setShowAllTickets] = useState(false);
   const { data: tickets = [], isLoading, refetch } = useTickets();
   const { data: isAdmin } = useIsSupportAdmin();
   const { data: supportAgents = [] } = useSupportAgents();
@@ -132,16 +135,20 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
       const matchesService = serviceFilter === "all" || t.service === serviceFilter;
       const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(t.status as TicketStatus);
 
-      return matchesSearch && matchesPriority && matchesService && matchesStatus;
+      // Support admins default to showing only own & unassigned tickets
+      const matchesOwner = !isAdmin || showAllTickets || !user ||
+        t.assigned_to === user.id || t.assigned_to === null;
+
+      return matchesSearch && matchesPriority && matchesService && matchesStatus && matchesOwner;
     });
-  }, [tickets, search, priorityFilter, serviceFilter, selectedStatuses]);
+  }, [tickets, search, priorityFilter, serviceFilter, selectedStatuses, isAdmin, showAllTickets, user]);
 
   const [page, setPage] = useState(1);
   const pageSize = embeddedInManagement && isAdmin ? 25 : 15;
 
   React.useEffect(() => {
     setPage(1);
-  }, [search, selectedStatuses, priorityFilter, serviceFilter]);
+  }, [search, selectedStatuses, priorityFilter, serviceFilter, showAllTickets]);
 
   const totalPages = Math.ceil(filteredTickets.length / pageSize);
   const paginatedTickets = useMemo(() => {
@@ -155,7 +162,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
 
   React.useEffect(() => {
     setAssignmentPage(1);
-  }, [search, selectedStatuses, priorityFilter, serviceFilter]);
+  }, [search, selectedStatuses, priorityFilter, serviceFilter, showAllTickets]);
 
   const assignmentTotalPages = Math.ceil(filteredTickets.length / assignmentPageSize);
   const paginatedAssignmentTickets = useMemo(() => {
@@ -520,6 +527,21 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                     <SelectItem value="accounty">eaisyBooks</SelectItem>
                   </SelectContent>
                 </Select>
+                {isAdmin && (
+                  <div className="flex items-center gap-2 h-10 border border-input rounded-md px-3 bg-background/50 hover:bg-accent/50 transition-colors shrink-0">
+                    <Checkbox
+                      id="show-all-tickets"
+                      checked={showAllTickets}
+                      onCheckedChange={(checked) => setShowAllTickets(!!checked)}
+                    />
+                    <label
+                      htmlFor="show-all-tickets"
+                      className="text-xs font-semibold leading-none cursor-pointer select-none text-foreground/80"
+                    >
+                      Összes ticket
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

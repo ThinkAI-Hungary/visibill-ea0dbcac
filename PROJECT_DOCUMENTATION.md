@@ -771,6 +771,24 @@ npm run preview      # Preview production build
 
 ## Changelog
 
+### Version 1.8.0 (2026-08-18)
+- **Customs Decisions Processing (Vámhatározatok):**
+  - Extended the check constraint `invoices_type_check` in Supabase with the new `'vamhatarozat'` type.
+  - Implemented AI classification and extraction pipeline logic in Python worker with `VamhatarozatOutput` Pydantic models.
+  - Integrated robust fallback model handler (`gpt-4o-mini`) when DeepSeek API calls fail.
+  - Configured custom badge styles (orange color scheme) and labels (`vamhatarozat: 'Vámhatározat'`) in frontend.
+- **Categories Page Enhancements:**
+  - Extended client categories page lists to allow viewing document/invoice image previews (or structured e-Receipt details if no file is uploaded).
+  - Integrated support for showing detailed item-level breakdowns for category invoices directly.
+- **Ticketing System Refactoring:**
+  - Implemented sequence-based (`feedback_ticket_number_seq`) ticket ID auto-incrementing to resolve duplicate ticket ID issues (e.g. multiple `EB-0001` occurrences).
+  - Blocked commenting, file uploads, and internal note options on unassigned tickets (`!assigned_to`), displaying clear warnings for both admin and client roles.
+  - Added a new "Összes ticket" filter checkbox in the admin dashboard to display all tickets, showing only the admin's own and unassigned tickets by default.
+
+### Version 1.7.5 (2026-08-18)
+- **Chart of Accounts PDF Parser Precision:**
+  - **Standalone Keyword Matching:** Implemented a standalone word boundary validation (using Hungarian Unicode character aware regex checks) for address keyword filters (`tér`, `út`, `utca`, `tere`) in `UploadChartOfAccountsModal.tsx` and its corresponding test suite. This prevents valid general ledger accounts containing these letter combinations (e.g. `92 EXPORTÉRTÉKESÍTÉS ÁRBEVÉTELE`, which contains `t-é-r` as a substring) from being erroneously skipped.
+
 ### Version 1.7.4 (2026-08-17)
 - **AI Invoice Processor Resilience & Pydantic Fallbacks:**
   - **Pydantic Validation Safeguard:** Added custom pre-validators to `models.py` (specifically for `SimaSzamlaOutput`, `VegszamlaOutput`, `DijbekeroProformaOutput`, and `EgyszerusitettSzlaOutput`) to fallback to `"Ismeretlen vevő"` / `"Ismeretlen eladó"` if the LLM returns `null`/`None` for buyer or seller name fields. This prevents hard Pydantic schema validation failures from halting the entire processing pipeline.

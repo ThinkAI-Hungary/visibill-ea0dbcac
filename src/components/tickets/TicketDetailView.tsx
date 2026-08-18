@@ -34,6 +34,7 @@ import {
   Headset,
   HelpCircle,
   Trash2,
+  ShieldAlert,
 } from "lucide-react";
 import { uploadTicketImage } from "@/lib/upload-ticket-image";
 import { TicketStatusBadge } from "./TicketStatusBadge";
@@ -81,6 +82,8 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const { user } = useAuth();
   const { toast } = useToast();
   const { data, isLoading: isTicketLoading } = useTicketDetail(feedbackId);
+  const ticket = data?.ticket;
+  const comments = data?.comments || [];
   const { isLoading: isEventsLoading } = useTicketEvents(feedbackId);
   const { mutate: addComment, isPending: isCommenting } = useAddComment();
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateTicketStatus();
@@ -162,6 +165,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     }
   };
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!ticket?.assigned_to) return;
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSubmit();
@@ -169,6 +173,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!ticket?.assigned_to) return;
     const items = e.clipboardData?.items;
     if (!items) return;
 
@@ -458,8 +463,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     );
   }
 
-  const ticket = data.ticket;
-  const comments = data.comments || [];
+  // Declared at top
 
   const openGalleryForUrl = (url: string) => {
     const idx = allImages.indexOf(url);
@@ -714,19 +718,29 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
           ) : (
             <Card>
               <CardContent className="pt-4 pb-4">
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  {ticket && !ticket.assigned_to && (
+                    <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-md text-xs font-medium leading-relaxed">
+                      <ShieldAlert className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                      <div>
+                        A hozzászóláshoz a hibajegynek rendelkeznie kell felelőssel.
+                        {isAdmin ? " Kérjük, jelöljön ki egy felelőst a jobb oldali panelen." : " Kérjük, várja meg, amíg egy support munkatárs elvállalja a hibajegyet."}
+                      </div>
+                    </div>
+                  )}
                   <div
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (e.dataTransfer.files.length) addCommentFiles(e.dataTransfer.files); }}
+                    onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (ticket?.assigned_to && e.dataTransfer.files.length) addCommentFiles(e.dataTransfer.files); }}
                   >
                     <Textarea
-                      placeholder="Hozzászólás... (Ctrl+Enter)"
+                      placeholder={ticket?.assigned_to ? "Hozzászólás... (Ctrl+Enter)" : "A hozzászólás zárolva van, amíg nincs felelőse a jegynek."}
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
                       onKeyDown={handleKeyDown}
                       onPaste={handlePaste}
                       className="min-h-[80px] max-h-[200px] resize-none"
                       rows={3}
+                      disabled={!ticket?.assigned_to}
                     />
                   </div>
                   {/* Comment attachment previews */}
@@ -784,7 +798,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         onClick={() => commentFileInputRef.current?.click()}
-                        disabled={commentFiles.length >= 5}
+                        disabled={!ticket?.assigned_to || commentFiles.length >= 5}
                         title="Fájl csatolása (kép, PDF, CSV)"
                       >
                         <Plus className="h-5 w-5" />
@@ -793,12 +807,13 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                         <span className="text-[11px] text-muted-foreground">{commentFiles.length}/5</span>
                       )}
                       {isAdmin && (
-                        <label className="flex items-center gap-1.5 ml-2 text-xs text-amber-500 font-medium cursor-pointer select-none">
+                        <label className={`flex items-center gap-1.5 ml-2 text-xs text-amber-500 font-medium select-none ${ticket?.assigned_to ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}>
                           <input
                             type="checkbox"
                             checked={isInternal}
                             onChange={(e) => setIsInternal(e.target.checked)}
                             className="rounded border-amber-500/30 accent-amber-500"
+                            disabled={!ticket?.assigned_to}
                           />
                           Belső feljegyzés
                         </label>
@@ -807,7 +822,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                     <Button
                       size="sm"
                       onClick={handleSubmit}
-                      disabled={!comment.trim() || isCommenting}
+                      disabled={!ticket?.assigned_to || !comment.trim() || isCommenting}
                       className="gap-1.5"
                     >
                       {isCommenting ? (

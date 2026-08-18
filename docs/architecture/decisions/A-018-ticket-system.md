@@ -61,9 +61,9 @@ A fő tábla neve `feedback` maradt a legacy-ből — eredetileg egyszerű vissz
 ### Trigger-alapú Event Sourcing
 
 ```sql
--- 1. Automatikus jegyszám: TICKET-0001, TICKET-0002, ...
+-- 1. Automatikus jegyszám: EB-0001, EB-0002, ...
 CREATE FUNCTION generate_ticket_number()  -- BEFORE INSERT ON feedback
--- Lekérdezi a max ticket_number-t és increment-el
+-- A public.feedback_ticket_number_seq szekvencia következő értékéből lpad segítségével generál sorszámot.
 
 -- 2. Létrehozás event
 CREATE FUNCTION create_ticket_created_event()  -- AFTER INSERT ON feedback
@@ -170,12 +170,17 @@ idx_ticket_reads_feedback_user  ON ticket_reads(feedback_id, user_id)
 
 ## Frontend funkciók (2026-06 állapot)
 
+- **Státusz fordítás:** DB-ben `new` → frontend-en `Új` (normalizáció a hook-ban)
+
+## Frontend funkciók (2026-08 frissítés)
+
+- **Csoportos és Egyedi Felelős Kijelölés:** Support admin kijelölhet / módosíthat felelőst, ami timeline event-et generál.
+- **Hozzászólás Zárolása Felelős Nélkül:** Ha a hibajegynek nincs kijelölt felelőse (`assigned_to`), a rendszer zárolja a hozzászólás mezőt, a fájlcsatolásokat, a belső feljegyzés jelölőt és a küldés gombot. Ezzel egy időben figyelmeztetést mutat a support adminoknak ("Kérjük, jelöljön ki egy felelőst...") és a klienseknek ("Kérjük, várja meg, amíg egy support munkatárs elvállalja...").
+- **Admin Szűrő ("Összes ticket" Checkbox):** A support adminok számára a jegy listázása alapértelmezetten csak a **saját** és a **kiosztatlan** hibajegyeket mutatja. Egy szűrősávbeli jelölőnégyzettel ("Összes ticket") a szűrés feloldható a többi adminhoz rendelt jegyek megtekintéséhez.
 - **Pagináció:** 15 jegy/oldal (user), 25 jegy/oldal (support admin)
 - **Multi-status szűrő:** Több státusz egyidejű szűrése (pl. Új + Folyamatban) — Popover + Checkbox UI
 - **Ticket típusok:** Hibajelentés (bug), Visszajelzés (feedback), Kérdés (question)
 - **Prioritás:** Felhasználó választhatja meg a beküldéskor (low/medium/high/critical)
-- **Felelős kezelés:** Support admin kijelölhet / módosíthat felelőst, ami timeline event-et generál
 - **Clipboard paste:** Ctrl+V a hozzászólás mezőben képet csatol vágólapról
 - **Kép előnézet:** Csatolt képek kattinthatók küldés előtt → fullscreen preview
 - **Fullscreen galéria:** Portal-alapú overlay (z-index: 9999), teljes képernyős képnézegető
-- **Státusz fordítás:** DB-ben `new` → frontend-en `Új` (normalizáció a hook-ban)
