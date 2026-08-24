@@ -243,33 +243,30 @@ export default function AlertsCenterPage() {
   const { data: ytdTotalsMap, isLoading: totalsLoading, isError: totalsError } = useEvYtdTotals(taxYear);
   const { data: allReturns = [], isLoading: returnsLoading, isError: returnsError } = useAllEvTaxReturns(taxYear);
 
+  const clientCompanyIds = useMemo(() => clients.map(c => c.companyId).filter(Boolean), [clients]);
+
   const { data: customerTotalsMap, isLoading: customerTotalsLoading, isError: customerTotalsError } = useQuery({
-    queryKey: ['portfolio-kata-customer-totals-alerts', taxYear],
+    queryKey: ['portfolio-kata-customer-totals-alerts', taxYear, clientCompanyIds],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('nav_invoices')
-        .select('company_id, customer_name, invoice_gross_amount')
-        .eq('invoice_direction', 'OUTBOUND')
-        .gte('invoice_issue_date', `${taxYear}-01-01`)
-        .lte('invoice_issue_date', `${taxYear}-12-31`);
-      
+      if (clientCompanyIds.length === 0) return new Map<string, { customerName: string; total: number }[]>();
+
+      const { data, error } = await supabase.rpc('get_portfolio_kata_partner_totals', {
+        p_company_ids: clientCompanyIds,
+        p_year: taxYear,
+      });
+
       if (error) throw error;
-      
+
       const map = new Map<string, { customerName: string; total: number }[]>();
-      (data || []).forEach(inv => {
-        if (!inv.company_id || !inv.customer_name) return;
-        const list = map.get(inv.company_id) || [];
-        const existing = list.find(item => item.customerName === inv.customer_name);
-        const amount = Number(inv.invoice_gross_amount) || 0;
-        if (existing) {
-          existing.total += amount;
-        } else {
-          list.push({ customerName: inv.customer_name, total: amount });
-        }
-        map.set(inv.company_id, list);
+      (data || []).forEach(row => {
+        if (!row.company_id || !row.customer_name) return;
+        const list = map.get(row.company_id) || [];
+        list.push({ customerName: row.customer_name, total: Number(row.total) || 0 });
+        map.set(row.company_id, list);
       });
       return map;
-    }
+    },
+    enabled: clientCompanyIds.length > 0,
   });
 
   const isLoading = settingsLoading || totalsLoading || returnsLoading || customerTotalsLoading;

@@ -113,6 +113,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-043 | ZIP / RAR / 7z Archívum Csatolmány Kicsomagolás és Body-MIME Parsing — mindkét email pipeline (IMAP + Mailgun), fflate Deno-ban, py7zr/rarfile Python Worker-ben, body-mime RFC822 fallback | ✅ Decided | [A-043](./A-043-zip-archive-email-attachment-expansion.md) |
 | A-045 | Audit Trigger Email-Alias Bypass — service_role guard kivétele Mailgun EF INSERT-ekre + trigger kiterjesztés transaction_uploads és report_uploads táblákra | ✅ Decided | [A-045](./A-045-audit-trigger-email-alias-service-role-bypass.md) |
 | A-046 | LLM Költség Aggregáció Szerver-Oldali SECURITY DEFINER VOLATILE RPC-kkel — PostgREST max_rows (1000 sor) és 25006-os read-only tranzakciós hibák kiküszöbölése | ✅ Decided | [A-046](./A-046-llm-cost-aggregation-server-side-rpc.md) |
+| A-050 | Server-Side Aggregation & N+1 Query Optimization — Új RPC-k (get_accounty_missing_item_counts, get_portfolio_kata_partner_totals, get_ev_ytd_totals), Foreign Key indexek és N+1 hurkok kötegelése | ✅ Decided | [A-050](./A-050-server-side-aggregation-and-n-plus-1-optimization.md) |
 
 ---
 

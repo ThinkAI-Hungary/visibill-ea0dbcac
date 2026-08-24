@@ -864,34 +864,33 @@ export function useEvRealTotals(companyId: string | undefined, taxYear: number) 
 }
 
 /**
- * Fetch YTD revenue and expenses per company from real eaisybill invoices.
+ * Fetch YTD revenue and expenses per company via fast get_ev_ytd_totals RPC.
  */
-export function useEvYtdTotals(taxYear: number) {
+export function useEvYtdTotals(taxYear: number, companyIds?: string[]) {
   return useQuery({
-    queryKey: ['ev-real-ytd-totals', taxYear],
+    queryKey: ['ev-real-ytd-totals', taxYear, companyIds],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('company_id, invoice_direction, brutto_vegosszeg')
-        .or(`and(teljesites_datuma.gte.${taxYear}-01-01,teljesites_datuma.lte.${taxYear}-12-31),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${taxYear}-01-01,kibocsatas_datuma.lte.${taxYear}-12-31)`)
-        .not('exclude_from_accounting', 'is', true);
+      let targetIds = companyIds;
+      if (!targetIds || targetIds.length === 0) {
+        const { data: companies } = await supabase.from('companies').select('id');
+        targetIds = (companies || []).map(c => c.id);
+      }
+      if (targetIds.length === 0) return new Map<string, { revenue: number; expense: number }>();
+
+      const { data, error } = await supabase.rpc('get_ev_ytd_totals', {
+        p_company_ids: targetIds,
+        p_tax_year: taxYear,
+      });
 
       if (error) throw error;
 
       const map = new Map<string, { revenue: number; expense: number }>();
-      (data || []).forEach(inv => {
-        if (!inv.company_id) return;
-        const val = Number(inv.brutto_vegosszeg) || 0;
-        const current = map.get(inv.company_id) || { revenue: 0, expense: 0 };
-        const dir = (inv.invoice_direction || '').toUpperCase();
-        
-        if (dir === 'OUTBOUND') {
-          current.revenue += val;
-        } else if (dir === 'INBOUND') {
-          current.expense += val;
-        }
-        
-        map.set(inv.company_id, current);
+      (data || []).forEach((row: any) => {
+        if (!row.company_id) return;
+        map.set(row.company_id, {
+          revenue: Number(row.revenue) || 0,
+          expense: Number(row.expense) || 0,
+        });
       });
       return map;
     },
@@ -899,27 +898,31 @@ export function useEvYtdTotals(taxYear: number) {
 }
 
 /**
- * Fetch YTD revenue per company (for the threshold monitor) from real invoices
+ * Fetch YTD revenue per company (for the threshold monitor) via get_ev_ytd_totals RPC
  * Returns a Map<company_id, ytd_revenue> for easy lookup.
  */
-export function useEvYtdRevenue(taxYear: number) {
+export function useEvYtdRevenue(taxYear: number, companyIds?: string[]) {
   return useQuery({
-    queryKey: ['ev-ytd-revenue', taxYear],
+    queryKey: ['ev-ytd-revenue', taxYear, companyIds],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('company_id, brutto_vegosszeg')
-        .in('invoice_direction', ['OUTBOUND', 'outbound'])
-        .or(`and(teljesites_datuma.gte.${taxYear}-01-01,teljesites_datuma.lte.${taxYear}-12-31),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${taxYear}-01-01,kibocsatas_datuma.lte.${taxYear}-12-31)`)
-        .not('exclude_from_accounting', 'is', true);
+      let targetIds = companyIds;
+      if (!targetIds || targetIds.length === 0) {
+        const { data: companies } = await supabase.from('companies').select('id');
+        targetIds = (companies || []).map(c => c.id);
+      }
+      if (targetIds.length === 0) return new Map<string, number>();
+
+      const { data, error } = await supabase.rpc('get_ev_ytd_totals', {
+        p_company_ids: targetIds,
+        p_tax_year: taxYear,
+      });
 
       if (error) throw error;
 
       const map = new Map<string, number>();
-      (data || []).forEach(inv => {
-        if (!inv.company_id) return;
-        const val = Number(inv.brutto_vegosszeg) || 0;
-        map.set(inv.company_id, (map.get(inv.company_id) || 0) + val);
+      (data || []).forEach((row: any) => {
+        if (!row.company_id) return;
+        map.set(row.company_id, Number(row.revenue) || 0);
       });
       return map;
     },
@@ -1069,7 +1072,7 @@ export function useEvVatReturns(companyId: string | undefined, taxYear: number =
         .eq('tax_year', taxYear)
         .order('deadline', { ascending: true });
       if (error) throw error;
-      return (data || []) as {
+      return (data || []) as unknown as {
         id: string;
         period_key: string;
         status: 'upcoming' | 'draft' | 'submitted' | 'accepted';
@@ -1096,7 +1099,7 @@ export function useEvChamberPayments(companyId: string | undefined) {
         .eq('company_id', companyId!)
         .order('tax_year', { ascending: false });
       if (error) throw error;
-      return (data || []) as {
+      return (data || []) as unknown as {
         id: string;
         tax_year: number;
         amount: number;
@@ -1131,7 +1134,7 @@ export function useOrgReportLines(companyId: string | undefined, taxYear: number
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []) as {
+      return (data || []) as unknown as {
         id: string;
         report_type: 'balance_asset' | 'balance_liability' | 'income_statement';
         line_code: string;

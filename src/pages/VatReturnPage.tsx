@@ -376,7 +376,7 @@ function VatReturnViewTab() {
       // Get all OUTBOUND NAV invoices in this period that have no transaction (unpaid)
       const { data: invoices, error } = await supabase
         .from('nav_invoices')
-        .select('id')
+        .select('invoice_vat_amount')
         .eq('company_id', selectedCompany!.id)
         .eq('invoice_direction', 'OUTBOUND')
         .is('transaction_id', null)
@@ -385,20 +385,7 @@ function VatReturnViewTab() {
 
       if (error || !invoices || invoices.length === 0) return 0;
 
-      // Get VAT amounts for those invoice items
-      const invoiceIds = invoices.map(i => i.id);
-      let totalVat = 0;
-      // Batch in chunks of 50 to avoid URI length limits
-      for (let i = 0; i < invoiceIds.length; i += 50) {
-        const chunk = invoiceIds.slice(i, i + 50);
-        const { data: items } = await supabase
-          .from('nav_invoice_items')
-          .select('vat_amount')
-          .in('nav_invoice_id', chunk);
-        if (items) {
-          totalVat += items.reduce((sum, item) => sum + (item.vat_amount || 0), 0);
-        }
-      }
+      const totalVat = invoices.reduce((sum, inv) => sum + (Number(inv.invoice_vat_amount) || 0), 0);
       return Math.round(totalVat / 1000); // Convert to eFt
     },
     enabled: !!selectedCompany?.id && !!vatReturn,
@@ -1116,7 +1103,7 @@ function VatReturnViewTab() {
               </CardDescription>
             </div>
             <Button
-              size="xs"
+              size="sm"
               variant="outline"
               onClick={handleViesCheck}
               disabled={isValidatingVies || a60Calculations.itemsList.length === 0}
@@ -1580,7 +1567,7 @@ function VatReturnViewTab() {
               
               <div className="flex gap-2">
                 <Button
-                  size="xs"
+                  size="sm"
                   variant="outline"
                   onClick={() => {
                     const xml = getVatReturnXmlString({
@@ -1619,7 +1606,7 @@ function VatReturnViewTab() {
                     className="hidden"
                   />
                   <Button
-                    size="xs"
+                    size="sm"
                     variant="outline"
                     className="w-full text-[10px] h-7"
                     onClick={() => document.getElementById('xml-file-upload')?.click()}

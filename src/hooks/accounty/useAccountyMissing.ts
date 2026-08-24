@@ -2,7 +2,7 @@
  * Accounty Missing Items hooks — queries and mutations.
  * Split from useAccountyData.ts for maintainability.
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,16 +25,16 @@ export function useAccountyMissingItems(companyId: string, page = 0, pageSize = 
 
       if (countErr) throw countErr;
 
-      // 2. Fetch only the current page
+      // 2. Fetch only the requested page
       const from = page * pageSize;
       const to = from + pageSize - 1;
+
       const { data, error } = await supabase
         .from('accounty_missing_items')
         .select('*')
         .eq('company_id', companyId)
         .in('status', ['open', 'notified', 'resolved'])
-        .order('priority', { ascending: true })
-        .order('created_at', { ascending: false })
+        .order('item_date', { ascending: false, nullsFirst: false })
         .range(from, to);
 
       if (error) throw error;
@@ -42,12 +42,12 @@ export function useAccountyMissingItems(companyId: string, page = 0, pageSize = 
       const items = (data || []).map((item): AccountyMissingItem => ({
         id: item.id,
         companyId: item.company_id,
-        category: item.category,
+        category: (item.category || 'bejovo') as 'bejovo' | 'kimeno' | 'ber' | 'bank',
         title: item.title,
         subtitle: item.subtitle,
         source: item.source,
-        priority: item.priority,
-        status: item.status,
+        priority: (item.priority || 'medium') as 'low' | 'urgent' | 'medium',
+        status: (item.status || 'open') as 'open' | 'notified' | 'resolved' | 'ignored',
         details: item.details,
         amount: item.amount ? Number(item.amount) : null,
         invoiceNumber: item.invoice_number,
@@ -68,7 +68,7 @@ export function useAccountyMissingItems(companyId: string, page = 0, pageSize = 
     },
     enabled: !!companyId,
     staleTime: 30_000,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -169,12 +169,12 @@ export function useAccountyAllMissingItems() {
         id: item.id,
         companyId: item.company_id,
         companyName: nameMap[item.company_id] || 'Ismeretlen',
-        category: item.category,
+        category: (item.category || 'bejovo') as 'bejovo' | 'kimeno' | 'ber' | 'bank',
         title: item.title,
         subtitle: item.subtitle,
         source: item.source,
-        priority: item.priority,
-        status: item.status,
+        priority: (item.priority || 'medium') as 'low' | 'urgent' | 'medium',
+        status: (item.status || 'open') as 'open' | 'notified' | 'resolved' | 'ignored',
         details: item.details,
         amount: item.amount ? Number(item.amount) : null,
         invoiceNumber: item.invoice_number,
@@ -235,8 +235,12 @@ export function useAccountyCompanySummary() {
 
       if (compErr) throw compErr;
 
-      // 3. Get ALL open/notified missing items (paginated)
-      const missingItems = await fetchAllMissingItems(companyIds);
+      // 3. Get missing items summary per company via fast RPC
+      const { data: missingCounts, error: countErr } = await supabase.rpc('get_accounty_missing_item_counts', {
+        p_company_ids: companyIds,
+      });
+
+      if (countErr) throw countErr;
 
       // 4. Aggregate per company
       const companyMap: Record<string, { name: string; taxNumber: string }> = {};
@@ -258,17 +262,14 @@ export function useAccountyCompanySummary() {
         };
       });
 
-      missingItems.forEach((mi: { company_id: string; priority: string; last_notified_at: string | null; notification_count: number }) => {
+      (missingCounts || []).forEach((mi: any) => {
         const agg = aggregates[mi.company_id];
         if (!agg) return;
-        agg.missingCount++;
-        if (mi.priority === 'urgent') agg.criticalCount++;
-        if (mi.last_notified_at && (!agg.lastNotifiedAt || mi.last_notified_at > agg.lastNotifiedAt)) {
-          agg.lastNotifiedAt = mi.last_notified_at;
-        }
-        const nc = mi.notification_count || 0;
-        if (nc > agg.maxNotificationCount) agg.maxNotificationCount = nc;
-        if (nc > 0) agg.totalNotified++;
+        agg.missingCount = Number(mi.count || 0);
+        agg.criticalCount = Number(mi.critical_count || 0);
+        agg.lastNotifiedAt = mi.last_notified_at || null;
+        agg.maxNotificationCount = Number(mi.max_notification_count || 0);
+        agg.totalNotified = Number(mi.total_notified || 0);
       });
 
       return Object.values(aggregates)

@@ -176,14 +176,13 @@ export default function PartnersPage() {
       if (!selectedCompany?.id) return [];
 
       // Fetch partners + invoice counts from both tables in parallel
-      const [{ data: partnerData, error: partnerError }, { data: supplierCounts }, { data: customerCounts }, { data: uploadedCounts }] = await Promise.all([
+      const [{ data: partnerData, error: partnerError }, { data: navInvoicesData }, { data: uploadedCounts }] = await Promise.all([
         supabase
           .from("partners")
           .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting, custom_monogram, custom_color, custom_bg_color, related_party")
           .eq("company_id", selectedCompany.id)
           .order("name", { ascending: true }),
-        supabase.from("nav_invoices").select("supplier_tax_number").eq("company_id", selectedCompany.id),
-        supabase.from("nav_invoices").select("customer_tax_number").eq("company_id", selectedCompany.id),
+        supabase.from("nav_invoices").select("supplier_tax_number, customer_tax_number, supplier_name, customer_name").eq("company_id", selectedCompany.id),
         supabase.from("invoices").select("elado_vat_id, vevo_vat_id, elado_nev, vevo_nev").eq("company_id", selectedCompany.id),
       ]);
 
@@ -191,15 +190,12 @@ export default function PartnersPage() {
 
       const countsMap: Record<string, number> = {};
 
-      // NAV supplier invoices
-      (supplierCounts || []).forEach((inv: any) => {
+      // NAV supplier & customer invoices
+      (navInvoicesData || []).forEach((inv: any) => {
         if (inv.supplier_tax_number) {
           const cleanTax = inv.supplier_tax_number.substring(0, 8);
           countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
         }
-      });
-      // NAV customer invoices
-      (customerCounts || []).forEach((inv: any) => {
         if (inv.customer_tax_number) {
           const cleanTax = inv.customer_tax_number.substring(0, 8);
           countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
@@ -228,27 +224,33 @@ export default function PartnersPage() {
         }
       });
 
-      // Name-based invoice counts for FOREIGN: partners (NAV + uploaded by name)
+      // Name-based invoice counts for FOREIGN partners — computed directly in-memory (0 extra DB queries)
       const foreignPartners = (partnerData as Partner[]).filter(p => isForeignPartner(p.tax_number));
       const foreignCounts: Record<string, number> = {};
       if (foreignPartners.length > 0) {
-        const foreignResults = await Promise.all(
-          foreignPartners.map(async (fp) => {
-            const escapedName = fp.name.replace(/'/g, "''");
-            const [{ count: invCount }, { count: navCount }] = await Promise.all([
-              supabase.from('invoices')
-                .select('*', { count: 'exact', head: true })
-                .eq('company_id', selectedCompany.id)
-                .or(`elado_nev.ilike."%${escapedName}%",vevo_nev.ilike."%${escapedName}%"`),
-              supabase.from('nav_invoices')
-                .select('*', { count: 'exact', head: true })
-                .eq('company_id', selectedCompany.id)
-                .or(`supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`),
-            ]);
-            return { id: fp.id, count: (invCount || 0) + (navCount || 0) };
-          })
-        );
-        foreignResults.forEach(r => { foreignCounts[r.id] = r.count; });
+        foreignPartners.forEach(fp => {
+          const lowerName = (fp.name || '').toLowerCase().trim();
+          if (!lowerName) return;
+          let matchCount = 0;
+
+          (navInvoicesData || []).forEach((inv: any) => {
+            const sName = (inv.supplier_name || '').toLowerCase();
+            const cName = (inv.customer_name || '').toLowerCase();
+            if (sName.includes(lowerName) || cName.includes(lowerName)) {
+              matchCount++;
+            }
+          });
+
+          (uploadedCounts || []).forEach((inv: any) => {
+            const eName = (inv.elado_nev || '').toLowerCase();
+            const vName = (inv.vevo_nev || '').toLowerCase();
+            if (eName.includes(lowerName) || vName.includes(lowerName)) {
+              matchCount++;
+            }
+          });
+
+          foreignCounts[fp.id] = matchCount;
+        });
       }
 
       return (partnerData as Partner[]).map(partner => {

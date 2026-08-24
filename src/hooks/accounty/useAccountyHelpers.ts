@@ -98,6 +98,8 @@ export interface AccountyMissingItem {
   isIgnored: boolean;
   createdAt: string;
   resolvedAt: string | null;
+  uploaded_files?: string[] | null;
+  uploadedFiles?: string[] | null;
 }
 
 export interface AccountyDeadline {

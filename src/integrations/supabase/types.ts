@@ -10174,6 +10174,43 @@ export type Database = {
       }
     }
     Functions: {
+      get_accounty_missing_item_counts: {
+        Args: {
+          p_company_ids: string[]
+          p_date_from?: string | null
+          p_date_to?: string | null
+        }
+        Returns: {
+          company_id: string
+          count: number
+          critical_count: number
+          last_notified_at: string | null
+          max_notification_count: number
+          total_notified: number
+        }[]
+      }
+      get_portfolio_kata_partner_totals: {
+        Args: {
+          p_company_ids: string[]
+          p_year: number
+        }
+        Returns: {
+          company_id: string
+          customer_name: string
+          total: number
+        }[]
+      }
+      get_ev_ytd_totals: {
+        Args: {
+          p_company_ids: string[]
+          p_tax_year: number
+        }
+        Returns: {
+          company_id: string
+          revenue: number
+          expense: number
+        }[]
+      }
       assign_supplier_default_projects: {
         Args: { p_company_id: string }
         Returns: number

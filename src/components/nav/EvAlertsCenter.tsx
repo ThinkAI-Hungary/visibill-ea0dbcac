@@ -19,6 +19,7 @@ export interface PortfolioAlert {
   type: 'danger' | 'warning';
   title: string;
   message: string;
+  targetUrl?: string;
 }
 
 interface EvAlertsCenterProps {

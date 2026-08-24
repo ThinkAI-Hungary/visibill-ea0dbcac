@@ -78,12 +78,17 @@ export function useAccountyClients(dateFrom?: string, dateTo?: string) {
 
       if (compErr) throw compErr;
 
-      // Get missing items counts per company (paginated query to bypass PostgREST 1000-row limit)
+      // Get missing items counts per company via fast RPC
       const missingCountMap: Record<string, number> = {};
       try {
-        const openMissingItems = await fetchAllMissingItems(uniqueCompanyIds, dateFrom, dateTo);
-        (openMissingItems || []).forEach((r) => {
-          missingCountMap[r.company_id] = (missingCountMap[r.company_id] || 0) + 1;
+        const { data: missingCounts, error: countErr } = await supabase.rpc('get_accounty_missing_item_counts', {
+          p_company_ids: uniqueCompanyIds,
+          p_date_from: dateFrom || null,
+          p_date_to: dateTo || null,
+        });
+        if (countErr) throw countErr;
+        (missingCounts || []).forEach((r: any) => {
+          missingCountMap[r.company_id] = Number(r.count || 0);
         });
       } catch (countErr: any) {
         reportError({ type: 'db_query', component: 'useAccountyClients', action: 'missing_counts', message: countErr.message || String(countErr), error: countErr });
