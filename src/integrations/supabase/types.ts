@@ -6837,6 +6837,7 @@ export type Database = {
           id: string
           input_tokens: number
           llm_calls: number
+          metadata: Json | null
           model_name: string
           output_tokens: number
           pipeline: string
@@ -6854,6 +6855,7 @@ export type Database = {
           id?: string
           input_tokens?: number
           llm_calls?: number
+          metadata?: Json | null
           model_name: string
           output_tokens?: number
           pipeline: string
@@ -6871,6 +6873,7 @@ export type Database = {
           id?: string
           input_tokens?: number
           llm_calls?: number
+          metadata?: Json | null
           model_name?: string
           output_tokens?: number
           pipeline?: string
