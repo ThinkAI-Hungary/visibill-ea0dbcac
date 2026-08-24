@@ -2345,7 +2345,7 @@ async function updatePermissions(
               role: "iroda_admin",
               is_primary: true,
               is_main_accountant: !hasOtherMain,
-              source: "management_dashboard",
+              source: "manual",
             },
             { onConflict: "accountant_user_id,company_id" },
           );
