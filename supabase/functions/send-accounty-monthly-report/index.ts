@@ -62,7 +62,8 @@ Deno.serve(async (req: Request) => {
     const prevMonth = now.getUTCMonth() === 0 ? 12 : now.getUTCMonth() // 1-indexed
     const prevYear = now.getUTCMonth() === 0 ? now.getUTCFullYear() - 1 : now.getUTCFullYear()
     const monthStart = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`
-    const monthEnd = `${prevYear}-${String(prevMonth).padStart(2, '0')}-31`
+    const lastDayOfMonth = new Date(prevYear, prevMonth, 0).getDate()
+    const monthEnd = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`
 
     const monthNames = ['', 'január', 'február', 'március', 'április', 'május', 'június',
       'július', 'augusztus', 'szeptember', 'október', 'november', 'december']

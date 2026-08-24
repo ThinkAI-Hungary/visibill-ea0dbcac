@@ -313,18 +313,23 @@ export function useClosePeriod() {
       // 2. Mark all entries in the period as closed
       let dateFilter: { from: string; to: string };
       if (params.period_type === 'monthly') {
+        const [yearStr, monthStr] = params.period_key.split('-');
+        const y = parseInt(yearStr, 10);
+        const m = parseInt(monthStr, 10);
+        const lastDay = new Date(y, m, 0).getDate();
         dateFilter = {
           from: `${params.period_key}-01`,
-          to: `${params.period_key}-31`,
+          to: `${params.period_key}-${String(lastDay).padStart(2, '0')}`,
         };
       } else if (params.period_type === 'quarterly') {
         const [year, q] = params.period_key.split('-Q');
-        const qNum = parseInt(q);
+        const qNum = parseInt(q, 10);
         const startMonth = (qNum - 1) * 3 + 1;
         const endMonth = qNum * 3;
+        const lastDay = new Date(parseInt(year, 10), endMonth, 0).getDate();
         dateFilter = {
           from: `${year}-${String(startMonth).padStart(2, '0')}-01`,
-          to: `${year}-${String(endMonth).padStart(2, '0')}-31`,
+          to: `${year}-${String(endMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
         };
       } else {
         dateFilter = {

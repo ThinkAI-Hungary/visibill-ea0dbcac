@@ -419,15 +419,20 @@ describe('EV Module — Period Close Date Filters', () => {
   // Replicates the date filter logic from useClosePeriod
   function getDateFilter(periodType: string, periodKey: string, taxYear: number) {
     if (periodType === 'monthly') {
-      return { from: `${periodKey}-01`, to: `${periodKey}-31` };
+      const [yearStr, monthStr] = periodKey.split('-');
+      const y = parseInt(yearStr, 10);
+      const m = parseInt(monthStr, 10);
+      const lastDay = new Date(y, m, 0).getDate();
+      return { from: `${periodKey}-01`, to: `${periodKey}-${String(lastDay).padStart(2, '0')}` };
     } else if (periodType === 'quarterly') {
       const [year, q] = periodKey.split('-Q');
-      const qNum = parseInt(q);
+      const qNum = parseInt(q, 10);
       const startMonth = (qNum - 1) * 3 + 1;
       const endMonth = qNum * 3;
+      const lastDay = new Date(parseInt(year, 10), endMonth, 0).getDate();
       return {
         from: `${year}-${String(startMonth).padStart(2, '0')}-01`,
-        to: `${year}-${String(endMonth).padStart(2, '0')}-31`,
+        to: `${year}-${String(endMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
       };
     } else {
       return { from: `${taxYear}-01-01`, to: `${taxYear}-12-31` };
@@ -455,13 +460,13 @@ describe('EV Module — Period Close Date Filters', () => {
   it('quarterly: Q2 = Apr-Jun', () => {
     const filter = getDateFilter('quarterly', '2026-Q2', 2026);
     expect(filter.from).toBe('2026-04-01');
-    expect(filter.to).toBe('2026-06-31');
+    expect(filter.to).toBe('2026-06-30');
   });
 
   it('quarterly: Q3 = Jul-Sep', () => {
     const filter = getDateFilter('quarterly', '2026-Q3', 2026);
     expect(filter.from).toBe('2026-07-01');
-    expect(filter.to).toBe('2026-09-31');
+    expect(filter.to).toBe('2026-09-30');
   });
 
   it('quarterly: Q4 = Oct-Dec', () => {

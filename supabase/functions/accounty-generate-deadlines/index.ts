@@ -397,10 +397,11 @@ Deno.serve(async (req: Request) => {
       }
 
       // 3. Check for existing deadlines (avoid duplicates)
-      if (deadlinesToInsert.length > 0) {
-        const startOfMonth = `${targetYear}-${String(targetMonth).padStart(2, '0')}-01`
-        const endOfMonth = `${targetYear}-${String(targetMonth).padStart(2, '0')}-31`
+      const startOfMonth = `${targetYear}-${String(targetMonth).padStart(2, '0')}-01`
+      const lastDayOfMonth = new Date(targetYear, targetMonth, 0).getDate()
+      const endOfMonth = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`
 
+      if (deadlinesToInsert.length > 0) {
         const { data: existingDeadlines } = await supabase
           .from('accounty_deadlines')
           .select('deadline_type, due_date')
@@ -439,8 +440,8 @@ Deno.serve(async (req: Request) => {
         .eq('company_id', companyId)
         .eq('source', 'ber_cron')
         .eq('category', 'ber')
-        .gte('item_date', `${targetYear}-${String(targetMonth).padStart(2, '0')}-01`)
-        .lte('item_date', `${targetYear}-${String(targetMonth).padStart(2, '0')}-31`)
+        .gte('item_date', startOfMonth)
+        .lte('item_date', endOfMonth)
         .limit(1)
 
       if (!existingBer || existingBer.length === 0) {

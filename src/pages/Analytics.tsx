@@ -154,9 +154,11 @@ export default function Analytics() {
   const actualCurrentYear = new Date().getFullYear();
   const actualCurrentMonth = new Date().getMonth();
   const currentMonthStart = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-01`;
-  const currentMonthEnd = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-31`;
+  const actualCurrentLastDay = new Date(actualCurrentYear, actualCurrentMonth + 1, 0).getDate();
+  const currentMonthEnd = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-${String(actualCurrentLastDay).padStart(2, '0')}`;
   const compMonthStart = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-01`;
-  const compMonthEnd = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-31`;
+  const compLastDay = new Date(selectedYear, comparisonMonth + 1, 0).getDate();
+  const compMonthEnd = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-${String(compLastDay).padStart(2, '0')}`;
 
   const { data: vatData, isLoading: vatLoading } = useQuery({
     queryKey: queryKeys.analyticsVat(selectedCompany?.id || '', `${currentMonthStart}-${compMonthStart}`, `${currentMonthEnd}-${compMonthEnd}`),
