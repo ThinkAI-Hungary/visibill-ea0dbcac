@@ -1,4 +1,4 @@
-﻿# A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency
+# A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency
 
 **Status:** Decided  
 **Date:** 2026-07-20  
@@ -100,4 +100,6 @@ Migration fájl: supabase/migrations/20260720161534_mailgun_message_id_dedup_ind
 - [A-035: Háromirányú Pipeline Fallback](./A-035-three-way-fallback-redirection.md)
 - [A-011: Mailgun Email Processing](./A-011-email-processing.md)
 - [A-005: Edge Functions](./A-005-edge-functions.md)
-- Migration: supabase/migrations/20260720161534_mailgun_message_id_dedup_index.sql
+- [A-050: Server-Side Aggregation & N+1 Query Optimization](./A-050-server-side-aggregation-and-n-plus-1-optimization.md)
+- Migration: `supabase/migrations/20260720161534_mailgun_message_id_dedup_index.sql`
+- Migration: `supabase/migrations/20260824_add_metadata_to_llm_koltsegek.sql` (Layer 2 metadata jsonb oszlop & GIN index)

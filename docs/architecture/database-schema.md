@@ -1,6 +1,6 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-06-28
+> **Utoljára frissítve:** 2026-08-24
 > **Összesen:** ~154 tábla | **RLS:** mind engedélyezve | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.

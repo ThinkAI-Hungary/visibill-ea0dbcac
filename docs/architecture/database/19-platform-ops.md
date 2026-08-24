@@ -81,9 +81,12 @@
 | estimated_cost_usd | numeric | ✓ |  |
 | llm_calls | integer | — | `1` |
 | processing_duration_ms | integer | ✓ |  |
+| worker_id | text | ✓ |  |
+| metadata | jsonb | ✓ | `'{}'::jsonb` |
 
-**Indexek:** `idx_llm_koltsegek_company`, `idx_llm_koltsegek_created`, `idx_llm_koltsegek_model`, `idx_llm_koltsegek_pipeline`
+**Indexek:** `idx_llm_koltsegek_company`, `idx_llm_koltsegek_created`, `idx_llm_koltsegek_model`, `idx_llm_koltsegek_pipeline`, `idx_llm_koltsegek_metadata` (GIN)
 
+> **Megjegyzés (2026-08-24):** A `metadata` (`jsonb`) oszlop és a GIN index (ld. [A-041](../decisions/A-041-mailgun-concurrent-dedup.md), `20260824_add_metadata_to_llm_koltsegek.sql`) a Mailgun Webhook Layer 2 idempotency ellenőrzéséhez került bevezetésre (`mailgun_message_id` audit tracking).
 > **Megjegyzés (2026-06-28):** A `model_name` mező korábban csak a fő LLM modellt (pl. `deepseek/deepseek-chat`) tartalmazta. 2026-06-28-tól a Vision OCR költségek (gpt-4o) is trackelve vannak a `VisionCostAccumulator` → `drain_vision_costs()` mechanizmuson keresztül. Egy rekordban a `model_name` az elsődleges modellt mutatja, de az `estimated_cost_usd` **per-model árazással** számolódik (DeepSeek + gpt-4o külön). Ld. [A-007](../decisions/A-007-llm-strategy.md), [Worker ADR-026](../../../../worker/docs/DECISIONS.md).
 
 ---

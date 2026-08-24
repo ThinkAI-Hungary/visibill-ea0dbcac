@@ -26,6 +26,8 @@
 | kanban_status | text | ✓ | `'aktiv'::text` |
 | source | text | — | `'manual'::text` |
 | is_main_accountant | boolean | — | `false` |
+| is_impersonation | boolean | — | `false` |
+| last_computed_status | text | ✓ | `'Rendben'::text` |
 
 **FK:** `accountant_user_id` → `auth.users.id`, `accounting_firm_id` → `companies.id`, `company_id` → `companies.id`
 
