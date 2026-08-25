@@ -11,6 +11,7 @@ import { Search, Download, Loader2, BookOpen, ArrowUpDown } from 'lucide-react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { exportToFile } from '@/lib/exportUtils';
 import { toast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  F7: JOURNAL VIEW (Naplófőkönyv)
@@ -173,15 +174,6 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
     toast({ title: 'Naplófőkönyv exportálva' });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-16">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        <span className="ml-2 text-muted-foreground">Naplófőkönyv betöltése...</span>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -202,20 +194,26 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
             {uniqueTypes.map(t => <SelectItem key={t} value={t}>{TYPE_LABELS[t] || t}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleExport} disabled={filtered.length === 0}>
+        <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleExport} disabled={isLoading || filtered.length === 0}>
           <Download className="w-4 h-4" /> Export
         </Button>
       </div>
 
       {/* Summary */}
       <div className="flex items-center gap-4 text-xs text-muted-foreground bg-muted/40 px-4 py-2 rounded-lg">
-        <span>{filtered.length} tétel</span>
-        <span>|</span>
-        <span className="text-emerald-600 font-medium">Tartozik: {formatCurrency(totals.debit)}</span>
-        <span className="text-destructive font-medium">Követel: {formatCurrency(totals.credit)}</span>
-        <span className={cn('font-bold', totals.net >= 0 ? 'text-foreground' : 'text-destructive')}>
-          Nettó: {formatCurrency(totals.net)}
-        </span>
+        {isLoading ? (
+          <Skeleton className="h-4 w-64 bg-muted/50 rounded" />
+        ) : (
+          <>
+            <span>{filtered.length} tétel</span>
+            <span>|</span>
+            <span className="text-emerald-600 font-medium">Tartozik: {formatCurrency(totals.debit)}</span>
+            <span className="text-destructive font-medium">Követel: {formatCurrency(totals.credit)}</span>
+            <span className={cn('font-bold', totals.net >= 0 ? 'text-foreground' : 'text-destructive')}>
+              Nettó: {formatCurrency(totals.net)}
+            </span>
+          </>
+        )}
       </div>
 
       {/* Table */}
@@ -239,7 +237,36 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
 
         {/* Body */}
         <div className="divide-y divide-border/30 max-h-[60vh] overflow-y-auto">
-          {paginated.length === 0 ? (
+          {isLoading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="grid grid-cols-12 text-sm p-3 items-center animate-pulse">
+                <div className="col-span-1 text-center">
+                  <Skeleton className="h-4 w-16 mx-auto bg-muted/50 rounded" />
+                </div>
+                <div className="col-span-2">
+                  <Skeleton className="h-4 w-28 bg-muted/50 rounded" />
+                </div>
+                <div className="col-span-3">
+                  <Skeleton className="h-4 w-36 bg-muted/50 rounded" />
+                </div>
+                <div className="col-span-2 text-center">
+                  <Skeleton className="h-5 w-16 mx-auto bg-muted/50 rounded" />
+                </div>
+                <div className="col-span-1 text-center">
+                  <Skeleton className="h-5 w-12 mx-auto bg-muted/50 rounded" />
+                </div>
+                <div className="col-span-1 text-right">
+                  <Skeleton className="h-4 w-20 ml-auto bg-muted/50 rounded" />
+                </div>
+                <div className="col-span-1 text-right">
+                  <Skeleton className="h-4 w-20 ml-auto bg-muted/50 rounded" />
+                </div>
+                <div className="col-span-1 text-right">
+                  <Skeleton className="h-4 w-20 ml-auto bg-muted/50 rounded" />
+                </div>
+              </div>
+            ))
+          ) : paginated.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground flex flex-col items-center gap-2">
               <BookOpen className="w-8 h-8 text-muted-foreground/40" />
               <p className="text-sm">Nincs naplófőkönyvi tétel a kiválasztott időszakban</p>

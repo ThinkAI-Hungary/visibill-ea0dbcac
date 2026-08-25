@@ -70,7 +70,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
       </div>
 
       {/* Prep Toggle */}
-      <div className="flex p-1 bg-slate-100/80 dark:bg-slate-900/80 rounded-full mb-8 max-w-sm mx-auto border border-border/60">
+      <div className="flex p-1 bg-muted/80 rounded-full mb-8 max-w-sm mx-auto border border-border/60">
         <button 
           onClick={() => setUseVisibillAccount(true)}
           className={cn("flex-1 py-2 px-4 text-sm font-medium rounded-full flex items-center justify-center gap-2 transition-all", useVisibillAccount ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
@@ -319,21 +319,21 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
           
           <div className="grid grid-cols-3 gap-3">
             <button type="button" onClick={() => toggleChannel('email')}
-              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('email') ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}>
-              {selectedChannels.includes('email') && <Check className="w-4 h-4 text-slate-900 dark:text-slate-100 shrink-0" />}
-              <Mail className={cn("w-4 h-4 shrink-0", selectedChannels.includes('email') ? "text-slate-600 dark:text-slate-400" : "text-slate-400")} />
+              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('email') ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-slate-600 dark:text-slate-400")}>
+              {selectedChannels.includes('email') && <Check className="w-4 h-4 text-primary shrink-0" />}
+              <Mail className={cn("w-4 h-4 shrink-0", selectedChannels.includes('email') ? "text-primary" : "text-muted-foreground/60")} />
               E-mail
             </button>
             <button type="button" onClick={() => toggleChannel('viber')}
-              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('viber') ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}>
-              {selectedChannels.includes('viber') && <Check className="w-4 h-4 text-slate-900 dark:text-slate-100 shrink-0" />}
-              <Smartphone className={cn("w-4 h-4 shrink-0", selectedChannels.includes('viber') ? "text-slate-600 dark:text-slate-400" : "text-slate-400")} />
+              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('viber') ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-slate-600 dark:text-slate-400")}>
+              {selectedChannels.includes('viber') && <Check className="w-4 h-4 text-primary shrink-0" />}
+              <Smartphone className={cn("w-4 h-4 shrink-0", selectedChannels.includes('viber') ? "text-primary" : "text-muted-foreground/60")} />
               Viber
             </button>
             <button type="button" onClick={() => toggleChannel('telegram')}
-              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('telegram') ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}>
-              {selectedChannels.includes('telegram') && <Check className="w-4 h-4 text-slate-900 dark:text-slate-100 shrink-0" />}
-              <Send className={cn("w-4 h-4 shrink-0", selectedChannels.includes('telegram') ? "text-slate-600 dark:text-slate-400" : "text-slate-400")} />
+              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('telegram') ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-slate-600 dark:text-slate-400")}>
+              {selectedChannels.includes('telegram') && <Check className="w-4 h-4 text-primary shrink-0" />}
+              <Send className={cn("w-4 h-4 shrink-0", selectedChannels.includes('telegram') ? "text-primary" : "text-muted-foreground/60")} />
               Telegram
             </button>
           </div>
@@ -352,8 +352,8 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
               { id: 'berszamfejtes', label: 'Bérszámfejtési dokumentumok' },
             ].map(doc => (
               <button key={doc.id} type="button" onClick={() => toggleDoc(doc.id)}
-                className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes(doc.id) ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}>
-                <div className={cn("w-4 h-4 rounded-full flex items-center justify-center shrink-0", selectedDocs.includes(doc.id) ? "bg-slate-900 text-white" : "border border-slate-300")}>
+                className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes(doc.id) ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-slate-600 dark:text-slate-400")}>
+                <div className={cn("w-4 h-4 rounded-full flex items-center justify-center shrink-0", selectedDocs.includes(doc.id) ? "bg-primary text-primary-foreground" : "border border-border")}>
                   {selectedDocs.includes(doc.id) && <Check className="w-3 h-3" />}
                 </div>
                 {doc.label}

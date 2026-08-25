@@ -209,7 +209,7 @@ export default function EmployeeDetailsPage() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 overflow-x-auto bg-slate-100/80 dark:bg-slate-900/80 p-1 rounded-xl border border-border/60">
+      <div className="flex items-center gap-1 overflow-x-auto bg-muted/80 p-1 rounded-xl border border-border/60">
         {TABS.map((tab) => (
           <button
             key={tab.id}

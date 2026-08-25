@@ -47,6 +47,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { UnifiedPagination } from "@/components/ui/unified-pagination";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
 import { TicketPriorityBadge } from "@/components/tickets/TicketPriorityBadge";
 import { TicketDetailView } from "@/components/tickets/TicketDetailView";
@@ -570,32 +571,34 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
         {/* Table of tickets */}
         <Card className="border border-border/80 bg-card/50 backdrop-blur-md overflow-hidden">
           <CardContent className="p-0">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : filteredTickets.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-                <Inbox className="h-12 w-12 opacity-40" />
-                <p className="text-sm">Nincs a szűrésnek megfelelő hibajegy</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[120px]">Jegyszám</TableHead>
+                  <TableHead className="w-[60px]">Típus</TableHead>
+                  <TableHead className="w-[110px]">Rendszer</TableHead>
+                  <TableHead>Tárgy</TableHead>
+                  {isAdmin && <TableHead className="w-[180px]">Bejelentő & Cég</TableHead>}
+                  {isAdmin && <TableHead className="w-[120px]">Felelős</TableHead>}
+                  <TableHead className="w-[120px]">Státusz</TableHead>
+                  <TableHead className="w-[100px]">Prioritás</TableHead>
+                  <TableHead className="w-[110px]">Létrehozva</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableSkeleton rows={15} columns={isAdmin ? 9 : 7} />
+                ) : filteredTickets.length === 0 ? (
                   <TableRow>
-                    <TableHead className="w-[120px]">Jegyszám</TableHead>
-                    <TableHead className="w-[60px]">Típus</TableHead>
-                    <TableHead className="w-[110px]">Rendszer</TableHead>
-                    <TableHead>Tárgy</TableHead>
-                    {isAdmin && <TableHead className="w-[180px]">Bejelentő & Cég</TableHead>}
-                    {isAdmin && <TableHead className="w-[120px]">Felelős</TableHead>}
-                    <TableHead className="w-[120px]">Státusz</TableHead>
-                    <TableHead className="w-[100px]">Prioritás</TableHead>
-                    <TableHead className="w-[110px]">Létrehozva</TableHead>
+                    <TableCell colSpan={isAdmin ? 9 : 7} className="text-center py-16 text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <Inbox className="h-12 w-12 opacity-40" />
+                        <p className="text-sm">Nincs a szűrésnek megfelelő hibajegy</p>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedTickets.map((ticket) => (
+                ) : (
+                  paginatedTickets.map((ticket) => (
                     <TableRow
                       key={ticket.id}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -665,10 +668,10 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                         </span>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
 

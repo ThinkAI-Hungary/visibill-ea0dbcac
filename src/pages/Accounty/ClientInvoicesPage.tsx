@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2, FileText, Coins, Percent } from 'lucide-react';
+import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2, FileText, Coins, Percent, ArrowLeftRight, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCompanyInvoices } from '@/hooks/accounty';
+import { useCompanyInvoices, type CompanyInvoice } from '@/hooks/accounty';
 import { useAccountyClients } from '@/hooks/accounty';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -18,7 +18,7 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { exportToRLB60, exportToKulcsSoft, exportToNovitax } from '@/lib/bookkeepingExports';
 import { TAccountLedger } from '@/components/accounty/invoices/TAccountLedger';
-import { ArrowLeftRight } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 export default function ClientInvoicesPage() {
   const navigate = useNavigate();
@@ -172,11 +172,6 @@ export default function ClientInvoicesPage() {
   const [previewInvoice, setPreviewInvoice] = useState<any>(null);
   const [selectedLedgerInvoice, setSelectedLedgerInvoice] = useState<CompanyInvoice | null>(null);
 
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter]);
-
   const totalItems = filteredInvoices.length;
   const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -184,6 +179,123 @@ export default function ClientInvoicesPage() {
     const start = (currentPage - 1) * pageSize;
     return filteredInvoices.slice(start, start + pageSize);
   }, [filteredInvoices, currentPage, pageSize]);
+
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+
+  const handleRowSelect = (id: string, checked: boolean) => {
+    setSelectedInvoiceIds(prev => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const handleSelectAllPage = (checked: boolean) => {
+    setSelectedInvoiceIds(prev => {
+      const next = new Set(prev);
+      paginatedInvoices.forEach(inv => {
+        if (checked) next.add(inv.id);
+        else next.delete(inv.id);
+      });
+      return next;
+    });
+  };
+
+  const isAllPageSelected = paginatedInvoices.length > 0 && paginatedInvoices.every(inv => selectedInvoiceIds.has(inv.id));
+
+  // Reset page and selection when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedInvoiceIds(new Set());
+  }, [searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter]);
+
+  const handleBulkStatusChange = async (newStatus: string) => {
+    const selectedUploadedIds = filteredInvoices
+      .filter(inv => selectedInvoiceIds.has(inv.id) && !inv.isNav)
+      .map(inv => inv.id);
+
+    if (selectedUploadedIds.length === 0) {
+      toast({
+        title: 'Nincs módosítható számla',
+        description: 'A NAV rendszerről szinkronizált számlák státusza nem módosítható.',
+      });
+      return;
+    }
+
+    try {
+      let dbStatus = '';
+      switch (newStatus) {
+        case 'Új': dbStatus = 'feldolgozas_alatt'; break;
+        case 'Kontírozott': dbStatus = 'feldolgozott'; break;
+        case 'Exportálva': dbStatus = 'kifizetve'; break;
+        case 'Problémás': dbStatus = 'keses'; break;
+        default: dbStatus = 'kontirozasra_var'; break;
+      }
+
+      const { error } = await supabase
+        .from('invoices')
+        .update({ statusz: dbStatus })
+        .in('id', selectedUploadedIds);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: queryKeys.accountyCompanyInvoices(id || '') });
+      setSelectedInvoiceIds(new Set());
+
+      toast({
+        title: 'Sikeres módosítás',
+        description: `${selectedUploadedIds.length} feltöltött számla státusza frissítve lett.`,
+      });
+    } catch (err: any) {
+      console.error('Failed to update invoice statuses:', err);
+      toast({
+        title: 'Hiba a státusz módosításakor',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedUploadedIds = filteredInvoices
+      .filter(inv => selectedInvoiceIds.has(inv.id) && !inv.isNav)
+      .map(inv => inv.id);
+
+    if (selectedUploadedIds.length === 0) {
+      toast({
+        title: 'Nincs törölhető számla',
+        description: 'Csak a feltöltött bizonylatok törölhetőek, a NAV szinkronizált számlák nem.',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .in('id', selectedUploadedIds);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: queryKeys.accountyCompanyInvoices(id || '') });
+      setSelectedInvoiceIds(new Set());
+      setBulkDeleteDialogOpen(false);
+
+      toast({
+        title: 'Sikeres törlés',
+        description: `${selectedUploadedIds.length} számla törölve lett.`,
+      });
+    } catch (err: any) {
+      console.error('Failed to delete invoices:', err);
+      toast({
+        title: 'Hiba a törléskor',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  };
 
   const formatCurrency = (amount: number, currencyCode: string = 'HUF') => {
     const curr = (currencyCode || 'HUF').toUpperCase();
@@ -381,12 +493,15 @@ export default function ClientInvoicesPage() {
               <DropdownMenuItem 
                 className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
                 onClick={() => {
-                  if (filteredInvoices.length === 0) {
-                    toast({ title: 'Hiba', description: 'Nincsenek exportálható számlák a jelenlegi szűrésben.', variant: 'destructive' });
+                  const itemsToExport = selectedInvoiceIds.size > 0
+                    ? filteredInvoices.filter(i => selectedInvoiceIds.has(i.id))
+                    : filteredInvoices;
+                  if (itemsToExport.length === 0) {
+                    toast({ title: 'Hiba', description: 'Nincsenek exportálható számlák.', variant: 'destructive' });
                     return;
                   }
-                  exportToRLB60(filteredInvoices);
-                  toast({ title: 'RLB60 export sikeres', description: `${filteredInvoices.length} számla exportálva.` });
+                  exportToRLB60(itemsToExport);
+                  toast({ title: 'RLB60 export sikeres', description: `${itemsToExport.length} számla exportálva.` });
                 }}
               >
                 <FileText className="w-4 h-4 text-muted-foreground" />
@@ -395,12 +510,15 @@ export default function ClientInvoicesPage() {
               <DropdownMenuItem 
                 className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
                 onClick={() => {
-                  if (filteredInvoices.length === 0) {
-                    toast({ title: 'Hiba', description: 'Nincsenek exportálható számlák a jelenlegi szűrésben.', variant: 'destructive' });
+                  const itemsToExport = selectedInvoiceIds.size > 0
+                    ? filteredInvoices.filter(i => selectedInvoiceIds.has(i.id))
+                    : filteredInvoices;
+                  if (itemsToExport.length === 0) {
+                    toast({ title: 'Hiba', description: 'Nincsenek exportálható számlák.', variant: 'destructive' });
                     return;
                   }
-                  exportToKulcsSoft(filteredInvoices);
-                  toast({ title: 'Kulcs-Soft export sikeres', description: `${filteredInvoices.length} számla exportálva.` });
+                  exportToKulcsSoft(itemsToExport);
+                  toast({ title: 'Kulcs-Soft export sikeres', description: `${itemsToExport.length} számla exportálva.` });
                 }}
               >
                 <Cloud className="w-4 h-4 text-muted-foreground" />
@@ -409,12 +527,15 @@ export default function ClientInvoicesPage() {
               <DropdownMenuItem 
                 className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
                 onClick={() => {
-                  if (filteredInvoices.length === 0) {
-                    toast({ title: 'Hiba', description: 'Nincsenek exportálható számlák a jelenlegi szűrésben.', variant: 'destructive' });
+                  const itemsToExport = selectedInvoiceIds.size > 0
+                    ? filteredInvoices.filter(i => selectedInvoiceIds.has(i.id))
+                    : filteredInvoices;
+                  if (itemsToExport.length === 0) {
+                    toast({ title: 'Hiba', description: 'Nincsenek exportálható számlák.', variant: 'destructive' });
                     return;
                   }
-                  exportToNovitax(filteredInvoices);
-                  toast({ title: 'Novitax export sikeres', description: `${filteredInvoices.length} számla exportálva.` });
+                  exportToNovitax(itemsToExport);
+                  toast({ title: 'Novitax export sikeres', description: `${itemsToExport.length} számla exportálva.` });
                 }}
               >
                 <FileText className="w-4 h-4 text-muted-foreground" />
@@ -636,7 +757,14 @@ export default function ClientInvoicesPage() {
           <table className="w-full text-sm text-left">
             <thead className="bg-muted/50 border-b border-border text-muted-foreground font-semibold text-xs">
               <tr>
-                <th className="px-6 py-4 w-12 text-center font-semibold"><input type="checkbox" className="rounded border-border w-4 h-4 accent-primary" /></th>
+                <th className="px-6 py-4 w-12 text-center font-semibold">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-border w-4 h-4 accent-primary cursor-pointer" 
+                    checked={isAllPageSelected}
+                    onChange={(e) => handleSelectAllPage(e.target.checked)}
+                  />
+                </th>
                 <th className="px-6 py-4 font-semibold">Számla sorszám</th>
                 <th className="px-6 py-4 font-semibold">Szállító/Vevő</th>
                 <th className="px-6 py-4 font-semibold">Dátum</th>
@@ -659,7 +787,14 @@ export default function ClientInvoicesPage() {
               ) : filteredInvoices.length > 0 ? (
                 paginatedInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-accent/50 transition-colors group">
-                    <td className="px-6 py-4 text-center"><input type="checkbox" className="rounded border-border w-4 h-4 accent-primary" /></td>
+                    <td className="px-6 py-4 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-border w-4 h-4 accent-primary cursor-pointer" 
+                        checked={selectedInvoiceIds.has(inv.id)}
+                        onChange={(e) => handleRowSelect(inv.id, e.target.checked)}
+                      />
+                    </td>
                     <td className="px-6 py-4 font-medium text-foreground">{inv.invoiceNumber}</td>
                     <td className="px-6 py-4 text-muted-foreground">{inv.partnerName}</td>
                     <td className="px-6 py-4 text-muted-foreground">{inv.date}</td>
@@ -719,8 +854,52 @@ export default function ClientInvoicesPage() {
                             <ArrowLeftRight className="w-3.5 h-3.5 text-muted-foreground" />
                             Főkönyvi napló (T-számlák)
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer">Kontírozás</DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">Törlés</DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer"
+                            onClick={async () => {
+                              if (inv.isNav) {
+                                toast({ title: 'NAV számla', description: 'A NAV számlák automatikusan kontírozottak.' });
+                                return;
+                              }
+                              try {
+                                const { error } = await supabase
+                                  .from('invoices')
+                                  .update({ statusz: 'feldolgozott' })
+                                  .eq('id', inv.id);
+                                if (error) throw error;
+                                queryClient.invalidateQueries({ queryKey: queryKeys.accountyCompanyInvoices(id || '') });
+                                toast({ title: 'Sikeres kontírozás', description: 'A számla státusza Kontírozott-ra módosult.' });
+                              } catch (err: any) {
+                                toast({ title: 'Hiba a kontírozáskor', description: err.message, variant: 'destructive' });
+                              }
+                            }}
+                          >
+                            Kontírozás
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer text-destructive focus:text-destructive"
+                            onClick={async () => {
+                              if (inv.isNav) {
+                                toast({ title: 'NAV számla', description: 'NAV számlák nem törölhetőek.' });
+                                return;
+                              }
+                              if (confirm('Biztosan törölni szeretnéd ezt a bizonylatot?')) {
+                                try {
+                                  const { error } = await supabase
+                                    .from('invoices')
+                                    .delete()
+                                    .eq('id', inv.id);
+                                  if (error) throw error;
+                                  queryClient.invalidateQueries({ queryKey: queryKeys.accountyCompanyInvoices(id || '') });
+                                  toast({ title: 'Bizonylat törölve', description: 'A feltöltött bizonylat sikeresen törlődött.' });
+                                } catch (err: any) {
+                                  toast({ title: 'Hiba a törléskor', description: err.message, variant: 'destructive' });
+                                }
+                              }
+                            }}
+                          >
+                            Törlés
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -770,6 +949,142 @@ export default function ClientInvoicesPage() {
           {selectedLedgerInvoice && (
             <TAccountLedger invoice={selectedLedgerInvoice} />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {selectedInvoiceIds.size > 0 && createPortal(
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl bg-card border border-primary/30 shadow-2xl rounded-2xl px-6 py-4 flex items-center justify-between z-[9999] animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+            <p className="text-sm font-semibold text-foreground">
+              Kijelölt számlák: <span className="font-extrabold text-primary">{selectedInvoiceIds.size} db</span>
+            </p>
+            {(() => {
+              const selectedItems = filteredInvoices.filter(inv => selectedInvoiceIds.has(inv.id));
+              const sums: Record<string, number> = {};
+              selectedItems.forEach(inv => {
+                const currency = inv.currency || 'HUF';
+                sums[currency] = (sums[currency] || 0) + (inv.grossAmount || 0);
+              });
+              const sumStrings = Object.entries(sums).map(([ccy, amt]) => formatCurrency(amt, ccy));
+              if (sumStrings.length === 0) return null;
+              return (
+                <>
+                  <span className="text-muted-foreground/30 text-xs">|</span>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Összesen: <span className="font-bold text-foreground">{sumStrings.join(', ')}</span>
+                  </p>
+                </>
+              );
+            })()}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Select onValueChange={(val) => handleBulkStatusChange(val)}>
+              <SelectTrigger className="h-9 text-xs w-[220px] shrink-0 bg-background/50 border-border/60 rounded-xl">
+                <SelectValue placeholder="Státusz módosítása..." />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border w-[220px] z-[10000]" sideOffset={6}>
+                <SelectItem value="Új" className="text-xs">Új</SelectItem>
+                <SelectItem value="Kontírozásra vár" className="text-xs">Kontírozásra vár</SelectItem>
+                <SelectItem value="Kontírozott" className="text-xs">Kontírozott</SelectItem>
+                <SelectItem value="Exportálva" className="text-xs">Exportálva</SelectItem>
+                <SelectItem value="Problémás" className="text-xs">Problémás</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 rounded-xl border-border/60 bg-background/50 shrink-0">
+                  <Download className="w-3.5 h-3.5" /> Exportálás <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-card border-border">
+                <DropdownMenuItem 
+                  className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
+                  onClick={() => {
+                    const itemsToExport = filteredInvoices.filter(i => selectedInvoiceIds.has(i.id));
+                    exportToRLB60(itemsToExport);
+                    toast({ title: 'RLB60 export sikeres', description: `${itemsToExport.length} számla exportálva.` });
+                  }}
+                >
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  RLB60 formátum (.csv)
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
+                  onClick={() => {
+                    const itemsToExport = filteredInvoices.filter(i => selectedInvoiceIds.has(i.id));
+                    exportToKulcsSoft(itemsToExport);
+                    toast({ title: 'Kulcs-Soft export sikeres', description: `${itemsToExport.length} számla exportálva.` });
+                  }}
+                >
+                  <Cloud className="w-4 h-4 text-muted-foreground" />
+                  Kulcs-Soft formátum (.xml)
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
+                  onClick={() => {
+                    const itemsToExport = filteredInvoices.filter(i => selectedInvoiceIds.has(i.id));
+                    exportToNovitax(itemsToExport);
+                    toast({ title: 'Novitax export sikeres', description: `${itemsToExport.length} számla exportálva.` });
+                  }}
+                >
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  Novitax formátum (.csv)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {filteredInvoices.some(inv => selectedInvoiceIds.has(inv.id) && !inv.isNav) && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-9 text-xs gap-1.5 rounded-xl font-semibold shrink-0"
+                onClick={() => setBulkDeleteDialogOpen(true)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Törlés
+              </Button>
+            )}
+            
+            <div className="w-px h-6 bg-border/60 mx-1" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 text-xs text-muted-foreground hover:text-foreground rounded-xl shrink-0"
+              onClick={() => setSelectedInvoiceIds(new Set())}
+            >
+              Mégse
+            </Button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Bulk Delete Dialog */}
+      <Dialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] p-6 bg-card border-border">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-lg font-bold text-foreground">
+              Biztosan törölni szeretnéd a kijelölt bizonylatokat?
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Ez a művelet nem vonható vissza. A kijelölt {filteredInvoices.filter(inv => selectedInvoiceIds.has(inv.id) && !inv.isNav).length} db feltöltött számla véglegesen törlődik a rendszerből. (A NAV szinkronizált számlák automatikusan kihagyásra kerülnek a törlésből.)
+            </p>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" className="bg-card border-border text-foreground px-4 h-9 text-xs" onClick={() => setBulkDeleteDialogOpen(false)}>
+              Mégse
+            </Button>
+            <Button
+              variant="destructive"
+              className="px-4 h-9 text-xs"
+              onClick={handleBulkDelete}
+            >
+              Számlák törlése
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

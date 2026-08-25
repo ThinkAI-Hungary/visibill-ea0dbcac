@@ -433,9 +433,11 @@ Ha nem kívánja tovább használni az email szinkronizálást:
 ## Bankkivonatok és Tranzakciók
 
 A VisiBill nemcsak számlákat, hanem bankkivonatokat és banki tranzakciókat is képes feldolgozni és kezelni:
-- **Támogatott formátumok**: OTP, CIB, Raiffeisen PDF/XLS.
+- **Támogatott formátumok**: OTP, CIB, Raiffeisen, MBH PDF/XLS.
+- **MBH Bank többdevizás kivonatok**: Kifejezett támogatás a vegyes devizás (pl. EUR és HUF) MBH kivonatok oldalankénti különválasztásához és pontos devizafelismeréséhez.
 - **Binx e-pénz**: Speciális támogatás a Binx PDF kivonatokhoz. Ezeket a rendszer natív módon dolgozza fel, így az adatok kinyerése 100%-os pontosságú.
 - **Párosítás**: A feltöltött banki tranzakciókat a rendszer automatikusan megpróbálja hozzárendelni a nyitott számlákhoz.
+- **Kijelölt számlák kötegelt kezelése**: A számlák oldalon a sorok kijelölésével előhívható a lebegő bulk action sáv, amelyen egyszerre módosítható több számla státusza, törölhetők tételek, valamint megtekinthető a kijelölt számlák devizánként csoportosított bruttó összege.
 - **Automatikus könyvelési szabályok**: A tranzakciók oldalon saját szabályokat (szablonokat) hozhat létre az ismétlődő banki tételek (pl. kamatok, kezelési költségek, jutalékok) automatikus besorolására. A szabályokban meghatározható a tranzakció iránya (bejövetel/kiadás), összeghatára, és a leírásban keresett szövegminta (akár egyszerű egyezéssel, akár reguláris kifejezésekkel). A rendszer a szabályoknak megfelelő tételeket automatikusan a kívánt főkönyvi számhoz rendeli.
 - **Intelligens Hozzárendelési Javaslatok**: A rendszer az Eredménykimutatás lap Hozzárendelési Mátrix fülén automatikusan elemzi a besorolatlan főkönyvi számokat. Az Sztv. "A" variáns szerinti kódok alapján felismert tételekre javaslatokat tesz, amelyeket a kék színű információs sávban található **"Javaslatok ellenőrzése"** gombbal nyithatunk meg. A javaslatok listáján a megnevezések és a javasolt sorok teljes hosszukban kiíródnak, így könnyen és biztonságosan jóváhagyhatóak.
 
@@ -749,5 +751,5 @@ Magyar és angol nyelven is.
 
 ---
 
-*Utolsó frissítés: 2026. augusztus (v1.7.5)*  
-*Verzió: 1.7.5 (Éves beszámoló, M-lap validáció, számlafeldolgozási hibatűrés és számlatükör import fejlesztések)*
+*Utolsó frissítés: 2026. augusztus (v1.9.0)*  
+*Verzió: 1.9.0 (MBH többdevizás bankkivonatok, számlák kötegelt műveletei, fókuszálható kiegészítő melléklet szerkesztő és kategória-képmegjelenítők)*

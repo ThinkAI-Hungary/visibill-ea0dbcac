@@ -1,0 +1,243 @@
+Number of pages: 4
+
+--- Page 1 ---
+Bankszámlakivonat
+Bizonylat kibocsátó: MBH Bank Nyrt.
+MBH Bank Nyrt.
+Székhely: 1056 Budapest, Váci u. 38.
+Adóigazgatási száma: 10011922-4-44
+Csoportazonosító száma: 17782672-5-44
+EU közösségi adószáma: HU17782672
+SWIFT (BIC) kód: MKKBHUHB
+Telebank: 06 80 350 350
+Faxszám: +36 1 268 7799
+Honlap: mbhbank.hu
+E-mail: ugyfelszolgalat@mbhbank.hu
+A 2007. évi CXXVII. törvény 165. §-a alapján a
+Bank jelen számviteli bizonylat kibocsátásával
+mentesül a számla kiállítási kötelezettség alól.
+A számlakivonaton szereplő díjtételek a 2007. évi
+CXXVII. törvény alapján mentesek az adó alól.
+MANDALA FOGADÓ VENDÉGLÁTÓIPARI KORLÁTOLT FEL. TÁRS
+Állandó cím / Székhely: HU
+1031 BUDAPEST ZÁHONY UTCA 7
+Oldalszám: 1 / 4
+MANDALA FOGADÓ
+VENDÉGLÁTÓIPARI KORLÁTOLT FEL.
+TÁRS
+RÁCALMÁS
+JANKOVICH MIKLÓS KÖZ 1
+2459
+Kivonat száma: 2026/025
+Kivonat dátuma: 2026. július 30.
+Előző kivonat dátuma: 2026. július 22.
+BANKSZÁMLASZÁM: 10104105-14684500-01001309 DEVIZANEM: EUR IBAN: HU16 1010 4105 1468 4500 0100 1309
+BANKSZÁMLA TÍPUSA: PÉNZFORGALMI BANKSZÁMLA BANKSZÁMLA MEGNEVEZÉSE: Mandala Fogadó Kft.
+Terhelés
+Jóváírás
+Egyenleg / Fedezet
+NYITÓ EGYENLEG:
+14.169,33
+HALMOZOTT TERHELÉS:
+1.216,54
+HALMOZOTT JÓVÁÍRÁS:
+ZÁRÓ EGYENLEG:
+12.952,79
+FELHASZNÁLHATÓ ÖSSZEG:
+12.952,79
+FOLYÓSZÁMLA FORGALMAK
+Könyvelés
+napja
+Értéknap
+Tranzakció adatai
+Terhelés
+Jóváírás
+2026.07.30
+2026.07.30
+SEPA átutalás terhelése Azonosító szám:
+000PPSN262111381 Elektronikus csatorna: SEIO
+Ellenszámlaszám: DE79370400440123619900
+Ellenszámlaszám tulajdonosa: HRS Megjegyzés: 18491105
+Megbízás összege: 1210.26 EUR
+1.210,26
+2026.07.30
+2026.07.30
+SEPA átutalás (terhelés) jutaléka Tranzakcióazonosító:
+000PPSN262111381 Eredeti számlaszám:
+1468450001001309
+0,83
+MBH Bank Nyrt.
+
+--- Page 2 ---
+Bankszámlakivonat
+Oldalszám: 2 / 4
+BANKSZÁMLASZÁM:
+10104105-14684500-01001309
+Kivonat dátuma:
+2026. július 30.
+Könyvelés
+napja
+Értéknap
+Tranzakció adatai
+Terhelés
+Jóváírás
+2026.07.30
+2026.07.30
+Tranzakciós díjrész Azonosító szám: 000PPSN262111381
+5,45
+Összesen:
+1.216,54
+KIEGÉSZÍTŐ ADATOK
+PÉNZFORGALMI TRANZAKCIÓHOZ KAPCSOLÓDÓ BANKI DÍJAK ÖSSZEGZÉSE
+Könyvelési sordíj összege*
+Tranzakciós díjrészek összege*
+Pénzforgalmi tranzakciókhoz kapcsolódó jutalékok összege*
+5,45
+0,83
+*Jelen összesítősorok ismertetését a Bank mindenkor hatályos Üzletszabályzata és a vonatkozó Hirdetménye(i), Kondícióslistái, ésaz Általános Szerződési Feltételei (ÁSZF)
+tartalmazzák.
+
+--- Page 3 ---
+Bankszámlakivonat
+Oldalszám: 3 / 4
+Kivonat száma: 2026/146
+Kivonat dátuma: 2026. július 30.
+Előző kivonat dátuma: 2026. július 29.
+BANKSZÁMLASZÁM: 10104105-14684500-08001001 DEVIZANEM: HUF IBAN: HU28 1010 4105 1468 4500 0800 1001
+BANKSZÁMLA TÍPUSA: PÉNZFORGALMI BANKSZÁMLA BANKSZÁMLA MEGNEVEZÉSE: Mandala Fogadó Kft.
+Terhelés
+Jóváírás
+Egyenleg / Fedezet
+NYITÓ EGYENLEG:
+50.000
+HALMOZOTT TERHELÉS:
+2.639.413
+HALMOZOTT JÓVÁÍRÁS:
+2.589.413
+ZÁRÓ EGYENLEG:
+0
+ZÁROLT ÖSSZEGEK ÖSSZESEN:
+50.000
+FOLYÓSZÁMLA HITELKERET:
+20.000.000
+FELHASZNÁLHATÓ ÖSSZEG:
+15.343.384
+FOLYÓSZÁMLA FORGALMAK
+Könyvelés
+napja
+Értéknap
+Tranzakció adatai
+Terhelés
+Jóváírás
+2026.07.30
+2026.07.30
+GIRO átutalás jóváírása Azonosítószám:
+000PIGP262116360 Ellenszámlaszám:
+HU61117910055555555500000000 Ellenszámlaszám
+tulajdonosa: OTP Bank Nyrt. KELFO Kártyaelfogadói
+Foosztály Megjegyzés: Elszamolas a kartya elfogadoval
+29476/2026.07.30 Megbízás összege: 597579 HUF
+597.579
+2026.07.30
+2026.07.30
+MKB SZÉP kártyás költés Azonosító szám: SZ8153069
+77.120
+2026.07.30
+2026.07.30
+GIRO átutalás terhelése Azonosító szám:
+000IPMS26211GYN0 Ellenszámlaszám:
+HU76116000060000000084828844 Ellenszámlaszám
+tulajdonosa: IMV Stúdió Megjegyzés: IMV-2026-489
+23.600
+2026.07.30
+2026.07.30
+GIRO átutalás jutaléka Azonosító szám:
+000IPMS26211GYN0 Eredeti számlaszám:
+HU28101041051468450008001001
+150
+2026.07.30
+2026.07.30
+Tranzakciós díjrész Azonosító szám: 000IPMS26211GYN0
+Azonosító szám: 000FPOG262111035
+106
+2026.07.30
+2026.07.30
+Bankon belüli átutalás Azonosító szám:
+000IPMS26211GYMZ Ellenszámlaszám:
+HU56103000021317559100014902 Ellenszámlaszám
+tulajdonosa: Cyeb kft Megjegyzés: TRD-V26-026512
+2.144.163
+2026.07.30
+2026.07.30
+Tranzakciós díjrész Azonosító szám: 000IPMS26211GYMZ
+Azonosító szám: 000FPIN262110306
+9.649
+2026.07.30
+2026.07.30
+Bankon belüli átutalás Azonosító szám:
+000IPMS26211GYN1 Ellenszámlaszám:
+HU84504530871000843200000000 Ellenszámlaszám
+tulajdonosa: Well-Tex kft Megjegyzés: WT/000140 eloleg
+459.676
+2026.07.30
+2026.07.30
+Tranzakciós díjrész Azonosító szám: 000IPMS26211GYN1
+Azonosító szám: 000FPIN262110307
+2.069
+2026.07.30
+2026.07.30
+Hitelfolyósítás folyószámlahitel Tranzakció azonosító:
+000L801250800001 Szerződésazonosító:
+007L801250660001M Kamat: 8.96%
+1.914.714
+Összesen:
+2.639.413
+2.589.413
+
+--- Page 4 ---
+Bankszámlakivonat
+Oldalszám: 4 / 4
+BANKSZÁMLASZÁM:
+10104105-14684500-08001001
+Kivonat dátuma:
+2026. július 30.
+KIEGÉSZÍTŐ ADATOK
+PÉNZFORGALMI TRANZAKCIÓHOZ KAPCSOLÓDÓ BANKI DÍJAK ÖSSZEGZÉSE
+Könyvelési sordíj összege*
+Tranzakciós díjrészek összege*
+Pénzforgalmi tranzakciókhoz kapcsolódó jutalékok összege*
+11.824
+150
+*Jelen összesítősorok ismertetését a Bank mindenkor hatályos Üzletszabályzata és a vonatkozó Hirdetménye(i), Kondícióslistái, ésaz Általános Szerződési Feltételei (ÁSZF)
+tartalmazzák.
+ÉRVÉNYBEN LÉVŐ ZÁROLÁSOK
+Zárolás napja
+Zárolás lejárata
+Zárolás célja
+Zárolt összeg
+2026.02.27
+Hitelbírálati-Szerzodéskötési díj
+50.000
+Tisztelt Ügyfelünk!
+Tájékoztatjuk, hogy az Ön betéteire a 2013. évi CCXXXVII. tv. (Hpt.) 212.§ alapján vonatkozik az Országos Betétbiztosítási Alap (OBA)
+betétbiztosítása.
+A
+Hpt.
+6.
+sz.
+mellékletében
+meghatározott betétbiztosítási
+tájékoztatót
+a
+Bank
+évente
+megküldi
+a
+betéttulajdonosnak, a Hpt. 275.§ szerint. A betétbiztosítással kapcsolatban az Országos Betétbiztosítási Alap honlapján, a
+www.oba.hu weboldalon is tájékozódhat.
+Vértezze fel magát a kibercsalásokkal szemben, látogasson el a KiberPajzs honlapra!
+kiberpajzs.hu
+Jelen bizonylat a hatályos jogszabályok szerint elektronikus úton kibocsátott számviteli bizonylat, melyet elektronikus formában kell
+megőrizni.
+MBH Bank Nyrt.
+FSTM13314755-20260731020224

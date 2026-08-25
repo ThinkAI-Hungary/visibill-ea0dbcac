@@ -23,6 +23,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Select, 
   SelectContent, 
@@ -724,9 +725,36 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   if (isLoading || isLoadingItems) {
     return (
-      <div className="flex justify-center items-center h-[500px] text-muted-foreground w-full">
-        <Loader2 className="w-8 h-8 animate-spin" />
-        <span className="ml-3 font-medium">Főkönyvi adatok betöltése...</span>
+      <div className="w-full flex flex-col h-[65vh] max-h-[800px] bg-card overflow-hidden rounded-md border border-border">
+        {/* Header */}
+        <div className="bg-muted/80 border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none">
+          <div className="grid grid-cols-12 divide-x divide-border/50">
+            <div className="col-span-2 p-3 text-center text-xs text-foreground uppercase tracking-wider">Fők. szám</div>
+            <div className="col-span-7 p-3 text-xs text-foreground uppercase tracking-wider">Megnevezés</div>
+            <div className="col-span-3 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">Összesített Egyenleg</div>
+          </div>
+        </div>
+        {/* Skeleton Body */}
+        <div className="flex-1 divide-y divide-border/30 overflow-hidden">
+          {Array.from({ length: 12 }).map((_, i) => {
+            const depth = i % 3 === 0 ? 0 : i % 3 === 1 ? 1 : 2;
+            const indentPadding = `${0.75 + (depth * 1.5)}rem`;
+            return (
+              <div key={i} className="grid grid-cols-12 divide-x divide-border/10 p-3 items-center animate-pulse">
+                <div className="col-span-2 flex items-center justify-center">
+                  <Skeleton className="h-4 w-12 bg-muted/50 rounded" />
+                </div>
+                <div className="col-span-7 flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
+                  <div className="w-4 h-4 shrink-0" />
+                  <Skeleton className={cn("h-4 bg-muted/50 rounded", depth === 0 ? 'w-48' : depth === 1 ? 'w-36' : 'w-24')} />
+                </div>
+                <div className="col-span-3 flex justify-end">
+                  <Skeleton className="h-4 w-24 bg-muted/50 rounded" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

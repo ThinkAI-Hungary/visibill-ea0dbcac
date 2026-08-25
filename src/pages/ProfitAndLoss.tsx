@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle, Wand2, BarChart3, Sparkles, Check } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { FinancialPageSkeleton } from '@/components/ui/financial-skeleton';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -346,7 +347,7 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
   }, [treeData, expandedRowIds]);
 
   if (isLoadingStructure || isLoadingGlAccounts || isLoadingMappings) {
-    return <div className="p-8 flex justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
+    return <FinancialPageSkeleton title="Hozzárendelések betöltése..." />;
   }
 
   const assignableRows = pnlStructure?.filter(row => row.type === 'roman') || [];
@@ -828,7 +829,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   }, [pnlData, prevYearMap, revenueScale, materialScale, personnelScale, otherScale]);
 
   if (isLoading) {
-    return <div className="p-12 flex justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
+    return <FinancialPageSkeleton title="Eredménykimutatás betöltése..." />;
   }
 
   const handleExport = async () => {

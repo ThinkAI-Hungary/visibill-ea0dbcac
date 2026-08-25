@@ -771,6 +771,15 @@ npm run preview      # Preview production build
 
 ## Changelog
 
+### Version 1.9.0 (2026-08-25)
+- **eaisybooks & eaisybill UI/UX Unification:**
+  - **Centralized Theme Shadow Configuration:** Redefined the `'soft'` shadow mapping in [tailwind.config.ts](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/tailwind.config.ts) to point to the theme CSS variable `var(--shadow-soft)`. Defined `--shadow-soft` in [index.css](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/index.css) (with soft double-cast for light mode and 1px inset boundary for dark mode), dynamically updating over 50 card layouts across the platform.
+  - **Glassmorphic Card Visuals:** Updated `ClientCard` and `KpiCard` components in [DashboardShared.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/components/accounty/dashboard/DashboardShared.tsx) and charts/metric grids in [DashboardKpiView.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/components/accounty/dashboard/DashboardKpiView.tsx) to utilize glassmorphic styles (`bg-card/50 border border-border/80 shadow-soft`) matching the premium eaisybill layout.
+  - **Theme-Aware Tooltips & Popovers:** Replaced hardcoded hex values in chart tooltips ([MissingInvoicesReportPage.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/MissingInvoicesReportPage.tsx)) with CSS-theme variables (`var(--tooltip-bg)`, `var(--tooltip-text)`). Replaced hardcoded slate hover blocks with theme-aware `bg-popover border border-border text-popover-foreground` popover styles in [CashbookLedgerView.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/Ev/CashbookLedgerView.tsx).
+  - **Sticky Invoice Action Menu:** Added row selection states and integrated a premium floating bulk action menu via React portal in [ClientInvoicesPage.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/ClientInvoicesPage.tsx). Includes dynamic sum totals grouped by currency, bulk status mutation, delete confirmation overlays, and resolved z-index overlapping by raising dropdown z-index layers.
+  - **Form Stepper Fix:** Added `pt-2` padding to the wizard stepper wrapper in [TaoWizardShell.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/Tao/TaoWizardShell.tsx) to prevent clipping of the active step's outline rings.
+  - **Global Color Alignment:** Replaced hardcoded slate-900 borders and slate grey backgrounds with dynamic theme tokens (`border-primary`, `bg-accent/40`, `bg-muted/80`) in step forms ([ClientDetailsStep.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/new-client/ClientDetailsStep.tsx)), integrations ([IntegrationStep.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/new-client/IntegrationStep.tsx)), download formats ([ClientReportsPage.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/ClientReportsPage.tsx)), and payroll tab lists ([EmployeeDetailsPage.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/pages/Accounty/EmployeeDetailsPage.tsx)).
+
 ### Version 1.8.0 (2026-08-18)
 - **Customs Decisions Processing (Vámhatározatok):**
   - Extended the check constraint `invoices_type_check` in Supabase with the new `'vamhatarozat'` type.
@@ -942,5 +951,5 @@ npm run preview      # Preview production build
 
 ---
 
-**Last Updated:** 2026-08-13  
+**Last Updated:** 2026-08-25  
 **Maintained By:** VisiBill Development Team

@@ -11,7 +11,7 @@ interface TaoWizardStepperProps {
 
 export function TaoWizardStepper({ currentStep, onStepChange }: TaoWizardStepperProps) {
   return (
-    <div className="flex items-center gap-0 overflow-x-auto pb-2">
+    <div className="flex items-center gap-0 overflow-x-auto pt-2 pb-2">
       {STEPS.map((s, i) => {
         const isDone = s.num < currentStep;
         const isCurrent = s.num === currentStep;

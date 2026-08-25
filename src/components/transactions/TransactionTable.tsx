@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TableBody, TableRow, TableCell, TableHead, TableHeader } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1183,82 +1185,111 @@ const TransactionTable = React.memo(function TransactionTable({
   return (
     <div className="space-y-0 relative">
       {/* F1: Floating bulk action bar */}
-      {selectedIds.size > 0 && (
-        <div className="sticky top-0 z-20 bg-primary text-primary-foreground rounded-xl px-4 py-2.5 mb-3 flex items-center justify-between gap-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={selectedIds.size === transactions.length}
-              onCheckedChange={handleSelectAll}
-              className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
-            />
-            <span className="text-sm font-medium">{selectedIds.size} tranzakció kijelölve</span>
+      {selectedIds.size > 0 && createPortal(
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-5xl bg-card border border-primary/30 shadow-2xl rounded-2xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-3 z-[9999] animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start">
+            <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse shrink-0" />
+            <p className="text-sm font-semibold text-foreground whitespace-nowrap">
+              Kijelölt tranzakciók: <span className="font-extrabold text-primary">{selectedIds.size} db</span>
+            </p>
+            {(() => {
+              const selectedTxs = transactions.filter(t => selectedIds.has(t.id));
+              let inflow = 0;
+              let outflow = 0;
+              selectedTxs.forEach(t => {
+                const currency = t.currency || 'HUF';
+                const rate = exchangeRates?.[currency] ?? 1;
+                const hufAmount = t.amount * rate;
+                if (hufAmount > 0) inflow += hufAmount;
+                else outflow += Math.abs(hufAmount);
+              });
+              
+              if (selectedTxs.length === 0) return null;
+              
+              return (
+                <>
+                  <span className="text-muted-foreground/30 text-xs hidden sm:inline">|</span>
+                  <p className="text-xs text-muted-foreground font-medium flex items-center gap-3">
+                    {inflow > 0 && (
+                      <span>Bevétel: <span className="font-bold text-success">+{formatCurrency(inflow, 'HUF')}</span></span>
+                    )}
+                    {inflow > 0 && outflow > 0 && <span className="text-muted-foreground/30 text-[10px]">|</span>}
+                    {outflow > 0 && (
+                      <span>Kiadás: <span className="font-bold text-destructive">-{formatCurrency(outflow, 'HUF')}</span></span>
+                    )}
+                  </p>
+                </>
+              );
+            })()}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             {onBulkExport && (
-              <>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="h-7 text-xs gap-1.5"
-                  onClick={() => onBulkExport(Array.from(selectedIds), 'csv')}
-                >
-                  <Download className="w-3 h-3" /> CSV
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="h-7 text-xs gap-1.5"
-                  onClick={() => onBulkExport(Array.from(selectedIds), 'xlsx')}
-                >
-                  <FileText className="w-3 h-3" /> XLSX
-                </Button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 text-xs gap-1.5 rounded-xl border-border/60 hover:bg-muted"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Exportálás <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onBulkExport(Array.from(selectedIds), 'csv')} className="cursor-pointer gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" /> CSV (.csv)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onBulkExport(Array.from(selectedIds), 'xlsx')} className="cursor-pointer gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" /> Excel (.xlsx)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             {onBulkStatusChange && (
               <>
-                <div className="w-px h-5 bg-primary-foreground/20" />
+                <div className="w-px h-6 bg-border/60 mx-1 hidden sm:block" />
                 <Button
                   size="sm"
-                  variant="secondary"
-                  className="h-7 text-xs gap-1.5"
+                  variant="outline"
+                  className="h-9 text-xs gap-1.5 rounded-xl border-border/60 hover:bg-muted"
                   onClick={() => onBulkStatusChange(Array.from(selectedIds), 'no_match_category')}
                 >
-                  <Settings className="w-3 h-3" /> Rendezettnek jelölés
+                  <Settings className="w-3.5 h-3.5" /> Rendezett
                 </Button>
                 <Button
                   size="sm"
-                  variant="secondary"
-                  className="h-7 text-xs gap-1.5"
+                  variant="outline"
+                  className="h-9 text-xs gap-1.5 rounded-xl border-border/60 hover:bg-muted"
                   onClick={() => onBulkStatusChange(Array.from(selectedIds), 'no_invoice')}
                 >
-                  <Ban className="w-3 h-3" /> Nincs számla
+                  <Ban className="w-3.5 h-3.5" /> Nincs számla
                 </Button>
               </>
             )}
             {onBulkDelete && (
               <>
-                <div className="w-px h-5 bg-primary-foreground/20" />
+                <div className="w-px h-6 bg-border/60 mx-1 hidden sm:block" />
                 <Button
                   size="sm"
-                  variant="secondary"
-                  className="h-7 text-xs gap-1.5 bg-red-600 hover:bg-red-700 text-white"
+                  variant="destructive"
+                  className="h-9 text-xs gap-1.5 rounded-xl font-semibold"
                   onClick={() => { setDeleteConfirmInput(''); setDeleteConfirmOpen(true); }}
                 >
-                  <Trash2 className="w-3 h-3" /> Törlés
+                  <Trash2 className="w-3.5 h-3.5" /> Törlés
                 </Button>
               </>
             )}
-            <div className="w-px h-5 bg-primary-foreground/20" />
+            <div className="w-px h-6 bg-border/60 mx-1 hidden sm:block" />
             <Button
-              size="sm"
               variant="ghost"
-              className="h-7 w-7 p-0 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+              size="sm"
+              className="h-9 text-xs text-muted-foreground hover:text-foreground rounded-xl"
               onClick={clearSelection}
             >
-              <X className="w-3.5 h-3.5" />
+              Mégse
             </Button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete confirmation dialog */}

@@ -202,7 +202,7 @@ export default function ClientTaoMainPage() {
         </div>
 
         {/* 11-step stepper */}
-        <div className="flex items-center gap-0 overflow-x-auto pb-2">
+        <div className="flex items-center gap-0 overflow-x-auto pt-2 pb-2">
           {WIZARD_STEPS.map((step, i) => {
             const isDone = step.num < currentStep;
             const isCurrent = step.num === currentStep;

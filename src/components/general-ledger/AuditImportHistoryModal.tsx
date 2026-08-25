@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { FileText, Trash2, Loader2, CheckCircle2, AlertTriangle, Clock, User, Calendar, Hash } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface AuditImportHistoryModalProps {
   open: boolean;
@@ -110,8 +111,27 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
 
         <div className="flex-1 overflow-y-auto -mx-6 px-6">
           {isLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <div className="space-y-3 pb-4 animate-pulse">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="border rounded-xl p-4 space-y-3 bg-card border-border/50">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 flex-1">
+                      <Skeleton className="w-4 h-4 rounded-full bg-muted/50" />
+                      <div className="space-y-1.5 flex-1">
+                        <Skeleton className="h-4 w-40 bg-muted/50 rounded" />
+                        <Skeleton className="h-3 w-20 bg-muted/50 rounded" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-7 w-7 bg-muted/50 rounded shrink-0" />
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3">
+                    <Skeleton className="h-3 w-20 bg-muted/50 rounded" />
+                    <Skeleton className="h-3 w-16 bg-muted/50 rounded" />
+                    <Skeleton className="h-3 w-16 bg-muted/50 rounded" />
+                    <Skeleton className="h-3 w-24 bg-muted/50 rounded" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : !imports?.length ? (
             <div className="text-center py-12 text-muted-foreground">

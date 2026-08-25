@@ -25,40 +25,40 @@ export default function IntegrationStep({ integrationType, setIntegrationType, h
           {/* RLB Option */}
           <button 
             onClick={() => setIntegrationType('rlb')}
-            className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'rlb' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200")}
+            className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'rlb' ? "border-primary bg-accent/40 text-foreground" : "border-border hover:border-primary/20")}
           >
             <div className="w-10 h-10 mb-3 bg-card border border-border rounded flex items-center justify-center shadow-soft">
               <BarChart2 className="w-6 h-6 text-primary" />
             </div>
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">RLB</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-tight">RLB könyvelőprogram integráció RPA-val</p>
-            {integrationType === 'rlb' && <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100"><Check className="w-3.5 h-3.5" /> Kiválasztva</div>}
+            {integrationType === 'rlb' && <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-primary"><Check className="w-3.5 h-3.5" /> Kiválasztva</div>}
           </button>
-
+ 
           {/* Novitax Option */}
           <button 
             onClick={() => setIntegrationType('novitax')}
-            className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'novitax' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200")}
+            className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'novitax' ? "border-primary bg-accent/40 text-foreground" : "border-border hover:border-primary/20")}
           >
             <div className="w-10 h-10 mb-3 bg-card border border-border rounded flex items-center justify-center shadow-soft">
               <div className="text-red-500 font-bold text-lg"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
             </div>
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">Novitax</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-tight">Novitax könyvelőprogram integráció</p>
-            {integrationType === 'novitax' && <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100"><Check className="w-3.5 h-3.5" /> Kiválasztva</div>}
+            {integrationType === 'novitax' && <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-primary"><Check className="w-3.5 h-3.5" /> Kiválasztva</div>}
           </button>
-
+ 
           {/* Other Option */}
           <button 
             onClick={() => setIntegrationType('other')}
-            className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'other' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200")}
+            className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'other' ? "border-primary bg-accent/40 text-foreground" : "border-border hover:border-primary/20")}
           >
             <div className="w-10 h-10 mb-3 bg-card border border-border rounded flex items-center justify-center shadow-soft">
               <div className="w-6 h-5 bg-amber-400 rounded-sm relative"><div className="absolute top-0 right-0 w-2 h-2 bg-amber-300 rounded-bl-sm"></div></div>
             </div>
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">Egyéb / Nincs</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-tight">Manuális exportálás CSV/Excel formátumban</p>
-            {integrationType === 'other' && <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100"><Check className="w-3.5 h-3.5" /> Kiválasztva</div>}
+            {integrationType === 'other' && <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-primary"><Check className="w-3.5 h-3.5" /> Kiválasztva</div>}
           </button>
         </div>
       </div>

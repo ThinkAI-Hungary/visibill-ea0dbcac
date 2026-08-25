@@ -76,11 +76,10 @@ export function KpiCard({
     <div
       onClick={onClick}
       className={cn(
-        "relative overflow-hidden bg-gradient-to-br rounded-xl p-5 border border-border shadow-soft flex flex-col justify-between h-32 card-ripple",
-        "hover:shadow-lg hover:scale-[1.02] hover:border-border transition-all duration-300 group",
+        "relative overflow-hidden bg-gradient-to-br rounded-xl p-5 border border-border/80 shadow-soft flex flex-col justify-between h-32 card-ripple bg-card/50 backdrop-blur-md",
+        "hover:scale-[1.02] hover:border-border/90 transition-all duration-300 group",
         onClick ? "cursor-pointer" : "cursor-default",
-        colorMap[accentColor] || colorMap.emerald,
-        "bg-card"
+        colorMap[accentColor] || colorMap.emerald
       )}
       onMouseMove={(e) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -109,7 +108,7 @@ export function StatusBadge({ status }: { status: ClientData['status'] }) {
     'Kritikus': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
   };
   return (
-    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${styles[status]}`}>
+    <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider", styles[status])}>
       {status}
     </span>
   );
@@ -279,8 +278,8 @@ export function ClientCard({
       onDragEnd={onDragEnd}
       onClick={() => navigate(`/eaisybooks/client/${client.id}`)}
       className={cn(
-        "bg-card rounded-xl border border-border shadow-soft flex flex-col group cursor-pointer h-full overflow-hidden", 
-        "hover:shadow-lg hover:border-border hover:-translate-y-0.5 transition-all duration-300",
+        "bg-card/50 backdrop-blur-md rounded-xl border border-border/80 shadow-soft flex flex-col group cursor-pointer h-full overflow-hidden", 
+        "hover:border-border/90 hover:-translate-y-0.5 transition-all duration-300",
         "animate-in fade-in slide-in-from-bottom-2 duration-300",
         draggable && "cursor-grab active:cursor-grabbing",
         isDragged && "opacity-50 scale-[0.98] shadow-none border-dashed border-2 ring-2 ring-primary/20"

@@ -611,7 +611,7 @@ export default function AccountyApp() {
                       placeholder="Keresés..." 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 bg-muted/10 border-transparent focus-visible:ring-primary"
+                      className="pl-9 bg-card border-border focus-visible:ring-primary"
                     />
                   </div>
                   

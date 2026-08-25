@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -2350,16 +2351,36 @@ const InvoicesPage = () => {
         />
       )}
 
-      {activeSelection.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-background/90 dark:bg-slate-900/90 backdrop-blur-md border border-border/80 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-5 duration-300">
-          <span className="text-xs font-semibold text-foreground whitespace-nowrap">
-            {activeSelection.size} db számla kijelölve
-          </span>
-          <div className="h-5 w-px bg-border/60" />
+      {activeSelection.size > 0 && createPortal(
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl bg-card border border-primary/30 shadow-2xl rounded-2xl px-6 py-4 flex items-center justify-between z-[9999] animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+            <p className="text-sm font-semibold text-foreground">
+              Kijelölt számlák: <span className="font-extrabold text-primary">{activeSelection.size} db</span>
+            </p>
+            {(() => {
+              const selectedItems = exportableInvoices.filter(inv => activeSelection.has(inv.id));
+              const sums: Record<string, number> = {};
+              selectedItems.forEach(inv => {
+                const currency = inv.currency || 'HUF';
+                sums[currency] = (sums[currency] || 0) + (inv.gross_amount || 0);
+              });
+              const sumStrings = Object.entries(sums).map(([ccy, amt]) => formatCurrency(amt, ccy));
+              if (sumStrings.length === 0) return null;
+              return (
+                <>
+                  <span className="text-muted-foreground/30 text-xs">|</span>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Összesen: <span className="font-bold text-foreground">{sumStrings.join(', ')}</span>
+                  </p>
+                </>
+              );
+            })()}
+          </div>
           
           <div className="flex items-center gap-2">
             <Select onValueChange={(val) => handleBulkCategoryChange(val)}>
-              <SelectTrigger className="h-8 text-xs min-w-[130px] bg-background/50 border-border/60">
+              <SelectTrigger className="h-9 text-xs min-w-[130px] bg-background/50 border-border/60 rounded-xl">
                 <SelectValue placeholder="Kategória..." />
               </SelectTrigger>
               <SelectContent>
@@ -2371,7 +2392,7 @@ const InvoicesPage = () => {
             </Select>
 
             <Select onValueChange={(val) => handleBulkProjectChange(val)}>
-              <SelectTrigger className="h-8 text-xs min-w-[130px] bg-background/50 border-border/60">
+              <SelectTrigger className="h-9 text-xs min-w-[130px] bg-background/50 border-border/60 rounded-xl">
                 <SelectValue placeholder="Projekt..." />
               </SelectTrigger>
               <SelectContent>
@@ -2386,25 +2407,26 @@ const InvoicesPage = () => {
               <Button
                 variant="destructive"
                 size="sm"
-                className="h-8 text-xs gap-1.5"
+                className="h-9 text-xs gap-1.5 rounded-xl font-semibold"
                 onClick={() => setBulkDeleteDialogOpen(true)}
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Törlés
               </Button>
             )}
+            
+            <div className="w-px h-6 bg-border/60 mx-1" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 text-xs text-muted-foreground hover:text-foreground rounded-xl"
+              onClick={() => activeSetSelected(new Set())}
+            >
+              Mégse
+            </Button>
           </div>
-
-          <div className="h-5 w-px bg-border/60" />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => activeSetSelected(new Set())}
-          >
-            Mégse
-          </Button>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Bulk Delete Confirmation Dialog */}

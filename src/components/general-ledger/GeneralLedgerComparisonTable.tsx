@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { Loader2, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface GeneralLedgerComparisonTableProps {
   presetId?: string;
@@ -117,15 +118,6 @@ export function GeneralLedgerComparisonTable({
   const currYearLabel = dateFrom ? dateFrom.substring(0, 4) : 'Tárgyév';
   const prevYearLabel = prevDateFrom ? prevDateFrom.substring(0, 4) : 'Előző év';
 
-  if (currLoading || prevLoading) {
-    return (
-      <div className="flex justify-center items-center h-[350px] text-muted-foreground w-full">
-        <Loader2 className="w-8 h-8 animate-spin" />
-        <span className="ml-3 font-medium">Összehasonlító adatok betöltése...</span>
-      </div>
-    );
-  }
-
   return (
     <div className="rounded-lg border border-border/50 overflow-hidden bg-card">
       <table className="w-full text-sm text-left">
@@ -140,7 +132,18 @@ export function GeneralLedgerComparisonTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-border/30">
-          {comparisonData.length === 0 ? (
+          {currLoading || prevLoading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <tr key={i} className="hover:bg-muted/30 animate-pulse">
+                <td className="p-3 text-center"><Skeleton className="h-4 w-12 mx-auto bg-muted/50 rounded" /></td>
+                <td className="p-3"><Skeleton className="h-4 w-40 bg-muted/50 rounded" /></td>
+                <td className="p-3 text-right"><Skeleton className="h-4 w-24 ml-auto bg-muted/50 rounded" /></td>
+                <td className="p-3 text-right"><Skeleton className="h-4 w-24 ml-auto bg-muted/50 rounded" /></td>
+                <td className="p-3 text-right"><Skeleton className="h-4 w-24 ml-auto bg-muted/50 rounded" /></td>
+                <td className="p-3 text-center"><Skeleton className="h-5 w-10 mx-auto bg-muted/50 rounded" /></td>
+              </tr>
+            ))
+          ) : comparisonData.length === 0 ? (
             <tr>
               <td colSpan={6} className="p-8 text-center text-muted-foreground italic">
                 Nincsenek összehasonlító adatok a kiválasztott időszakra.

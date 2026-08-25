@@ -110,7 +110,7 @@ export default function DashboardKpiView({
         order={widgetOrder.indexOf('kpi_cards')}
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-card rounded-xl p-6 border border-border shadow-soft flex flex-col justify-center">
+          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft flex flex-col justify-center">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">
               {`Zárási státusz (${periodLabel}):`}
             </h3>
@@ -119,19 +119,19 @@ export default function DashboardKpiView({
               <span className="text-sm font-semibold text-primary">aktív</span>
             </div>
           </div>
-          <div className="bg-card rounded-xl p-6 border border-border shadow-soft flex flex-col justify-center">
+          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft flex flex-col justify-center">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Kritikus ügyfelek:</h3>
             <div className="flex items-baseline gap-4">
               <span className="text-4xl font-bold text-foreground">{dynamicKpiStats.kritikusDb} db</span>
             </div>
           </div>
-          <div className="bg-card rounded-xl p-6 border border-border shadow-soft flex flex-col justify-center">
+          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft flex flex-col justify-center">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Kiosztott / Rendben:</h3>
             <div className="flex items-baseline gap-4">
               <span className="text-4xl font-bold text-foreground">{dynamicKpiStats.kiosztottLezart}</span>
             </div>
           </div>
-          <div className="bg-card rounded-xl p-6 border border-border shadow-soft flex flex-col justify-center">
+          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft flex flex-col justify-center">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Portál aktivitás:</h3>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-foreground">{portalStats?.totalVisits ?? 0}</span>
@@ -169,7 +169,7 @@ export default function DashboardKpiView({
         order={widgetOrder.indexOf('charts')}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-card rounded-xl p-6 border border-border shadow-soft h-80 flex flex-col">
+          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft h-80 flex flex-col">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-primary" />
               Könyvelői Teljesítmény
@@ -180,7 +180,7 @@ export default function DashboardKpiView({
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-border" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} width={75} tickFormatter={(v) => `${v} db`} />
-                  <RechartsTooltip cursor={{ fill: 'hsl(var(--muted)/0.15)' }} content={({ active, payload, label }) => {
+                  <RechartsTooltip cursor={{ fill: 'var(--tooltip-cursor)' }} content={({ active, payload, label }) => {
                     if (!active || !payload?.length) return null;
                     return (
                        <div className="bg-popover rounded-lg shadow-lg border border-border px-3 py-2">
@@ -195,7 +195,7 @@ export default function DashboardKpiView({
             </div>
           </div>
 
-          <div className="bg-card rounded-xl p-6 border border-border shadow-soft h-80 flex flex-col relative">
+          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft h-80 flex flex-col relative">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <PieChartIcon className="w-4 h-4 text-amber-600" />
               {isAdmin ? 'Irodai Ügyfél Státuszok' : 'Saját Ügyfél Státuszok'}
@@ -258,7 +258,7 @@ export default function DashboardKpiView({
         isLast={widgetOrder.indexOf('monthly_trend') === widgetOrder.length - 1}
         order={widgetOrder.indexOf('monthly_trend')}
       >
-        <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
+        <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
@@ -319,7 +319,7 @@ export default function DashboardKpiView({
           isLast={widgetOrder.indexOf('colleague_table') === widgetOrder.length - 1}
           order={widgetOrder.indexOf('colleague_table')}
         >
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card/50 backdrop-blur-md rounded-xl border border-border/80 shadow-soft overflow-hidden">
             <div className="p-4 border-b border-border dark:bg-muted/5 flex items-center justify-between">
               <h3 className="font-bold text-foreground flex items-center gap-2">
                 <User className="w-4 h-4 text-muted-foreground" />
@@ -405,7 +405,7 @@ export default function DashboardKpiView({
           isLast={widgetOrder.indexOf('audit_log') === widgetOrder.length - 1}
           order={widgetOrder.indexOf('audit_log')}
         >
-          <div className="bg-card rounded-xl border border-border shadow-soft p-6">
+          <div className="bg-card/50 backdrop-blur-md rounded-xl border border-border/80 shadow-soft p-6">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" />
               Tevékenységnapló
@@ -449,7 +449,7 @@ export default function DashboardKpiView({
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
-              <div className="bg-card rounded-xl p-6 border border-border shadow-soft hover:shadow-md transition-shadow">
+              <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft transition-all duration-300">
                 <h3 className="font-bold text-foreground mb-6">Értesítési Csatornák (Sikeres adatbekérés %)</h3>
                 <div className="space-y-6">
                   <div>
@@ -493,7 +493,7 @@ export default function DashboardKpiView({
                 </div>
               </div>
 
-              <div className="bg-card rounded-xl p-6 border border-border shadow-soft hover:shadow-md transition-shadow flex flex-col">
+              <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft transition-all duration-300 flex flex-col">
                 <h3 className="font-bold text-foreground mb-6">Legtöbb hiányzó tétellel rendelkező ügyfelek</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">

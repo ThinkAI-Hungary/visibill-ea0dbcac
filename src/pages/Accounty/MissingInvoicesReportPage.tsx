@@ -277,8 +277,15 @@ export default function MissingInvoicesReportPage() {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
                 <Tooltip 
-                  cursor={{ fill: 'hsl(var(--muted))' }} 
-                  contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', color: 'hsl(var(--foreground))' }} 
+                  cursor={{ fill: 'var(--tooltip-cursor)' }} 
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: '1px solid hsl(var(--border))',
+                    background: 'var(--tooltip-bg)',
+                    color: 'var(--tooltip-text)',
+                    boxShadow: 'var(--shadow-lg)'
+                  }}
+                  labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
                 />
                 <Bar dataKey="requested" name="Bekérések" fill="hsl(173, 80%, 40%)" radius={[4, 4, 0, 0]} barSize={32} />
                 <Bar dataKey="resolved" name="Megoldott" fill="#475569" radius={[4, 4, 0, 0]} barSize={32} />

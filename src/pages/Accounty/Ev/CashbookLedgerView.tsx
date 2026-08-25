@@ -424,10 +424,10 @@ export default function CashbookLedgerView() {
 
                               {/* Tooltip on hover */}
                               {(m.revenue > 0 || m.expense > 0) && (
-                                <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] rounded-lg px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 shadow-lg">
+                                <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-popover border border-border text-popover-foreground text-[10px] rounded-lg px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 shadow-lg">
                                   <p className="font-semibold mb-0.5">{m.label}</p>
-                                  <p className="text-green-400">Bev: {formatHuf(m.revenue)}</p>
-                                  <p className="text-red-400">Kiad: {formatHuf(m.expense)}</p>
+                                  <p className="text-green-600 dark:text-green-400 font-bold">Bev: {formatHuf(m.revenue)}</p>
+                                  <p className="text-red-500 font-bold">Kiad: {formatHuf(m.expense)}</p>
                                 </div>
                               )}
                             </div>

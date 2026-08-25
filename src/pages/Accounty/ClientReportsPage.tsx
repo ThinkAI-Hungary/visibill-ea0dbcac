@@ -202,7 +202,7 @@ export default function ClientReportsPage() {
                     onClick={() => setFormat('pdf')}
                     className={cn(
                       "flex items-center gap-2 p-3 rounded-xl border-2 transition-colors text-sm font-medium",
-                      format === 'pdf' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200"
+                      format === 'pdf' ? "border-primary bg-accent/40 text-foreground" : "border-border hover:border-primary/20"
                     )}
                   >
                     <FileText className={cn("w-4 h-4", format === 'pdf' ? "text-red-500" : "text-slate-400")} />
@@ -212,7 +212,7 @@ export default function ClientReportsPage() {
                     onClick={() => setFormat('excel')}
                     className={cn(
                       "flex items-center gap-2 p-3 rounded-xl border-2 transition-colors text-sm font-medium",
-                      format === 'excel' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200"
+                      format === 'excel' ? "border-primary bg-accent/40 text-foreground" : "border-border hover:border-primary/20"
                     )}
                   >
                     <FileJson className={cn("w-4 h-4", format === 'excel' ? "text-primary" : "text-slate-400")} />

@@ -60,6 +60,7 @@ import {
 } from '@/components/ui/table';
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
 
 
 interface TransferInvoice {
@@ -1334,7 +1335,23 @@ export default function TransfersPage() {
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="py-12 text-center text-sm text-muted-foreground animate-pulse">Számlák betöltése...</div>
+                <div className="rounded-lg border border-border/50 overflow-x-auto">
+                  <Table className="compact-table min-w-max">
+                    <TableHeader>
+                      <TableRow className="bg-muted/40 text-muted-foreground font-medium text-xs select-none hover:bg-muted/40">
+                        <TableHead className="w-12 text-center" />
+                        <TableHead>Partner</TableHead>
+                        <TableHead className="min-w-[200px] whitespace-nowrap">Számlaszám(ok)</TableHead>
+                        <TableHead className="w-32 whitespace-nowrap">Határidő</TableHead>
+                        <TableHead className="w-40 text-right whitespace-nowrap">Összeg</TableHead>
+                        <TableHead className="w-72">Partner Bankszámlaszáma</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableSkeleton rows={8} columns={6} />
+                    </TableBody>
+                  </Table>
+                </div>
               ) : displayItems.length === 0 ? (
                 <div className="py-16 text-center border-t border-border/40">
                   <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto mb-2" />

@@ -87,7 +87,7 @@ export default {
         },
       },
       boxShadow: {
-        'soft': 'rgba(0,0,0,0.4) 0px 2px 4px 0px',
+        'soft': 'var(--shadow-soft)',
         'card-inset': 'inset 0 0 0 1px hsl(var(--border))',
         'subtle': '0 0 0 1px hsl(var(--border))',
         'premium': '0 8px 30px -12px rgba(0, 0, 0, 0.25)',

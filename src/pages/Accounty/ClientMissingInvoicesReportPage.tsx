@@ -197,7 +197,17 @@ export default function ClientMissingInvoicesReportPage() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
-                <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }} />
+                <Tooltip 
+                  cursor={{ fill: 'var(--tooltip-cursor)' }} 
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: '1px solid hsl(var(--border))',
+                    background: 'var(--tooltip-bg)',
+                    color: 'var(--tooltip-text)',
+                    boxShadow: 'var(--shadow-lg)'
+                  }}
+                  labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
+                />
                 <Bar dataKey="requested" name="Kérések" fill="hsl(173, 80%, 40%)" radius={[4, 4, 0, 0]} barSize={32} />
                 <Bar dataKey="resolved" name="Megoldott" fill="#475569" radius={[4, 4, 0, 0]} barSize={32} />
               </BarChart>
