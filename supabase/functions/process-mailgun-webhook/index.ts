@@ -384,6 +384,10 @@ serve(async (req) => {
       throw new Error(`Unsupported content type: ${contentType}`);
     }
 
+    if (recipient) {
+      recipient = recipient.toLowerCase().trim();
+    }
+
     console.log('Parsed email data:', { recipient, sender, subject, attachmentCount, originalFrom });
 
     // ── Sender domain extraction ──────────────────────────────────

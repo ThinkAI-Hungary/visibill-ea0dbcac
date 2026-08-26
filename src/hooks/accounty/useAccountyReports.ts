@@ -172,53 +172,28 @@ export function useAccountyMonthlyTrend() {
     queryFn: async (): Promise<MonthlyTrendPoint[]> => {
       if (companyIds.length === 0) return [];
 
-      const now = new Date();
+      const { data, error } = await supabase.rpc('get_monthly_trend_stats', {
+        p_company_ids: companyIds,
+        p_months_count: 6,
+      });
+
+      if (error) throw error;
+
       const monthNames = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'Aug', 'Szep', 'Okt', 'Nov', 'Dec'];
-      const monthConfigs = [];
 
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthStart = d.toISOString().split('T')[0];
-        const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-        const monthEnd = nextMonth.toISOString().split('T')[0];
-        const label = monthNames[d.getMonth()];
-        monthConfigs.push({ monthStart, monthEnd, label });
-      }
+      return (data || []).map((row: any) => {
+        const parts = row.month_start.split('-');
+        const monthIndex = parseInt(parts[1], 10) - 1;
+        const label = monthNames[monthIndex];
+        
+        const totalInv = Number(row.invoice_count || 0) + Number(row.nav_invoice_count || 0);
+        const totalMissing = Number(row.missing_item_count || 0);
+        const zaras = totalInv + totalMissing > 0
+          ? Math.round((totalInv / (totalInv + totalMissing)) * 100)
+          : 0;
 
-      const months = await Promise.all(
-        monthConfigs.map(async ({ monthStart, monthEnd, label }) => {
-          const [{ count: invCount }, { count: navCount }, { count: missingCount }] = await Promise.all([
-            supabase
-              .from('invoices')
-              .select('id', { count: 'exact', head: true })
-              .in('company_id', companyIds)
-              .gte('kibocsatas_datuma', monthStart)
-              .lt('kibocsatas_datuma', monthEnd),
-            supabase
-              .from('nav_invoices')
-              .select('id', { count: 'exact', head: true })
-              .in('company_id', companyIds)
-              .gte('invoice_issue_date', monthStart)
-              .lt('invoice_issue_date', monthEnd),
-            supabase
-              .from('accounty_missing_items')
-              .select('id', { count: 'exact', head: true })
-              .in('company_id', companyIds)
-              .gte('created_at', monthStart)
-              .lt('created_at', monthEnd),
-          ]);
-
-          const totalInv = (invCount || 0) + (navCount || 0);
-          const totalMissing = missingCount || 0;
-          const zaras = totalInv + totalMissing > 0
-            ? Math.round((totalInv / (totalInv + totalMissing)) * 100)
-            : 0;
-
-          return { month: label, szamlak: totalInv, hianyzok: totalMissing, zaras };
-        })
-      );
-
-      return months;
+        return { month: label, szamlak: totalInv, hianyzok: totalMissing, zaras };
+      });
     },
     enabled: !!userId && !!myAssignsData,
     staleTime: 5 * 60_000,
@@ -241,106 +216,35 @@ export function useAccountyColleagueStats() {
       const firmId = myAssignment?.accounting_firm_id;
       if (!firmId) return [];
 
-      const { data: assignments } = await supabase
-        .from('accounty_assignments')
-        .select('accountant_user_id, company_id')
-        .eq('accounting_firm_id', firmId);
-      if (!assignments || assignments.length === 0) return [];
+      const { data, error } = await supabase.rpc('get_colleague_efficiency_stats', {
+        p_accounting_firm_id: firmId,
+      });
 
-      const allCompanyIds = [...new Set(assignments.map(a => a.company_id))];
-      const { data: companies } = await supabase
-        .from('companies')
-        .select('id, name')
-        .in('id', allCompanyIds);
-      const sandboxIds = new Set((companies || []).filter(c => c.name === 'SANDBOX').map(c => c.id));
+      if (error) throw error;
 
-      const accountantCompanies: Record<string, string[]> = {};
-      for (const a of assignments) {
-        if (sandboxIds.has(a.company_id)) continue;
-        if (!accountantCompanies[a.accountant_user_id]) accountantCompanies[a.accountant_user_id] = [];
-        accountantCompanies[a.accountant_user_id].push(a.company_id);
-      }
+      return (data || []).map((row: any): ColleagueStat => {
+        const name = row.accountant_name || 'Névtelen';
+        const missing = Number(row.missing_count || 0);
+        const resolved = Number(row.resolved_count || 0);
+        const totalHandled = resolved + missing;
+        const closingPct = totalHandled > 0 ? Math.round((resolved / totalHandled) * 100) : 0;
 
-      const accountantIds = Object.keys(accountantCompanies);
+        let efficiency: ColleagueStat['efficiency'] = 'Fejlesztendő';
+        if (closingPct >= 80) efficiency = 'Kiváló';
+        else if (closingPct >= 50) efficiency = 'Jó';
 
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, name')
-        .in('user_id', accountantIds);
-      const nameMap: Record<string, string> = {};
-      (profiles || []).forEach(p => { nameMap[p.user_id] = p.name || 'Névtelen'; });
-
-      const results = await Promise.all(
-        accountantIds.map(async (uid) => {
-          const coIds = accountantCompanies[uid] || [];
-          const name = nameMap[uid] || 'Névtelen';
-
-          if (coIds.length === 0) {
-            return {
-              name,
-              initial: name.charAt(0).toUpperCase(),
-              assigned: 0,
-              closed: 0,
-              inProgress: 0,
-              missing: 0,
-              closingPct: 0,
-              avgDays: 0,
-              efficiency: 'Fejlesztendő' as const,
-            };
-          }
-
-          const [missingOpenRes, resolvedRes, completedDeadlinesRes, inProgressDeadlinesRes] = await Promise.all([
-            supabase
-              .from('accounty_missing_items')
-              .select('id', { count: 'exact', head: true })
-              .in('company_id', coIds)
-              .in('status', ['open', 'notified']),
-            supabase
-              .from('accounty_missing_items')
-              .select('id', { count: 'exact', head: true })
-              .in('company_id', coIds)
-              .eq('status', 'resolved'),
-            supabase
-              .from('accounty_deadlines')
-              .select('id', { count: 'exact', head: true })
-              .in('company_id', coIds)
-              .eq('status', 'completed'),
-            supabase
-              .from('accounty_deadlines')
-              .select('id', { count: 'exact', head: true })
-              .in('company_id', coIds)
-              .eq('status', 'in_progress'),
-          ]);
-
-          const assigned = coIds.length;
-          const closed = completedDeadlinesRes.count || 0;
-          const inProgress = inProgressDeadlinesRes.count || 0;
-          const missing = missingOpenRes.count || 0;
-          const resolved = resolvedRes.count || 0;
-          const totalHandled = resolved + missing;
-          const closingPct = totalHandled > 0 ? Math.round((resolved / totalHandled) * 100) : 0;
-
-          let efficiency: ColleagueStat['efficiency'] = 'Fejlesztendő';
-          if (closingPct >= 80) efficiency = 'Kiváló';
-          else if (closingPct >= 50) efficiency = 'Jó';
-
-          return {
-            name,
-            initial: name.charAt(0).toUpperCase(),
-            assigned,
-            closed,
-            inProgress,
-            missing,
-            closingPct,
-            avgDays: 0,
-            efficiency,
-          };
-        })
-      );
-
-      return results
-        .filter(r => r.name !== 'Sandbox' && r.name !== 'Névtelen')
-        .sort((a, b) => b.closingPct - a.closingPct);
+        return {
+          name,
+          initial: name.charAt(0).toUpperCase(),
+          assigned: Number(row.assigned_companies_count || 0),
+          closed: Number(row.closed_deadlines_count || 0),
+          inProgress: Number(row.in_progress_deadlines_count || 0),
+          missing,
+          closingPct,
+          avgDays: 0,
+          efficiency,
+        };
+      });
     },
     enabled: !!user,
     staleTime: 5 * 60_000,

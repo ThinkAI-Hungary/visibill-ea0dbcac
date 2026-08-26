@@ -381,35 +381,21 @@ export function useDashboardData() {
     placeholderData: keepPreviousData,
   });
 
-  // ── Petty cash (computed from raw tables, no RPC) ──
+  // ── Petty cash (computed using get_petty_cash_summary RPC) ──
   const { data: pettyCashBalances = [] } = useQuery<{ currency: string; balance: number }[]>({
     queryKey: queryKeys.dashboardPettyCash(companyId),
     queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_petty_cash_summary', {
+        p_company_id: companyId,
+      });
 
-      const [regRes, obRes, entRes] = await Promise.all([
-        supabase.from('petty_cash_registers').select('id').eq('company_id', companyId),
-        supabase.from('petty_cash_opening_balances').select('register_id, currency, amount'),
-        supabase.from('petty_cash_entries').select('register_id, currency, amount').eq('company_id', companyId),
-      ]);
-
-
-      const regIds = new Set((regRes.data || []).map((r: any) => r.id));
-      if (regIds.size === 0) {
-        return [];
-      }
+      if (error) throw error;
 
       const byCurrency: Record<string, number> = {};
 
-      (obRes.data || []).forEach((ob: any) => {
-        if (!regIds.has(ob.register_id)) return;
-        const cur = ob.currency || 'HUF';
-        byCurrency[cur] = (byCurrency[cur] || 0) + Number(ob.amount || 0);
-      });
-
-      (entRes.data || []).forEach((e: any) => {
-        if (!regIds.has(e.register_id)) return;
-        const cur = e.currency || 'HUF';
-        byCurrency[cur] = (byCurrency[cur] || 0) + Number(e.amount || 0);
+      (data || []).forEach((row: any) => {
+        const cur = row.currency || 'HUF';
+        byCurrency[cur] = (byCurrency[cur] || 0) + Number(row.current_balance || 0);
       });
 
       // Round HUF to nearest 5

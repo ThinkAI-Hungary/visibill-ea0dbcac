@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAccountyDocuments, useGenerateDocuments, type AccountyDocument } from '@/hooks/accounty';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { useToast } from '@/components/ui/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Document categories — these are static navigation items, not user data
 const DOC_CATEGORIES = [
@@ -93,7 +94,32 @@ export default function DocumentCenterPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="bg-card rounded-xl border border-border p-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-2 w-full rounded-full bg-muted/50" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-card rounded-xl border border-border shadow-soft p-5 space-y-4">
+                <div className="flex items-start gap-4">
+                  <Skeleton className="w-12 h-12 rounded-xl shrink-0 bg-muted/50" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32 bg-muted/50" />
+                    <Skeleton className="h-3 w-16 bg-muted/50" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 pt-2">
+                  <Skeleton className="h-8 w-20 rounded-md bg-muted/50" />
+                  <Skeleton className="h-8 w-20 rounded-md bg-muted/50" />
+                  <Skeleton className="h-8 w-24 rounded-md ml-auto bg-muted/50" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
         <>
           <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">

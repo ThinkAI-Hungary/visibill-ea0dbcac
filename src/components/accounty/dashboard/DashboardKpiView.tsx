@@ -271,7 +271,7 @@ export default function DashboardKpiView({
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyTrendData || []} margin={{ top: 10, right: 40, left: -10, bottom: 0 }}>
+              <LineChart data={monthlyTrendData || []} margin={{ top: 24, right: 40, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-border" stroke="hsl(var(--border))" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                 <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
@@ -495,13 +495,13 @@ export default function DashboardKpiView({
 
               <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft transition-all duration-300 flex flex-col">
                 <h3 className="font-bold text-foreground mb-6">Legtöbb hiányzó tétellel rendelkező ügyfelek</h3>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto pt-3 pb-1">
                   <table className="w-full text-sm text-left">
-                    <thead className="bg-transparent border-b border-border text-muted-foreground font-semibold text-xs tracking-wider">
+                    <thead className="bg-transparent border-b border-border text-muted-foreground font-semibold text-xs tracking-wider leading-relaxed">
                       <tr>
-                        <th className="pb-3 pr-4">Ügyfél neve</th>
-                        <th className="pb-3 px-4 text-center">Hiányzó</th>
-                        <th className="pb-3 pl-4 text-right">Kockázat</th>
+                        <th className="pt-2 pb-3 pr-4">Ügyfél neve</th>
+                        <th className="pt-2 pb-3 px-4 text-center">Hiányzó</th>
+                        <th className="pt-2 pb-3 pl-4 pr-6 text-right">Kockázat</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -510,25 +510,27 @@ export default function DashboardKpiView({
                         .slice(0, 5)
                         .filter(c => c.missingCount > 0)
                         .map(c => (
-                          <tr key={c.id} className="hover:bg-accent/50 transition-colors cursor-pointer group/row relative" onClick={() => navigate(`/eaisybooks/missing-invoices/${c.id}`)}>
-                            <td className="py-3 pr-4 font-semibold text-foreground">{c.name}</td>
-                            <td className="py-3 px-4 text-center font-bold text-foreground">{c.missingCount}</td>
-                            <td className="py-3 pl-4 text-right">
-                              <span className={cn(
-                                "inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider",
-                                c.missingCount > 500
-                                  ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400"
-                                  : c.missingCount > 100
-                                  ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
-                                  : "bg-muted/20 text-muted-foreground"
-                              )}>
-                                {c.missingCount > 500 ? 'Kritikus' : c.missingCount > 100 ? 'Magas' : 'Közepes'}
-                              </span>
-                            </td>
-                            <td className="p-0 relative">
-                              <MissingItemsTooltip companyId={c.id} />
-                            </td>
-                          </tr>
+                          <MissingItemsTooltip key={c.id} companyId={c.id}>
+                            <tr 
+                              className="hover:bg-accent/50 transition-colors cursor-pointer group/row relative" 
+                              onClick={() => navigate(`/eaisybooks/missing-invoices/${c.id}`)}
+                            >
+                              <td className="py-3 pr-4 font-semibold text-foreground">{c.name}</td>
+                              <td className="py-3 px-4 text-center font-bold text-foreground">{c.missingCount}</td>
+                              <td className="py-3 pl-4 pr-6 text-right">
+                                <span className={cn(
+                                  "inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider",
+                                  c.missingCount > 500
+                                    ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400"
+                                    : c.missingCount > 100
+                                    ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
+                                    : "bg-muted/20 text-muted-foreground"
+                                )}>
+                                  {c.missingCount > 500 ? 'Kritikus' : c.missingCount > 100 ? 'Magas' : 'Közepes'}
+                                </span>
+                              </td>
+                            </tr>
+                          </MissingItemsTooltip>
                         ))}
                       {clients.filter(c => c.missingCount > 0).length === 0 && (
                         <tr><td colSpan={3} className="py-6 text-center text-muted-foreground text-sm">Nincs kritikus ügyfél</td></tr>

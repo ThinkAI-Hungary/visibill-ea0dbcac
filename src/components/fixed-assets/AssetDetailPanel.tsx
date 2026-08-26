@@ -23,6 +23,14 @@ const ReactivationDialog = lazy(() => import('./ReactivationDialog').then(m => (
 const DisposalDialog = lazy(() => import('./DisposalDialog').then(m => ({ default: m.DisposalDialog })));
 const QrLabelDialog = lazy(() => import('./QrLabelDialog').then(m => ({ default: m.QrLabelDialog })));
 
+function parseLocalDate(ymdStr: string): Date {
+  const parts = ymdStr.split('-');
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) - 1; // 0-indexed
+  const d = parseInt(parts[2], 10);
+  return new Date(y, m, d);
+}
+
 interface AssetDetailPanelProps {
   asset: FixedAsset;
   events: AssetEvent[];
@@ -254,11 +262,11 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
         </div>
         <div>
           <span className="text-muted-foreground">Beszerzés dátuma:</span>
-          <p className="font-semibold">{format(new Date(asset.purchase_date), 'yyyy.MM.dd.', { locale: hu })}</p>
+          <p className="font-semibold">{format(parseLocalDate(asset.purchase_date), 'yyyy.MM.dd.', { locale: hu })}</p>
         </div>
         <div>
           <span className="text-muted-foreground">Aktiválás dátuma:</span>
-          <p className="font-semibold">{format(new Date(asset.activation_date), 'yyyy.MM.dd.', { locale: hu })}</p>
+          <p className="font-semibold">{format(parseLocalDate(asset.activation_date), 'yyyy.MM.dd.', { locale: hu })}</p>
         </div>
         <div>
           <span className="text-muted-foreground">Szállító:</span>
@@ -290,7 +298,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
         {asset.disposal_date && (
           <div>
             <span className="text-muted-foreground">Kivezetés dátuma:</span>
-            <p className="font-semibold">{format(new Date(asset.disposal_date), 'yyyy.MM.dd.', { locale: hu })}</p>
+            <p className="font-semibold">{format(parseLocalDate(asset.disposal_date), 'yyyy.MM.dd.', { locale: hu })}</p>
           </div>
         )}
       </div>
@@ -353,7 +361,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
                       return (
                         <tr key={event.id} className="hover:bg-muted/20">
                           <td className="py-2 px-3 font-mono">
-                            {format(new Date(event.event_date), 'yyyy.MM.dd.', { locale: hu })}
+                            {format(parseLocalDate(event.event_date), 'yyyy.MM.dd.', { locale: hu })}
                           </td>
                           <td className="py-2 px-3 text-right tabular-nums">
                             {pVal.toLocaleString('hu-HU')} {asset.performance_unit}
@@ -485,7 +493,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
               <div key={event.id} className="flex items-center gap-3 text-sm">
                 <div className="flex-shrink-0">{EVENT_ICONS[event.event_type] || <CheckCircle className="h-3.5 w-3.5" />}</div>
                 <span className="text-muted-foreground font-mono text-xs">
-                  {format(new Date(event.event_date), 'yyyy.MM.dd', { locale: hu })}
+                  {format(parseLocalDate(event.event_date), 'yyyy.MM.dd', { locale: hu })}
                 </span>
                 <span className="font-medium">
                   {EVENT_LABELS[event.event_type] || event.event_type}

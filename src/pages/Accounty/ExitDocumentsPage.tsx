@@ -13,6 +13,7 @@ import { usePayrollEmployee, usePayrollEmployments, usePayrollCalculations, useP
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -384,7 +385,7 @@ export default function ExitDocumentsPage() {
   };
 
   if (jobsError) return <AccountyErrorState message="Nem sikerült betölteni a kilépő dokumentumok adatait." onRetry={() => refetchJobs()} />;
-  if (isLoading) return <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>;
+  if (isLoading) return <ContentSkeleton />;
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">

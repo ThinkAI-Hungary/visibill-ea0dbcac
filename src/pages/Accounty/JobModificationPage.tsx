@@ -11,6 +11,7 @@ import { usePayrollEmployments, type PayrollEmployment } from '@/hooks/usePayrol
 import { useAddJobModification } from '@/hooks/accounty';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { ContentSkeleton } from '@/components/ui/content-skeleton';
 
 type ChangeType = 'worktime' | 'feor' | 'salary' | 'position' | 'site' | 'costcenter';
 
@@ -150,7 +151,7 @@ export default function JobModificationPage() {
   };
 
   if (empError) return <AccountyErrorState message="Nem sikerült betölteni a jogviszony adatokat." onRetry={() => refetchEmp()} />;
-  if (isLoading) return <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>;
+  if (isLoading) return <ContentSkeleton />;
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">

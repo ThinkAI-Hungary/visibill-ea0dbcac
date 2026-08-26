@@ -835,33 +835,31 @@ export function useEvRealTotals(companyId: string | undefined, taxYear: number) 
     queryFn: async () => {
       if (!companyId) return { totalBevetel: 0, totalKiadas: 0, balance: 0, itemCount: 0 };
       
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('invoice_direction, brutto_vegosszeg')
-        .eq('company_id', companyId)
-        .or(`and(teljesites_datuma.gte.${taxYear}-01-01,teljesites_datuma.lte.${taxYear}-12-31),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${taxYear}-01-01,kibocsatas_datuma.lte.${taxYear}-12-31)`)
-        .not('exclude_from_accounting', 'is', true);
+      const [totalsRes, countRes] = await Promise.all([
+        supabase.rpc('get_ev_ytd_totals', {
+          p_company_ids: [companyId],
+          p_tax_year: taxYear,
+        }),
+        supabase
+          .from('invoices')
+          .select('*', { count: 'exact', head: true })
+          .eq('company_id', companyId)
+          .or(`and(teljesites_datuma.gte.${taxYear}-01-01,teljesites_datuma.lte.${taxYear}-12-31),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${taxYear}-01-01,kibocsatas_datuma.lte.${taxYear}-12-31)`)
+          .not('exclude_from_accounting', 'is', true)
+      ]);
 
-      if (error) throw error;
+      if (totalsRes.error) throw totalsRes.error;
+      if (countRes.error) throw countRes.error;
 
-      let totalBevetel = 0;
-      let totalKiadas = 0;
-
-      (data || []).forEach(inv => {
-        const val = Number(inv.brutto_vegosszeg) || 0;
-        const dir = (inv.invoice_direction || '').toUpperCase();
-        if (dir === 'OUTBOUND') {
-          totalBevetel += val;
-        } else if (dir === 'INBOUND') {
-          totalKiadas += val;
-        }
-      });
+      const totalsRow = totalsRes.data?.[0] || { revenue: 0, expense: 0 };
+      const totalBevetel = Number(totalsRow.revenue) || 0;
+      const totalKiadas = Number(totalsRow.expense) || 0;
 
       return {
         totalBevetel,
         totalKiadas,
         balance: totalBevetel - totalKiadas,
-        itemCount: data?.length || 0,
+        itemCount: countRes.count || 0,
       };
     },
     enabled: !!companyId,
@@ -1164,63 +1162,13 @@ export function useEvRecordCounts(companyId: string | undefined, taxYear: number
     queryFn: async () => {
       if (!companyId) return {} as Record<string, number>;
 
-      const getCount = async (table: string, filterField?: string, filterVal?: any) => {
-        let q = supabase
-          .from(table as any)
-          .select('*', { count: 'exact', head: true })
-          .eq('company_id', companyId);
+      const { data, error } = await supabase.rpc('get_ev_record_counts', {
+        p_company_id: companyId,
+        p_tax_year: taxYear,
+      });
 
-        if (table !== 'accounty_ev_audit_log') {
-          q = q.eq('tax_year', taxYear);
-        }
-
-        if (filterField && filterVal !== undefined) {
-          q = q.eq(filterField, filterVal);
-        }
-
-        const { count, error } = await q;
-        if (error) {
-          console.error(`Error fetching count for ${table}:`, error);
-          return 0;
-        }
-        return count || 0;
-      };
-
-      const [
-        vevo,
-        assets,
-        inventory,
-        log,
-        claims,
-        wages,
-        cashbook,
-        scrapping,
-        auditLog
-      ] = await Promise.all([
-        getCount('accounty_ev_records_receivables'),
-        getCount('accounty_ev_records_fixed_assets'),
-        getCount('accounty_ev_records_inventory'),
-        getCount('accounty_ev_records_vehicle_log'),
-        getCount('accounty_ev_records_other_claims'),
-        getCount('accounty_ev_records_wages'),
-        getCount('accounty_penztarkonyv_tetel'),
-        getCount('accounty_ev_records_scrapping'),
-        getCount('accounty_ev_audit_log'),
-      ]);
-
-      return {
-        'vevo-szallito': vevo,
-        'tao-kesz': assets,
-        'keszlet': inventory,
-        'utnyilv': log,
-        'berbeadas': Math.round(claims / 2),
-        'valuta': Math.round(claims / 2),
-        'munkaber': Math.round(wages / 2),
-        'penztarkonyv': cashbook,
-        'selejtezes': scrapping,
-        'lekerdezes': auditLog,
-        'jog-bizt': Math.round(wages / 2),
-      };
+      if (error) throw error;
+      return (data || {}) as Record<string, number>;
     },
     enabled: !!companyId,
   });

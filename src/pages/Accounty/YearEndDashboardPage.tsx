@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { exportPdf } from '@/lib/exportPdf';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   useYearEndTasks, useUpdateYearEndTask, useSeedYearEndTasks,
   type YearEndTask,
@@ -97,7 +98,38 @@ export default function YearEndDashboardPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-32 bg-muted/50" />
+              <Skeleton className="h-4 w-28 bg-muted/50" />
+            </div>
+            <Skeleton className="h-3 w-full rounded-full bg-muted/50" />
+            <div className="grid grid-cols-4 gap-3 pt-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="text-center space-y-1">
+                  <Skeleton className="h-6 w-12 mx-auto bg-muted/50" />
+                  <Skeleton className="h-3 w-8 mx-auto bg-muted/50" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
+                <Skeleton className="w-10 h-10 rounded-xl bg-muted/50 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-48 bg-muted/50" />
+                  <Skeleton className="h-3 w-64 bg-muted/50" />
+                </div>
+                <div className="flex gap-4 shrink-0">
+                  <Skeleton className="h-8 w-16 bg-muted/50" />
+                  <Skeleton className="h-8 w-12 bg-muted/50" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : taskList.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
           <Database className="w-10 h-10 mx-auto text-muted-foreground/30" />

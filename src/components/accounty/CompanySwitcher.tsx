@@ -25,7 +25,7 @@ export function CompanySwitcher() {
     // 1. Check scoped layout format: /accounty/:companyId/:dateRange/...
     // companyId is the first parameter after /accounty/ and it's a UUID
     const parts = location.pathname.split('/').filter(Boolean);
-    if (parts.length >= 3 && parts[0] === 'accounty') {
+    if (parts.length >= 3 && (parts[0] === 'eaisybooks' || parts[0] === 'accounty')) {
       const possibleUuid = parts[1];
       const uuidRegex = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
       if (uuidRegex.test(possibleUuid)) {

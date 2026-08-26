@@ -62,7 +62,7 @@ export function calculateDepreciation(params: {
       accountingMonthly = usefulLifeMonths > 0 ? accountingDepreciableBase / usefulLifeMonths : 0;
       accountingAccumulated = accountingMonthly * elapsedMonths;
     } 
-    else if (depreciationMethod === 'degressive_syd') {
+    else if (depreciationMethod === 'degressive_syd' || depreciationMethod === 'sum_of_years_digits') {
       const nYears = Math.ceil(usefulLifeMonths / 12) || 1;
       const S = (nYears * (nYears + 1)) / 2;
       
@@ -82,7 +82,7 @@ export function calculateDepreciation(params: {
       accountingAccumulated = sumDep;
       accountingRatePercent = S > 0 ? ((nYears / S) * 100) : 0;
     } 
-    else if (depreciationMethod === 'degressive_declining') {
+    else if (depreciationMethod === 'degressive_declining' || depreciationMethod === 'declining_balance') {
       // Declining Balance: 200% declining balance rate
       const nYears = usefulLifeMonths / 12 || 1;
       const annualRate = (2 / nYears);

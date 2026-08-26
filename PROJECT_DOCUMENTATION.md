@@ -771,6 +771,41 @@ npm run preview      # Preview production build
 
 ## Changelog
 
+### Version 1.9.5 (2026-08-26)
+- **Timezone-Safe Date Calculations & Formatting:**
+  - Implemented the `parseLocalDate` utility across the **eaisybooks (Accounty)** DateRangeContext, EV depreciation extraction, and **Corporate Tax (TAO)** fixed assets views (`DepreciationCards.tsx`, `AssetDetailPanel.tsx`).
+  - Resolves timezone shifts where YYYY-MM-DD dates parsed using `new Date()` shifted backward by one day for users in timezones behind UTC (such as US EST).
+  - Fixed Net Book Value columns in EV Depreciation list to dynamically deduct current year depreciation.
+- **Multi-Currency Analytics and VAT Return Integration:**
+  - Integrated `useExchangeRates` in the **Analytics** page (`Analytics.tsx`) to dynamically fetch MNB exchange rates. Correctly converts EUR, USD, and other foreign currency amounts to HUF before aggregating monthly revenue/expenses charts and VAT analytical breakdowns.
+  - Implemented exchange rate conversion for items and totals inside the VAT row drill-down component (`VatRowDrillDown.tsx`) and for A60 EU community totals in the main VAT Return page (`VatReturnPage.tsx`).
+- **Year Selector Reactivity:**
+  - Removed redundant `taxYear` states from EV Flat Rate, KATA, HIPA, VSZJA Osztalékalap, VSZJA Adóalap, and Compare pages. The pages now dynamically recalculate and respond to changes in the global DateRangeContext.
+- **Worker db.py Cleanup:**
+  - Removed an invalid, empty database RPC call `client.rpc("", {})` in `get_gl_context` inside the python worker (`db.py`), eliminating redundant database exceptions.
+
+### Version 1.9.3 (2026-08-26)
+- **Skeleton Loader Migration:**
+  - Systematically replaced legacy spinner loading overlays (`<Loader2 />`) and text loading messages (`Betöltés...`) with modern, animated Skeleton loaders inside the **eaisybooks (Accounty)** module.
+  - Replaced spinners on `Filing2608Page`, `Filing08EPage`, and `EPayslipPortalPage` with the `FinancialPageSkeleton` component.
+  - Replaced spinners on `DocumentCenterPage` with a custom grid-card layout skeleton.
+  - Replaced spinners on `YearEndDashboardPage`, `MultiJobPage`, `JobModificationPage`, `ExitDocumentsPage`, `EmployeeExitWizardPage`, `OfficeSettingsPage`, and `FilingWorkflowPage` with styled page layouts utilizing `<Skeleton />` and `<ContentSkeleton />`.
+  - Replaced inline text placeholders in `RepresentationPage` and `CegkapuSettingsPage` with animated skeletons.
+
+### Version 1.9.2 (2026-08-26)
+- **Database & Query Performance Optimizations:**
+  - Created and executed a new PostgreSQL migration ([20260826_optimize_ev_record_counts.sql](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/supabase/migrations/20260826_optimize_ev_record_counts.sql)) implementing the `get_ev_record_counts(p_company_id uuid, p_tax_year int)` server-side RPC function. It incorporates strict security checks (member/accountant access check) and runs all 9 counts in a single database transaction using fast index-scans.
+  - Refactored `useEvRecordCounts` in [useEvData.ts](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/hooks/useEvData.ts) to utilize the new RPC, reducing parallel client-side HTTP network connection overhead from 9 queries down to 1.
+  - Optimized `useEvRealTotals` in [useEvData.ts](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/hooks/useEvData.ts) to call the high-performance `get_ev_ytd_totals` RPC alongside a fast `head` count check instead of fetching and mapping thousands of full invoice rows into client memory.
+  - Fixed an N+1 query storm on the Dashboard KPI page by lazy-loading the `MissingItemsTooltip` component in [DashboardKpiView.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/components/accounty/dashboard/DashboardKpiView.tsx) only when the user hovers over a client row, eliminating 5 redundant queries on initial page load.
+  - Optimized the **eaisybill** client dashboard query in [useDashboardData.ts](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/hooks/useDashboardData.ts) to call the pre-existing database RPC `get_petty_cash_summary` instead of pulling registers, opening balances (unfiltered), and entries, and doing JS summation in client memory, reducing 3 raw client-side queries into 1 lightweight RPC.
+  - **Dashboard Tooltip & Layout Fixes:** Refactored `MissingItemsTooltip` in [DashboardShared.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/components/accounty/dashboard/DashboardShared.tsx) to use Radix UI `HoverCard` rendering inside a Portal at the root body level. This prevents tooltips from altering the container's DOM dimensions (causing unwanted scrollbars) and eliminates absolute element clipping. Wrapped the table rows in [DashboardKpiView.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/components/accounty/dashboard/DashboardKpiView.tsx) as HoverCard triggers, added `pr-6` padding to the rightmost column header and cells to resolve column cutoff issues, and added `pt-3 pb-1` padding to the `overflow-x-auto` wrapper combined with `leading-relaxed` line-height on `thead` to prevent Hungarian accent characters (like Ü, á, ó) from being clipped at the top boundary of the container. Increased the top margin of the `LineChart` component from 10 to 24 in [DashboardKpiView.tsx](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/components/accounty/dashboard/DashboardKpiView.tsx) to prevent clipping of the highest Y-axis label (e.g. "6000 db").
+
+### Version 1.9.1 (2026-08-26)
+- **Database Security & RLS Permission Fix:**
+  - Created and executed a new PostgreSQL migration ([20260826_fix_user_is_company_member_permission.sql](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/supabase/migrations/20260826_fix_user_is_company_member_permission.sql)) to grant `EXECUTE` privileges on the `user_is_company_member(uuid)` helper function to `anon` and `authenticated` roles.
+  - Resolves a recurring RLS policy evaluation blocker (`42501 permission denied`) that caused database lookup errors on company membership tables when accessed by unauthenticated sessions (e.g. during initialization or login flow).
+
 ### Version 1.9.0 (2026-08-25)
 - **eaisybooks & eaisybill UI/UX Unification:**
   - **Centralized Theme Shadow Configuration:** Redefined the `'soft'` shadow mapping in [tailwind.config.ts](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/tailwind.config.ts) to point to the theme CSS variable `var(--shadow-soft)`. Defined `--shadow-soft` in [index.css](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/index.css) (with soft double-cast for light mode and 1px inset boundary for dark mode), dynamically updating over 50 card layouts across the platform.

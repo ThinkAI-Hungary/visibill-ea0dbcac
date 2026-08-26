@@ -1,5 +1,5 @@
 import { useDateRange } from '@/contexts/DateRangeContext';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Calendar, ArrowLeft, ChevronRight, Clock, CheckCircle2,
@@ -54,6 +54,10 @@ export default function EvCalendarPage() {
   const [selectedYear, setSelectedYear] = useState(yearParam);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  useEffect(() => {
+    setSelectedYear(yearParam);
+  }, [yearParam]);
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawReturns, isLoading } = useAllEvTaxReturns(selectedYear);

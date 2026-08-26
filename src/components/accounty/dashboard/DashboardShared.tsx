@@ -17,6 +17,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ClientData } from '@/pages/Accounty/types';
 import { useAccountyAccountants } from '@/hooks/accounty';
 import { useAccountyRole } from '@/pages/Accounty/AccountyRoleContext';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 
 export const CLIENT_COLORS = [
   'bg-accent text-primary', 'bg-amber-100 text-amber-600',
@@ -188,7 +189,7 @@ export function OwnerDropdown({
   );
 }
 
-export function MissingItemsTooltip({ companyId }: { companyId: string }) {
+export function MissingItemsTooltip({ companyId, children }: { companyId: string; children: React.ReactNode }) {
   const { data: items } = useQuery({
     queryKey: ['missing-top3', companyId],
     queryFn: async () => {
@@ -204,11 +205,20 @@ export function MissingItemsTooltip({ companyId }: { companyId: string }) {
     staleTime: 60_000,
   });
 
-  if (!items || items.length === 0) return null;
+  if (!items || items.length === 0) {
+    return <>{children}</>;
+  }
 
   return (
-    <div className="absolute right-0 top-1/2 -translate-y-1/2 z-50 opacity-0 group-hover/row:opacity-100 pointer-events-none transition-opacity duration-200">
-      <div className="bg-popover text-popover-foreground rounded-lg shadow-xl p-3 ml-2 min-w-[220px] border border-border">
+    <HoverCard openDelay={100} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        {children}
+      </HoverCardTrigger>
+      <HoverCardContent 
+        side="right" 
+        align="center" 
+        className="w-[240px] p-3 bg-popover border border-border shadow-xl rounded-lg z-[100]"
+      >
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Top tételek</p>
         {items.map((item, i) => (
           <div key={i} className="flex items-center justify-between gap-3 py-1">
@@ -220,8 +230,8 @@ export function MissingItemsTooltip({ companyId }: { companyId: string }) {
             )}
           </div>
         ))}
-      </div>
-    </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 

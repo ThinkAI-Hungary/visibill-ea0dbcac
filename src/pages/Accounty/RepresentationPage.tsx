@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useNavRepresentations, useAddNavRepresentation, useRevokeNavRepresentation, type NavRepresentation } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Wizard steps
 const WIZARD_STEPS = [
@@ -399,9 +400,46 @@ export default function RepresentationPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        Betöltés...
+      <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            <Skeleton className="w-8 h-8 rounded-lg bg-muted/50 mt-1.5" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-32 bg-muted/50" />
+              <Skeleton className="h-6 w-64 bg-muted/50" />
+              <Skeleton className="h-3 w-48 bg-muted/50" />
+            </div>
+          </div>
+          <Skeleton className="h-10 w-36 bg-muted/50 rounded-lg" />
+        </div>
+        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 rounded-xl p-4">
+          <Skeleton className="h-4 w-full bg-muted/50" />
+        </div>
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+            <Skeleton className="h-4 w-36 bg-muted/50" />
+            <Skeleton className="h-4 w-8 rounded-full bg-muted/50" />
+          </div>
+          <div className="divide-y divide-border/50">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <Skeleton className="w-10 h-10 rounded-xl bg-muted/50 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-48 bg-muted/50" />
+                  <Skeleton className="h-3 w-32 bg-muted/50" />
+                </div>
+                <div className="text-right space-y-1.5">
+                  <Skeleton className="h-5 w-16 rounded-full bg-muted/50" />
+                  <Skeleton className="h-3 w-12 bg-muted/50 ml-auto" />
+                </div>
+                <div className="text-right space-y-1.5 pl-4">
+                  <Skeleton className="h-3 w-20 bg-muted/50" />
+                  <Skeleton className="h-3 w-24 bg-muted/50" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

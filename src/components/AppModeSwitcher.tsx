@@ -15,7 +15,7 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
     return (
       <div className={cn("flex items-center", isCollapsed ? "justify-center py-2" : "px-2 py-1")}>
         {isCollapsed ? (
-          <span className="text-xl font-bold text-primary select-none">{isBill ? 'eB' : 'eB'}</span>
+          <span className="text-xl font-bold text-primary select-none">{isBill ? 'eB' : 'eK'}</span>
         ) : (
           <span className="text-xl font-medium text-foreground/80 select-none">
             eaisy<span className="font-bold text-primary">{isBill ? 'Bill' : 'Books'}</span>
@@ -34,7 +34,7 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
           onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybill')}
           title="eaisyBill"
           className={cn(
-            "w-7 h-7 flex items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200 border",
+            "relative w-7 h-7 flex items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200 border",
             activeMode === "eaisybill"
               ? "bg-primary/15 dark:bg-primary/5 text-primary border-primary/20 shadow-sm"
               : "text-muted-foreground hover:bg-primary/5 hover:text-primary border-transparent"
@@ -50,7 +50,7 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
           onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybooks')}
           title="eaisyBooks"
           className={cn(
-            "w-7 h-7 flex items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200 border",
+            "relative w-7 h-7 flex items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200 border",
             activeMode === "accounty"
               ? "bg-primary/15 dark:bg-primary/5 text-primary border-primary/20 shadow-sm"
               : "text-muted-foreground hover:bg-primary/5 hover:text-primary border-transparent"

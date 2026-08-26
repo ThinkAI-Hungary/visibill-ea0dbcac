@@ -27,14 +27,22 @@ function formatDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function parseLocalDate(ymdStr: string): Date {
+  const parts = ymdStr.split('-');
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) - 1; // 0-indexed
+  const d = parseInt(parts[2], 10);
+  return new Date(y, m, d);
+}
+
 /** Restore persisted date range from localStorage, or default to "This Year". */
 function getInitialDates(): { from: Date; to: Date } {
   try {
     const saved = safeStorage.getItem(STORAGE_KEYS.DATE_RANGE);
     if (saved) {
       const parsed = JSON.parse(saved);
-      const from = new Date(parsed.from);
-      const to = new Date(parsed.to);
+      const from = parseLocalDate(parsed.from);
+      const to = parseLocalDate(parsed.to);
       if (!isNaN(from.getTime()) && !isNaN(to.getTime())) {
         return { from, to };
       }

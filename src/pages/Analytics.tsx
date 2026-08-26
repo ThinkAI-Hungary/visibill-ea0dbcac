@@ -20,6 +20,7 @@ import { ChevronUp, Loader2 } from "lucide-react";
 import { format, parseISO, subMonths } from "date-fns";
 import { hu } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
+import { useExchangeRates } from "@/hooks/useExchangeRates";
 
 interface MonthlyData {
   month: string;
@@ -34,6 +35,7 @@ interface RawInvoice {
   invoice_direction: string | null;
   invoice_gross_amount: number | null;
   invoice_net_amount: number | null;
+  currency?: string | null;
 }
 
 interface RawSalary {
@@ -75,6 +77,8 @@ export default function Analytics() {
   const [comparisonMonth, setComparisonMonth] = useState(currentMonth > 0 ? currentMonth - 1 : 11);
 
   const vatChartRef = useRef<HTMLDivElement>(null);
+  const { data: exchangeRates } = useExchangeRates();
+  const rates = exchangeRates || { HUF: 1 };
 
   // TanStack Query: fetch raw invoice + salary data
   const { data: rawData, isLoading: rawLoading } = useQuery({
@@ -90,7 +94,7 @@ export default function Analytics() {
       while (true) {
         const { data, error } = await supabase
           .from("nav_invoices")
-          .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, invoice_number")
+          .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, invoice_number, currency")
           .eq("company_id", selectedCompany!.id)
           .gte("invoice_issue_date", yearStart)
           .lte("invoice_issue_date", yearEnd)
@@ -134,6 +138,7 @@ export default function Analytics() {
             invoice_direction: inv.invoice_direction,
             invoice_gross_amount: inv.brutto_vegosszeg,
             invoice_net_amount: inv.adoalap_osszesen,
+            currency: inv.penznem,
           });
         }
       });
@@ -166,20 +171,20 @@ export default function Analytics() {
       const [currentResult, compResult, currentInvResult, compInvResult] = await Promise.all([
         supabase
           .from("nav_invoices")
-          .select("invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_number")
+          .select("invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_number, currency")
           .eq("company_id", selectedCompany!.id)
           .gte("invoice_issue_date", currentMonthStart)
           .lte("invoice_issue_date", currentMonthEnd),
         supabase
           .from("nav_invoices")
-          .select("invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_number")
+          .select("invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_number, currency")
           .eq("company_id", selectedCompany!.id)
           .gte("invoice_issue_date", compMonthStart)
           .lte("invoice_issue_date", compMonthEnd),
         // Fetch submitted INBOUND invoices for current month
         supabase
           .from("invoices")
-          .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction")
+          .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction, penznem")
           .eq("company_id", selectedCompany!.id)
           .eq("invoice_direction", "INBOUND")
           .gte("kibocsatas_datuma", currentMonthStart)
@@ -187,7 +192,7 @@ export default function Analytics() {
         // Fetch submitted INBOUND invoices for comparison month
         supabase
           .from("invoices")
-          .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction")
+          .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction, penznem")
           .eq("company_id", selectedCompany!.id)
           .eq("invoice_direction", "INBOUND")
           .gte("kibocsatas_datuma", compMonthStart)
@@ -209,6 +214,7 @@ export default function Analytics() {
           invoice_direction: 'INBOUND',
           invoice_vat_amount: inv.afa_osszeg_osszesen || 0,
           invoice_net_amount: inv.adoalap_osszesen || 0,
+          currency: inv.penznem,
         })),
       ];
 
@@ -227,6 +233,7 @@ export default function Analytics() {
           invoice_direction: 'INBOUND',
           invoice_vat_amount: inv.afa_osszeg_osszesen || 0,
           invoice_net_amount: inv.adoalap_osszesen || 0,
+          currency: inv.penznem,
         })),
       ];
 
@@ -249,12 +256,17 @@ export default function Analytics() {
     let inboundNet = 0;
 
     invoices?.forEach(inv => {
+      const currency = (inv.currency || "HUF").toUpperCase();
+      const rate = rates[currency] || 1;
+      const vatAmountHuf = (inv.invoice_vat_amount || 0) * rate;
+      const netAmountHuf = (inv.invoice_net_amount || 0) * rate;
+
       if (inv.invoice_direction === "OUTBOUND") {
-        outboundVat += inv.invoice_vat_amount || 0;
-        outboundNet += inv.invoice_net_amount || 0;
+        outboundVat += vatAmountHuf;
+        outboundNet += netAmountHuf;
       } else {
-        inboundVat += inv.invoice_vat_amount || 0;
-        inboundNet += inv.invoice_net_amount || 0;
+        inboundVat += vatAmountHuf;
+        inboundNet += netAmountHuf;
       }
     });
 
@@ -282,8 +294,8 @@ export default function Analytics() {
   };
 
   // Compute VAT data from query results
-  const currentVatProcessed = useMemo(() => processInvoices(vatData?.currentInvoices || []), [vatData?.currentInvoices]);
-  const compVatProcessed = useMemo(() => processInvoices(vatData?.compInvoices || []), [vatData?.compInvoices]);
+  const currentVatProcessed = useMemo(() => processInvoices(vatData?.currentInvoices || []), [vatData?.currentInvoices, rates]);
+  const compVatProcessed = useMemo(() => processInvoices(vatData?.compInvoices || []), [vatData?.compInvoices, rates]);
 
   // Displayed data based on toggle
   const displayedMonthName = showCurrentPeriod ? currentMonthName : MONTH_NAMES[comparisonMonth];
@@ -304,11 +316,14 @@ export default function Analytics() {
       if (inv.invoice_issue_date) {
         const date = parseISO(inv.invoice_issue_date);
         const monthIndex = date.getMonth();
+        const currency = (inv.currency || "HUF").toUpperCase();
+        const rate = rates[currency] || 1;
         const amount = showBrutto ? (inv.invoice_gross_amount || 0) : (inv.invoice_net_amount || 0);
+        const amountHuf = amount * rate;
         if (inv.invoice_direction === "OUTBOUND") {
-          monthlyMap[monthIndex].revenue += amount;
+          monthlyMap[monthIndex].revenue += amountHuf;
         } else {
-          monthlyMap[monthIndex].expenses += amount;
+          monthlyMap[monthIndex].expenses += amountHuf;
         }
       }
     });
@@ -322,7 +337,7 @@ export default function Analytics() {
     });
 
     return Object.values(monthlyMap);
-  }, [rawInvoices, rawSalaries, showBrutto]);
+  }, [rawInvoices, rawSalaries, showBrutto, rates]);
 
 
 

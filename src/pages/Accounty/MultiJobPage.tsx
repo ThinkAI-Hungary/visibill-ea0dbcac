@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useEmployeeJobs, type EmployeeJob } from '@/hooks/accounty';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function calculateInsurance(jobs: EmployeeJob[]) {
   const activeJobs = jobs.filter(j => j.status === 'active');
@@ -81,7 +82,28 @@ export default function MultiJobPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
+        <div className="space-y-4 animate-in fade-in duration-300">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-card rounded-xl border border-border overflow-hidden">
+              <div className="px-5 py-3 border-b flex items-center justify-between bg-muted/20">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-4 w-12 bg-muted/50" />
+                  <Skeleton className="h-4 w-20 bg-muted/50" />
+                  <Skeleton className="h-4 w-32 bg-muted/50" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full bg-muted/50" />
+              </div>
+              <div className="p-5 grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Array.from({ length: 8 }).map((_, j) => (
+                  <div key={j} className="space-y-1.5">
+                    <Skeleton className="h-3 w-16 bg-muted/50" />
+                    <Skeleton className="h-4 w-28 bg-muted/50" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : jobList.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center text-sm text-slate-400">Nincs rögzített jogviszony ehhez a munkavállalóhoz.</div>
       ) : (

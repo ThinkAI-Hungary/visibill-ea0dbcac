@@ -11,7 +11,9 @@ interface DepreciationCardsProps {
 const METHOD_LABELS: Record<string, string> = {
   linear: 'Lineáris',
   degressive_syd: 'Degresszív (Évek száma)',
+  sum_of_years_digits: 'Degresszív (Évek száma)',
   degressive_declining: 'Degresszív (Nettó érték)',
+  declining_balance: 'Degresszív (Nettó érték)',
   progressive: 'Progresszív',
   performance: 'Teljesítményarányos',
   absolute: 'Abszolút összegű',
@@ -19,16 +21,24 @@ const METHOD_LABELS: Record<string, string> = {
   immediate: 'Azonnali',
 };
 
+function parseLocalDate(ymdStr: string): Date {
+  const parts = ymdStr.split('-');
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) - 1; // 0-indexed
+  const d = parseInt(parts[2], 10);
+  return new Date(y, m, d);
+}
+
 export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsProps) {
   const taoRate = asset.tao_rate_override ?? asset.tao_template?.tao_rate_percent ?? 14.5;
 
   const result = useMemo(() => calculateDepreciation({
     acquisitionValue: asset.acquisition_value,
     residualValue: asset.residual_value,
-    activationDate: new Date(asset.activation_date),
+    activationDate: parseLocalDate(asset.activation_date),
     usefulLifeMonths: asset.useful_life_months,
     taoRatePercent: taoRate,
-    disposalDate: asset.disposal_date ? new Date(asset.disposal_date) : undefined,
+    disposalDate: asset.disposal_date ? parseLocalDate(asset.disposal_date) : undefined,
     depreciationMethod: asset.depreciation_method,
     performanceUnit: asset.performance_unit,
     totalPlannedPerformance: asset.total_planned_performance,

@@ -11,6 +11,7 @@ import { usePayrollEmployments } from '@/hooks/usePayrollData';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { ContentSkeleton } from '@/components/ui/content-skeleton';
 
 const REASONS = [
   'Közös megegyezés', 'Munkavállaló felmondása', 'Munkáltatói felmondás',
@@ -116,7 +117,7 @@ export default function EmployeeExitWizardPage() {
   };
 
   if (empError) return <AccountyErrorState message="Nem sikerült betölteni a jogviszony adatokat." onRetry={() => refetchEmp()} />;
-  if (isLoading) return <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>;
+  if (isLoading) return <ContentSkeleton />;
 
   if (!activeJob) {
     return (

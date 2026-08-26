@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCegkapuSettings, useUpsertCegkapuSettings, type CegkapuSettings } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 type TarhelyType = 'cegkapu' | 'kuny';
@@ -113,9 +114,32 @@ export default function CegkapuSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        Betöltés...
+      <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+        <div className="flex items-start gap-4">
+          <Skeleton className="w-8 h-8 rounded-lg bg-muted/50 mt-1" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-3.5 w-32 bg-muted/50" />
+            <Skeleton className="h-6 w-64 bg-muted/50" />
+            <Skeleton className="h-3 w-48 bg-muted/50" />
+          </div>
+        </div>
+        <div className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-8 w-full bg-muted/50 rounded-lg" />
+          ))}
+        </div>
+        <div className="bg-card rounded-xl border border-border p-6 space-y-6">
+          <Skeleton className="h-4 w-32 bg-muted/50" />
+          <div className="grid grid-cols-2 gap-4">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full bg-muted/50 rounded-xl" />
+            ))}
+          </div>
+          <div className="space-y-1.5 pt-4 border-t border-border/50">
+            <Skeleton className="h-3.5 w-24 bg-muted/50" />
+            <Skeleton className="h-9 w-full bg-muted/50 rounded-lg" />
+          </div>
+        </div>
       </div>
     );
   }

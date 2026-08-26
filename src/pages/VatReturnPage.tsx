@@ -23,6 +23,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { reportError } from '@/lib/errorReporter';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { FormRow } from '@/components/vat/vatTypes';
 
 import { VatCodeConfigTab } from '@/components/vat/VatCodeConfigTab';
@@ -132,6 +133,7 @@ const fmtEft = (v: number | null | undefined) => (v === null || v === undefined)
 function VatReturnViewTab() {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
+  const { data: exchangeRates } = useExchangeRates();
   const qc = useQueryClient();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -148,7 +150,7 @@ function VatReturnViewTab() {
   const [expandedPartners, setExpandedPartners] = useState<Set<string>>(new Set());
   const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
   const [expandedFormRow, setExpandedFormRow] = useState<string | null>(null);
-  const [euTypeOverrides, setEuTypeOverrides] = useState<Record<string, 'product' | 'service'>>({});
+  // EU type overrides are persisted in database via termek_szolgaltatas_tipusa column
 
   // VIES EU Tax Validation state
   const [viesStatuses, setViesStatuses] = useState<Record<string, 'valid' | 'invalid' | 'loading' | null>>({});
@@ -416,7 +418,7 @@ function VatReturnViewTab() {
       // Fetch all invoices (INBOUND and OUTBOUND) for this period
       const { data: rawInvoices, error } = await supabase
         .from('nav_invoices')
-        .select('id, invoice_number, invoice_direction, supplier_tax_number, customer_tax_number, supplier_name, customer_name, invoice_delivery_date, invoice_net_amount, currency')
+        .select('id, invoice_number, invoice_direction, supplier_tax_number, customer_tax_number, supplier_name, customer_name, invoice_delivery_date, invoice_net_amount, currency, termek_szolgaltatas_tipusa')
         .eq('company_id', selectedCompany.id)
         .gte('invoice_delivery_date', dateFrom)
         .lte('invoice_delivery_date', dateTo);
@@ -491,6 +493,7 @@ function VatReturnViewTab() {
 
         const partnerName = inv.invoice_direction === 'OUTBOUND' ? inv.customer_name : inv.supplier_name;
         const partnerTaxNum = inv.invoice_direction === 'OUTBOUND' ? inv.customer_tax_number : inv.supplier_tax_number;
+        const typeOverride = inv.termek_szolgaltatas_tipusa;
 
         return {
           id: inv.id,
@@ -501,7 +504,7 @@ function VatReturnViewTab() {
           invoice_delivery_date: inv.invoice_delivery_date,
           invoice_net_amount: inv.invoice_net_amount || 0,
           currency: inv.currency,
-          defaultIsService: isService,
+          defaultIsService: typeOverride ? (typeOverride === 'service') : isService,
         };
       });
     },
@@ -686,6 +689,21 @@ function VatReturnViewTab() {
     onError: (e: any) => toast({ title: 'Áthozat mentési hiba', description: e.message, variant: 'destructive' }),
   });
 
+  const updateInvoiceType = useMutation({
+    mutationFn: async ({ id, type }: { id: string; type: 'product' | 'service' }) => {
+      const { error } = await supabase
+        .from('nav_invoices')
+        .update({ termek_szolgaltatas_tipusa: type })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['vat_eu_invoices'] });
+      toast({ title: 'Tranzakció típus sikeresen frissítve a rendszerben.' });
+    },
+    onError: (e: any) => toast({ title: 'Hiba a tranzakció típus frissítésekor', description: e.message, variant: 'destructive' }),
+  });
+
   // V3: Controlled carryforward state
   const [carryforwardValue, setCarryforwardValue] = useState<string>('');
   React.useEffect(() => {
@@ -720,13 +738,28 @@ function VatReturnViewTab() {
     const itemsList: any[] = [];
     const taxErrors: string[] = [];
 
-    euInvoices.forEach(inv => {
-      const isService = euTypeOverrides[inv.id] !== undefined
-        ? euTypeOverrides[inv.id] === 'service'
-        : inv.defaultIsService;
+    const getRate = (currency: string | null | undefined): number => {
+      const cur = (currency || 'HUF').toUpperCase();
+      if (cur === 'HUF') return 1;
+      if (exchangeRates && exchangeRates[cur]) return exchangeRates[cur];
+      const fallbacks: Record<string, number> = {
+        EUR: 400,
+        USD: 370,
+        GBP: 470,
+        CHF: 415,
+        RON: 80,
+      };
+      return fallbacks[cur] || 1;
+    };
 
-      // EU invoice net amount is stored in HUF. Convert to eFt (rounded to thousands)
-      const amountEft = Math.round((inv.invoice_net_amount || 0) / 1000);
+    euInvoices.forEach(inv => {
+      const isService = inv.defaultIsService;
+      const currency = inv.currency || 'HUF';
+      const rate = getRate(currency);
+      const netAmountHuf = (inv.invoice_net_amount || 0) * rate;
+
+      // EU invoice net amount is converted to HUF. Convert to eFt (rounded to thousands)
+      const amountEft = Math.round(netAmountHuf / 1000);
 
       if (inv.invoice_direction === 'OUTBOUND') {
         if (isService) {
@@ -773,7 +806,7 @@ function VatReturnViewTab() {
       taxErrors,
       isValid: !goodsMismatch && !servicesMismatch && taxErrors.length === 0,
     };
-  }, [euInvoices, euTypeOverrides, lines]);
+  }, [euInvoices, euTypeOverrides, lines, exchangeRates]);
 
   const hasPrevData = prevLines.length > 0;
 
@@ -1274,11 +1307,9 @@ function VatReturnViewTab() {
                             <button
                               type="button"
                               onClick={() => {
-                                setEuTypeOverrides(prev => ({
-                                  ...prev,
-                                  [item.id]: 'product'
-                                }));
+                                updateInvoiceType.mutate({ id: item.id, type: 'product' });
                               }}
+                              disabled={updateInvoiceType.isPending}
                               className={cn(
                                 "px-2 py-1 text-[10px] font-bold rounded transition-all",
                                 !item.isService
@@ -1291,11 +1322,9 @@ function VatReturnViewTab() {
                             <button
                               type="button"
                               onClick={() => {
-                                setEuTypeOverrides(prev => ({
-                                  ...prev,
-                                  [item.id]: 'service'
-                                }));
+                                updateInvoiceType.mutate({ id: item.id, type: 'service' });
                               }}
+                              disabled={updateInvoiceType.isPending}
                               className={cn(
                                 "px-2 py-1 text-[10px] font-bold rounded transition-all",
                                 item.isService

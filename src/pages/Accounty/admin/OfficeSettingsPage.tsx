@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useOfficeSettings, useUpsertOfficeSettings } from '@/hooks/accounty';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface OfficeSettings {
   officeName: string;
@@ -80,8 +81,30 @@ export default function OfficeSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
-        <Loader2 className="w-5 h-5 animate-spin" /> Betöltés...
+      <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-lg bg-muted/50" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-5 w-48 bg-muted/50" />
+            <Skeleton className="h-3 w-64 bg-muted/50" />
+          </div>
+        </div>
+        <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg w-fit">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-8 w-24 rounded-md bg-muted/50" />
+          ))}
+        </div>
+        <div className="bg-card rounded-xl border border-border p-6 space-y-6">
+          <Skeleton className="h-4 w-32 bg-muted/50" />
+          <div className="grid grid-cols-2 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-1.5">
+                <Skeleton className="h-3.5 w-24 bg-muted/50" />
+                <Skeleton className="h-9 w-full bg-muted/50 rounded-lg" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

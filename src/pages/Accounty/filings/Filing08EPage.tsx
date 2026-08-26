@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { FinancialPageSkeleton } from '@/components/ui/financial-skeleton';
 
 const CHANGE_CODES = [
   { code: '01', label: 'Biztosítási jogviszony kezdete', type: 'bejelentes' as const },
@@ -279,7 +280,7 @@ export default function Filing08EPage() {
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
+        <FinancialPageSkeleton title="08E bejelentések betöltése..." />
       ) : rows.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
           <Database className="w-10 h-10 mx-auto text-slate-400" />

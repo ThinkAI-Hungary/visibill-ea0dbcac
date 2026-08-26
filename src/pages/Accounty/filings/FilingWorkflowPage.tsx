@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAccountyClients } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Step = 'preview' | 'sign' | 'submit' | 'receipt';
 
@@ -161,8 +162,37 @@ export default function FilingWorkflowPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-4xl mx-auto flex items-center justify-center h-64 gap-2 text-muted-foreground">
-        <Loader2 className="w-5 h-5 animate-spin" /> Betöltés...
+      <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-lg bg-muted/50" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-5 w-48 bg-muted/50" />
+            <Skeleton className="h-3 w-64 bg-muted/50" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 px-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <React.Fragment key={i}>
+              <Skeleton className="h-8 w-28 rounded-full bg-muted/50" />
+              {i < 3 && <Skeleton className="w-8 h-0.5 bg-muted/50" />}
+            </React.Fragment>
+          ))}
+        </div>
+        <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+          <Skeleton className="h-4 w-32 bg-muted/50" />
+          <div className="border border-border rounded-lg p-8 min-h-[300px] space-y-4">
+            <Skeleton className="h-6 w-64 mx-auto bg-muted/50" />
+            <Skeleton className="h-4 w-48 mx-auto bg-muted/50" />
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/50">
+              <Skeleton className="h-4 w-32 bg-muted/50" />
+              <Skeleton className="h-4 w-28 bg-muted/50" />
+            </div>
+            <div className="space-y-2 pt-4 border-t border-border/50">
+              <Skeleton className="h-3.5 w-24 bg-muted/50" />
+              <Skeleton className="h-10 w-full bg-muted/50 rounded-lg" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

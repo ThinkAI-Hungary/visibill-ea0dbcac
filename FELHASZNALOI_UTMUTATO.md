@@ -490,10 +490,11 @@ Az **"Árfolyamok"** oldalon valós idejű deviza árfolyamokat tekinthet meg, a
 #### Deviza konverzió
 
 Ha külföldi devizás számlákat kezel:
-1. Nézze meg az aktuális árfolyamot az Árfolyamok oldalon
-2. Használja a számlák rögzítésekor a megfelelő devizanemet
-3. A rendszer automatikusan tárolja az eredeti devizát
-4. Később visszanézheti a történeti árfolyamokat
+1. Nézze meg az aktuális árfolyamot az Árfolyamok oldalon.
+2. Használja a számlák rögzítésekor a megfelelő devizanemet.
+3. A rendszer automatikusan tárolja az eredeti devizát és az MNB árfolyamot.
+4. **Automatikus Analytics konverzió**: A Vezérlőpult és az Analytics grafikonjai, valamint az ÁFÁ-val kapcsolatos összesített kimutatások automatikusan átszámítják a külföldi devizás tételeket (pl. EUR, USD) HUF-ra az MNB napi középárfolyamai alapján, így a cég teljes bevétele és kiadása helyesen, egységesen forintban jelenik meg.
+5. **ÁFA és A60 jelentések**: Az ÁFA bevallás részletezőjében és a Közösségi Ügyletek (A60) főlapján szintén automatikus az árfolyam-átváltás, biztosítva a forintos adóalapok és ÁFA-értékek pontos bevallását.
 
 ---
 
@@ -751,5 +752,5 @@ Magyar és angol nyelven is.
 
 ---
 
-*Utolsó frissítés: 2026. augusztus (v1.9.0)*  
-*Verzió: 1.9.0 (MBH többdevizás bankkivonatok, számlák kötegelt műveletei, fókuszálható kiegészítő melléklet szerkesztő és kategória-képmegjelenítők)*
+*Utolsó frissítés: 2026. augusztus (v1.9.5)*  
+*Verzió: 1.9.5 (Analytics többdevizás diagram- és ÁFA-konverziók, TAO/EV tárgyi eszköz időzónás dátum-eltolódások javítása, azonnali adóév-reaktivitás az egyéni vállalkozások oldalain)*

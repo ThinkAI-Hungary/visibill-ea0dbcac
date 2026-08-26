@@ -589,7 +589,7 @@ export default function EvDepreciationPage() {
         case 'sum_of_years_digits': {
           const n = depRate > 0 ? Math.round(100 / depRate) : 5;
           const S = (n * (n + 1)) / 2;
-          const acqYear = new Date(a.acquisition_date).getFullYear();
+          const acqYear = a.acquisition_date ? parseInt(a.acquisition_date.split('-')[0], 10) : taxYear;
           const t = taxYear - acqYear + 1;
           if (t >= 1 && t <= n) {
             currentYearDep = Math.round(a.acquisition_cost * (n - t + 1) / S);
@@ -599,7 +599,7 @@ export default function EvDepreciationPage() {
         case 'progressive': {
           const n = depRate > 0 ? Math.round(100 / depRate) : 5;
           const S = (n * (n + 1)) / 2;
-          const acqYear = new Date(a.acquisition_date).getFullYear();
+          const acqYear = a.acquisition_date ? parseInt(a.acquisition_date.split('-')[0], 10) : taxYear;
           const t = taxYear - acqYear + 1;
           if (t >= 1 && t <= n) {
             currentYearDep = Math.round(a.acquisition_cost * t / S);
@@ -613,7 +613,7 @@ export default function EvDepreciationPage() {
           break;
         }
         case 'multiplier': {
-          const acqYear = new Date(a.acquisition_date).getFullYear();
+          const acqYear = a.acquisition_date ? parseInt(a.acquisition_date.split('-')[0], 10) : taxYear;
           const t = taxYear - acqYear + 1;
           const mults = multipliersStr.split(',').map(m => Number(m.trim())).filter(m => !isNaN(m));
           let mult = 1.0;
@@ -636,7 +636,7 @@ export default function EvDepreciationPage() {
       const maxAllowedDep = a.acquisition_cost - a.accumulated_depreciation;
       currentYearDep = Math.max(0, Math.min(currentYearDep, maxAllowedDep));
 
-      const netBookValue = a.net_value ?? (a.acquisition_cost - a.accumulated_depreciation - currentYearDep);
+      const netBookValue = a.acquisition_cost - a.accumulated_depreciation - currentYearDep;
 
       return {
         id: a.id,
@@ -964,7 +964,7 @@ export default function EvDepreciationPage() {
               <li>Bútorok, berendezések: max. 14,5% (7 év)</li>
               <li>Járművek: max. 20% (5 év)</li>
               <li>Ingatlanok: 2-6% (típustól függően)</li>
-              <li>100 ezer Ft alatti eszközök: egyben leírhatók</li>
+              <li>200 ezer Ft alatti eszközök: egyben leírhatók</li>
             </ul>
           </div>
         </div>

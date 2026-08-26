@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { reportError } from '@/lib/errorReporter';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+
 
 /* ────────────────────────────────────────── */
 /*  Types                                     */
@@ -104,12 +106,29 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
   }, [year, month, frequency]);
 
   const dateTo = useMemo(() => {
-    const d = new Date(dateFrom);
-    if (frequency === 'H') { d.setMonth(d.getMonth() + 1); d.setDate(0); }
-    else if (frequency === 'E') return `${year}-12-31`;
-    else { d.setMonth(d.getMonth() + 3); d.setDate(0); }
-    return d.toISOString().split('T')[0];
-  }, [dateFrom, frequency, year]);
+    if (frequency === 'E') return `${year}-12-31`;
+    let endYear = year;
+    let endMonth = frequency === 'H' ? month : month * 3;
+    const lastDay = new Date(Date.UTC(endYear, endMonth, 0)).getUTCDate();
+    return `${endYear}-${String(endMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  }, [frequency, year, month]);
+
+  // Fetch current exchange rates to dynamically handle foreign currencies
+  const { data: exchangeRates } = useExchangeRates();
+
+  const getRate = (currency: string | null | undefined): number => {
+    const cur = (currency || 'HUF').toUpperCase();
+    if (cur === 'HUF') return 1;
+    if (exchangeRates && exchangeRates[cur]) return exchangeRates[cur];
+    const fallbacks: Record<string, number> = {
+      EUR: 400,
+      USD: 370,
+      GBP: 470,
+      CHF: 415,
+      RON: 80,
+    };
+    return fallbacks[cur] || 1;
+  };
 
   // Fetch VAT codes config to know which direction/rate to query
   const { data: vatCodes = [] } = useQuery({
@@ -186,6 +205,22 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
 
   const fmtHuf = (v: number) => `${Math.round(v).toLocaleString('hu-HU')} Ft`;
 
+  const grandNet = invoices.reduce((s: number, inv: any) => {
+    const currency = inv.currency || 'HUF';
+    const rate = getRate(currency);
+    const items = inv.nav_invoice_items || [];
+    const netSum = items.reduce((is: number, i: any) => is + (Number(i.net_amount) || 0), 0);
+    return s + (netSum * rate);
+  }, 0);
+
+  const grandVat = invoices.reduce((s: number, inv: any) => {
+    const currency = inv.currency || 'HUF';
+    const rate = getRate(currency);
+    const items = inv.nav_invoice_items || [];
+    const vatSum = items.reduce((is: number, i: any) => is + (Number(i.vat_amount) || 0), 0);
+    return s + (vatSum * rate);
+  }, 0);
+
   return (
     <div className="bg-muted/15 border-t border-b border-border/30 animate-in fade-in slide-in-from-top-1 duration-200">
       {/* header */}
@@ -200,8 +235,16 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
         const items = inv.nav_invoice_items || [];
         const isInbound = inv.invoice_direction === 'INBOUND';
         const partner = isInbound ? inv.supplier_name : inv.customer_name;
-        const totalNet = items.reduce((s: number, i: any) => s + (Number(i.net_amount) || 0), 0);
-        const totalVat = items.reduce((s: number, i: any) => s + (Number(i.vat_amount) || 0), 0);
+        
+        const currency = inv.currency || 'HUF';
+        const rate = getRate(currency);
+        const isForeign = currency.toUpperCase() !== 'HUF';
+
+        const origNet = items.reduce((s: number, i: any) => s + (Number(i.net_amount) || 0), 0);
+        const origVat = items.reduce((s: number, i: any) => s + (Number(i.vat_amount) || 0), 0);
+
+        const totalNet = Math.round(origNet * rate);
+        const totalVat = Math.round(origVat * rate);
         const isExpanded = expandedInv === inv.id;
 
         return (
@@ -221,8 +264,22 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
               <div className="col-span-2 text-center tabular-nums text-muted-foreground">
                 {inv.invoice_delivery_date ? new Date(inv.invoice_delivery_date).toLocaleDateString('hu-HU') : '—'}
               </div>
-              <div className="col-span-2 text-right tabular-nums">{fmtHuf(totalNet)}</div>
-              <div className="col-span-2 text-right tabular-nums font-medium">{fmtHuf(totalVat)}</div>
+              <div className="col-span-2 text-right tabular-nums">
+                <div>{fmtHuf(totalNet)}</div>
+                {isForeign && (
+                  <div className="text-[9px] text-muted-foreground/60 font-normal">
+                    {origNet.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                  </div>
+                )}
+              </div>
+              <div className="col-span-2 text-right tabular-nums font-medium">
+                <div>{fmtHuf(totalVat)}</div>
+                {isForeign && (
+                  <div className="text-[9px] text-muted-foreground/60 font-normal text-muted-foreground/50">
+                    {origVat.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                  </div>
+                )}
+              </div>
             </div>
             {isExpanded && items.length > 0 && (
               <div className="bg-background/50 border border-border/20 rounded mx-6 mb-1.5 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
@@ -233,15 +290,35 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
                   <div className="col-span-2 text-right">Nettó</div>
                   <div className="col-span-2 text-right">ÁFA</div>
                 </div>
-                {items.map((item: any, j: number) => (
-                  <div key={j} className="grid grid-cols-12 gap-2 px-3 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/15 transition-colors">
-                    <div className="col-span-4 truncate" title={item.line_description}>{item.line_description || '—'}</div>
-                    <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? Number(item.quantity).toLocaleString('hu-HU') : '—'}</div>
-                    <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? Number(item.unit_price).toLocaleString('hu-HU') : '—'}</div>
-                    <div className="col-span-2 text-right tabular-nums">{fmtHuf(Number(item.net_amount || 0))}</div>
-                    <div className="col-span-2 text-right tabular-nums">{fmtHuf(Number(item.vat_amount || 0))}</div>
-                  </div>
-                ))}
+                {items.map((item: any, j: number) => {
+                  const itemNet = Number(item.net_amount || 0);
+                  const itemVat = Number(item.vat_amount || 0);
+                  const itemNetHuf = Math.round(itemNet * rate);
+                  const itemVatHuf = Math.round(itemVat * rate);
+                  return (
+                    <div key={j} className="grid grid-cols-12 gap-2 px-3 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/15 transition-colors">
+                      <div className="col-span-4 truncate" title={item.line_description}>{item.line_description || '—'}</div>
+                      <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? Number(item.quantity).toLocaleString('hu-HU') : '—'}</div>
+                      <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? Number(item.unit_price).toLocaleString('hu-HU') : '—'}</div>
+                      <div className="col-span-2 text-right tabular-nums font-normal">
+                        <div>{fmtHuf(itemNetHuf)}</div>
+                        {isForeign && (
+                          <div className="text-[8px] text-muted-foreground/50">
+                            {itemNet.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-span-2 text-right tabular-nums font-normal">
+                        <div>{fmtHuf(itemVatHuf)}</div>
+                        {isForeign && (
+                          <div className="text-[8px] text-muted-foreground/50">
+                            {itemVat.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </React.Fragment>
@@ -252,10 +329,10 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
         <div className="col-span-6 text-muted-foreground">Összesen ({invoices.length} számla)</div>
         <div className="col-span-2" />
         <div className="col-span-2 text-right tabular-nums">
-          {fmtHuf(invoices.reduce((s: number, inv: any) => s + (inv.nav_invoice_items || []).reduce((is: number, i: any) => is + (Number(i.net_amount) || 0), 0), 0))}
+          {fmtHuf(grandNet)}
         </div>
         <div className="col-span-2 text-right tabular-nums">
-          {fmtHuf(invoices.reduce((s: number, inv: any) => s + (inv.nav_invoice_items || []).reduce((is: number, i: any) => is + (Number(i.vat_amount) || 0), 0), 0))}
+          {fmtHuf(grandVat)}
         </div>
       </div>
     </div>

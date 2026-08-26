@@ -19,8 +19,7 @@ export default function EvHipaPage() {
   const { data: client } = useAccountyClient(id);
   const [searchParams] = useSearchParams();
   const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
-  const yearParam = dateFrom.getFullYear();
-  const [taxYear, setTaxYear] = useState(yearParam);
+  const taxYear = dateFrom.getFullYear();
   const updateReturn = useUpdateEvTaxReturn();
   const [saving, setSaving] = useState(false);
 
