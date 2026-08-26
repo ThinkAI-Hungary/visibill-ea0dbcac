@@ -418,7 +418,7 @@ function VatReturnViewTab() {
       // Fetch all invoices (INBOUND and OUTBOUND) for this period
       const { data: rawInvoices, error } = await supabase
         .from('nav_invoices')
-        .select('id, invoice_number, invoice_direction, supplier_tax_number, customer_tax_number, supplier_name, customer_name, invoice_delivery_date, invoice_net_amount, currency, termek_szolgaltatas_tipusa')
+        .select('id, invoice_number, invoice_direction, supplier_tax_number, customer_tax_number, supplier_name, customer_name, invoice_delivery_date, invoice_net_amount, currency')
         .eq('company_id', selectedCompany.id)
         .gte('invoice_delivery_date', dateFrom)
         .lte('invoice_delivery_date', dateTo);
@@ -493,7 +493,6 @@ function VatReturnViewTab() {
 
         const partnerName = inv.invoice_direction === 'OUTBOUND' ? inv.customer_name : inv.supplier_name;
         const partnerTaxNum = inv.invoice_direction === 'OUTBOUND' ? inv.customer_tax_number : inv.supplier_tax_number;
-        const typeOverride = inv.termek_szolgaltatas_tipusa;
 
         return {
           id: inv.id,
@@ -504,7 +503,7 @@ function VatReturnViewTab() {
           invoice_delivery_date: inv.invoice_delivery_date,
           invoice_net_amount: inv.invoice_net_amount || 0,
           currency: inv.currency,
-          defaultIsService: typeOverride ? (typeOverride === 'service') : isService,
+          defaultIsService: isService,
         };
       });
     },
@@ -628,6 +627,26 @@ function VatReturnViewTab() {
     onError: (e: any) => toast({ title: 'Visszanyitás hiba', description: e.message, variant: 'destructive' }),
   });
 
+  const lineMap = useMemo(() => {
+    const m: Record<string, ReturnLine> = {};
+    for (const l of lines) m[l.row_number] = l;
+    return m;
+  }, [lines]);
+
+  const getVal = (row: string, col: 'base' | 'tax') => {
+    const line = lineMap[row];
+    if (!line) return 0;
+    const val = col === 'base' ? line.base_amount_rounded : line.tax_amount_rounded;
+    return val ?? 0;
+  };
+
+  const getPrevVal = (row: string, col: 'base' | 'tax') => {
+    const line = prevLineMap[row];
+    if (!line) return 0;
+    const val = col === 'base' ? line.base_amount_rounded : line.tax_amount_rounded;
+    return val ?? 0;
+  };
+
   // V3: Carryforward mutation (previously inline onBlur handler)
   const saveCarryforward = useMutation({
     mutationFn: async (newVal: number) => {
@@ -689,47 +708,12 @@ function VatReturnViewTab() {
     onError: (e: any) => toast({ title: 'Áthozat mentési hiba', description: e.message, variant: 'destructive' }),
   });
 
-  const updateInvoiceType = useMutation({
-    mutationFn: async ({ id, type }: { id: string; type: 'product' | 'service' }) => {
-      const { error } = await supabase
-        .from('nav_invoices')
-        .update({ termek_szolgaltatas_tipusa: type })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['vat_eu_invoices'] });
-      toast({ title: 'Tranzakció típus sikeresen frissítve a rendszerben.' });
-    },
-    onError: (e: any) => toast({ title: 'Hiba a tranzakció típus frissítésekor', description: e.message, variant: 'destructive' }),
-  });
-
   // V3: Controlled carryforward state
   const [carryforwardValue, setCarryforwardValue] = useState<string>('');
   React.useEffect(() => {
     const val = getVal('82', 'tax') || prevLineMap['86']?.tax_amount_rounded || 0;
     setCarryforwardValue(String(val || ''));
   }, [lines.length, prevLines.length]);
-
-  const lineMap = useMemo(() => {
-    const m: Record<string, ReturnLine> = {};
-    for (const l of lines) m[l.row_number] = l;
-    return m;
-  }, [lines]);
-
-  const getVal = (row: string, col: 'base' | 'tax') => {
-    const line = lineMap[row];
-    if (!line) return 0;
-    const val = col === 'base' ? line.base_amount_rounded : line.tax_amount_rounded;
-    return val ?? 0;
-  };
-
-  const getPrevVal = (row: string, col: 'base' | 'tax') => {
-    const line = prevLineMap[row];
-    if (!line) return 0;
-    const val = col === 'base' ? line.base_amount_rounded : line.tax_amount_rounded;
-    return val ?? 0;
-  };
 
   // Calculate A60 EU community totals and crosscheck validations
   const a60Calculations = useMemo(() => {
@@ -806,7 +790,7 @@ function VatReturnViewTab() {
       taxErrors,
       isValid: !goodsMismatch && !servicesMismatch && taxErrors.length === 0,
     };
-  }, [euInvoices, euTypeOverrides, lines, exchangeRates]);
+  }, [euInvoices, lines, exchangeRates]);
 
   const hasPrevData = prevLines.length > 0;
 
