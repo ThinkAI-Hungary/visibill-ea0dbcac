@@ -710,6 +710,8 @@ function VatReturnViewTab() {
 
   // V3: Controlled carryforward state
   const [carryforwardValue, setCarryforwardValue] = useState<string>('');
+  const [euTypeOverrides, setEuTypeOverrides] = useState<Record<string, 'product' | 'service'>>({});
+
   React.useEffect(() => {
     const val = getVal('82', 'tax') || prevLineMap['86']?.tax_amount_rounded || 0;
     setCarryforwardValue(String(val || ''));
@@ -737,7 +739,9 @@ function VatReturnViewTab() {
     };
 
     euInvoices.forEach(inv => {
-      const isService = inv.defaultIsService;
+      const isService = euTypeOverrides[inv.id] !== undefined
+        ? euTypeOverrides[inv.id] === 'service'
+        : inv.defaultIsService;
       const currency = inv.currency || 'HUF';
       const rate = getRate(currency);
       const netAmountHuf = (inv.invoice_net_amount || 0) * rate;
@@ -790,7 +794,7 @@ function VatReturnViewTab() {
       taxErrors,
       isValid: !goodsMismatch && !servicesMismatch && taxErrors.length === 0,
     };
-  }, [euInvoices, lines, exchangeRates]);
+  }, [euInvoices, euTypeOverrides, lines, exchangeRates]);
 
   const hasPrevData = prevLines.length > 0;
 
@@ -1291,9 +1295,11 @@ function VatReturnViewTab() {
                             <button
                               type="button"
                               onClick={() => {
-                                updateInvoiceType.mutate({ id: item.id, type: 'product' });
+                                setEuTypeOverrides(prev => ({
+                                  ...prev,
+                                  [item.id]: 'product'
+                                }));
                               }}
-                              disabled={updateInvoiceType.isPending}
                               className={cn(
                                 "px-2 py-1 text-[10px] font-bold rounded transition-all",
                                 !item.isService
@@ -1306,9 +1312,11 @@ function VatReturnViewTab() {
                             <button
                               type="button"
                               onClick={() => {
-                                updateInvoiceType.mutate({ id: item.id, type: 'service' });
+                                setEuTypeOverrides(prev => ({
+                                  ...prev,
+                                  [item.id]: 'service'
+                                }));
                               }}
-                              disabled={updateInvoiceType.isPending}
                               className={cn(
                                 "px-2 py-1 text-[10px] font-bold rounded transition-all",
                                 item.isService
