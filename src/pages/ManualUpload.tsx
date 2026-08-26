@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileText, X, Building2, CreditCard, Wallet, Info, Landmark, Package, FolderOpen, Coins } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -56,8 +57,12 @@ const ManualUpload = () => {
   // Duplicate re-upload confirmation state (DB-level: file already processed)
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [duplicateFileNames, setDuplicateFileNames] = useState<string[]>([]);
-  const [duplicateUploadType, setDuplicateUploadType] = useState<'invoice' | 'transaction'>('invoice');
-  const pendingUploadRef = useRef<(() => void) | null>(null);
+  const [selectedDuplicates, setSelectedDuplicates] = useState<Set<string>>(new Set());
+  const [duplicateUploadType, setDuplicateUploadType] = useState<'invoice' | 'transaction' | 'bank' | 'salary' | 'report'>('invoice');
+  // Callback receives the set of duplicate file names the user chose to re-upload
+  const pendingUploadRef = useRef<((reuploadNames: Set<string>) => void) | null>(null);
+  // Total number of non-duplicate files in the current batch (for disabled-state logic)
+  const nonDuplicateCountRef = useRef(0);
   const [filesModalOpen, setFilesModalOpen] = useState(false);
 
   // List-level duplicate dialog (file already in pending selection list)
@@ -387,7 +392,10 @@ const ManualUpload = () => {
     return urlData.publicUrl;
   };
 
-  const checkDuplicateFile = async (fileName: string, table: 'invoice_uploads' | 'transaction_uploads'): Promise<boolean> => {
+  const checkDuplicateFile = async (
+    fileName: string,
+    table: 'invoice_uploads' | 'transaction_uploads' | 'bank_statement_uploads' | 'report_uploads'
+  ): Promise<boolean> => {
     if (!selectedCompany?.id) return false;
 
     // Check ALL relevant statuses — not just 'processed'.
@@ -400,8 +408,7 @@ const ManualUpload = () => {
       .eq('file_name', fileName)
       .eq('upload_status', 'uploaded')
       .in('processing_status', [
-        'processed', 'pending', 'processing', 'ignored',
-        ...(table === 'transaction_uploads' ? ['completed'] : [])
+        'processed', 'pending', 'processing', 'ignored', 'completed', 'webhook_sent'
       ])
       .limit(1);
 
@@ -428,18 +435,31 @@ const ManualUpload = () => {
     }
 
     if (duplicates.length > 0) {
-      // Show confirmation dialog instead of blocking
+      // Show confirmation dialog with per-file checkboxes
       setDuplicateFileNames(duplicates);
+      setSelectedDuplicates(new Set(duplicates));
+      nonDuplicateCountRef.current = selectedInvoiceFiles.length - duplicates.length;
       setDuplicateUploadType('invoice');
-      pendingUploadRef.current = () => proceedWithInvoiceUpload(true);
+      pendingUploadRef.current = (reuploadNames) => proceedWithInvoiceUpload(reuploadNames, duplicates);
       setDuplicateDialogOpen(true);
       return;
     }
 
-    proceedWithInvoiceUpload(false);
+    proceedWithInvoiceUpload(null, []);
   };
 
-  const proceedWithInvoiceUpload = async (isConfirmedReupload = false) => {
+  const proceedWithInvoiceUpload = async (reuploadNames: Set<string> | null, allDuplicates: string[] = []) => {
+    // Filter: keep non-duplicates + user-selected duplicates (avoid stale closure by using allDuplicates)
+    const dupeSet = reuploadNames ? new Set(allDuplicates) : null;
+    const filesToUpload = dupeSet
+      ? selectedInvoiceFiles.filter(f => !dupeSet.has(f.name) || reuploadNames!.has(f.name))
+      : selectedInvoiceFiles;
+
+    if (filesToUpload.length === 0) {
+      toast({ title: "Nincs feltöltendő fájl", description: "Minden fájl ki lett hagyva." });
+      return;
+    }
+
     if (uploadMutexRef.current) return;
     uploadMutexRef.current = true;
     setUploading(true);
@@ -447,7 +467,7 @@ const ManualUpload = () => {
     try {
       // Phase 1: Upload all files to storage, collect URLs
       const storageResults: { file: File; fileUrl: string; storagePath: string }[] = [];
-      for (const file of selectedInvoiceFiles) {
+      for (const file of filesToUpload) {
         try {
           const fileUrl = await uploadFileToInvoiceStorage(file, user?.id!);
           const storagePath = extractStoragePath(fileUrl, 'invoice-uploads') || '';
@@ -475,7 +495,7 @@ const ManualUpload = () => {
         file_url: r.fileUrl,
         upload_status: 'uploaded' as const,
         processing_status: 'pending' as const,
-        ...(isConfirmedReupload ? { metadata: { source: 'manual_reupload' } } : {}),
+        ...(reuploadNames?.has(r.file.name) ? { metadata: { source: 'manual_reupload' } } : {}),
       }));
 
       const { data: uploadRecords, error: batchError } = await supabase
@@ -541,23 +561,35 @@ const ManualUpload = () => {
 
     if (duplicates.length > 0) {
       setDuplicateFileNames(duplicates);
+      setSelectedDuplicates(new Set(duplicates));
+      nonDuplicateCountRef.current = selectedVoucherFiles.length - duplicates.length;
       setDuplicateUploadType('invoice');
-      pendingUploadRef.current = () => proceedWithVoucherUpload(true);
+      pendingUploadRef.current = (reuploadNames) => proceedWithVoucherUpload(reuploadNames, duplicates);
       setDuplicateDialogOpen(true);
       return;
     }
 
-    proceedWithVoucherUpload(false);
+    proceedWithVoucherUpload(null, []);
   };
 
-  const proceedWithVoucherUpload = async (isConfirmedReupload = false) => {
+  const proceedWithVoucherUpload = async (reuploadNames: Set<string> | null, allDuplicates: string[] = []) => {
+    const dupeSet = reuploadNames ? new Set(allDuplicates) : null;
+    const filesToUpload = dupeSet
+      ? selectedVoucherFiles.filter(f => !dupeSet.has(f.name) || reuploadNames!.has(f.name))
+      : selectedVoucherFiles;
+
+    if (filesToUpload.length === 0) {
+      toast({ title: "Nincs feltöltendő fájl", description: "Minden fájl ki lett hagyva." });
+      return;
+    }
+
     if (uploadMutexRef.current) return;
     uploadMutexRef.current = true;
     setUploading(true);
 
     try {
       const storageResults: { file: File; fileUrl: string; storagePath: string }[] = [];
-      for (const file of selectedVoucherFiles) {
+      for (const file of filesToUpload) {
         try {
           const fileUrl = await uploadFileToInvoiceStorage(file, user?.id!);
           const storagePath = extractStoragePath(fileUrl, 'invoice-uploads') || '';
@@ -583,7 +615,7 @@ const ManualUpload = () => {
         processing_status: 'pending' as const,
         document_category: 'penztarbizonylat',
         metadata: {
-          source: isConfirmedReupload ? 'manual_reupload' : 'manual_upload',
+          source: reuploadNames?.has(r.file.name) ? 'manual_reupload' : 'manual_upload',
         },
       }));
 
@@ -644,6 +676,38 @@ const ManualUpload = () => {
       return;
     }
 
+    const duplicates: string[] = [];
+    for (const file of selectedBankFiles) {
+      const isDuplicate = await checkDuplicateFile(file.name, 'bank_statement_uploads');
+      if (isDuplicate) {
+        duplicates.push(file.name);
+      }
+    }
+
+    if (duplicates.length > 0) {
+      setDuplicateFileNames(duplicates);
+      setSelectedDuplicates(new Set(duplicates));
+      nonDuplicateCountRef.current = selectedBankFiles.length - duplicates.length;
+      setDuplicateUploadType('bank');
+      pendingUploadRef.current = (reuploadNames) => proceedWithBankStatementUpload(reuploadNames, duplicates);
+      setDuplicateDialogOpen(true);
+      return;
+    }
+
+    proceedWithBankStatementUpload(null, []);
+  };
+
+  const proceedWithBankStatementUpload = async (reuploadNames: Set<string> | null, allDuplicates: string[] = []) => {
+    const dupeSet = reuploadNames ? new Set(allDuplicates) : null;
+    const filesToUpload = dupeSet
+      ? selectedBankFiles.filter(f => !dupeSet.has(f.name) || reuploadNames!.has(f.name))
+      : selectedBankFiles;
+
+    if (filesToUpload.length === 0) {
+      toast({ title: "Nincs feltöltendő fájl", description: "Minden fájl ki lett hagyva." });
+      return;
+    }
+
     if (uploadMutexRef.current) return;
     uploadMutexRef.current = true;
     setUploading(true);
@@ -651,15 +715,15 @@ const ManualUpload = () => {
     try {
       // Phase 1: Upload all files to storage
       const storageResults: { file: File; fileUrl: string; storagePath: string }[] = [];
-      for (const file of selectedBankFiles) {
-        const uploadData = await uploadFileToStorage(file, 'bank-statements', user.id);
+      for (const file of filesToUpload) {
+        const uploadData = await uploadFileToStorage(file, 'bank-statements', user!.id);
         const { data: urlData } = supabase.storage.from('bank-statements').getPublicUrl(uploadData.path);
         storageResults.push({ file, fileUrl: urlData.publicUrl, storagePath: uploadData.path });
       }
 
       // Phase 2: Single batch DB insert
       const insertRows = storageResults.map(r => ({
-        user_id: user.id,
+        user_id: user!.id,
         company_id: selectedCompany?.id || null,
         file_name: r.file.name,
         file_url: r.fileUrl,
@@ -667,6 +731,7 @@ const ManualUpload = () => {
         file_type: r.file.type,
         upload_status: 'uploaded' as const,
         processing_status: 'pending' as const,
+        ...(reuploadNames?.has(r.file.name) ? { metadata: { source: 'manual_reupload' } } : {}),
       }));
 
       const { data: uploadRecords, error: batchError } = await supabase
@@ -681,11 +746,10 @@ const ManualUpload = () => {
         throw batchError;
       }
 
-
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
-          file_type: rec.file_type, file_url: rec.file_url, user_id: user.id,
+          file_type: rec.file_type, file_url: rec.file_url, user_id: user!.id,
           upload_status: 'uploaded', processing_status: 'pending',
           created_at: new Date().toISOString(), error_message: null,
         });
@@ -722,6 +786,38 @@ const ManualUpload = () => {
       return;
     }
 
+    const duplicates: string[] = [];
+    for (const file of selectedSalaryFiles) {
+      const isDuplicate = await checkDuplicateFile(file.name, 'invoice_uploads');
+      if (isDuplicate) {
+        duplicates.push(file.name);
+      }
+    }
+
+    if (duplicates.length > 0) {
+      setDuplicateFileNames(duplicates);
+      setSelectedDuplicates(new Set(duplicates));
+      nonDuplicateCountRef.current = selectedSalaryFiles.length - duplicates.length;
+      setDuplicateUploadType('salary');
+      pendingUploadRef.current = (reuploadNames) => proceedWithSalaryUpload(reuploadNames, duplicates);
+      setDuplicateDialogOpen(true);
+      return;
+    }
+
+    proceedWithSalaryUpload(null, []);
+  };
+
+  const proceedWithSalaryUpload = async (reuploadNames: Set<string> | null, allDuplicates: string[] = []) => {
+    const dupeSet = reuploadNames ? new Set(allDuplicates) : null;
+    const filesToUpload = dupeSet
+      ? selectedSalaryFiles.filter(f => !dupeSet.has(f.name) || reuploadNames!.has(f.name))
+      : selectedSalaryFiles;
+
+    if (filesToUpload.length === 0) {
+      toast({ title: "Nincs feltöltendő fájl", description: "Minden fájl ki lett hagyva." });
+      return;
+    }
+
     if (uploadMutexRef.current) return;
     uploadMutexRef.current = true;
     setUploading(true);
@@ -729,9 +825,9 @@ const ManualUpload = () => {
     try {
       // Phase 1: Upload all files to storage
       const storageResults: { file: File; fileUrl: string; storagePath: string }[] = [];
-      for (const file of selectedSalaryFiles) {
+      for (const file of filesToUpload) {
         try {
-          const fileUrl = await uploadFileToInvoiceStorage(file, user.id);
+          const fileUrl = await uploadFileToInvoiceStorage(file, user!.id);
           const storagePath = extractStoragePath(fileUrl, 'invoice-uploads') || '';
           storageResults.push({ file, fileUrl, storagePath });
         } catch (fileError) {
@@ -746,7 +842,7 @@ const ManualUpload = () => {
 
       // Phase 2: Single batch DB insert with document_category = 'payroll'
       const insertRows = storageResults.map(r => ({
-        user_id: user.id,
+        user_id: user!.id,
         company_id: selectedCompany?.id || null,
         file_name: r.file.name,
         file_size: r.file.size,
@@ -755,6 +851,7 @@ const ManualUpload = () => {
         upload_status: 'uploaded' as const,
         processing_status: 'pending' as const,
         document_category: 'payroll',
+        ...(reuploadNames?.has(r.file.name) ? { metadata: { source: 'manual_reupload' } } : {}),
       }));
 
       const { data: uploadRecords, error: batchError } = await supabase
@@ -770,15 +867,13 @@ const ManualUpload = () => {
         throw new Error(`Adatbázis hiba: ${batchError.message}`);
       }
 
-
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
-          file_type: rec.file_type, file_url: rec.file_url, user_id: user.id,
+          file_type: rec.file_type, file_url: rec.file_url, user_id: user!.id,
           upload_status: 'uploaded', processing_status: 'pending',
           created_at: new Date().toISOString(), error_message: null,
         });
-        // Register with session-scoped polling so toasts fire on any page
         registerPendingUpload(rec.id);
       }
 
@@ -832,18 +927,30 @@ const ManualUpload = () => {
     }
 
     if (duplicates.length > 0) {
-      // Show confirmation dialog instead of blocking
+      // Show confirmation dialog with per-file checkboxes
       setDuplicateFileNames(duplicates);
+      setSelectedDuplicates(new Set(duplicates));
+      nonDuplicateCountRef.current = selectedTransactionFiles.length - duplicates.length;
       setDuplicateUploadType('transaction');
-      pendingUploadRef.current = () => proceedWithTransactionUpload(true);
+      pendingUploadRef.current = (reuploadNames) => proceedWithTransactionUpload(reuploadNames, duplicates);
       setDuplicateDialogOpen(true);
       return;
     }
 
-    proceedWithTransactionUpload(false);
+    proceedWithTransactionUpload(null, []);
   };
 
-  const proceedWithTransactionUpload = async (isConfirmedReupload = false) => {
+  const proceedWithTransactionUpload = async (reuploadNames: Set<string> | null, allDuplicates: string[] = []) => {
+    const dupeSet = reuploadNames ? new Set(allDuplicates) : null;
+    const filesToUpload = dupeSet
+      ? selectedTransactionFiles.filter(f => !dupeSet.has(f.name) || reuploadNames!.has(f.name))
+      : selectedTransactionFiles;
+
+    if (filesToUpload.length === 0) {
+      toast({ title: "Nincs feltöltendő fájl", description: "Minden fájl ki lett hagyva." });
+      return;
+    }
+
     if (uploadMutexRef.current) return;
     uploadMutexRef.current = true;
     setUploading(true);
@@ -852,7 +959,7 @@ const ManualUpload = () => {
     try {
       // Phase 1: Upload all files to storage
       const storageResults: { file: File; fileUrl: string; storagePath: string }[] = [];
-      for (const file of selectedTransactionFiles) {
+      for (const file of filesToUpload) {
         const uploadData = await uploadFileToStorage(file, 'transactions', user.id);
         const { data: urlData } = supabase.storage.from('transactions').getPublicUrl(uploadData.path);
         storageResults.push({ file, fileUrl: urlData.publicUrl, storagePath: uploadData.path });
@@ -872,7 +979,7 @@ const ManualUpload = () => {
         upload_status: 'uploaded' as const,
         processing_status: 'pending' as const,
         ...(selectedBankHint !== 'auto' ? { bank_hint: selectedBankHint } : {}),
-        ...(isConfirmedReupload ? { metadata: { source: 'manual_reupload' } } : {}),
+        ...(reuploadNames?.has(r.file.name) ? { metadata: { source: 'manual_reupload' } } : {}),
       }));
 
       const { data: uploadRecords, error: batchError } = await supabase
@@ -917,55 +1024,68 @@ const ManualUpload = () => {
   // formatFileSize is now imported from @/lib/utils
 
   const handleReportUpload = async () => {
-    if (uploadMutexRef.current) return;
     if (selectedReportFiles.length === 0) {
-      toast({ variant: "destructive", title: "Nincs kiv\u00e1lasztott f\u00e1jl", description: "K\u00e9rlek v\u00e1lassz ki legal\u00e1bb egy riport f\u00e1jlt." });
+      toast({ variant: "destructive", title: "Nincs kiválasztott fájl", description: "Kérlek válassz ki legalább egy riport fájlt." });
       return;
     }
     if (!user) {
-      toast({ variant: "destructive", title: "Nem vagy bejelentkezve", description: "A felt\u00f6lt\u00e9shez be kell jelentkezned." });
+      toast({ variant: "destructive", title: "Nem vagy bejelentkezve", description: "A feltöltéshez be kell jelentkezned." });
       return;
     }
     if (!selectedCompany?.id) {
-      toast({ variant: "destructive", title: "Nincs kiv\u00e1lasztott c\u00e9g", description: "A felt\u00f6lt\u00e9shez v\u00e1lassz ki egy c\u00e9get." });
+      toast({ variant: "destructive", title: "Nincs kiválasztott cég", description: "A feltöltéshez válassz ki egy céget." });
       return;
     }
+
+    const duplicates: string[] = [];
+    for (const entry of selectedReportFiles) {
+      const isDuplicate = await checkDuplicateFile(entry.file.name, 'report_uploads');
+      if (isDuplicate) {
+        duplicates.push(entry.file.name);
+      }
+    }
+
+    if (duplicates.length > 0) {
+      setDuplicateFileNames(duplicates);
+      setSelectedDuplicates(new Set(duplicates));
+      nonDuplicateCountRef.current = selectedReportFiles.length - duplicates.length;
+      setDuplicateUploadType('report');
+      pendingUploadRef.current = (reuploadNames) => proceedWithReportUpload(reuploadNames, duplicates);
+      setDuplicateDialogOpen(true);
+      return;
+    }
+
+    proceedWithReportUpload(null, []);
+  };
+
+  const proceedWithReportUpload = async (reuploadNames: Set<string> | null, allDuplicates: string[] = []) => {
+    const dupeSet = reuploadNames ? new Set(allDuplicates) : null;
+    const filesToUpload = dupeSet
+      ? selectedReportFiles.filter(e => !dupeSet.has(e.file.name) || reuploadNames!.has(e.file.name))
+      : selectedReportFiles;
+
+    if (filesToUpload.length === 0) {
+      toast({ title: "Nincs feltöltendő fájl", description: "Minden fájl ki lett hagyva." });
+      return;
+    }
+
+    if (uploadMutexRef.current) return;
     uploadMutexRef.current = true;
     setUploading(true);
+
     try {
-      // Phase 0: Check for duplicate files already in the system
-      const fileNames = selectedReportFiles.map(e => e.file.name);
-      const { data: existingUploads } = await supabase
-        .from('report_uploads')
-        .select('id, file_name, report_type, processing_status')
-        .eq('company_id', selectedCompany.id)
-        .in('file_name', fileNames);
-
-      if (existingUploads && existingUploads.length > 0) {
-        const dupeNames = [...new Set(existingUploads.map(u => u.file_name))];
-        const confirmed = window.confirm(
-          `A következő fájl(ok) már korábban fel lettek töltve:\n\n` +
-          dupeNames.map(n => `  • ${n}`).join('\n') +
-          `\n\nÚjra feltöltés esetén a korábbi adatok felülíródnak.\nFolytatod?`
-        );
-        if (!confirmed) {
-          setUploading(false);
-          return;
-        }
-      }
-
       // Phase 1: Upload all files to storage
       const storageResults: { entry: typeof selectedReportFiles[0]; fileUrl: string; storagePath: string }[] = [];
-      for (const entry of selectedReportFiles) {
-        const uploadData = await uploadFileToStorage(entry.file, 'report-uploads', user.id);
+      for (const entry of filesToUpload) {
+        const uploadData = await uploadFileToStorage(entry.file, 'report-uploads', user!.id);
         const { data: urlData } = supabase.storage.from('report-uploads').getPublicUrl(uploadData.path);
         storageResults.push({ entry, fileUrl: urlData.publicUrl, storagePath: uploadData.path });
       }
 
       // Phase 2: Single batch DB insert
       const insertRows = storageResults.map(r => ({
-        user_id: user.id,
-        company_id: selectedCompany.id,
+        user_id: user!.id,
+        company_id: selectedCompany!.id,
         file_name: r.entry.file.name,
         file_url: r.fileUrl,
         file_size: r.entry.file.size,
@@ -973,6 +1093,7 @@ const ManualUpload = () => {
         report_type: r.entry.reportType,
         upload_status: 'uploaded' as const,
         processing_status: 'pending' as const,
+        ...(reuploadNames?.has(r.entry.file.name) ? { metadata: { source: 'manual_reupload' } } : {}),
       }));
 
       const { data: uploadRecords, error: batchError } = await supabase
@@ -990,7 +1111,7 @@ const ManualUpload = () => {
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
-          file_type: rec.file_type, file_url: rec.file_url, user_id: user.id,
+          file_type: rec.file_type, file_url: rec.file_url, user_id: user!.id,
           upload_status: 'uploaded', processing_status: 'pending',
           created_at: new Date().toISOString(), error_message: null,
         });
@@ -1905,39 +2026,70 @@ const ManualUpload = () => {
 
       <UploadHistory activeTab={activeTab} />
 
-      {/* Duplicate re-upload confirmation dialog */}
+      {/* Duplicate re-upload confirmation dialog with per-file checkboxes */}
       <AlertDialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Korábban már feltöltött fájl(ok)</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <p>
-                  A következő fájl(ok) már sikeresen fel lettek töltve és feldolgozva:
+                  A következő fájl(ok) már sikeresen fel lettek töltve és feldolgozva.
+                  Jelöld be, amelyeket újra szeretnéd feltölteni:
                 </p>
-                <ul className="list-disc pl-5 space-y-1">
-                  {duplicateFileNames.map((name, i) => (
-                    <li key={i} className="font-medium text-foreground">{name}</li>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {duplicateFileNames.map((name) => (
+                    <label
+                      key={name}
+                      className="flex items-start gap-3 py-1.5 px-2 rounded hover:bg-muted/50 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={selectedDuplicates.has(name)}
+                        onCheckedChange={(checked) => {
+                          setSelectedDuplicates(prev => {
+                            const next = new Set(prev);
+                            if (checked) next.add(name);
+                            else next.delete(name);
+                            return next;
+                          });
+                        }}
+                        className="mt-0.5"
+                      />
+                      <span className="text-sm font-medium text-foreground break-all">{name}</span>
+                    </label>
                   ))}
-                </ul>
-                <p>
-                  Szeretnéd újra feltölteni? A korábbi adatok frissülni fognak az új feldolgozás eredményével.
-                </p>
+                </div>
+                {selectedDuplicates.size < duplicateFileNames.length && selectedDuplicates.size > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {duplicateFileNames.length - selectedDuplicates.size} fájl kimarad a feltöltésből.
+                  </p>
+                )}
+                {selectedDuplicates.size === 0 && nonDuplicateCountRef.current > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    A duplikátok nélkül {nonDuplicateCountRef.current} fájl kerül feltöltésre.
+                  </p>
+                )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Mégsem</AlertDialogCancel>
             <AlertDialogAction
+              disabled={selectedDuplicates.size === 0 && nonDuplicateCountRef.current === 0}
               onClick={() => {
                 setDuplicateDialogOpen(false);
                 if (pendingUploadRef.current) {
-                  pendingUploadRef.current();
+                  pendingUploadRef.current(selectedDuplicates);
                   pendingUploadRef.current = null;
                 }
               }}
             >
-              Igen, újra feltöltöm
+              {selectedDuplicates.size === 0
+                ? 'Feltöltés duplikátok nélkül'
+                : selectedDuplicates.size === duplicateFileNames.length
+                  ? 'Igen, újra feltöltöm'
+                  : `Feltöltés (${selectedDuplicates.size} újra)`
+              }
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

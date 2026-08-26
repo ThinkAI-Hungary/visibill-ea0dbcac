@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet, Package, Ban, UploadCloud, Undo2, Lock, Users, Loader2, Plus, ClipboardCheck, Pencil } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
@@ -145,6 +144,8 @@ export const TransactionDetailsDialog = ({
   const [matchedSalary, setMatchedSalary] = useState<MatchedSalary | null>(null);
   const [matchedCourierReports, setMatchedCourierReports] = useState<MatchedCourierReport[]>([]);
   const [availableInvoices, setAvailableInvoices] = useState<AvailableInvoice[]>([]);
+  const [serverSearchResults, setServerSearchResults] = useState<AvailableInvoice[]>([]);
+  const [isSearchingServer, setIsSearchingServer] = useState(false);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [loadingAvailable, setLoadingAvailable] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -471,6 +472,111 @@ export const TransactionDetailsDialog = ({
     }
   };
 
+  // Helper to resolve payments and cross-references for any list of candidate invoices
+  const buildAvailableInvoicesList = async (invoices: any[], navInvoices: any[]): Promise<AvailableInvoice[]> => {
+    const allInvoiceIds = [
+      ...(invoices || []).map(i => i.id),
+      ...(navInvoices || []).map(n => n.id),
+    ];
+
+    const submittedByNumber = new Map<string, string[]>();
+    (invoices || []).forEach(inv => {
+      if (inv.bizonylatsorszam) {
+        const existing = submittedByNumber.get(inv.bizonylatsorszam) || [];
+        existing.push(inv.id);
+        submittedByNumber.set(inv.bizonylatsorszam, existing);
+      }
+    });
+    const navByNumber = new Map<string, string[]>();
+    (navInvoices || []).forEach(nav => {
+      if (nav.invoice_number) {
+        const existing = navByNumber.get(nav.invoice_number) || [];
+        existing.push(nav.id);
+        navByNumber.set(nav.invoice_number, existing);
+      }
+    });
+
+    (invoices || []).forEach(inv => {
+      if (inv.bizonylatsorszam) {
+        const navIds = navByNumber.get(inv.bizonylatsorszam);
+        if (navIds) allInvoiceIds.push(...navIds);
+      }
+    });
+    (navInvoices || []).forEach(nav => {
+      if (nav.invoice_number) {
+        const subIds = submittedByNumber.get(nav.invoice_number);
+        if (subIds) allInvoiceIds.push(...subIds);
+      }
+    });
+
+    const uniqueIds = [...new Set(allInvoiceIds)];
+    const paidByInvoiceId = new Map<string, number>();
+
+    if (uniqueIds.length > 0) {
+      const CHUNK = 500;
+      for (let i = 0; i < uniqueIds.length; i += CHUNK) {
+        const chunk = uniqueIds.slice(i, i + CHUNK);
+        const { data: matchedTxs } = await supabase
+          .from('transactions')
+          .select('matched_invoice_id, amount')
+          .eq('company_id', companyId)
+          .in('matched_invoice_id', chunk);
+
+        (matchedTxs || []).forEach(tx => {
+          if (tx.matched_invoice_id) {
+            const prev = paidByInvoiceId.get(tx.matched_invoice_id) || 0;
+            paidByInvoiceId.set(tx.matched_invoice_id, prev + Math.abs(tx.amount || 0));
+          }
+        });
+      }
+    }
+
+    const combined: AvailableInvoice[] = [];
+
+    for (const inv of (invoices || [])) {
+      let alreadyPaid = paidByInvoiceId.get(inv.id) || 0;
+      if (inv.bizonylatsorszam) {
+        const navIds = navByNumber.get(inv.bizonylatsorszam);
+        if (navIds) {
+          navIds.forEach(nid => { alreadyPaid += paidByInvoiceId.get(nid) || 0; });
+        }
+      }
+      combined.push({
+        id: inv.id,
+        bizonylatsorszam: inv.bizonylatsorszam,
+        brutto_vegosszeg: inv.brutto_vegosszeg,
+        elado_nev: inv.elado_nev,
+        penznem: inv.penznem,
+        kibocsatas_datuma: inv.kibocsatas_datuma,
+        already_paid: alreadyPaid,
+        remaining: Math.abs(inv.brutto_vegosszeg || 0) - alreadyPaid,
+      });
+    }
+
+    for (const nav of (navInvoices || [])) {
+      let navAlreadyPaid = paidByInvoiceId.get(nav.id) || 0;
+      if (nav.invoice_number) {
+        const subIds = submittedByNumber.get(nav.invoice_number);
+        if (subIds) {
+          subIds.forEach(sid => { navAlreadyPaid += paidByInvoiceId.get(sid) || 0; });
+        }
+      }
+      const navBrutto = Math.abs(nav.invoice_gross_amount || 0);
+      combined.push({
+        id: nav.id,
+        bizonylatsorszam: nav.invoice_number,
+        brutto_vegosszeg: nav.invoice_gross_amount || 0,
+        elado_nev: nav.supplier_name || nav.customer_name || '',
+        penznem: nav.currency,
+        kibocsatas_datuma: nav.invoice_issue_date || '',
+        already_paid: navAlreadyPaid,
+        remaining: navBrutto - navAlreadyPaid,
+      });
+    }
+
+    return combined;
+  };
+
   const fetchAvailableInvoices = async () => {
     if (!transaction || !companyId) return;
 
@@ -500,116 +606,7 @@ export const TransactionDetailsDialog = ({
           .limit(200),
       ]);
 
-      // 2. Collect ALL invoice IDs (submitted + NAV) to batch-fetch matched transactions
-      const allInvoiceIds = [
-        ...(invoices || []).map(i => i.id),
-        ...(navInvoices || []).map(n => n.id),
-      ];
-
-      // 3. Build cross-reference maps: submitted bizonylatsorszam ↔ NAV invoice_number
-      // So we can compute "already paid" via counterpart invoices too
-      const submittedByNumber = new Map<string, string[]>();
-      (invoices || []).forEach(inv => {
-        if (inv.bizonylatsorszam) {
-          const existing = submittedByNumber.get(inv.bizonylatsorszam) || [];
-          existing.push(inv.id);
-          submittedByNumber.set(inv.bizonylatsorszam, existing);
-        }
-      });
-      const navByNumber = new Map<string, string[]>();
-      (navInvoices || []).forEach(nav => {
-        if (nav.invoice_number) {
-          const existing = navByNumber.get(nav.invoice_number) || [];
-          existing.push(nav.id);
-          navByNumber.set(nav.invoice_number, existing);
-        }
-      });
-
-      // Add cross-referenced IDs to the batch
-      (invoices || []).forEach(inv => {
-        if (inv.bizonylatsorszam) {
-          const navIds = navByNumber.get(inv.bizonylatsorszam);
-          if (navIds) allInvoiceIds.push(...navIds);
-        }
-      });
-      (navInvoices || []).forEach(nav => {
-        if (nav.invoice_number) {
-          const subIds = submittedByNumber.get(nav.invoice_number);
-          if (subIds) allInvoiceIds.push(...subIds);
-        }
-      });
-
-      // 4. Single batch query: fetch ALL transactions matched to ANY of these invoice IDs
-      const uniqueIds = [...new Set(allInvoiceIds)];
-      const paidByInvoiceId = new Map<string, number>();
-
-      if (uniqueIds.length > 0) {
-        // Batch in chunks of 500 to avoid URL length limits
-        const CHUNK = 500;
-        for (let i = 0; i < uniqueIds.length; i += CHUNK) {
-          const chunk = uniqueIds.slice(i, i + CHUNK);
-          const { data: matchedTxs } = await supabase
-            .from('transactions')
-            .select('matched_invoice_id, amount')
-            .in('matched_invoice_id', chunk);
-
-          (matchedTxs || []).forEach(tx => {
-            if (tx.matched_invoice_id) {
-              const prev = paidByInvoiceId.get(tx.matched_invoice_id) || 0;
-              paidByInvoiceId.set(tx.matched_invoice_id, prev + Math.abs(tx.amount || 0));
-            }
-          });
-        }
-      }
-
-      // 5. Build combined list with already_paid computed via Map lookups (no extra queries)
-      const combined: AvailableInvoice[] = [];
-
-      for (const inv of (invoices || [])) {
-        let alreadyPaid = paidByInvoiceId.get(inv.id) || 0;
-        // Add payments via NAV counterpart
-        if (inv.bizonylatsorszam) {
-          const navIds = navByNumber.get(inv.bizonylatsorszam);
-          if (navIds) {
-            navIds.forEach(nid => { alreadyPaid += paidByInvoiceId.get(nid) || 0; });
-          }
-        }
-        combined.push({
-          id: inv.id,
-          bizonylatsorszam: inv.bizonylatsorszam,
-          brutto_vegosszeg: inv.brutto_vegosszeg,
-          elado_nev: inv.elado_nev,
-          penznem: inv.penznem,
-          kibocsatas_datuma: inv.kibocsatas_datuma,
-          already_paid: alreadyPaid,
-          remaining: Math.abs(inv.brutto_vegosszeg || 0) - alreadyPaid,
-        });
-      }
-
-      for (const nav of (navInvoices || [])) {
-        let navAlreadyPaid = paidByInvoiceId.get(nav.id) || 0;
-        // Add payments via submitted counterpart
-        if (nav.invoice_number) {
-          const subIds = submittedByNumber.get(nav.invoice_number);
-          if (subIds) {
-            subIds.forEach(sid => { navAlreadyPaid += paidByInvoiceId.get(sid) || 0; });
-          }
-        }
-        const navBrutto = Math.abs(nav.invoice_gross_amount || 0);
-        combined.push({
-          id: nav.id,
-          bizonylatsorszam: nav.invoice_number,
-          brutto_vegosszeg: nav.invoice_gross_amount || 0,
-          elado_nev: nav.supplier_name || nav.customer_name || '',
-          penznem: nav.currency,
-          kibocsatas_datuma: nav.invoice_issue_date || '',
-          already_paid: navAlreadyPaid,
-          remaining: navBrutto - navAlreadyPaid,
-        });
-      }
-
-      // (sorting is handled in filteredInvoices useMemo)
-
+      const combined = await buildAvailableInvoicesList(invoices || [], navInvoices || []);
       setAvailableInvoices(combined);
     } catch (error) {
       reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error fetching invoices:', error: error });
@@ -618,6 +615,52 @@ export const TransactionDetailsDialog = ({
       setLoadingAvailable(false);
     }
   };
+
+  // Debounced full-database search for invoices across both invoices and nav_invoices
+  useEffect(() => {
+    if (!companyId) return;
+    const query = search.trim();
+    if (query.length < 2) {
+      setServerSearchResults([]);
+      setIsSearchingServer(false);
+      return;
+    }
+
+    // Immediately set searching state so "Nincs találat" never flashes during debounce
+    setIsSearchingServer(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const cleanTerm = query.replace(/[%_]/g, '\\$&');
+
+        const [{ data: invoices }, { data: navInvoices }] = await Promise.all([
+          supabase
+            .from('invoices')
+            .select('id, bizonylatsorszam, brutto_vegosszeg, elado_nev, vevo_nev, penznem, kibocsatas_datuma')
+            .eq('company_id', companyId)
+            .or(`bizonylatsorszam.ilike.%${cleanTerm}%,elado_nev.ilike.%${cleanTerm}%,vevo_nev.ilike.%${cleanTerm}%`)
+            .order('kibocsatas_datuma', { ascending: false })
+            .limit(50),
+          supabase
+            .from('nav_invoices')
+            .select('id, invoice_number, invoice_gross_amount, supplier_name, customer_name, currency, invoice_issue_date, invoice_direction')
+            .eq('company_id', companyId)
+            .or(`invoice_number.ilike.%${cleanTerm}%,supplier_name.ilike.%${cleanTerm}%,customer_name.ilike.%${cleanTerm}%`)
+            .order('invoice_issue_date', { ascending: false })
+            .limit(50),
+        ]);
+
+        const resolved = await buildAvailableInvoicesList(invoices || [], navInvoices || []);
+        setServerSearchResults(resolved);
+      } catch (err) {
+        console.error('Server invoice search error:', err);
+      } finally {
+        setIsSearchingServer(false);
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [search, companyId]);
 
   const handleShowManualMatch = () => {
     setShowManualMatch(true);
@@ -967,10 +1010,11 @@ export const TransactionDetailsDialog = ({
 
   const filteredInvoices = useMemo(() => {
     const txAmt = Math.abs(transaction?.amount || 0);
-    let list = [...availableInvoices];
+    const query = search.trim();
 
-    // When no search: only show invoices within tolerance of transaction amount
-    if (!search) {
+    // When no search: only show candidate invoices within tolerance of transaction amount
+    if (!query) {
+      let list = [...availableInvoices];
       if (txAmt > 0) {
         const txCcy = (transaction?.currency || 'HUF').toUpperCase();
 
@@ -1003,7 +1047,6 @@ export const TransactionDetailsDialog = ({
           const sorted = [...list].sort((a, b) => {
             const aSame = (a.penznem || 'HUF').toUpperCase() === txCcy;
             const bSame = (b.penznem || 'HUF').toUpperCase() === txCcy;
-            // Same-currency invoices come first
             if (aSame !== bSame) return aSame ? -1 : 1;
 
             const aAmt = aSame ? Math.abs(a.brutto_vegosszeg || 0) : toHuf(Math.abs(a.brutto_vegosszeg || 0), a.penznem);
@@ -1014,33 +1057,43 @@ export const TransactionDetailsDialog = ({
           list = sorted.slice(0, Math.max(MIN_SHOW, filtered.length));
         }
       }
-    } else {
-      // When searching: match text, no amount filter
-      const searchLower = search.toLowerCase();
-      // Normalize search input: accept both '.' and ',' as decimal separator
-      const searchNormalized = search.replace(',', '.');
-
-      list = availableInvoices.filter(inv => {
-        // Text match on invoice number or vendor name
-        if (inv.bizonylatsorszam.toLowerCase().includes(searchLower)) return true;
-        if (inv.elado_nev?.toLowerCase().includes(searchLower)) return true;
-
-        // Amount match: compare as formatted string and as number
-        if (inv.brutto_vegosszeg != null) {
-          const amt = inv.brutto_vegosszeg;
-          const amtStr = amt.toString();
-          const amtFixed2 = amt.toFixed(2);
-          const amtInt = Math.round(amt).toString();
-          if (amtStr.includes(searchNormalized) || amtFixed2.includes(searchNormalized) || amtInt.includes(searchNormalized)) return true;
-          if (amtStr.includes(search) || amtFixed2.includes(search)) return true;
-        }
-        return false;
-      });
+      return list;
     }
+
+    // When searching: merge serverSearchResults and local filtered availableInvoices
+    const searchLower = query.toLowerCase();
+    const searchNormalized = query.replace(',', '.');
+
+    const localMatches = availableInvoices.filter(inv => {
+      // Text match on invoice number or vendor name
+      if (inv.bizonylatsorszam?.toLowerCase().includes(searchLower)) return true;
+      if (inv.elado_nev?.toLowerCase().includes(searchLower)) return true;
+
+      // Amount match: compare as formatted string and as number
+      if (inv.brutto_vegosszeg != null) {
+        const amt = inv.brutto_vegosszeg;
+        const amtStr = amt.toString();
+        const amtFixed2 = amt.toFixed(2);
+        const amtInt = Math.round(amt).toString();
+        if (amtStr.includes(searchNormalized) || amtFixed2.includes(searchNormalized) || amtInt.includes(searchNormalized)) return true;
+        if (amtStr.includes(query) || amtFixed2.includes(query)) return true;
+      }
+      return false;
+    });
+
+    // Combine server and local matches, deduplicated by ID
+    const seenIds = new Set<string>();
+    const merged: AvailableInvoice[] = [];
+    [...serverSearchResults, ...localMatches].forEach(item => {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        merged.push(item);
+      }
+    });
 
     // Always sort by proximity to transaction amount (currency-aware)
     const txCcyFinal = (transaction?.currency || 'HUF').toUpperCase();
-    list.sort((a, b) => {
+    merged.sort((a, b) => {
       const aCcy = (a.penznem || 'HUF').toUpperCase();
       const bCcy = (b.penznem || 'HUF').toUpperCase();
       // Same-currency invoices get priority
@@ -1056,8 +1109,8 @@ export const TransactionDetailsDialog = ({
       return diffA - diffB;
     });
 
-    return list;
-  }, [availableInvoices, search, transaction?.amount, transaction?.currency]);
+    return merged;
+  }, [availableInvoices, serverSearchResults, search, transaction?.amount, transaction?.currency]);
 
   const transactionAmount = transaction?.amount || 0;
   const matchStatus = transaction ? computeMatchStatus(transaction) : 'unmatched';
@@ -1284,7 +1337,7 @@ export const TransactionDetailsDialog = ({
               <CardContent className="p-3 pt-0">
                 {loadingInvoice ? (
                   <div className="flex items-center justify-center py-2">
-                    <LoadingSpinner />
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>
                 ) : matchedInvoice ? (
                   <div className="grid grid-cols-2 gap-2 text-xs">
@@ -1661,32 +1714,46 @@ export const TransactionDetailsDialog = ({
               </div>
 
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder={`Keresés számlaszám, partner vagy összeg alapján...`}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8 h-8 text-xs"
+                  className="pl-8 pr-8 h-8 text-xs"
                   autoFocus
                 />
+                {isSearchingServer && (
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  </div>
+                )}
               </div>
 
               {/* Results count */}
-              {!loadingAvailable && filteredInvoices.length > 0 && (
+              {!loadingAvailable && (
                 <div className="flex items-center justify-between text-[10px] text-muted-foreground px-0.5">
-                  <span>{filteredInvoices.length} számla az időszakban (±180 nap)</span>
+                  <span>{search ? `${filteredInvoices.length} találat` : `${filteredInvoices.length} számla az időszakban (±180 nap)`}</span>
                 </div>
               )}
 
               <div className="min-h-[240px] max-h-[240px] overflow-y-auto border rounded-md">
                 {loadingAvailable ? (
                   <div className="flex items-center justify-center h-20">
-                    <LoadingSpinner />
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>
                 ) : filteredInvoices.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-20 text-muted-foreground">
-                    <FileText className="h-5 w-5 mb-1" />
-                    <p className="text-xs">{search ? 'Nincs találat a keresésre' : 'Nincs elérhető számla az időszakban'}</p>
+                    {isSearchingServer ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <p className="text-xs mt-2">Keresés a számlák között...</p>
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="h-5 w-5 mb-1" />
+                        <p className="text-xs">{search ? 'Nincs találat a keresésre' : 'Nincs elérhető számla az időszakban'}</p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="p-1.5 space-y-1">
@@ -1871,25 +1938,39 @@ export const TransactionDetailsDialog = ({
               </div>
 
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder="Keresés számlaszám, partner vagy összeg alapján..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8 h-8 text-xs"
+                  className="pl-8 pr-8 h-8 text-xs"
                   autoFocus
                 />
+                {isSearchingServer && (
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  </div>
+                )}
               </div>
 
               <div className="min-h-[200px] max-h-[200px] overflow-y-auto border rounded-md">
                 {loadingAvailable ? (
                   <div className="flex items-center justify-center h-20">
-                    <LoadingSpinner />
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>
                 ) : filteredInvoices.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-20 text-muted-foreground">
-                    <FileText className="h-5 w-5 mb-1" />
-                    <p className="text-xs">{search ? 'Nincs találat' : 'Nincs elérhető számla'}</p>
+                    {isSearchingServer ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <p className="text-xs mt-2">Keresés a számlák között...</p>
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="h-5 w-5 mb-1" />
+                        <p className="text-xs">{search ? 'Nincs találat' : 'Nincs elérhető számla'}</p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="p-1.5 space-y-1">
@@ -1953,7 +2034,7 @@ export const TransactionDetailsDialog = ({
 
               {loadingNotes ? (
                 <div className="flex items-center justify-center py-2">
-                  <LoadingSpinner />
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 </div>
               ) : notes.length > 0 ? (
                 <div className="space-y-2">
