@@ -93,6 +93,7 @@ export interface PayrollEmployment {
   insurance_relationship_code: string | null;
   job_valid_from: string | null;
   feor_description: string | null;
+  project_id?: string | null;
 }
 
 export interface PayrollCycle {

@@ -320,6 +320,7 @@ export default function WorkingTimePage() {
     email: string | null;
     phone: string | null;
     hourly_rate: number | null;
+    project_id?: string | null;
     user_id?: string | null;
   }) => {
     upsertMutation.mutate(data, {

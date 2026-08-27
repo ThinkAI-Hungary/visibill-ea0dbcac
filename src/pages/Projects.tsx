@@ -169,6 +169,18 @@ const Projects = () => {
   // Track search text for filtering existing assigned invoices
   const [assignedInvoicesSearch, setAssignedInvoicesSearch] = useState<Record<string, string>>({});
 
+  // Track expanded invoice IDs for showing sub-items breakdown
+  const [expandedInvoiceIds, setExpandedInvoiceIds] = useState<Set<string>>(new Set());
+
+  const toggleInvoiceExpand = (invoiceId: string) => {
+    setExpandedInvoiceIds(prev => {
+      const next = new Set(prev);
+      if (next.has(invoiceId)) next.delete(invoiceId);
+      else next.add(invoiceId);
+      return next;
+    });
+  };
+
   // Track search text for filtering existing assigned assets
   const [assignedAssetsSearch, setAssignedAssetsSearch] = useState<Record<string, string>>({});
 
@@ -208,9 +220,9 @@ const Projects = () => {
         project_type: p.project_type || 'one_time'
       })) as Project[];
 
-      // Fetch detailed assigned invoices (bypasses 1000-row limit)
+      // 1. Fetch detailed directly assigned invoices (bypasses 1000-row limit)
       const PAGE_SIZE = 1000;
-      let allInvoices: any[] = [];
+      let directlyLinkedInvoices: any[] = [];
       let invFrom = 0;
       while (true) {
         const { data: batch, error: invoiceError } = await supabase
@@ -221,25 +233,158 @@ const Projects = () => {
           .range(invFrom, invFrom + PAGE_SIZE - 1);
 
         if (invoiceError) throw invoiceError;
-        allInvoices = allInvoices.concat(batch || []);
+        directlyLinkedInvoices = directlyLinkedInvoices.concat(batch || []);
         if (!batch || batch.length < PAGE_SIZE) break;
         invFrom += PAGE_SIZE;
       }
 
-      // Group financials
+      // 2. Fetch all line items with explicit project_id, along with their parent invoices
+      let lineItemAssignments: any[] = [];
+      let itemFrom = 0;
+      while (true) {
+        const { data: batch, error: itemsError } = await supabase
+          .from('nav_invoice_items')
+          .select(`
+            id,
+            project_id,
+            net_amount,
+            vat_amount,
+            gross_amount,
+            line_number,
+            line_description,
+            nav_invoices!inner(
+              id,
+              invoice_number,
+              supplier_name,
+              customer_name,
+              invoice_gross_amount,
+              invoice_direction,
+              currency,
+              invoice_issue_date,
+              company_id
+            )
+          `)
+          .eq('nav_invoices.company_id', selectedCompany!.id)
+          .not('project_id', 'is', null)
+          .range(itemFrom, itemFrom + PAGE_SIZE - 1);
+
+        if (itemsError) throw itemsError;
+        lineItemAssignments = lineItemAssignments.concat(batch || []);
+        if (!batch || batch.length < PAGE_SIZE) break;
+        itemFrom += PAGE_SIZE;
+      }
+
+      // We will build a mapping of: projectId -> Map of invoiceId -> invoice details + portion amount
+      const projectInvoicePortions = new Map<string, Map<string, {
+        invoice: any;
+        portionGross: number;
+        isPartial: boolean;
+        assignedItems: Array<{
+          line_number: number;
+          line_description: string | null;
+          gross_amount: number;
+        }>;
+      }>>();
+
+      // A. Process directly linked invoices (initialize them with their full gross amount)
+      directlyLinkedInvoices.forEach((inv: any) => {
+        const projectId = inv.project_id;
+        if (!projectId) return;
+
+        if (!projectInvoicePortions.has(projectId)) {
+          projectInvoicePortions.set(projectId, new Map());
+        }
+
+        const gross = parseFloat(inv.invoice_gross_amount) || 0;
+        projectInvoicePortions.get(projectId)!.set(inv.id, {
+          invoice: inv,
+          portionGross: gross,
+          isPartial: false,
+          assignedItems: []
+        });
+      });
+
+      // B. Process explicit line item assignments
+      lineItemAssignments.forEach((assignment: any) => {
+        const itemProjectId = assignment.project_id;
+        const parentInv = assignment.nav_invoices;
+        if (!parentInv) return;
+
+        const parentProjectId = parentInv.project_id;
+        const itemGross = parseFloat(assignment.gross_amount) || 
+                          (parseFloat(assignment.net_amount) || 0) + (parseFloat(assignment.vat_amount) || 0);
+
+        // Case: The item's project is different from the parent's project (override)
+        if (itemProjectId !== parentProjectId) {
+          // If parent had a project, subtract the overridden item's amount from parent's project portion
+          if (parentProjectId) {
+            const parentProjMap = projectInvoicePortions.get(parentProjectId);
+            if (parentProjMap && parentProjMap.has(parentInv.id)) {
+              const current = parentProjMap.get(parentInv.id)!;
+              current.portionGross = Math.max(0, current.portionGross - itemGross);
+              current.isPartial = true;
+            }
+          }
+
+          // Add the item's amount to the item's project
+          if (!projectInvoicePortions.has(itemProjectId)) {
+            projectInvoicePortions.set(itemProjectId, new Map());
+          }
+          const itemProjMap = projectInvoicePortions.get(itemProjectId)!;
+          if (itemProjMap.has(parentInv.id)) {
+            const current = itemProjMap.get(parentInv.id)!;
+            current.portionGross += itemGross;
+            current.isPartial = true;
+            current.assignedItems.push({
+              line_number: assignment.line_number,
+              line_description: assignment.line_description,
+              gross_amount: itemGross
+            });
+          } else {
+            // Map parentInv to have project_id = itemProjectId for matching
+            const mappedInv = { ...parentInv, project_id: itemProjectId };
+            itemProjMap.set(parentInv.id, {
+              invoice: mappedInv,
+              portionGross: itemGross,
+              isPartial: true,
+              assignedItems: [{
+                line_number: assignment.line_number,
+                line_description: assignment.line_description,
+                gross_amount: itemGross
+              }]
+            });
+          }
+        }
+      });
+
+      // Flatten map to get assignedInvoices list and financials
+      const allAssignedInvoices: any[] = [];
       const financialsMap = new Map<string, { outbound: number; inbound: number }>();
-      allInvoices.forEach((inv: any) => {
-        if (!inv.project_id) return;
-        if (!financialsMap.has(inv.project_id)) {
-          financialsMap.set(inv.project_id, { outbound: 0, inbound: 0 });
+
+      projectInvoicePortions.forEach((invoiceMap, projectId) => {
+        if (!financialsMap.has(projectId)) {
+          financialsMap.set(projectId, { outbound: 0, inbound: 0 });
         }
-        const current = financialsMap.get(inv.project_id)!;
-        const amount = parseFloat(inv.invoice_gross_amount) || 0;
-        if (inv.invoice_direction === 'OUTBOUND') {
-          current.outbound += amount;
-        } else if (inv.invoice_direction === 'INBOUND') {
-          current.inbound += amount;
-        }
+        const fin = financialsMap.get(projectId)!;
+
+        invoiceMap.forEach((portion) => {
+          const uiInvoice = {
+            ...portion.invoice,
+            invoice_gross_amount: portion.portionGross, // display the project portion's amount
+            original_gross_amount: portion.invoice.invoice_gross_amount,
+            is_partial: portion.isPartial,
+            assigned_items: portion.assignedItems, // pass the list of items
+            project_id: projectId // override project_id for filtering
+          };
+          allAssignedInvoices.push(uiInvoice);
+
+          const amount = portion.portionGross;
+          if (portion.invoice.invoice_direction === 'OUTBOUND') {
+            fin.outbound += amount;
+          } else if (portion.invoice.invoice_direction === 'INBOUND') {
+            fin.inbound += amount;
+          }
+        });
       });
 
       const financials: ProjectFinancials[] = Array.from(financialsMap.entries()).map(([projectId, d]) => ({
@@ -249,7 +394,7 @@ const Projects = () => {
         profit: d.outbound - d.inbound
       }));
 
-      return { projects: projectsList, financials, invoices: allInvoices };
+      return { projects: projectsList, financials, invoices: allAssignedInvoices };
     },
     enabled: !!user && !!selectedCompany?.id,
     placeholderData: keepPreviousData,
@@ -523,16 +668,23 @@ const Projects = () => {
 
   const handleUnassignInvoice = async (invoiceId: string) => {
     try {
-      const { error } = await supabase
+      const { error: parentError } = await supabase
         .from('nav_invoices')
         .update({ project_id: null })
         .eq('id', invoiceId);
 
-      if (error) throw error;
+      if (parentError) throw parentError;
+
+      const { error: itemsError } = await supabase
+        .from('nav_invoice_items')
+        .update({ project_id: null })
+        .eq('nav_invoice_id', invoiceId);
+
+      if (itemsError) throw itemsError;
 
       toast({
         title: 'Hozzárendelés törölve',
-        description: 'A számla eltávolítva a projektből.',
+        description: 'A számla és tételei eltávolítva a projektből.',
       });
 
       queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') });
@@ -801,7 +953,7 @@ const Projects = () => {
                       </div>
 
                       {/* Active Tab Contents */}
-                      <div className="flex-1 flex flex-col p-4 min-h-[260px] justify-between">
+                      <div className="flex-1 flex flex-col p-4 min-h-[320px] justify-between">
                         {currentTab === 'overview' && (
                           <div className="space-y-4 flex-1 flex flex-col justify-between">
                             <div className="grid grid-cols-2 gap-3 text-left">
@@ -938,7 +1090,7 @@ const Projects = () => {
                             </div>
 
                             {/* Scrollable list of assigned invoices */}
-                            <div className="overflow-y-auto max-h-[145px] space-y-1.5 pr-1 flex-1">
+                            <div className="overflow-y-auto max-h-[210px] space-y-1.5 pr-1 flex-1">
                               {(() => {
                                 const searchVal = assignedInvoicesSearch[project.id!] || '';
                                 const filteredProjectInvoices = projectInvoices.filter(inv =>
@@ -957,52 +1109,89 @@ const Projects = () => {
                                   );
                                 }
 
-                                return filteredProjectInvoices.map((invoice) => (
-                                  <div
-                                    key={invoice.id}
-                                    className="group flex items-center justify-between p-2 rounded-lg bg-muted/30 border text-xs transition-colors hover:bg-muted/60"
-                                  >
-                                    <div className="flex items-center gap-2 min-w-0 mr-1.5">
+                                return filteredProjectInvoices.map((invoice) => {
+                                  const isExpanded = expandedInvoiceIds.has(invoice.id);
+                                  return (
+                                    <div key={invoice.id} className="space-y-1.5 w-full">
                                       <div
-                                        className={`w-2 h-2 rounded-full shrink-0 ${
-                                          invoice.invoice_direction === 'INBOUND' ? 'bg-blue-500' : 'bg-green-500'
-                                        }`}
-                                      />
-                                      <div className="min-w-0">
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="font-mono font-bold truncate">
-                                            {invoice.invoice_number}
-                                          </span>
-                                          <span className={`text-[9px] py-0 px-1 rounded font-semibold ${
-                                            invoice.invoice_direction === 'INBOUND'
-                                              ? 'bg-blue-100 text-blue-700'
-                                              : 'bg-green-100 text-green-700'
-                                          }`}>
-                                            {invoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
-                                          </span>
+                                        className="group flex items-center justify-between p-2 rounded-lg bg-muted/30 border text-xs transition-colors hover:bg-muted/60"
+                                      >
+                                        <div className="flex items-center gap-2 min-w-0 mr-1.5">
+                                          {invoice.is_partial && (
+                                            <button
+                                              onClick={() => toggleInvoiceExpand(invoice.id)}
+                                              className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-muted transition-all shrink-0"
+                                              title="Tételek részletezése"
+                                            >
+                                              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", isExpanded && "rotate-180")} />
+                                            </button>
+                                          )}
+                                          <div
+                                            className={`w-2 h-2 rounded-full shrink-0 ${
+                                              invoice.invoice_direction === 'INBOUND' ? 'bg-blue-500' : 'bg-green-500'
+                                            }`}
+                                          />
+                                          <div className="min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="font-mono font-bold truncate">
+                                                {invoice.invoice_number}
+                                              </span>
+                                              <span className={`text-[9px] py-0 px-1 rounded font-semibold ${
+                                                invoice.invoice_direction === 'INBOUND'
+                                                  ? 'bg-blue-100 text-blue-700'
+                                                  : 'bg-green-100 text-green-700'
+                                              }`}>
+                                                {invoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
+                                              </span>
+                                            </div>
+                                            <div className="text-[10px] text-muted-foreground truncate">
+                                              {invoice.invoice_direction === 'INBOUND'
+                                                ? (invoice.supplier_name || 'Szállító')
+                                                : (invoice.customer_name || 'Ügyfél')}
+                                            </div>
+                                          </div>
                                         </div>
-                                        <div className="text-[10px] text-muted-foreground truncate">
-                                          {invoice.invoice_direction === 'INBOUND'
-                                            ? (invoice.supplier_name || 'Szállító')
-                                            : (invoice.customer_name || 'Ügyfél')}
+
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          <span className="font-semibold text-foreground flex items-center gap-1">
+                                            {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                                            {invoice.is_partial && (
+                                              <span className="text-[10px] font-normal text-muted-foreground animate-pulse" title="Ez a számla csak részben tartozik ehhez a projekthez.">
+                                                (részösszeg)
+                                              </span>
+                                            )}
+                                          </span>
+                                          <button
+                                            onClick={() => handleUnassignInvoice(invoice.id)}
+                                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-1 rounded transition-all md:opacity-0 md:group-hover:opacity-100"
+                                            title="Hozzárendelés törlése"
+                                          >
+                                            <X className="h-3.5 w-3.5" />
+                                          </button>
                                         </div>
                                       </div>
-                                    </div>
 
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                      <span className="font-semibold text-foreground">
-                                        {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
-                                      </span>
-                                      <button
-                                        onClick={() => handleUnassignInvoice(invoice.id)}
-                                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-1 rounded transition-all md:opacity-0 md:group-hover:opacity-100"
-                                        title="Hozzárendelés törlése"
-                                      >
-                                        <X className="h-3.5 w-3.5" />
-                                      </button>
+                                      {isExpanded && invoice.assigned_items && invoice.assigned_items.length > 0 && (
+                                        <div className="ml-4 pl-3 pr-1 py-1.5 border-l-2 border-primary/30 space-y-1 bg-muted/10 rounded-r-md animate-in slide-in-from-top-1 duration-150">
+                                          <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                                            Hozzárendelt számlatételek:
+                                          </div>
+                                          {invoice.assigned_items.map((item: any, idx: number) => (
+                                            <div key={idx} className="flex justify-between items-center text-[10px] text-muted-foreground bg-background/40 border border-border/40 p-1.5 rounded">
+                                              <span className="truncate pr-2">
+                                                <span className="font-mono font-bold text-foreground mr-1">#{item.line_number}</span>
+                                                {item.line_description || 'Névtelen tétel'}
+                                              </span>
+                                              <span className="font-semibold text-foreground shrink-0">
+                                                {formatCurrency(item.gross_amount || 0, invoice.currency || 'HUF')}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
-                                ));
+                                  );
+                                });
                               })()}
                             </div>
 

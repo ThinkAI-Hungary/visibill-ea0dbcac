@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useProjectList } from '@/hooks/useProjectList';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -54,6 +55,7 @@ interface EmployeeListPanelProps {
     employee_type?: 'employee' | 'contractor';
     email?: string | null;
     phone?: string | null;
+    project_id?: string | null;
   }) => void;
   isEditing?: boolean;
   autoEditEmployeeId?: string | null;
@@ -80,6 +82,7 @@ function EmployeeCard({
     employee_type?: 'employee' | 'contractor';
     email?: string | null;
     phone?: string | null;
+    project_id?: string | null;
   }) => void;
   isEditing?: boolean;
   autoEditId?: string | null;
@@ -88,12 +91,14 @@ function EmployeeCard({
   const { copy } = useCopyToClipboard();
   const [expanded, setExpanded] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const { projects = [] } = useProjectList();
 
   // Edit form state
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editType, setEditType] = useState<'employee' | 'contractor'>('employee');
+  const [editProjectId, setEditProjectId] = useState('');
 
   const isLinked = !!employee.user_id;
 
@@ -123,6 +128,7 @@ function EmployeeCard({
     setEditEmail(employee.email || '');
     setEditPhone(employee.phone || '');
     setEditType(employee.employee_type);
+    setEditProjectId(employee.project_id || '');
     setEditOpen(true);
     onEditOpenChange?.(employee.id);
   };
@@ -141,6 +147,7 @@ function EmployeeCard({
       employee_type: editType,
       email: editEmail.trim() || null,
       phone: editPhone.trim() || null,
+      project_id: editProjectId || null,
     });
     setEditOpen(false);
     onEditOpenChange?.(null);
@@ -335,6 +342,24 @@ function EmployeeCard({
                 <SelectContent>
                   <SelectItem value="employee">Bejelentett dolgozó</SelectItem>
                   <SelectItem value="contractor">Alvállalkozó</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Projekt (opcionális)</Label>
+              <Select value={editProjectId} onValueChange={(v) => setEditProjectId(v === '__none__' ? '' : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Válassz projektet..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">
+                    <span className="text-muted-foreground">Nincs projekthez rendelve</span>
+                  </SelectItem>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

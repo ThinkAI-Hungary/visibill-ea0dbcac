@@ -1,0 +1,734 @@
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import {
+  BookOpen,
+  Plus,
+  Loader2,
+  Lock,
+  Search,
+  Eye,
+  History,
+  FileSpreadsheet,
+  AlertCircle,
+  FileText,
+  Trash2,
+  CornerDownRight,
+  ShieldCheck,
+  Calendar,
+  Bot
+} from 'lucide-react';
+import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
+import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
+import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
+import { useActivePreset } from '@/hooks/useActivePreset';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  GEPI_JAVASLAT: { label: 'Rendszer javaslat', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' },
+  KEZI_PISZKOZAT: { label: 'Piszkozat', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
+  JOVAHAGYASRA_VAR: { label: 'Jóváhagyásra vár', color: 'bg-sky-500/10 text-sky-500 border-sky-500/20' },
+  KONYVELT: { label: 'Könyvelt', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
+  SZTORNOZOTT: { label: 'Sztornózott', color: 'bg-rose-500/10 text-rose-500 border-rose-500/20' },
+  ELVETVE: { label: 'Elvetve', color: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  AUTO_SZAMLA: '⚙️ Számla',
+  AUTO_BANK: '⚙️ Bank',
+  AUTO_RENDSZER: '⚙️ Rendszer',
+  KEZI: '✏️ Kézi',
+  KEZI_MODOSITAS: '✏️ Módosítás',
+};
+
+const formatCurrency = (val: number, currency: string = 'HUF') => {
+  const isHuf = currency === 'HUF';
+  return new Intl.NumberFormat('hu-HU', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: isHuf ? 0 : 2
+  }).format(val);
+};
+
+export default function JournalsPage() {
+  const { selectedCompany } = useCompany();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { dateFromFormatted: dateFrom, dateToFormatted: dateTo } = useDateRange();
+
+  const { activePresetId } = useActivePreset(selectedCompany?.id);
+
+  const generateDraftsMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedCompany?.id || !activePresetId) return 0;
+      const { data, error } = await supabase.rpc('acc_generate_drafts_from_ledger', {
+        p_company_id: selectedCompany.id,
+        p_preset_id: activePresetId
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      toast({ title: "Javaslatok sikeresen legenerálva", description: `${count} db könyvelési tétel javaslat jött létre a meglévő adatokból.` });
+    },
+    onError: (err) => {
+      toast({ title: "Hiba a javaslatok generálásakor", description: err.message, variant: "destructive" });
+    }
+  });
+
+  const [selectedJournalId, setSelectedJournalId] = useState<string>('munkalista');
+  const [search, setSearch] = useState('');
+  const [selectedEntry, setSelectedEntry] = useState<any>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30;
+
+  // Reset page when search or journal changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedJournalId]);
+  
+  // Modals state
+  const [manualEntryOpen, setManualEntryOpen] = useState(false);
+  const [periodClosingOpen, setPeriodClosingOpen] = useState(false);
+  const [auditEntryId, setAuditEntryId] = useState<string | null>(null);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+
+  // Storno / Correction dialog state
+  const [stornoOpen, setStornoOpen] = useState(false);
+  const [stornoTarget, setStornoTarget] = useState<{ headerId: string; correct: boolean } | null>(null);
+  const [stornoReason, setStornoReason] = useState('');
+
+  // Fetch journals
+  const { data: journals = [], isLoading: loadingJournals, refetch: refetchJournals } = useQuery({
+    queryKey: ['acc-journals', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('acc_journals')
+        .select('*')
+        .eq('company_id', selectedCompany.id)
+        .order('code');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCompany?.id,
+  });
+
+  // Seed journals mutation if empty
+  const seedMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedCompany?.id) return;
+      const { error } = await supabase.rpc('acc_seed_default_journals', {
+        p_company_id: selectedCompany.id
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchJournals();
+      toast({ title: "Naplók sikeresen inicializálva" });
+    },
+    onError: (err) => {
+      toast({ title: "Sikertelen inicializálás", description: err.message, variant: "destructive" });
+    }
+  });
+
+  // Auto seed if list is empty
+  useEffect(() => {
+    if (!loadingJournals && journals.length === 0 && selectedCompany?.id) {
+      seedMutation.mutate();
+    }
+  }, [journals, loadingJournals, selectedCompany]);
+
+  // Fetch entries
+  const { data: entries = [], isLoading: loadingEntries } = useQuery({
+    queryKey: ['acc-journal-entries', selectedCompany?.id, selectedJournalId, dateFrom, dateTo],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      let query = supabase
+        .from('acc_journal_headers')
+        .select(`
+          *,
+          journal:acc_journals(code, name),
+          partner:partners(name),
+          lines:acc_journal_lines(
+            *,
+            gl_account:gl_accounts(gl_number, short_name),
+            project:projects(name)
+          )
+        `)
+        .eq('company_id', selectedCompany.id);
+
+      if (selectedJournalId === 'munkalista') {
+        query = query.in('status', ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT']);
+      } else {
+        query = query.eq('journal_id', selectedJournalId);
+        if (dateFrom) query = query.gte('posting_date', dateFrom);
+        if (dateTo) query = query.lte('posting_date', dateTo);
+      }
+
+      const { data, error } = await query.order('posting_date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCompany?.id && !!selectedJournalId,
+  });
+
+  // Post entry mutation
+  const postMutation = useMutation({
+    mutationFn: async (headerId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Bejelentkezés szükséges");
+
+      const { error } = await supabase.rpc('acc_post_journal_entry', {
+        p_header_id: headerId,
+        p_user_id: user.id
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      toast({ title: "Tétel sikeresen lekönyvelve" });
+    },
+    onError: (err) => {
+      toast({ title: "Könyvelési hiba", description: err.message, variant: "destructive" });
+    }
+  });
+
+  // Storno entry mutation
+  const stornoMutation = useMutation({
+    mutationFn: async ({ headerId, reason, correct }: { headerId: string; reason: string; correct: boolean }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Bejelentkezés szükséges");
+
+      const { data, error } = await supabase.rpc('acc_storno_journal_entry', {
+        p_header_id: headerId,
+        p_user_id: user.id,
+        p_reason: reason,
+        p_create_correction: correct
+      });
+      if (error) throw error;
+      return { id: data, correct };
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      toast({ title: res.correct ? "Sztornózva és javító másolat elkészítve" : "Tétel sztornózva" });
+      if (res.correct && res.id) {
+        setEditingEntryId(res.id);
+        setManualEntryOpen(true);
+      }
+    },
+    onError: (err) => {
+      toast({ title: "Sztornózási hiba", description: err.message, variant: "destructive" });
+    }
+  });
+
+  // Delete draft mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (headerId: string) => {
+      const { error } = await supabase.from('acc_journal_headers').delete().eq('id', headerId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      setSelectedEntry(null);
+      toast({ title: "Piszkozat törölve" });
+    },
+    onError: (err) => {
+      toast({ title: "Törlési hiba", description: err.message, variant: "destructive" });
+    }
+  });
+
+  // Handle storno prompt
+  const handleStorno = (headerId: string, correct: boolean) => {
+    setStornoTarget({ headerId, correct });
+    setStornoReason('');
+    setStornoOpen(true);
+  };
+
+  // Filtered entries
+  const filteredEntries = entries.filter((e: any) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      (e.description && e.description.toLowerCase().includes(q)) ||
+      (e.document_id && e.document_id.toLowerCase().includes(q)) ||
+      (e.partner?.name && e.partner.name.toLowerCase().includes(q)) ||
+      (e.journal_number && `${e.journal?.code}/${e.journal_number}`.toLowerCase().includes(q))
+    );
+  });
+
+  const totalItems = filteredEntries.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const paginatedEntries = filteredEntries.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  return (
+    <div className="flex flex-col space-y-4 p-6 min-h-[calc(100vh-4rem)] bg-background">
+      <PageHeader
+        title="Könyvelési Naplók"
+        description="A vállalkozás kettős könyvvitelének naplónemenkénti, idősoros és zárt nyilvántartása."
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPeriodClosingOpen(true)}>
+              <Lock className="w-4 h-4" /> Időszakzárás
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 dark:border-indigo-900/50 dark:text-indigo-400 dark:hover:bg-indigo-950/30"
+              onClick={() => generateDraftsMutation.mutate()}
+              disabled={generateDraftsMutation.isPending || !activePresetId}
+            >
+              {generateDraftsMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Bot className="w-4 h-4" />
+              )}
+              Javaslatok generálása
+            </Button>
+            <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-500" onClick={() => { setEditingEntryId(null); setManualEntryOpen(true); }}>
+              <Plus className="w-4 h-4" /> Új vegyes bizonylat
+            </Button>
+          </div>
+        }
+      />
+
+      <div className="grid grid-cols-12 gap-6 items-start">
+        {/* Left selector */}
+        <div className="col-span-12 md:col-span-3 space-y-3">
+          <Card className="border border-border bg-card/60 backdrop-blur-md">
+            <CardHeader className="py-3.5 px-4 border-b">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary" /> Naplók listája
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-2 space-y-1">
+              <button
+                onClick={() => setSelectedJournalId('munkalista')}
+                className={cn(
+                  "w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition-all flex items-center justify-between border",
+                  selectedJournalId === 'munkalista'
+                    ? "bg-primary/10 text-primary border-primary/20"
+                    : "hover:bg-muted/40 text-muted-foreground border-transparent"
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Munkalista (Drafts)
+                </span>
+                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                  Függő
+                </Badge>
+              </button>
+
+              <div className="h-px bg-border my-2" />
+
+              {loadingJournals ? (
+                <div className="py-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+              ) : (
+                journals.map((j: any) => (
+                  <button
+                    key={j.id}
+                    onClick={() => setSelectedJournalId(j.id)}
+                    className={cn(
+                      "w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all flex items-center justify-between border",
+                      selectedJournalId === j.id
+                        ? "bg-primary/10 text-primary border-primary/20 font-medium"
+                        : "hover:bg-muted/40 text-muted-foreground border-transparent"
+                    )}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-foreground">{j.code}</span>
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{j.name}</span>
+                    </div>
+                    <Badge variant="outline" className="px-1.5 py-0 text-[10px] scale-90">
+                      {j.currency}
+                    </Badge>
+                  </button>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Center list */}
+        <div className="col-span-12 md:col-span-9 space-y-4">
+          {/* Filters */}
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Keresés (partner, bizonylatszám, megnevezés...)"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9 bg-card border-border"
+              />
+            </div>
+          </div>
+
+          {/* List Table */}
+          <Card className="border border-border bg-card/60 backdrop-blur-md overflow-hidden">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-muted/40 border-b border-border/40 text-muted-foreground select-none uppercase font-semibold text-[10px] tracking-wider">
+                      <th className="p-3">Dátum</th>
+                      <th className="p-3">Naplószám</th>
+                      <th className="p-3">Bizonylatszám</th>
+                      <th className="p-3">Partner</th>
+                      <th className="p-3">Megnevezés</th>
+                      <th className="p-3 text-right">Összeg</th>
+                      <th className="p-3 text-center">Típus</th>
+                      <th className="p-3 text-center">Státusz</th>
+                      <th className="p-3 text-right">Műveletek</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/30">
+                    {loadingEntries ? (
+                      <tr>
+                        <td colSpan={9} className="p-12 text-center text-muted-foreground">
+                          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+                          Tételek betöltése...
+                        </td>
+                      </tr>
+                    ) : filteredEntries.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="p-12 text-center text-muted-foreground">
+                          <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
+                          Nincsenek tételek ebben a nézetben.
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedEntries.map((e: any) => {
+                        const isForeign = e.currency && e.currency !== 'HUF';
+                        const totalAmount = e.lines?.reduce((acc: number, l: any) => {
+                          if (l.dc_type !== 'T') return acc;
+                          const val = isForeign ? (l.foreign_amount || l.amount) : l.amount;
+                          return acc + Number(val);
+                        }, 0) || 0;
+                        const hufAmount = isForeign
+                          ? e.lines?.reduce((acc: number, l: any) => l.dc_type === 'T' ? acc + Number(l.amount) : acc, 0) || 0
+                          : 0;
+
+                        const statusInfo = STATUS_LABELS[e.status] || { label: e.status, color: 'bg-slate-500/10' };
+                        const journalNum = e.journal_number ? `${e.journal?.code}/${e.journal_number}` : '—';
+                        
+                        return (
+                          <tr key={e.id} className="hover:bg-muted/20 transition-colors">
+                            <td className="p-3 font-mono text-muted-foreground">{e.posting_date.replace(/-/g, '.')}</td>
+                            <td className="p-3 font-semibold text-foreground">{journalNum}</td>
+                            <td className="p-3 font-mono">{e.document_id}</td>
+                            <td className="p-3 font-medium text-foreground">{e.partner?.name || '—'}</td>
+                            <td className="p-3">
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="truncate max-w-[200px] font-medium text-foreground cursor-default">
+                                      {e.description}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-[400px] bg-slate-900 border-slate-800 text-slate-100 p-2 text-xs shadow-md">
+                                    <p className="whitespace-pre-wrap">{e.description}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </td>
+                            <td className="p-3 text-right font-semibold tabular-nums">
+                              <div className="flex flex-col items-end">
+                                <span>{formatCurrency(totalAmount, e.currency || 'HUF')}</span>
+                                {isForeign && (
+                                  <span className="text-[10px] text-muted-foreground font-normal leading-tight">
+                                    ({formatCurrency(hufAmount, 'HUF')})
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3 text-center text-[10px] text-muted-foreground font-mono">{SOURCE_LABELS[e.source] || e.source}</td>
+                            <td className="p-3 text-center">
+                              <Badge className={cn("px-2 py-0.5 text-[10px] font-medium border uppercase", statusInfo.color)} variant="outline">
+                                {statusInfo.label}
+                              </Badge>
+                            </td>
+                            <td className="p-3 text-right">
+                              <div className="flex justify-end gap-1.5">
+                                <Button size="icon" variant="ghost" className="w-7 h-7 text-muted-foreground hover:text-foreground" onClick={() => setSelectedEntry(e)}>
+                                  <Eye className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button size="icon" variant="ghost" className="w-7 h-7 text-muted-foreground hover:text-foreground" onClick={() => setAuditEntryId(e.id)}>
+                                  <History className="w-3.5 h-3.5" />
+                                </Button>
+                                {e.status === 'KONYVELT' && (
+                                  <>
+                                    <Button size="icon" variant="ghost" className="w-7 h-7 text-destructive hover:bg-destructive/10" title="Sztornózás" onClick={() => handleStorno(e.id, false)}>
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="w-7 h-7 text-sky-600 hover:bg-sky-50" title="Javítás/Helyesbítés" onClick={() => handleStorno(e.id, true)}>
+                                      <CornerDownRight className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </>
+                                )}
+                                {(e.status === 'KEZI_PISZKOZAT' || e.status === 'JOVAHAGYASRA_VAR' || e.status === 'GEPI_JAVASLAT') && (
+                                  <>
+                                    <Button size="icon" variant="ghost" className="w-7 h-7 text-emerald-600 hover:bg-emerald-5" title="Könyvelés" onClick={() => postMutation.mutate(e.id)} disabled={postMutation.isPending}>
+                                      <ShieldCheck className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="w-7 h-7 text-primary" title="Szerkesztés" onClick={() => { setEditingEntryId(e.id); setManualEntryOpen(true); }}>
+                                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="w-7 h-7 text-destructive" title="Piszkozat törlése" onClick={() => { if (confirm("Biztosan törli ezt a piszkozatot?")) deleteMutation.mutate(e.id); }}>
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/20 text-xs">
+                  <div className="text-muted-foreground">
+                    Összesen <span className="font-semibold text-foreground">{totalItems}</span> tételből{' '}
+                    <span className="font-semibold text-foreground">
+                      {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} -{' '}
+                      {Math.min(currentPage * itemsPerPage, totalItems)}
+                    </span>{' '}
+                    megjelenítve
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="h-8"
+                    >
+                      Előző
+                    </Button>
+                    <div className="flex items-center px-3 font-medium">
+                      {currentPage} / {totalPages}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="h-8"
+                    >
+                      Következő
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Details Drawer */}
+      <Sheet open={!!selectedEntry} onOpenChange={open => !open && setSelectedEntry(null)}>
+        <SheetContent className="sm:max-w-2xl overflow-y-auto">
+          {selectedEntry && (
+            <>
+              <SheetHeader className="border-b pb-4">
+                <SheetTitle className="flex justify-between items-center text-base">
+                  <span>Bizonylat tételek: {selectedEntry.journal_number ? `${selectedEntry.journal?.code}/${selectedEntry.journal_number}` : 'Könyveletlen piszkozat'}</span>
+                  <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] font-medium border uppercase", STATUS_LABELS[selectedEntry.status]?.color)}>
+                    {STATUS_LABELS[selectedEntry.status]?.label}
+                  </Badge>
+                </SheetTitle>
+              </SheetHeader>
+
+              <div className="space-y-6 py-6">
+                {/* General Info */}
+                <div className="grid grid-cols-2 gap-4 text-xs bg-muted/30 p-4 rounded-lg border">
+                  <div>
+                    <span className="text-muted-foreground block">Partner</span>
+                    <span className="font-semibold text-foreground text-sm">{selectedEntry.partner?.name || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block">Megnevezés</span>
+                    <span className="font-semibold text-foreground text-sm">{selectedEntry.description}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block">Teljesítés dátuma</span>
+                    <span className="font-medium text-foreground flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-muted-foreground" />{selectedEntry.posting_date.replace(/-/g, '.')}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block">Bizonylatszám</span>
+                    <span className="font-mono font-medium text-foreground">{selectedEntry.document_id}</span>
+                  </div>
+                  {selectedEntry.justification && (
+                    <div className="col-span-2 border-t pt-2 mt-2">
+                      <span className="text-muted-foreground block">Indoklás / Megjegyzés</span>
+                      <span className="italic text-foreground">{selectedEntry.justification}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Double entry lines */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kontírozott tételek (Tétel sorok)</h4>
+                  <div className="border rounded-lg overflow-hidden bg-card">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-muted/50 border-b border-border/40 font-semibold text-[10px] uppercase text-muted-foreground">
+                          <th className="p-2.5">Sorsz.</th>
+                          <th className="p-2.5">Főkönyvi szám</th>
+                          <th className="p-2.5">Főkönyvi megnevezés</th>
+                          <th className="p-2.5 text-center">T/K</th>
+                          <th className="p-2.5 text-right">Összeg</th>
+                          <th className="p-2.5">Projekt</th>
+                          <th className="p-2.5">Jegyzet</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/20">
+                        {selectedEntry.lines?.map((line: any) => (
+                          <tr key={line.id} className="hover:bg-muted/10">
+                            <td className="p-2.5 text-muted-foreground font-mono">{line.sequence_number}</td>
+                            <td className="p-2.5 font-mono font-semibold">{line.gl_account?.gl_number || '—'}</td>
+                            <td className="p-2.5 text-muted-foreground">{line.gl_account?.short_name || '—'}</td>
+                            <td className="p-2.5 text-center">
+                              <Badge className={line.dc_type === 'T' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-destructive/10 text-destructive border-destructive/20"} variant="outline">
+                                {line.dc_type}
+                              </Badge>
+                            </td>
+                            <td className="p-2.5 text-right font-semibold tabular-nums">
+                              {(() => {
+                                const isForeign = selectedEntry.currency && selectedEntry.currency !== 'HUF';
+                                const amtVal = isForeign ? (line.foreign_amount || line.amount) : line.amount;
+                                const formatted = formatCurrency(amtVal, selectedEntry.currency || 'HUF');
+                                
+                                if (isForeign) {
+                                  const formattedHuf = formatCurrency(line.amount, 'HUF');
+                                  return (
+                                    <div className="flex flex-col items-end">
+                                      <span>{formatted}</span>
+                                      <span className="text-[10px] text-muted-foreground font-normal leading-tight">
+                                        ({formattedHuf})
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                return <span>{formatted}</span>;
+                              })()}
+                            </td>
+                            <td className="p-2.5 text-muted-foreground">{line.project?.name || '—'}</td>
+                            <td className="p-2.5 text-muted-foreground italic truncate max-w-[120px]">{line.description || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Modals components */}
+      {manualEntryOpen && (
+        <AddManualJournalEntryModal
+          open={manualEntryOpen}
+          onOpenChange={setManualEntryOpen}
+          entryId={editingEntryId}
+        />
+      )}
+
+      {periodClosingOpen && (
+        <PeriodClosingSettings
+          open={periodClosingOpen}
+          onOpenChange={setPeriodClosingOpen}
+        />
+      )}
+
+      {auditEntryId && (
+        <AuditTrailDialog
+          open={!!auditEntryId}
+          onOpenChange={open => !open && setAuditEntryId(null)}
+          entryId={auditEntryId}
+        />
+      )}
+
+      {stornoOpen && (
+        <Dialog open={stornoOpen} onOpenChange={setStornoOpen}>
+          <DialogContent className="sm:max-w-md bg-card border border-border">
+            <DialogHeader>
+              <DialogTitle className={cn("text-base font-bold", stornoTarget?.correct ? "text-primary" : "text-destructive")}>
+                {stornoTarget?.correct ? 'Bizonylat helyesbítése' : 'Bizonylat sztornózása'}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-1">
+                {stornoTarget?.correct 
+                  ? 'Kérjük, adja meg a helyesbítés indokát. A helyesbítés során egy ellentétes előjelű (storno) tétel, majd egy új, javított kézi piszkozat jön létre.'
+                  : 'Kérjük, adja meg a sztornózás indokát. A sztornózás során egy ellentétes előjelű tétel jön létre, amely lezárja az eredetit.'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <label htmlFor="storno-reason" className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Indoklás <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  id="storno-reason"
+                  value={stornoReason}
+                  onChange={e => setStornoReason(e.target.value)}
+                  placeholder="Pl. Hibás összeg, téves kontírozás..."
+                  className="h-9 text-xs"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0 border-t border-border/10 pt-3">
+              <Button type="button" variant="outline" size="sm" onClick={() => setStornoOpen(false)} className="h-9 text-xs">
+                Mégse
+              </Button>
+              <Button
+                type="button"
+                variant={stornoTarget?.correct ? 'default' : 'destructive'}
+                size="sm"
+                disabled={!stornoReason.trim() || stornoMutation.isPending}
+                className="h-9 text-xs font-semibold"
+                onClick={() => {
+                  if (stornoTarget) {
+                    stornoMutation.mutate({
+                      headerId: stornoTarget.headerId,
+                      reason: stornoReason,
+                      correct: stornoTarget.correct
+                    });
+                    setStornoOpen(false);
+                  }
+                }}
+              >
+                {stornoMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                {stornoTarget?.correct ? 'Helyesbítés indítása' : 'Sztornózás végrehajtása'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}

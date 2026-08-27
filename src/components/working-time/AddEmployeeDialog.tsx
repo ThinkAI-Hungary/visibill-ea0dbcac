@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useProjectList } from '@/hooks/useProjectList';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ interface AddEmployeeDialogProps {
     email: string | null;
     phone: string | null;
     hourly_rate: number | null;
+    project_id?: string | null;
     user_id?: string | null;
   }) => void;
   isSaving: boolean;
@@ -53,6 +55,7 @@ export function AddEmployeeDialog({
   existingEmployeeNames = [],
 }: AddEmployeeDialogProps) {
   const { selectedCompany } = useCompany();
+  const { projects = [] } = useProjectList();
   const [mode, setMode] = useState<AddMode>('member');
 
   // Form state
@@ -62,6 +65,7 @@ export function AddEmployeeDialog({
     email: '',
     phone: '',
     hourly_rate: '',
+    project_id: '',
   });
 
   // Selected member from dropdown
@@ -114,6 +118,7 @@ export function AddEmployeeDialog({
       email: '',
       phone: '',
       hourly_rate: '',
+      project_id: '',
     });
     setSelectedMemberId(null);
     setMode('member');
@@ -130,6 +135,7 @@ export function AddEmployeeDialog({
         email: null,
         phone: null,
         hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null,
+        project_id: form.project_id || null,
         user_id: selectedMember.user_id,
       });
     } else {
@@ -140,6 +146,7 @@ export function AddEmployeeDialog({
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
         hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null,
+        project_id: form.project_id || null,
       });
     }
     reset();
@@ -333,6 +340,30 @@ export function AddEmployeeDialog({
               <SelectContent>
                 <SelectItem value="employee">Bejelentett dolgozó</SelectItem>
                 <SelectItem value="contractor">Alvállalkozó</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="emp-project">Projekt (opcionális)</Label>
+            <Select
+              value={form.project_id}
+              onValueChange={(v) =>
+                setForm({ ...form, project_id: v === '__none__' ? '' : v })
+              }
+            >
+              <SelectTrigger id="emp-project">
+                <SelectValue placeholder="Válassz projektet..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">
+                  <span className="text-muted-foreground">Nincs projekthez rendelve</span>
+                </SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

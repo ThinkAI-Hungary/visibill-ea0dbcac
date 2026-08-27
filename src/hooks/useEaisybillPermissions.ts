@@ -22,6 +22,7 @@ export type EaisybillModule =
   | 'balance_sheet'
   | 'annual_report'
   | 'vat_return'
+  | 'journals'
   | 'salaries'
   | 'working_time'
   | 'fixed_assets'
@@ -66,6 +67,7 @@ const MEMBER_MODULES: EaisybillModule[] = [
   'balance_sheet',
   'annual_report',
   'vat_return',
+  'journals',
   'fixed_assets',
 ];
 
@@ -117,7 +119,7 @@ const EMPLOYEE_MODULES: EaisybillModule[] = [
 const ALL_MODULES: EaisybillModule[] = [
   'dashboard', 'categories', 'projects', 'partners',
   'invoices', 'receivables', 'transactions', 'petty_cash',
-  'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
+  'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return', 'journals',
   'salaries', 'working_time', 'fixed_assets',
   'integrations', 'exchange_rates', 'upload', 'tickets', 'settings',
   'shipments', 'shipment_matching', 'shipment_import', 'notes',
@@ -140,6 +142,7 @@ export const URL_TO_MODULE: Record<string, EaisybillModule> = {
   '/balance-sheet': 'balance_sheet',
   '/annual-report': 'annual_report',
   '/vat-return': 'vat_return',
+  '/journals': 'journals',
   '/salaries': 'salaries',
   '/working-time': 'working_time',
   '/teny': 'fixed_assets',
@@ -174,6 +177,7 @@ export const CONFIGURABLE_MODULES: { key: EaisybillModule; label: string; group:
   { key: 'balance_sheet', label: 'Mérleg', group: 'Könyvelés' },
   { key: 'annual_report', label: 'Beszámoló', group: 'Könyvelés' },
   { key: 'vat_return', label: 'ÁFA Bevallás', group: 'Könyvelés' },
+  { key: 'journals', label: 'Napló', group: 'Könyvelés' },
   { key: 'salaries', label: 'Bérek/járulékok', group: 'HR & Eszközök' },
   { key: 'working_time', label: 'Munkaidő', group: 'HR & Eszközök' },
   { key: 'fixed_assets', label: 'TENY', group: 'HR & Eszközök' },

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useCreateEmployee, useCreateEmployment, useJobCodes, useCreateDependent } from '@/hooks/usePayrollData';
+import { useProjectList } from '@/hooks/useProjectList';
 import { validateTajNumber, validateTaxId, validateBankAccount, validateFeorCode, formatTajNumber, formatBankAccount, formatTajNumberOnType, formatBankAccountOnType } from '@/lib/payroll/validators';
 
 // ── Step definitions ──
@@ -126,6 +127,7 @@ type FormData = {
   other_company_tax_number: string;
   is_min_base_exempt_gyes_gyed: boolean;
   is_min_base_exempt_student: boolean;
+  project_id: string;
 };
 
 const INITIAL_FORM: FormData = {
@@ -173,6 +175,7 @@ const INITIAL_FORM: FormData = {
   other_company_tax_number: '',
   is_min_base_exempt_gyes_gyed: false,
   is_min_base_exempt_student: false,
+  project_id: '',
 };
 
 import { supabase } from '@/integrations/supabase/client';
@@ -189,6 +192,7 @@ export default function EmployeeWizardPage() {
   const createEmployee = useCreateEmployee();
   const createEmployment = useCreateEmployment();
   const { data: jobCodes = [] } = useJobCodes();
+  const { projects = [] } = useProjectList();
 
   const update = (field: keyof FormData, value: string | boolean | any[]) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -355,6 +359,7 @@ export default function EmployeeWizardPage() {
         insurance_relationship_code: form.insurance_relationship_code || null,
         job_valid_from: form.start_date,
         feor_description: form.feor_description || null,
+        project_id: form.project_id || null,
       } as any);
 
       navigate(`/eaisybooks/payroll/${companyId}/employees`);
@@ -738,6 +743,22 @@ export default function EmployeeWizardPage() {
               </Select>
             </div>
             <FormField label="Heti munkaidő (óra)" value={form.weekly_hours} onChange={(v) => update('weekly_hours', v)} type="number" placeholder="40" error={errors.weekly_hours} />
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Projekt (opcionális)</label>
+              <Select value={form.project_id} onValueChange={(v) => update('project_id', v === '__none__' ? '' : v)}>
+                <SelectTrigger className="bg-card border-border">
+                  <SelectValue placeholder="Válassz projektet..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nincs projekthez rendelve</SelectItem>
+                  {projects.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
               <input type="checkbox" checked={form.is_fixed_term} onChange={(e) => update('is_fixed_term', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
               <label className="text-sm text-slate-700 dark:text-slate-300">Határozott idejű</label>

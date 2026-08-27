@@ -205,6 +205,7 @@ const PrivacyPolicyPage = lazy(() => import("./pages/Accounty/PrivacyPolicyPage"
 const CustomReportBuilderPage = lazy(() => import("./pages/Accounty/reports/CustomReportBuilderPage"));
 const DeclarationArchivePage = lazy(() => import("./pages/Accounty/declarations/DeclarationArchivePage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
+const JournalsPage = lazy(() => import("./pages/JournalsPage"));
 const TicketsPage = lazy(() => import("./pages/TicketsPage"));
 const TransfersPage = lazy(() => import("./pages/TransfersPage"));
 const ShipmentImportPage = lazy(() => import("./pages/ShipmentImportPage"));
@@ -944,6 +945,7 @@ const App = () => (
                         <Route path="balance-sheet/:tab?" element={<ProtectedPage><BalanceSheet /></ProtectedPage>} />
                         <Route path="annual-report" element={<ProtectedPage><AnnualReportPage /></ProtectedPage>} />
                         <Route path="vat-return/:tab?" element={<ProtectedPage><VatReturnPage /></ProtectedPage>} />
+                        <Route path="journals" element={<ProtectedPage><JournalsPage /></ProtectedPage>} />
                         <Route path="kintlevo/:tab?" element={<ProtectedPage><KintlevoPage /></ProtectedPage>} />
                         <Route path="petty-cash/:tab?" element={<ProtectedPage><PettyCashPage /></ProtectedPage>} />
                         <Route path="teny/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />

@@ -19,6 +19,7 @@ export interface EmployeeRate {
   effective_date: string;
   email: string | null;
   phone: string | null;
+  project_id?: string | null;
   registration_token: string | null;
   created_at: string;
   updated_at: string;

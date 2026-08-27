@@ -39,6 +39,355 @@ export type Database = {
   }
   public: {
     Tables: {
+      acc_journals: {
+        Row: {
+          company_id: string
+          code: string
+          name: string
+          type: string
+          connected_gl_account: string | null
+          currency: string
+          is_active: boolean
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          company_id: string
+          code: string
+          name: string
+          type: string
+          connected_gl_account?: string | null
+          currency?: string
+          is_active?: boolean
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          company_id?: string
+          code?: string
+          name?: string
+          type?: string
+          connected_gl_account?: string | null
+          currency?: string
+          is_active?: boolean
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acc_journals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      acc_journal_headers: {
+        Row: {
+          id: string
+          company_id: string
+          journal_id: string
+          accounting_year: number
+          journal_number: number | null
+          status: string
+          entry_type: string
+          source: string
+          posting_date: string
+          document_date: string
+          posting_timestamp: string | null
+          document_id: string
+          partner_id: string | null
+          description: string
+          justification: string | null
+          currency: string
+          exchange_rate: number | null
+          exchange_rate_date: string | null
+          stornoed_entry_id: string | null
+          original_entry_id: string | null
+          ai_recommendation: Json | null
+          confidence: number | null
+          import_key: string | null
+          created_by: string | null
+          created_at: string | null
+          posted_by: string | null
+          posted_at: string | null
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          journal_id: string
+          accounting_year: number
+          journal_number?: number | null
+          status?: string
+          entry_type?: string
+          source?: string
+          posting_date: string
+          document_date: string
+          posting_timestamp?: string | null
+          document_id: string
+          partner_id?: string | null
+          description: string
+          justification?: string | null
+          currency?: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
+          stornoed_entry_id?: string | null
+          original_entry_id?: string | null
+          ai_recommendation?: Json | null
+          confidence?: number | null
+          import_key?: string | null
+          created_by?: string | null
+          created_at?: string | null
+          posted_by?: string | null
+          posted_at?: string | null
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          journal_id?: string
+          accounting_year?: number
+          journal_number?: number | null
+          status?: string
+          entry_type?: string
+          source?: string
+          posting_date?: string
+          document_date?: string
+          posting_timestamp?: string | null
+          document_id?: string
+          partner_id?: string | null
+          description?: string
+          justification?: string | null
+          currency?: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
+          stornoed_entry_id?: string | null
+          original_entry_id?: string | null
+          ai_recommendation?: Json | null
+          confidence?: number | null
+          import_key?: string | null
+          created_by?: string | null
+          created_at?: string | null
+          posted_by?: string | null
+          posted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acc_journal_headers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acc_journal_headers_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "acc_journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acc_journal_headers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      acc_journal_lines: {
+        Row: {
+          id: string
+          header_id: string
+          sequence_number: number
+          gl_account_id: string | null
+          dc_type: string
+          amount: number
+          foreign_amount: number | null
+          vat_code: string | null
+          vat_role: string | null
+          parent_line_id: string | null
+          project_id: string | null
+          cost_center_id: string | null
+          confidence: number | null
+          description: string | null
+        }
+        Insert: {
+          id?: string
+          header_id: string
+          sequence_number: number
+          gl_account_id?: string | null
+          dc_type: string
+          amount: number
+          foreign_amount?: number | null
+          vat_code?: string | null
+          vat_role?: string | null
+          parent_line_id?: string | null
+          project_id?: string | null
+          cost_center_id?: string | null
+          confidence?: number | null
+          description?: string | null
+        }
+        Update: {
+          id?: string
+          header_id?: string
+          sequence_number?: number
+          gl_account_id?: string | null
+          dc_type?: string
+          amount?: number
+          foreign_amount?: number | null
+          vat_code?: string | null
+          vat_role?: string | null
+          parent_line_id?: string | null
+          project_id?: string | null
+          cost_center_id?: string | null
+          confidence?: number | null
+          description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acc_journal_lines_header_id_fkey"
+            columns: ["header_id"]
+            isOneToOne: false
+            referencedRelation: "acc_journal_headers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acc_journal_lines_gl_account_id_fkey"
+            columns: ["gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acc_journal_lines_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      acc_journal_counters: {
+        Row: {
+          journal_id: string
+          accounting_year: number
+          last_number: number
+        }
+        Insert: {
+          journal_id: string
+          accounting_year: number
+          last_number?: number
+        }
+        Update: {
+          journal_id?: string
+          accounting_year?: number
+          last_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acc_journal_counters_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "acc_journals"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      acc_journal_audit_logs: {
+        Row: {
+          id: number
+          company_id: string
+          entity_type: string
+          entity_id: string
+          event: string
+          old_status: string | null
+          new_status: string | null
+          changes: Json | null
+          reason: string | null
+          user_id: string | null
+          process_name: string | null
+          timestamp: string
+          transaction_id: string | null
+        }
+        Insert: {
+          id?: number
+          company_id: string
+          entity_type: string
+          entity_id: string
+          event: string
+          old_status?: string | null
+          new_status?: string | null
+          changes?: Json | null
+          reason?: string | null
+          user_id?: string | null
+          process_name?: string | null
+          timestamp?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          id?: number
+          company_id?: string
+          entity_type?: string
+          entity_id?: string
+          event?: string
+          old_status?: string | null
+          new_status?: string | null
+          changes?: Json | null
+          reason?: string | null
+          user_id?: string | null
+          process_name?: string | null
+          timestamp?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acc_journal_audit_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      acc_accounting_periods: {
+        Row: {
+          id: string
+          company_id: string
+          year: number
+          month: number
+          is_closed: boolean
+          closed_at: string | null
+          closed_by: string | null
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          year: number
+          month: number
+          is_closed?: boolean
+          closed_at?: string | null
+          closed_by?: string | null
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          year?: number
+          month?: number
+          is_closed?: boolean
+          closed_at?: string | null
+          closed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acc_accounting_periods_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       accounty_ai_chat_messages: {
         Row: {
           content: string
@@ -6427,7 +6776,9 @@ export type Database = {
           line_description: string | null
           line_number: number
           net_amount: number | null
+          notes: string | null
           product_code: string | null
+          project_id: string | null
           quantity: number | null
           unit_of_measure: string | null
           unit_price: number | null
@@ -6444,7 +6795,9 @@ export type Database = {
           line_description?: string | null
           line_number: number
           net_amount?: number | null
+          notes?: string | null
           product_code?: string | null
+          project_id?: string | null
           quantity?: number | null
           unit_of_measure?: string | null
           unit_price?: number | null
@@ -6461,7 +6814,9 @@ export type Database = {
           line_description?: string | null
           line_number?: number
           net_amount?: number | null
+          notes?: string | null
           product_code?: string | null
+          project_id?: string | null
           quantity?: number | null
           unit_of_measure?: string | null
           unit_price?: number | null
@@ -6474,6 +6829,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -6784,6 +7146,51 @@ export type Database = {
           },
         ]
       }
+      item_project_rules: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          gl_number: string
+          id: string
+          line_description: string
+          project_id: string
+          user_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          gl_number: string
+          id?: string
+          line_description: string
+          project_id: string
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          gl_number?: string
+          id?: string
+          line_description?: string
+          project_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_project_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_project_rules_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           admin_note: string | null
@@ -6973,7 +7380,9 @@ export type Database = {
           line_number: number
           nav_invoice_id: string
           net_amount: number | null
+          notes: string | null
           product_code: string | null
+          project_id: string | null
           quantity: number | null
           unit_of_measure: string | null
           unit_price: number | null
@@ -6992,7 +7401,9 @@ export type Database = {
           line_number: number
           nav_invoice_id: string
           net_amount?: number | null
+          notes?: string | null
           product_code?: string | null
+          project_id?: string | null
           quantity?: number | null
           unit_of_measure?: string | null
           unit_price?: number | null
@@ -7011,7 +7422,9 @@ export type Database = {
           line_number?: number
           nav_invoice_id?: string
           net_amount?: number | null
+          notes?: string | null
           product_code?: string | null
+          project_id?: string | null
           quantity?: number | null
           unit_of_measure?: string | null
           unit_price?: number | null
@@ -7024,6 +7437,13 @@ export type Database = {
             columns: ["nav_invoice_id"]
             isOneToOne: false
             referencedRelation: "nav_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nav_invoice_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -10189,6 +10609,35 @@ export type Database = {
       }
     }
     Functions: {
+      acc_generate_drafts_from_ledger: {
+        Args: {
+          p_company_id: string
+          p_preset_id: string
+        }
+        Returns: number
+      }
+      acc_post_journal_entry: {
+        Args: {
+          p_header_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      acc_storno_journal_entry: {
+        Args: {
+          p_header_id: string
+          p_user_id: string
+          p_reason: string
+          p_create_correction?: boolean
+        }
+        Returns: string
+      }
+      acc_seed_default_journals: {
+        Args: {
+          p_company_id: string
+        }
+        Returns: boolean
+      }
       get_accounty_missing_item_counts: {
         Args: {
           p_company_ids: string[]
@@ -10921,6 +11370,16 @@ export type Database = {
           p_smtp_username: string
         }
         Returns: Json
+      }
+      save_item_project_rule_and_retroactive: {
+        Args: {
+          p_company_id: string
+          p_line_description: string
+          p_gl_number: string
+          p_project_id: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
       save_nav_credentials: {
         Args: {

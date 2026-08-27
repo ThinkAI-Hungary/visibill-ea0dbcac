@@ -125,6 +125,7 @@ const navigationGroups: NavGroup[] = [
       { title: "Mérleg", url: "/balance-sheet", icon: Scale, tourId: "balance-sheet", moduleKey: 'balance_sheet' },
       { title: "Beszámoló", url: "/annual-report", icon: ClipboardCheck, tourId: "annual-report", moduleKey: 'annual_report' },
       { title: "ÁFA Bevallás", url: "/vat-return", icon: FileSpreadsheet, tourId: "vat-return", moduleKey: 'vat_return' },
+      { title: "Napló", url: "/journals", icon: BookOpen, tourId: "journals", moduleKey: 'journals' },
     ],
   },
   {
@@ -177,6 +178,7 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/balance-sheet": () => import("@/pages/BalanceSheet"),
   "/annual-report": () => import("@/pages/AnnualReportPage"),
   "/vat-return": () => import("@/pages/VatReturnPage"),
+  "/journals": () => import("@/pages/JournalsPage"),
   "/upload": () => import("@/pages/ManualUpload"),
   "/salaries": () => import("@/pages/SalariesPage"),
   "/working-time": () => import("@/pages/WorkingTimePage"),

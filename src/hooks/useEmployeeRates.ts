@@ -51,6 +51,7 @@ export function useEmployeeRates() {
       effective_date?: string;
       email?: string | null;
       phone?: string | null;
+      project_id?: string | null;
       user_id?: string | null;
     }): Promise<'created' | 'updated'> => {
       if (!user || !selectedCompany) throw new Error('No user/company');
@@ -69,6 +70,7 @@ export function useEmployeeRates() {
           effective_date: rate.effective_date ?? existing.effective_date,
           email: rate.email !== undefined ? rate.email : existing.email,
           phone: rate.phone !== undefined ? rate.phone : existing.phone,
+          project_id: rate.project_id !== undefined ? rate.project_id : existing.project_id,
           updated_at: new Date().toISOString(),
         };
         // Link user_id if provided and not already set
@@ -93,6 +95,7 @@ export function useEmployeeRates() {
           effective_date: rate.effective_date ?? new Date().toISOString().slice(0, 10),
           email: rate.email ?? null,
           phone: rate.phone ?? null,
+          project_id: rate.project_id ?? null,
         };
         if (rate.user_id) {
           insertData.user_id = rate.user_id;

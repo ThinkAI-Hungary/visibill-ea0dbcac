@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn } from '@/lib/utils';
-import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X } from 'lucide-react';
+import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
@@ -35,6 +35,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useProjectList } from '@/hooks/useProjectList';
+import { Label } from '@/components/ui/label';
 
 interface InvoiceLineItem {
   id: string;
@@ -50,6 +54,8 @@ interface InvoiceLineItem {
   product_code: string | null;
   gl_classifications: any | null;
   exclude_from_accounting?: boolean;
+  project_id?: string | null;
+  notes?: string | null;
 }
 
 interface InvoiceItemsDialogProps {
@@ -95,6 +101,160 @@ export function InvoiceItemsDialog({
   const [glSearchQuery, setGlSearchQuery] = useState('');
   const [selectedNewGL, setSelectedNewGL] = useState<string>('');
   const [isGlSubmitting, setIsGlSubmitting] = useState(false);
+
+  // Petty cash write-off dialog state
+  const [pettyCashWriteOffOpen, setPettyCashWriteOffOpen] = useState(false);
+  const [pendingOmitItem, setPendingOmitItem] = useState<InvoiceLineItem | null>(null);
+  const [pettyCashRegisters, setPettyCashRegisters] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedRegisterId, setSelectedRegisterId] = useState<string>('');
+
+  // Sorting state
+  const [sortField, setSortField] = useState<keyof InvoiceLineItem | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  // Fetch projects list
+  const { projects: projectList } = useProjectList();
+
+  // Fetch parent invoice project_id and other details for petty cash
+  const { data: parentInvoice } = useQuery({
+    queryKey: ['parentInvoice', source, invoiceId],
+    queryFn: async () => {
+      const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
+      const selectFields = source === 'submitted'
+        ? 'project_id, invoice_direction, kibocsatas_datuma, penznem'
+        : 'project_id, invoice_direction, invoice_issue_date, currency';
+
+      const { data, error } = await supabase
+        .from(table as any)
+        .select(selectFields)
+        .eq('id', invoiceId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: open && !!invoiceId,
+  });
+
+  // Sort toggle handler
+  const handleSort = (field: keyof InvoiceLineItem) => {
+    if (sortField !== field) {
+      setSortField(field);
+      setSortDirection('asc');
+    } else if (sortDirection === 'asc') {
+      setSortDirection('desc');
+    } else {
+      setSortField(null);
+      setSortDirection(null);
+    }
+  };
+
+  // Update item project handler
+  const handleUpdateItemProject = async (item: InvoiceLineItem, projectId: string | null) => {
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const { error } = await supabase
+      .from(table as any)
+      .update({ project_id: projectId })
+      .eq('id', item.id);
+
+    if (error) {
+      toast({
+        title: 'Hiba a projekt frissítésekor',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const twins = await findTwinItems(item);
+      for (const twin of twins) {
+        await supabase
+          .from(twin.sourceTable as any)
+          .update({ project_id: projectId })
+          .eq('id', twin.id);
+      }
+    } catch (e) {
+      console.error("Failed to update twin item projects:", e);
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+    toast({
+      title: 'Projekt frissítve',
+      description: 'A tétel projekt-hozzárendelése sikeresen módosult.',
+    });
+  };
+
+  // Save project auto-linkage rule handler
+  const handleSaveProjectRule = async (lineDescription: string, glNumber: string, projectId: string, projectName: string) => {
+    if (!selectedCompany?.id || !session?.user.id) return;
+
+    try {
+      const { data, error } = await supabase.rpc('save_item_project_rule_and_retroactive', {
+        p_company_id: selectedCompany.id,
+        p_line_description: lineDescription,
+        p_gl_number: glNumber,
+        p_project_id: projectId,
+        p_user_id: session.user.id,
+      });
+
+      if (error) {
+        toast({
+          title: 'Hiba a szabály mentésekor',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Szabály sikeresen elmentve',
+          description: `A(z) "${projectName}" projektszabály rögzítve lett és alkalmazva az azonos tételekre.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+      }
+    } catch (e: any) {
+      toast({
+        title: 'Hiba a szabály mentésekor',
+        description: e.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Update item note handler
+  const handleUpdateItemNotes = async (item: InvoiceLineItem, notesText: string) => {
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const notesValue = notesText.trim() === '' ? null : notesText;
+    const { error } = await supabase
+      .from(table as any)
+      .update({ notes: notesValue })
+      .eq('id', item.id);
+
+    if (error) {
+      toast({
+        title: 'Hiba a jegyzet mentésekor',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const twins = await findTwinItems(item);
+      for (const twin of twins) {
+        await supabase
+          .from(twin.sourceTable as any)
+          .update({ notes: notesValue })
+          .eq('id', twin.id);
+      }
+    } catch (e) {
+      console.error("Failed to update twin item notes:", e);
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+    toast({
+      title: 'Jegyzet mentve',
+      description: 'A tétel jegyzete sikeresen frissült.',
+    });
+  };
 
   // Fetch GL accounts for the picker combobox
   const { data: glAccounts = [] } = useQuery({
@@ -249,7 +409,7 @@ export function InvoiceItemsDialog({
       toast({ title: 'Hiba a mentés során', description: error?.message || 'Ismeretlen hiba', variant: 'destructive' });
     } else {
       const twinMsg = twins.length > 0 ? ' (párosított számla is frissítve)' : '';
-      toast({ title: 'Sikeres módosítás', description: `Főkönyvi besorolás frissítve.${twinMsg}`, className: 'bg-green-50 text-green-900 border-green-200' });
+      toast({ title: 'Sikeres módosítás', description: `Főkönyvi besorolás frissítve.${twinMsg}` });
       setGlEditOpen(false);
       setGlEditItem(null);
       // Invalidate all relevant caches so every view refreshes
@@ -264,9 +424,8 @@ export function InvoiceItemsDialog({
   const { data: items = [], isLoading: loading } = useQuery({
     queryKey: ['invoiceItems', source, invoiceId],
     queryFn: async () => {
-      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications';
+      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes';
       const fullCols = baseCols + ', exclude_from_accounting';
-      const table = source === 'submitted' ? 'invoice_items' : 'submitted';
       const fkCol = source === 'submitted' ? 'invoice_id' : 'nav_invoice_id';
       const fromTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
 
@@ -295,6 +454,66 @@ export function InvoiceItemsDialog({
     enabled: open && !!invoiceId,
     placeholderData: keepPreviousData,
   });
+
+  // Sort items client-side if a sort field is active
+  const sortedItems = useMemo(() => {
+    if (!sortField || !sortDirection) return items;
+
+    return [...items].sort((a, b) => {
+      let aVal: any = a[sortField];
+      let bVal: any = b[sortField];
+
+      if (sortField === 'gross_amount') {
+        aVal = getGrossAmount(a);
+        bVal = getGrossAmount(b);
+      }
+
+      if (sortField === 'gl_classifications') {
+        const aClass = (activePresetId && a.gl_classifications?.[activePresetId])
+          ? a.gl_classifications[activePresetId]
+          : null;
+        const bClass = (activePresetId && b.gl_classifications?.[activePresetId])
+          ? b.gl_classifications[activePresetId]
+          : null;
+        aVal = aClass?.gl_number || '';
+        bVal = bClass?.gl_number || '';
+      }
+
+      if (aVal === null || aVal === undefined) return sortDirection === 'asc' ? 1 : -1;
+      if (bVal === null || bVal === undefined) return sortDirection === 'asc' ? -1 : 1;
+
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+
+      const aStr = String(aVal).localeCompare(String(bVal), 'hu');
+      return sortDirection === 'asc' ? aStr : -aStr;
+    });
+  }, [items, sortField, sortDirection, activePresetId]);
+
+  // Render a sortable header cell helper
+  const renderSortableHeader = (field: keyof InvoiceLineItem, label: string, align: 'left' | 'center' | 'right' = 'left', className?: string) => {
+    const isSorted = sortField === field;
+    return (
+      <TableHead 
+        className={cn("cursor-pointer select-none hover:bg-muted/40 transition-colors py-3 font-semibold", className)}
+        onClick={() => handleSort(field)}
+      >
+        <div className={cn(
+          "flex items-center gap-1",
+          align === 'right' && "justify-end",
+          align === 'center' && "justify-center"
+        )}>
+          <span>{label}</span>
+          {isSorted ? (
+            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3 text-primary shrink-0" /> : <ChevronDown className="h-3 w-3 text-primary shrink-0" />
+          ) : (
+            <ArrowUpDown className="h-3 w-3 text-muted-foreground/30 hover:text-muted-foreground/60 shrink-0" />
+          )}
+        </div>
+      </TableHead>
+    );
+  };
 
   // ── Query existing fixed assets linked to this invoice to prevent duplicates ──
   const { data: existingAssets = [] } = useQuery({
@@ -349,10 +568,118 @@ export function InvoiceItemsDialog({
       .from(table)
       .update({ exclude_from_accounting: newValue })
       .eq('id', item.id);
-    if (!error) {
-      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+    
+    if (error) {
+      toast({
+        title: 'Hiba a könyvelési státusz módosításakor',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
     }
-  }, [source, invoiceId, queryClient]);
+
+    queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+
+    // If it is being excluded, check petty cash registers and ask if they want to write it off
+    if (newValue === true) {
+      try {
+        const { data: registers, error: regError } = await supabase
+          .from('petty_cash_registers')
+          .select('id, name')
+          .eq('company_id', selectedCompany!.id);
+
+        if (regError) throw regError;
+
+        if (registers && registers.length > 0) {
+          setPettyCashRegisters(registers);
+          setPendingOmitItem(item);
+          if (registers.length === 1) {
+            setSelectedRegisterId(registers[0].id);
+          } else {
+            setSelectedRegisterId('');
+          }
+          setPettyCashWriteOffOpen(true);
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch petty cash registers:', err);
+      }
+    } else {
+      // If it is being restored, delete any linked petty cash entry
+      try {
+        const { error: deleteError } = await supabase
+          .from('petty_cash_entries')
+          .delete()
+          .eq('source_table', table)
+          .eq('source_id', item.id);
+        
+        if (!deleteError) {
+          toast({
+            title: 'Házipénztár bejegyzés törölve',
+            description: 'A tétel visszakerült a könyvelésbe, a hozzá kapcsolódó pénztári bejegyzés törlésre került.',
+          });
+        }
+      } catch (err) {
+        console.error('Failed to delete linked petty cash entry:', err);
+      }
+    }
+  }, [source, invoiceId, queryClient, selectedCompany, toast]);
+
+  // Confirm petty cash write-off
+  const handleConfirmPettyCashWriteOff = async () => {
+    if (!pendingOmitItem || !selectedRegisterId) return;
+
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const amount = getGrossAmount(pendingOmitItem) || 0;
+    const direction = parentInvoice?.invoice_direction || 'INBOUND';
+    
+    // Inbound invoice means cash spent (expense) -> negative amount
+    // Outbound invoice means cash received (sale) -> positive amount
+    const entryAmount = direction === 'INBOUND' ? -amount : amount;
+
+    let entryDate = new Date().toISOString().split('T')[0];
+    if (source === 'submitted' && parentInvoice?.kibocsatas_datuma) {
+      entryDate = parentInvoice.kibocsatas_datuma;
+    } else if (source === 'nav' && parentInvoice?.invoice_issue_date) {
+      entryDate = parentInvoice.invoice_issue_date;
+    }
+
+    const description = `Készpénzes kiírás (könyvelésből kizárt tétel: ${pendingOmitItem.line_description || 'Névtelen tétel'}) - Bizonylatszám: ${invoiceNumber}`;
+    const invoiceCurrency = currency || parentInvoice?.currency || parentInvoice?.penznem || 'HUF';
+
+    try {
+      const { error } = await supabase
+        .from('petty_cash_entries')
+        .insert({
+          company_id: selectedCompany!.id,
+          register_id: selectedRegisterId,
+          entry_date: entryDate,
+          description: description,
+          amount: entryAmount,
+          currency: invoiceCurrency,
+          source_type: direction === 'INBOUND' ? 'cash_expense' : 'cash_sale',
+          source_id: pendingOmitItem.id,
+          source_table: table,
+          routed_by: 'manual'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sikeres kiírás házipénztárra',
+        description: `A tétel kiírása megtörtént a(z) "${pettyCashRegisters.find(r => r.id === selectedRegisterId)?.name || 'Pénztár'}" kasszába.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a házipénztári kiíráskor',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setPettyCashWriteOffOpen(false);
+      setPendingOmitItem(null);
+      setSelectedRegisterId('');
+    }
+  };
 
   // Bulk toggle exclude_from_accounting for selected items
   const handleBulkToggleExclude = useCallback(async (exclude: boolean) => {
@@ -378,7 +705,6 @@ export function InvoiceItemsDialog({
         description: exclude
           ? `${selectedIds.size} tétel kizárva a könyvelésből.`
           : `${selectedIds.size} tétel beemelve a könyvelésbe.`,
-        className: 'bg-green-50 text-green-900 border-green-200',
       });
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
@@ -501,16 +827,18 @@ export function InvoiceItemsDialog({
                           aria-label="Összes kijelölése"
                         />
                       </TableHead>
-                      <TableHead className="w-12 font-semibold">#</TableHead>
-                      <TableHead className="font-semibold">Megnevezés</TableHead>
-                      <TableHead className="text-right font-semibold">Mennyiség</TableHead>
-                      <TableHead className="text-right font-semibold">Egységár</TableHead>
-                      <TableHead className="text-right font-semibold">Nettó</TableHead>
-                      <TableHead className="text-center font-semibold">ÁFA</TableHead>
-                      <TableHead className="text-right font-semibold">ÁFA összeg</TableHead>
-                      <TableHead className="text-right font-semibold">Bruttó</TableHead>
-                      <TableHead className="text-center font-semibold">Főkönyv</TableHead>
-                      <TableHead className="text-center font-semibold w-[70px]">
+                      {renderSortableHeader('line_number', '#', 'left', 'w-16')}
+                      {renderSortableHeader('line_description', 'Megnevezés', 'left')}
+                      {renderSortableHeader('quantity', 'Mennyiség', 'right', 'text-right')}
+                      {renderSortableHeader('unit_price', 'Egységár', 'right', 'text-right')}
+                      {renderSortableHeader('net_amount', 'Nettó', 'right', 'text-right')}
+                      {renderSortableHeader('vat_rate', 'ÁFA', 'center', 'text-center w-[90px]')}
+                      {renderSortableHeader('vat_amount', 'ÁFA összeg', 'right', 'text-right')}
+                      {renderSortableHeader('gross_amount', 'Bruttó', 'right', 'text-right')}
+                      {renderSortableHeader('gl_classifications', 'Főkönyv', 'center', 'text-center')}
+                      <TableHead className="font-semibold w-[200px]">Projekt</TableHead>
+                      <TableHead className="font-semibold text-center w-12">Jegyzet</TableHead>
+                      <TableHead className="text-center font-semibold w-[75px]">
                         <div className="flex items-center justify-center gap-1">
                           Könyv.
                           <TooltipProvider delayDuration={0}>
@@ -528,7 +856,7 @@ export function InvoiceItemsDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {items.map((item, index) => {
+                    {sortedItems.map((item, index) => {
                       const alreadyActivated = isItemAlreadyActivated(item);
                       return (
                       <TableRow 
@@ -634,6 +962,141 @@ export function InvoiceItemsDialog({
                               </button>
                             );
                           })()}
+                        </TableCell>
+                        <TableCell className="min-w-[160px]">
+                          <div className="flex items-center gap-1.5">
+                            <Select
+                              value={item.project_id || 'INHERITED'}
+                              onValueChange={(val) => {
+                                handleUpdateItemProject(item, val === 'INHERITED' ? null : val);
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs bg-background border-border/60 hover:bg-muted/30 transition-colors w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="max-w-[200px]">
+                                <SelectItem value="INHERITED" className="text-xs text-muted-foreground italic">
+                                  {parentInvoice?.project_id ? (
+                                    <span>Örökölt ({projectList.find(p => p.id === parentInvoice.project_id)?.name || 'Projekt'})</span>
+                                  ) : (
+                                    '-'
+                                  )}
+                                </SelectItem>
+                                {projectList.map((p) => (
+                                  <SelectItem key={p.id} value={p.id} className="text-xs">
+                                    {p.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+
+                            {(() => {
+                              const classification = (activePresetId && item.gl_classifications?.[activePresetId])
+                                ? item.gl_classifications[activePresetId]
+                                : null;
+                              
+                              if (!item.project_id || !classification?.gl_number) return null;
+
+                              const projName = projectList.find(p => p.id === item.project_id)?.name || 'Projekt';
+
+                              return (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10 rounded-md shrink-0"
+                                      title="Automata szabály beállítása"
+                                    >
+                                      <Sparkles className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-80 p-4 z-[110]" align="end">
+                                    <div className="space-y-3">
+                                      <div className="flex items-center gap-2">
+                                        <Sparkles className="h-4 w-4 text-primary" />
+                                        <h4 className="font-semibold text-sm">Automatikus szabály beállítása</h4>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Szeretné beállítani, hogy a jövőben minden <strong>"{item.line_description}"</strong> megnevezésű és <strong>"{classification.gl_number}"</strong> kontírszámú tétel automatikusan a(z) <strong>"{projName}"</strong> projekthez sorolódjon?
+                                      </p>
+                                      <p className="text-[10px] text-primary/80 italic leading-snug bg-primary/5 p-2 rounded border border-primary/10">
+                                        Ez a szabály visszamenőleg is érvényesül a még projekt nélküli azonos tételekre!
+                                      </p>
+                                      <div className="flex justify-end gap-2 pt-2">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-8 text-xs"
+                                          onClick={() => {
+                                            document.body.click();
+                                          }}
+                                        >
+                                          Mégse
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          className="h-8 text-xs gap-1.5"
+                                          onClick={async () => {
+                                            document.body.click();
+                                            await handleSaveProjectRule(
+                                              item.line_description || '',
+                                              classification.gl_number,
+                                              item.project_id!,
+                                              projName
+                                            );
+                                          }}
+                                        >
+                                          Szabály mentése
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              );
+                            })()}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center w-12">
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className={cn(
+                                          "h-8 w-8 rounded-md hover:bg-muted/50 transition-colors shrink-0",
+                                          item.notes ? "text-emerald-500 hover:text-emerald-600" : "text-muted-foreground/45 hover:text-muted-foreground/80"
+                                        )}
+                                      >
+                                        <MessageSquare className="h-4 w-4" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80 p-4 z-[110]" align="end">
+                                      <ItemNoteEditor 
+                                        item={item} 
+                                        onSave={async (newNotes) => {
+                                          await handleUpdateItemNotes(item, newNotes);
+                                        }} 
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[240px] z-[120]">
+                                <p className="text-xs leading-normal">
+                                  {item.notes ? (
+                                    <span className="font-medium">{item.notes}</span>
+                                  ) : (
+                                    <span>Jegyzet hozzáadása</span>
+                                  )}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </TableCell>
                         <TableCell className="text-center">
                           {item.exclude_from_accounting !== undefined ? (
@@ -826,6 +1289,125 @@ export function InvoiceItemsDialog({
           queryClient.invalidateQueries({ queryKey: ['fixedAssetsForInvoice', invoiceId, source] });
         }}
       />
+
+      {/* Petty Cash Write-off Dialog */}
+      <Dialog open={pettyCashWriteOffOpen} onOpenChange={(open) => {
+        if (!open) {
+          setPettyCashWriteOffOpen(false);
+          setPendingOmitItem(null);
+          setSelectedRegisterId('');
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Wallet className="h-5 w-5 text-primary" />
+              Kiírás házipénztárra
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Könyvelésből kizárt tétel: <strong className="text-foreground">"{pendingOmitItem?.line_description}"</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Szeretné kiírni az adott tételt ({pendingOmitItem ? formatAmount(getGrossAmount(pendingOmitItem)) : ''}) házipénztárra?
+            </p>
+
+            {pettyCashRegisters.length > 1 && (
+              <div className="space-y-2 bg-muted/30 p-3 rounded-lg border border-border/50">
+                <Label htmlFor="petty-cash-select" className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                  Válassz házipénztárt:
+                </Label>
+                <Select
+                  value={selectedRegisterId}
+                  onValueChange={setSelectedRegisterId}
+                >
+                  <SelectTrigger id="petty-cash-select" className="w-full bg-background border-border/80 h-10">
+                    <SelectValue placeholder="Pénztár kiválasztása..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pettyCashRegisters.map((reg) => (
+                      <SelectItem key={reg.id} value={reg.id}>
+                        {reg.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex justify-end gap-2 pt-4 border-t border-border/50">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPettyCashWriteOffOpen(false);
+                setPendingOmitItem(null);
+                setSelectedRegisterId('');
+              }}
+            >
+              Nem
+            </Button>
+            <Button
+              onClick={handleConfirmPettyCashWriteOff}
+              disabled={!selectedRegisterId}
+            >
+              Igen, kiírás
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
+  );
+}
+
+// Lightweight component to edit line item note inside popover
+interface ItemNoteEditorProps {
+  item: InvoiceLineItem;
+  onSave: (notes: string) => Promise<void>;
+}
+
+function ItemNoteEditor({ item, onSave }: ItemNoteEditorProps) {
+  const [text, setText] = useState(item.notes || '');
+  const [saving, setSaving] = useState(false);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <MessageSquare className="h-4 w-4 text-emerald-500" />
+        <h4 className="font-semibold text-sm">Tétel jegyzet</h4>
+      </div>
+      <textarea
+        className="w-full min-h-[80px] p-2 text-xs bg-background border border-border/80 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-y text-foreground"
+        placeholder="Jegyzet írása..."
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <div className="flex justify-end gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs"
+          onClick={() => {
+            document.body.click();
+          }}
+        >
+          Mégse
+        </Button>
+        <Button
+          size="sm"
+          className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+          onClick={async () => {
+            setSaving(true);
+            await onSave(text);
+            setSaving(false);
+            document.body.click();
+          }}
+          disabled={saving}
+        >
+          Mentés
+        </Button>
+      </div>
+    </div>
   );
 }

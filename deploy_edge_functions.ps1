@@ -1,7 +1,5 @@
-# Deploy all Edge Functions to the new VSWEB project
-# Using Supabase CLI with project access token
-
-$env:SUPABASE_ACCESS_TOKEN = "sbp_952cd487e0752adfbf208f4db31e4d961f4ce1fd"
+# Set SUPABASE_ACCESS_TOKEN in your environment or use npx supabase login
+# $env:SUPABASE_ACCESS_TOKEN = "your_access_token_here"
 $projectRef = "pirgpqadfodoggcgbwbh"
 $functionsDir = "d:\ThinkAI\Visibill\visibill-709fffdf\supabase\functions"
 

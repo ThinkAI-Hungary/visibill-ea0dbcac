@@ -4,7 +4,7 @@ import {
   ArrowLeft, User, Briefcase, CreditCard, Calendar, FileText,
   Shield, Edit3, Trash2, Plus, X,
   Mail, Phone, MapPin, Banknote, AlertTriangle, Save, Loader2,
-  Users, LogOut, FolderOpen, Printer, Download, Gift
+  Users, LogOut, FolderOpen, Printer, Download, Gift, Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,7 @@ import { EmployeeGarnishmentsTab } from './employee-details/EmployeeGarnishments
 import { EmployeeCafeteriaTab } from './employee-details/EmployeeCafeteriaTab';
 import SalaryHistoryTab from './employee-details/SalaryHistoryTab';
 import { printEmploymentCertificate, printIncomeCertificate, printTimesheetTemplate, printAnnualLedger } from '@/lib/payroll/payslipTemplates';
+import { SickLeaveFormDialog } from '@/components/accounty/payroll/SickLeaveFormDialog';
 import { generate2608Xml, generate2658Xml, generateT1041Xml, generateT1042EXml } from '@/lib/payroll/xmlGenerator';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +54,8 @@ export default function EmployeeDetailsPage() {
   const [editingDeclaration, setEditingDeclaration] = useState<PayrollDeclaration | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<PayrollEmployee>>({});
+  const [sickLeaveDialogOpen, setSickLeaveDialogOpen] = useState(false);
+  const [sickLeaveDocType, setSickLeaveDocType] = useState<'sick' | 'csed_gyed' | 'pregnancy' | 'accident' | null>(null);
   const updateEmployee = useUpdateEmployee();
 
   const { data: employee, isLoading: empLoading, isError: empError, refetch: refetchEmp } = usePayrollEmployee(empId || '');
@@ -280,7 +283,7 @@ export default function EmployeeDetailsPage() {
               Generáld és nyomtasd ki a dolgozó munkaviszonyával kapcsolatos kötelező bizonylatokat, vagy töltsd le a NAV ÁNYK kompatibilis bejelentő XML fájlokat.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Printable documents block */}
               <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
                 <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -516,6 +519,86 @@ export default function EmployeeDetailsPage() {
                 </div>
               </div>
 
+              {/* Táppénz és Családtámogatás (TB) block */}
+              <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-primary" /> Táppénz és Családtámogatás (TB)
+                </h4>
+                <div className="divide-y divide-border/60 text-xs">
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">Munkáltatói Nyilatkozat Táppénzhez</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Igazolás keresőképtelen állományról táppénz kifizetéshez.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => {
+                        setSickLeaveDocType('sick');
+                        setSickLeaveDialogOpen(true);
+                      }}
+                    >
+                      Kitöltés és Nyomtatás
+                    </Button>
+                  </div>
+
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">Foglalkoztatói Igazolás CSED/GYED-hez</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Foglalkoztatói nyilatkozat gyermekgondozási díjak igényléséhez.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => {
+                        setSickLeaveDocType('csed_gyed');
+                        setSickLeaveDialogOpen(true);
+                      }}
+                    >
+                      Kitöltés és Nyomtatás
+                    </Button>
+                  </div>
+
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">Veszélyeztetett Terhességi Nyilatkozat</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Igazolás 9-es kódú terhességi keresőképtelen állományról.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => {
+                        setSickLeaveDocType('pregnancy');
+                        setSickLeaveDialogOpen(true);
+                      }}
+                    >
+                      Kitöltés és Nyomtatás
+                    </Button>
+                  </div>
+
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">Jegyzőkönyv Munkabalesetről</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Hivatalos jegyzőkönyv munkahelyi/üzemi baleset felvételéhez.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => {
+                        setSickLeaveDocType('accident');
+                        setSickLeaveDialogOpen(true);
+                      }}
+                    >
+                      Kitöltés és Nyomtatás
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
               {/* NAV XML generation block */}
               <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
                 <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -582,6 +665,20 @@ export default function EmployeeDetailsPage() {
           </div>
         )}
       </div>
+      {employee && (
+        <SickLeaveFormDialog
+          open={sickLeaveDialogOpen}
+          onOpenChange={setSickLeaveDialogOpen}
+          documentType={sickLeaveDocType}
+          employee={employee}
+          company={companyData ? {
+            name: companyData.name,
+            taxNumber: companyData.tax_number,
+            address: companyData.address || '–'
+          } : null}
+          leaves={leaves}
+        />
+      )}
     </div>
   );
 }

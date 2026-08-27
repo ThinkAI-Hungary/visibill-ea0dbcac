@@ -1,7 +1,7 @@
 export interface Note {
   id: string;
   company_id: string;
-  user_id: string;
+  user_id: string | null;
   title: string;
   content: string;
   is_private: boolean;
@@ -11,6 +11,7 @@ export interface Note {
   transaction_ids?: string[];
   created_at: string;
   updated_at: string;
+  is_line_item_note?: boolean;
   // Joined fields
   profiles?: {
     full_name: string | null;

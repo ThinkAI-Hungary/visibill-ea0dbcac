@@ -335,26 +335,28 @@ export default function NotesPage() {
                 </div>
 
                 {/* Edit & Delete Controls */}
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    onClick={() => handleEditNote(selectedNote)}
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1 text-xs"
-                  >
-                    <Edit3 className="h-3.5 w-3.5" />
-                    Szerkesztés
-                  </Button>
-                  <Button
-                    onClick={() => handleDeleteNote(selectedNote.id)}
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/5"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Törlés
-                  </Button>
-                </div>
+                {!selectedNote.is_line_item_note && (
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      onClick={() => handleEditNote(selectedNote)}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1 text-xs"
+                    >
+                      <Edit3 className="h-3.5 w-3.5" />
+                      Szerkesztés
+                    </Button>
+                    <Button
+                      onClick={() => handleDeleteNote(selectedNote.id)}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/5"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Törlés
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Note Content */}
@@ -480,7 +482,11 @@ export default function NotesPage() {
               <div className="border-t border-border/30 pt-4 flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <User className="h-3.5 w-3.5" />
-                  Rögzítette: {selectedNote.profiles?.full_name || 'Ismeretlen'}
+                  {selectedNote.is_line_item_note ? (
+                    <span>Típus: Számlatétel jegyzet (a számla részleteinél módosítható)</span>
+                  ) : (
+                    <span>Rögzítette: {selectedNote.profiles?.full_name || 'Ismeretlen'}</span>
+                  )}
                 </span>
               </div>
             </div>
