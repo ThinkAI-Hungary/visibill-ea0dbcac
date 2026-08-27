@@ -177,14 +177,14 @@ Deno.serve(async (req: Request) => {
     )
 
     const { data: decSettings, error: decryptError } = await serviceSupabase
-      .rpc('get_company_email_settings', { p_company_id: companyId })
+      .rpc('get_default_company_smtp', { p_company_id: companyId })
       .maybeSingle()
 
     let sentWithCustomSmtp = false
     let smtpError: any = null
 
     if (!decryptError && decSettings?.smtp_host && decSettings?.smtp_status === 'valid') {
-      console.log(`[dunning] Attempting custom SMTP send via: ${decSettings.smtp_host}`)
+      console.log(`[dunning] Attempting custom SMTP send via: ${decSettings.smtp_host} (account: ${decSettings.name || decSettings.id})`)
       try {
         const secure = decSettings.smtp_encryption === 'SSL/TLS' || decSettings.smtp_port === 465;
         const transporter = nodemailer.createTransport({
@@ -225,14 +225,16 @@ Deno.serve(async (req: Request) => {
         
         // Update SMTP settings status to error in background
         try {
-          await serviceSupabase
-            .from('company_email_settings')
-            .update({
-              smtp_status: 'error',
-              smtp_validation_error: `SMTP küldési hiba: ${err.message || err}`,
-              smtp_last_validated_at: new Date().toISOString()
-            })
-            .eq('company_id', companyId)
+          if (decSettings.id) {
+            await serviceSupabase
+              .from('company_email_accounts')
+              .update({
+                smtp_status: 'error',
+                smtp_validation_error: `SMTP küldési hiba: ${err.message || err}`,
+                smtp_last_validated_at: new Date().toISOString()
+              })
+              .eq('id', decSettings.id)
+          }
         } catch (updateErr) {
           console.error('[dunning] Failed to update SMTP status to error:', updateErr)
         }

@@ -1,8 +1,7 @@
-
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-08-26  
-> **Összesen:** 50 döntés | ✅ Decided: 47 | 🔴 Open: 1 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-08-27  
+> **Összesen:** 52 döntés | ✅ Decided: 48 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -66,7 +65,8 @@
 | P-025 | Settings oldal struktúra (5 szekció + FX beállítások) | ✅ Decided | [P-025](./P-025-settings-structure.md) |
 | P-026 | Cégprofil adatok (alap + alias + telephely) | ✅ Decided | [P-026](./P-026-company-profile.md) |
 | P-027 | Csapattagok kezelés (share token) | ✅ Decided | [P-027](./P-027-team-management.md) |
-| P-048 | IMAP/SMTP Levelező Beállítások és Tabs UX | ✅ Decided | [P-048](./P-048-imap-smtp-settings-tabs-ux.md) |
+| P-048 | IMAP/SMTP Levelező Beállítások és Tabs UX | ⛔ Superseded | [P-048](./P-048-imap-smtp-settings-tabs-ux.md) |
+| P-051 | Többprofilos Levelező Fiókok (Multi-Profile IMAP/SMTP) Kezelése UX | ✅ Decided | [P-051](./P-051-multi-profile-email-accounts-management-ux.md) |
 
 ## 💳 Előfizetés & Pricing
 
@@ -127,7 +127,7 @@
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| P-048 | Sztornó Számla Kézi Lezárás UX — toggle gomb, confirm dialog, visszavonható | ✅ Decided | [P-048](./P-048-storno-settle-ux.md) |
+| P-048-storno | Sztornó Számla Kézi Lezárás UX — toggle gomb, confirm dialog, visszavonható | ✅ Decided | [P-048](./P-048-storno-settle-ux.md) |
 
 ## 🔗 NAV Integráció
 
@@ -135,9 +135,9 @@
 |---|--------|---------|------|
 | P-049 | NAV Szinkronizálás Dátumtartomány Választó Modal UX (preset gombok, progress bar) | ✅ Decided | [P-049](./P-049-nav-sync-dialog-ux.md) |
 
-## 💼 Projektek
+## 💼 Projektek & Tárgyi Eszközök
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-050 | Projekt interaktív folyamatábra (Flowchart) UX és logika | ✅ Decided | [P-050](./P-050-project-flowchart-ux.md) |
-
+| P-052 | Tárgyi Eszközök Projektekhez Rendelése (TENY Project Assignment) UX | ✅ Decided | [P-052](./P-052-fixed-assets-project-assignment-ux.md) |

@@ -102,6 +102,8 @@ export const queryKeys = {
     ['integrations', companyId] as const,
   emailSettings: (companyId: string) =>
     ['emailSettings', companyId] as const,
+  emailAccounts: (companyId: string) =>
+    ['emailAccounts', companyId] as const,
 
   // ── Analytics ──
   analyticsRaw: (companyId: string, dateFrom: string, dateTo: string) =>

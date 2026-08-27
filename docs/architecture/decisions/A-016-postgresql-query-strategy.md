@@ -137,6 +137,18 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 |---|---|---|---|
 | `get_partner_ranking(p_company_id)` | DEFINER | PartnersPage.tsx | Top 10 beszállító/vevő rangsor — NAV-only + külföldi beküldött. Lásd: [A-027](./A-027-partner-ranking-treemap.md) |
 
+#### 📧 2.8 E-mail Integráció & Vault RPC-k
+
+| RPC Function | Security | Hívó | Cél |
+|---|---|---|---|
+| `save_company_email_account(...)` | DEFINER | useEmailAccounts.ts | Fiók mentése/frissítése Vault jelszótitkosítással |
+| `delete_company_email_account(p_account_id)` | DEFINER | useEmailAccounts.ts, delete-email-settings EF | Fiók és Vault titkok törlése |
+| `set_default_company_email_account(p_account_id, p_type)` | DEFINER | useEmailAccounts.ts | Alapértelmezett SMTP/IMAP fiók átállítása |
+| `get_company_email_accounts(p_company_id)` | DEFINER | useEmailAccounts.ts | Cég összes fiókjának listázása feloldott jelszavakkal |
+| `get_single_email_account(p_account_id)` | DEFINER | test-email-connection EF | Egyetlen fiók feloldása teszteléshez |
+| `get_default_company_smtp(p_company_id)` | DEFINER | send-dunning-email EF | Alapértelmezett kimenő SMTP fiók feloldása |
+| `get_active_imap_accounts()` | DEFINER | Python Worker | Összes aktív IMAP fiók lekérdezése párhuzamos polloláshoz |
+
 ---
 
 ### 3. DB Trigger Function-ök (25 db)

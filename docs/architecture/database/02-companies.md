@@ -106,37 +106,65 @@
 
 ---
 
-### `company_email_settings`
+### `company_email_accounts`
 
-**RLS:** ✅ | **Sorok:** ~0
+> Többprofilos IMAP & SMTP levelező fiókok kezelése cégekhez, titkosított Supabase Vault integrációval.
+
+**RLS:** ✅ | **Sorok:** Dinamikus
 
 | Oszlop | Típus | Null | Default |
 |--------|-------|------|---------|
 | id | uuid | — | `gen_random_uuid()` |
-| company_id | uuid | — |  |
-| user_id | uuid | — |  |
-| imap_host | text | ✓ |  |
-| imap_port | integer | ✓ |  |
-| imap_username | text | ✓ |  |
-| imap_password_secret_id | uuid | ✓ |  |
-| imap_encryption | text | — | `'SSL/TLS'::text` |
-| imap_status | text | — | `'pending'::text` |
-| imap_last_validated_at | timestamp with time zone | ✓ |  |
-| imap_validation_error | text | ✓ |  |
-| smtp_host | text | ✓ |  |
-| smtp_port | integer | ✓ |  |
-| smtp_username | text | ✓ |  |
-| smtp_password_secret_id | uuid | ✓ |  |
-| smtp_encryption | text | — | `'SSL/TLS'::text` |
-| smtp_status | text | — | `'pending'::text` |
-| smtp_last_validated_at | timestamp with time zone | ✓ |  |
-| smtp_validation_error | text | ✓ |  |
+| company_id | uuid | — | — |
+| user_id | uuid | — | — |
+| name | text | — | `'Levelező fiók'` |
+| is_active | boolean | — | `true` |
+| is_default_smtp | boolean | — | `false` |
+| is_default_imap | boolean | — | `false` |
+| is_imap_enabled | boolean | — | `true` |
+| imap_host | text | ✓ | — |
+| imap_port | integer | ✓ | `993` |
+| imap_username | text | ✓ | — |
+| imap_password_secret_id | uuid | ✓ | — |
+| imap_encryption | text | — | `'SSL/TLS'` |
+| imap_status | text | — | `'pending'` |
+| imap_last_synced_at | timestamp with time zone | ✓ | — |
+| imap_last_validated_at | timestamp with time zone | ✓ | — |
+| imap_validation_error | text | ✓ | — |
+| is_smtp_enabled | boolean | — | `true` |
+| smtp_host | text | ✓ | — |
+| smtp_port | integer | ✓ | `465` |
+| smtp_username | text | ✓ | — |
+| smtp_password_secret_id | uuid | ✓ | — |
+| smtp_encryption | text | — | `'SSL/TLS'` |
+| smtp_status | text | — | `'pending'` |
+| smtp_last_validated_at | timestamp with time zone | ✓ | — |
+| smtp_validation_error | text | ✓ | — |
 | created_at | timestamp with time zone | — | `now()` |
 | updated_at | timestamp with time zone | — | `now()` |
 
+**FK:**  
+* `company_id` → `companies.id (ON DELETE CASCADE)`  
+* `user_id` → `auth.users.id (ON DELETE CASCADE)`  
+* `imap_password_secret_id` → `vault.secrets.id (ON DELETE SET NULL)`  
+* `smtp_password_secret_id` → `vault.secrets.id (ON DELETE SET NULL)`
+
+**Indexek:**  
+* `company_email_accounts_pkey` (PRIMARY KEY)  
+* `idx_company_email_accounts_company_id` on `(company_id)`  
+* `idx_company_email_accounts_active_imap` on `(is_active, is_imap_enabled)`  
+* `idx_company_email_accounts_default_smtp` on `(company_id, is_default_smtp)`
+
+---
+
+### `company_email_settings` *(Legacy / Elavult)*
+
+> Korábbi egyrekordos beállítási tábla. Helyette a `company_email_accounts` használandó.
+
+**RLS:** ✅ | **Sorok:** 0 (Deprecated)
+
 **FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`
 
-**Indexek:** `company_email_settings_company_id_key`
 
 
 ---

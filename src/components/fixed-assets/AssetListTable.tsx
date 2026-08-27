@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Package2 } from 'lucide-react';
+import { Search, Package2, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FixedAsset } from '@/types/fixed-assets';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
@@ -24,6 +24,8 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
       a.name.toLowerCase().includes(s) ||
       a.inventory_number.toLowerCase().includes(s) ||
       (a.location?.name || '').toLowerCase().includes(s) ||
+      (a.project?.name || '').toLowerCase().includes(s) ||
+      (a.project?.project_code || '').toLowerCase().includes(s) ||
       (a.activated_by_name || '').toLowerCase().includes(s)
     );
   });
@@ -35,7 +37,7 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Keresés eszközök között..."
+            placeholder="Keresés eszközök, projektek, helyszínek között..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 bg-secondary/50 border-border/30"
@@ -64,11 +66,12 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead className="w-[30px] font-semibold">#</TableHead>
-                <TableHead className="w-[18%] font-semibold">Leltári Szám</TableHead>
-                <TableHead className="w-[35%] font-semibold">Megnevezés</TableHead>
-                <TableHead className="w-[70px] font-semibold text-center">Státusz</TableHead>
-                <TableHead className="w-[20%] font-semibold">Helyszín</TableHead>
-                <TableHead className="w-[15%] font-semibold">Felelős</TableHead>
+                <TableHead className="w-[16%] font-semibold">Leltári Szám</TableHead>
+                <TableHead className="w-[28%] font-semibold">Megnevezés</TableHead>
+                <TableHead className="w-[65px] font-semibold text-center">Státusz</TableHead>
+                <TableHead className="w-[18%] font-semibold">Projekt</TableHead>
+                <TableHead className="w-[18%] font-semibold">Helyszín</TableHead>
+                <TableHead className="w-[14%] font-semibold">Felelős</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -85,23 +88,39 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
                 >
                   <TableCell className="font-mono text-muted-foreground text-xs">{index + 1}.</TableCell>
                   <TableCell className="font-mono text-xs">{asset.inventory_number}</TableCell>
-                  <TableCell className="font-medium max-w-[280px] truncate" title={asset.name}>{asset.name}</TableCell>
+                  <TableCell className="font-medium max-w-[240px] truncate" title={asset.name}>{asset.name}</TableCell>
                   <TableCell className="text-center">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ASSET_STATUS_COLORS[asset.status]}`}>
                       {ASSET_STATUS_LABELS[asset.status]}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {asset.project ? (
+                      <span
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary truncate max-w-[140px] border border-primary/20"
+                        style={asset.project.color ? { borderColor: asset.project.color, color: asset.project.color } : undefined}
+                        title={asset.project.project_code ? `${asset.project.name} (${asset.project.project_code})` : asset.project.name}
+                      >
+                        <FolderKanban className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{asset.project.name}</span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {asset.location ? (
                       <span title={asset.location.address || ''}>
                         {asset.location.name}
                         {asset.location.address && (
-                          <span className="block text-xs opacity-75 truncate max-w-[180px]">{asset.location.address}</span>
+                          <span className="block text-xs opacity-75 truncate max-w-[150px]">{asset.location.address}</span>
                         )}
                       </span>
                     ) : '-'}
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{asset.activated_by_name || '-'}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm truncate max-w-[120px]" title={asset.activated_by_name || ''}>
+                    {asset.activated_by_name || '-'}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-08-26  
-> **Összesen:** 50 döntés | ✅ Decided: 49 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-08-27  
+> **Összesen:** 52 döntés | ✅ Decided: 50 | ⛔ Superseded: 2
 
 ---
 
@@ -69,8 +69,9 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-031 | Mailgun Webhook Robustness (silent missing alias, legacy skip) | ✅ Decided | [A-031](./A-031-mailgun-webhook-robustness.md) |
 | A-032 | Accounty Push Notification Preferences (Service Worker, VAPID, EF) | ✅ Decided | [A-032](./A-032-accounty-push-notifications.md) |
 | A-034 | Accounty Digest Emails (dedikált oszlopok JSONB helyett, óránkénti Cron) | ✅ Decided | [A-034](./A-034-accounty-digest-emails.md) |
-| A-038 | IMAP/SMTP Hitelesítő Adatok és Vault Integráció | ✅ Decided | [A-038](./A-038-imap-smtp-credentials-vault-integration.md) |
+| A-038 | IMAP/SMTP Hitelesítő Adatok és Vault Integráció | ⛔ Superseded | [A-038](./A-038-imap-smtp-credentials-vault-integration.md) |
 | A-041 | Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency | ✅ Decided | [A-041](./A-041-mailgun-concurrent-dedup.md) |
+| A-052 | Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció | ✅ Decided | [A-052](./A-052-multi-profile-email-accounts-vault-integration.md) |
 
 ## 🗄️ Adatbázis & Pénzügy
 
@@ -81,6 +82,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-036 | Pénztárbizonylat (Cash Voucher) Processing | ✅ Decided | [A-036](./A-036-penztarbizonylat-processing.md) |
 | A-037 | Jegyzetek Rendszer Architektúra (Notes System Architecture) | ✅ Decided | [A-037](./A-037-notes-architecture.md) |
 | A-051 | ÁFA Bevallás Kalkuláció Robusztusság (Auto-Seed & Date Fallback) | ✅ Decided | [A-051](./A-051-vat-return-auto-seed-and-date-fallback.md) |
+| A-053 | Tárgyi Eszközök Projektekhez Rendelése (Fixed Assets Project Assignment) | ✅ Decided | [A-053](./A-053-fixed-assets-project-assignment.md) |
 
 ## 🖥️ Frontend
 

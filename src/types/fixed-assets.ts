@@ -17,6 +17,14 @@ export interface TaoTemplate {
   created_at: string;
 }
 
+export interface AssetProject {
+  id: string;
+  name: string;
+  project_code: string | null;
+  color: string | null;
+  icon: string | null;
+}
+
 export interface FixedAsset {
   id: string;
   company_id: string;
@@ -39,6 +47,7 @@ export interface FixedAsset {
   tao_template_id: string | null;
   tao_rate_override: number | null;
   location_id: string | null;
+  project_id: string | null;
   activated_by_user_id: string | null;
   activated_by_name: string | null;
   gl_account_id: string | null;
@@ -52,6 +61,7 @@ export interface FixedAsset {
   updated_at: string;
   // Joined fields
   location?: CompanyLocation;
+  project?: AssetProject;
   tao_template?: TaoTemplate;
   gl_account?: { id: string; gl_number: string; short_name: string };
 }
@@ -61,7 +71,7 @@ export interface AssetEvent {
   asset_id: string;
   company_id: string;
   user_id: string;
-  event_type: 'activation' | 'transfer' | 'reactivation' | 'disposal' | 'inventory_check' | 'value_change' | 'document_upload' | 'performance_log';
+  event_type: 'activation' | 'transfer' | 'project_transfer' | 'reactivation' | 'disposal' | 'inventory_check' | 'value_change' | 'document_upload' | 'performance_log';
   event_date: string;
   description: string | null;
   old_values: Record<string, any> | null;

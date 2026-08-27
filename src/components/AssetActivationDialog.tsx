@@ -9,6 +9,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTaoTemplates, useCreateFixedAsset, generateInventoryNumber, useAssetGlAccounts } from '@/hooks/useFixedAssets';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
+import { useProjectList } from '@/hooks/useProjectList';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { supabase } from '@/integrations/supabase/client';
 import { Package2, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -29,6 +30,7 @@ interface InvoiceInfo {
   invoiceNumber: string;
   invoiceDate: string;
   supplierName: string;
+  projectId?: string | null;
 }
 
 interface AssetActivationDialogProps {
@@ -51,6 +53,7 @@ export function AssetActivationDialog({
   const { user } = useAuth();
   const { data: taoTemplates = [] } = useTaoTemplates();
   const { locations } = useCompanyLocations(selectedCompany?.id);
+  const { projects = [] } = useProjectList();
   const { activePresetId } = useActivePreset(selectedCompany?.id);
   const { data: glAccounts = [] } = useAssetGlAccounts(selectedCompany?.id, activePresetId);
   const createAsset = useCreateFixedAsset();
@@ -76,6 +79,7 @@ export function AssetActivationDialog({
     residualValue: string;
     taoTemplateId: string;
     locationId: string;
+    projectId: string;
     glAccountId: string;
     depreciationMethod: string;
     performanceUnit: string;
@@ -96,6 +100,7 @@ export function AssetActivationDialog({
         residualValue: '0',
         taoTemplateId: '',
         locationId: '',
+        projectId: invoiceInfo.projectId || '',
         glAccountId: '',
         depreciationMethod: 'linear',
         performanceUnit: '',
@@ -103,7 +108,7 @@ export function AssetActivationDialog({
         depreciationScheduleString: '',
       })));
     }
-  }, [open, selectedItems]);
+  }, [open, selectedItems, invoiceInfo.projectId]);
 
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
@@ -149,6 +154,7 @@ export function AssetActivationDialog({
           depreciationSchedule: schedule,
           taoTemplateId: form.taoTemplateId || null,
           locationId: form.locationId || null,
+          projectId: form.projectId || null,
           activatedByUserId: user.id,
           activatedByName: userName,
           sourceInvoiceId: invoiceInfo.invoiceId,
@@ -428,26 +434,47 @@ export function AssetActivationDialog({
                   </div>
                 </div>
 
-                {glAccounts.length > 0 && (
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Főkönyvi számla</Label>
+                    <Label>Projekt</Label>
                     <Select
-                      value={form.glAccountId}
-                      onValueChange={v => updateForm(index, 'glAccountId', v)}
+                      value={form.projectId || '_none'}
+                      onValueChange={v => updateForm(index, 'projectId', v === '_none' ? '' : v)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="FK számla kiválasztása..." />
+                        <SelectValue placeholder="Projekt kiválasztása..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {glAccounts.map((a: any) => (
-                          <SelectItem key={a.id} value={a.id}>
-                            {a.gl_number} — {a.short_name}
+                        <SelectItem value="_none">Nincs projekt</SelectItem>
+                        {projects.map(p => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                )}
+                  {glAccounts.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Főkönyvi számla</Label>
+                      <Select
+                        value={form.glAccountId}
+                        onValueChange={v => updateForm(index, 'glAccountId', v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="FK számla kiválasztása..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {glAccounts.map((a: any) => (
+                            <SelectItem key={a.id} value={a.id}>
+                              {a.gl_number} — {a.short_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}

@@ -42,31 +42,43 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = await req.json()
-    const { companyId } = body
+    const { companyId, accountId } = body
 
-    if (!companyId) {
+    if (!accountId && !companyId) {
       return new Response(
-        JSON.stringify({ error: 'companyId is required', debugId }),
+        JSON.stringify({ error: 'accountId or companyId is required', debugId }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Call RPC to delete credentials and Vault secrets
-    // The RPC will handle the owner role check using auth.uid()
-    const { data, error } = await supabaseClient.rpc('delete_company_email_settings', {
-      p_company_id: companyId
-    })
+    if (accountId) {
+      const { data, error } = await supabaseClient.rpc('delete_company_email_account', {
+        p_account_id: accountId
+      })
 
-    if (error) {
-      console.error(`[${debugId}] Database error deleting email settings:`, error)
-      return new Response(
-        JSON.stringify({ error: error.message, debugId }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      if (error) {
+        console.error(`[${debugId}] Database error deleting email account:`, error)
+        return new Response(
+          JSON.stringify({ error: error.message, debugId }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    } else {
+      const { data, error } = await supabaseClient.rpc('delete_company_email_settings', {
+        p_company_id: companyId
+      })
+
+      if (error) {
+        console.error(`[${debugId}] Database error deleting email settings:`, error)
+        return new Response(
+          JSON.stringify({ error: error.message, debugId }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: 'E-mail beállítások sikeresen törölve a Vaultból és az adatbázisból.' }),
+      JSON.stringify({ success: true, message: 'E-mail fiók sikeresen törölve a Vaultból és az adatbázisból.' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 

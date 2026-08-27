@@ -43,7 +43,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = await req.json()
-    const { type, companyId, config } = body
+    const { type, companyId, accountId, config } = body
 
     if (!type || !['imap', 'smtp'].includes(type)) {
       return new Response(
@@ -72,30 +72,35 @@ Deno.serve(async (req: Request) => {
     // Resolve credentials (either passed from frontend form or fetched from DB + Vault)
     let username = config?.username?.trim()
     let password = config?.password
-    const host = config?.host?.trim()
-    const port = parseInt(config?.port)
-    const encryption = config?.encryption // 'SSL/TLS', 'STARTTLS', 'NONE'
+    let host = config?.host?.trim()
+    let port = parseInt(config?.port)
+    let encryption = config?.encryption // 'SSL/TLS', 'STARTTLS', 'NONE'
 
-    if (!host || isNaN(port) || !username) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required configuration fields (host, port, username)', debugId }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // If password is masked/empty and we have a companyId, retrieve the existing password from Vault
-    if ((!password || password === '***masked***') && companyId) {
-      console.log(`[${debugId}] Password not provided, fetching from Vault for company: ${companyId}`)
+    // If password is masked/empty and we have an accountId or companyId, retrieve from Vault
+    if ((!password || password === '***masked***') && (accountId || companyId)) {
+      console.log(`[${debugId}] Password not provided/masked, fetching from Vault (accountId: ${accountId}, companyId: ${companyId})`)
       
       const serviceClient = createClient(
         supabaseUrl,
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       )
 
-      // Fetch decrypted settings using the new RPC function
-      const { data: decSettings, error: decryptError } = await serviceClient
-        .rpc('get_company_email_settings', { p_company_id: companyId })
-        .maybeSingle()
+      let decSettings: any = null
+      let decryptError: any = null
+
+      if (accountId) {
+        const res = await serviceClient
+          .rpc('get_single_email_account', { p_account_id: accountId })
+          .maybeSingle()
+        decSettings = res.data
+        decryptError = res.error
+      } else if (companyId) {
+        const res = await serviceClient
+          .rpc('get_company_email_settings', { p_company_id: companyId })
+          .maybeSingle()
+        decSettings = res.data
+        decryptError = res.error
+      }
 
       if (decryptError || !decSettings) {
         console.error(`[${debugId}] Failed to decrypt email settings:`, decryptError)
@@ -105,7 +110,18 @@ Deno.serve(async (req: Request) => {
         )
       }
 
+      if (!host) host = type === 'imap' ? decSettings.imap_host : decSettings.smtp_host
+      if (isNaN(port)) port = type === 'imap' ? decSettings.imap_port : decSettings.smtp_port
+      if (!username) username = type === 'imap' ? decSettings.imap_username : decSettings.smtp_username
+      if (!encryption) encryption = type === 'imap' ? decSettings.imap_encryption : decSettings.smtp_encryption
       password = type === 'imap' ? decSettings.imap_password : decSettings.smtp_password
+    }
+
+    if (!host || isNaN(port) || !username) {
+      return new Response(
+        JSON.stringify({ error: 'Hiányzó kötelező mezők (host, port, felhasználónév)', debugId }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     if (!password) {
@@ -139,6 +155,16 @@ Deno.serve(async (req: Request) => {
       await client.connect()
       await client.logout()
 
+      // If accountId is present, update status to valid
+      if (accountId) {
+        const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
+        await serviceClient.from('company_email_accounts').update({
+          imap_status: 'valid',
+          imap_validation_error: null,
+          imap_last_validated_at: new Date().toISOString()
+        }).eq('id', accountId)
+      }
+
       return new Response(
         JSON.stringify({ success: true, message: 'IMAP kapcsolat sikeresen tesztelve és hitelesítve.' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -162,6 +188,16 @@ Deno.serve(async (req: Request) => {
       })
 
       await transporter.verify()
+
+      // If accountId is present, update status to valid
+      if (accountId) {
+        const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
+        await serviceClient.from('company_email_accounts').update({
+          smtp_status: 'valid',
+          smtp_validation_error: null,
+          smtp_last_validated_at: new Date().toISOString()
+        }).eq('id', accountId)
+      }
 
       return new Response(
         JSON.stringify({ success: true, message: 'SMTP kapcsolat sikeresen tesztelve és hitelesítve.' }),

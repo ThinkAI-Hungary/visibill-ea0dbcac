@@ -119,7 +119,8 @@ Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáj
 | `chart_of_accounts_presets` | 📊 Főkönyv (General Ledger) | 5 |  |
 | `cmr_documents` | ❓ Uncategorized | ? |  |
 | `companies` | 🏢 Cégek & Tagság | 31 |  |
-| `company_email_settings` | 🏢 Cégek & Tagság | 0 | Saját SMTP/IMAP levelezési beállítások (kiszolgálók, Vault titok UUID-k, státuszok) |
+| `company_email_accounts` | 🏢 Cégek & Tagság | 1 | Többprofilos IMAP & SMTP levelező fiókok kezelése titkosított Vault jelszavakkal |
+| `company_email_settings` | 🏢 Cégek & Tagság | 0 | *(Legacy)* Saját SMTP/IMAP levelezési beállítások |
 | `company_fx_settings` | 🏢 Cégek & Tagság | 0 |  |
 | `company_locations` | 🏢 Cégek & Tagság | 6 |  |
 | `company_members` | 🏢 Cégek & Tagság | 49 |  |

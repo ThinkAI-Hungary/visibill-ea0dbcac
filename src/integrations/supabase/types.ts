@@ -5858,6 +5858,7 @@ export type Database = {
           created_at: string | null
           currency: string | null
           depreciation_method: string | null
+          depreciation_schedule: Json | null
           description: string | null
           disposal_date: string | null
           documents: Json | null
@@ -5866,6 +5867,8 @@ export type Database = {
           inventory_number: string
           location_id: string | null
           name: string
+          performance_unit: string | null
+          project_id: string | null
           purchase_date: string
           residual_value: number | null
           source_invoice_id: string | null
@@ -5875,6 +5878,7 @@ export type Database = {
           supplier_name: string | null
           tao_rate_override: number | null
           tao_template_id: string | null
+          total_planned_performance: number | null
           updated_at: string | null
           useful_life_months: number
           user_id: string
@@ -5889,6 +5893,7 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           depreciation_method?: string | null
+          depreciation_schedule?: Json | null
           description?: string | null
           disposal_date?: string | null
           documents?: Json | null
@@ -5897,6 +5902,8 @@ export type Database = {
           inventory_number: string
           location_id?: string | null
           name: string
+          performance_unit?: string | null
+          project_id?: string | null
           purchase_date: string
           residual_value?: number | null
           source_invoice_id?: string | null
@@ -5906,6 +5913,7 @@ export type Database = {
           supplier_name?: string | null
           tao_rate_override?: number | null
           tao_template_id?: string | null
+          total_planned_performance?: number | null
           updated_at?: string | null
           useful_life_months: number
           user_id: string
@@ -5920,6 +5928,7 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           depreciation_method?: string | null
+          depreciation_schedule?: Json | null
           description?: string | null
           disposal_date?: string | null
           documents?: Json | null
@@ -5928,6 +5937,8 @@ export type Database = {
           inventory_number?: string
           location_id?: string | null
           name?: string
+          performance_unit?: string | null
+          project_id?: string | null
           purchase_date?: string
           residual_value?: number | null
           source_invoice_id?: string | null
@@ -5937,6 +5948,7 @@ export type Database = {
           supplier_name?: string | null
           tao_rate_override?: number | null
           tao_template_id?: string | null
+          total_planned_performance?: number | null
           updated_at?: string | null
           useful_life_months?: number
           user_id?: string

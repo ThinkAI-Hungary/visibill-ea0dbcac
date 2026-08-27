@@ -51,6 +51,7 @@ export function QrLabelDialog({ open, onOpenChange, asset }: QrLabelDialogProps)
           <h3>${esc(asset.name)}</h3>
           <p class="inv">${esc(asset.inventory_number)}</p>
           <p>${esc(asset.location?.name || '')}</p>
+          ${asset.project?.name ? `<p>Projekt: ${esc(asset.project.name)}</p>` : ''}
           <p>Érték: ${esc(formatCurrency(asset.acquisition_value, asset.currency))}</p>
         </div>
       </body>
@@ -109,6 +110,9 @@ export function QrLabelDialog({ open, onOpenChange, asset }: QrLabelDialogProps)
               <p className="font-mono text-sm text-muted-foreground tracking-wider">{asset.inventory_number}</p>
               {asset.location?.name && (
                 <p className="text-xs text-muted-foreground mt-1">{asset.location.name}</p>
+              )}
+              {asset.project?.name && (
+                <p className="text-xs text-primary font-medium mt-0.5">Projekt: {asset.project.name}</p>
               )}
               <p className="text-xs text-muted-foreground">
                 {formatCurrency(asset.acquisition_value, asset.currency)}

@@ -5,7 +5,7 @@ import { formatCurrency } from '@/lib/utils';
 import { DepreciationCards } from './DepreciationCards';
 import type { FixedAsset, AssetEvent } from '@/types/fixed-assets';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
-import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt } from 'lucide-react';
+import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt, FolderKanban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -40,6 +40,7 @@ const EVENT_ICONS: Record<string, React.ReactNode> = {
   activation: <CheckCircle className="h-3.5 w-3.5 text-success" />,
   inventory_check: <ShieldCheck className="h-3.5 w-3.5 text-primary" />,
   transfer: <ArrowRightLeft className="h-3.5 w-3.5 text-info" />,
+  project_transfer: <FolderKanban className="h-3.5 w-3.5 text-indigo-500" />,
   reactivation: <PlusCircle className="h-3.5 w-3.5 text-warning" />,
   disposal: <Trash2 className="h-3.5 w-3.5 text-destructive" />,
   value_change: <PlusCircle className="h-3.5 w-3.5 text-warning" />,
@@ -51,6 +52,7 @@ const EVENT_LABELS: Record<string, string> = {
   activation: 'Aktiválás',
   inventory_check: 'Leltár - Fellelve',
   transfer: 'Áthelyezés',
+  project_transfer: 'Projekt hozzárendelés',
   reactivation: 'Ráaktiválás',
   disposal: 'Kivezetés',
   value_change: 'Értékváltozás',
@@ -277,6 +279,25 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           <p className="font-semibold">{asset.location?.name || '-'}</p>
           {asset.location?.address && (
             <p className="text-xs text-muted-foreground">{asset.location.address}</p>
+          )}
+        </div>
+        <div>
+          <span className="text-muted-foreground">Projekt:</span>
+          {asset.project ? (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+                style={asset.project.color ? { borderColor: asset.project.color, color: asset.project.color } : undefined}
+              >
+                <FolderKanban className="h-3 w-3 shrink-0" />
+                <span className="truncate max-w-[140px]">{asset.project.name}</span>
+                {asset.project.project_code && (
+                  <span className="opacity-75 font-mono text-[10px]">({asset.project.project_code})</span>
+                )}
+              </span>
+            </div>
+          ) : (
+            <p className="font-semibold text-muted-foreground">-</p>
           )}
         </div>
         <div>

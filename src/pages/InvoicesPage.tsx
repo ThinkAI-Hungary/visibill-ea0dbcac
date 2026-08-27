@@ -2335,6 +2335,7 @@ const InvoicesPage = () => {
           source="nav"
           invoiceDate={selectedNavInvoice?.invoice_issue_date || undefined}
           supplierName={selectedNavInvoice?.supplier_name || undefined}
+          projectId={selectedNavInvoice?.project_id || undefined}
         />
       )}
 
@@ -2348,6 +2349,7 @@ const InvoicesPage = () => {
           source="submitted"
           invoiceDate={selectedSubmittedForItems?.kibocsatas_datuma || undefined}
           supplierName={selectedSubmittedForItems?.elado_nev || undefined}
+          projectId={selectedSubmittedForItems?.project_id || undefined}
         />
       )}
 

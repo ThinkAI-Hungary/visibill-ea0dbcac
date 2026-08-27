@@ -30,6 +30,7 @@
 | tao_template_id | uuid | ✓ |  |
 | tao_rate_override | numeric | ✓ |  |
 | location_id | uuid | ✓ |  |
+| project_id | uuid | ✓ |  |
 | activated_by_user_id | uuid | ✓ |  |
 | activated_by_name | text | ✓ |  |
 | source_invoice_id | uuid | ✓ |  |
@@ -42,9 +43,9 @@
 | updated_at | timestamp with time zone | ✓ | `now()` |
 | gl_account_id | uuid | ✓ |  |
 
-**FK:** `activated_by_user_id` → `auth.users.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `location_id` → `company_locations.id`, `tao_template_id` → `tao_depreciation_templates.id`, `user_id` → `auth.users.id`
+**FK:** `activated_by_user_id` → `auth.users.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `location_id` → `company_locations.id`, `project_id` → `projects.id`, `tao_template_id` → `tao_depreciation_templates.id`, `user_id` → `auth.users.id`
 
-**Indexek:** `fixed_assets_company_id_inventory_number_key`, `idx_fixed_assets_activated_by_user_id`, `idx_fixed_assets_company`, `idx_fixed_assets_gl_account_id`, `idx_fixed_assets_location_id`, `idx_fixed_assets_tao_template_id`, `idx_fixed_assets_user_id`
+**Indexek:** `fixed_assets_company_id_inventory_number_key`, `idx_fixed_assets_activated_by_user_id`, `idx_fixed_assets_company`, `idx_fixed_assets_gl_account_id`, `idx_fixed_assets_location_id`, `idx_fixed_assets_project_id`, `idx_fixed_assets_tao_template_id`, `idx_fixed_assets_user_id`
 
 ---
 

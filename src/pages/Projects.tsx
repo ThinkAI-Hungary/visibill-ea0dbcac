@@ -1,7 +1,9 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
+import { useScopedBasePath } from '@/lib/navigation';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -16,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users, BarChart3, FileText, Settings, Search, Check, ChevronDown, GitBranch } from 'lucide-react';
+import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users, BarChart3, FileText, Settings, Search, Check, ChevronDown, GitBranch, Package2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -155,14 +157,20 @@ const Projects = () => {
   const [modalSelectedInvoices, setModalSelectedInvoices] = useState<Set<string>>(new Set());
   const [selectedFlowchartProject, setSelectedFlowchartProject] = useState<Project | null>(null);
   
+  const navigate = useNavigate();
+  const basePath = useScopedBasePath();
+
   // Track active tab for each project (defaulting to 'overview')
-  const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'invoices' | 'settings'>>({});
+  const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'invoices' | 'assets' | 'settings'>>({});
 
   // Track expanded description cards
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   
   // Track search text for filtering existing assigned invoices
   const [assignedInvoicesSearch, setAssignedInvoicesSearch] = useState<Record<string, string>>({});
+
+  // Track search text for filtering existing assigned assets
+  const [assignedAssetsSearch, setAssignedAssetsSearch] = useState<Record<string, string>>({});
 
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -251,6 +259,22 @@ const Projects = () => {
   const projectFinancials = queryData?.financials || [];
   const assignedInvoices = queryData?.invoices || [];
   const { getLaborCost } = useProjectLaborCosts();
+
+  // Fetch fixed assets assigned to projects in this company
+  const { data: projectFixedAssets = [] } = useQuery({
+    queryKey: ['company-project-fixed-assets', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('fixed_assets')
+        .select('id, name, inventory_number, acquisition_value, status, project_id, currency')
+        .eq('company_id', selectedCompany.id)
+        .not('project_id', 'is', null);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCompany?.id,
+  });
 
   // Fetch unassigned invoices for the search bar dropdown
   const { data: unassignedInvoices = [], refetch: refetchUnassigned } = useQuery({
@@ -633,6 +657,8 @@ const Projects = () => {
               const financials = getProjectFinancials(project.id!);
               const currentTab = activeTabs[project.id!] || 'overview';
               const projectInvoices = assignedInvoices.filter(inv => inv.project_id === project.id);
+              const currentProjectAssets = projectFixedAssets.filter((a: any) => a.project_id === project.id);
+              const totalAssetValue = currentProjectAssets.reduce((sum: number, a: any) => sum + (Number(a.acquisition_value) || 0), 0);
 
               // Calculate budget percentage
               const budgetPercent = project.budget && project.budget > 0
@@ -753,6 +779,17 @@ const Projects = () => {
                           Számlák ({projectInvoices.length})
                         </button>
                         <button
+                          onClick={() => setActiveTabs(prev => ({ ...prev, [project.id!]: 'assets' }))}
+                          className={`flex-1 py-2 text-center border-b-2 transition-all flex items-center justify-center gap-1.5 ${
+                            currentTab === 'assets'
+                              ? 'text-primary border-primary bg-background'
+                              : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          <Package2 className="h-3.5 w-3.5" />
+                          Eszközök ({currentProjectAssets.length})
+                        </button>
+                        <button
                           onClick={() => {
                             setEditingProject({ ...project });
                           }}
@@ -841,6 +878,26 @@ const Projects = () => {
                                 </div>
                               );
                             })()}
+
+                            {/* Fixed Assets summary if present */}
+                            {currentProjectAssets.length > 0 && (
+                              <div
+                                onClick={() => setActiveTabs(prev => ({ ...prev, [project.id!]: 'assets' }))}
+                                className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/10 text-blue-900 font-semibold mt-1 cursor-pointer hover:bg-blue-500/10 transition-colors"
+                                title="Kattints a tárgyi eszközök megtekintéséhez"
+                              >
+                                <span className="flex items-center gap-1">
+                                  <Package2 className="h-3.5 w-3.5 text-blue-600" />
+                                  Hozzárendelt eszközök:
+                                </span>
+                                <span>
+                                  {formatCurrency(totalAssetValue, 'HUF')}
+                                  <span className="text-[10px] text-blue-700/80 font-normal ml-1">
+                                    ({currentProjectAssets.length} db)
+                                  </span>
+                                </span>
+                              </div>
+                            )}
 
                             {project.description && (() => {
                               const isExpanded = expandedDescriptions[project.id!];
@@ -960,6 +1017,86 @@ const Projects = () => {
                               >
                                 <Plus className="h-3.5 w-3.5" />
                                 Számla hozzárendelése
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {currentTab === 'assets' && (
+                          <div className="flex flex-col flex-1 justify-between h-full">
+                            {/* Search bar to filter existing assigned assets */}
+                            <div className="relative mb-2 shrink-0">
+                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input
+                                placeholder="Keresés a hozzárendelt eszközök között..."
+                                value={assignedAssetsSearch[project.id!] || ''}
+                                onChange={(e) => setAssignedAssetsSearch(prev => ({ ...prev, [project.id!]: e.target.value }))}
+                                className="pl-8 h-8 text-xs bg-background/50"
+                              />
+                            </div>
+
+                            {/* Scrollable list of assigned assets */}
+                            <div className="overflow-y-auto max-h-[145px] space-y-1.5 pr-1 flex-1">
+                              {(() => {
+                                const searchVal = (assignedAssetsSearch[project.id!] || '').toLowerCase();
+                                const filteredProjectAssets = currentProjectAssets.filter((asset: any) =>
+                                  asset.name.toLowerCase().includes(searchVal) ||
+                                  asset.inventory_number.toLowerCase().includes(searchVal)
+                                );
+
+                                if (filteredProjectAssets.length === 0) {
+                                  return (
+                                    <div className="text-center py-8 text-xs text-muted-foreground font-medium">
+                                      {currentProjectAssets.length === 0 
+                                        ? 'Még nincs tárgyi eszköz hozzárendelve ehhez a projekthez.'
+                                        : 'Nincs a keresésnek megfelelő eszköz.'}
+                                    </div>
+                                  );
+                                }
+
+                                return filteredProjectAssets.map((asset: any) => (
+                                  <div
+                                    key={asset.id}
+                                    onClick={() => navigate(`${basePath}/teny?asset=${asset.id}`)}
+                                    className="group flex items-center justify-between p-2 rounded-lg bg-muted/30 border text-xs transition-colors hover:bg-muted/60 cursor-pointer"
+                                    title="Megnyitás a Tárgyi Eszközök modulban"
+                                  >
+                                    <div className="min-w-0 mr-2 flex-1">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-mono font-bold text-[11px] truncate">
+                                          {asset.inventory_number}
+                                        </span>
+                                        <Badge variant="outline" className="text-[9px] py-0 px-1 font-normal">
+                                          {asset.status === 'active' ? 'Aktív' : asset.status}
+                                        </Badge>
+                                      </div>
+                                      <div className="text-[11px] text-foreground font-medium truncate mt-0.5">
+                                        {asset.name}
+                                      </div>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                      <span className="font-semibold text-foreground">
+                                        {formatCurrency(asset.acquisition_value, asset.currency || 'HUF')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+
+                            {/* Assets footer summary and link to TENY */}
+                            <div className="border-t pt-2.5 mt-2.5 flex items-center justify-between text-xs shrink-0">
+                              <span className="text-muted-foreground">
+                                Összesen: <strong className="text-foreground">{formatCurrency(totalAssetValue, 'HUF')}</strong>
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs h-7 px-2 text-primary hover:text-primary/80"
+                                onClick={() => navigate(`${basePath}/teny`)}
+                              >
+                                Tárgyi Eszközök megnyitása →
                               </Button>
                             </div>
                           </div>

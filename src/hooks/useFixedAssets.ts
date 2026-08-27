@@ -14,13 +14,14 @@ export function useFixedAssets(companyId: string | undefined) {
         .select(`
           *,
           location:company_locations(id, name, address, location_type),
+          project:projects(id, name, project_code, color, icon),
           tao_template:tao_depreciation_templates(id, name, tao_rate_percent),
           gl_account:gl_accounts(id, gl_number, short_name)
         `)
         .eq('company_id', companyId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as FixedAsset[];
+      return (data || []) as unknown as FixedAsset[];
     },
     enabled: !!companyId,
   });
@@ -38,6 +39,7 @@ export function useFixedAssetDetail(assetId: string | null) {
           .select(`
             *,
             location:company_locations(id, name, address, location_type),
+            project:projects(id, name, project_code, color, icon),
             tao_template:tao_depreciation_templates(id, name, tao_rate_percent),
             gl_account:gl_accounts(id, gl_number, short_name)
           `)
@@ -51,7 +53,7 @@ export function useFixedAssetDetail(assetId: string | null) {
       ]);
       if (assetRes.error) throw assetRes.error;
       return {
-        asset: assetRes.data as FixedAsset,
+        asset: (assetRes.data || null) as unknown as FixedAsset,
         events: (eventsRes.data || []) as AssetEvent[],
       };
     },
@@ -119,6 +121,7 @@ export function useCreateFixedAsset() {
       depreciationSchedule?: number[] | null;
       taoTemplateId: string | null;
       locationId: string | null;
+      projectId?: string | null;
       activatedByUserId: string;
       activatedByName: string;
       sourceInvoiceId: string | null;
@@ -148,6 +151,7 @@ export function useCreateFixedAsset() {
           depreciation_schedule: params.depreciationSchedule || null,
           tao_template_id: params.taoTemplateId,
           location_id: params.locationId,
+          project_id: params.projectId || null,
           activated_by_user_id: params.activatedByUserId,
           activated_by_name: params.activatedByName,
           source_invoice_id: params.sourceInvoiceId,
@@ -175,6 +179,7 @@ export function useCreateFixedAsset() {
             acquisition_value: params.acquisitionValue,
             activation_date: params.activationDate,
             activated_by: params.activatedByName,
+            ...(params.projectId ? { project_id: params.projectId } : {}),
           },
         });
 
@@ -184,6 +189,7 @@ export function useCreateFixedAsset() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fixedAssets', variables.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['project-fixed-assets'] });
     },
   });
 }
@@ -210,7 +216,7 @@ export async function generateInventoryNumber(
   return `${prefix}${String(nextNum).padStart(4, '0')}`;
 }
 
-// ── Transfer asset (áthelyezés) ──
+// ── Transfer asset (áthelyezés / projekt hozzárendelés) ──
 export function useTransferAsset() {
   const queryClient = useQueryClient();
 
@@ -219,17 +225,59 @@ export function useTransferAsset() {
       assetId: string;
       companyId: string;
       userId: string;
-      newLocationId: string;
-      newLocationName: string;
-      oldLocationName: string;
+      newLocationId?: string | null;
+      newLocationName?: string;
+      oldLocationName?: string;
+      newProjectId?: string | null;
+      newProjectName?: string;
+      oldProjectName?: string;
       eventDate: string;
       description?: string;
     }) => {
+      const updatePayload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (params.newLocationId !== undefined) {
+        updatePayload.location_id = params.newLocationId || null;
+      }
+      if (params.newProjectId !== undefined) {
+        updatePayload.project_id = params.newProjectId || null;
+      }
+
       const { error: updateError } = await supabase
         .from('fixed_assets')
-        .update({ location_id: params.newLocationId, updated_at: new Date().toISOString() })
+        .update(updatePayload)
         .eq('id', params.assetId);
       if (updateError) throw updateError;
+
+      // Determine event type & description
+      const isLocationChange = params.newLocationId !== undefined && params.newLocationName !== params.oldLocationName;
+      const isProjectChange = params.newProjectId !== undefined && params.newProjectName !== params.oldProjectName;
+
+      let eventType: 'transfer' | 'project_transfer' = 'transfer';
+      let autoDesc = '';
+      const oldVals: Record<string, any> = {};
+      const newVals: Record<string, any> = {};
+
+      if (isLocationChange && isProjectChange) {
+        eventType = 'transfer';
+        autoDesc = `Áthelyezés: ${params.oldLocationName || 'Nincs'} → ${params.newLocationName || 'Nincs'}, Projekt: ${params.oldProjectName || 'Nincs'} → ${params.newProjectName || 'Nincs'}`;
+        oldVals.location = params.oldLocationName;
+        oldVals.project = params.oldProjectName;
+        newVals.location = params.newLocationName;
+        newVals.project = params.newProjectName;
+      } else if (isProjectChange) {
+        eventType = 'project_transfer';
+        autoDesc = `Projekt hozzárendelés: ${params.oldProjectName || 'Nincs'} → ${params.newProjectName || 'Nincs'}`;
+        oldVals.project = params.oldProjectName;
+        newVals.project = params.newProjectName;
+      } else {
+        eventType = 'transfer';
+        autoDesc = `Áthelyezés: ${params.oldLocationName || 'Nincs'} → ${params.newLocationName || 'Nincs'}`;
+        oldVals.location = params.oldLocationName;
+        newVals.location = params.newLocationName;
+      }
 
       const { error: eventError } = await supabase
         .from('asset_events')
@@ -237,17 +285,18 @@ export function useTransferAsset() {
           asset_id: params.assetId,
           company_id: params.companyId,
           user_id: params.userId,
-          event_type: 'transfer',
+          event_type: eventType,
           event_date: params.eventDate,
-          description: params.description || `Áthelyezés: ${params.oldLocationName} → ${params.newLocationName}`,
-          old_values: { location: params.oldLocationName },
-          new_values: { location: params.newLocationName },
+          description: params.description || autoDesc,
+          old_values: oldVals,
+          new_values: newVals,
         });
       if (eventError) reportError({ type: 'db_query', component: 'useFixedAssets', action: 'error', message: 'Event insert error:', error: eventError });
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fixedAssets', variables.companyId] });
       queryClient.invalidateQueries({ queryKey: ['fixedAssetDetail', variables.assetId] });
+      queryClient.invalidateQueries({ queryKey: ['project-fixed-assets'] });
     },
   });
 }
@@ -342,7 +391,43 @@ export function useDisposeAsset() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fixedAssets', variables.companyId] });
       queryClient.invalidateQueries({ queryKey: ['fixedAssetDetail', variables.assetId] });
+      queryClient.invalidateQueries({ queryKey: ['project-fixed-assets'] });
     },
   });
 }
+
+// ── Projekthez rendelt eszközök lekérése ──
+export function useProjectFixedAssets(companyId: string | undefined, projectId: string | undefined) {
+  return useQuery({
+    queryKey: ['project-fixed-assets', companyId, projectId],
+    queryFn: async () => {
+      if (!companyId || !projectId) return [];
+      const { data, error } = await supabase
+        .from('fixed_assets')
+        .select(`
+          id,
+          inventory_number,
+          name,
+          acquisition_value,
+          residual_value,
+          currency,
+          purchase_date,
+          activation_date,
+          status,
+          useful_life_months,
+          depreciation_method,
+          tao_rate_override,
+          location:company_locations(id, name),
+          tao_template:tao_depreciation_templates(tao_rate_percent)
+        `)
+        .eq('company_id', companyId)
+        .eq('project_id', projectId)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId && !!projectId,
+  });
+}
+
 

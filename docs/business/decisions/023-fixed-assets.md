@@ -9,17 +9,26 @@
 **Decision:**
 - Teljes életciklus: active → disposed / sold / missing
 - Értékcsökkenés: lineáris módszer, TAO sablonok (11 sablon), rate override lehetőség
-- Aktiválási workflow: `asset_events` tábla (activation, transfer, disposal, inventory_check, value_change, reactivation)
+- Aktiválási workflow: `asset_events` tábla (activation, transfer, project_transfer, disposal, inventory_check, value_change, reactivation)
 - Számla-alapú eszköz létrehozás (`source_invoice_id`, `source_invoice_type`: submitted/nav)
-- Dokumentum csatolás (`documents` JSONB), telephelyhez rendelés (`location_id`)
+- Dokumentum csatolás (`documents` JSONB), telephelyhez rendelés (`location_id`), projekthez rendelés (`project_id`)
 - GL szám hozzárendelés (`gl_account_id`)
 - VTSZ/TESZOR kód rögzítés
+- Projektek oldali integráció: a projektek adatlapon megjelennek a hozzárendelt eszközök és azok összértéke
 
-**Rationale:** A magyar számviteli törvénynek megfelelő tárgyi eszköz nyilvántartás szükséges. A TAO sablonok biztosítják a helyes adóalap számítást. Az aktiválási workflow audit trail-t biztosít.
+**Rationale:** A magyar számviteli törvénynek megfelelő tárgyi eszköz nyilvántartás szükséges. A TAO sablonok biztosítják a helyes adóalap számítást. Az aktiválási workflow audit trail-t biztosít. A projekt-hozzárendelés biztosítja a projektszintű eszköz- és költségallokációt.
 
 ---
 
 ## Megvalósítás részletei
+
+### Projekt hozzárendelés (PROJEKT oszlop és áthelyezés)
+
+Az eszközök a `projects` táblához rendelhetők a `fixed_assets.project_id` FK-n keresztül:
+- **Aktiváláskor:** Választható projekt lenyílóból (ha a forrásszámla projekthez tartozott, előtöltésre kerül).
+- **Áthelyezéskor:** A `TransferDialog`-ban a telephely és a projekt külön-külön vagy egyszerre módosítható.
+- **Életút napló:** Projekt változáskor `project_transfer` esemény jön létre az `asset_events` táblában.
+- **Projects oldalon:** A projekt kártyáján a "Eszközök" fül alatt megjelennek az allokált tárgyi eszközök, valamint az Áttekintés fülön a darabszám és összérték.
 
 ### Helyszín (HELYSZÍN oszlop)
 

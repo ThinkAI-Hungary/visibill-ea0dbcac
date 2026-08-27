@@ -64,6 +64,8 @@ interface InvoiceItemsDialogProps {
   invoiceDate?: string;
   /** Supplier / partner name (for asset activation) */
   supplierName?: string;
+  /** Project id of the invoice (for asset activation) */
+  projectId?: string | null;
 }
 
 export function InvoiceItemsDialog({
@@ -75,6 +77,7 @@ export function InvoiceItemsDialog({
   source = 'nav',
   invoiceDate,
   supplierName,
+  projectId,
 }: InvoiceItemsDialogProps) {
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
@@ -815,6 +818,7 @@ export function InvoiceItemsDialog({
           invoiceNumber,
           invoiceDate: invoiceDate || new Date().toISOString().split('T')[0],
           supplierName: supplierName || 'Ismeretlen',
+          projectId,
         }}
         onSuccess={() => {
           setSelectedIds(new Set());
