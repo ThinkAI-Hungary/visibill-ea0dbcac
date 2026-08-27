@@ -1,0 +1,1199 @@
+A Napló szerepe és működése a könyvelőprogramokban
+
+Mi a napló fogalmilag?
+
+A napló a kettős könyvvitel egyik legrégebbi és legalapvetőbb nyilvántartása: a gazdasági események időrendi (kronologikus) rögzítésének helye. Ez a kulcsszó, ami megkülönbözteti a főkönyvtől: míg a főkönyv szisztematikus rendben, számlánként csoportosítva mutatja ugyanazokat a tételeket, addig a napló a rögzítés sorrendjében, folyamatos sorszámozással tartalmazza őket. A magyar számviteli törvény (2000. évi C. törvény, 161. §) is előírja, hogy a könyvviteli nyilvántartásoknak biztosítaniuk kell a gazdasági események időrendi és rendszerezett rögzítését is — a napló az időrendi oldal.
+
+Fontos megérteni, hogy modern könyvelőprogramban a napló és a főkönyv nem két külön adatrögzítés, hanem ugyanannak az adathalmaznak két nézete. A könyvelő egyszer rögzíti a tételt (ez a naplóbejegyzés), és a program ebből automatikusan "vezeti" a főkönyvet, az analitikákat, az ÁFA-nyilvántartást stb. A napló tehát az elsődleges adatforrás, minden más ebből származtatott.
+
+A naplók felosztása
+
+A gyakorlatban a könyvelők szinte soha nem egyetlen naplóba dolgoznak, hanem naplónemek (naplókódok) szerint bontott naplórendszerbe. A tipikus felosztás: bank napló (bankonként, akár devizánként külön), pénztár napló (pénztáranként), vevő napló (kimenő számlák), szállító napló (bejövő számlák), vegyes napló (bérfeladás, értékcsökkenés, átvezetések, rendező tételek, zárási tételek), és gyakran külön napló a nyitó tételeknek. Nagyobb rendszerekben lehetnek gépi/automatikus naplók is, ahová a feladások (pl. bérprogramból, számlázóból, készletmodulból érkező tételek) kerülnek.
+
+A naplónemeknek több funkciója van. Egyrészt rendszerezik a munkát: a könyvelő tudja, hogy a bankkivonatot a bank naplóba, a bejövő számlát a szállító naplóba rögzíti. Másrészt a naplónem meghatározhat viselkedést: a bank naplóban kötelező lehet a bankszámla főkönyvi szám az egyik oldalon, a vevő naplóban kötelező a partner és a számlaszám, a szállító naplóban az ÁFA-kezelés. Harmadrészt a lekérdezéseket, egyeztetéseket is segíti (pl. "listázd a novemberi bank naplót, és egyezzen a kivonat záró egyenlegével").
+
+Hogyan íródik be egy tétel a naplóba?
+
+Minden könyvelt gazdasági esemény egy naplóbejegyzésként (könyvelési tételként) kerül rögzítésre, és minden bejegyzés mögött bizonylatnak kell állnia (bizonylati elv, Szt. 165. §). Egy naplóbejegyzés tipikus adattartalma:
+
+A fejadatok szintjén: naplónem, naplón belüli folyamatos sorszám (tételszám), a könyvelés dátuma, a bizonylat kelte, a teljesítés dátuma (ez adja a számviteli időszakot!), a bizonylat azonosítója (számlaszám, kivonatszám, pénztárbizonylat száma), a partner, szöveges megjegyzés/megnevezés, valamint a rögzítő felhasználó és a rögzítés időbélyege.
+
+A sorok (kontírsorok) szintjén: főkönyvi számlaszám, Tartozik vagy Követel jelleg, összeg, devizás könyvelésnél deviza, devizaösszeg és árfolyam, ÁFA-kód és ÁFA-alap/ÁFA-összeg kapcsolat, valamint opcionálisan dimenziók (költséghely, költségviselő, munkaszám, projekt).
+
+A kettős könyvvitel alapszabálya, hogy egy tételen belül a Tartozik és Követel oldal összegének meg kell egyeznie — a program egy kiegyensúlyozatlan tételt nem enged véglegesíteni. Egy tétel lehet egyszerű (1 Tartozik + 1 Követel sor, pl. T 384 – K 311 vevő fizet) vagy összetett (több soros, pl. egy bejövő számla: T 5xx költség + T 466 ÁFA – K 454 szállító).
+
+Hogyan használja a könyvelő a naplót?
+
+A könyvelő napi munkája lényegében naplóbejegyzések előállítása, három tipikus úton. Kézi rögzítéssel: megnyitja a megfelelő naplót, felviszi a fejadatokat, kontírozza a sorokat. Itt a hatékonyság kulcsa a gyors, billentyűzetről vezérelhető rögzítőfelület, az ismétlődő tételekhez használható kontírozási sablonok (gyakori partner–számlaszám párosítások, automatikus ÁFA-bontás bruttóból), és az intelligens alapértelmezések. Feladással/importtal: bankkivonat-import, számlázóprogram-kapcsolat, NAV Online Számla adatok alapján előkészített tételek, bérfeladás — ezek gépi úton generálnak naplóbejegyzéseket, amelyeket a könyvelő jóváhagy. Automatikus tételekkel: értékcsökkenés-futtatás, árfolyam-átértékelés, zárási tételek — ezeket a program állítja elő, de szintén szabályos naplóbejegyzésként.
+
+A rögzítésen túl a napló az ellenőrzés és egyeztetés eszköze: a könyvelő naplólistát kér le (adott naplóra, időszakra), és ezt veti össze a bizonylatokkal (pl. bank napló forgalma és záró egyenlege = bankkivonat), keresi vissza a tételeket bizonylatszám, partner, összeg vagy szöveg alapján. A naplólista a könyvvizsgálat és a NAV-ellenőrzés egyik alapdokumentuma is.
+
+Javítás, sztornó, megváltoztathatatlanság
+
+Ez az a pont, ahol a napló tervezése jogilag és szakmailag a legérzékenyebb. A számviteli bizonylatokon és könyvelési tételeken utólagos, nyomtalan módosítás nem megengedett. Ebből következik a modern naplók alapelve: a könyvelt tétel nem törölhető és nem írható felül nyomtalanul. A gyakorlatban két állapotmodell terjedt el. Az egyikben a tétel rögzítéskor "előkönyvelt" (piszkozat) státuszú, ilyenkor még szabadon javítható, majd egy könyvelés/véglegesítés lépéssel válik véglegessé; utána már csak sztornóval (az eredetivel ellentétes vagy negatív előjelű ellentétellel) és új, helyes tétellel javítható. A másik modellben minden tétel azonnal végleges, és minden javítás sztornó+újrakönyvelés. Mindkét esetben kötelező elem az időszakzárás: lezárt hónapba/évbe új tétel nem rögzíthető és ottani tétel nem sztornózható vissza abba az időszakba — a javítás a következő nyitott időszakban történik.
+
+Ehhez kapcsolódik a folyamatos, kihagyásmentes sorszámozás követelménye: a naplón belül a tételszámoknak hézagmentesnek kell lenniük (törölt piszkozat helyét is kezelni kell), mert a hiányzó sorszám ellenőrzésnél azonnal kérdéseket vet fel. Valamint az audit trail: minden tételnél visszakereshetőnek kell lennie, ki, mikor rögzítette, módosította, könyvelte, sztornózta.
+
+Mit kell tudnia egy modern naplónak — összefoglalva
+
+Szakmai szemmel a modern napló egy olyan tranzakciós nyilvántartás, amely a rendszer egyetlen "igazságforrása" (single source of truth): minden más kimutatás (főkönyvi kivonat, számlatörténet, ÁFA-analitika, mérleg, eredménykimutatás) ebből számítódik, redundáns tárolás nélkül vagy szigorúan szinkronban tartva. Garantálja a tételszintű egyensúlyt (T=K), a bizonylati megfeleltetést (minden tételhez bizonylat-hivatkozás, ideálisan csatolt digitális bizonylatkép), az időrendi és hézagmentes sorszámozást naplónemenként, a megváltoztathatatlanságot (sztornó-elv, időszakzárás, teljes audit trail), a többdimenziós adattartalmat (deviza, ÁFA, költséghely, projekt), és a hatékony munkavégzést (sablonok, importok, gépi feladások, gyors keresés és listázás). Emellett kezelnie kell az évnyitást-évzárást (nyitó napló, záró tételek), és illeszkednie kell a magyar sajátosságokhoz: ÁFA-bevallási időszakok, NAV Online Számla adatkapcsolat, önellenőrzés kezelése.
+
+Az alábbiakban azt mutatom meg, ahogyan a naplók a gyakorlatban, a tipikus (magyar) könyvelőprogramokban megjelennek — először a naplórendszer felépítését, aztán konkrét naplólista-részleteket, ahogy a könyvelő a képernyőn vagy a nyomtatott listán látja.
+
+1. példa: Tipikus naplótörzs (naplónemek listája)
+
+A legtöbb hazai kettős könyvviteles programban (pl. Kulcs-Könyvelés, Novitax, RLB) a cég megnyitásakor egy ehhez hasonló naplótörzset találunk, amit a könyvelő bővíthet:
+
+Kód
+
+Napló megnevezése
+
+Típus
+
+Kapcsolt főkönyvi szám
+
+NY
+
+Nyitó tételek
+
+nyitó
+
+491
+
+B1
+
+K&H bank HUF
+
+bank
+
+3841
+
+B2
+
+K&H bank EUR
+
+bank (deviza)
+
+3861
+
+P1
+
+Házipénztár HUF
+
+pénztár
+
+3811
+
+V
+
+Vevő számlák
+
+kimenő számla
+
+311
+
+SZ
+
+Szállító számlák
+
+bejövő számla
+
+454
+
+VE
+
+Vegyes tételek
+
+vegyes
+
+–
+
+BÉR
+
+Bérfeladás
+
+gépi/feladás
+
+–
+
+Z
+
+Záró tételek
+
+záró
+
+492
+
+A "típus" itt nem csak címke: a bank naplóban a program automatikusan felajánlja a 3841-et ellenszámlaként, a vevő naplóban kötelezővé teszi a partnert és a számlaszámot, a nyitó/záró naplóba pedig csak az évnyitás/évzárás funkció könyvelhet.
+
+2. példa: Bank napló lista (egy kivonat könyvelése)
+
+Így néz ki egy tipikus naplólista-részlet, amikor a könyvelő a novemberi 21. számú bankkivonatot rögzítette. Figyeld meg: minden kivonatsor önálló, kiegyensúlyozott tétel, és a napló végén a program egyenleget számol, amit a könyvelő a kivonat záró egyenlegével egyeztet:
+
+B1 napló – K&H bank HUF                    Időszak: 2026.11.
+
+─────────────────────────────────────────────────────────────────────────
+
+Tétel  Telj.dátum  Bizonylat   Partner/Szöveg          Tartozik  Követel   Összeg
+
+─────────────────────────────────────────────────────────────────────────
+
+B1/347 2026.11.14  KIV-21/1    Minta Kft. – vevő bef.   3841     311       1 270 000
+
+B1/348 2026.11.14  KIV-21/2    NAV ÁFA befizetés         468      3841       890 000
+
+B1/349 2026.11.14  KIV-21/3    Banki jutalék             532      3841         1 450
+
+B1/350 2026.11.14  KIV-21/4    Munkabér átutalás         471      3841     2 340 000
+
+─────────────────────────────────────────────────────────────────────────
+
+Napló forgalom:                                     T: 4 501 450  K: 4 501 450
+
+3841 nyitó: 5 118 900   Tartozik forg.: 1 270 000   Követel forg.: 3 231 450
+
+3841 záró:  3 157 450   ← egyeztetendő a kivonat záró egyenlegével
+
+3. példa: Összetett tétel a szállító naplóban
+
+Egy bejövő számla jellemzően egyetlen naplóbejegyzés, több kontírsorral. A fejadatok és a sorok elkülönülnek — pontosan úgy, ahogy az adatmodellben is érdemes majd kialakítanod:
+
+SZ napló – SZ/1128. tétel                              Státusz: KÖNYVELT
+
+─────────────────────────────────────────────────────────────────────────
+
+Partner:        Irodaszer Bt.                Bizonylat: ISZ-2026/4471
+
+Bizonylat kelte: 2026.11.10    Teljesítés: 2026.11.10    Fiz.hat.: 2026.11.25
+
+Megnevezés:     Irodaszer beszerzés
+
+Rögzítette:     kovacsanna, 2026.11.16 09:41
+
+─────────────────────────────────────────────────────────────────────────
+
+Sor  Fők.szám  Megnevezés              Tartozik   Követel    ÁFA-kód
+
+ 1   5111      Irodaszer költség        118 500              A27 (alap)
+
+ 2   4661      Előzetes ÁFA 27%          31 995              A27 (áfa)
+
+ 3   454       Szállítók                            150 495
+
+─────────────────────────────────────────────────────────────────────────
+
+                                    T: 150 495 = K: 150 495  ✓
+
+4. példa: Sztornó a naplóban
+
+Így jelenik meg, amikor a könyvelő egy hibás tételt javít — az eredeti tétel megmarad, a sztornó hivatkozik rá, és jön az új, helyes tétel:
+
+VE/89   2026.11.05  Telefonköltség          T 529  K 454      45 000   [SZTORNÓZVA]
+
+VE/94   2026.11.16  SZTORNÓ → VE/89         T 529  K 454     -45 000   [SZTORNÓ]
+
+VE/95   2026.11.16  Telefonköltség (jav.)   T 5291 K 454      45 000
+
+Néhány megjegyzés a példákhoz: a nemzetközi programok (QuickBooks, Xero, SAP) logikája ugyanez, csak az elnevezés más — ott "journal entry" a tétel, a naplónem szerepét pedig gyakran a "journal type" vagy SAP-ban a "document type" (KR = szállító számla, DR = vevő számla, SA = vegyes) tölti be, dokumentumszám-tartományokkal, ami funkcionálisan azonos a naplónkénti hézagmentes sorszámozással. A magyar programokban a naplónkénti bontás hangsúlyosabb, mert a könyvelőirodai munkaszervezés (bankos, számlás, vegyes tételek külön munkafázisban) erre épül.
+
+Kézi beavatkozás egy automatizált naplóban — tervezési javaslat
+
+A kiindulópont, amit érdemes rögzíteni: az automatizált rendszerben a kézi beavatkozás nem kivételes "hack", hanem a rendszer szerves, elsőrangú funkciója — csak éppen szigorúbban dokumentált, mint az automatikus ág. A tervezés vezérelve az legyen, hogy a kézi és a gépi tétel ugyanabba a naplóstruktúrába, ugyanazon szabályok szerint kerül, csak az eredete (forrása) különbözik. Nem szabad külön "kézi naplót" építeni más adatmodellel — az szétzilálja az egységes audit trailt.
+
+1. A forrás (origin) mint tételszintű attribútum
+
+Minden naplóbejegyzés kapjon egy kötelező forrás mezőt, például: AUTO_SZAMLA (számlafeldolgozó), AUTO_BANK (bankimport + párosítás), AUTO_RENDSZER (écs, árfolyam-átértékelés, zárás), KEZI (könyvelő rögzítette), KEZI_MODOSITAS (gépi tétel kézi javításából született). Ez teszi lehetővé, hogy bármikor lekérdezhető legyen: mit csinált a gép, mihez nyúlt ember. Könyvvizsgálatnál és belső minőségellenőrzésnél ez az első kérdés, és a ti értékajánlatotok ("mennyire pontos az automatika") méréséhez is ez kell — a kézi beavatkozások aránya a legfontosabb minőségi metrikátok lesz.
+
+2. A kézi módosítás: soha nem felülírás, hanem sztornó + új tétel
+
+Itt a legfontosabb elvi döntés. Amikor a könyvelő egy automatikusan könyvelt tételt "módosít", a felület felől nézve szerkeszthet — de a motor szintjén ez mindig három dolgot jelentsen: az eredeti tétel megmarad és sztornózott státuszt kap, keletkezik egy sztornó ellentétel (forrás: KEZI_MODOSITAS, hivatkozással az eredetire), és keletkezik az új, helyes tétel (szintén hivatkozással az eredetire). A felhasználói élmény ettől még lehet egyszerű: a könyvelő megnyitja a tételt, átírja a főkönyvi számot vagy az ÁFA-kódot, ment — a program pedig a háttérben elvégzi a sztornó–újrakönyvelés láncot, és a naplóban mindhárom elem látszik, összekapcsolva.
+
+Egy fontos finomítás: érdemes megkülönböztetni a könyvelt és a még nem véglegesített gépi tételt. Ha az automatika kimenete először "előkönyvelt/javaslat" státuszba kerül (erről mindjárt), akkor ott még szabad a nyomtalan szerkesztés, mert számvitelileg még nem történt meg a könyvelés. A sztornó-kényszer csak a véglegesített tételekre vonatkozzon. Ez drámaian csökkenti a naplóban a sztornó-zajt.
+
+3. A jóváhagyási zóna: hova nyúl be az ember tipikusan
+
+Automatizált rendszerben a kézi beavatkozás leggyakoribb formája nem az utólagos javítás, hanem a bizonytalan gépi javaslat elbírálása. Ezért a feldolgozási folyamatba építsetek be egy konfidencia-alapú elágazást: ha az automatikus kontírozás magabiztos (ismert partner, ismert számlatípus, egyértelmű banki párosítás), a tétel mehet egyenesen könyvelt státuszba; ha bizonytalan (új partner, szokatlan összeg, nem egyértelmű ÁFA-besorolás, párosítatlan banki tétel), akkor "jóváhagyásra vár" státuszú piszkozatként landol egy munkalistán. A könyvelő itt nem naplót szerkeszt, hanem javaslatokat hagy jóvá vagy javít — és minden javítása egyben tanítóadat az automatikának. A küszöb legyen cégenként/könyvelőirodánként állítható, mert lesz ügyfél, aki mindent látni akar könyvelés előtt, és lesz, aki csak a kivételeket.
+
+4. A kézi felvitel: a "vegyes tétel" rögzítő
+
+Az atipikus, semmilyen forrásból nem érkező bizonylatokra (vámhatározat, bírósági végzés, adóhatósági határozat, apport, elengedett követelés, önellenőrzés rendező tételei) kell egy klasszikus kézi rögzítőfelület. Ennek javasolt kialakítása:
+
+Hova kerül: a vegyes naplóba (vagy ha a tétel jellege indokolja, a megfelelő naplónembe — de az egyszerűség kedvéért indulásnak elég egy VE napló KEZI forrással). Ugyanaz a fej + sorok szerkezet, ugyanaz a T=K validáció, ugyanaz a sorszámozás, mint a gépi tételeknél.
+
+Kötelező bizonylatcsatolás: mivel nálatok minden más tételhez automatikusan tartozik digitális bizonylat (a beolvasott számla, a bankkivonat), a kézi tétel ne lehessen kivétel — véglegesítés előtt kötelező legyen feltölteni a bizonylatképet (a vámhatározat PDF-jét/szkennelt képét) és megadni a bizonylat azonosítóját, keltét, teljesítési dátumát. Ez tartja egyben a "minden tétel mögött ott a bizonylat egy kattintásra" élményt, és ellenőrzésnél aranyat ér.
+
+Indoklás mező: kézi tételnél és kézi módosításnál legyen egy rövid, kötelező (vagy legalább erősen ösztönzött) "miért" mező — "vámhatározat, EV-2026/... szám", "gépi kontírozás hibás volt, 52-es helyett 51-es". Ez a mező a későbbi visszakereséskor és a kollégák közti átadásnál pótolhatatlan, és az automatika fejlesztéséhez is visszajelzés.
+
+Segített kontírozás kézzel is: attól, hogy kézi a rögzítés, az automatika segíthet — a bizonylatkép feltöltésekor az OCR/feldolgozó futhat rajta és előtöltheti az összeget, dátumokat, partnert, sőt javasolhat kontírozást, amit a könyvelő felülbírálhat. A vámhatározat is dokumentum: a "kézi" itt azt jelenti, hogy nincs strukturált forráscsatorna (NAV Online Számla, bankkapcsolat), nem azt, hogy a könyvelőnek mindent billentyűznie kell. Emellett kellenek sablonok az ismétlődő atipikus tételekre (pl. "vámhatározat" sablon: T 368/51x + T 466 – K 465 váz, csak az összegek kellenek).
+
+5. Jogosultság és védelem
+
+Néhány szabály, ami a kézi ágat biztonságossá teszi. Szerepkörhöz kötés: ki rögzíthet kézi tételt, ki módosíthat gépit, ki véglegesíthet — kisebb irodánál lehet egy személy mindhárom, de a jogosultsági modell legyen meg. Az automatikus tételek "védelme": gépi feladásból származó tétel sorait ne lehessen csöndben átírni még piszkozat státuszban se úgy, hogy elvész a gépi javaslat — tároljátok el az eredeti gépi javaslatot is (mit mondott az automatika vs. mit hagyott jóvá az ember), mert ez a tanulási visszacsatolás alapja. Időszakzárás: a kézi tétel és a kézi módosítás is csak nyitott időszakba mehet, lezárt időszakot érintő javítás automatikusan a következő nyitott időszakba kerüljön, erre figyelmeztetéssel. És természetesen teljes audit trail: ki, mikor, mit, miről mire — kézi tételnél ez hatványozottan fontos, mert ellenőrzésnél mindig a kézi tételeket nézik először.
+
+6. A naplóképben való megjelenítés
+
+A naplólistában a kézi és a gépi tétel egy folyamban jelenjen meg (az időrend szent), de vizuálisan megkülönböztetve — egy forrás-ikon vagy jelölés (⚙ gépi / ✎ kézi / ⚙✎ gépi, kézzel javítva) elegendő. Legyen szűrő "csak kézi tételek" és "kézzel módosított gépi tételek" nézetre. A sztornó-láncok legyenek összecsukhatók: alapnézetben a könyvelő a hatályos állapotot lássa (a javított tételt), és egy kattintással bonthassa ki a történetet (eredeti → sztornó → új).
+
+Összefoglaló elv
+
+Egyetlen naplómotor, egyetlen szabályrendszer, kétféle forrás. A gépi ág gyors és tömeges, a kézi ág ritka, de szigorúbban dokumentált (kötelező bizonylat + indoklás). A kettő találkozási pontja a jóváhagyási munkalista, ahol a bizonytalan gépi javaslatokat ember bírálja el — és minden emberi döntés visszacsatolás az automatikának.
+
+A naplótétel állapotgépe — részletes specifikáció
+
+Az állapotok
+
+GÉPI JAVASLAT — az automatika (számlafeldolgozó, bankimport, rendszerfolyamat) által előállított tétel, amely még nem lépett be a számviteli nyilvántartásba. Tartalmilag teljes naplóbejegyzés (fej + sorok + konfidencia-értékek soronként), de nincs végleges naplószáma, nem jelenik meg a főkönyvben, az ÁFA-analitikában, semmilyen kimutatásban. Ez egy technikai előszoba: a rendszer itt dönti el a konfidencia alapján, hogy a tétel emberi elbírálásra megy vagy egyenesen könyvelésre. Az állapot jellemzően másodpercekig él — de fontos, hogy létezzen, mert ide tárolódik el az eredeti gépi javaslat pillanatképe, amihez később a kézi módosításokat viszonyítjátok.
+
+KÉZI PISZKOZAT — a könyvelő által megkezdett, de még nem véglegesített rögzítés. Szabadon szerkeszthető, menthető félkészen (hiányzó sorokkal, T≠K állapotban is), nincs naplószáma. Ez az egyetlen állapot, ahol megengedett a kiegyensúlyozatlanság — de kilépni belőle csak érvényes tétellel lehet.
+
+JÓVÁHAGYÁSRA VÁR — a munkalistán ülő, emberi döntésre váró tétel. Ide kerül a bizonytalan gépi javaslat, valamint (konfigurációtól függően) a kézi piszkozat is, ha az adott cégnél négy szem elvű jóváhagyás van beállítva. Ebben az állapotban a tétel még szerkeszthető nyomtalan sztornó nélkül — de már nem nyomtalanul a szó szoros értelmében: minden szerkesztés naplózódik az audit trailben, és a gépi eredetű tételnél az eredeti javaslat érintetlenül megmarad összehasonlítási alapként. Még nincs végleges naplószám.
+
+KÖNYVELT — a tétel belépett a számviteli nyilvántartásba. Ekkor és csak ekkor kap végleges, hézagmentes naplószámot. Tartalma ettől a pillanattól megváltoztathatatlan: egyetlen mező sem írható át, egyetlen sor sem törölhető vagy módosítható. Minden kimutatás (főkönyv, ÁFA, mérleg) kizárólag könyvelt tételekből számítódik. Ez az állapot két al-jelleget hordozhat, ami nem külön állapot, hanem a tétel típusa: normál és sztornó (utóbbi egy sztornózási művelet során keletkezett ellentétel).
+
+SZTORNÓZOTT — könyvelt tétel, amelyet később érvénytelenítettek. Fontos a pontos értelmezés: a tétel nem tűnik el és nem íródik át — a főkönyvben továbbra is ott van a forgalma, csak a rendszer megjelöli, hogy hozzá tartozik egy ellentétel, amely kinullázza. A "sztornózott" tehát a könyvelt állapot lezárt alesete, nem visszalépés.
+
+ELVETVE — javaslat vagy piszkozat, amelyet könyvelés előtt elutasítottak/töröltek. Soha nem volt a számviteli nyilvántartás része, ezért szabadon kerülhetett ide — de a rekordot nem törlitek fizikailag, hanem megőrzitek (ki, mikor, miért vetette el), mert a gépi javaslatok elutasítása értékes tanítójel az automatikának, a kézi piszkozatoknál pedig olcsó biztosíték.
+
+Az átmenetek és feltételeik (guard-ok)
+
+1. Gépi javaslat → Könyvelt (automatikus könyvelés). Feltételek: a soronkénti és tételszintű konfidencia eléri a cégre beállított küszöböt; T=K teljesül; minden kötelező mező kitöltött (teljesítési dátum, bizonylat-hivatkozás, ÁFA-besorolás); a teljesítési dátum szerinti időszak nyitott; a bizonylatkép csatolva van. Ha bármelyik nem teljesül, az átmenet nem hajtható végre, és a tétel a 2-es átmenetre esik vissza. Végrehajtáskor: naplószám-kiosztás, könyvelési időbélyeg, forrás = AUTO_*.
+
+2. Gépi javaslat → Jóváhagyásra vár. Feltétel: konfidencia a küszöb alatt, vagy szabály írja elő az emberi elbírálást (új partner, összeghatár feletti tétel, szokatlan kontírozás, párosítatlan banki tétel), vagy az 1-es átmenet valamely technikai feltétele hiányzik. A gépi javaslat pillanatképe befagy.
+
+3. Kézi piszkozat → Könyvelt (véglegesítés). Feltételek: T=K; kötelező mezők; kötelező bizonylatcsatolás és bizonylatazonosító; kitöltött indoklás mező; nyitott időszak; a felhasználónak van könyvelési jogosultsága. Ha a cégnél négy szem elv van beállítva, ez az átmenet tiltott, helyette a 4-es él.
+
+4. Kézi piszkozat → Jóváhagyásra vár (beadás jóváhagyásra). Ugyanazok a tartalmi feltételek, mint a 3-asnál — a munkalistára csak érvényes, teljes tétel kerülhet, félkész piszkozat nem.
+
+5. Jóváhagyásra vár → Könyvelt (jóváhagyás). Feltételek: a jóváhagyó rendelkezik a megfelelő jogosultsággal; négy szem elvnél a jóváhagyó nem azonos a rögzítővel; az időszak a jóváhagyás pillanatában is nyitott (ez nem triviális — a tétel várakozhatott napokat, közben az időszakot lezárhatták; ilyenkor a rendszer figyelmeztet és felajánlja az átdátumozást a következő nyitott időszakra). Ha a jóváhagyó előtte szerkesztette a tételt, a módosítás ténye, a módosított mezők és az eredeti gépi javaslat közti eltérés rögzítésre kerül — ez a tanulási visszacsatolás.
+
+6. Jóváhagyásra vár → Elvetve és Kézi piszkozat → Elvetve. Feltétel: kötelező elvetési indok (választható kódlistából + szabad szöveg: "duplikátum", "hibás feldolgozás", "nem könyvelendő"). Gépi javaslatnál az elutasítás indoka strukturáltan tárolódik a tanításhoz.
+
+7. Könyvelt → Sztornózott (sztornózás). Ez az egyetlen kivezető él a könyvelt állapotból, és összetett, atomi tranzakció: az eredeti tétel státusza sztornózottra vált; keletkezik egy új, ellentétes előjelű sztornó tétel (típus: sztornó, forrás: KEZI_MODOSITAS vagy AUTO_*, hivatkozás az eredetire), amely maga is végigmegy az állapotgépen — jellemzően azonnal könyvelt lesz; és opcionálisan keletkezik a helyesbítő új tétel, szintén hivatkozással a láncra. A három lépés vagy együtt sikerül, vagy egyik sem. Feltételek: a sztornó tétel teljesítési dátuma nyitott időszakra essen (ha az eredeti időszaka már zárt, a sztornó a következő nyitott időszakba könyvelődik, kereszt-időszak jelöléssel); a felhasználónak van sztornó jogosultsága; sztornózott tétel nem sztornózható újra (a lánc nem duplázható).
+
+Egy fontos működési finomság a 7-eshez: amikor a könyvelő a felületen "szerkeszt" egy könyvelt tételt, a program valójában egy előre kitöltött kézi piszkozatot nyit (az eredeti adataival), és mentéskor futtatja le a sztornó+új tétel tranzakciót. A felhasználó egy szerkesztést él meg, az állapotgép két tételkeletkezést és egy állapotváltást.
+
+Invariánsok — ami soha nem sérülhet
+
+Ezek azok a szabályok, amelyeket az állapotgép minden átmenete együttesen garantál, és amelyekre teszteket érdemes írni. Könyvelt tétel tartalma soha nem változik — a Könyvelt és Sztornózott állapotú tétel minden mezője írásvédett az alkalmazás minden rétegében, ideálisan adatbázis-szinten is kikényszerítve. Naplószámot csak a könyvelt állapotba lépés oszt ki, szigorúan monoton, hézagmentes sorrendben naplónként és évenként — mivel a javaslatok és piszkozatok nem kapnak számot, az elvetésük nem üt lyukat a sorszámozásba (ez a fő ok, amiért a számkiosztást a véglegesítéshez kötjük, nem a létrehozáshoz). Zárt időszakba egyetlen átmenet sem könyvelhet és nem sztornózhat. Minden állapotváltás audit-bejegyzést generál (ki, mikor, melyik állapotból melyikbe, milyen indokkal). Minden sztornó és helyesbítő tétel feloldhatatlan hivatkozással kapcsolódik az eredetihez, így a lánc bármely eleméből a teljes történet bejárható. És végül: gépi eredetű tételnél az eredeti gépi javaslat pillanatképe minden későbbi állapotban változatlanul elérhető.
+
+Ajánlott technikai leképezés
+
+A tétel fej rekordján egy statusz mező hordozza az állapotot (GEPI_JAVASLAT, KEZI_PISZKOZAT, JOVAHAGYASRA_VAR, KONYVELT, SZTORNOZOTT, ELVETVE), mellette a tetel_tipus (NORMAL, SZTORNO, NYITO, ZARO), a forras, a sztornozott_tetel_id / helyesbito_tetel_id hivatkozások, és a gepi_javaslat_snapshot (JSON). Az átmeneteket egyetlen központi szolgáltatás (állapotgép-motor) hajtsa végre — a kódban sehol máshol ne lehessen státuszt írni —, mert így a guard-ok megkerülhetetlenek, és minden átmenet automatikusan audit-bejegyzést ír. A Könyvelt állapotba lépés és a naplószám-kiosztás egyetlen adatbázis-tranzakcióban történjen, naplónkénti számlálóval és zárolással, hogy párhuzamos könyvelésnél se keletkezzen duplikált vagy kihagyott sorszám.
+
+A napló adatmodellje — mezőszintű specifikáció
+
+A példák PostgreSQL-t feltételeznek (a jsonb, timestamptz, trigger-mechanika erre épül), de a logika bármely relációs adatbázisra átvihető. Minden tábla multi-tenant: a ceg_id mindenhol jelen van, és minden egyedi kulcs és lekérdezés ezen belül értelmezett.
+
+1. naplo — naplótörzs
+
+Mező
+
+Típus
+
+Megjegyzés
+
+id
+
+uuid PK
+
+ceg_id
+
+uuid, not null
+
+tenant kulcs
+
+kod
+
+varchar(8)
+
+pl. B1, SZ, VE — egyedi cégen belül
+
+nev
+
+varchar(100)
+
+pl. "K&H bank HUF"
+
+tipus
+
+enum
+
+BANK, PENZTAR, VEVO, SZALLITO, VEGYES, NYITO, ZARO, GEPI
+
+kapcsolt_fokonyvi_szam
+
+varchar(10), nullable
+
+bank/pénztár naplónál a technikai ellenszámla (3841 stb.)
+
+deviza
+
+char(3), nullable
+
+devizás bank naplónál
+
+aktiv
+
+boolean
+
+inaktiválható, de sosem törölhető, ha van tétele
+
+A tipus vezérli a viselkedési szabályokat (kötelező mezők, alapértelmezett ellenszámla), amelyeket érdemes nem kódba égetni, hanem egy naplo_szabaly konfigurációs szerkezetben tartani — de ez már finomítás, indulásnak elég a típusonkénti logika.
+
+2. tetel_fej — a naplóbejegyzés feje
+
+Ez a rendszer központi táblája. Mezőcsoportonként:
+
+Azonosítás és besorolás
+
+Mező
+
+Típus
+
+Megjegyzés
+
+id
+
+uuid PK
+
+belső, technikai azonosító — már javaslat státuszban létezik
+
+ceg_id
+
+uuid, not null
+
+naplo_id
+
+uuid FK → naplo
+
+konyvelesi_ev
+
+smallint, not null
+
+üzleti év (eltérő üzleti évnél nem naptári)
+
+naplo_szam
+
+integer, nullable
+
+a hézagmentes sorszám; csak könyvelt állapotban kap értéket
+
+statusz
+
+enum, not null
+
+GEPI_JAVASLAT, KEZI_PISZKOZAT, JOVAHAGYASRA_VAR, KONYVELT, SZTORNOZOTT, ELVETVE
+
+tetel_tipus
+
+enum, not null
+
+NORMAL, SZTORNO, NYITO, ZARO
+
+forras
+
+enum, not null
+
+AUTO_SZAMLA, AUTO_BANK, AUTO_RENDSZER, KEZI, KEZI_MODOSITAS
+
+Kulcsfontosságú megszorítás: UNIQUE (naplo_id, konyvelesi_ev, naplo_szam) WHERE naplo_szam IS NOT NULL — részleges egyedi index, mert a nem könyvelt tételek NULL száma nem ütközhet.
+
+Dátumok — a könyvelésben három dátum él egymás mellett, és mindhármat tárolni kell külön:
+
+Mező
+
+Típus
+
+Megjegyzés
+
+teljesites_datum
+
+date, not null
+
+ez határozza meg a számviteli időszakot — minden kimutatás erre szűr
+
+bizonylat_kelte
+
+date
+
+a bizonylat kiállítási dátuma
+
+konyveles_idopontja
+
+timestamptz, nullable
+
+a könyvelt állapotba lépés időbélyege — rendszer tölti
+
+Bizonylat és partner
+
+Mező
+
+Típus
+
+Megjegyzés
+
+bizonylat_azonosito
+
+varchar(64)
+
+számlaszám, kivonatszám, határozatszám
+
+partner_id
+
+uuid FK, nullable
+
+vegyes tételnél lehet üres
+
+megnevezes
+
+varchar(255), not null
+
+a tétel szöveges leírása
+
+indoklas
+
+text, nullable
+
+kézi tételnél/módosításnál kötelező (app-szinten kikényszerítve)
+
+Deviza (fej-szinten, mert egy tétel egy devizában könyvelődik)
+
+Mező
+
+Típus
+
+Megjegyzés
+
+deviza
+
+char(3), default 'HUF'
+
+arfolyam
+
+numeric(12,6), nullable
+
+HUF-nál null
+
+arfolyam_datum
+
+date, nullable
+
+melyik napi árfolyam
+
+Láncolás és gépi eredet
+
+Mező
+
+Típus
+
+Megjegyzés
+
+sztornozott_tetel_id
+
+uuid FK → tetel_fej, nullable
+
+sztornó tételnél: mit sztornóz
+
+eredeti_tetel_id
+
+uuid FK → tetel_fej, nullable
+
+helyesbítő tételnél: a lánc gyökere
+
+gepi_javaslat
+
+jsonb, nullable
+
+az automatika eredeti javaslatának befagyasztott pillanatképe (fej + sorok + soronkénti konfidencia)
+
+konfidencia
+
+numeric(4,3), nullable
+
+tételszintű összesített konfidencia
+
+import_kulcs
+
+varchar(128), nullable
+
+idempotencia-kulcs (lásd lentebb)
+
+Létrehozás/feldolgozás metaadatai: letrehozta (uuid vagy SYSTEM), letrehozva (timestamptz), konyvelte, jovahagyta, elvetette + a hozzájuk tartozó időbélyegek. Ezek kényelmi denormalizációk — a hiteles forrás az audit log, de a listanézetek gyorsításához érdemes a fejen is tartani őket.
+
+Az import_kulcs a teljes automatizálás miatt kritikus: amikor a számlafeldolgozó vagy a bankimport újra beküldi ugyanazt a forrásdokumentumot (retry, duplikált webhook, újrafuttatott feldolgozás), a UNIQUE (ceg_id, import_kulcs) megszorítás garantálja, hogy nem keletkezik duplikált tétel. A kulcs a forrásoldali azonosítóból képződik (pl. NAV számla hash, bank tranzakció-azonosító).
+
+3. tetel_sor — kontírsorok
+
+Mező
+
+Típus
+
+Megjegyzés
+
+id
+
+uuid PK
+
+tetel_fej_id
+
+uuid FK, not null, on delete restrict
+
+sorszam
+
+smallint, not null
+
+soron belüli sorrend, UNIQUE (tetel_fej_id, sorszam)
+
+fokonyvi_szamla_id
+
+uuid FK → számlatükör
+
+tk_jelleg
+
+char(1), not null
+
+T vagy K
+
+osszeg
+
+numeric(18,2), not null, CHECK (osszeg > 0)
+
+mindig pozitív, könyvelési devizában (HUF)
+
+deviza_osszeg
+
+numeric(18,2), nullable
+
+devizás tételnél az eredeti devizaösszeg
+
+afa_kod
+
+varchar(16), nullable
+
+ÁFA-kulcs/jogcím kód
+
+afa_szerep
+
+enum, nullable
+
+ALAP, AFA, NINCS
+
+kapcsolt_sor_id
+
+uuid FK → tetel_sor, nullable
+
+az ÁFA-sor hivatkozik a hozzá tartozó alap-sorra
+
+koltseghely_id, projekt_id
+
+uuid FK, nullable
+
+dimenziók
+
+sor_konfidencia
+
+numeric(4,3), nullable
+
+a gépi kontírozás soronkénti biztonsága
+
+megnevezes
+
+varchar(255), nullable
+
+soronkénti szöveg, ha eltér a fejtől
+
+Két tudatos tervezési döntés van itt. Az első: jelleg + pozitív összeg, nem előjeles összeg és nem két oszlop (tartozik_összeg/követel_összeg). Ez a legkevésbé hibázható forma: a T=K validáció SUM(CASE WHEN tk_jelleg='T' THEN osszeg ELSE -osszeg END) = 0, a sztornó tétel pedig egyszerűen a jellegek megfordításával képződik (nem negatív összeggel — a CHECK (osszeg > 0) ezt ki is zárja, a "piros sztornó" helyett az ellenkönyvelés modellt választva; ha később piros sztornót is akartok támogatni, az a tetel_tipus szintjén kezelendő, nem az összegen). A második: az ÁFA alap–ÁFA sor explicit összekapcsolása (kapcsolt_sor_id), mert e nélkül az ÁFA-analitika és a bevallás-összeállítás csak heurisztikákkal tudná párosítani, melyik 27%-os ÁFA-sor melyik alaphoz tartozik egy soktételes vegyes bejegyzésben.
+
+A T=K egyensúlyt adatbázis-szinten nem lehet klasszikus CHECK-kel kikényszeríteni (több sorra vonatkozik) — ezt a könyvelési tranzakció végén futó constraint trigger (deferred, commit-kor kiértékelve) vagy az állapotgép-motor garantálja. Javaslom mindkettőt: az app-réteg validál, a deferred trigger pedig védőháló.
+
+4. Naplószám-kiosztás — a konkurencia kezelése
+
+Először az, hogy miért nem jó a beépített sequence: a PostgreSQL sequence rollback esetén nem adja vissza a kihúzott számot, tehát minden meghiúsult tranzakció lyukat üt a sorszámozásba — pontosan azt sérti, amit garantálni akarunk. A hézagmentes számozás egyetlen megbízható módja a számláló tábla soronkénti zárolással:
+
+sql
+
+CREATE TABLE naplo_szamlalo (
+
+  naplo_id     uuid     NOT NULL,
+
+  konyvelesi_ev smallint NOT NULL,
+
+  utolso_szam  integer  NOT NULL DEFAULT 0,
+
+  PRIMARY KEY (naplo_id, konyvelesi_ev)
+
+);
+
+A könyvelési tranzakció váza:
+
+sql
+
+BEGIN;
+
+-- 1. Zároljuk a számlálót: minden párhuzamos könyvelés
+
+--    ugyanebbe a naplóba itt sorba áll
+
+SELECT utolso_szam FROM naplo_szamlalo
+
+ WHERE naplo_id = $1 AND konyvelesi_ev = $2
+
+ FOR UPDATE;
+
+-- 2. Guard-ellenőrzések a zárolás UTÁN:
+
+--    időszak nyitott? T=K? kötelező mezők? státusz-átmenet érvényes?
+
+-- 3. Szám kiosztása
+
+UPDATE naplo_szamlalo SET utolso_szam = utolso_szam + 1
+
+ WHERE naplo_id = $1 AND konyvelesi_ev = $2;
+
+-- 4. Tétel véglegesítése
+
+UPDATE tetel_fej
+
+   SET statusz = 'KONYVELT',
+
+       naplo_szam = <kiosztott szám>,
+
+       konyveles_idopontja = now(),
+
+       konyvelte = $felhasznalo
+
+ WHERE id = $tetel_id AND statusz IN ('GEPI_JAVASLAT','JOVAHAGYASRA_VAR','KEZI_PISZKOZAT');
+
+-- 5. Audit-bejegyzés
+
+INSERT INTO audit_log (...);
+
+COMMIT;
+
+A kritikus részletek: a FOR UPDATE a napló+év kombinációra sorosítja a könyvelést, tehát két különböző naplóba párhuzamosan lehet könyvelni, ugyanabba sorban — ez pontosan a kívánt viselkedés, és a hézagmentesség így garantált, mert a szám kiosztása és a tétel könyvelt állapotba írása ugyanabban a tranzakcióban történik: ha bármi meghiúsul, a rollback a számláló növelését is visszavonja. A guard-ellenőrzéseket a zárolás után kell futtatni (különben két párhuzamos tranzakció ugyanazt az állapotot látná). A 4-es lépés WHERE statusz IN (...) feltétele az optimista védelem kettős könyvelés ellen: ha közben valaki más már könyvelte a tételt, az UPDATE nulla sort érint, és a tranzakciót vissza kell görgetni. Tömeges gépi könyvelésnél (pl. egy 200 soros bankkivonat feldolgozása) ne tételenként nyissatok tranzakciót, hanem kötegben: egy zárolás, N szám kiosztása, N tétel véglegesítése — nagyságrendekkel gyorsabb, és a kivonat vagy egyben könyvelődik, vagy egyben nem. Holtpont ellen elég egy konvenció: ha egy tranzakció több naplót érintene (ritka), a zárolásokat mindig azonos sorrendben (naplo_id szerint rendezve) kell felvenni.
+
+5. audit_log — a megmásíthatatlan eseménynapló
+
+sql
+
+CREATE TABLE audit_log (
+
+  id             bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+  ceg_id         uuid        NOT NULL,
+
+  entitas_tipus  varchar(32) NOT NULL,   -- 'TETEL_FEJ', 'TETEL_SOR', 'NAPLO', ...
+
+  entitas_id     uuid        NOT NULL,
+
+  esemeny        varchar(32) NOT NULL,   -- 'LETREHOZAS', 'MODOSITAS',
+
+                                         -- 'ALLAPOTVALTAS', 'SZTORNOZAS',
+
+                                         -- 'BIZONYLAT_CSATOLAS', 'ELVETES'
+
+  regi_statusz   varchar(32),
+
+  uj_statusz     varchar(32),
+
+  valtozasok     jsonb,                  -- mezőnkénti diff: {"mezo": {"regi":..., "uj":...}}
+
+  indok          text,
+
+  felhasznalo_id uuid,                   -- NULL = rendszer
+
+  folyamat       varchar(64),            -- melyik gépi folyamat (pl. 'bank-import-v3')
+
+  idobelyeg      timestamptz NOT NULL DEFAULT now(),
+
+  tranzakcio_id  uuid                    -- egy üzleti művelet több bejegyzésének összefogása
+
+);
+
+Néhány tervezési indok. A valtozasok jsonb diff azért mezőnkénti, mert a jóváhagyó munkalistán és ellenőrzéskor a leggyakoribb kérdés a "mit írt át az ember a gépi javaslaton" — ezt egy diff-ből azonnal meg lehet válaszolni, teljes pillanatképek összehasonlítgatása nélkül. A tranzakcio_id köti össze az egy üzleti műveletként végrehajtott lépéseket: egy sztornózás három tételt érint (eredeti státuszváltása, sztornó tétel keletkezése és könyvelése, helyesbítő tétel), és ellenőrzéskor egyetlen műveletként kell tudni megmutatni. A folyamat mező a gépi eseményeknél mondja meg, melyik automatika-verzió cselekedett — hibakereséskor és a modellfejlesztés visszamérésekor pótolhatatlan.
+
+Az append-only jelleget adatbázis-szinten kényszerítsétek ki: az alkalmazás szerepköre csak INSERT és SELECT jogot kap a táblára, UPDATE/DELETE jogot senki (védőhálónak mehet mellé egy tiltó trigger is). Az audit log sosem törlődik — particionáljátok idő szerint (havi/éves particionálás), így az archiválás particiócserével megoldható a tábla bolygatása nélkül.
+
+6. Megváltoztathatatlanság kikényszerítése a könyvelt tételen
+
+Az app-rétegbeli tiltás mellé adatbázis-szintű védőháló:
+
+sql
+
+CREATE OR REPLACE FUNCTION vedd_a_konyvelt_tetelt() RETURNS trigger AS $$
+
+BEGIN
+
+  IF OLD.statusz IN ('KONYVELT','SZTORNOZOTT') THEN
+
+    -- egyetlen megengedett változás: KONYVELT -> SZTORNOZOTT
+
+    -- a láncmezők egyidejű beírásával
+
+    IF NOT (OLD.statusz = 'KONYVELT'
+
+            AND NEW.statusz = 'SZTORNOZOTT'
+
+            AND NEW.naplo_szam = OLD.naplo_szam
+
+            AND NEW.teljesites_datum = OLD.teljesites_datum) THEN
+
+      RAISE EXCEPTION 'Könyvelt tétel nem módosítható (id: %)', OLD.id;
+
+    END IF;
+
+  END IF;
+
+  RETURN NEW;
+
+END $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_konyvelt_vedelem
+
+BEFORE UPDATE OR DELETE ON tetel_fej
+
+FOR EACH ROW EXECUTE FUNCTION vedd_a_konyvelt_tetelt();
+
+A gyakorlatban a teljes mezőlistát érdemes összevetni (a fenti a minta kedvéért rövidített), a tetel_sor táblára pedig egy párja kell: könyvelt fejhez tartozó sor nem módosítható és nem törölhető, DELETE pedig a fejre is teljesen tiltott minden könyvelt/sztornózott státuszban.
+
+7. Indexek — a napi munka lekérdezései alá
+
+A leggyakoribb hozzáférési minták: naplólista időszakra ((ceg_id, naplo_id, konyvelesi_ev, naplo_szam) — ez a részleges egyedi index eleve megvan), időszaki kimutatások ((ceg_id, teljesites_datum) WHERE statusz IN ('KONYVELT','SZTORNOZOTT')), a jóváhagyási munkalista ((ceg_id, statusz, letrehozva) WHERE statusz = 'JOVAHAGYASRA_VAR' részleges index — kicsi és mindig forró), bizonylat szerinti visszakeresés ((ceg_id, bizonylat_azonosito)), partner szerinti ((ceg_id, partner_id, teljesites_datum)), a sor-oldalon pedig a főkönyvi kivonat alapja: (fokonyvi_szamla_id, tetel_fej_id). A főkönyvi egyenlegeket kezdetben számoljátok mindig a sorokból (a napló az egyetlen igazságforrás!) — materializált egyenlegtáblát csak akkor vezessetek be, ha a volumen kikényszeríti, és akkor is származtatott, újraépíthető gyorsítótárként.
+
+Ezzel megvan a mag: törzs, fej, sor, számláló, audit, csatolmány — és a három kényes mechanizmus (hézagmentes számkiosztás, append-only audit, DB-szintű írásvédelem).
+
+1. Az időszakkezelés adatmodellje
+
+1.1 A kiinduló felismerés: két, egymástól független időszak-fogalom él együtt
+
+Mielőtt táblát terveznénk, egy elvi tisztázás, mert erre épül minden: a könyvelési időszak (melyik hónapba tartozik a tétel a teljesítési dátum szerint, ide könyvelhető-e még) és az ÁFA-bevallási időszak (melyik bevallásban jelenik meg a tétel ÁFA-tartalma) két különböző dolog, és a kettő rendszeresen elválik egymástól. A tipikus eset: november 20-án zárjátok az októberi ÁFA-t és benyújtjátok a bevallást, de december 3-án még befut egy októberi teljesítésű szállítói számla. Ezt a számlát könyvelni még lehet és kell októberre (a számviteli időszak még nyitott), de az ÁFA-ja már nem mehet az októberi bevallásba — a levonható ÁFA a következő nyitott bevallási időszakban érvényesíthető (az Áfa tv. ezt engedi, a levonási jog utóbb, elévülési időn belül gyakorolható), fizetendő ÁFA-nál pedig önellenőrzés kell. Ebből következik az adatmodell kulcsdöntése: a tétel sorai külön hivatkoznak az ÁFA-bevallási időszakra, ami alapértelmezetten a teljesítési dátumból adódik, de attól eltérhet.
+
+1.2 konyvelesi_idoszak tábla
+
+Havi granularitást javaslok — ez a legkisebb egység, aminél a zárás értelmes, és minden nagyobb egység (negyedév, év) ebből összerakható:
+
+sql
+
+CREATE TABLE konyvelesi_idoszak (
+
+  id            uuid PRIMARY KEY,
+
+  ceg_id        uuid     NOT NULL,
+
+  konyvelesi_ev smallint NOT NULL,
+
+  honap         smallint NOT NULL CHECK (honap BETWEEN 1 AND 12),
+
+  kezdo_datum   date     NOT NULL,   -- eltérő üzleti évnél nem esik egybe
+
+  zaro_datum    date     NOT NULL,   -- a naptári hónappal
+
+  statusz       varchar(16) NOT NULL DEFAULT 'NYITOTT',
+
+                -- 'NYITOTT' | 'ZART' | 'VEGLEGES'
+
+  zarta         uuid,
+
+  zarva         timestamptz,
+
+  UNIQUE (ceg_id, konyvelesi_ev, honap)
+
+);
+
+A státuszok jelentése szándékosan minimális. NYITOTT: bármely guard-nak megfelelő tétel könyvelhető és sztornózható bele. ZART: semmilyen tétel nem könyvelhető bele és nem sztornózható belőle — az állapotgép minden könyvelési átmenete a teljesítési dátum időszakának ezt a mezőjét ellenőrzi. VEGLEGES: a beszámoló elfogadása utáni állapot, ahonnan nincs visszaút — a ZART még újranyitható, a VEGLEGES soha. Az újranyitás (ZART → NYITOTT) legyen létező, de erősen kontrollált művelet: külön jogosultság, kötelező indoklás, audit-bejegyzés, és a felület figyelmeztessen, ha az újranyitott időszakot érintő ÁFA-bevallás már benyújtott (mert akkor a változtatás önellenőrzést von maga után).
+
+Két működési szabály tartozik ide. A zárás csak folytonosan haladhat: egy hónap nem zárható, ha az előző még nyitott — különben lyukas zárási állapot keletkezik, amiben a "meddig van kész a könyvelés" kérdés megválaszolhatatlan. Az évnyitás pedig automatikusan hozza létre a következő év 12 időszakát NYITOTT státusszal (illetve könyvelőirodai gyakorlatban gyakori, hogy a jövőbeli hónapokat is csak sorban nyitják — ezt konfigurációs kérdésként kezelném, alapértelmezésben minden létrehozott időszak nyitott).
+
+1.3 A zárás mint művelet
+
+A zárás ne egy státuszmező-átbillentés legyen, hanem egy ellenőrzőlistás művelet, amely validációk sorozata után, tranzakcióban fut le. A javasolt ellenőrzések a záráskor:
+
+Blokkoló feltételek (ezek hiányában a zárás nem futhat le): nincs az időszakra eső teljesítési dátumú tétel JOVAHAGYASRA_VAR státuszban (a munkalistát ki kell üríteni — el kell dönteni minden függő tételről, hogy könyvelésre vagy elvetésre kerül, különben a zárás után már nem lehetne őket jóváhagyni); az előző időszak zárt; minden, az időszakot érintő gépi feldolgozási sor (feldolgozás alatt álló bankimport, számlafeldolgozási köteg) lefutott vagy megszakított.
+
+Figyelmeztető feltételek (a zárás mehet, de a könyvelő explicit megerősítésével): vannak az időszakra eső GEPI_JAVASLAT vagy KEZI_PISZKOZAT státuszú tételek (ezek a zárás után csak későbbi időszakra átdátumozva véglegesíthetők); a bank naplók egyenlege nem egyezik a kivonategyeztetéssel; párosítatlan banki tranzakciók maradtak.
+
+Maga a zárási tranzakció: a blokkoló feltételek újraellenőrzése zárolás alatt (az időszak-rekord FOR UPDATE zárolásával, hogy a validáció és a státuszváltás között ne csússzon be könyvelés — és ugyanezért az állapotgép könyvelési tranzakciója is az időszak-rekordot FOR SHARE zárolással olvassa: így a könyvelés és a zárás kizárja egymást, de a párhuzamos könyvelések nem), majd statusz = 'ZART', audit-bejegyzés, és opcionálisan a zárási riport (naplónkénti forgalmi összesítő) pillanatképének eltárolása.
+
+1.4 afa_bevallasi_idoszak tábla és a sorok hozzárendelése
+
+sql
+
+CREATE TABLE afa_bevallasi_idoszak (
+
+  id             uuid PRIMARY KEY,
+
+  ceg_id         uuid NOT NULL,
+
+  gyakorisag     varchar(8)  NOT NULL,  -- 'HAVI' | 'NEGYEDEV' | 'EVES'
+
+  kezdo_datum    date NOT NULL,
+
+  zaro_datum     date NOT NULL,
+
+  statusz        varchar(16) NOT NULL DEFAULT 'NYITOTT',
+
+                 -- 'NYITOTT' | 'OSSZEALLITAS' | 'BENYUJTVA'
+
+  tipus          varchar(16) NOT NULL DEFAULT 'ALAP',
+
+                 -- 'ALAP' | 'ONELLENORZES'
+
+  alap_idoszak_id uuid REFERENCES afa_bevallasi_idoszak(id),
+
+                 -- önellenőrzésnél: melyik bevallást helyesbíti
+
+  benyujtva      timestamptz,
+
+  UNIQUE (ceg_id, kezdo_datum, zaro_datum, tipus, alap_idoszak_id)
+
+);
+
+Fontos, hogy az időszakokat dátumtartományként tároljátok, ne év+hónap párként, mert a bevallási gyakoriság évközben változhat (a cég átlép havi bevallásra negyedévesről vagy fordítva), és az áttérés évében az időszakok nem szabályos rácsra esnek. A gyakoriság-váltást az időszakok generálása kezeli, a tételek hozzárendelése már csak tartomány-illesztés.
+
+A tetel_sor kap egy afa_bevallasi_idoszak_id (nullable FK) mezőt — csak azok a sorok töltik, amelyeknek van ÁFA-vonatkozása (afa_szerep ≠ NINCS). A hozzárendelési logika a könyveléskor (a könyvelt állapotba lépés pillanatában, az állapotgép-motorban) fut le:
+
+Alapértelmezés: a teljesítési dátumot tartalmazó ÁFA-időszak.
+
+Ha az az időszak már OSSZEALLITAS vagy BENYUJTVA státuszú és a sor levonható (előzetes) ÁFA: a soron következő NYITOTT időszakhoz rendelés, a soron egy afa_atsorolas_oka = 'KESVE_ERKEZETT' jelöléssel — így a bevallás-összeállító pontosan látja, mi miért csúszott át.
+
+Ha az időszak benyújtott és a sor fizetendő ÁFA-t érint: a tétel könyvelhető, de a rendszer önellenőrzési kötelezettséget jelez — a sor egy "önellenőrzésre vár" gyűjtőbe kerül (afa_bevallasi_idoszak_id egyelőre NULL, státuszjelzéssel), és a könyvelő az önellenőrzési bevallás létrehozásakor (tipus = 'ONELLENORZES', alap_idoszak_id az eredetire mutat) rendeli hozzá az oda tartozó sorokat.
+
+Az ÁFA-időszak BENYUJTVA állapotba lépésekor a hozzárendelt sorok ÁFA-vonatkozású mezői is befagynak (a tétel amúgy is könyvelt, tehát írásvédett — itt a plusz szabály az, hogy a benyújtott időszakhoz sor már nem rendelhető hozzá és onnan el sem vehető, csak önellenőrzésen keresztül). Így a bevallás bármikor, utólag is bitre pontosan újra-előállítható a naplóból — ellenőrzésnél ez a képesség aranyat ér.
+
+A könyvelési és az ÁFA-időszak zárása közti viszony tehát: a kettő függetlenül zárható, de a rendszer figyelmeztet az észszerű sorrendre (előbb ÁFA-zárás, aztán könyvelési zárás), és a könyvelési zárás blokkoló feltételei közé érdemes felvenni konfigurálhatóan, hogy az időszakot fedő ÁFA-bevallás legalább OSSZEALLITAS státuszban legyen.
+
+2. A jóváhagyási munkalista API-terve
+
+Az API tervezésének vezérelve: a munkalista nem CRUD-felület, hanem döntéstámogató sor — a könyvelő másodpercek alatt dönt tételekről, ezért a lekérdezésnek gazdagnak, a műveleteknek atominak, ütközésbiztosnak és idempotensnek kell lenniük.
+
+2.1 A munkalista lekérdezése
+
+GET /api/v1/cegek/{cegId}/munkalista
+
+  ?statusz=JOVAHAGYASRA_VAR
+
+  &naplo=SZ,B1
+
+  &forras=AUTO_SZAMLA
+
+  &konfidencia_max=0.85
+
+  &osszeg_min=100000
+
+  &teljesites_tol=2026-08-01&teljesites_ig=2026-08-31
+
+  &rendezes=konfidencia_asc          -- a legbizonytalanabb elöl
+
+  &cursor=eyJ...&limit=50
+
+Kurzoralapú lapozást javaslok offset helyett: a munkalista élő sor, amelyből folyamatosan tűnnek el és amelybe folyamatosan érkeznek tételek — offset-lapozásnál a könyvelő duplán látna vagy kihagyna tételeket. A válasz tétel-összefoglalókat ad, amelyeknek a döntéshez szükséges minden adata megvan, hogy a tipikus esetben ne kelljen lekérni a részleteket:
+
+json
+
+{
+
+  "tetelek": [{
+
+    "id": "…",
+
+    "verzio": 3,
+
+    "naplo": "SZ",
+
+    "forras": "AUTO_SZAMLA",
+
+    "statusz": "JOVAHAGYASRA_VAR",
+
+    "partner": {"id": "…", "nev": "Irodaszer Bt."},
+
+    "bizonylat_azonosito": "ISZ-2026/4471",
+
+    "teljesites_datum": "2026-08-10",
+
+    "brutto_osszeg": 150495,
+
+    "deviza": "HUF",
+
+    "konfidencia": 0.71,
+
+    "figyelmeztetesek": ["UJ_PARTNER", "SZOKATLAN_FOKONYVI_SZAM"],
+
+    "sorok": [
+
+      {"fokonyvi_szam": "5111", "tk": "T", "osszeg": 118500,
+
+       "afa_kod": "A27", "sor_konfidencia": 0.68},
+
+      {"fokonyvi_szam": "4661", "tk": "T", "osszeg": 31995,
+
+       "sor_konfidencia": 0.97},
+
+      {"fokonyvi_szam": "454",  "tk": "K", "osszeg": 150495,
+
+       "sor_konfidencia": 0.99}
+
+    ],
+
+    "bizonylat_kep_url": "…",
+
+    "miert_var": "KONFIDENCIA_KUSZOB_ALATT"
+
+  }],
+
+  "kovetkezo_cursor": "eyJ…",
+
+  "osszesen": 37
+
+}
+
+A verzio mező az optimista konkurencia alapja (lásd 2.3), a miert_var és a figyelmeztetesek pedig a felület számára mondja el, mire figyeljen a könyvelő — a jó munkalista nem csak megmutatja a tételt, hanem rámutat a bizonytalanság okára (soronkénti konfidenciával: a fenti példában látszik, hogy a gép a költségszámla-besorolásban bizonytalan, nem az ÁFA-ban).
+
+Emellett egy GET /munkalista/osszesito végpont adja a fejléc-számokat (hány tétel vár, naplónként, legrégebbi várakozó kora), a GET /tetelek/{id} pedig a teljes részletet, benne a gepi_javaslat pillanatképpel és — már módosított tételnél — az aktuális állapot és a javaslat mezőnkénti diffjével.
+
+2.2 Döntési műveletek
+
+POST /api/v1/cegek/{cegId}/tetelek/{id}/jovahagyas
+
+POST /api/v1/cegek/{cegId}/tetelek/{id}/elvetes
+
+PUT  /api/v1/cegek/{cegId}/tetelek/{id}          -- szerkesztés várakozó állapotban
+
+POST /api/v1/cegek/{cegId}/tetelek/{id}/sztorno   -- könyvelt tételre
+
+POST /api/v1/cegek/{cegId}/tetelek               -- kézi piszkozat létrehozása
+
+POST /api/v1/cegek/{cegId}/tetelek/{id}/veglegesites  -- piszkozat könyvelése
+
+A jóváhagyás kérésteste szándékosan tud opcionális módosítást hordozni, mert a leggyakoribb munkafolyamat a "javítok egy mezőt és jóváhagyom" — ezt egy hívásban kell tudni, különben minden javításos jóváhagyás két kör:
+
+json
+
+POST …/tetelek/{id}/jovahagyas
+
+{
+
+  "verzio": 3,
+
+  "modositasok": {
+
+    "sorok": [{"sorszam": 1, "fokonyvi_szamla": "5112"}]
+
+  },
+
+  "megjegyzes": "irodaszer helyett nyomtatvány"
+
+}
+
+A motor ilyenkor egy tranzakcióban alkalmazza a módosítást (auditálva, a gépi javaslathoz képesti diffel), futtatja a guard-okat és könyvel. Az elvetés kötelező strukturált indokot vár ({"verzio": 3, "indok_kod": "DUPLIKATUM", "indok": "…"} — az indok_kod kódlistája a tanítójel). A sztornó végpont a korábban tervezett atomi láncot futtatja, és paraméterben kéri a módot: {"mod": "CSAK_SZTORNO"} vagy {"mod": "SZTORNO_ES_HELYESBITES", "uj_tetel": {…}}, valamint zárt időszak esetén a "sztorno_teljesites_datum" felülbírálást a következő nyitott időszakra.
+
+Tömeges műveletre külön végpont kell, mert a munkalista-ürítés (pl. 40 magabiztos tétel egyben jóváhagyása zárás előtt) e nélkül kínszenvedés:
+
+POST …/tetelek/tomeges-jovahagyas
+
+{ "tetelek": [{"id": "…", "verzio": 3}, {"id": "…", "verzio": 1}] }
+
+A válasz tételenkénti eredménylista (részleges siker megengedett — egy 409-es ütközés nem boríthatja a többi 39 tételt), és a végrehajtás tételenként külön tranzakció, de naplónként kötegelt számkiosztással.
+
+2.3 Konkurencia, idempotencia, hibarend
+
+Optimista zárolás verziószámmal. A tetel_fej kap egy verzio mezőt, amelyet minden írás növel. Minden döntési művelet kötelezően hozza a verziót, és ha az adatbázisbeli ettől eltér (közben egy kolléga szerkesztette, vagy egy másik gépen már jóváhagyták), a válasz 409 Conflict a tétel friss állapotával — a felület ilyenkor újrarajzolja a tételt és a könyvelő az aktuális állapotról dönt. Ez könyvelőirodai környezetben (többen dolgoznak ugyanazon a cégen) nem elméleti eset, hanem mindennapos.
+
+Idempotencia-kulcs. Minden állapotváltoztató POST elfogad egy Idempotency-Key fejlécet; a szerver a kulcs+végpont párra eltárolja az első végrehajtás eredményét, és ismételt kérésre azt adja vissza újra-végrehajtás nélkül. Mobilhálózaton megszakadt kérés újraküldésénél ez különbözteti meg a "kétszer jóváhagyás" hibát a biztonságos ismétléstől.
+
+Strukturált guard-hibák. Amikor egy művelet guard-on bukik, a válasz 422, géppel értelmezhető kóddal, hogy a felület pontos, cselekvésre fordítható hibát mutathasson:
+
+json
+
+{
+
+  "hiba": "GUARD_SERTES",
+
+  "reszletek": [
+
+    {"kod": "IDOSZAK_ZART", "mezo": "teljesites_datum",
+
+     "uzenet": "A 2026. júliusi időszak zárt.",
+
+     "javaslat": {"muvelet": "ATDATUMOZAS", "ertek": "2026-08-01"}}
+
+  ]
+
+}
+
+A javaslat mező a kulcs a gördülékeny UX-hez: a hiba nemcsak közli a falat, hanem felkínálja a megoldást, amit a felület egy gombként jeleníthet meg ("Átdátumozás augusztus 1-re és jóváhagyás").
+
+Frissesség. A munkalista élő jellege miatt érdemes egy egyszerű értesítési csatorna (SSE vagy websocket): munkalista_valtozott esemény cég-szinten, mire a nyitott munkalista-nézet újratölt. Nem kell tételes szinkron — a lista olcsón újrakérdezhető.
+
+Ezzel az időszak-réteg és a munkalista-API is megvan, és a kettő össze is ér: a zárás blokkoló feltétele a kiürített munkalista, a munkalista guard-hibái pedig az időszak-státuszokból táplálkoznak.
+
+A 65-ös bevallás összeállítása a naplóból
+
+1. Az alapelv: a bevallás származtatott adat — de benyújtáskor befagy
+
+A rendszer eddigi logikájából ez egyenesen következik, de érdemes kimondani: a bevallás nem külön könyvelés, hanem a könyvelt tételsorok egy vetülete. Minden forintnak, ami a bevallás bármely sorában megjelenik, visszavezethetőnek kell lennie konkrét tetel_sor rekordokra — és fordítva: minden ÁFA-vonatkozású sornak pontosan egy bevallásban kell landolnia (vagy explicit módon "még nyitott" állapotban lennie). Ugyanakkor a benyújtott bevallás jogi tény: ami bement a NAV-hoz, azt akkor is bitre pontosan reprodukálni kell tudni, ha a napló utólag változik (sztornók, önellenőrzés). Ezért az architektúra kétrétegű: az élő réteg (a sorok hozzárendelése bevallási időszakhoz, bármikor újraaggregálható) és a befagyasztott réteg (a benyújtott bevallás pillanatképe).
+
+2. Az ÁFA-kód törzs: a leképezés magja
+
+A tetel_sor.afa_kod eddig csak egy címke volt — most kap tartalmat. Az ÁFA-kód a rendszer legfontosabb vezérlő törzsadata: ez mondja meg, hogy egy sor a bevallás melyik részébe, milyen szereppel kerül.
+
+sql
+
+CREATE TABLE afa_kod (
+
+  id              uuid PRIMARY KEY,
+
+  kod             varchar(16) NOT NULL,     -- 'A27', 'F27', 'KB27', 'AM', 'TM'…
+
+  megnevezes      varchar(100) NOT NULL,
+
+  kulcs           numeric(4,2),             -- 27.00, 18.00, 5.00, 0, NULL
+
+  irany           varchar(16) NOT NULL,     -- 'FIZETENDO' | 'LEVONHATO' | 'TAJEKOZTATO' | 'NINCS'
+
+  jogcim          varchar(32) NOT NULL,     -- 'BELFOLDI_EGYENES', 'BELFOLDI_FORDITOTT',
+
+                                            -- 'KOZOSSEGI_TERMEK', 'KOZOSSEGI_SZOLG',
+
+                                            -- 'IMPORT', 'EXPORT', 'ALANYI_MENTES',
+
+                                            -- 'TARGYI_MENTES', 'ARANYOSITOTT'…
+
+  levonasi_korlat varchar(16),              -- 'TELJES' | 'ARANYOSITOTT' | 'TILTOTT'
+
+  m_lapos         boolean NOT NULL DEFAULT false,  -- partnertételes M-lapra kerül-e
+
+  ervenyes_tol    date NOT NULL,
+
+  ervenyes_ig     date
+
+);
+
+Néhány tervezési megjegyzés. A fordított adózás (BELFOLDI_FORDITOTT, valamint a közösségi beszerzés és az import szolgáltatás) azért kap külön jogcímet, mert egyetlen bejövő számlából két bevallási irányt generál: a beszerzőnek fizetendő ÁFA-ja keletkezik ÉS (levonási jog esetén) ugyanakkora levonható tétele. Ezt a könyvelési oldalon már a kontírozás leképezi (T 466 – K 467 pár), de a bevallás-összeállítónak tudnia kell, hogy a két sor összetartozik és melyik bevallási blokkba megy. A levonasi_korlat az arányosítás (tárgyi mentes és adóköteles tevékenységet vegyesen végző cég) és a tételes levonási tilalmak (pl. személygépkocsi) kezelésének horgonya — az arányosítás teljes algoritmusát első körben elég előkészíteni (a kód szintjén megjelölni, mi arányosítandó), a tényleges arányszám-számítás lehet későbbi ütem. Az ervenyes_tol/ig pedig azért kell, mert kulcsok és szabályok változnak, és egy 2025-ös tétel a 2025-ben érvényes kóddal könyvelődött.
+
+3. A bevallási sablon: az űrlap-verziók leválasztása
+
+A NAV nyomtatvány évente új jelű (2565, 2665…), és a sorszerkezete is változhat. Halálos hiba lenne az ÁFA-kód törzsbe égetni a nyomtatvány sorszámait — helyette egy verziózott leképező réteg kell:
+
+sql
+
+CREATE TABLE bevallas_sablon (
+
+  id          uuid PRIMARY KEY,
+
+  nyomtatvany varchar(16) NOT NULL,   -- '2665'
+
+  ervenyes_tol date NOT NULL,
+
+  ervenyes_ig  date
+
+);
+
+CREATE TABLE bevallas_sor_lekepezes (
+
+  sablon_id   uuid REFERENCES bevallas_sablon(id),
+
+  afa_kod_id  uuid REFERENCES afa_kod(id),
+
+  szerep      varchar(8) NOT NULL,    -- 'ALAP' | 'AFA'
+
+  sor_kod     varchar(16) NOT NULL,   -- a nyomtatvány sorának azonosítója
+
+  elojel      smallint NOT NULL DEFAULT 1
+
+);
+
+Így egy ÁFA-kód a 2565-ös és a 2665-ös sablonban más-más sorra képeződhet, a történeti bevallások pedig a saját koruk sablonjával reprodukálódnak. Az összeállító motor ezen a leképezésen keresztül aggregál: SUM(osszeg) sor_kódonként, az afa_szerep (ALAP/AFA) és az előjel figyelembevételével — a sztornó tételek jellegfordítása miatt az előjelkezelés automatikusan helyes, ha az aggregálás a T/K jellegen keresztül előjelesen történik.
+
+4. Az összeállítás folyamata és a pillanatkép
+
+Az afa_bevallasi_idoszak státuszgépe működés közben:
+
+NYITOTT → OSSZEALLITAS. A könyvelő (vagy időzített folyamat) elindítja az összeállítást. Ettől kezdve a motor az időszakhoz már nem rendel hozzá új sorokat automatikusan — ami ezután könyvelődik, az a következő nyitott időszakba vagy az önellenőrzési gyűjtőbe megy. Az összeállítás lefuttatja az aggregálást és ellenőrzőlistát ad: vannak-e az időszakra eső, még JOVAHAGYASRA_VAR tételek (figyelmeztetés: ezek ÁFA-ja nem lesz benne); vannak-e ÁFA-kód nélküli, de 466/467-et érintő sorok (blokkoló — kontírozási hiba); egyezik-e a bevallás fizetendő/levonható összesenje a főkönyvi 467/466 időszaki forgalmával (lásd 6. pont). Az OSSZEALLITAS állapot visszanyitható (→ NYITOTT), ha a könyvelő még enged be tételeket.
+
+OSSZEALLITAS → BENYUJTVA. A benyújtás rögzítésekor születik meg a befagyasztott réteg:
+
+sql
+
+CREATE TABLE bevallas (
+
+  id            uuid PRIMARY KEY,
+
+  idoszak_id    uuid REFERENCES afa_bevallasi_idoszak(id),
+
+  sablon_id     uuid REFERENCES bevallas_sablon(id),
+
+  tipus         varchar(16) NOT NULL,          -- 'ALAP' | 'ONELLENORZES'
+
+  benyujtva     timestamptz NOT NULL,
+
+  nav_azonosito varchar(64),                   -- érkeztetési szám
+
+  export_hash   varchar(64) NOT NULL           -- a beküldött állomány hash-e
+
+);
+
+CREATE TABLE bevallas_ertek (
+
+  bevallas_id uuid REFERENCES bevallas(id),
+
+  sor_kod     varchar(16) NOT NULL,
+
+  ertek_eft   integer NOT NULL,                -- ezer forintban, kerekítve
+
+  PRIMARY KEY (bevallas_id, sor_kod)
+
+);
+
+CREATE TABLE bevallas_tetel_kapcsolat (
+
+  bevallas_id  uuid REFERENCES bevallas(id),
+
+  tetel_sor_id uuid REFERENCES tetel_sor(id),
+
+  PRIMARY KEY (bevallas_id, tetel_sor_id)
+
+);
+
+A bevallas_tetel_kapcsolat a rendszer egyik legértékesebb táblája: ez a tételes bizonyíték arról, hogy pontosan mely sorokból állt össze a benyújtott bevallás. NAV-ellenőrzésnél ("mutassa be a bevallás 07. sorának analitikáját") ez egy lekérdezés; önellenőrzésnél pedig ez az összehasonlítási alap.
+
+A kerekítés külön figyelmet érdemel: a bevallás ezer forintban készül, de az aggregálás forintban fut, és soronként (sor_kódonként) kerekedik ezerre. Tároljátok a forintos nyers értéket is a bevallas_ertek-ben (ertek_ft oszlop), mert az önellenőrzési különbözet-számításnál a kerekítési lépcsők miatt az ezres értékekből visszafelé számolni hibaforrás.
+
+5. Az M-lapok: partnertételes adatszolgáltatás
+
+A belföldi, levonásba helyezett számlákról partnerenként-számlánként tételes M-lap készül. Ehhez az aggregálás mellett egy tételes kigyűjtés is fut: minden m_lapos = true kódú, levonható sorból számla-szintű rekord képződik (partner adószáma — ezért a partner törzsben az adószám első nyolc jegye kötelező adat belföldi partnernél —, számla sorszáma, teljesítés dátuma, adóalap, áthárított adó). Itt a tetel_fej.bizonylat_azonosito és a partner_id minősége közvetlenül bevallási adatminőség — az automatikus számlafeldolgozásnál ezért a partner-adószám kinyerése és validálása (NAV törzsadat-lekérdezéssel) nem kényelmi, hanem bevallási követelmény. Egy számla több tételsorban, akár több naplóbejegyzésben is szerepelhet (részleges levonás, javítás) — az M-lap-generátor bizonylat-szinten von össze. A NAV Online Számla adatokkal való keresztellenőrzés (a beérkezett számlaadat-szolgáltatás és a levonásba helyezett tételek összevetése) ide építhető be későbbi ütemben — az adatmodell (import_kulcs a NAV-azonosítóval) ezt már most lehetővé teszi.
+
+6. Egyeztetés a főkönyvvel
+
+Az összeállítás kötelező záró ellenőrzése a főkönyvi egyeztetés: a bevallás "fizetendő ÁFA összesen" sora egyezzen a 467-es számla időszaki követel forgalmával (a technikai átvezetések nélkül), a levonható a 466-os tartozik forgalmával, az elszámolandó különbözet pedig a 468-ra vezetődik át egy — a rendszer által generálható — vegyes naplós átvezetési tétellel (T 467 – K 466 – K/T 468). Ez az átvezetés maga is szabályos, gépi forrású naplóbejegyzés (forras = AUTO_RENDSZER), amely az időszak-hozzárendelésben már a következő időszakot terheli, hogy ne zavarja a saját bevallását. Az eltérés-riport (bevallás vs. főkönyv, sor_kódonként lebontva, a kilógó tételsorok listájával) az összeállító képernyő központi eleme legyen.
+
+Az önellenőrzés — végigvezetve
+
+7.1 Mikor keletkezik önellenőrzési helyzet?
+
+A rendszer szempontjából az önellenőrzés detektálási kérdés: minden olyan könyvelési esemény, amely egy BENYUJTVA státuszú bevalláshoz rendelt sort érint, vagy oda tartozott volna. A három forrás: (1) későn érkezett fizetendő oldali tétel — pl. augusztusi teljesítésű kimenő számla kerül elő októberben, az augusztusi bevallás már bent van; (2) benyújtott bevallásban szereplő tétel sztornója/helyesbítése — a sztornó tétel sorai ugyanahhoz a lezárt bevallási időszakhoz "tartoznának", de oda már nem rendelhetők; (3) ÁFA-kódot érintő javítás — a helyesbítő tétel más sorra képeződik, mint az eredeti. A levonható oldali késés — ahogy az időszakkezelésnél rögzítettük — főszabályként nem önellenőrzés, hanem átsorolás a következő nyitott időszakba; önellenőrzés a levonható oldalon akkor kell, ha az adózó kifejezetten az eredeti időszakban akarja érvényesíteni, vagy ha a javítás csökkenti a korábban levont adót (ez utóbbi kötelező eset!).
+
+A motor tehát a könyvelési tranzakcióban (állapotgép, könyvelt állapotba lépéskor) minden ÁFA-s sorra lefuttatja a döntést: nyitott időszak → hozzárendel; lezárt, levonható, növelő → átsorol KESVE_ERKEZETT jelöléssel; minden más lezárt időszakot érintő eset → a sor az önellenőrzési gyűjtőbe kerül: afa_bevallasi_idoszak_id = NULL, onell_cel_idoszak_id = <az érintett benyújtott időszak>, onell_statusz = 'VAR'. A felületen ez egy állandóan látható jelzés: "3 tétel önellenőrzésre vár a 2026. Q2 időszakra".
+
+7.2 Az önellenőrzési bevallás összeállítása
+
+Az önellenőrzés a 65-ös logikájában nem különbözet-bevallás, hanem az időszak teljes, helyes újrabevallása, amelyből a nyomtatvány önellenőrzési blokkja képzi a kötelezettség-változást. Ezt az összeállító így képezi le:
+
+Létrejön az új afa_bevallasi_idoszak rekord: tipus = 'ONELLENORZES', alap_idoszak_id a helyesbítendő időszakra (láncolt önellenőrzésnél mindig a legutóbbi benyújtott változatra — az időszak hatályos állapota a lánc vége).
+
+A tételkör: az alap bevallás bevallas_tetel_kapcsolat szerinti sorai plusz a gyűjtőből az ide céldátumozott sorok mínusz azok a sorok, amelyeket időközben sztornó nullázott ki (ezek bent maradnak a körben az ellentételükkel együtt — így a szaldójuk nulla, és a lánc tételesen dokumentált).
+
+Újraaggregálás a korabeli sablonnal (az alap bevallás sablon_id-jával — az önellenőrzés az eredeti nyomtatványstruktúrában értelmezett).
+
+A különbözet-számítás: az új helyes értékek mínusz a lánc előző tagjának befagyasztott értékei (bevallas_ertek), sor_kódonként és az elszámolandó adó szintjén. Ez adja a kötelezettség-változást.
+
+Benyújtáskor ugyanúgy befagy: új bevallas rekord, teljes értékkészlettel és tételkapcsolatokkal — az időszak hatályos állapota mostantól ez.
+
+7.3 Önellenőrzési pótlék
+
+Ha a kötelezettség nő, a rendszer számítsa ki az önellenőrzési pótlékot: alapja a kötelezettség-növekedés, mértéke a jegybanki alapkamat (ismételt önellenőrzésnél másfélszerese), időarányosan az eredeti esedékességtől az önellenőrzés benyújtásáig terjedő napokra. A napi kamatlábhoz alapkamat-történet törzs kell (érvényességi dátumokkal — a kamat a futamidő alatt változhat, szakaszosan kell számolni). A pótlék nem ÁFA: külön adónemre könyvelődik, és a rendszer generálja hozzá a vegyes naplós tételt (T 8-as egyéb ráfordítás – K 46x adónem) meg a befizetési figyelmeztetést. A számítást a felület mutassa meg levezetve (időszakok, napok, kamatlábak) — a könyvelő e nélkül nem meri benyújtani.
+
+7.4 A kör bezárása
+
+Az önellenőrzés benyújtásával a gyűjtőben lévő sorok onell_statusz = 'BEVALLVA' státuszra és a létrejött önellenőrzési időszakhoz rendelésre kerülnek — a "minden ÁFA-s sor pontosan egy bevallásban" invariáns helyreáll. A bevallási időszak nézete pedig innentől láncként jelenik meg: alap bevallás → önellenőrzés(ek), mindegyik a saját befagyasztott értékeivel, a hatályos állapot a lánc utolsó tagja, és bármely két tag közti eltérés tételes szintig lefúrható a bevallas_tetel_kapcsolat különbségén keresztül.
+
+Egy megjegyzés a végére: a benyújtás technikai oldala (ÁNYK/eBEV XML előállítás, NAV-integráció) tudatosan maradt ki — az export a befagyasztott bevallas_ertek rétegből generálódik, tehát az itteni modellre tisztán ráépül, az export_hash pedig a beküldött állomány és a tárolt értékek egyezőségét pecsételi meg.
