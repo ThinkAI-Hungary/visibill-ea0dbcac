@@ -18,7 +18,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Trash2, FileText, Loader2, Search, User, Landmark } from 'lucide-react';
+import { Trash2, FileText, Loader2, Search, User, Landmark, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 interface UploadWithTransactions {
   id: string;
   file_name: string;
+  file_url?: string;
   created_at: string;
   user_id: string | null;
   detected_bank: string | null;
@@ -75,6 +76,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [uploaderFilter, setUploaderFilter] = useState('all');
@@ -92,6 +94,45 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
     setCurrentPage(1);
   };
 
+  const handleDownloadSelected = async () => {
+    if (selectedIds.size === 0) return;
+    setDownloading(true);
+    try {
+      const targets = uploads.filter(u => selectedIds.has(u.id));
+      for (const upload of targets) {
+        if (!upload.file_url) continue;
+        const storagePath = extractStoragePath(upload.file_url, 'transactions');
+        if (storagePath) {
+          const { data, error } = await supabase.storage.from('transactions').download(storagePath);
+          if (error) throw error;
+          if (data) {
+            const url = URL.createObjectURL(data);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = upload.file_name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        } else {
+          const a = document.createElement('a');
+          a.href = upload.file_url;
+          a.download = upload.file_name;
+          a.target = '_blank';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+      }
+      toast({ title: 'Sikeres letöltés', description: `${targets.length} fájl letöltése elindítva.` });
+    } catch (err: any) {
+      toast({ title: 'Hiba a letöltés során', description: err.message || 'Ismeretlen hiba történt.', variant: 'destructive' });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const companyId = selectedCompany?.id;
 
   // Fetch transaction_uploads with related transaction counts
@@ -100,18 +141,18 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
     queryFn: async () => {
       const { data: uploadData, error: uploadError } = await supabase
         .from('transaction_uploads')
-        .select('id, file_name, created_at, user_id, detected_bank')
+        .select('id, file_name, file_url, created_at, user_id, detected_bank')
         .eq('company_id', companyId!)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false });
       if (uploadError) throw uploadError;
       if (!uploadData || uploadData.length === 0) return [];
 
+      const uploadIds = uploadData.map(u => u.id);
       const { data: txData, error: txError } = await supabase
         .from('transactions')
         .select('upload_id')
-        .eq('company_id', companyId!)
-        .not('upload_id', 'is', null);
+        .in('upload_id', uploadIds);
       if (txError) throw txError;
 
       const countsByUpload = new Map<string, number>();
@@ -123,6 +164,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
       return uploadData.map(u => ({
         id: u.id,
         file_name: u.file_name,
+        file_url: u.file_url,
         created_at: u.created_at,
         user_id: u.user_id,
         detected_bank: u.detected_bank,
@@ -399,18 +441,6 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                 ))}
               </SelectContent>
             </Select>
-
-            {selectedCount > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-9 gap-1.5 shrink-0"
-                onClick={() => setBatchDeleteOpen(true)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                {selectedCount} törlése
-              </Button>
-            )}
           </div>
 
           {isLoading ? (
@@ -423,6 +453,37 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
             </div>
           ) : (
             <div className="space-y-4">
+              {selectedCount > 0 && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20 text-foreground animate-in fade-in duration-200">
+                  <span className="text-sm font-semibold">{selectedCount} kijelölt elem</span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 font-semibold bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"
+                      onClick={handleDownloadSelected}
+                      disabled={downloading}
+                    >
+                      {downloading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                      Letöltés
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-8 gap-1.5 font-semibold"
+                      onClick={() => setBatchDeleteOpen(true)}
+                      disabled={downloading}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Törlés
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="rounded-lg border border-border/50 overflow-x-auto">
                 <Table className="compact-table">
                   <TableHeader>

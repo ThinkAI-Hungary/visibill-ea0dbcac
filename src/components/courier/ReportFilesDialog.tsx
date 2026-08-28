@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
@@ -16,7 +18,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Trash2, FileText, Loader2, Search, User } from 'lucide-react';
+import { Trash2, FileText, Loader2, Search, User, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 interface ReportUploadWithRows {
   id: string;
   file_name: string;
+  file_url?: string;
   created_at: string;
   user_id: string | null;
   report_type: string;
@@ -56,19 +59,63 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
   const [bulkDeleteTarget, setBulkDeleteTarget] = useState<ReportUploadWithRows[] | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [uploaderFilter, setUploaderFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
 
   const companyId = selectedCompany?.id;
+
+  const handleDownloadSelected = async () => {
+    if (selectedIds.size === 0) return;
+    setDownloading(true);
+    try {
+      const targets = uploads.filter(u => selectedIds.has(u.id));
+      for (const upload of targets) {
+        if (!upload.file_url) continue;
+        const storagePath = extractStoragePath(upload.file_url, 'report-uploads');
+        if (storagePath) {
+          const { data, error } = await supabase.storage.from('report-uploads').download(storagePath);
+          if (error) throw error;
+          if (data) {
+            const url = URL.createObjectURL(data);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = upload.file_name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        } else {
+          const a = document.createElement('a');
+          a.href = upload.file_url;
+          a.download = upload.file_name;
+          a.target = '_blank';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+      }
+      toast({ title: 'Sikeres letöltés', description: `${targets.length} fájl letöltése elindítva.` });
+    } catch (err: any) {
+      toast({ title: 'Hiba a letöltés során', description: err.message || 'Ismeretlen hiba történt.', variant: 'destructive' });
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
     setSelectedIds(new Set());
+    setCurrentPage(1);
   };
 
   const handleUploaderFilterChange = (val: string) => {
     setUploaderFilter(val);
     setSelectedIds(new Set());
+    setCurrentPage(1);
   };
 
   // Fetch report_uploads with courier_reports counts
@@ -77,7 +124,7 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
     queryFn: async () => {
       let query = supabase
         .from('report_uploads')
-        .select('id, file_name, created_at, user_id, report_type, upload_status, processing_status, metadata')
+        .select('id, file_name, file_url, created_at, user_id, report_type, upload_status, processing_status, metadata')
         .eq('company_id', companyId!)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false });
@@ -90,40 +137,60 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
       if (uploadError) throw uploadError;
       if (!uploadData || uploadData.length === 0) return [];
 
-      // Get courier_reports counts per upload
-      const uploadIds = uploadData.map(u => u.id);
-      const { data: reportData, error: reportError } = await supabase
-        .from('courier_reports')
-        .select('upload_id, match_status')
-        .in('upload_id', uploadIds);
-      if (reportError) throw reportError;
-
-      // Group counts by upload_id
-      const countsByUpload = new Map<string, { total: number; matched: number }>();
-      (reportData || []).forEach((r: any) => {
-        if (!r.upload_id) return;
-        if (!countsByUpload.has(r.upload_id)) {
-          countsByUpload.set(r.upload_id, { total: 0, matched: 0 });
-        }
-        const entry = countsByUpload.get(r.upload_id)!;
-        entry.total++;
-        if (r.match_status === 'full' || r.match_status === 'partial_nav' || r.match_status === 'partial_trx') {
-          entry.matched++;
-        }
+      // Optimize: Only query courier_reports counts for uploads that don't have rows_parsed in metadata
+      const uploadsWithoutMetadata = uploadData.filter(u => {
+        const meta = typeof u.metadata === 'string' ? JSON.parse(u.metadata) : u.metadata;
+        return !meta || typeof meta.rows_parsed === 'undefined';
       });
 
-      return uploadData.map(u => ({
-        id: u.id,
-        file_name: u.file_name,
-        created_at: u.created_at,
-        user_id: u.user_id,
-        report_type: u.report_type,
-        upload_status: u.upload_status,
-        processing_status: u.processing_status,
-        metadata: typeof u.metadata === 'string' ? JSON.parse(u.metadata) : u.metadata,
-        rowCount: countsByUpload.get(u.id)?.total || 0,
-        matchedCount: countsByUpload.get(u.id)?.matched || 0,
-      })) as ReportUploadWithRows[];
+      const countsByUpload = new Map<string, { total: number; matched: number }>();
+
+      if (uploadsWithoutMetadata.length > 0) {
+        const uploadIds = uploadsWithoutMetadata.map(u => u.id);
+        
+        // Use our RPC to fetch counts aggregated in DB (extremely fast and lag-free!)
+        const { data: reportCounts, error: reportError } = await supabase
+          .rpc('get_courier_reports_counts_by_upload', { p_upload_ids: uploadIds });
+        if (reportError) throw reportError;
+
+        (reportCounts || []).forEach((r: any) => {
+          countsByUpload.set(r.upload_id, {
+            total: Number(r.total_count) || 0,
+            matched: Number(r.matched_count) || 0
+          });
+        });
+      }
+
+      return uploadData.map(u => {
+        const meta = typeof u.metadata === 'string' ? JSON.parse(u.metadata) : u.metadata;
+        let rowCount = 0;
+        let matchedCount = 0;
+
+        if (meta && typeof meta.rows_parsed !== 'undefined') {
+          rowCount = meta.rows_parsed;
+          matchedCount = (meta.rows_matched_full || 0) + (meta.rows_matched_partial || 0);
+          if (typeof meta.rows_matched !== 'undefined' && !meta.rows_matched_full) {
+            matchedCount = meta.rows_matched;
+          }
+        } else {
+          rowCount = countsByUpload.get(u.id)?.total || 0;
+          matchedCount = countsByUpload.get(u.id)?.matched || 0;
+        }
+
+        return {
+          id: u.id,
+          file_name: u.file_name,
+          file_url: u.file_url,
+          created_at: u.created_at,
+          user_id: u.user_id,
+          report_type: u.report_type,
+          upload_status: u.upload_status,
+          processing_status: u.processing_status,
+          metadata: meta,
+          rowCount,
+          matchedCount,
+        };
+      }) as ReportUploadWithRows[];
     },
     enabled: !!companyId && isOpen,
     staleTime: 0,
@@ -175,6 +242,38 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
       return matchesSearch && matchesUploader;
     });
   }, [uploads, searchQuery, uploaderFilter]);
+
+  // Client-side pagination
+  const { paginatedUploads, totalPages } = useMemo(() => {
+    const totalPages = Math.ceil(filteredUploads.length / pageSize);
+    const paginated = filteredUploads.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    return { paginatedUploads: paginated, totalPages };
+  }, [filteredUploads, currentPage, pageSize]);
+
+  // Selection helpers
+  const visibleIds = paginatedUploads.map(u => u.id);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+  const someVisibleSelected = visibleIds.some(id => selectedIds.has(id));
+
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        visibleIds.forEach(id => next.delete(id));
+      } else {
+        visibleIds.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   // Delete file only (keep report data)
   const handleDeleteFileOnly = async (upload: ReportUploadWithRows) => {
@@ -422,20 +521,37 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
 
           {/* Bulk Action Bar */}
           {selectedIds.size > 0 && (
-            <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-950 dark:text-red-400 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20 text-foreground animate-in fade-in duration-200">
               <span className="text-sm font-semibold">{selectedIds.size} kijelölt elem</span>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-8 gap-1.5 font-semibold"
-                onClick={() => {
-                  const targets = uploads.filter(u => selectedIds.has(u.id));
-                  setBulkDeleteTarget(targets);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-                Kijelöltek törlése
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 font-semibold bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"
+                  onClick={handleDownloadSelected}
+                  disabled={downloading}
+                >
+                  {downloading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  Letöltés
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 gap-1.5 font-semibold"
+                  onClick={() => {
+                    const targets = uploads.filter(u => selectedIds.has(u.id));
+                    setBulkDeleteTarget(targets);
+                  }}
+                  disabled={downloading}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Törlés
+                </Button>
+              </div>
             </div>
           )}
 
@@ -448,89 +564,95 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
               {uploads.length === 0 ? 'Nincs feltöltött riport dokumentum.' : 'Nincs találat a megadott szűrőkkel.'}
             </div>
           ) : (
-            <div className="rounded-lg border border-border/50 overflow-x-auto">
-              <Table className="compact-table">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[5%]">
-                      <input
-                        type="checkbox"
-                        checked={filteredUploads.length > 0 && selectedIds.size === filteredUploads.length}
-                        ref={input => {
-                          if (input) {
-                            input.indeterminate = selectedIds.size > 0 && selectedIds.size < filteredUploads.length;
-                          }
-                        }}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedIds(new Set(filteredUploads.map(u => u.id)));
-                          } else {
-                            setSelectedIds(new Set());
-                          }
-                        }}
-                        className="rounded border-slate-300 dark:border-white/10 text-primary focus:ring-primary h-4 w-4 accent-primary cursor-pointer mt-1"
-                      />
-                    </TableHead>
-                    <TableHead className="w-[30%]">Fájl neve</TableHead>
-                    <TableHead className="w-[10%]">Típus</TableHead>
-                    <TableHead className="w-[15%]">Sorok</TableHead>
-                    <TableHead className="w-[18%]">Feltöltés dátuma</TableHead>
-                    <TableHead className="w-[15%]">Feltöltötte</TableHead>
-                    <TableHead className="w-[7%] text-right">Művelet</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUploads.map((upload) => (
-                    <TableRow key={upload.id}>
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(upload.id)}
-                          onChange={() => {
-                            const next = new Set(selectedIds);
-                            if (next.has(upload.id)) {
-                              next.delete(upload.id);
-                            } else {
-                              next.add(upload.id);
-                            }
-                            setSelectedIds(next);
-                          }}
-                          className="rounded border-slate-300 dark:border-white/10 text-primary focus:ring-primary h-4 w-4 accent-primary cursor-pointer mt-1"
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border/50 overflow-x-auto">
+                <Table className="compact-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px] pr-0">
+                        <Checkbox
+                          checked={allVisibleSelected}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Összes kijelölése az oldalon"
+                          className="data-[state=indeterminate]:opacity-70"
+                          {...(someVisibleSelected && !allVisibleSelected ? { 'data-state': 'indeterminate' } : {})}
                         />
-                      </TableCell>
-                      <TableCell className="font-medium text-sm truncate max-w-[250px]">
-                        {upload.file_name}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {REPORT_TYPE_LABELS[upload.report_type] || upload.report_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {upload.rowCount > 0
-                          ? `${upload.matchedCount}/${upload.rowCount} párosítva`
-                          : '—'}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: hu })}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {getUserName(upload.user_id)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                          onClick={() => setDeleteTarget(upload)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
+                      </TableHead>
+                      <TableHead className="w-[30%]">Fájl neve</TableHead>
+                      <TableHead className="w-[10%]">Típus</TableHead>
+                      <TableHead className="w-[15%]">Sorok</TableHead>
+                      <TableHead className="w-[18%]">Feltöltés dátuma</TableHead>
+                      <TableHead className="w-[15%]">Feltöltötte</TableHead>
+                      <TableHead className="w-[10%] text-right">Művelet</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedUploads.map((upload) => (
+                      <TableRow
+                        key={upload.id}
+                        data-row-hover
+                        className={selectedIds.has(upload.id) ? 'bg-primary/5 dark:bg-primary/10' : ''}
+                      >
+                        <TableCell className="pr-0">
+                          <Checkbox
+                            checked={selectedIds.has(upload.id)}
+                            onCheckedChange={() => toggleSelect(upload.id)}
+                            aria-label={`Kijelölés: ${upload.file_name}`}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium text-sm truncate max-w-[250px]" title={upload.file_name}>
+                          {upload.file_name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {REPORT_TYPE_LABELS[upload.report_type] || upload.report_type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {upload.rowCount > 0
+                            ? `${upload.matchedCount}/${upload.rowCount} párosítva`
+                            : '—'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: hu })}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {getUserName(upload.user_id)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            onClick={() => setDeleteTarget(upload)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {/* Placeholder rows — prevent pagination jump on last page */}
+                    {Array.from({ length: Math.max(0, pageSize - paginatedUploads.length) }).map((_, i) => (
+                      <TableRow key={`placeholder-${i}`} className="border-b border-transparent pointer-events-none select-none">
+                        <TableCell colSpan={7} className="py-1.5">&nbsp;</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <UnifiedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredUploads.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[15, 30, 50]}
+                disableScrollToTop
+              />
             </div>
           )}
           </div>

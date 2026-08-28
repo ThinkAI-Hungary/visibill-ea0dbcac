@@ -301,11 +301,11 @@ All colors MUST be HSL.
   }
 
   /* Data row hover — subtle brightness shift on the existing row color */
-  tr[data-row-hover]:hover {
-    filter: brightness(0.96);
+  tr[data-row-hover]:hover td {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.03)) !important;
   }
-  .dark tr[data-row-hover]:hover {
-    filter: brightness(1.15);
+  .dark tr[data-row-hover]:hover td {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06)) !important;
   }
 
   /* Remove mouse/JS focus rings — preserve keyboard focus-visible for a11y (§1 focus-states) */
