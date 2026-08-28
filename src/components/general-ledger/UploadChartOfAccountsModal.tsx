@@ -212,7 +212,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
           .neq('id', presetId);
 
         // 3. Prepare bulk insert data
-        const insertData = rows.map((row) => {
+        const rawInsertData = rows.map((row) => {
           const rowValues = Object.values(row);
           
           // Case-insensitive key search for Hungarian headers
@@ -239,6 +239,16 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
               description: description ? String(description).trim() : null
            };
         }).filter(r => r.gl_number !== '' && r.short_name !== ''); // drop completely empty/junk parsed mappings
+
+        // Deduplicate by gl_number to avoid unique constraint violation
+        const seenGlNumbers = new Set<string>();
+        const insertData = rawInsertData.filter(item => {
+          if (seenGlNumbers.has(item.gl_number)) {
+            return false;
+          }
+          seenGlNumbers.add(item.gl_number);
+          return true;
+        });
 
         if (insertData.length === 0) throw new Error("Nem találtunk érvényes sorkódokat a fájlban. Ellenőrizd a fejlécet/adatokat!");
 
