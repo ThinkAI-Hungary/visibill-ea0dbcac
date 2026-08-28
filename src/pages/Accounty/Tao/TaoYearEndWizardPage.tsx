@@ -24,7 +24,7 @@ import { TaoWizardStepper, TaoWizardSidebar } from './TaoWizardShell';
 
 
 export default function TaoYearEndWizardPage() {
-  const { companyId, year } = useParams<{ companyId: string; year: string }>();
+  const { companyId, year, dateRange } = useParams<{ companyId: string; year: string; dateRange: string }>();
   const id = companyId;
   const taxYear = parseInt(year || '2025', 10);
   const { data: clients = [] } = useAccountyClients();
