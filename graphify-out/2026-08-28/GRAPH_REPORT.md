@@ -1,7 +1,7 @@
 # Graph Report - eaisybill-prod  (2026-08-28)
 
 ## Corpus Check
-- 1366 files · ~2,061,646 words
+- 1366 files · ~2,061,590 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -851,8 +851,8 @@ Cohesion: 0.12
 Nodes (16): 1. lépés: Kulcsszavak kinyerése, 2. lépés: Graphify query, 3. lépés: Döntés-keresés a 4 rétegben, 4. lépés: ⭐ Design Pattern-ek felderítése, 5. lépés: ⭐ Open / Partially Decided döntések feltárása, 6. lépés: Kontextus összesítő, 7. lépés: KÖTELEZŐ — Várd meg a jóváhagyást, a) Business Decisions (BRD) (+8 more)
 
 ### Community 61 - "Hooks Useaccountydata Auditlogentry"
-Cohesion: 0.08
-Nodes (24): ALL_EMPLOYMENT_TYPES, JOB_TYPES, JobType, JobTypeConfig, SpecialJobFormsPage(), Category, EditableLineItem, InvoiceFullEditDialogProps (+16 more)
+Cohesion: 0.06
+Nodes (30): ALL_EMPLOYMENT_TYPES, JOB_TYPES, JobType, JobTypeConfig, SpecialJobFormsPage(), Category, EditableLineItem, InvoiceFullEditDialogProps (+22 more)
 
 ### Community 62 - "Hooks Useaccountydata Colleaguestat"
 Cohesion: 0.14
@@ -960,7 +960,7 @@ Nodes (28): 1. Menü és routing, 2.1 ShipmentMatchingDashboard.tsx, 2.2 UploadH
 
 ### Community 88 - "Hooks Useaccountydata Usecompletedeadline"
 Cohesion: 0.18
-Nodes (10): Bejelentkezés, Bevezetés, Elfelejtett jelszó, Kapcsolat, Kinek készült?, Mi a VisiBill?, Regisztráció és bejelentkezés, Tartalomjegyzék (+2 more)
+Nodes (10): Bankkivonatok és Tranzakciók, Bevezetés, Jegyzetek oldal integrációja, Kapcsolat, Kinek készült?, Mi a VisiBill?, Tartalomjegyzék, Tranzakciós feljegyzések (Jegyzetek) készítése (+2 more)
 
 ### Community 89 - "Hooks Useaccountydata Usegenerateportaltoken"
 Cohesion: 0.43
@@ -1139,8 +1139,8 @@ Cohesion: 0.07
 Nodes (27): 1. lépés: Módosított fájlok azonosítása, 2. lépés: Fájl → Docs mapping, 3.5 lépés: ⭐ Doc Self-Review (javaslat bemutatása ELŐTT — kötelező), 3. lépés: Változás analízis és javaslat, 4. lépés: Végrehajtás (jóváhagyás után), 5. lépés: ⭐ Graphify update (MINDIG az utolsó lépés), ⭐ ADR minőségi szűrő — Mikor VALÓBAN kell ADR?, Aktuális számozás (mindig ellenőrizd az index.md-t!) (+19 more)
 
 ### Community 174 - "Community 174"
-Cohesion: 0.09
-Nodes (19): formatDate(), formatDateTime(), FullInvoice, InvoiceDetailPopup(), InvoiceDetailPopupProps, statusLabels, useNotesData(), reportAuthError() (+11 more)
+Cohesion: 0.13
+Nodes (13): formatDate(), formatDateTime(), FullInvoice, InvoiceDetailPopup(), InvoiceDetailPopupProps, statusLabels, useNotesData(), NoteModal() (+5 more)
 
 ### Community 175 - "Community 175"
 Cohesion: 0.29
@@ -1860,7 +1860,7 @@ Nodes (6): buildQueuePayload(), deleteErrors(), getClientForProject(), getProjec
 
 ### Community 441 - "Community 441"
 Cohesion: 0.05
-Nodes (50): ClientReportsPage(), ReportType, reportTypes, NewClientPage(), ReportsPage(), ReportType, reportTypes, Invoice (+42 more)
+Nodes (51): ClientReportsPage(), ReportType, reportTypes, NewClientPage(), ReportsPage(), ReportType, reportTypes, Invoice (+43 more)
 
 ### Community 442 - "Community 442"
 Cohesion: 0.07
@@ -2300,7 +2300,7 @@ Nodes (3): queryClient, TestComponent(), useInvoiceFilters()
 
 ### Community 609 - "Community 609"
 Cohesion: 0.50
-Nodes (4): Bankkivonatok és Tranzakciók, Jegyzetek oldal integrációja, Tranzakciós feljegyzések (Jegyzetek) készítése, Tranzakciós fájlok feltöltése és törlése
+Nodes (4): Bejelentkezés, Elfelejtett jelszó, Regisztráció és bejelentkezés, Új fiók létrehozása
 
 ## Knowledge Gaps
 - **3783 isolated node(s):** `entrypoint_path`, `name`, `files`, `verify_jwt`, `{ createClient }` (+3778 more)

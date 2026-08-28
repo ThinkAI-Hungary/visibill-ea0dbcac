@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,7 @@ import {
   Paperclip,
   MonitorSmartphone,
   HelpCircle,
+  Plus,
 } from "lucide-react";
 
 const MAX_ATTACHMENTS = 5;
@@ -65,22 +66,35 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset form when dialog opens
+  // Explicit form reset function
+  const resetForm = useCallback(() => {
+    setCompanyId(selectedCompany?.id || "");
+    setService("");
+    setType("");
+    setPriority("medium");
+    setMessage("");
+    setAttachments([]);
+    setSubmitted(false);
+    setSubmitting(false);
+    setIsDragOver(false);
+  }, [selectedCompany?.id]);
+
+  // Reset form whenever the dialog opens
+  useEffect(() => {
+    if (open) {
+      resetForm();
+    }
+  }, [open, resetForm]);
+
+  // Handle open state changes from internal dialog controls (Esc, backdrop, close button)
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
-      if (isOpen) {
-        setCompanyId(selectedCompany?.id || "");
-        setService("");
-        setType("");
-        setPriority("medium");
-        setMessage("");
-        setAttachments([]);
+      if (!isOpen) {
         setSubmitted(false);
-        setIsDragOver(false);
       }
       onOpenChange(isOpen);
     },
-    [onOpenChange, selectedCompany]
+    [onOpenChange]
   );
 
   // ── File handling ──
@@ -152,7 +166,8 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   }, [validateAndAddFiles]);
 
   const selectedCompanyObj = companies.find((c) => c.id === companyId);
-  const canSubmit = companyId && service && type && message.trim().length >= 10;
+  const hasContent = message.trim().length > 0 || attachments.length > 0;
+  const canSubmit = Boolean(companyId && service && type && hasContent);
 
   const handleSubmit = async () => {
     if (!canSubmit || !user) return;
@@ -206,7 +221,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <MessageSquareText className="h-5 w-5 text-primary" />
@@ -230,114 +245,123 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 A visszajelzése sikeresen elküldve. Csapatunk hamarosan áttekinti.
               </p>
             </div>
-            <Button variant="outline" onClick={() => handleOpenChange(false)} className="mt-2">
-              Bezárás
-            </Button>
+            <div className="flex items-center gap-3 mt-2">
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                Bezárás
+              </Button>
+              <Button onClick={resetForm} className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                Újabb visszajelzés
+              </Button>
+            </div>
           </div>
         ) : (
           /* ── Form ── */
           <div className="space-y-5 py-2">
-            {/* Company selector */}
-            <div className="space-y-2">
-              <Label htmlFor="feedback-company" className="text-sm font-medium">
-                Cég
-              </Label>
-              <Select value={companyId} onValueChange={setCompanyId}>
-                <SelectTrigger id="feedback-company">
-                  <SelectValue placeholder="Válasszon céget..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
+            {/* Top selectors in 2-column responsive grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Company selector */}
+              <div className="space-y-2">
+                <Label htmlFor="feedback-company" className="text-sm font-medium">
+                  Cég
+                </Label>
+                <Select value={companyId} onValueChange={setCompanyId}>
+                  <SelectTrigger id="feedback-company">
+                    <SelectValue placeholder="Válasszon céget..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Service selector */}
+              <div className="space-y-2">
+                <Label htmlFor="feedback-service" className="text-sm font-medium">
+                  Szolgáltatás
+                </Label>
+                <Select value={service} onValueChange={setService}>
+                  <SelectTrigger id="feedback-service">
+                    <SelectValue placeholder="Válasszon szolgáltatást..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="eaisybill">
+                      <span className="flex items-center gap-2">
+                        <span className="text-sm">
+                          <span className="font-medium text-foreground/80">e</span>
+                          <span className="font-bold text-primary">ai</span>
+                          <span className="font-medium text-foreground/80">sy</span>
+                          <span className="font-medium text-primary">bill</span>
+                        </span>
+                      </span>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Service selector */}
-            <div className="space-y-2">
-              <Label htmlFor="feedback-service" className="text-sm font-medium">
-                Szolgáltatás
-              </Label>
-              <Select value={service} onValueChange={setService}>
-                <SelectTrigger id="feedback-service">
-                  <SelectValue placeholder="Válasszon szolgáltatást..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="eaisybill">
-                    <span className="flex items-center gap-2">
-                      <span className="text-sm">
-                        <span className="font-medium text-foreground/80">e</span>
-                        <span className="font-bold text-primary">ai</span>
-                        <span className="font-medium text-foreground/80">sy</span>
-                        <span className="font-medium text-primary">bill</span>
+                    <SelectItem value="accounty">
+                      <span className="flex items-center gap-2">
+                        <span className="text-sm">
+                          <span className="font-medium text-foreground/80">e</span>
+                          <span className="font-bold text-primary">ai</span>
+                          <span className="font-medium text-foreground/80">sy</span>
+                          <span className="font-medium text-primary">books</span>
+                        </span>
                       </span>
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="accounty">
-                    <span className="flex items-center gap-2">
-                      <span className="text-sm">
-                        <span className="font-medium text-foreground/80">e</span>
-                        <span className="font-bold text-primary">ai</span>
-                        <span className="font-medium text-foreground/80">sy</span>
-                        <span className="font-medium text-primary">books</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Type selector */}
+              <div className="space-y-2">
+                <Label htmlFor="feedback-type" className="text-sm font-medium">
+                  Típus
+                </Label>
+                <Select value={type} onValueChange={setType}>
+                  <SelectTrigger id="feedback-type">
+                    <SelectValue placeholder="Válasszon típust..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bug">
+                      <span className="flex items-center gap-2">
+                        <Bug className="h-4 w-4 text-red-500" />
+                        Hibajelentés
                       </span>
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                    </SelectItem>
+                    <SelectItem value="feedback">
+                      <span className="flex items-center gap-2">
+                        <Lightbulb className="h-4 w-4 text-amber-500" />
+                        Visszajelzés / Javaslat
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="question">
+                      <span className="flex items-center gap-2">
+                        <HelpCircle className="h-4 w-4 text-sky-500" />
+                        Kérdés
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Type selector */}
-            <div className="space-y-2">
-              <Label htmlFor="feedback-type" className="text-sm font-medium">
-                Típus
-              </Label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger id="feedback-type">
-                  <SelectValue placeholder="Válasszon típust..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bug">
-                    <span className="flex items-center gap-2">
-                      <Bug className="h-4 w-4 text-red-500" />
-                      Hibajelentés
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="feedback">
-                    <span className="flex items-center gap-2">
-                      <Lightbulb className="h-4 w-4 text-amber-500" />
-                      Visszajelzés / Javaslat
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="question">
-                    <span className="flex items-center gap-2">
-                      <HelpCircle className="h-4 w-4 text-sky-500" />
-                      Kérdés
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Priority selector */}
-            <div className="space-y-2">
-              <Label htmlFor="feedback-priority" className="text-sm font-medium">
-                Prioritás
-              </Label>
-              <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger id="feedback-priority">
-                  <SelectValue placeholder="Válasszon prioritást..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Alacsony</SelectItem>
-                  <SelectItem value="medium">Közepes</SelectItem>
-                  <SelectItem value="high">Magas</SelectItem>
-                  <SelectItem value="critical">Kritikus</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Priority selector */}
+              <div className="space-y-2">
+                <Label htmlFor="feedback-priority" className="text-sm font-medium">
+                  Prioritás
+                </Label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger id="feedback-priority">
+                    <SelectValue placeholder="Válasszon prioritást..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Alacsony</SelectItem>
+                    <SelectItem value="medium">Közepes</SelectItem>
+                    <SelectItem value="high">Magas</SelectItem>
+                    <SelectItem value="critical">Kritikus</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Message */}
@@ -346,11 +370,6 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 <Label htmlFor="feedback-message" className="text-sm font-medium">
                   Üzenet
                 </Label>
-                {message.trim().length > 0 && message.trim().length < 10 && (
-                  <span className="text-xs text-muted-foreground">
-                    Minimum 10 karakter ({message.trim().length}/10)
-                  </span>
-                )}
               </div>
               <Textarea
                 id="feedback-message"

@@ -10,6 +10,10 @@
 **Decision:** Beépített in-app ticket rendszer, elérhető a fő app-ból és az Accounty-ból is.
 
 **Current Implementation:**
+- `FeedbackDialog.tsx` — Lebegő gyorsgombból és menükből elérhető visszajelzés beküldő modal:
+  - Szélesség: `sm:max-w-[720px]`, asztali nézeten 2 oszlopos reszponzív grid a választómezőkhöz (Cég, Szolgáltatás, Típus, Prioritás)
+  - Állapotkezelés: automatikus `resetForm` az `open` prop változásakor (megelőzve a korábbi form vagy confirmation beragadást)
+  - Beküldés utáni megerősítés: zöld pipás siker ablak, ahol a „Bezárás” mellett elérhető az „Újabb visszajelzés” gomb is közvetlen sorozatos beküldéshez
 - `TicketsPage.tsx` — több route-ról elérhető:
   - `/:companyId/:dateRange/tickets/:ticketId?` (fő app)
   - `/accounty/tickets/:ticketId?` (Accounty)

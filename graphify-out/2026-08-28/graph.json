@@ -9210,7 +9210,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "layout_accountycommandpalette",
-      "community": 611,
+      "community": 441,
       "norm_label": "accountycommandpalette.tsx"
     },
     {
@@ -9220,7 +9220,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "layout_accountycommandpalette_accountycommandpaletteprops",
-      "community": 611,
+      "community": 441,
       "norm_label": "accountycommandpaletteprops"
     },
     {
@@ -9230,7 +9230,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "layout_accountycommandpalette_accountycommandpalette",
-      "community": 611,
+      "community": 441,
       "norm_label": "accountycommandpalette()"
     },
     {
@@ -24690,7 +24690,7 @@
       "source_location": "L193",
       "_origin": "ast",
       "id": "lib_errorreporter_reportautherror",
-      "community": 174,
+      "community": 61,
       "norm_label": "reportautherror()"
     },
     {
@@ -36290,7 +36290,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_auth",
-      "community": 174,
+      "community": 61,
       "norm_label": "auth.tsx"
     },
     {
@@ -36300,7 +36300,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "pages_auth_carouselstyle",
-      "community": 174,
+      "community": 61,
       "norm_label": "carouselstyle"
     },
     {
@@ -36310,7 +36310,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "pages_auth_carouselslide",
-      "community": 174,
+      "community": 61,
       "norm_label": "carouselslide"
     },
     {
@@ -36320,7 +36320,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "pages_auth_carouselslides",
-      "community": 174,
+      "community": 61,
       "norm_label": "carouselslides"
     },
     {
@@ -36330,7 +36330,7 @@
       "source_location": "L215",
       "_origin": "ast",
       "id": "pages_auth_bookscarouselslides",
-      "community": 174,
+      "community": 61,
       "norm_label": "bookscarouselslides"
     },
     {
@@ -37750,7 +37750,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_resetpassword",
-      "community": 174,
+      "community": 61,
       "norm_label": "resetpassword.tsx"
     },
     {
@@ -37760,7 +37760,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "pages_resetpassword_consumeresetpwstate",
-      "community": 174,
+      "community": 61,
       "norm_label": "consumeresetpwstate()"
     },
     {
@@ -37770,7 +37770,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "pages_resetpassword_resetpassword",
-      "community": 174,
+      "community": 61,
       "norm_label": "resetpassword()"
     },
     {
@@ -49370,7 +49370,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_regisztr\u00e1ci\u00f3_\u00e9s_bejelentkez\u00e9s",
-      "community": 88,
+      "community": 609,
       "norm_label": "regisztracio es bejelentkezes"
     },
     {
@@ -49380,7 +49380,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_\u00faj_fi\u00f3k_l\u00e9trehoz\u00e1sa",
-      "community": 88,
+      "community": 609,
       "norm_label": "uj fiok letrehozasa"
     },
     {
@@ -49390,7 +49390,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_bejelentkez\u00e9s",
-      "community": 88,
+      "community": 609,
       "norm_label": "bejelentkezes"
     },
     {
@@ -49400,7 +49400,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_elfelejtett_jelsz\u00f3",
-      "community": 88,
+      "community": 609,
       "norm_label": "elfelejtett jelszo"
     },
     {
@@ -49770,7 +49770,7 @@
       "source_location": "L433",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_bankkivonatok_\u00e9s_tranzakci\u00f3k",
-      "community": 609,
+      "community": 88,
       "norm_label": "bankkivonatok es tranzakciok"
     },
     {
@@ -49780,7 +49780,7 @@
       "source_location": "L444",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_tranzakci\u00f3s_f\u00e1jlok_felt\u00f6lt\u00e9se_\u00e9s_t\u00f6rl\u00e9se",
-      "community": 609,
+      "community": 88,
       "norm_label": "tranzakcios fajlok feltoltese es torlese"
     },
     {
@@ -49790,7 +49790,7 @@
       "source_location": "L452",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_tranzakci\u00f3s_feljegyz\u00e9sek_jegyzetek_k\u00e9sz\u00edt\u00e9se",
-      "community": 609,
+      "community": 88,
       "norm_label": "tranzakcios feljegyzesek (jegyzetek) keszitese"
     },
     {
@@ -49800,7 +49800,7 @@
       "source_location": "L461",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_jegyzetek_oldal_integr\u00e1ci\u00f3ja",
-      "community": 609,
+      "community": 88,
       "norm_label": "jegyzetek oldal integracioja"
     },
     {
@@ -71457,7 +71457,7 @@
       "label": "Kapcsol\u00f3d\u00f3",
       "file_type": "document",
       "source_file": "docs/product/decisions/P-036-management-dashboard.md",
-      "source_location": "L26",
+      "source_location": "L24",
       "_origin": "ast",
       "id": "decisions_p_036_management_dashboard_kapcsol\u00f3d\u00f3",
       "community": 320,
@@ -84723,9 +84723,9 @@
       "source_file": "src/__tests__/management-user-filter.test.ts",
       "source_location": "L10",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tests_management_user_filter_test",
-      "target": "tests_management_user_filter_test_filterusers"
+      "target": "tests_management_user_filter_test_filterusers",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -84733,9 +84733,9 @@
       "source_file": "src/__tests__/management-user-filter.test.ts",
       "source_location": "L3",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tests_management_user_filter_test",
-      "target": "tests_management_user_filter_test_user"
+      "target": "tests_management_user_filter_test_user",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",

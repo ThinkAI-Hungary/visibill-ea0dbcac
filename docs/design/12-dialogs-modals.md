@@ -97,7 +97,7 @@
 |--------|------|-------------|
 | `AssetActivationDialog` | 15KB | TENY aktiválás |
 | `ChangePasswordDialog` | 8KB | Jelszó módosítás |
-| `FeedbackDialog` | 11KB | Visszajelzés küldés |
+| `FeedbackDialog` | 12KB | Visszajelzés küldés (`sm:max-w-[720px]`, 2-oszlopos grid, open reset) |
 | `IdleWarningModal` | 3KB | Inaktivitás figyelmeztetés |
 | `UnsavedChangesDialog` | 1KB | Mentetlen változások |
 | `SupplierInvoiceAssignment` | 14KB | Szállító-számla összerendelés |

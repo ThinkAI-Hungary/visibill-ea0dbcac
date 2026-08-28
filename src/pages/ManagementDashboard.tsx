@@ -3652,6 +3652,9 @@ interface ControlCenterUser {
   user_id: string;
   name: string;
   email: string;
+  id?: string;
+  created_at?: string;
+  companies?: Array<{ id: string; name: string; role: string }>;
 }
 
 function ControlCenter({
@@ -7190,7 +7193,9 @@ function UsersControlPanel({ allUsers, overviewLoading, companyCostMap, onOpenCo
     if (!searchUser.trim()) return allUsers;
     const q = searchUser.toLowerCase();
     return allUsers.filter(u =>
-      (u.name || '').toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+      (u.name || '').toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      (u.companies && u.companies.some(c => (c.name || '').toLowerCase().includes(q)))
     );
   }, [allUsers, searchUser]);
 
@@ -7210,7 +7215,7 @@ function UsersControlPanel({ allUsers, overviewLoading, companyCostMap, onOpenCo
           <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Keresés név vagy email..."
+            placeholder="Keresés név, email vagy cég..."
             className="pl-8 h-8 text-xs w-56 bg-background"
           />
         </div>
@@ -7492,7 +7497,9 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
     if (!searchUser.trim()) return allUsers;
     const q = searchUser.toLowerCase();
     return allUsers.filter(u =>
-      (u.name || '').toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+      (u.name || '').toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      (u.companies && u.companies.some(c => (c.name || '').toLowerCase().includes(q)))
     );
   }, [allUsers, searchUser]);
 
@@ -7678,7 +7685,7 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Keresés..."
+              placeholder="Keresés név, email vagy cég..."
               className="pl-8 h-8 text-xs"
             />
           </div>
@@ -7697,6 +7704,12 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
               >
                 <p className="text-sm font-medium truncate">{u.name || '—'}</p>
                 <p className="text-[11px] text-muted-foreground truncate">{u.email}</p>
+                {u.companies && u.companies.length > 0 && (
+                  <p className="text-[10.5px] text-muted-foreground/80 truncate mt-1 flex items-center gap-1.5" title={u.companies.map(c => c.name).join(', ')}>
+                    <Building2 className="h-3 w-3 shrink-0 text-primary/70" />
+                    <span className="truncate">{u.companies.map(c => c.name).join(', ')}</span>
+                  </p>
+                )}
               </button>
             ))}
           </div>
