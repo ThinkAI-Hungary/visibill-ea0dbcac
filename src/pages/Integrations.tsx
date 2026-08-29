@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Zap, Shield, AtSign, Info, Activity, CheckCircle, XCircle, Clock, AlertTriangle, Loader2 } from 'lucide-react';
+import { Mail, Zap, Shield, AtSign, Info, Activity, CheckCircle, XCircle, Clock, AlertTriangle, Loader2, Upload, Database, FileText } from 'lucide-react';
 import EmailAliasManager from '@/components/EmailAliasManager';
 import EmailSettingsForm from '@/components/integrations/EmailSettingsForm';
 import NavCredentialsForm from '@/components/nav/NavCredentialsForm';
@@ -15,6 +16,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { cn } from '@/lib/utils';
 
 interface SyncLog {
   id: string;
@@ -36,6 +38,183 @@ const Integrations = () => {
   const { selectedCompany, loading: companyLoading } = useCompany();
   const isOwner = selectedCompany?.owner_id === user?.id;
   const [activeNavTab, setActiveNavTab] = useState('credentials');
+
+  const [xmlFile, setXmlFile] = useState<File | null>(null);
+  const [dmpFile, setDmpFile] = useState<File | null>(null);
+  const [relaxUploading, setRelaxUploading] = useState(false);
+
+  const compareNames = (name1: string, name2: string): boolean => {
+    const normalize = (name: string) => {
+      return name
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+        .replace(/[^a-z0-9]/g, '') // strip everything except alphanumeric
+        .replace(/\s+/g, '')
+        .replace(/\b(kft|bt|zrt|nyrt|kkt|ev|egyeni\s*vallalkozo)\b/gi, '');
+    };
+    const norm1 = normalize(name1);
+    const norm2 = normalize(name2);
+    return norm1 === norm2 || norm1.includes(norm2) || norm2.includes(norm1);
+  };
+
+  const validateXmlFile = (file: File, activeCompanyName: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        const match = text.match(/<Cegadatok>[\s\S]*?<Nev>([^<]+)<\/Nev>/);
+        const fileCompanyName = match ? match[1].trim() : null;
+        if (!fileCompanyName) {
+          const generalMatch = text.match(/<Nev>([^<]+)<\/Nev>/);
+          const fbName = generalMatch ? generalMatch[1].trim() : null;
+          if (!fbName) {
+            resolve(true);
+            return;
+          }
+          resolve(compareNames(fbName, activeCompanyName));
+          return;
+        }
+        resolve(compareNames(fileCompanyName, activeCompanyName));
+      };
+      reader.onerror = () => resolve(true);
+      reader.readAsText(file.slice(0, 102400), "UTF-8");
+    });
+  };
+
+  const validateDmpFile = (file: File, activeCompanyName: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        const match = text.match(/INSERT INTO mv_ugyfelek VALUES \([^,]+,'([^']+)'/i);
+        const fileCompanyName = match ? match[1].trim() : null;
+        if (!fileCompanyName) {
+          resolve(true);
+          return;
+        }
+        resolve(compareNames(fileCompanyName, activeCompanyName));
+      };
+      reader.onerror = () => resolve(true);
+      reader.readAsText(file.slice(0, 204800), "latin1");
+    });
+  };
+
+  const handleXmlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!selectedCompany?.name) {
+      toast({ title: 'Válassz ki egy aktív céget előbb!', variant: 'destructive' });
+      return;
+    }
+
+    const isValid = await validateXmlFile(file, selectedCompany.name);
+    if (!isValid) {
+      toast({
+        title: 'Safeguard Hiba',
+        description: `Az XML fájlban található cégnév nem egyezik az aktívan kiválasztott cég nevével (${selectedCompany.name})!`,
+        variant: 'destructive',
+      });
+      if (e.target) e.target.value = '';
+      setXmlFile(null);
+      return;
+    }
+
+    setXmlFile(file);
+  };
+
+  const handleDmpChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!selectedCompany?.name) {
+      toast({ title: 'Válassz ki egy aktív céget előbb!', variant: 'destructive' });
+      return;
+    }
+
+    const isValid = await validateDmpFile(file, selectedCompany.name);
+    if (!isValid) {
+      toast({
+        title: 'Safeguard Hiba',
+        description: `A DMP fájlban található cégnév nem egyezik az aktívan kiválasztott cég nevével (${selectedCompany.name})!`,
+        variant: 'destructive',
+      });
+      if (e.target) e.target.value = '';
+      setDmpFile(null);
+      return;
+    }
+
+    setDmpFile(file);
+  };
+
+  const handleRelaxUpload = async () => {
+    if (!xmlFile || !selectedCompany?.id) return;
+
+    setRelaxUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const xmlSafeName = xmlFile.name
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9._-]/g, '');
+      const xmlPath = `audit-xml/${selectedCompany.id}/${xmlSafeName}`;
+      const { error: xmlErr } = await supabase.storage
+        .from('gl_uploads')
+        .upload(xmlPath, xmlFile, { upsert: true });
+
+      if (xmlErr) throw new Error(`XML feltöltési hiba: ${xmlErr.message}`);
+
+      let storagePathVal = xmlPath;
+
+      if (dmpFile) {
+        const dmpSafeName = dmpFile.name
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/\s+/g, '_')
+          .replace(/[^a-zA-Z0-9._-]/g, '');
+        const dmpPath = `audit-dmp/${selectedCompany.id}/${dmpSafeName}`;
+        const { error: dmpErr } = await supabase.storage
+          .from('gl_uploads')
+          .upload(dmpPath, dmpFile, { upsert: true });
+
+        if (dmpErr) throw new Error(`DMP feltöltési hiba: ${dmpErr.message}`);
+
+        storagePathVal = `${xmlPath};${dmpPath}`;
+      }
+
+      const { error: dbErr } = await supabase
+        .from('gl_audit_imports')
+        .insert({
+          company_id: selectedCompany.id,
+          file_name: xmlFile.name,
+          storage_path: storagePathVal,
+          period_start: '2022-01-01',
+          period_end: '2026-12-31',
+          processing_status: 'pending',
+          imported_by: user?.id || null,
+          dry_run: false
+        });
+
+      if (dbErr) throw new Error(`Adatbázis hiba: ${dbErr.message}`);
+
+      toast({
+        title: 'Sikeres feltöltés!',
+        description: 'A Relax fájl(ok) feldolgozása elindult a háttérben.',
+        className: 'bg-green-50 text-green-900 border-green-200',
+      });
+
+      setXmlFile(null);
+      setDmpFile(null);
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a feltöltés során',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setRelaxUploading(false);
+    }
+  };
 
   const { data: syncLogs = [], isLoading: logsLoading } = useQuery({
     queryKey: queryKeys.syncLogs(selectedCompany?.id || ''),
@@ -277,6 +456,87 @@ const Integrations = () => {
                   </div>
                 </TabsContent>
               </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Relax Integration Section */}
+          <Card className="border-primary/10 hover:border-primary/20 transition-colors lg:col-span-2">
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
+                  <Database className="w-6 h-6 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <CardTitle className="text-lg">Relax adatok importálása</CardTitle>
+                  <CardDescription className="text-sm">
+                    Tölts fel Relax XML exportot és opcionális DMP dumpot történelmi adatok betöltéséhez
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* XML Input */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground">Relax XML Fájl (.xml) *</label>
+                  <div className="relative flex items-center justify-center border-2 border-dashed rounded-lg p-6 hover:bg-muted/30 transition-all cursor-pointer">
+                    <input
+                      type="file"
+                      accept=".xml"
+                      onChange={handleXmlChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="flex flex-col items-center gap-1.5 text-center">
+                      <FileText className={cn("w-6 h-6", xmlFile ? "text-emerald-500" : "text-muted-foreground/60")} />
+                      <span className="text-xs font-medium truncate max-w-[200px]">
+                        {xmlFile ? xmlFile.name : "Kattints a tallózáshoz..."}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* DMP Input */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground">Relax DMP Fájl (.dmp) (opcionális)</label>
+                  <div className="relative flex items-center justify-center border-2 border-dashed rounded-lg p-6 hover:bg-muted/30 transition-all cursor-pointer">
+                    <input
+                      type="file"
+                      accept=".dmp"
+                      onChange={handleDmpChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="flex flex-col items-center gap-1.5 text-center">
+                      <Database className={cn("w-6 h-6", dmpFile ? "text-emerald-500" : "text-muted-foreground/60")} />
+                      <span className="text-xs font-medium truncate max-w-[200px]">
+                        {dmpFile ? dmpFile.name : "Kattints a tallózáshoz..."}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t pt-4">
+                <div className="text-xs text-muted-foreground">
+                  * Kötelező fájlok. A feltöltés előtt biztonsági ellenőrzés fut le a cégnevekre vonatkozóan.
+                </div>
+                <Button
+                  onClick={handleRelaxUpload}
+                  disabled={!xmlFile || relaxUploading}
+                  className="gap-2"
+                >
+                  {relaxUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Feltöltés...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Importálás indítása
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

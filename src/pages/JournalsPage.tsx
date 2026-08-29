@@ -375,19 +375,24 @@ export default function JournalsPage() {
       />
 
       {/* Horizontal Journals Selector */}
-      <div className="w-full flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none select-none">
+      <div className="w-full flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none select-none">
         <button
           onClick={() => setSelectedJournalId('munkalista')}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all border shrink-0",
+            "flex items-center gap-3 pl-3 pr-4 h-12 rounded-lg text-xs transition-all border shrink-0 justify-between text-left",
             selectedJournalId === 'munkalista'
               ? "bg-primary text-primary-foreground border-primary shadow-sm"
               : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
           )}
         >
-          <AlertCircle className="w-3.5 h-3.5" />
-          <span>Munkalista (Drafts)</span>
-          <Badge variant={selectedJournalId === 'munkalista' ? 'secondary' : 'outline'} className="px-1.5 py-0 text-[10px]">
+          <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <div className="flex flex-col leading-tight min-w-0 pr-1 shrink-0">
+              <span className={cn("font-bold text-[11px] leading-tight whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground" : "text-foreground")}>Munkalista</span>
+              <span className={cn("text-[8px] leading-none whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground/80" : "text-muted-foreground")}>Drafts</span>
+            </div>
+          </div>
+          <Badge variant={selectedJournalId === 'munkalista' ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
             Függő
           </Badge>
         </button>
@@ -396,24 +401,33 @@ export default function JournalsPage() {
           <div className="flex items-center pl-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
         ) : (
           journals.map((j: any) => (
-            <button
-              key={j.id}
-              onClick={() => setSelectedJournalId(j.id)}
-              className={cn(
-                "flex items-center gap-2.5 px-4 py-2 rounded-lg text-xs transition-all border shrink-0 text-left",
-                selectedJournalId === j.id
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
-                  : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
-              )}
-            >
-              <div className="flex flex-col">
-                <span className={selectedJournalId === j.id ? "text-primary-foreground font-bold" : "text-foreground font-semibold"}>{j.code}</span>
-                <span className={cn("text-[9px] truncate max-w-[120px]", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>{j.name}</span>
-              </div>
-              <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0 text-[9px] scale-90">
-                {j.currency}
-              </Badge>
-            </button>
+            <TooltipProvider key={j.id} delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setSelectedJournalId(j.id)}
+                    className={cn(
+                      "flex items-center gap-3 pl-3 pr-4 h-12 rounded-lg text-xs transition-all border shrink-0 text-left justify-between flex-1 min-w-[80px]",
+                      selectedJournalId === j.id
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
+                        : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
+                    )}
+                  >
+                    <div className="flex flex-col min-w-0 pr-1 leading-tight flex-1">
+                      <span className={cn("font-bold text-[11px] leading-tight truncate", selectedJournalId === j.id ? "text-primary-foreground" : "text-foreground")}>{j.code}</span>
+                      <span className={cn("text-[8px] leading-none truncate", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>{j.name}</span>
+                    </div>
+                    <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
+                      {j.currency}
+                    </Badge>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-slate-900 border-slate-800 text-slate-100 p-2 text-xs shadow-md">
+                  <p className="font-semibold text-white">{j.code} - {j.name}</p>
+                  <p className="text-[10px] text-slate-400">Pénznem: {j.currency}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ))
         )}
       </div>
