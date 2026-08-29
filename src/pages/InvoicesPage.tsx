@@ -43,6 +43,7 @@ import { TableEmptyState } from '@/components/ui/table-empty-state';
 import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
+import { normalizeInvoiceNumber, isNavAndSubmittedInvoiceMatch } from '@/lib/invoiceMatchingUtils';
 
 import { useInvoiceData } from '@/hooks/useInvoiceData';
 import type { NavInvoice, SubmittedInvoice, TransactionRecord } from '@/hooks/useInvoiceData';
@@ -293,11 +294,7 @@ const InvoicesPage = () => {
     }
 
     return filteredAndSortedNavInvoices.map(inv => {
-      const invNum = (inv.invoice_number || '').trim().toLowerCase();
-      const pairedSub = filteredAndSortedSubmittedInvoices.find(s => {
-        const subNum = (s.bizonylatsorszam || (s as any).invoice_number || '').trim().toLowerCase();
-        return (Boolean(invNum) && Boolean(subNum) && invNum === subNum) || (s as any).nav_invoice_id === inv.id;
-      });
+      const pairedSub = filteredAndSortedSubmittedInvoices.find(s => isNavAndSubmittedInvoiceMatch(inv, s));
 
       return {
         id: inv.id,
@@ -702,31 +699,53 @@ const InvoicesPage = () => {
   // ── Lookup maps ──
   // Normalize invoice numbers by stripping spaces so that
   // NAV's "HP / 2026-002072" matches submitted's "HP/2026-002072"
-  const normalizeInvNum = (s: string) => s.replace(/\s+/g, '').toUpperCase();
+  const normalizeInvNum = (s: string) => normalizeInvoiceNumber(s);
 
   const navToSubmittedMap = useMemo(() => {
     const map = new Map<string, typeof submittedInvoices>();
+    const byNum = new Map<string, typeof submittedInvoices>();
     submittedInvoices.forEach(inv => {
       if (inv.bizonylatsorszam) {
-        const key = normalizeInvNum(inv.bizonylatsorszam);
-        const existing = map.get(key) || [];
+        const key = normalizeInvoiceNumber(inv.bizonylatsorszam);
+        const existing = byNum.get(key) || [];
         existing.push(inv);
-        map.set(key, existing);
+        byNum.set(key, existing);
+      }
+    });
+
+    navInvoicesLookup.forEach(nav => {
+      const key = normalizeInvoiceNumber(nav.invoice_number);
+      const candidates = byNum.get(key) || [];
+      const verified = candidates.filter(sub => isNavAndSubmittedInvoiceMatch(nav, sub));
+      if (verified.length > 0) {
+        map.set(key, verified);
       }
     });
     return map;
-  }, [submittedInvoices]);
+  }, [submittedInvoices, navInvoicesLookup]);
 
   const submittedToNavMap = useMemo(() => {
     const map = new Map<string, NavInvoice[]>();
+    const byNum = new Map<string, NavInvoice[]>();
     navInvoicesLookup.forEach(inv => {
-      const key = normalizeInvNum(inv.invoice_number);
-      const existing = map.get(key) || [];
+      const key = normalizeInvoiceNumber(inv.invoice_number);
+      const existing = byNum.get(key) || [];
       existing.push(inv);
-      map.set(key, existing);
+      byNum.set(key, existing);
+    });
+
+    submittedInvoices.forEach(sub => {
+      if (sub.bizonylatsorszam) {
+        const key = normalizeInvoiceNumber(sub.bizonylatsorszam);
+        const candidates = byNum.get(key) || [];
+        const verified = candidates.filter(nav => isNavAndSubmittedInvoiceMatch(nav, sub));
+        if (verified.length > 0) {
+          map.set(key, verified);
+        }
+      }
     });
     return map;
-  }, [navInvoicesLookup]);
+  }, [navInvoicesLookup, submittedInvoices]);
 
   const submittedIdToTransactionsMap = useMemo(() => {
     const map = new Map<string, TransactionRecord[]>();

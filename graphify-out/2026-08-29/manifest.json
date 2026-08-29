@@ -385,8 +385,8 @@
     "semantic_hash": "3fc261ab4b94e52a718df440100b641a"
   },
   "src/components/general-ledger/UploadChartOfAccountsModal.tsx": {
-    "mtime": 1787969882.0819094,
-    "ast_hash": "868773cdb6a68c639bd416b6065766ab",
+    "mtime": 1787568622.858336,
+    "ast_hash": "65dee71113e074e9a6d0c92e6558e749",
     "semantic_hash": ""
   },
   "src/components/invoices/InvoiceFilesDialog.tsx": {
@@ -975,8 +975,8 @@
     "semantic_hash": "f2a60e18bdf9a9d5b884b5b2a805ca4f"
   },
   "src/hooks/useInvoiceData.ts": {
-    "mtime": 1787973089.2170727,
-    "ast_hash": "0f3f2ee4bfc3ada52db0feaba4284682",
+    "mtime": 1785267960.2341118,
+    "ast_hash": "38fcbe72a258f372ef324ad48f4f4550",
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceFilters.ts": {
@@ -1495,8 +1495,8 @@
     "semantic_hash": ""
   },
   "src/pages/InvoicesPage.tsx": {
-    "mtime": 1787973000.5495255,
-    "ast_hash": "65a5427d9b444c35d556ffbd7da17da3",
+    "mtime": 1787840349.1728942,
+    "ast_hash": "00e43c2ad4c90f4aed527136ad202665",
     "semantic_hash": ""
   },
   "src/pages/KintlevoPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1787973230.8113978,
-    "ast_hash": "a2d455ca434fa8ce336ade11f05901f0",
+    "mtime": 1787841048.6818175,
+    "ast_hash": "8c67ad37c97ebd9026759874641cf929",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1787973245.7046676,
-    "ast_hash": "146bd22acc6d32c35c708863edb12bb3",
+    "mtime": 1787841067.9778357,
+    "ast_hash": "8e2de45a855d37c08dce9929143428f6",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -4120,8 +4120,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/Tao/TaoYearEndWizardPage.tsx": {
-    "mtime": 1787969882.08243,
-    "ast_hash": "61fe06b5779a8ecd477fd2d03811dc3d",
+    "mtime": 1787568622.8968499,
+    "ast_hash": "464509ae81da1ce50955a5f4286e1842",
     "semantic_hash": ""
   },
   "src/pages/Accounty/TemplatesPage.tsx": {
@@ -7182,36 +7182,6 @@
   "src/__tests__/management-user-filter.test.ts": {
     "mtime": 1787932907.0238695,
     "ast_hash": "be3e624e7c561d39f9c3532f57ae997b",
-    "semantic_hash": ""
-  },
-  "scratch/fetch_errors.js": {
-    "mtime": 1787969882.0808668,
-    "ast_hash": "1e7bd79efb2e74320b148f56ee015379",
-    "semantic_hash": ""
-  },
-  "scratch/fetch_tao_errors.js": {
-    "mtime": 1787969882.0813909,
-    "ast_hash": "1f65b0a301fdb80321a1d8a78ba0a838",
-    "semantic_hash": ""
-  },
-  "src/lib/invoiceMatchingUtils.test.ts": {
-    "mtime": 1787972953.2850401,
-    "ast_hash": "746773d37870301d6d0056e40fa1b3ee",
-    "semantic_hash": ""
-  },
-  "src/lib/invoiceMatchingUtils.ts": {
-    "mtime": 1787972939.7542224,
-    "ast_hash": "9c552f7fd3a2193c968c91ab607bbf4b",
-    "semantic_hash": ""
-  },
-  "docs/architecture/decisions/A-054-strict-nav-submitted-pairing.md": {
-    "mtime": 1787973216.7710953,
-    "ast_hash": "32bb7dbd7b7e636903332ace404fb0fc",
-    "semantic_hash": ""
-  },
-  "docs/product/decisions/P-053-strict-invoice-attachment-pairing-ux.md": {
-    "mtime": 1787973237.601282,
-    "ast_hash": "19c410705b3f471d3c7e1565b2c88726",
     "semantic_hash": ""
   }
 }

@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-08-27  
-> **Összesen:** 52 döntés | ✅ Decided: 50 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-08-29  
+> **Összesen:** 53 döntés | ✅ Decided: 51 | ⛔ Superseded: 2
 
 ---
 
@@ -94,6 +94,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-029 | Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció | ✅ Decided | [A-029](./A-029-syncing-url-dialog-state.md) |
 | A-040 | Multi-Tab Auth Flow Isolation (sessionStorage és auth-token storage) | ✅ Decided | [A-040](./A-040-multi-tab-auth-flow-isolation.md) |
 | A-044 | Shared FilePreviewModal Utility — Egységes fájl előnézet | ✅ Decided | [A-044](./A-044-shared-file-preview-modal.md) |
+| A-054 | Szigorított NAV ↔ Beküldött Számla Összerendelés (Strict Invoice Pairing) | ✅ Decided | [A-054](./A-054-strict-nav-submitted-pairing.md) |
 
 ## 💳 Fizetés
 
