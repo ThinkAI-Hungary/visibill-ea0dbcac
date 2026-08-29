@@ -38,10 +38,16 @@ Ha a cél-pipeline eltér a bizonylat jelenlegi forrástáblájától (pl. egy `
 - Enqueue-olja a PGMQ üzenetet a cél-queue-ba a megváltoztatott forrás megjelöléssel.
 Ez biztosítja, hogy a worker a megfelelő céltáblában keresse és megtalálja a rekordot, és megmaradjon a kliens oldali UUID folytonosság.
 
+**6. Foreign Key Védelem és Automatikus Rekord Gyógyítás (Auto-Healing & FK Safety):**
+Amikor egy bizonylat átirányításra kerül a számla pipeline-ra (vagy tévesen a tranzakció/riport táblában jött létre az `upload_id`), a worker `db.py -> upsert_invoice` függvénye a mentés előtt leellenőrzi az `invoice_uploads` integritását:
+- Ha az `upload_id` a `transaction_uploads` vagy `report_uploads` táblában található, a rendszer automatikusan létrehozza a hozzá tartozó `invoice_uploads` rekordot (`ensure_invoice_upload_exists`), így a számla és a csatolmány kapcsolata sértetlen marad és nem sérül az `invoices_invoice_uploads_id_fkey` constraint.
+- Ha a felhasználó időközben törölte a feltöltést a felületen, a worker elkapja a 23503 idegen kulcs kényszerhibát, csendes figyelmeztetéssel lezárja a feladatot, megelőzve az unhandled crash-eket és a beragadó feladatokat.
+
 ## Consequences
 **Pozitív:**
 - Teljesen automata típusfelismerés és átirányítás a 3 legfontosabb pipeline (Invoice, Transaction, Report) között.
 - Zero duplikált vagy beragadt rekord a Supabase-ben sikertelen fallback esetén.
+- Kizárja a Postgres 23503 Foreign Key Constraint hibákat (`invoices_invoice_uploads_id_fkey`).
 - Pontos és tiszta frontend visszajelzés: a sikeres bizonylatok valóban zöld "Feldolgozva" állapotban jelennek meg.
 - A kézi újraküldések zökkenőmentesek és nem okoznak "record not found" hibákat a Python workerben.
 

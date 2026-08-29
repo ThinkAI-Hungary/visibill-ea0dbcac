@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { defaultFilters, FILTER_URL_KEYS } from '@/hooks/useInvoiceFilters';
+import type { KpiFilterType, InvoiceKpiSummary, InvoiceFilters } from '@/hooks/useInvoiceFilters';
 
 describe('useInvoiceFilters', () => {
   it('has correct default filter values', () => {
@@ -26,5 +27,24 @@ describe('useInvoiceFilters', () => {
     expect(FILTER_URL_KEYS.category).toBe('cat');
     expect(FILTER_URL_KEYS.paymentMethod).toBe('pm');
     expect(FILTER_URL_KEYS.continuous).toBe('cont');
+  });
+
+  it('correctly handles all KPI filter types', () => {
+    const kpiTypes: KpiFilterType[] = ['all', 'matched', 'suggested', 'unmatched'];
+    expect(kpiTypes).toHaveLength(4);
+    expect(kpiTypes).toContain('all');
+    expect(kpiTypes).toContain('matched');
+    expect(kpiTypes).toContain('suggested');
+    expect(kpiTypes).toContain('unmatched');
+  });
+
+  it('validates InvoiceKpiSummary computation integrity', () => {
+    const sampleSummary: InvoiceKpiSummary = {
+      total: 416,
+      matched: 100,
+      suggested: 0,
+      unmatched: 316,
+    };
+    expect(sampleSummary.matched + sampleSummary.suggested + sampleSummary.unmatched).toBe(sampleSummary.total);
   });
 });

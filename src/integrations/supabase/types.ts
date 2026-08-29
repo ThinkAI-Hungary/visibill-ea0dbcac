@@ -10927,6 +10927,7 @@ export type Database = {
           p_direction: string
           p_issue_date_from?: string
           p_issue_date_to?: string
+          p_kpi_filter?: string
           p_page?: number
           p_page_size?: number
           p_paid?: string
@@ -10963,6 +10964,7 @@ export type Database = {
           is_continuous: boolean
           is_manual_payment: boolean
           manual_payment_type: string
+          match_status: string
           paid: boolean
           payment_date: string
           payment_method: string
@@ -10992,6 +10994,7 @@ export type Database = {
           p_direction: string
           p_issue_date_from?: string
           p_issue_date_to?: string
+          p_kpi_filter?: string
           p_page?: number
           p_page_size?: number
           p_payment_method?: string
@@ -11013,6 +11016,7 @@ export type Database = {
           image_url: string
           invoice_direction: string
           kibocsatas_datuma: string
+          match_status: string
           melleklet_url: string
           penznem: string
           project_id: string
@@ -11020,6 +11024,32 @@ export type Database = {
           teljesites_datuma: string
           total_count: number
           vevo_nev: string
+        }[]
+      }
+      get_invoice_kpis: {
+        Args: {
+          p_amount_max?: number
+          p_amount_min?: number
+          p_category_id?: string
+          p_company_id: string
+          p_continuous?: string
+          p_currency?: string
+          p_date_from: string
+          p_date_to: string
+          p_direction: string
+          p_issue_date_from?: string
+          p_issue_date_to?: string
+          p_payment_method?: string
+          p_project_id?: string
+          p_search?: string
+          p_source?: string
+          p_submitted?: string
+        }
+        Returns: {
+          matched: number
+          suggested: number
+          total: number
+          unmatched: number
         }[]
       }
       get_fx_differences: {

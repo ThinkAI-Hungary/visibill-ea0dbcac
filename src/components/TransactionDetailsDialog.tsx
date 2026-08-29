@@ -126,9 +126,9 @@ export const TransactionDetailsDialog = ({
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const invalidateAllMatches = () => {
+    queryClient.invalidateQueries({ queryKey: ['invoiceKpis', companyId] });
     queryClient.invalidateQueries({ queryKey: ['transactions', companyId] });
     queryClient.invalidateQueries({ queryKey: ['navInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['navInvoicesLookup', companyId] });
     queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });

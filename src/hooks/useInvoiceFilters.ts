@@ -196,23 +196,23 @@ export function useInvoiceFilters(
       issueDateFrom, issueDateTo, filters.continuous, filters.submitted
     ],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)('get_invoice_kpis', {
+      const { data, error } = await supabase.rpc('get_invoice_kpis', {
         p_company_id: companyId,
         p_date_from: dateFromFormatted,
         p_date_to: dateToFormatted,
         p_direction: isNavTab ? navDirection : submittedDirection,
         p_source: isNavTab ? 'nav' : 'submitted',
-        p_search: deferredSearch || null,
-        p_currency: filters.currency === 'all' ? null : filters.currency,
-        p_project_id: filters.project === 'all' ? null : filters.project,
-        p_category_id: filters.category === 'all' ? null : filters.category,
-        p_payment_method: filters.paymentMethod === 'all' ? null : filters.paymentMethod,
-        p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : null,
-        p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : null,
-        p_issue_date_from: issueDateFrom,
-        p_issue_date_to: issueDateTo,
-        p_continuous: filters.continuous === 'all' ? null : filters.continuous,
-        p_submitted: filters.submitted === 'all' ? null : filters.submitted,
+        p_search: deferredSearch || undefined,
+        p_currency: filters.currency === 'all' ? undefined : filters.currency,
+        p_project_id: filters.project === 'all' ? undefined : filters.project,
+        p_category_id: filters.category === 'all' ? undefined : filters.category,
+        p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
+        p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
+        p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
+        p_issue_date_from: issueDateFrom || undefined,
+        p_issue_date_to: issueDateTo || undefined,
+        p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
+        p_submitted: filters.submitted === 'all' ? undefined : filters.submitted,
       });
       if (error) throw error;
       const res = data?.[0] || { total: 0, matched: 0, suggested: 0, unmatched: 0 };
@@ -239,28 +239,28 @@ export function useInvoiceFilters(
       issueDateFrom, issueDateTo, activePresetId, filters.continuous, kpiFilter
     ],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)('get_filtered_nav_invoices', {
+      const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
         p_company_id: companyId,
         p_date_from: dateFromFormatted,
         p_date_to: dateToFormatted,
         p_direction: navDirection,
-        p_search: deferredSearch || null,
-        p_currency: filters.currency === 'all' ? null : filters.currency,
-        p_paid: filters.paid === 'all' ? null : filters.paid,
-        p_submitted: filters.submitted === 'all' ? null : filters.submitted,
-        p_project_id: filters.project === 'all' ? null : filters.project,
-        p_category_id: filters.category === 'all' ? null : filters.category,
-        p_payment_method: filters.paymentMethod === 'all' ? null : filters.paymentMethod,
-        p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : null,
-        p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : null,
+        p_search: deferredSearch || undefined,
+        p_currency: filters.currency === 'all' ? undefined : filters.currency,
+        p_paid: filters.paid === 'all' ? undefined : filters.paid,
+        p_submitted: filters.submitted === 'all' ? undefined : filters.submitted,
+        p_project_id: filters.project === 'all' ? undefined : filters.project,
+        p_category_id: filters.category === 'all' ? undefined : filters.category,
+        p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
+        p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
+        p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
         p_sort_field: sortField,
         p_sort_dir: sortDirection,
         p_page: navCurrentPage,
         p_page_size: navPageSize,
-        p_issue_date_from: issueDateFrom,
-        p_issue_date_to: issueDateTo,
-        p_preset_id: activePresetId || null,
-        p_continuous: filters.continuous === 'all' ? null : filters.continuous,
+        p_issue_date_from: issueDateFrom || undefined,
+        p_issue_date_to: issueDateTo || undefined,
+        p_preset_id: activePresetId || undefined,
+        p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
         p_kpi_filter: kpiFilter,
       });
       if (error) throw error;
@@ -281,24 +281,24 @@ export function useInvoiceFilters(
       issueDateFrom, issueDateTo, kpiFilter
     ],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)('get_filtered_submitted_invoices', {
+      const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
         p_company_id: companyId,
         p_date_from: dateFromFormatted,
         p_date_to: dateToFormatted,
         p_direction: submittedDirection,
-        p_search: deferredSearch || null,
-        p_currency: filters.currency === 'all' ? null : filters.currency,
-        p_category_id: filters.category === 'all' ? null : filters.category,
-        p_project_id: filters.project === 'all' ? null : filters.project,
-        p_payment_method: filters.paymentMethod === 'all' ? null : filters.paymentMethod,
-        p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : null,
-        p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : null,
+        p_search: deferredSearch || undefined,
+        p_currency: filters.currency === 'all' ? undefined : filters.currency,
+        p_category_id: filters.category === 'all' ? undefined : filters.category,
+        p_project_id: filters.project === 'all' ? undefined : filters.project,
+        p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
+        p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
+        p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
         p_sort_field: sortField,
         p_sort_dir: sortDirection,
         p_page: submittedCurrentPage,
         p_page_size: submittedPageSize,
-        p_issue_date_from: issueDateFrom,
-        p_issue_date_to: issueDateTo,
+        p_issue_date_from: issueDateFrom || undefined,
+        p_issue_date_to: issueDateTo || undefined,
         p_kpi_filter: kpiFilter,
       });
       if (error) throw error;
