@@ -91,14 +91,16 @@ export default function JournalsPage() {
   const [selectedJournalId, setSelectedJournalId] = useState<string>('munkalista');
   const [search, setSearch] = useState('');
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
+  const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
 
-  // Reset page when search or journal changes
+  // Reset page and selection when search or journal changes
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedEntryIds(new Set());
   }, [search, selectedJournalId]);
   
   // Modals state
@@ -208,6 +210,30 @@ export default function JournalsPage() {
     }
   });
 
+  // Bulk post mutation
+  const bulkPostMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Bejelentkezés szükséges");
+
+      for (const id of ids) {
+        const { error } = await supabase.rpc('acc_post_journal_entry', {
+          p_header_id: id,
+          p_user_id: user.id
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      setSelectedEntryIds(new Set());
+      toast({ title: "Kijelölt tételek sikeresen lekönyvelve" });
+    },
+    onError: (err) => {
+      toast({ title: "Könyvelési hiba", description: err.message, variant: "destructive" });
+    }
+  });
+
   // Storno entry mutation
   const stornoMutation = useMutation({
     mutationFn: async ({ headerId, reason, correct }: { headerId: string; reason: string; correct: boolean }) => {
@@ -252,11 +278,50 @@ export default function JournalsPage() {
     }
   });
 
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from('acc_journal_headers').delete().in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      setSelectedEntryIds(new Set());
+      toast({ title: "Kijelölt piszkozatok sikeresen törölve" });
+    },
+    onError: (err) => {
+      toast({ title: "Törlési hiba", description: err.message, variant: "destructive" });
+    }
+  });
+
   // Handle storno prompt
   const handleStorno = (headerId: string, correct: boolean) => {
     setStornoTarget({ headerId, correct });
     setStornoReason('');
     setStornoOpen(true);
+  };
+
+  const toggleSelectEntry = (id: string) => {
+    setSelectedEntryIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean, pageEntries: any[]) => {
+    if (checked) {
+      const draftIds = pageEntries
+        .filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status))
+        .map((e: any) => e.id);
+      setSelectedEntryIds(new Set(draftIds));
+    } else {
+      setSelectedEntryIds(new Set());
+    }
   };
 
   // Filtered entries
@@ -309,66 +374,53 @@ export default function JournalsPage() {
         }
       />
 
-      <div className="grid grid-cols-12 gap-6 items-start">
-        {/* Left selector */}
-        <div className="col-span-12 md:col-span-3 space-y-3">
-          <Card className="border border-border bg-card/60 backdrop-blur-md">
-            <CardHeader className="py-3.5 px-4 border-b">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-primary" /> Naplók listája
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-2 space-y-1">
-              <button
-                onClick={() => setSelectedJournalId('munkalista')}
-                className={cn(
-                  "w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition-all flex items-center justify-between border",
-                  selectedJournalId === 'munkalista'
-                    ? "bg-primary/10 text-primary border-primary/20"
-                    : "hover:bg-muted/40 text-muted-foreground border-transparent"
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  Munkalista (Drafts)
-                </span>
-                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-                  Függő
-                </Badge>
-              </button>
+      {/* Horizontal Journals Selector */}
+      <div className="w-full flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none select-none">
+        <button
+          onClick={() => setSelectedJournalId('munkalista')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all border shrink-0",
+            selectedJournalId === 'munkalista'
+              ? "bg-primary text-primary-foreground border-primary shadow-sm"
+              : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
+          )}
+        >
+          <AlertCircle className="w-3.5 h-3.5" />
+          <span>Munkalista (Drafts)</span>
+          <Badge variant={selectedJournalId === 'munkalista' ? 'secondary' : 'outline'} className="px-1.5 py-0 text-[10px]">
+            Függő
+          </Badge>
+        </button>
 
-              <div className="h-px bg-border my-2" />
-
-              {loadingJournals ? (
-                <div className="py-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-              ) : (
-                journals.map((j: any) => (
-                  <button
-                    key={j.id}
-                    onClick={() => setSelectedJournalId(j.id)}
-                    className={cn(
-                      "w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all flex items-center justify-between border",
-                      selectedJournalId === j.id
-                        ? "bg-primary/10 text-primary border-primary/20 font-medium"
-                        : "hover:bg-muted/40 text-muted-foreground border-transparent"
-                    )}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-foreground">{j.code}</span>
-                      <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{j.name}</span>
-                    </div>
-                    <Badge variant="outline" className="px-1.5 py-0 text-[10px] scale-90">
-                      {j.currency}
-                    </Badge>
-                  </button>
-                ))
+        {loadingJournals ? (
+          <div className="flex items-center pl-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+        ) : (
+          journals.map((j: any) => (
+            <button
+              key={j.id}
+              onClick={() => setSelectedJournalId(j.id)}
+              className={cn(
+                "flex items-center gap-2.5 px-4 py-2 rounded-lg text-xs transition-all border shrink-0 text-left",
+                selectedJournalId === j.id
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
+                  : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
               )}
-            </CardContent>
-          </Card>
-        </div>
+            >
+              <div className="flex flex-col">
+                <span className={selectedJournalId === j.id ? "text-primary-foreground font-bold" : "text-foreground font-semibold"}>{j.code}</span>
+                <span className={cn("text-[9px] truncate max-w-[120px]", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>{j.name}</span>
+              </div>
+              <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0 text-[9px] scale-90">
+                {j.currency}
+              </Badge>
+            </button>
+          ))
+        )}
+      </div>
 
-        {/* Center list */}
-        <div className="col-span-12 md:col-span-9 space-y-4">
+      <div className="grid grid-cols-12 gap-4 items-start">
+        {/* Full-width list table */}
+        <div className="col-span-12 space-y-4">
           {/* Filters */}
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -384,33 +436,98 @@ export default function JournalsPage() {
 
           {/* List Table */}
           <Card className="border border-border bg-card/60 backdrop-blur-md overflow-hidden">
+            {selectedEntryIds.size > 0 && (
+              <div className="flex items-center justify-between px-4 py-2.5 bg-primary/5 border-b border-border/80 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                  <span className="bg-primary/10 px-2 py-0.5 rounded-full tabular-nums">
+                    {selectedEntryIds.size}
+                  </span>
+                  <span>tétel kijelölve a tömeges műveletekhez</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-950 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                    onClick={() => bulkPostMutation.mutate(Array.from(selectedEntryIds))}
+                    disabled={bulkPostMutation.isPending}
+                  >
+                    {bulkPostMutation.isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                    )}
+                    Kijelöltek könyvelése
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1.5 border-destructive/20 text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      if (confirm(`Biztosan törölni szeretné a kijelölt ${selectedEntryIds.size} db piszkozatot?`)) {
+                        bulkDeleteMutation.mutate(Array.from(selectedEntryIds));
+                      }
+                    }}
+                    disabled={bulkDeleteMutation.isPending}
+                  >
+                    {bulkDeleteMutation.isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    Kijelöltek törlése
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 text-xs px-2 text-muted-foreground"
+                    onClick={() => setSelectedEntryIds(new Set())}
+                  >
+                    Mégse
+                  </Button>
+                </div>
+              </div>
+            )}
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-muted/40 border-b border-border/40 text-muted-foreground select-none uppercase font-semibold text-[10px] tracking-wider">
-                      <th className="p-3">Dátum</th>
-                      <th className="p-3">Naplószám</th>
-                      <th className="p-3">Bizonylatszám</th>
-                      <th className="p-3">Partner</th>
-                      <th className="p-3">Megnevezés</th>
-                      <th className="p-3 text-right">Összeg</th>
-                      <th className="p-3 text-center">Típus</th>
-                      <th className="p-3 text-center">Státusz</th>
-                      <th className="p-3 text-right">Műveletek</th>
+                      <th className="py-1.5 px-2 text-center w-10">
+                        <input
+                          type="checkbox"
+                          checked={
+                            paginatedEntries.length > 0 &&
+                            paginatedEntries
+                              .filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status))
+                              .every((e: any) => selectedEntryIds.has(e.id))
+                          }
+                          onChange={(ev) => handleSelectAll(ev.target.checked, paginatedEntries)}
+                          className="rounded border-gray-300 text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
+                        />
+                      </th>
+                      <th className="py-1.5 px-2">Dátum</th>
+                      <th className="py-1.5 px-2">Naplószám</th>
+                      <th className="py-1.5 px-2">Bizonylatszám</th>
+                      <th className="py-1.5 px-2">Partner</th>
+                      <th className="py-1.5 px-2">Megnevezés</th>
+                      <th className="py-1.5 px-2 text-right">Összeg</th>
+                      <th className="py-1.5 px-2 text-center">Típus</th>
+                      <th className="py-1.5 px-2 text-center">Státusz</th>
+                      <th className="py-1.5 px-2 text-right">Műveletek</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/30">
                     {loadingEntries ? (
                       <tr>
-                        <td colSpan={9} className="p-12 text-center text-muted-foreground">
+                        <td colSpan={10} className="p-12 text-center text-muted-foreground">
                           <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                           Tételek betöltése...
                         </td>
                       </tr>
                     ) : filteredEntries.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="p-12 text-center text-muted-foreground">
+                        <td colSpan={10} className="p-12 text-center text-muted-foreground">
                           <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
                           Nincsenek tételek ebben a nézetben.
                         </td>
@@ -429,14 +546,27 @@ export default function JournalsPage() {
 
                         const statusInfo = STATUS_LABELS[e.status] || { label: e.status, color: 'bg-slate-500/10' };
                         const journalNum = e.journal_number ? `${e.journal?.code}/${e.journal_number}` : '—';
+                        const isDraft = ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status);
                         
                         return (
                           <tr key={e.id} className="hover:bg-muted/20 transition-colors">
-                            <td className="p-3 font-mono text-muted-foreground">{e.posting_date.replace(/-/g, '.')}</td>
-                            <td className="p-3 font-semibold text-foreground">{journalNum}</td>
-                            <td className="p-3 font-mono">{e.document_id}</td>
-                            <td className="p-3 font-medium text-foreground">{e.partner?.name || '—'}</td>
-                            <td className="p-3">
+                            <td className="py-1 px-2 text-center w-10">
+                              {isDraft ? (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedEntryIds.has(e.id)}
+                                  onChange={() => toggleSelectEntry(e.id)}
+                                  className="rounded border-gray-300 text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
+                                />
+                              ) : (
+                                <div className="w-3.5 h-3.5 mx-auto" />
+                              )}
+                            </td>
+                            <td className="py-1 px-2 font-mono text-muted-foreground">{e.posting_date.replace(/-/g, '.')}</td>
+                            <td className="py-1 px-2 font-semibold text-foreground">{journalNum}</td>
+                            <td className="py-1 px-2 font-mono">{e.document_id}</td>
+                            <td className="py-1 px-2 font-medium text-foreground">{e.partner?.name || '—'}</td>
+                            <td className="py-1 px-2">
                               <TooltipProvider delayDuration={0}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -450,7 +580,7 @@ export default function JournalsPage() {
                                 </Tooltip>
                               </TooltipProvider>
                             </td>
-                            <td className="p-3 text-right font-semibold tabular-nums">
+                            <td className="py-1 px-2 text-right font-semibold tabular-nums">
                               <div className="flex flex-col items-end">
                                 <span>{formatCurrency(totalAmount, e.currency || 'HUF')}</span>
                                 {isForeign && (
@@ -460,39 +590,39 @@ export default function JournalsPage() {
                                 )}
                               </div>
                             </td>
-                            <td className="p-3 text-center text-[10px] text-muted-foreground font-mono">{SOURCE_LABELS[e.source] || e.source}</td>
-                            <td className="p-3 text-center">
+                            <td className="py-1 px-2 text-center text-[10px] text-muted-foreground font-mono">{SOURCE_LABELS[e.source] || e.source}</td>
+                            <td className="py-1 px-2 text-center">
                               <Badge className={cn("px-2 py-0.5 text-[10px] font-medium border uppercase", statusInfo.color)} variant="outline">
                                 {statusInfo.label}
                               </Badge>
                             </td>
-                            <td className="p-3 text-right">
-                              <div className="flex justify-end gap-1.5">
-                                <Button size="icon" variant="ghost" className="w-7 h-7 text-muted-foreground hover:text-foreground" onClick={() => setSelectedEntry(e)}>
+                            <td className="py-1 px-2 text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button size="icon" variant="ghost" className="w-6 h-6 text-muted-foreground hover:text-foreground" onClick={() => setSelectedEntry(e)}>
                                   <Eye className="w-3.5 h-3.5" />
                                 </Button>
-                                <Button size="icon" variant="ghost" className="w-7 h-7 text-muted-foreground hover:text-foreground" onClick={() => setAuditEntryId(e.id)}>
+                                <Button size="icon" variant="ghost" className="w-6 h-6 text-muted-foreground hover:text-foreground" onClick={() => setAuditEntryId(e.id)}>
                                   <History className="w-3.5 h-3.5" />
                                 </Button>
                                 {e.status === 'KONYVELT' && (
                                   <>
-                                    <Button size="icon" variant="ghost" className="w-7 h-7 text-destructive hover:bg-destructive/10" title="Sztornózás" onClick={() => handleStorno(e.id, false)}>
+                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-destructive hover:bg-destructive/10" title="Sztornózás" onClick={() => handleStorno(e.id, false)}>
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </Button>
-                                    <Button size="icon" variant="ghost" className="w-7 h-7 text-sky-600 hover:bg-sky-50" title="Javítás/Helyesbítés" onClick={() => handleStorno(e.id, true)}>
+                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-sky-600 hover:bg-sky-50" title="Javítás/Helyesbítés" onClick={() => handleStorno(e.id, true)}>
                                       <CornerDownRight className="w-3.5 h-3.5" />
                                     </Button>
                                   </>
                                 )}
                                 {(e.status === 'KEZI_PISZKOZAT' || e.status === 'JOVAHAGYASRA_VAR' || e.status === 'GEPI_JAVASLAT') && (
                                   <>
-                                    <Button size="icon" variant="ghost" className="w-7 h-7 text-emerald-600 hover:bg-emerald-5" title="Könyvelés" onClick={() => postMutation.mutate(e.id)} disabled={postMutation.isPending}>
+                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-emerald-600 hover:bg-emerald-5" title="Könyvelés" onClick={() => postMutation.mutate(e.id)} disabled={postMutation.isPending}>
                                       <ShieldCheck className="w-3.5 h-3.5" />
                                     </Button>
-                                    <Button size="icon" variant="ghost" className="w-7 h-7 text-primary" title="Szerkesztés" onClick={() => { setEditingEntryId(e.id); setManualEntryOpen(true); }}>
+                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-primary" title="Szerkesztés" onClick={() => { setEditingEntryId(e.id); setManualEntryOpen(true); }}>
                                       <FileSpreadsheet className="w-3.5 h-3.5" />
                                     </Button>
-                                    <Button size="icon" variant="ghost" className="w-7 h-7 text-destructive" title="Piszkozat törlése" onClick={() => { if (confirm("Biztosan törli ezt a piszkozatot?")) deleteMutation.mutate(e.id); }}>
+                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-destructive" title="Piszkozat törlése" onClick={() => { if (confirm("Biztosan törli ezt a piszkozatot?")) deleteMutation.mutate(e.id); }}>
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </Button>
                                   </>
