@@ -22620,7 +22620,7 @@
       "source_location": "L439",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usepayrollcycle",
-      "community": 9,
+      "community": 30,
       "norm_label": "usepayrollcycle()"
     },
     {
@@ -22780,7 +22780,7 @@
       "source_location": "L846",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usetaxparameters",
-      "community": 30,
+      "community": 334,
       "norm_label": "usetaxparameters()"
     },
     {
@@ -25160,7 +25160,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_exportpdf",
-      "community": 184,
+      "community": 46,
       "norm_label": "exportpdf.ts"
     },
     {
@@ -25180,7 +25180,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "lib_exportpdf_hu",
-      "community": 184,
+      "community": 46,
       "norm_label": "hu()"
     },
     {
@@ -25190,7 +25190,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "lib_exportpdf_loadpdflibs",
-      "community": 184,
+      "community": 46,
       "norm_label": "loadpdflibs()"
     },
     {
@@ -25200,7 +25200,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "lib_exportpdf_exportpdf",
-      "community": 184,
+      "community": 46,
       "norm_label": "exportpdf()"
     },
     {
@@ -25210,7 +25210,7 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "lib_exportpdf_getpdfbloburl",
-      "community": 184,
+      "community": 46,
       "norm_label": "getpdfbloburl()"
     },
     {
@@ -25220,7 +25220,7 @@
       "source_location": "L181",
       "_origin": "ast",
       "id": "lib_exportpdf_exportreceiptpdf",
-      "community": 184,
+      "community": 46,
       "norm_label": "exportreceiptpdf()"
     },
     {
@@ -34220,7 +34220,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "documents_epayslipportalpage_epayslipportalpage",
-      "community": 6,
+      "community": 30,
       "norm_label": "epayslipportalpage()"
     },
     {
@@ -34310,7 +34310,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "documents_transferlistpage",
-      "community": 30,
+      "community": 184,
       "norm_label": "transferlistpage.tsx"
     },
     {
@@ -34330,7 +34330,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "documents_transferlistpage_downloadsepaxml",
-      "community": 30,
+      "community": 184,
       "norm_label": "downloadsepaxml()"
     },
     {
@@ -34340,7 +34340,7 @@
       "source_location": "L244",
       "_origin": "ast",
       "id": "documents_transferlistpage_downloadmt940",
-      "community": 30,
+      "community": 184,
       "norm_label": "downloadmt940()"
     },
     {
@@ -34350,7 +34350,7 @@
       "source_location": "L268",
       "_origin": "ast",
       "id": "documents_transferlistpage_escapexml",
-      "community": 30,
+      "community": 184,
       "norm_label": "escapexml()"
     },
     {
@@ -34360,7 +34360,7 @@
       "source_location": "L272",
       "_origin": "ast",
       "id": "documents_transferlistpage_downloadfile",
-      "community": 30,
+      "community": 184,
       "norm_label": "downloadfile()"
     },
     {
@@ -35690,7 +35690,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "new_client_integrationstep",
-      "community": 184,
+      "community": 46,
       "norm_label": "integrationstep.tsx"
     },
     {
@@ -35700,7 +35700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "new_client_integrationstep_integrationstepprops",
-      "community": 184,
+      "community": 46,
       "norm_label": "integrationstepprops"
     },
     {
@@ -35710,7 +35710,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "new_client_integrationstep_integrationstep",
-      "community": 184,
+      "community": 46,
       "norm_label": "integrationstep()"
     },
     {
@@ -35820,7 +35820,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage",
-      "community": 184,
+      "community": 46,
       "norm_label": "payrolladvancedreportspage.tsx"
     },
     {
@@ -35830,7 +35830,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage_reporttype",
-      "community": 184,
+      "community": 46,
       "norm_label": "reporttype"
     },
     {
@@ -35840,7 +35840,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage_report_types",
-      "community": 184,
+      "community": 46,
       "norm_label": "report_types"
     },
     {
@@ -35850,7 +35850,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage_payrollreportspage2",
-      "community": 184,
+      "community": 46,
       "norm_label": "payrollreportspage2()"
     },
     {
@@ -49570,7 +49570,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_regisztr\u00e1ci\u00f3_\u00e9s_bejelentkez\u00e9s",
-      "community": 88,
+      "community": 609,
       "norm_label": "regisztracio es bejelentkezes"
     },
     {
@@ -49580,7 +49580,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_\u00faj_fi\u00f3k_l\u00e9trehoz\u00e1sa",
-      "community": 88,
+      "community": 609,
       "norm_label": "uj fiok letrehozasa"
     },
     {
@@ -49590,7 +49590,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_bejelentkez\u00e9s",
-      "community": 88,
+      "community": 609,
       "norm_label": "bejelentkezes"
     },
     {
@@ -49600,7 +49600,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_elfelejtett_jelsz\u00f3",
-      "community": 88,
+      "community": 609,
       "norm_label": "elfelejtett jelszo"
     },
     {
@@ -49970,7 +49970,7 @@
       "source_location": "L433",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_bankkivonatok_\u00e9s_tranzakci\u00f3k",
-      "community": 609,
+      "community": 88,
       "norm_label": "bankkivonatok es tranzakciok"
     },
     {
@@ -49980,7 +49980,7 @@
       "source_location": "L444",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_tranzakci\u00f3s_f\u00e1jlok_felt\u00f6lt\u00e9se_\u00e9s_t\u00f6rl\u00e9se",
-      "community": 609,
+      "community": 88,
       "norm_label": "tranzakcios fajlok feltoltese es torlese"
     },
     {
@@ -49990,7 +49990,7 @@
       "source_location": "L452",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_tranzakci\u00f3s_feljegyz\u00e9sek_jegyzetek_k\u00e9sz\u00edt\u00e9se",
-      "community": 609,
+      "community": 88,
       "norm_label": "tranzakcios feljegyzesek (jegyzetek) keszitese"
     },
     {
@@ -50000,7 +50000,7 @@
       "source_location": "L461",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_jegyzetek_oldal_integr\u00e1ci\u00f3ja",
-      "community": 609,
+      "community": 88,
       "norm_label": "jegyzetek oldal integracioja"
     },
     {
@@ -59157,7 +59157,7 @@
       "label": "Consequences",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-055-server-side-invoice-query-kpi-optimization.md",
-      "source_location": "L37",
+      "source_location": "L41",
       "_origin": "ast",
       "id": "decisions_a_055_server_side_invoice_query_kpi_optimization_consequences",
       "community": 617,
@@ -59167,7 +59167,7 @@
       "label": "Kapcsol\u00f3d\u00f3",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-055-server-side-invoice-query-kpi-optimization.md",
-      "source_location": "L49",
+      "source_location": "L54",
       "_origin": "ast",
       "id": "decisions_a_055_server_side_invoice_query_kpi_optimization_kapcsol\u00f3d\u00f3",
       "community": 617,
@@ -244772,9 +244772,9 @@
       "source_file": "docs/architecture/decisions/A-055-server-side-invoice-query-kpi-optimization.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_055_server_side_invoice_query_kpi_optimization",
-      "target": "decisions_a_055_server_side_invoice_query_kpi_optimization_a_055_server_side_invoice_query_kpi_aggregation_gin_trigram_optimization",
-      "confidence_score": 1.0
+      "target": "decisions_a_055_server_side_invoice_query_kpi_optimization_a_055_server_side_invoice_query_kpi_aggregation_gin_trigram_optimization"
     },
     {
       "relation": "contains",
@@ -244782,9 +244782,9 @@
       "source_file": "docs/architecture/decisions/A-055-server-side-invoice-query-kpi-optimization.md",
       "source_location": "L37",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_055_server_side_invoice_query_kpi_optimization_a_055_server_side_invoice_query_kpi_aggregation_gin_trigram_optimization",
-      "target": "decisions_a_055_server_side_invoice_query_kpi_optimization_consequences",
-      "confidence_score": 1.0
+      "target": "decisions_a_055_server_side_invoice_query_kpi_optimization_consequences"
     },
     {
       "relation": "contains",
@@ -244792,9 +244792,9 @@
       "source_file": "docs/architecture/decisions/A-055-server-side-invoice-query-kpi-optimization.md",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_055_server_side_invoice_query_kpi_optimization_a_055_server_side_invoice_query_kpi_aggregation_gin_trigram_optimization",
-      "target": "decisions_a_055_server_side_invoice_query_kpi_optimization_context",
-      "confidence_score": 1.0
+      "target": "decisions_a_055_server_side_invoice_query_kpi_optimization_context"
     },
     {
       "relation": "contains",
@@ -244802,9 +244802,9 @@
       "source_file": "docs/architecture/decisions/A-055-server-side-invoice-query-kpi-optimization.md",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_055_server_side_invoice_query_kpi_optimization_a_055_server_side_invoice_query_kpi_aggregation_gin_trigram_optimization",
-      "target": "decisions_a_055_server_side_invoice_query_kpi_optimization_decision",
-      "confidence_score": 1.0
+      "target": "decisions_a_055_server_side_invoice_query_kpi_optimization_decision"
     },
     {
       "relation": "contains",
@@ -244812,9 +244812,9 @@
       "source_file": "docs/architecture/decisions/A-055-server-side-invoice-query-kpi-optimization.md",
       "source_location": "L49",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_055_server_side_invoice_query_kpi_optimization_a_055_server_side_invoice_query_kpi_aggregation_gin_trigram_optimization",
-      "target": "decisions_a_055_server_side_invoice_query_kpi_optimization_kapcsol\u00f3d\u00f3",
-      "confidence_score": 1.0
+      "target": "decisions_a_055_server_side_invoice_query_kpi_optimization_kapcsol\u00f3d\u00f3"
     },
     {
       "relation": "contains",
@@ -255572,9 +255572,9 @@
       "source_file": "docs/product/decisions/P-010-invoice-list.md",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_p_010_invoice_list_p_010_sz\u00e1mla_lista_n\u00e9zet_sz\u0171r\u0151k",
-      "target": "decisions_p_010_invoice_list_kapcsol\u00f3d\u00f3",
-      "confidence_score": 1.0
+      "target": "decisions_p_010_invoice_list_kapcsol\u00f3d\u00f3"
     },
     {
       "relation": "contains",
@@ -257092,9 +257092,9 @@
       "source_file": "docs/product/decisions/P-054-server-side-invoice-pagination-and-kpi-filters-ux.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_p_054_server_side_invoice_pagination_and_kpi_filters_ux",
-      "target": "decisions_p_054_server_side_invoice_pagination_and_kpi_filters_ux_p_054_scalable_server_side_invoice_pagination_kpi_card_filtering_ux",
-      "confidence_score": 1.0
+      "target": "decisions_p_054_server_side_invoice_pagination_and_kpi_filters_ux_p_054_scalable_server_side_invoice_pagination_kpi_card_filtering_ux"
     },
     {
       "relation": "contains",
@@ -257102,9 +257102,9 @@
       "source_file": "docs/product/decisions/P-054-server-side-invoice-pagination-and-kpi-filters-ux.md",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_p_054_server_side_invoice_pagination_and_kpi_filters_ux_p_054_scalable_server_side_invoice_pagination_kpi_card_filtering_ux",
-      "target": "decisions_p_054_server_side_invoice_pagination_and_kpi_filters_ux_kapcsol\u00f3d\u00f3",
-      "confidence_score": 1.0
+      "target": "decisions_p_054_server_side_invoice_pagination_and_kpi_filters_ux_kapcsol\u00f3d\u00f3"
     },
     {
       "relation": "contains",

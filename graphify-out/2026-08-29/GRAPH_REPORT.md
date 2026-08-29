@@ -1,7 +1,7 @@
 # Graph Report - eaisybill-prod  (2026-08-29)
 
 ## Corpus Check
-- 1376 files · ~2,066,776 words
+- 1376 files · ~2,066,857 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -645,8 +645,8 @@ Cohesion: 0.06
 Nodes (64): FirmMembersCard(), Profile, SystemSettings, CategoryCard(), ChangePasswordDialog(), CourierReportTabProps, MatchDetails, REPORT_LABELS (+56 more)
 
 ### Community 6 - "Invoice Type Definitions"
-Cohesion: 0.23
-Nodes (13): AccountyDocument, useAccountyDocuments(), useGenerateDocuments(), DOC_CATEGORIES, DocumentCenterPage(), EPayslipPortalPage(), PayslipGeneratorPage(), buildPayslipDoc() (+5 more)
+Cohesion: 0.26
+Nodes (12): AccountyDocument, useAccountyDocuments(), useGenerateDocuments(), DOC_CATEGORIES, DocumentCenterPage(), PayslipGeneratorPage(), buildPayslipDoc(), downloadPayslipPdf() (+4 more)
 
 ### Community 7 - "NAV Tax Authority Integration"
 Cohesion: 0.05
@@ -658,7 +658,7 @@ Nodes (37): activityGrid, activityItem, activityItemError, container, dateRange,
 
 ### Community 9 - "Accounty Accountyrolecontext Useaccountyrole"
 Cohesion: 0.09
-Nodes (28): CYCLE_STEPS, EMPLOYMENT_TYPE_LABELS, MONTHS, PayrollCyclePage(), PayrollCalculation, useCreateCycle(), usePayrollCycle(), usePayrollItems() (+20 more)
+Nodes (27): CYCLE_STEPS, EMPLOYMENT_TYPE_LABELS, MONTHS, PayrollCyclePage(), PayrollCalculation, useCreateCycle(), usePayrollItems(), useRunBatchPayroll() (+19 more)
 
 ### Community 10 - "Accounty Clientinvoicespage Clientinvoicespage"
 Cohesion: 0.22
@@ -737,8 +737,8 @@ Cohesion: 0.07
 Nodes (37): DEFAULT_SETTINGS, PayrollSettings, Tab, TABS, Category, EditableLineItem, InvoiceFullEditDialogProps, InvoiceLineItem (+29 more)
 
 ### Community 30 - "Accounty Types Blockingitem"
-Cohesion: 0.09
-Nodes (47): ClientInvoicesPage(), ClientMissingInvoicesReportPage(), ChatMessage, ClientPortalPage(), generateToken(), MONTHS, PortalRequest, EmployeesPage() (+39 more)
+Cohesion: 0.10
+Nodes (44): ClientInvoicesPage(), ClientMissingInvoicesReportPage(), ChatMessage, ClientPortalPage(), generateToken(), MONTHS, PortalRequest, EmployeesPage() (+36 more)
 
 ### Community 31 - "Accounty Types Clientdata"
 Cohesion: 0.12
@@ -797,8 +797,8 @@ Cohesion: 0.12
 Nodes (15): container, detailsBox, detailText, errorBox, errorText, footer, h1, h2 (+7 more)
 
 ### Community 46 - "Dashboard Useractivitydialog Useractivitydialog"
-Cohesion: 0.23
-Nodes (12): FILING_TYPES, MONTHS, STATUS_MAP, downloadXml(), escapeXml(), Filing08Data, Filing08EmployeeLine, generateFiling08Xml() (+4 more)
+Cohesion: 0.12
+Nodes (21): FILING_TYPES, MONTHS, STATUS_MAP, exportPdf(), exportReceiptPdf(), getPdfBlobUrl(), hu(), loadPdfLibs() (+13 more)
 
 ### Community 47 - "Eaisybill Prod Ai Instructions"
 Cohesion: 0.12
@@ -966,7 +966,7 @@ Nodes (28): 1. Menü és routing, 2.1 ShipmentMatchingDashboard.tsx, 2.2 UploadH
 
 ### Community 88 - "Hooks Useaccountydata Usecompletedeadline"
 Cohesion: 0.18
-Nodes (10): Bejelentkezés, Bevezetés, Elfelejtett jelszó, Kapcsolat, Kinek készült?, Mi a VisiBill?, Regisztráció és bejelentkezés, Tartalomjegyzék (+2 more)
+Nodes (10): Bankkivonatok és Tranzakciók, Bevezetés, Jegyzetek oldal integrációja, Kapcsolat, Kinek készült?, Mi a VisiBill?, Tartalomjegyzék, Tranzakciós feljegyzések (Jegyzetek) készítése (+2 more)
 
 ### Community 89 - "Hooks Useaccountydata Usegenerateportaltoken"
 Cohesion: 0.43
@@ -1185,8 +1185,8 @@ Cohesion: 0.18
 Nodes (10): 10.1 — Language Consistency, 10.2 — Date & Number Formatting, Audit Output Template, Layer 10: Localization & Hardcoded Strings, Prerequisites — Load Related Skills First, Quick Reference, Severity Classification, The Audit Layers (+2 more)
 
 ### Community 184 - "Community 184"
-Cohesion: 0.07
-Nodes (33): ExportButton(), ExportButtonProps, Deadline, NavDeadlinesPage(), STATUS_OPTIONS, TYPE_CONFIG, STATUS_BADGE, TYPE_COLORS (+25 more)
+Cohesion: 0.08
+Nodes (28): ExportButton(), ExportButtonProps, Deadline, NavDeadlinesPage(), STATUS_OPTIONS, TYPE_CONFIG, STATUS_BADGE, TYPE_COLORS (+20 more)
 
 ### Community 185 - "Community 185"
 Cohesion: 0.11
@@ -1530,7 +1530,7 @@ Nodes (7): buildHeader(), buildUserXml(), cors, sha3_512UpperHex(), sha512UpperH
 
 ### Community 334 - "Community 334"
 Cohesion: 0.08
-Nodes (26): CATEGORIES, PARAM_LABELS, TaxParametersPage(), Child, FamilyDeclarationPage(), TAX_PARAMS_2026, CONFIGS, DeclType (+18 more)
+Nodes (27): CATEGORIES, PARAM_LABELS, TaxParametersPage(), Child, FamilyDeclarationPage(), TAX_PARAMS_2026, CONFIGS, DeclType (+19 more)
 
 ### Community 335 - "Community 335"
 Cohesion: 0.45
@@ -2302,7 +2302,7 @@ Nodes (6): CompanyPayrollSettingsPage(), useAccountyTaxProfile(), useTaoYearly()
 
 ### Community 609 - "Community 609"
 Cohesion: 0.50
-Nodes (4): Bankkivonatok és Tranzakciók, Jegyzetek oldal integrációja, Tranzakciós feljegyzések (Jegyzetek) készítése, Tranzakciós fájlok feltöltése és törlése
+Nodes (4): Bejelentkezés, Elfelejtett jelszó, Regisztráció és bejelentkezés, Új fiók létrehozása
 
 ### Community 610 - "Community 610"
 Cohesion: 0.08

@@ -7220,13 +7220,13 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260829160000_optimize_invoice_queries_and_kpis.sql": {
-    "mtime": 1788008858.908646,
-    "ast_hash": "f42cf74b052200e196d2b159e28d622d",
+    "mtime": 1788009879.4809244,
+    "ast_hash": "fb8bc30b0e11474c0724d3d0e41d1675",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-055-server-side-invoice-query-kpi-optimization.md": {
-    "mtime": 1788009505.8278446,
-    "ast_hash": "87545b2558c9671245df4d94b0258330",
+    "mtime": 1788010075.2861936,
+    "ast_hash": "473bda0e6c2524e056d6aef512e858ef",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-054-server-side-invoice-pagination-and-kpi-filters-ux.md": {

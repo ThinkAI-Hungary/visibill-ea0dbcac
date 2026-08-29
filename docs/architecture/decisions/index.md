@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-08-29  
-> **Összesen:** 54 döntés | ✅ Decided: 52 | ⛔ Superseded: 2
+> **Összesen:** 55 döntés | ✅ Decided: 53 | ⛔ Superseded: 2
 
 ---
 
@@ -84,6 +84,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-051 | ÁFA Bevallás Kalkuláció Robusztusság (Auto-Seed & Date Fallback) | ✅ Decided | [A-051](./A-051-vat-return-auto-seed-and-date-fallback.md) |
 | A-053 | Tárgyi Eszközök Projektekhez Rendelése (Fixed Assets Project Assignment) | ✅ Decided | [A-053](./A-053-fixed-assets-project-assignment.md) |
 | A-055 | Server-Side Invoice Query, KPI Aggregation & GIN Trigram Optimization | ✅ Decided | [A-055](./A-055-server-side-invoice-query-kpi-optimization.md) |
+| A-056 | pg_cron Storage Cleanup Guard & Edge Function Schema Alignment | ✅ Decided | [A-056](./A-056-pgcron-storage-cleanup-and-edge-function-guards.md) |
 
 ## 🖥️ Frontend
 

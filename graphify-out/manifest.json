@@ -170,7 +170,7 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1788009355.14652,
+    "mtime": 1788010558.6234446,
     "ast_hash": "1a10c49cbf7883ad6fe06dbfaf5a236e",
     "semantic_hash": ""
   },
@@ -975,13 +975,13 @@
     "semantic_hash": "f2a60e18bdf9a9d5b884b5b2a805ca4f"
   },
   "src/hooks/useInvoiceData.ts": {
-    "mtime": 1788008913.3950536,
-    "ast_hash": "75898fc5675ccc91feefc1f423988c12",
+    "mtime": 1788010558.6239688,
+    "ast_hash": "1610232f428c103d1e04b47c0d0535a2",
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceFilters.ts": {
-    "mtime": 1788009367.2656639,
-    "ast_hash": "4554d4103e4a34061d45879a8b049d91",
+    "mtime": 1788010558.6244864,
+    "ast_hash": "0c5046c05df8a4a829895b2b035c71b6",
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceMutations.ts": {
@@ -1490,12 +1490,12 @@
     "semantic_hash": ""
   },
   "src/pages/Integrations.tsx": {
-    "mtime": 1784106408.6851156,
-    "ast_hash": "2e9644821016dbfa24c34b7577180423",
+    "mtime": 1788010558.4234123,
+    "ast_hash": "c4577332380ce70415cd10b62e258a4e",
     "semantic_hash": ""
   },
   "src/pages/InvoicesPage.tsx": {
-    "mtime": 1788009250.6837614,
+    "mtime": 1788010558.6255221,
     "ast_hash": "5c7636112611c7c3716d04fdc86c7cfc",
     "semantic_hash": ""
   },
@@ -1660,9 +1660,9 @@
     "semantic_hash": "9d6ecac96af73f0f8fdf17a42a7948e5"
   },
   "supabase/functions/check-payment-deadlines/index.ts": {
-    "mtime": 1780695606.4195788,
-    "ast_hash": "fa14d56074f7b10d5ef7c9adf0b996d3",
-    "semantic_hash": "fa14d56074f7b10d5ef7c9adf0b996d3"
+    "mtime": 1788010724.3349092,
+    "ast_hash": "53c2f6c79431f423e93b219851a299d6",
+    "semantic_hash": ""
   },
   "supabase/functions/create-email-alias/index.ts": {
     "mtime": 1781447479.427135,
@@ -3070,7 +3070,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788009563.4443257,
+    "mtime": 1788010558.558156,
     "ast_hash": "4d108a817c9a6f4326b976920db00605",
     "semantic_hash": ""
   },
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788009535.7338696,
-    "ast_hash": "334b3159bd065d26cff454314390039e",
+    "mtime": 1788010776.8171277,
+    "ast_hash": "586de5b57504cade273ba2aa9ca8472e",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3440,7 +3440,7 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-010-invoice-list.md": {
-    "mtime": 1788009592.6580276,
+    "mtime": 1788010558.5591614,
     "ast_hash": "7ff1fd8b7848a0a1de8fd30c05770b79",
     "semantic_hash": ""
   },
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788009552.1160212,
-    "ast_hash": "57edc1419e2a9a1cc8eeb80852c1e694",
+    "mtime": 1788010558.5601618,
+    "ast_hash": "47c916443d9447881ce4f5a38c1cd029",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -4270,8 +4270,8 @@
     "semantic_hash": ""
   },
   "src/test/accounty/eaisybillPermissions.test.ts": {
-    "mtime": 1784554389.5528023,
-    "ast_hash": "c7307145d384114adb106129bb80c062",
+    "mtime": 1788010558.6260374,
+    "ast_hash": "cb7dc92e729e6a7aa9cc2bb37bca2756",
     "semantic_hash": ""
   },
   "src/test/accounty/emailClassifier.test.ts": {
@@ -5040,12 +5040,12 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/04-invoices.md": {
-    "mtime": 1788009574.0571442,
+    "mtime": 1788010558.556653,
     "ast_hash": "22b904398f839518bfe2f0fdc6802c05",
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {
-    "mtime": 1788009582.811419,
+    "mtime": 1788010558.556653,
     "ast_hash": "703237360bb8cd0940bb67869589398f",
     "semantic_hash": ""
   },
@@ -7080,8 +7080,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1787931793.4619267,
-    "ast_hash": "90ee57ac005d225f7d86de949877ef7c",
+    "mtime": 1788010558.424412,
+    "ast_hash": "6658d9c9a58a9db02b9643b4c539c2de",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -7215,23 +7215,58 @@
     "semantic_hash": ""
   },
   "src/test/invoiceFilters.test.ts": {
-    "mtime": 1788009185.3039925,
-    "ast_hash": "61287b0b0c70b14b8f53f0ed3ccd4724",
+    "mtime": 1788010558.6260374,
+    "ast_hash": "0761b7e0a6dcca058148d60887173257",
     "semantic_hash": ""
   },
   "supabase/migrations/20260829160000_optimize_invoice_queries_and_kpis.sql": {
-    "mtime": 1788009879.4809244,
-    "ast_hash": "fb8bc30b0e11474c0724d3d0e41d1675",
+    "mtime": 1788010558.6270673,
+    "ast_hash": "03d11b696052f1ecdbc4eff3e9eb906e",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-055-server-side-invoice-query-kpi-optimization.md": {
-    "mtime": 1788010075.2861936,
-    "ast_hash": "473bda0e6c2524e056d6aef512e858ef",
+    "mtime": 1788010558.558156,
+    "ast_hash": "85d5ff999e896e764204b2a80c1a8318",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-054-server-side-invoice-pagination-and-kpi-filters-ux.md": {
-    "mtime": 1788009517.1628485,
-    "ast_hash": "d8ef9236137fb3607ecca93d98daef3c",
+    "mtime": 1788010558.5601618,
+    "ast_hash": "485ba332431ba95cd1c4a0427269fe04",
+    "semantic_hash": ""
+  },
+  "scratch/check_audit_columns.js": {
+    "mtime": 1788010558.4194129,
+    "ast_hash": "dbca0a1c8adfb146583df680c332d094",
+    "semantic_hash": ""
+  },
+  "scratch/parse_dmp_tables.py": {
+    "mtime": 1788010558.4194129,
+    "ast_hash": "15709fc4e1a3f2a74162c9acb062c6e1",
+    "semantic_hash": ""
+  },
+  "scratch/parse_xml_tags.py": {
+    "mtime": 1788010558.420414,
+    "ast_hash": "deda043a823a845204b47d1312f000a1",
+    "semantic_hash": ""
+  },
+  "scratch/search_xml_assets.py": {
+    "mtime": 1788010558.420414,
+    "ast_hash": "afa815f3b2215fa90aa0e05a65912a7d",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260829120000_add_dmp_to_gl_audit_imports.sql": {
+    "mtime": 1788010558.425411,
+    "ast_hash": "338529eb16e19f3d09ebe127768ccd21",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260829170000_fix_cleanup_pdf_exports_and_cron.sql": {
+    "mtime": 1788010558.6275833,
+    "ast_hash": "df649f459c2c623a7ccd751a383fcde0",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-056-pgcron-storage-cleanup-and-edge-function-guards.md": {
+    "mtime": 1788010765.1015947,
+    "ast_hash": "eef3a9900adc925d30adea2748ecf4af",
     "semantic_hash": ""
   }
 }
