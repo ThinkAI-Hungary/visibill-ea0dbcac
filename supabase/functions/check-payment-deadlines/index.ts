@@ -1,5 +1,21 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+interface NavInvoice {
+  id: string
+  invoice_number: string
+  payment_date: string
+  invoice_gross_amount: number | null
+  supplier_name: string | null
+}
+
+interface ManualInvoice {
+  id: string
+  bizonylatsorszam: string | null
+  fizetesi_hatarido: string
+  brutto_vegosszeg: number | null
+  elado_nev: string | null
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -53,6 +69,7 @@ Deno.serve(async (req: Request) => {
         .or('paid.is.null,paid.eq.false')
         .gte('payment_date', todayStr)
         .lte('payment_date', thresholdStr)
+        .returns<NavInvoice[]>()
 
       // Manual invoices: INBOUND, not paid, fizetesi_hatarido between today and 3 days
       const { data: manualInvoices } = await supabase
@@ -63,6 +80,7 @@ Deno.serve(async (req: Request) => {
         .or('fizetve.is.null,fizetve.eq.false')
         .gte('fizetesi_hatarido', todayStr)
         .lte('fizetesi_hatarido', thresholdStr)
+        .returns<ManualInvoice[]>()
 
       const navCount = navInvoices?.length || 0
       const manualCount = manualInvoices?.length || 0
@@ -72,8 +90,8 @@ Deno.serve(async (req: Request) => {
 
       // Calculate total amount
       let totalAmount = 0
-      navInvoices?.forEach(inv => { totalAmount += Math.abs(inv.invoice_gross_amount || 0) })
-      manualInvoices?.forEach(inv => { totalAmount += Math.abs(inv.brutto_vegosszeg || 0) })
+      navInvoices?.forEach((inv: NavInvoice) => { totalAmount += Math.abs(inv.invoice_gross_amount || 0) })
+      manualInvoices?.forEach((inv: ManualInvoice) => { totalAmount += Math.abs(inv.brutto_vegosszeg || 0) })
 
       const formattedAmount = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(totalAmount) + ' Ft'
 
@@ -81,10 +99,10 @@ Deno.serve(async (req: Request) => {
       let invoiceListHtml = '<table style="width:100%;border-collapse:collapse;margin:12px 0">'
       invoiceListHtml += '<tr style="background:#f3f4f6"><th style="padding:8px;text-align:left;font-size:12px">Szállító</th><th style="padding:8px;text-align:left;font-size:12px">Számla</th><th style="padding:8px;text-align:right;font-size:12px">Határidő</th><th style="padding:8px;text-align:right;font-size:12px">Összeg</th></tr>'
 
-      navInvoices?.forEach(inv => {
+      navInvoices?.forEach((inv: NavInvoice) => {
         invoiceListHtml += `<tr><td style="padding:6px 8px;font-size:13px;border-bottom:1px solid #e5e7eb">${inv.supplier_name || '—'}</td><td style="padding:6px 8px;font-size:13px;border-bottom:1px solid #e5e7eb">${inv.invoice_number}</td><td style="padding:6px 8px;font-size:13px;border-bottom:1px solid #e5e7eb;text-align:right">${inv.payment_date}</td><td style="padding:6px 8px;font-size:13px;border-bottom:1px solid #e5e7eb;text-align:right">${new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(Math.abs(inv.invoice_gross_amount || 0))} Ft</td></tr>`
       })
-      manualInvoices?.forEach(inv => {
+      manualInvoices?.forEach((inv: ManualInvoice) => {
         invoiceListHtml += `<tr><td style="padding:6px 8px;font-size:13px;border-bottom:1px solid #e5e7eb">${inv.elado_nev || '—'}</td><td style="padding:6px 8px;font-size:13px;border-bottom:1px solid #e5e7eb">${inv.bizonylatsorszam || '—'}</td><td style="padding:6px 8px;font-size:13px;border-bottom:1px solid #e5e7eb;text-align:right">${inv.fizetesi_hatarido}</td><td style="padding:6px 8px;font-size:13px;border-bottom:1px solid #e5e7eb;text-align:right">${new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(Math.abs(inv.brutto_vegosszeg || 0))} Ft</td></tr>`
       })
       invoiceListHtml += '</table>'
