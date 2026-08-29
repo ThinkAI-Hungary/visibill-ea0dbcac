@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useDeferredValue } from 'react';
+import { useState, useMemo, useEffect, useDeferredValue, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +6,14 @@ import type { NavInvoice, SubmittedInvoice, Partner, Category, Project } from '.
 import { useActivePreset } from './useActivePreset';
 
 export type InvoiceTab = 'OUTBOUND' | 'INBOUND' | 'SUBMITTED_INBOUND' | 'SUBMITTED_OUTBOUND';
+export type KpiFilterType = 'all' | 'matched' | 'suggested' | 'unmatched';
+
+export interface InvoiceKpiSummary {
+  total: number;
+  matched: number;
+  suggested: number;
+  unmatched: number;
+}
 
 // ── Unified filter interface shared across ALL tabs ──
 export interface InvoiceFilters {
@@ -64,7 +72,7 @@ export function useInvoiceFilters(
   projects: Project[],
   activeTab: InvoiceTab
 ) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { activePresetId } = useActivePreset(companyId);
 
   // Initialize all state from URL searchParams (enables link sharing)
@@ -85,6 +93,15 @@ export function useInvoiceFilters(
     
     return initial;
   });
+
+  const [kpiFilter, setKpiFilter] = useState<KpiFilterType>(() => {
+    const kpi = searchParams.get('kpi');
+    if (kpi === 'matched' || kpi === 'suggested' || kpi === 'unmatched') {
+      return kpi;
+    }
+    return 'all';
+  });
+
   const [sortField, setSortField] = useState<string>(() =>
     searchParams.get('sf') || 'invoice_issue_date'
   );
@@ -109,8 +126,6 @@ export function useInvoiceFilters(
   });
 
   // Sync URL search params back to React state when URL changes externally.
-  // Using functional state setters that bail out when values are identical
-  // is critical to prevent infinite searchParams update loops.
   useEffect(() => {
     setFilters(prev => {
       let updated = false;
@@ -134,6 +149,10 @@ export function useInvoiceFilters(
       return updated ? next : prev;
     });
 
+    const kpi = searchParams.get('kpi');
+    const validKpi: KpiFilterType = (kpi === 'matched' || kpi === 'suggested' || kpi === 'unmatched') ? kpi : 'all';
+    setKpiFilter(prev => prev !== validKpi ? validKpi : prev);
+
     const sf = searchParams.get('sf') || 'invoice_issue_date';
     setSortField(prev => prev !== sf ? sf : prev);
     
@@ -151,20 +170,65 @@ export function useInvoiceFilters(
     setSubmittedCurrentPage(prev => prev !== pageNum ? pageNum : prev);
   }, [searchParams]);
 
-  // Debounce search with useDeferredValue (single search)
+  // Debounce search with useDeferredValue
   const deferredSearch = useDeferredValue(filters.search);
 
-  // Reset page when filters or tab change
-  useEffect(() => { setNavCurrentPage(1); }, [filters, activeTab]);
-  useEffect(() => { setSubmittedCurrentPage(1); }, [filters]);
+  // Reset page when filters, KPI filter, or tab change
+  useEffect(() => { setNavCurrentPage(1); }, [filters, kpiFilter, activeTab]);
+  useEffect(() => { setSubmittedCurrentPage(1); }, [filters, kpiFilter, activeTab]);
 
-  // ── Server-side NAV invoices query ──
   const isNavTab = activeTab === 'OUTBOUND' || activeTab === 'INBOUND';
   const navDirection = activeTab === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
+  const isSubmittedTab = activeTab === 'SUBMITTED_INBOUND' || activeTab === 'SUBMITTED_OUTBOUND';
+  const submittedDirection = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
 
   const issueDateFrom = filters.issueDateFrom || null;
   const issueDateTo = filters.issueDateTo || null;
 
+  // ── Server-side KPI Summary RPC query (ultra-fast aggregation) ──
+  const { data: invoiceKpis = { total: 0, matched: 0, suggested: 0, unmatched: 0 }, isLoading: isKpisLoading } = useQuery({
+    queryKey: [
+      'invoiceKpis', companyId, dateFromFormatted, dateToFormatted,
+      isNavTab ? navDirection : submittedDirection,
+      isNavTab ? 'nav' : 'submitted',
+      deferredSearch, filters.currency, filters.project, filters.category,
+      filters.paymentMethod, filters.amountMin, filters.amountMax,
+      issueDateFrom, issueDateTo, filters.continuous, filters.submitted
+    ],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)('get_invoice_kpis', {
+        p_company_id: companyId,
+        p_date_from: dateFromFormatted,
+        p_date_to: dateToFormatted,
+        p_direction: isNavTab ? navDirection : submittedDirection,
+        p_source: isNavTab ? 'nav' : 'submitted',
+        p_search: deferredSearch || null,
+        p_currency: filters.currency === 'all' ? null : filters.currency,
+        p_project_id: filters.project === 'all' ? null : filters.project,
+        p_category_id: filters.category === 'all' ? null : filters.category,
+        p_payment_method: filters.paymentMethod === 'all' ? null : filters.paymentMethod,
+        p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : null,
+        p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : null,
+        p_issue_date_from: issueDateFrom,
+        p_issue_date_to: issueDateTo,
+        p_continuous: filters.continuous === 'all' ? null : filters.continuous,
+        p_submitted: filters.submitted === 'all' ? null : filters.submitted,
+      });
+      if (error) throw error;
+      const res = data?.[0] || { total: 0, matched: 0, suggested: 0, unmatched: 0 };
+      return {
+        total: Number(res.total || 0),
+        matched: Number(res.matched || 0),
+        suggested: Number(res.suggested || 0),
+        unmatched: Number(res.unmatched || 0),
+      };
+    },
+    enabled: enabled && !!companyId,
+    placeholderData: keepPreviousData,
+    staleTime: 30000,
+  });
+
+  // ── Server-side NAV invoices query (with server-side p_kpi_filter) ──
   const { data: navResult = [], isLoading: navLoading, isFetching: navFetching } = useQuery({
     queryKey: [
       'filteredNavInvoices', companyId, dateFromFormatted, dateToFormatted,
@@ -172,10 +236,10 @@ export function useInvoiceFilters(
       filters.submitted, filters.project, filters.category,
       filters.paymentMethod, filters.amountMin, filters.amountMax,
       sortField, sortDirection, navCurrentPage, navPageSize,
-      issueDateFrom, issueDateTo, activePresetId, filters.continuous
+      issueDateFrom, issueDateTo, activePresetId, filters.continuous, kpiFilter
     ],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
+      const { data, error } = await (supabase.rpc as any)('get_filtered_nav_invoices', {
         p_company_id: companyId,
         p_date_from: dateFromFormatted,
         p_date_to: dateToFormatted,
@@ -197,18 +261,16 @@ export function useInvoiceFilters(
         p_issue_date_to: issueDateTo,
         p_preset_id: activePresetId || null,
         p_continuous: filters.continuous === 'all' ? null : filters.continuous,
+        p_kpi_filter: kpiFilter,
       });
       if (error) throw error;
-      return (data || []) as (NavInvoice & { total_count: number })[];
+      return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
     },
     enabled: enabled && isNavTab,
     placeholderData: keepPreviousData,
   });
 
-  // ── Server-side submitted invoices query ──
-  const isSubmittedTab = activeTab === 'SUBMITTED_INBOUND' || activeTab === 'SUBMITTED_OUTBOUND';
-  const submittedDirection = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
-
+  // ── Server-side submitted invoices query (with server-side p_kpi_filter) ──
   const { data: submittedResult = [], isLoading: submittedFilterLoading, isFetching: submittedFetching } = useQuery({
     queryKey: [
       'filteredSubmittedInvoices', companyId, dateFromFormatted, dateToFormatted,
@@ -216,10 +278,10 @@ export function useInvoiceFilters(
       filters.category, filters.project, filters.paymentMethod,
       filters.amountMin, filters.amountMax,
       sortField, sortDirection, submittedCurrentPage, submittedPageSize,
-      issueDateFrom, issueDateTo,
+      issueDateFrom, issueDateTo, kpiFilter
     ],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
+      const { data, error } = await (supabase.rpc as any)('get_filtered_submitted_invoices', {
         p_company_id: companyId,
         p_date_from: dateFromFormatted,
         p_date_to: dateToFormatted,
@@ -237,22 +299,28 @@ export function useInvoiceFilters(
         p_page_size: submittedPageSize,
         p_issue_date_from: issueDateFrom,
         p_issue_date_to: issueDateTo,
+        p_kpi_filter: kpiFilter,
       });
       if (error) throw error;
-      return (data || []) as (SubmittedInvoice & { total_count: number })[];
+      return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
     },
     enabled: enabled && isSubmittedTab,
     placeholderData: keepPreviousData,
   });
 
-  // Extract paginated data and total counts
-  const paginatedNavInvoices = navResult as NavInvoice[];
-  const navTotalCount = (navResult[0] as any)?.total_count ?? 0;
+  // Extract paginated data and total counts directly from server
+  const paginatedNavInvoices = navResult as (NavInvoice & { match_status: string })[];
+  const navTotalCount = Number((navResult[0] as any)?.total_count ?? 0);
   const navTotalPages = Math.max(1, Math.ceil(navTotalCount / navPageSize));
 
-  const paginatedSubmittedInvoices = submittedResult as SubmittedInvoice[];
-  const submittedTotalCount = (submittedResult[0] as any)?.total_count ?? 0;
+  const paginatedSubmittedInvoices = submittedResult as (SubmittedInvoice & { match_status: string })[];
+  const submittedTotalCount = Number((submittedResult[0] as any)?.total_count ?? 0);
   const submittedTotalPages = Math.max(1, Math.ceil(submittedTotalCount / submittedPageSize));
+
+  // Toggle KPI filter
+  const toggleKpiFilter = useCallback((filter: KpiFilterType) => {
+    setKpiFilter(prev => prev === filter ? 'all' : filter);
+  }, []);
 
   // ── Helper functions ──
 
@@ -310,13 +378,22 @@ export function useInvoiceFilters(
 
   // ── Clear filters ──
 
-  const clearFilters = () => setFilters(defaultFilters);
+  const clearFilters = () => {
+    setFilters(defaultFilters);
+    setKpiFilter('all');
+  };
 
   return {
     // Unified filters
     filters,
     setFilters,
     clearFilters,
+    // KPI filter & summary
+    kpiFilter,
+    setKpiFilter,
+    toggleKpiFilter,
+    invoiceKpis,
+    isKpisLoading,
     // Sorting
     sortField,
     sortDirection,

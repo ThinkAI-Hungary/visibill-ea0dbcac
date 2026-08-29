@@ -58,6 +58,7 @@ export interface NavInvoice {
   ti_calculation_method?: string | null;
   is_manual_payment?: boolean | null;
   manual_payment_type?: string | null;
+  match_status?: string;
 }
 
 export interface SubmittedInvoice {
@@ -84,6 +85,7 @@ export interface SubmittedInvoice {
   exclude_from_accounting?: boolean;
   elolegszamla_hivatkozas?: string | null;
   nav_invoice_id?: string | null;
+  match_status?: string;
 }
 
 export interface Partner {
@@ -124,8 +126,9 @@ export function useInvoiceData(
 ) {
   const queryClient = useQueryClient();
 
-  // NAV invoices are now fetched server-side via useInvoiceFilters RPC.
-  // We still need a lightweight query for submitted invoices (for lookup maps + linked invoices).
+  // NAV and Submitted invoices list are fetched server-side via useInvoiceFilters RPCs.
+  // We keep a lightweight query for submitted invoices within the active date range
+  // for linked invoice chains and attachment metadata lookup.
   const { data: submittedInvoices = [], isLoading: submittedLoading } = useQuery({
     queryKey: queryKeys.submittedInvoices(companyId, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
@@ -144,7 +147,7 @@ export function useInvoiceData(
   });
 
   // Derive a stable fingerprint from submittedInvoices so linkedInvoicesPool
-  // automatically refetches when the submitted set changes (fixes race condition).
+  // automatically refetches when the submitted set changes.
   const submittedFingerprint = useMemo(
     () => submittedInvoices.map(i => i.id).sort().join(','),
     [submittedInvoices]
@@ -208,102 +211,6 @@ export function useInvoiceData(
     enabled,
   });
 
-  const { data: allTransactions = [], isLoading: txLoading } = useQuery({
-    // No date filtering — matched transactions must always be visible
-    // regardless of the invoice date range filter (a May invoice can have
-    // a June transaction match, and vice versa).
-    queryKey: queryKeys.invoiceTransactions(companyId, '', ''),
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('transactions')
-        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified, reason')
-        .eq('company_id', companyId)
-        .not('matched_invoice_id', 'is', null);
-      return (data || []) as TransactionRecord[];
-    },
-    enabled,
-  });
-
-  // Fetch multi-match join table entries so invoices matched via
-  // transaction_invoice_matches (not just matched_invoice_id) are visible.
-  // We fetch ALL join table rows for the company's matched transactions.
-  const txFingerprint = useMemo(() => allTransactions.length, [allTransactions]);
-  const { data: joinTableMatches = [] } = useQuery({
-    queryKey: ['transactionInvoiceMatches', companyId, txFingerprint],
-    queryFn: async () => {
-      // Re-read allTransactions at query time (not from stale closure)
-      const currentTxIds = allTransactions.map(t => t.id);
-      if (currentTxIds.length === 0) return [];
-
-      // Batch fetch in chunks of 500 to avoid URL length limits
-      const CHUNK = 500;
-      const all: { transaction_id: string; invoice_id: string; invoice_source: string }[] = [];
-      for (let i = 0; i < currentTxIds.length; i += CHUNK) {
-        const chunk = currentTxIds.slice(i, i + CHUNK);
-        const { data } = await supabase
-          .from('transaction_invoice_matches')
-          .select('transaction_id, invoice_id, invoice_source')
-          .in('transaction_id', chunk);
-        if (data) all.push(...data);
-      }
-      return all;
-    },
-    enabled: enabled && allTransactions.length > 0,
-  });
-
-  // Lightweight NAV lookup for cross-tab matching (submitted ↔ NAV by bizonylatsorszam)
-  // Paginated fetch to bypass Supabase max_rows limit (default 1000)
-  const { data: navInvoicesLookup = [] } = useQuery({
-    queryKey: ['navInvoicesLookup', companyId, dateFromFormatted, dateToFormatted],
-    queryFn: async () => {
-      const PAGE_SIZE = 1000;
-      let allData: NavInvoice[] = [];
-      let page = 0;
-      let hasMore = true;
-      while (hasMore) {
-        const from = page * PAGE_SIZE;
-        const to = from + PAGE_SIZE - 1;
-        let query = supabase
-          .from('nav_invoices')
-          .select('id, invoice_number, invoice_direction, invoice_issue_date, invoice_delivery_date, supplier_name, supplier_tax_number, customer_name, customer_tax_number, invoice_net_amount, invoice_gross_amount, currency, transaction_id, submitted')
-          .eq('company_id', companyId);
-
-        if (dateFromFormatted) {
-          query = query.gte('invoice_issue_date', dateFromFormatted);
-        }
-        if (dateToFormatted) {
-          query = query.lte('invoice_issue_date', dateToFormatted);
-        }
-
-        const { data, error } = await query
-          .range(from, to)
-          .order('invoice_issue_date', { ascending: false })
-          .order('id', { ascending: true });
-        if (error) throw error;
-        if (data && data.length > 0) {
-          allData = allData.concat(data as NavInvoice[]);
-          hasMore = data.length === PAGE_SIZE;
-        } else {
-          hasMore = false;
-        }
-        page++;
-      }
-      return allData;
-    },
-    enabled,
-    placeholderData: keepPreviousData,
-  });
-
-  const matchedInvoiceIds = useMemo(
-    () => {
-      const ids = new Set(allTransactions.map(t => t.matched_invoice_id).filter(Boolean));
-      // Also include invoice IDs from the join table (multi-match)
-      joinTableMatches.forEach(m => ids.add(m.invoice_id));
-      return ids;
-    },
-    [allTransactions, joinTableMatches]
-  );
-
   // Fetch courier reports matched to NAV invoices or transactions for this company
   const { data: courierReports = [] } = useQuery({
     queryKey: queryKeys.courierReportsForInvoices(companyId),
@@ -333,7 +240,7 @@ export function useInvoiceData(
     return map;
   }, [courierReports]);
 
-  const loading = submittedLoading || txLoading;
+  const loading = submittedLoading;
 
   const { data: credentialsExist = false } = useQuery({
     queryKey: queryKeys.navCredentials(selectedCompanyId || ''),
@@ -343,24 +250,21 @@ export function useInvoiceData(
         .select('id, validation_status')
         .eq('company_id', selectedCompanyId!)
         .maybeSingle();
-      // Only allow sync when credentials exist AND validation_status is 'valid'
       return !error && !!data && data.validation_status === 'valid';
     },
     enabled: !!selectedCompanyId,
   });
 
   const invalidateInvoiceData = () => {
-    queryClient.invalidateQueries({ queryKey: ['navInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['navInvoicesLookup', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['invoiceKpis', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['partners', companyId] });
     queryClient.invalidateQueries({ queryKey: ['categories', companyId] });
     queryClient.invalidateQueries({ queryKey: ['projectsList', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['transactionInvoiceMatches', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['courierReports', companyId] });
   };
 
   return {
@@ -370,10 +274,6 @@ export function useInvoiceData(
     partners,
     categories,
     projects,
-    allTransactions,
-    joinTableMatches,
-    navInvoicesLookup,
-    matchedInvoiceIds,
     courierReports,
     navIdToCourierReportsMap,
     loading,

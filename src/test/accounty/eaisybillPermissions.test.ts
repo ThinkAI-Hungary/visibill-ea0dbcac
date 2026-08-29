@@ -42,7 +42,7 @@ const SHIPMENT_MODULES: EaisybillModule[] = ['shipments', 'shipment_matching', '
 const ALL_MODULES: EaisybillModule[] = [
   'dashboard', 'categories', 'projects', 'partners',
   'invoices', 'receivables', 'transactions', 'petty_cash',
-  'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
+  'general_ledger', 'journals', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
   'salaries', 'working_time', 'fixed_assets',
   'integrations', 'exchange_rates', 'upload', 'tickets', 'settings',
   'shipments', 'shipment_matching', 'shipment_import', 'notes',

@@ -63,7 +63,7 @@
 
 **FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `project_id` → `projects.id`, `supplier_partner_id` → `partners.id`, `transaction_id` → `transactions.id`, `user_id` → `auth.users.id`
 
-**Indexek:** `idx_nav_invoices_cash_payment`, `idx_nav_invoices_category_id`, `idx_nav_invoices_company_date`, `idx_nav_invoices_company_direction_date`, `idx_nav_invoices_company_payment`, `idx_nav_invoices_exclude`, `idx_nav_invoices_gl_account_id`, `idx_nav_invoices_outbound_unpaid`, `idx_nav_invoices_project_id`, `idx_nav_invoices_reverse_charge`, `idx_nav_invoices_supplier_partner`, `idx_nav_invoices_transaction_id`, `idx_nav_invoices_user_id`, `nav_invoices_company_id_invoice_number_key`
+**Indexek:** `idx_nav_invoices_cash_payment`, `idx_nav_invoices_category_id`, `idx_nav_invoices_company_date`, `idx_nav_invoices_company_direction_date`, `idx_nav_invoices_company_dir_date_desc`, `idx_nav_invoices_company_payment`, `idx_nav_invoices_exclude`, `idx_nav_invoices_gl_account_id`, `idx_nav_invoices_outbound_unpaid`, `idx_nav_invoices_project_id`, `idx_nav_invoices_reverse_charge`, `idx_nav_invoices_search_trgm` (GIN trigram), `idx_nav_invoices_supplier_partner`, `idx_nav_invoices_transaction_id`, `idx_nav_invoices_user_id`, `nav_invoices_company_id_invoice_number_key`
 
 **Kézi fizetés logika (`is_manual_payment`):**  
 Ha `manual_payment_type = 'storno_settled'` → a sztornó láncolatot a user manuálisan zárta le (`mark_storno_group_settled` RPC). A sor zöldre vált a frontenden, visszavonható (`unmark_storno_group_settled`).  

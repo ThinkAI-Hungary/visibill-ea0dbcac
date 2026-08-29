@@ -45,7 +45,7 @@ await supabase.from('invoices').update({ status: 'verified' }).eq('id', invoiceI
 
 ### 2. Teljes RPC Function Katalógus
 
-**Összesen: 81 function** a `public` sémában.
+**Összesen: 82 function** a `public` sémában.
 
 ---
 
@@ -61,12 +61,11 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `get_gl_categorized_items(p_company_id, p_preset_id, p_date_from?, p_date_to?, p_exchange_rates?)` | DEFINER | GeneralLedgerTable.tsx | GL drill-down tételek |
 | `get_invoice_aggregates(p_company_id, p_date_from, p_date_to)` | DEFINER | useDashboardData.ts | Dashboard számla összesítők |
 | `get_nav_invoice_aggregates(p_company_id, p_date_from, p_date_to)` | DEFINER | useDashboardData.ts | Dashboard NAV összesítők |
+| `get_invoice_kpis(p_company_id, p_date_from, p_date_to, p_direction, p_source, ...)` | DEFINER | useInvoiceFilters.ts | Számla menü KPI kártyák szerver-oldali aggregációja (total, matched, suggested, unmatched) |
 | `get_vat_breakdown(p_company_id, p_date_from, p_date_to)` | DEFINER | useDashboardData.ts | Dashboard ÁFA bontás kategóriánként |
 | `get_petty_cash_balance(p_company_id)` | DEFINER | useDashboardData.ts | Házipénztár egyenleg |
-| `get_filtered_nav_invoices(p_company_id, p_date_from, p_date_to, p_direction, ...)` | DEFINER | useInvoiceFilters.ts | NAV számlák szűrt/lapozott lekérdezés |
-| `get_filtered_nav_invoices(... + p_issue_date_from?, p_issue_date_to?)` | DEFINER | useInvoiceFilters.ts | ↑ Overload: kibocsátási dátum szűrővel |
-| `get_filtered_submitted_invoices(p_company_id, p_date_from, p_date_to, p_direction, ...)` | DEFINER | useInvoiceFilters.ts | Feltöltött számlák szűrt/lapozott lekérdezés |
-| `get_filtered_submitted_invoices(... + p_payment_method?, p_issue_date_from?, p_issue_date_to?)` | DEFINER | useInvoiceFilters.ts | ↑ Overload: fizetési mód + kibocsátási dátum szűrőkkel |
+| `get_filtered_nav_invoices(p_company_id, p_date_from, p_date_to, p_direction, ..., p_kpi_filter?)` | DEFINER | useInvoiceFilters.ts | NAV számlák szűrt/lapozott lekérdezés + KPI szűrés + match_status |
+| `get_filtered_submitted_invoices(p_company_id, p_date_from, p_date_to, p_direction, ..., p_kpi_filter?)` | DEFINER | useInvoiceFilters.ts | Feltöltött számlák szűrt/lapozott lekérdezés + KPI szűrés + match_status |
 | `get_linked_invoices(p_company_id, p_seed_bizonylat[], p_seed_reference[], p_exclude_ids[])` | DEFINER | useInvoiceData.ts | Összekapcsolt számlák (végszámla ↔ díjbekérő) |
 | `get_transaction_filter_options(p_company_id)` | DEFINER | useTransactionData.ts | Tranzakció szűrő dropdown értékek |
 | `calculate_vat_return(p_company_id, p_year, p_month, p_frequency?)` | DEFINER | VatReturnPage.tsx | ÁFA bevallás kalkuláció |

@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-08-29  
-> **Összesen:** 53 döntés | ✅ Decided: 49 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 54 döntés | ✅ Decided: 50 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -32,6 +32,7 @@
 | P-015 | Tömeges műveletek (checkbox bulk actions) | ✅ Decided | [P-015](./P-015-bulk-actions.md) |
 | P-045 | PDF Export UX & Banner viselkedés (auto-download, fallback, toast) | ✅ Decided | [P-045](./P-045-pdf-export-ux.md) |
 | P-046 | Pénztárbizonylatok feltöltési fül (vouchers tab + elkülönített upload) | ✅ Decided | [P-046](./P-046-penztarbizonylat-upload-ux.md) |
+| P-054 | Scalable Server-Side Invoice Pagination & KPI Card Filtering UX | ✅ Decided | [P-054](./P-054-server-side-invoice-pagination-and-kpi-filters-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 

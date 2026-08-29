@@ -86,17 +86,6 @@ const InvoicesPage = () => {
 
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
 
-  // KPI filter: click a KPI card to filter the table by match status
-  type KpiFilterType = 'all' | 'matched' | 'suggested' | 'unmatched';
-  const [kpiFilter, setKpiFilter] = useState<KpiFilterType>(() => {
-    const urlKpi = searchParams.get('kpi');
-    return (urlKpi && ['matched', 'suggested', 'unmatched'].includes(urlKpi))
-      ? urlKpi as KpiFilterType
-      : 'all';
-  });
-  const toggleKpiFilter = useCallback((filter: KpiFilterType) => {
-    setKpiFilter(prev => prev === filter ? 'all' : filter);
-  }, []);
 
   // Tab state synced to URL (e.g., /invoices/outbound_nav)
   const [tabSlug, setTabSlug] = useUrlTab('invoices', 'outbound_nav' as TabSlug, TAB_SLUGS);
@@ -150,17 +139,16 @@ const InvoicesPage = () => {
   // ── Data hook ──
   const {
     submittedInvoices, linkedInvoicesPool, linkedInvoicesLoading,
-    partners, categories, projects, allTransactions, joinTableMatches, navInvoicesLookup,
-    matchedInvoiceIds, navIdToCourierReportsMap,
+    partners, categories, projects,
+    navIdToCourierReportsMap,
     loading: dataLoading, credentialsExist, invalidateInvoiceData,
   } = useInvoiceData(companyId, enabled, dateFromFormatted, dateToFormatted, selectedCompany?.id);
-
-  // ── Netting detection (kompenzálás heurisztika) ──
-  const { nettingInvoiceIds, getNettingGroup } = useNettingDetection(navInvoicesLookup);
 
   // ── Filters hook (server-side, unified across all tabs) ──
   const {
     filters, setFilters, clearFilters,
+    kpiFilter, setKpiFilter, toggleKpiFilter,
+    invoiceKpis, isKpisLoading,
     sortField, sortDirection, handleSort,
     navPageSize, setNavPageSize, submittedPageSize, setSubmittedPageSize,
     navCurrentPage, setNavCurrentPage, submittedCurrentPage, setSubmittedCurrentPage,
@@ -171,6 +159,9 @@ const InvoicesPage = () => {
     navTotalCount, submittedTotalCount,
     getInvoicePartnerName, getPartnerTaxNumber, getCategoryName, getProjectName, getPaymentMethodLabel,
   } = useInvoiceFilters(companyId, enabled, dateFromFormatted, dateToFormatted, partners, categories, projects, activeTab);
+
+  // ── Netting detection (kompenzálás heurisztika) ──
+  const { nettingInvoiceIds, getNettingGroup } = useNettingDetection(paginatedNavInvoices);
 
   const loading = dataLoading || navLoading || submittedFilterLoading;
   const tabFetching = isSubmittedTab ? submittedFetching : navFetching;
@@ -713,7 +704,7 @@ const InvoicesPage = () => {
       }
     });
 
-    navInvoicesLookup.forEach(nav => {
+    paginatedNavInvoices.forEach(nav => {
       const key = normalizeInvoiceNumber(nav.invoice_number);
       const candidates = byNum.get(key) || [];
       const verified = candidates.filter(sub => isNavAndSubmittedInvoiceMatch(nav, sub));
@@ -722,12 +713,12 @@ const InvoicesPage = () => {
       }
     });
     return map;
-  }, [submittedInvoices, navInvoicesLookup]);
+  }, [submittedInvoices, paginatedNavInvoices]);
 
   const submittedToNavMap = useMemo(() => {
     const map = new Map<string, NavInvoice[]>();
     const byNum = new Map<string, NavInvoice[]>();
-    navInvoicesLookup.forEach(inv => {
+    paginatedNavInvoices.forEach(inv => {
       const key = normalizeInvoiceNumber(inv.invoice_number);
       const existing = byNum.get(key) || [];
       existing.push(inv);
@@ -745,32 +736,7 @@ const InvoicesPage = () => {
       }
     });
     return map;
-  }, [navInvoicesLookup, submittedInvoices]);
-
-  const submittedIdToTransactionsMap = useMemo(() => {
-    const map = new Map<string, TransactionRecord[]>();
-    // 1. Primary match (matched_invoice_id)
-    allTransactions.forEach(tx => {
-      if (tx.matched_invoice_id) {
-        const existing = map.get(tx.matched_invoice_id) || [];
-        existing.push(tx);
-        map.set(tx.matched_invoice_id, existing);
-      }
-    });
-    // 2. Multi-match via join table (transaction_invoice_matches)
-    const txById = new Map(allTransactions.map(t => [t.id, t]));
-    joinTableMatches.forEach(m => {
-      const tx = txById.get(m.transaction_id);
-      if (tx) {
-        const existing = map.get(m.invoice_id) || [];
-        if (!existing.some(t => t.id === tx.id)) {
-          existing.push(tx);
-          map.set(m.invoice_id, existing);
-        }
-      }
-    });
-    return map;
-  }, [allTransactions, joinTableMatches]);
+  }, [paginatedNavInvoices, submittedInvoices]);
 
   const linkedInvoicesMap = useMemo(() => {
     const allInvoices = [...submittedInvoices, ...linkedInvoicesPool];
@@ -855,51 +821,30 @@ const InvoicesPage = () => {
 
   const getNavInvoiceMatches = (navInvoice: NavInvoice) => {
     const matchedSubmitted = navToSubmittedMap.get(normalizeInvNum(navInvoice.invoice_number)) || [];
-    const matchedTx: TransactionRecord[] = [];
-    matchedSubmitted.forEach(sub => {
-      const txs = submittedIdToTransactionsMap.get(sub.id) || [];
-      matchedTx.push(...txs);
-    });
-    const directTxs = submittedIdToTransactionsMap.get(navInvoice.id) || [];
-    directTxs.forEach(tx => {
-      if (!matchedTx.some(t => t.id === tx.id)) matchedTx.push(tx);
-    });
     const linkedInvs: SubmittedInvoice[] = [];
     matchedSubmitted.forEach(sub => {
       getLinkedInvoices(sub).forEach(l => {
         if (!linkedInvs.some(x => x.id === l.id) && !matchedSubmitted.some(x => x.id === l.id)) linkedInvs.push(l);
       });
     });
-    // Propagate transactions from linked invoices (e.g. DB/416429 → RF/038227/2026)
-    linkedInvs.forEach(linked => {
-      const linkedTxs = submittedIdToTransactionsMap.get(linked.id) || [];
-      linkedTxs.forEach(tx => {
-        if (!matchedTx.some(t => t.id === tx.id)) matchedTx.push(tx);
-      });
-    });
-    return { matchedSubmitted, matchedTransactions: matchedTx, matchedNav: [] as NavInvoice[], linkedInvoices: linkedInvs, matchedCourierReports: navIdToCourierReportsMap.get(navInvoice.id) || [] };
+    return {
+      matchedSubmitted,
+      matchedTransactions: [] as TransactionRecord[],
+      matchedNav: [] as NavInvoice[],
+      linkedInvoices: linkedInvs,
+      matchedCourierReports: navIdToCourierReportsMap.get(navInvoice.id) || []
+    };
   };
 
   const getSubmittedInvoiceMatches = (submitted: SubmittedInvoice) => {
     const matchedNav = submitted.bizonylatsorszam ? (submittedToNavMap.get(normalizeInvNum(submitted.bizonylatsorszam)) || []) : [];
-    // Direct transactions for this submitted invoice
-    const matchedTx: TransactionRecord[] = [...(submittedIdToTransactionsMap.get(submitted.id) || [])];
-    // Also include transactions from matched NAV invoices
-    matchedNav.forEach(nav => {
-      const navTxs = submittedIdToTransactionsMap.get(nav.id) || [];
-      navTxs.forEach(tx => {
-        if (!matchedTx.some(t => t.id === tx.id)) matchedTx.push(tx);
-      });
-    });
     const linkedInvs = getLinkedInvoices(submitted);
-    // Propagate transactions from linked invoices (e.g. parent/child via reference_number)
-    linkedInvs.forEach(linked => {
-      const linkedTxs = submittedIdToTransactionsMap.get(linked.id) || [];
-      linkedTxs.forEach(tx => {
-        if (!matchedTx.some(t => t.id === tx.id)) matchedTx.push(tx);
-      });
-    });
-    return { matchedSubmitted: [] as SubmittedInvoice[], matchedTransactions: matchedTx, matchedNav, linkedInvoices: linkedInvs };
+    return {
+      matchedSubmitted: [] as SubmittedInvoice[],
+      matchedTransactions: [] as TransactionRecord[],
+      matchedNav,
+      linkedInvoices: linkedInvs
+    };
   };
 
   const handleRowClick = (invoiceId: string, e: React.MouseEvent) => {
@@ -947,310 +892,6 @@ const InvoicesPage = () => {
     if (isSubmittedTab) return submittedTotalCount;
     return navTotalCount;
   };
-
-  // Extend matchedInvoiceIds: also mark submitted invoices as "matched" (green)
-  // when their NAV counterpart has a transaction match OR a linked invoice has one
-  const extendedMatchedIds = useMemo(() => {
-    const ids = new Set(matchedInvoiceIds);
-    const allInvs = [...submittedInvoices, ...linkedInvoicesPool];
-    submittedInvoices.forEach(inv => {
-      if (ids.has(inv.id)) return; // already matched directly
-      // Check NAV counterpart
-      if (inv.bizonylatsorszam) {
-        const navMatches = submittedToNavMap.get(normalizeInvNum(inv.bizonylatsorszam)) || [];
-        const hasPaidNav = navMatches.some(nav => submittedIdToTransactionsMap.has(nav.id));
-        if (hasPaidNav) { ids.add(inv.id); return; }
-      }
-      // Check linked invoices (reference_number chain) for transaction matches
-      const linked = getLinkedInvoices(inv);
-      const hasLinkedTx = linked.some(l => submittedIdToTransactionsMap.has(l.id));
-      if (hasLinkedTx) ids.add(inv.id);
-    });
-    return ids;
-  }, [matchedInvoiceIds, submittedInvoices, linkedInvoicesPool, submittedToNavMap, submittedIdToTransactionsMap]);
-
-  // Identify invoices that ONLY have suggested (not confirmed) matches → amber row
-  // A match is "suggested" when: match_type !== 'manual' AND is_verified !== true AND confidence_score < 0.9
-  // This mirrors the isSuggested logic in ExpandedInvoiceRow.tsx
-  const suggestedOnlyIds = useMemo(() => {
-    const ids = new Set<string>();
-    allTransactions.forEach(tx => {
-      if (!tx.matched_invoice_id) return;
-      const isSuggested = tx.match_type !== 'manual' && !tx.is_verified && (tx.confidence_score ?? 1) < 0.9;
-      if (isSuggested) ids.add(tx.matched_invoice_id);
-    });
-    // Remove any that also have a confirmed (non-suggested) match
-    allTransactions.forEach(tx => {
-      if (!tx.matched_invoice_id) return;
-      const isSuggested = tx.match_type !== 'manual' && !tx.is_verified && (tx.confidence_score ?? 1) < 0.9;
-      if (!isSuggested) ids.delete(tx.matched_invoice_id);
-    });
-    return ids;
-  }, [allTransactions]);
-
-  // ── Invoice KPI summary (respects ALL active filters) ──
-  const invoiceKpis = useMemo(() => {
-    // Helper: apply standard filters client-side to a NAV invoice
-    const passesNavFilters = (inv: NavInvoice) => {
-      // Global date range (invoice_issue_date)
-      if (dateFromFormatted && inv.invoice_issue_date && inv.invoice_issue_date < dateFromFormatted) return false;
-      if (dateToFormatted && inv.invoice_issue_date && inv.invoice_issue_date > dateToFormatted) return false;
-      // Issue date range filter
-      if (filters.issueDateFrom && inv.invoice_issue_date && inv.invoice_issue_date < filters.issueDateFrom) return false;
-      if (filters.issueDateTo && inv.invoice_issue_date && inv.invoice_issue_date > filters.issueDateTo) return false;
-      // Currency
-      if (filters.currency !== 'all' && inv.currency !== filters.currency) return false;
-      // Submitted
-      if (filters.submitted === 'yes' && !inv.submitted) return false;
-      if (filters.submitted === 'no' && inv.submitted) return false;
-      // Amount range (gross)
-      if (filters.amountMin && Math.abs(inv.invoice_gross_amount || 0) < parseFloat(filters.amountMin)) return false;
-      if (filters.amountMax && Math.abs(inv.invoice_gross_amount || 0) > parseFloat(filters.amountMax)) return false;
-      // Search (partner names, tax numbers, invoice number, amounts)
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        const grossStr = (inv.invoice_gross_amount || 0).toString();
-        const netStr = (inv.invoice_net_amount || 0).toString();
-        if (
-          !(inv.supplier_name || '').toLowerCase().includes(q) &&
-          !(inv.customer_name || '').toLowerCase().includes(q) &&
-          !(inv.supplier_tax_number || '').toLowerCase().includes(q) &&
-          !(inv.customer_tax_number || '').toLowerCase().includes(q) &&
-          !inv.invoice_number.toLowerCase().includes(q) &&
-          !grossStr.includes(q) &&
-          !netStr.includes(q)
-        ) return false;
-      }
-      return true;
-    };
-
-    // Helper: apply standard filters client-side to a Submitted invoice
-    const passesSubmittedFilters = (inv: SubmittedInvoice) => {
-      // Issue date (kibocsatas_datuma)
-      if (filters.issueDateFrom && inv.kibocsatas_datuma && inv.kibocsatas_datuma < filters.issueDateFrom) return false;
-      if (filters.issueDateTo && inv.kibocsatas_datuma && inv.kibocsatas_datuma > filters.issueDateTo) return false;
-      // Currency
-      if (filters.currency !== 'all' && inv.penznem !== filters.currency) return false;
-      // Amount range (gross)
-      if (filters.amountMin && Math.abs(inv.brutto_vegosszeg || 0) < parseFloat(filters.amountMin)) return false;
-      if (filters.amountMax && Math.abs(inv.brutto_vegosszeg || 0) > parseFloat(filters.amountMax)) return false;
-      // Project
-      if (filters.project !== 'all' && inv.project_id !== filters.project) return false;
-      // Category
-      if (filters.category !== 'all' && inv.category_id !== filters.category) return false;
-      // Payment method
-      if (filters.paymentMethod !== 'all') {
-        if (filters.paymentMethod === 'none' && inv.fizetesi_mod) return false;
-        if (filters.paymentMethod !== 'none' && inv.fizetesi_mod !== filters.paymentMethod) return false;
-      }
-      // Search
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.vevo_nev : inv.elado_nev) || '';
-        const grossStr = (inv.brutto_vegosszeg || 0).toString();
-        const netStr = (inv.adoalap_osszesen || 0).toString();
-        if (
-          !partnerName.toLowerCase().includes(q) && 
-          !(inv.bizonylatsorszam || '').toLowerCase().includes(q) &&
-          !grossStr.includes(q) &&
-          !netStr.includes(q)
-        ) return false;
-      }
-      return true;
-    };
-
-    const isNavKpi = activeTab === 'OUTBOUND' || activeTab === 'INBOUND';
-    if (isNavKpi) {
-      const direction = activeTab;
-      const navInvs = navInvoicesLookup.filter(inv => inv.invoice_direction === direction && passesNavFilters(inv));
-      const total = navInvs.length;
-      let matched = 0, suggested = 0, unmatched = 0;
-      for (const inv of navInvs) {
-        if (suggestedOnlyIds.has(inv.id)) {
-          suggested++;
-        } else {
-          const directlyMatched = matchedInvoiceIds.has(inv.id);
-          const sMatches = navToSubmittedMap.get(normalizeInvNum(inv.invoice_number)) || [];
-          const indirectlyMatched = sMatches.some(sub => submittedIdToTransactionsMap.has(sub.id));
-          const linkedChain = !indirectlyMatched && sMatches.some(sub => {
-            const linked = getLinkedInvoices(sub);
-            return linked.some(l => submittedIdToTransactionsMap.has(l.id));
-          });
-          const isPaid = inv.paid === true || !!inv.transaction_id || directlyMatched || indirectlyMatched || linkedChain;
-          if (isPaid) matched++;
-          else unmatched++;
-        }
-      }
-      return { total, matched, suggested, unmatched };
-    } else {
-      const direction = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
-      const subInvs = submittedInvoices.filter(inv => inv.invoice_direction === direction && passesSubmittedFilters(inv));
-      const total = subInvs.length;
-      let matched = 0, suggested = 0, unmatched = 0;
-      for (const inv of subInvs) {
-        if (suggestedOnlyIds.has(inv.id)) {
-          suggested++;
-        } else if (extendedMatchedIds.has(inv.id)) {
-          matched++;
-        } else {
-          unmatched++;
-        }
-      }
-      return { total, matched, suggested, unmatched };
-    }
-  }, [activeTab, navInvoicesLookup, submittedInvoices, matchedInvoiceIds, extendedMatchedIds, suggestedOnlyIds, navToSubmittedMap, submittedIdToTransactionsMap, getLinkedInvoices, filters, dateFromFormatted, dateToFormatted]);
-
-  // ── KPI-filtered rows (client-side filter on paginated data) ──
-  // NAV match status: replicates the exact same isPaid logic used in row rendering
-  const getNavMatchStatus = useCallback((invoice: NavInvoice): KpiFilterType => {
-    if (suggestedOnlyIds.has(invoice.id)) return 'suggested';
-    // 5 sources of "paid/matched" for NAV invoices:
-    const directlyMatched = matchedInvoiceIds.has(invoice.id);
-    const submittedMatches = navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number)) || [];
-    const indirectlyMatched = submittedMatches.some(sub => submittedIdToTransactionsMap.has(sub.id));
-    const linkedChainMatched = !indirectlyMatched && submittedMatches.some(sub => {
-      const linked = getLinkedInvoices(sub);
-      return linked.some(l => submittedIdToTransactionsMap.has(l.id));
-    });
-    const isPaid = invoice.paid === true || !!invoice.transaction_id || !!invoice.is_manual_payment || directlyMatched || indirectlyMatched || linkedChainMatched;
-    if (isPaid) return 'matched';
-    return 'unmatched';
-  }, [matchedInvoiceIds, suggestedOnlyIds, navToSubmittedMap, submittedIdToTransactionsMap, getLinkedInvoices]);
-
-  const getSubmittedMatchStatus = useCallback((invoiceId: string): KpiFilterType => {
-    if (suggestedOnlyIds.has(invoiceId)) return 'suggested';
-    if (extendedMatchedIds.has(invoiceId)) return 'matched';
-    return 'unmatched';
-  }, [extendedMatchedIds, suggestedOnlyIds]);
-  // ── KPI-filtered display: when KPI filter is active, paginate client-side from FULL dataset ──
-  // This fixes the bug where server-side pagination (50/page) was filtered client-side,
-  // showing e.g. only 1 "matched" row on page 1 out of 50 server-returned rows.
-  const displayedNavInvoices = useMemo(() => {
-    if (kpiFilter === 'all') return paginatedNavInvoices;
-
-    // KPI filter active → filter from ALL nav invoices (not just current page)
-    const direction = activeTab as string;
-    const allFiltered = navInvoicesLookup
-      .filter(inv => inv.invoice_direction === direction)
-      .filter(inv => {
-        // Apply same standard filters as invoiceKpis
-        if (dateFromFormatted && inv.invoice_issue_date && inv.invoice_issue_date < dateFromFormatted) return false;
-        if (dateToFormatted && inv.invoice_issue_date && inv.invoice_issue_date > dateToFormatted) return false;
-        if (filters.issueDateFrom && inv.invoice_issue_date && inv.invoice_issue_date < filters.issueDateFrom) return false;
-        if (filters.issueDateTo && inv.invoice_issue_date && inv.invoice_issue_date > filters.issueDateTo) return false;
-        if (filters.currency !== 'all' && inv.currency !== filters.currency) return false;
-        if (filters.submitted === 'yes' && !inv.submitted) return false;
-        if (filters.submitted === 'no' && inv.submitted) return false;
-        if (filters.amountMin && Math.abs(inv.invoice_gross_amount || 0) < parseFloat(filters.amountMin)) return false;
-        if (filters.amountMax && Math.abs(inv.invoice_gross_amount || 0) > parseFloat(filters.amountMax)) return false;
-        if (filters.search) {
-          const q = filters.search.toLowerCase();
-          const grossStr = (inv.invoice_gross_amount || 0).toString();
-          const netStr = (inv.invoice_net_amount || 0).toString();
-          if (
-            !(inv.supplier_name || '').toLowerCase().includes(q) &&
-            !(inv.customer_name || '').toLowerCase().includes(q) &&
-            !(inv.supplier_tax_number || '').toLowerCase().includes(q) &&
-            !(inv.customer_tax_number || '').toLowerCase().includes(q) &&
-            !inv.invoice_number.toLowerCase().includes(q) &&
-            !grossStr.includes(q) &&
-            !netStr.includes(q)
-          ) return false;
-        }
-        return true;
-      })
-      .filter(inv => getNavMatchStatus(inv) === kpiFilter);
-
-    // Sort client-side (same field/direction as server-side sort)
-    allFiltered.sort((a, b) => {
-      const aVal = (a as any)[sortField] ?? '';
-      const bVal = (b as any)[sortField] ?? '';
-      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-      return sortDirection === 'asc' ? cmp : -cmp;
-    });
-
-    // Paginate client-side
-    const pageSize = navPageSize;
-    const start = (navCurrentPage - 1) * pageSize;
-    return allFiltered.slice(start, start + pageSize);
-  }, [kpiFilter, paginatedNavInvoices, navInvoicesLookup, activeTab, getNavMatchStatus,
-      filters, dateFromFormatted, dateToFormatted, sortField, sortDirection, navPageSize, navCurrentPage]);
-
-  const displayedSubmittedInvoices = useMemo(() => {
-    if (kpiFilter === 'all') return paginatedSubmittedInvoices;
-
-    // KPI filter active → filter from ALL submitted invoices
-    const direction = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
-    const allFiltered = submittedInvoices
-      .filter(inv => inv.invoice_direction === direction)
-      .filter(inv => {
-        if (filters.issueDateFrom && inv.kibocsatas_datuma && inv.kibocsatas_datuma < filters.issueDateFrom) return false;
-        if (filters.issueDateTo && inv.kibocsatas_datuma && inv.kibocsatas_datuma > filters.issueDateTo) return false;
-        if (filters.currency !== 'all' && inv.penznem !== filters.currency) return false;
-        if (filters.amountMin && Math.abs(inv.brutto_vegosszeg || 0) < parseFloat(filters.amountMin)) return false;
-        if (filters.amountMax && Math.abs(inv.brutto_vegosszeg || 0) > parseFloat(filters.amountMax)) return false;
-        if (filters.project !== 'all' && inv.project_id !== filters.project) return false;
-        if (filters.category !== 'all' && inv.category_id !== filters.category) return false;
-        if (filters.paymentMethod !== 'all') {
-          if (filters.paymentMethod === 'none' && inv.fizetesi_mod) return false;
-          if (filters.paymentMethod !== 'none' && inv.fizetesi_mod !== filters.paymentMethod) return false;
-        }
-        if (filters.search) {
-          const q = filters.search.toLowerCase();
-          const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.vevo_nev : inv.elado_nev) || '';
-          const grossStr = (inv.brutto_vegosszeg || 0).toString();
-          const netStr = (inv.adoalap_osszesen || 0).toString();
-          if (
-            !partnerName.toLowerCase().includes(q) && 
-            !(inv.bizonylatsorszam || '').toLowerCase().includes(q) &&
-            !grossStr.includes(q) &&
-            !netStr.includes(q)
-          ) return false;
-        }
-        return true;
-      })
-      .filter(inv => getSubmittedMatchStatus(inv.id) === kpiFilter);
-
-    // Sort client-side
-    const fieldMap: Record<string, string> = {
-      invoice_issue_date: 'kibocsatas_datuma',
-      invoice_gross_amount: 'brutto_vegosszeg',
-      invoice_number: 'bizonylatsorszam',
-    };
-    const mappedField = fieldMap[sortField] || sortField;
-    allFiltered.sort((a, b) => {
-      const aVal = (a as any)[mappedField] ?? '';
-      const bVal = (b as any)[mappedField] ?? '';
-      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-      return sortDirection === 'asc' ? cmp : -cmp;
-    });
-
-    // Paginate client-side
-    const pageSize = submittedPageSize;
-    const start = (submittedCurrentPage - 1) * pageSize;
-    return allFiltered.slice(start, start + pageSize);
-  }, [kpiFilter, paginatedSubmittedInvoices, submittedInvoices, activeTab, getSubmittedMatchStatus,
-      filters, sortField, sortDirection, submittedPageSize, submittedCurrentPage]);
-
-  // When KPI filter is active, show the KPI count as totalItems in pagination
-  // Always use invoiceKpis values so "Találatok" is consistent with the KPI cards
-  const kpiFilteredTotalItems = useMemo(() => {
-    if (kpiFilter === 'all') return invoiceKpis.total;
-    if (kpiFilter === 'matched') return invoiceKpis.matched;
-    if (kpiFilter === 'suggested') return invoiceKpis.suggested;
-    return invoiceKpis.unmatched;
-  }, [kpiFilter, invoiceKpis]);
-
-  // Compute totalPages from kpiFilteredTotalItems so pagination shows correct page count
-  const kpiFilteredNavTotalPages = useMemo(() => {
-    if (kpiFilter === 'all') return navTotalPages;
-    return Math.max(1, Math.ceil(kpiFilteredTotalItems / navPageSize));
-  }, [kpiFilter, navTotalPages, kpiFilteredTotalItems, navPageSize]);
-
-  const kpiFilteredSubmittedTotalPages = useMemo(() => {
-    if (kpiFilter === 'all') return submittedTotalPages;
-    return Math.max(1, Math.ceil(kpiFilteredTotalItems / submittedPageSize));
-  }, [kpiFilter, submittedTotalPages, kpiFilteredTotalItems, submittedPageSize]);
 
   return (
     <div className="h-full bg-background page-animate">
@@ -1618,8 +1259,8 @@ const InvoicesPage = () => {
 
                   <UnifiedPagination
                     currentPage={navCurrentPage}
-                    totalPages={kpiFilteredNavTotalPages}
-                    totalItems={kpiFilteredTotalItems}
+                    totalPages={navTotalPages}
+                    totalItems={navTotalCount}
                     pageSize={navPageSize}
                     onPageChange={setNavCurrentPage}
                     onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
@@ -1705,35 +1346,25 @@ const InvoicesPage = () => {
                       <TableBody>
                         {(loading || tabFetching) ? (
                           <TableSkeleton rows={10} columns={activeTab === 'INBOUND' ? 15 : 13} />
-                        ) : displayedNavInvoices.length === 0 ? (
+                        ) : paginatedNavInvoices.length === 0 ? (
                           <TableEmptyState colSpan={activeTab === 'INBOUND' ? 15 : 13} title={kpiFilter !== 'all' ? "Nincs ilyen státuszú számla ezen az oldalon" : "Nincs megjeleníthető számla"} description={kpiFilter !== 'all' ? "Kattints az \"Összes találat\" KPI kártyára a szűrő törléséhez." : "Próbáld módosítani a szűrőket vagy keresési feltételeket."} onClearFilters={kpiFilter !== 'all' ? () => setKpiFilter('all') : clearFilters} />
                         ) : (
-                          displayedNavInvoices.map((invoice) => {
+                          paginatedNavInvoices.map((invoice) => {
                             const partnerTaxNumber = getPartnerTaxNumber(invoice);
                             const partnerName = getInvoicePartnerName(invoice);
-                            // Check paid status from multiple sources:
-                            // 1. nav_invoices.paid / nav_invoices.transaction_id (legacy)
-                            // 2. transactions.matched_invoice_id pointing directly to this NAV invoice
-                            // 3. Indirect: submitted invoice (same bizonylatsorszam) has a matched transaction
-                            // 4. Linked chain: any linked invoice (via reference_number) has a matched transaction
-                            const directlyMatched = matchedInvoiceIds.has(invoice.id);
-                            const submittedMatches = navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number)) || [];
-                            const indirectlyMatched = submittedMatches.some(sub => submittedIdToTransactionsMap.has(sub.id));
-                            const linkedChainMatched = !indirectlyMatched && submittedMatches.some(sub => {
-                              const linked = getLinkedInvoices(sub);
-                              return linked.some(l => submittedIdToTransactionsMap.has(l.id));
-                            });
-                            const isPaid = invoice.paid === true || !!invoice.transaction_id || !!invoice.is_manual_payment || directlyMatched || indirectlyMatched || linkedChainMatched;
+                            const matchStatus = (invoice as any).match_status || (invoice.paid ? 'matched' : 'unmatched');
+                            const isPaid = matchStatus === 'matched';
+                            const isSuggested = matchStatus === 'suggested';
                             const isNettingCandidate = nettingInvoiceIds.has(invoice.id);
                             return (
                               <React.Fragment key={invoice.id}>
                                 <TableRow data-row-hover className={cn(
                                   "group cursor-pointer transition-colors",
                                   selectedInvoiceIds.has(invoice.id) && "bg-primary/10",
-                                  !selectedInvoiceIds.has(invoice.id) && isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-matched-bg)]",
-                                  !selectedInvoiceIds.has(invoice.id) && suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-suggested-bg)]",
-                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && !suggestedOnlyIds.has(invoice.id) && !isNettingCandidate && "bg-[var(--row-unmatched-bg)]",
-                                  !selectedInvoiceIds.has(invoice.id) && isNettingCandidate && !isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-orange-500/[0.06]",
+                                  !selectedInvoiceIds.has(invoice.id) && isPaid && "bg-[var(--row-matched-bg)]",
+                                  !selectedInvoiceIds.has(invoice.id) && isSuggested && "bg-[var(--row-suggested-bg)]",
+                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && !isSuggested && !isNettingCandidate && "bg-[var(--row-unmatched-bg)]",
+                                  !selectedInvoiceIds.has(invoice.id) && isNettingCandidate && !isPaid && !isSuggested && "bg-orange-500/[0.06]",
                                   expandedRowIds.has(invoice.id) && "border-b-0"
                                 )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                   <TableCell className="pl-2">
@@ -1926,7 +1557,7 @@ const InvoicesPage = () => {
                                       invoiceSource="nav"
                                       onMatchUpdate={invalidateInvoiceData}
                                       glNumbers={invoice.gl_numbers}
-                                      hasSubmittedMatch={submittedMatches.length > 0}
+                                      hasSubmittedMatch={matches.matchedSubmitted.length > 0}
                                       categories={categories}
                                       projects={projects}
                                       nettingGroup={getNettingGroup(invoice.id)}
@@ -1967,8 +1598,8 @@ const InvoicesPage = () => {
 
                   <UnifiedPagination
                     currentPage={navCurrentPage}
-                    totalPages={kpiFilteredNavTotalPages}
-                    totalItems={kpiFilteredTotalItems}
+                    totalPages={navTotalPages}
+                    totalItems={navTotalCount}
                     pageSize={navPageSize}
                     onPageChange={setNavCurrentPage}
                     onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
@@ -2094,8 +1725,8 @@ const InvoicesPage = () => {
 
                   <UnifiedPagination
                     currentPage={submittedCurrentPage}
-                    totalPages={kpiFilteredSubmittedTotalPages}
-                    totalItems={kpiFilteredTotalItems}
+                    totalPages={submittedTotalPages}
+                    totalItems={submittedTotalCount}
                     pageSize={submittedPageSize}
                     onPageChange={setSubmittedCurrentPage}
                     onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
@@ -2165,17 +1796,21 @@ const InvoicesPage = () => {
                       <TableBody>
                         {(loading || tabFetching) ? (
                           <TableSkeleton rows={10} columns={12} />
-                        ) : displayedSubmittedInvoices.length === 0 ? (
+                        ) : paginatedSubmittedInvoices.length === 0 ? (
                           <TableEmptyState colSpan={12} title={kpiFilter !== 'all' ? "Nincs ilyen státuszú számla ezen az oldalon" : "Nincs megjeleníthető számla"} description={kpiFilter !== 'all' ? "Kattints az \"Összes találat\" KPI kártyára a szűrő törléséhez." : "Próbáld módosítani a szűrőket vagy keresési feltételeket."} />
                         ) : (
-                          displayedSubmittedInvoices.map((invoice) => (
+                          paginatedSubmittedInvoices.map((invoice) => {
+                            const matchStatus = (invoice as any).match_status || 'unmatched';
+                            const isMatched = matchStatus === 'matched';
+                            const isSuggested = matchStatus === 'suggested';
+                            return (
                             <React.Fragment key={invoice.id}>
                               <TableRow data-row-hover className={cn(
                                 "group cursor-pointer",
                                 selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
-                                !selectedSubmittedIds.has(invoice.id) && extendedMatchedIds.has(invoice.id) && !suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-matched-bg)]",
-                                !selectedSubmittedIds.has(invoice.id) && suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-suggested-bg)]",
-                                !selectedSubmittedIds.has(invoice.id) && !extendedMatchedIds.has(invoice.id) && !suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-unmatched-bg)]",
+                                !selectedSubmittedIds.has(invoice.id) && isMatched && "bg-[var(--row-matched-bg)]",
+                                !selectedSubmittedIds.has(invoice.id) && isSuggested && "bg-[var(--row-suggested-bg)]",
+                                !selectedSubmittedIds.has(invoice.id) && !isMatched && !isSuggested && "bg-[var(--row-unmatched-bg)]",
                                 expandedRowIds.has(invoice.id) && "border-b-0"
                               )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell className="pl-2">
@@ -2285,7 +1920,8 @@ const InvoicesPage = () => {
                                 );
                               })()}
                             </React.Fragment>
-                          ))
+                            );
+                          })
                         )}
                         <TablePlaceholderRows currentCount={paginatedSubmittedInvoices.length} pageSize={submittedPageSize} columns={12} />
                       </TableBody>
@@ -2308,8 +1944,8 @@ const InvoicesPage = () => {
 
                   <UnifiedPagination
                     currentPage={submittedCurrentPage}
-                    totalPages={kpiFilteredSubmittedTotalPages}
-                    totalItems={kpiFilteredTotalItems}
+                    totalPages={submittedTotalPages}
+                    totalItems={submittedTotalCount}
                     pageSize={submittedPageSize}
                     onPageChange={setSubmittedCurrentPage}
                     onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}

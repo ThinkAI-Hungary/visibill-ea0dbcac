@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1787931793.4514167,
-    "ast_hash": "3229d40ebf5d176ef917e04461a5127d",
+    "mtime": 1788009355.14652,
+    "ast_hash": "1a10c49cbf7883ad6fe06dbfaf5a236e",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -975,13 +975,13 @@
     "semantic_hash": "f2a60e18bdf9a9d5b884b5b2a805ca4f"
   },
   "src/hooks/useInvoiceData.ts": {
-    "mtime": 1787973089.2170727,
-    "ast_hash": "0f3f2ee4bfc3ada52db0feaba4284682",
+    "mtime": 1788008913.3950536,
+    "ast_hash": "75898fc5675ccc91feefc1f423988c12",
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceFilters.ts": {
-    "mtime": 1787568622.8643358,
-    "ast_hash": "ba2ea154e41f4e4a5cf5860809af31c5",
+    "mtime": 1788009367.2656639,
+    "ast_hash": "4554d4103e4a34061d45879a8b049d91",
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceMutations.ts": {
@@ -1495,8 +1495,8 @@
     "semantic_hash": ""
   },
   "src/pages/InvoicesPage.tsx": {
-    "mtime": 1787973000.5495255,
-    "ast_hash": "65a5427d9b444c35d556ffbd7da17da3",
+    "mtime": 1788009250.6837614,
+    "ast_hash": "5c7636112611c7c3716d04fdc86c7cfc",
     "semantic_hash": ""
   },
   "src/pages/KintlevoPage.tsx": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1787839531.8975391,
-    "ast_hash": "e2098cf89e975a154305a64775d0f745",
+    "mtime": 1788009563.4443257,
+    "ast_hash": "4d108a817c9a6f4326b976920db00605",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1787973230.8113978,
-    "ast_hash": "a2d455ca434fa8ce336ade11f05901f0",
+    "mtime": 1788009535.7338696,
+    "ast_hash": "334b3159bd065d26cff454314390039e",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3440,8 +3440,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-010-invoice-list.md": {
-    "mtime": 1780305936.2501602,
-    "ast_hash": "f634660cca022d7b81d396a8d1294421",
+    "mtime": 1788009592.6580276,
+    "ast_hash": "7ff1fd8b7848a0a1de8fd30c05770b79",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-012-invoice-editing.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1787973245.7046676,
-    "ast_hash": "146bd22acc6d32c35c708863edb12bb3",
+    "mtime": 1788009552.1160212,
+    "ast_hash": "57edc1419e2a9a1cc8eeb80852c1e694",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5040,13 +5040,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/04-invoices.md": {
-    "mtime": 1783244778.9276989,
-    "ast_hash": "ddcfb41cd1981143864d9211bfe82fef",
+    "mtime": 1788009574.0571442,
+    "ast_hash": "22b904398f839518bfe2f0fdc6802c05",
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {
-    "mtime": 1784632211.6255531,
-    "ast_hash": "89ca4854e9cb0771a4abfeb7c351bda2",
+    "mtime": 1788009582.811419,
+    "ast_hash": "703237360bb8cd0940bb67869589398f",
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1787931798.0710301,
+    "mtime": 1788008243.1207285,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -7212,6 +7212,26 @@
   "docs/product/decisions/P-053-strict-invoice-attachment-pairing-ux.md": {
     "mtime": 1787973237.601282,
     "ast_hash": "19c410705b3f471d3c7e1565b2c88726",
+    "semantic_hash": ""
+  },
+  "src/test/invoiceFilters.test.ts": {
+    "mtime": 1788009185.3039925,
+    "ast_hash": "61287b0b0c70b14b8f53f0ed3ccd4724",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260829160000_optimize_invoice_queries_and_kpis.sql": {
+    "mtime": 1788009879.4809244,
+    "ast_hash": "fb8bc30b0e11474c0724d3d0e41d1675",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-055-server-side-invoice-query-kpi-optimization.md": {
+    "mtime": 1788010075.2861936,
+    "ast_hash": "473bda0e6c2524e056d6aef512e858ef",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-054-server-side-invoice-pagination-and-kpi-filters-ux.md": {
+    "mtime": 1788009517.1628485,
+    "ast_hash": "d8ef9236137fb3607ecca93d98daef3c",
     "semantic_hash": ""
   }
 }

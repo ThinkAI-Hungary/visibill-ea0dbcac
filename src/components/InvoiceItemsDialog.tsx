@@ -130,7 +130,14 @@ export function InvoiceItemsDialog({
         .eq('id', invoiceId)
         .single();
       if (error) throw error;
-      return data;
+      return data as {
+        project_id?: string | null;
+        invoice_direction?: string;
+        kibocsatas_datuma?: string;
+        invoice_issue_date?: string;
+        currency?: string;
+        penznem?: string;
+      } | null;
     },
     enabled: open && !!invoiceId,
   });
@@ -305,7 +312,9 @@ export function InvoiceItemsDialog({
         const { data: submittedInvs } = await supabase
           .from('invoices')
           .select('id, bizonylatsorszam')
-          .eq('company_id', selectedCompany.id);
+          .eq('company_id', selectedCompany.id)
+          .ilike('bizonylatsorszam', `%${normalizedNum}%`)
+          .limit(10);
 
         const matchingInvIds = (submittedInvs || [])
           .filter(inv => inv.bizonylatsorszam && inv.bizonylatsorszam.replace(/\s+/g, '').toUpperCase() === normalizedNum.toUpperCase())
@@ -339,7 +348,9 @@ export function InvoiceItemsDialog({
         const { data: navInvs } = await supabase
           .from('nav_invoices')
           .select('id, invoice_number')
-          .eq('company_id', selectedCompany.id);
+          .eq('company_id', selectedCompany.id)
+          .ilike('invoice_number', `%${normalizedNum}%`)
+          .limit(10);
 
         const matchingNavIds = (navInvs || [])
           .filter(inv => inv.invoice_number && inv.invoice_number.replace(/\s+/g, '').toUpperCase() === normalizedNum.toUpperCase())
