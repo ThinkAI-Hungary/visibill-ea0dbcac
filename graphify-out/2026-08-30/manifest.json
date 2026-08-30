@@ -120,8 +120,8 @@
     "semantic_hash": ""
   },
   "src/components/ExpandedInvoiceRow.tsx": {
-    "mtime": 1788096559.0686114,
-    "ast_hash": "dd93a3f3048af9dfcc88e83194f14e28",
+    "mtime": 1788095716.3441408,
+    "ast_hash": "900b535dcd4f5eaef8d88013737dd900",
     "semantic_hash": ""
   },
   "src/components/FeedbackDialog.tsx": {
@@ -1495,8 +1495,8 @@
     "semantic_hash": ""
   },
   "src/pages/InvoicesPage.tsx": {
-    "mtime": 1788096617.736392,
-    "ast_hash": "93cff746ca8bda2f28a1845c7f97b4fd",
+    "mtime": 1788096092.0370274,
+    "ast_hash": "7dd31718875dfe494d5446b3e896963a",
     "semantic_hash": ""
   },
   "src/pages/KintlevoPage.tsx": {
@@ -3060,8 +3060,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-014-react-query-cache.md": {
-    "mtime": 1788096846.2300117,
-    "ast_hash": "c9e7e092bc20c33e5ef19659a85b0ac4",
+    "mtime": 1783769853.2184162,
+    "ast_hash": "474735c65576c824a62aeacd7ac62eba",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-015-stripe-removal.md": {
@@ -3465,8 +3465,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-017-matching-display.md": {
-    "mtime": 1788096852.3675652,
-    "ast_hash": "c0e05473c417fc5387c560f05672fc7e",
+    "mtime": 1780305936.2513628,
+    "ast_hash": "6f7f8e3378efc7f22521e32460877446",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-018-manual-matching.md": {
@@ -3585,8 +3585,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionMatcher.ts": {
-    "mtime": 1788096547.4152198,
-    "ast_hash": "76a4d510862630d050a59f4124203b35",
+    "mtime": 1788095603.9193046,
+    "ast_hash": "a032cb82459b0b7d9da6f3f68a1e0075",
     "semantic_hash": ""
   },
   "src/lib/errorReporter.ts": {
@@ -7230,8 +7230,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-054-server-side-invoice-pagination-and-kpi-filters-ux.md": {
-    "mtime": 1788096836.000995,
-    "ast_hash": "b92592501103f3461182e285d74cc0c5",
+    "mtime": 1788010558.5601618,
+    "ast_hash": "485ba332431ba95cd1c4a0427269fe04",
     "semantic_hash": ""
   },
   "scratch/check_audit_columns.js": {

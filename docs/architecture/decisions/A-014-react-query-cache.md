@@ -71,15 +71,28 @@ Tab visszajön (visible) →
 
 A mutációs műveletek (mint például adatok törlése, újraküldése, státuszfrissítés, jogosultságok módosítása vagy impersonation leállítása) után az `invalidateQueries` használata nem elegendő, mert az csupán elavultnak jelöli meg a cache-t, de a memóriában tartja a régi adatokat. Emiatt navigációkor vagy a háttérben futó lekérdezés (background refetch) ideje alatt a felhasználó 1-2 másodpercig még a régi, elavult adatokat láthatja (stale state layout shift).
 
-A konzisztens és tiszsa UX érdekében az alábbi szabályt alkalmazzuk:
-- **`queryClient.resetQueries` használata:** Minden olyan mutáció sikeres lefutása után, amely közvetlen hatással van a statisztikákra vagy listákra (pl. `delete-errors`, `retry-errors`, `delete-files`, `update-file-status`, `update-permissions`), az érintett query-ket (`management-overview`, `management-errors`, `management-files`, `worker-status`, `management-user-permissions`, `active-impersonation`) **resetelni** kell invalidálás helyett.
-- Ez azonnal kiüríti a gyorsítótárat (visszaállítja `undefined` állapotra), így a felhasználó azonnal egy tiszta betöltési állapotot (loading skeleton/spinner) lát a régi elavult adatok helyett, amíg a friss adatok le nem töltődnek.
+### Page-Level Batch Pre-fetch & Query Key Hygiene (2026-08)
+
+Nagy adatbázisoknál (több tízezer rekord) a globális pre-fetch (összes tranzakció betöltése) és az egyenkénti sornyitáskori aszinkron lekérdezés (N hálózati kérés + késleltetés) helyett **lap-szintű kötegelt (Page-Level Batch) pre-fetch-et** alkalmazunk:
+
+1. **Page-Level Batch Pre-fetch:**
+   - A komponens (pl. `InvoicesPage`) az aktuális oldalra betöltött sorok azonosítóit (`currentPageInvoiceIds`) gyűjti össze.
+   - Egyetlen indexelt TanStack lekérdezéssel (`page-invoice-transactions`) lekéri az adott lap összes kapcsolódó tételét és egy `invoiceIdToTransactionsMap` memóriatérképbe rendezi.
+   - A gyermekkomponensek (`ExpandedInvoiceRow`) propként kapják meg az adatokat, így a lenyitás **0 ms (azonnali)**, miközben az adatforgalom szigorúan a lapozási limithez (`pageSize`) kötött ($O(1)$ skálázódás).
+
+2. **Query Key Hygiene (Objektumtömbök tiltása a kulcsban):**
+   - A `queryKey`-be SOHA nem teszünk objektumokat vagy objektumtömböket (`[..., objects]`), mert azok minden renderkor új memóriareferenciát képeznek és felesleges re-fetch-et vagy deep-comparison terhelést okoznak.
+   - Helyette mindig **primitív típusokat vagy rendezett string azonosítókat** használunk:
+     `const pageInvoiceIdsKey = useMemo(() => ids.slice().sort().join(','), [ids]);`
+     `queryKey: ['page-invoice-transactions', companyId, pageInvoiceIdsKey]`
 
 ## Consequences
 
 **Pozitív:**
 - 5 perces staleTime → navigálás oldalak között instant (cached adat)
 - A `resetQueries` használata mutációk után megakadályozza a régi elavult adatok villódzását (layout shift) a statisztikai felületeken.
+- Page-Level Batch Pre-fetch → azonnali sorlenyitás és minimális hálózati adatforgalom nagy adatbázisoknál is.
+- Primitív query kulcsok → stabil cache azonosítás felesleges re-fetch nélkül.
 - companyId/dateRange a kulcsban → természetes invalidáció
 - Deduplikáció — azonos query-t nem hívja meg kétszer párhuzamosan
 - Realtime → azonnali frissítés DB változáskor, toast értesítéssel

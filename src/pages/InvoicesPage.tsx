@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -819,6 +820,112 @@ const InvoicesPage = () => {
     return linked;
   };
 
+  // Collect all invoice IDs displayed on the current page (including their matched cross-invoices)
+  const currentPageInvoiceIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (isSubmittedTab) {
+      paginatedSubmittedInvoices.forEach(sub => {
+        if (sub.id) ids.add(sub.id);
+        if (sub.bizonylatsorszam) {
+          const navMatches = submittedToNavMap.get(normalizeInvNum(sub.bizonylatsorszam)) || [];
+          navMatches.forEach(nav => { if (nav.id) ids.add(nav.id); });
+        }
+      });
+    } else {
+      paginatedNavInvoices.forEach(nav => {
+        if (nav.id) ids.add(nav.id);
+        const subMatches = navToSubmittedMap.get(normalizeInvNum(nav.invoice_number)) || [];
+        subMatches.forEach(sub => { if (sub.id) ids.add(sub.id); });
+      });
+    }
+    return Array.from(ids);
+  }, [activeTab, paginatedSubmittedInvoices, paginatedNavInvoices, submittedToNavMap, navToSubmittedMap]);
+
+  const pageInvoiceIdsKey = useMemo(() => currentPageInvoiceIds.slice().sort().join(','), [currentPageInvoiceIds]);
+
+  // Page-level batch fetch: fetch matched transactions ONLY for invoices on the current page (100% scalable O(1))
+  const { data: pageTransactions = [] } = useQuery({
+    queryKey: ['page-invoice-transactions', companyId, pageInvoiceIdsKey],
+    queryFn: async () => {
+      if (!companyId || currentPageInvoiceIds.length === 0) return [];
+
+      const txList: TransactionRecord[] = [];
+
+      // 1. Direct matches in transactions table
+      const { data: directTxs, error: directErr } = await supabase
+        .from('transactions')
+        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified, reason')
+        .eq('company_id', companyId)
+        .in('matched_invoice_id', currentPageInvoiceIds);
+
+      if (!directErr && directTxs) {
+        directTxs.forEach((t: any) => {
+          txList.push({
+            id: t.id,
+            matched_invoice_id: t.matched_invoice_id,
+            transaction_date: t.transaction_date,
+            amount: Number(t.amount || 0),
+            description: t.description,
+            currency: t.currency,
+            type: t.type,
+            confidence_score: t.confidence_score,
+            match_type: t.match_type,
+            is_verified: t.is_verified,
+            reason: t.reason,
+          });
+        });
+      }
+
+      // 2. Multi-match join table (transaction_invoice_matches)
+      const { data: multiMatches, error: multiErr } = await supabase
+        .from('transaction_invoice_matches')
+        .select('transaction_id, invoice_id, transactions:transaction_id (id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified, reason, company_id)')
+        .in('invoice_id', currentPageInvoiceIds);
+
+      if (!multiErr && multiMatches) {
+        for (const mm of multiMatches as any[]) {
+          const t = mm.transactions;
+          if (t && t.company_id === companyId) {
+            if (!txList.some(item => item.id === t.id && item.matched_invoice_id === mm.invoice_id)) {
+              txList.push({
+                id: t.id,
+                matched_invoice_id: mm.invoice_id,
+                transaction_date: t.transaction_date,
+                amount: Number(t.amount || 0),
+                description: t.description,
+                currency: t.currency,
+                type: t.type,
+                confidence_score: t.confidence_score,
+                match_type: t.match_type,
+                is_verified: t.is_verified,
+                reason: t.reason,
+              });
+            }
+          }
+        }
+      }
+
+      return txList;
+    },
+    enabled: enabled && !!companyId && currentPageInvoiceIds.length > 0,
+    placeholderData: keepPreviousData,
+  });
+
+  // Map: invoice_id -> TransactionRecord[]
+  const pageInvoiceIdToTransactionsMap = useMemo(() => {
+    const map = new Map<string, TransactionRecord[]>();
+    for (const tx of pageTransactions) {
+      if (tx.matched_invoice_id) {
+        const existing = map.get(tx.matched_invoice_id) || [];
+        if (!existing.some(e => e.id === tx.id)) {
+          existing.push(tx);
+          map.set(tx.matched_invoice_id, existing);
+        }
+      }
+    }
+    return map;
+  }, [pageTransactions]);
+
   const getNavInvoiceMatches = (navInvoice: NavInvoice) => {
     const matchedSubmitted = navToSubmittedMap.get(normalizeInvNum(navInvoice.invoice_number)) || [];
     const linkedInvs: SubmittedInvoice[] = [];
@@ -827,9 +934,17 @@ const InvoicesPage = () => {
         if (!linkedInvs.some(x => x.id === l.id) && !matchedSubmitted.some(x => x.id === l.id)) linkedInvs.push(l);
       });
     });
+
+    // Collect transactions for navInvoice itself AND any matched submitted invoices
+    const allTxMap = new Map<string, TransactionRecord>();
+    (pageInvoiceIdToTransactionsMap.get(navInvoice.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
+    matchedSubmitted.forEach(sub => {
+      (pageInvoiceIdToTransactionsMap.get(sub.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
+    });
+
     return {
       matchedSubmitted,
-      matchedTransactions: [] as TransactionRecord[],
+      matchedTransactions: Array.from(allTxMap.values()),
       matchedNav: [] as NavInvoice[],
       linkedInvoices: linkedInvs,
       matchedCourierReports: navIdToCourierReportsMap.get(navInvoice.id) || []
@@ -839,9 +954,17 @@ const InvoicesPage = () => {
   const getSubmittedInvoiceMatches = (submitted: SubmittedInvoice) => {
     const matchedNav = submitted.bizonylatsorszam ? (submittedToNavMap.get(normalizeInvNum(submitted.bizonylatsorszam)) || []) : [];
     const linkedInvs = getLinkedInvoices(submitted);
+
+    // Collect transactions for submitted invoice itself AND any matched nav invoices
+    const allTxMap = new Map<string, TransactionRecord>();
+    (pageInvoiceIdToTransactionsMap.get(submitted.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
+    matchedNav.forEach(nav => {
+      (pageInvoiceIdToTransactionsMap.get(nav.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
+    });
+
     return {
       matchedSubmitted: [] as SubmittedInvoice[],
-      matchedTransactions: [] as TransactionRecord[],
+      matchedTransactions: Array.from(allTxMap.values()),
       matchedNav,
       linkedInvoices: linkedInvs
     };
@@ -1554,6 +1677,7 @@ const InvoicesPage = () => {
                                       invoiceCurrency={invoice.currency || 'HUF'}
                                       invoiceDate={invoice.invoice_issue_date || ''}
                                       companyId={companyId}
+                                      transactionId={invoice.transaction_id || undefined}
                                       invoiceSource="nav"
                                       onMatchUpdate={invalidateInvoiceData}
                                       glNumbers={invoice.gl_numbers}
@@ -1912,6 +2036,8 @@ const InvoicesPage = () => {
                                     invoiceCurrency={invoice.penznem || 'HUF'}
                                     invoiceDate={invoice.kibocsatas_datuma || ''}
                                     companyId={companyId}
+                                    transactionId={(invoice as any).transaction_id || undefined}
+                                    invoiceNumber={invoice.bizonylatsorszam || undefined}
                                     invoiceSource="submitted"
                                     onMatchUpdate={invalidateInvoiceData}
                                     categories={categories}

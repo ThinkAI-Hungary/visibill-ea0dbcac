@@ -261,6 +261,8 @@ export function useInvoiceData(
     queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['page-invoice-transactions'] });
+    queryClient.invalidateQueries({ queryKey: ['matched-transactions-for-invoice'] });
     queryClient.invalidateQueries({ queryKey: ['partners', companyId] });
     queryClient.invalidateQueries({ queryKey: ['categories', companyId] });
     queryClient.invalidateQueries({ queryKey: ['projectsList', companyId] });

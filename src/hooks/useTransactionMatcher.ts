@@ -59,6 +59,8 @@ export function useTransactionMatcher({
     queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['page-invoice-transactions'] });
+    queryClient.invalidateQueries({ queryKey: ['matched-transactions-for-invoice'] });
     queryClient.invalidateQueries({ queryKey: ['transactionInvoiceMatches', companyId] });
     queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });

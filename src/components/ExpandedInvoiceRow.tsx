@@ -1,7 +1,7 @@
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet, CreditCard, Scale, RefreshCw, Lock, Users, ClipboardCheck, Loader2, XCircle, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -413,6 +413,108 @@ const ExpandedInvoiceRow = ({
     enabled: !!invoiceId,
   });
 
+  const subIdsKey = useMemo(() => matchedSubmittedInvoices.map(inv => inv.id).sort().join(','), [matchedSubmittedInvoices]);
+  const navIdsKey = useMemo(() => matchedNavInvoices.map(inv => inv.id).sort().join(','), [matchedNavInvoices]);
+
+  // Fetch linked transactions (only when matchedTransactions is NOT provided by parent batch query)
+  const { data: fetchedTransactions = [], isLoading: transactionsLoading } = useQuery({
+    queryKey: ['matched-transactions-for-invoice', invoiceId, transactionId, subIdsKey, navIdsKey],
+    queryFn: async () => {
+      if (!invoiceId && !transactionId) return [];
+
+      const allRelatedInvoiceIds = [
+        invoiceId,
+        ...matchedSubmittedInvoices.map(inv => inv.id),
+        ...matchedNavInvoices.map(inv => inv.id),
+      ].filter(Boolean) as string[];
+
+      const txMap = new Map<string, MatchedTransaction>();
+
+      // 1. Direct matched_invoice_id or specific transactionId
+      if (allRelatedInvoiceIds.length > 0 || transactionId) {
+        let query = supabase
+          .from('transactions')
+          .select('id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified, reason, matched_invoice_id');
+
+        if (allRelatedInvoiceIds.length > 0 && transactionId) {
+          query = query.or(`matched_invoice_id.in.(${allRelatedInvoiceIds.join(',')}),id.eq.${transactionId}`);
+        } else if (allRelatedInvoiceIds.length > 0) {
+          query = query.in('matched_invoice_id', allRelatedInvoiceIds);
+        } else if (transactionId) {
+          query = query.eq('id', transactionId);
+        }
+
+        const { data: directTxs, error: directErr } = await query;
+        if (!directErr && directTxs) {
+          directTxs.forEach((tx: any) => {
+            txMap.set(tx.id, {
+              id: tx.id,
+              transaction_date: tx.transaction_date,
+              amount: Number(tx.amount || 0),
+              description: tx.description,
+              currency: tx.currency,
+              type: tx.type,
+              confidence_score: tx.confidence_score,
+              match_type: tx.match_type,
+              is_verified: tx.is_verified,
+              reason: tx.reason,
+            });
+          });
+        }
+      }
+
+      // 2. Multi-match join table (transaction_invoice_matches)
+      if (allRelatedInvoiceIds.length > 0) {
+        const { data: joinMatches, error: joinErr } = await supabase
+          .from('transaction_invoice_matches')
+          .select('transaction_id')
+          .in('invoice_id', allRelatedInvoiceIds);
+
+        if (!joinErr && joinMatches && joinMatches.length > 0) {
+          const additionalTxIds = joinMatches
+            .map((m: any) => m.transaction_id)
+            .filter((id: string) => id && !txMap.has(id));
+
+          if (additionalTxIds.length > 0) {
+            const { data: joinTxs, error: joinTxsErr } = await supabase
+              .from('transactions')
+              .select('id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified, reason, matched_invoice_id')
+              .in('id', additionalTxIds);
+
+            if (!joinTxsErr && joinTxs) {
+              joinTxs.forEach((tx: any) => {
+                txMap.set(tx.id, {
+                  id: tx.id,
+                  transaction_date: tx.transaction_date,
+                  amount: Number(tx.amount || 0),
+                  description: tx.description,
+                  currency: tx.currency,
+                  type: tx.type,
+                  confidence_score: tx.confidence_score,
+                  match_type: tx.match_type,
+                  is_verified: tx.is_verified,
+                  reason: tx.reason,
+                });
+              });
+            }
+          }
+        }
+      }
+
+      const result = Array.from(txMap.values());
+      result.sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
+      return result;
+    },
+    enabled: matchedTransactions === undefined && !!(invoiceId || transactionId),
+  });
+
+  const effectiveMatchedTransactions = useMemo(() => {
+    if (matchedTransactions !== undefined) {
+      return matchedTransactions;
+    }
+    return fetchedTransactions;
+  }, [matchedTransactions, fetchedTransactions]);
+
   // Invoice-side matching is enabled when all required props are provided
   const matchingEnabled = !!(invoiceId && companyId && invoiceDate && !hideStandaloneTransactions);
 
@@ -433,7 +535,7 @@ const ExpandedInvoiceRow = ({
 
   const hasAny = matchedSubmittedInvoices.length > 0 
     || matchedNavInvoices.length > 0 
-    || matchedTransactions.length > 0 
+    || effectiveMatchedTransactions.length > 0 
     || linkedInvoices.length > 0 
     || matchedCourierReports.length > 0
     || hasBrokenChain;
@@ -850,7 +952,7 @@ const ExpandedInvoiceRow = ({
                     </CardContent>
                   </Card>
                 ))}
-                {(matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0) && (
+                {(matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || effectiveMatchedTransactions.length > 0) && (
                   <Separator className="my-1" />
                 )}
               </>
@@ -957,8 +1059,8 @@ const ExpandedInvoiceRow = ({
                     </div>
                   </div>
                   {/* Inline collapsible transaction list (Transactions page only, 2+ tx) */}
-                  {hideStandaloneTransactions && matchedTransactions.length >= 2 && (
-                    <InlineTransactionList transactions={matchedTransactions} invoiceId={inv.id} />
+                  {hideStandaloneTransactions && effectiveMatchedTransactions.length >= 2 && (
+                    <InlineTransactionList transactions={effectiveMatchedTransactions} invoiceId={inv.id} />
                   )}
                 </CardContent>
               </Card>
@@ -1028,15 +1130,15 @@ const ExpandedInvoiceRow = ({
                     </div>
                   </div>
                   {/* Inline collapsible transaction list (Transactions page only, 2+ tx) */}
-                  {hideStandaloneTransactions && matchedTransactions.length >= 2 && (
-                    <InlineTransactionList transactions={matchedTransactions} invoiceId={inv.id} />
+                  {hideStandaloneTransactions && effectiveMatchedTransactions.length >= 2 && (
+                    <InlineTransactionList transactions={effectiveMatchedTransactions} invoiceId={inv.id} />
                   )}
                 </CardContent>
               </Card>
             ))}
 
             {/* Standalone matched transactions (full card style — Invoices page only) */}
-            {!hideStandaloneTransactions && matchedTransactions.map((tx) => {
+            {!hideStandaloneTransactions && effectiveMatchedTransactions.map((tx) => {
               const isSuggested = tx.match_type !== 'manual' && !tx.is_verified && (tx.confidence_score ?? 1) < 0.9;
               return (
               <Card key={tx.id} className={cn(
