@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 interface AddManualJournalEntryModalProps {
   open: boolean;
@@ -45,6 +47,8 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     { gl_account_id: '', dc_type: 'T', amount: 0, project_id: null, description: '' },
     { gl_account_id: '', dc_type: 'K', amount: 0, project_id: null, description: '' },
   ]);
+  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch Lookups
   const { data: journals = [] } = useQuery({
@@ -396,21 +400,72 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                       <tr key={index} className="hover:bg-muted/10">
                         {/* GL Account Select */}
                         <td className="p-2">
-                          <Select
-                            value={line.gl_account_id}
-                            onValueChange={v => handleUpdateLine(index, 'gl_account_id', v)}
+                          <Popover 
+                            open={openDropdownIndex === index} 
+                            onOpenChange={(open) => {
+                              if (open) {
+                                setOpenDropdownIndex(index);
+                                setSearchQuery('');
+                              } else {
+                                setOpenDropdownIndex(null);
+                              }
+                            }}
                           >
-                            <SelectTrigger className="h-8 text-xs font-mono">
-                              <SelectValue placeholder="Válasszon főkönyvet..." />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[300px]">
-                              {glAccounts.map((gl: any) => (
-                                <SelectItem key={gl.id} value={gl.id} className="font-mono text-xs">
-                                  {gl.gl_number} - {gl.short_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="h-8 w-full justify-between font-mono text-xs text-left px-2 border-input/60 hover:bg-muted/50"
+                              >
+                                <span className="truncate">
+                                  {line.gl_account_id
+                                    ? (() => {
+                                        const gl = glAccounts.find((g: any) => g.id === line.gl_account_id);
+                                        return gl ? `${gl.gl_number} - ${gl.short_name}` : 'Válasszon főkönyvet...';
+                                      })()
+                                    : 'Válasszon főkönyvet...'}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground ml-1">▼</span>
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent 
+                              className="w-[450px] max-w-[85vw] p-0 z-[1200]" 
+                              align="start"
+                              onWheel={(e) => e.stopPropagation()}
+                              onTouchMove={(e) => e.stopPropagation()}
+                            >
+                              <Command shouldFilter={false}>
+                                <CommandInput
+                                  placeholder="Keresés (pl. 111, anyag)..."
+                                  value={searchQuery}
+                                  onValueChange={setSearchQuery}
+                                />
+                                <CommandList className="max-h-[250px] overflow-y-auto">
+                                  <CommandEmpty>Nincs találat.</CommandEmpty>
+                                  <CommandGroup>
+                                    {glAccounts
+                                      ?.filter((gl: any) => 
+                                        !searchQuery || 
+                                        `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(searchQuery.toLowerCase())
+                                      )
+                                      .map((gl: any) => (
+                                        <CommandItem
+                                          key={gl.id}
+                                          value={`${gl.gl_number} ${gl.short_name}`}
+                                          onSelect={() => {
+                                            handleUpdateLine(index, 'gl_account_id', gl.id);
+                                            setOpenDropdownIndex(null);
+                                          }}
+                                          className="font-mono text-xs cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                                        >
+                                          {gl.gl_number} - {gl.short_name}
+                                        </CommandItem>
+                                      ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </td>
 
                         {/* T/K Select */}
