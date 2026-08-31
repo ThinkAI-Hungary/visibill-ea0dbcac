@@ -2,7 +2,7 @@
 
 > Cégek, tagságok, beállítások, telephely.
 
-**Táblák ebben a csoportban:** 6
+**Táblák ebben a csoportban:** 7
 
 ---
 
@@ -157,15 +157,25 @@
 
 ---
 
-### `company_email_settings` *(Legacy / Elavult)*
+### `company_bank_accounts`
 
-> Korábbi egyrekordos beállítási tábla. Helyette a `company_email_accounts` használandó.
+> Cég saját forint és deviza bankszámlái kimenő és bejövő utalásokhoz és bizonylatgeneráláshoz.
 
-**RLS:** ✅ | **Sorok:** 0 (Deprecated)
+**RLS:** ✅ | **Sorok:** Dinamikus
 
-**FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `company_id` | uuid | — | — | FK → `companies.id` (CASCADE) |
+| `bank_name` | text | — | — | Bank megnevezése (pl. OTP, K&H, Erste) |
+| `account_number` | text | — | — | Bankszámlaszám / IBAN |
+| `currency` | text | — | `'HUF'` | Számla devizaneme |
+| `created_at` | timestamp with time zone | — | `now()` | Létrehozás ideje |
+| `updated_at` | timestamp with time zone | — | `now()` | Módosítás ideje |
 
+**FK:** `company_id` → `companies.id (ON DELETE CASCADE)`
 
+**Indexek:** `company_bank_accounts_pkey`
 
 ---
 

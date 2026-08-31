@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-08-29  
-> **Összesen:** 55 döntés | ✅ Decided: 53 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-08-31  
+> **Összesen:** 67 döntés | ✅ Decided: 65 | ⛔ Superseded: 2
 
 ---
 
@@ -30,7 +30,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
-| A-005 | Edge Functions (Deno) — 50 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
+| A-005 | Edge Functions (Deno) — 58 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
 | A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
 
 ## 🤖 AI & Feldolgozás
@@ -46,6 +46,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-035 | Háromirányú Szekvenciális Pipeline Átirányítás (Invoice ↔ Transaction ↔ Report) és Hibakezelés | ✅ Decided | [A-035](./A-035-three-way-fallback-redirection.md) |
 | A-039 | Transaction Matcher Performance Optimization (O(1) in-memory hash indexing) | ✅ Decided | [A-039](./A-039-transaction-matcher-performance-optimization.md) |
 | A-047 | Robust PDF Export Pipeline, Paired Image Resolution & eaisybill Brand Kontírozó Lap | ✅ Decided | [A-047](./A-047-pdf-export-enhancements-and-posting-slips.md) |
+| A-059 | Tranzakció Párosítási Mag & Moduláris UI Architektúra (TransactionMatchingCore) | ✅ Decided | [A-059](./A-059-transaction-matching-core-and-modular-ui.md) |
 
 ## 🔒 Biztonság & Auth
 
@@ -77,7 +78,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-016 | PostgreSQL query stratégia — 81 RPC function teljes katalógus | ✅ Decided | [A-016](./A-016-postgresql-query-strategy.md) |
+| A-016 | PostgreSQL query stratégia — ~90+ RPC function teljes katalógus | ✅ Decided | [A-016](./A-016-postgresql-query-strategy.md) |
 | A-022 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [A-022](./A-022-categories-projects-sync.md) |
 | A-036 | Pénztárbizonylat (Cash Voucher) Processing | ✅ Decided | [A-036](./A-036-penztarbizonylat-processing.md) |
 | A-037 | Jegyzetek Rendszer Architektúra (Notes System Architecture) | ✅ Decided | [A-037](./A-037-notes-architecture.md) |
@@ -85,18 +86,28 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-053 | Tárgyi Eszközök Projektekhez Rendelése (Fixed Assets Project Assignment) | ✅ Decided | [A-053](./A-053-fixed-assets-project-assignment.md) |
 | A-055 | Server-Side Invoice Query, KPI Aggregation & GIN Trigram Optimization | ✅ Decided | [A-055](./A-055-server-side-invoice-query-kpi-optimization.md) |
 | A-056 | pg_cron Storage Cleanup Guard & Edge Function Schema Alignment | ✅ Decided | [A-056](./A-056-pgcron-storage-cleanup-and-edge-function-guards.md) |
+| A-057 | Könyvelési Napló Rendszer Architektúra (Accounting Journals) | ✅ Decided | [A-057](./A-057-accounting-journals-architecture.md) |
+| A-058 | Banki Utalások és Csomagkészítés Architektúra (Bank Transfers) | ✅ Decided | [A-058](./A-058-bank-transfers-architecture.md) |
 
 ## 🖥️ Frontend
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-013 | Scoped URL routing + invoice filter query params | ✅ Decided | [A-013](./A-013-scoped-routing.md) |
-| A-014 | React Query cache stratégia | ✅ Decided | [A-014](./A-014-react-query-cache.md) |
+| A-014 | React Query cache stratégia (Modular Domain Registries & Dispatchers) | ✅ Decided | [A-014](./A-014-react-query-cache.md) |
 | A-027 | Partner Ranking & Treemap — NAV-only + külföldi partner + dátumszűrő logika | ✅ Decided | [A-027](./A-027-partner-ranking-treemap.md) |
 | A-029 | Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció | ✅ Decided | [A-029](./A-029-syncing-url-dialog-state.md) |
 | A-040 | Multi-Tab Auth Flow Isolation (sessionStorage és auth-token storage) | ✅ Decided | [A-040](./A-040-multi-tab-auth-flow-isolation.md) |
 | A-044 | Shared FilePreviewModal Utility — Egységes fájl előnézet | ✅ Decided | [A-044](./A-044-shared-file-preview-modal.md) |
 | A-054 | Szigorított NAV ↔ Beküldött Számla Összerendelés (Strict Invoice Pairing) | ✅ Decided | [A-054](./A-054-strict-nav-submitted-pairing.md) |
+| A-059 | TransactionMatchingCore & Moduláris UI Architektúra | ✅ Decided | [A-059](./A-059-transaction-matching-core-and-modular-ui.md) |
+| A-060 | Moduláris App Router & Platform Bootstrap Architektúra | ✅ Decided | [A-060](./A-060-modular-app-router-and-bootstrap-shell.md) |
+| A-062 | Számla Feature Szelet Modularizáció és Dekompozíció (`src/features/invoices`) | ✅ Decided | [A-062](./A-062-invoices-feature-slice-modularization.md) |
+| A-063 | Egységes DocumentEngine & Ports-and-Adapters Export Architektúra (`src/lib/documents`) | ✅ Decided | [A-063](./A-063-unified-document-engine-architecture.md) |
+| A-064 | Multi-Channel Document Upload Engine és Feature Szelet Modularizáció (`src/features/upload`) | ✅ Decided | [A-064](./A-064-multi-channel-upload-engine-modularization.md) |
+| A-065 | Invoice God Context Dekompozíció és Expanded Invoice Row Modularizáció | ✅ Decided | [A-065](./A-065-invoices-god-context-decomposition-and-expanded-row-modularization.md) |
+| A-066 | Management Route Access Control és NotFound Guard | ✅ Decided | [A-066](./A-066-management-route-access-control-and-not-found-guard.md) |
+| A-067 | Projects Oldal Lekérdezés Párhuzamosítás és Parciális Indexelés | ✅ Decided | [A-067](./A-067-projects-query-parallelization-and-partial-indexing.md) |
 
 ## 💳 Fizetés
 
@@ -122,5 +133,6 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-046 | LLM Költség Aggregáció Szerver-Oldali SECURITY DEFINER VOLATILE RPC-kkel | ✅ Decided | [A-046](./A-046-llm-cost-aggregation-server-side-rpc.md) |
 | A-048 | Számla Irány Felülbírálás (Invoice Direction Override) | ✅ Decided | [A-048](./A-048-invoice-direction-programmatic-override.md) |
 | A-050 | Server-Side Aggregation & N+1 Query Optimization | ✅ Decided | [A-050](./A-050-server-side-aggregation-and-n-plus-1-optimization.md) |
+| A-061 | Decomposing the Monolithic Super-Admin & Management Dashboard | ✅ Decided | [A-061](./A-061-decompose-management-dashboard.md) |
 
 

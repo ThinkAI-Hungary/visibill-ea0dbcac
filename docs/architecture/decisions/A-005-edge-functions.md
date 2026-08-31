@@ -2,21 +2,21 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-07-07
+**Utoljára frissítve:** 2026-08-31
 
 ## Context
 
-A rendszernek serverless logikára van szüksége: NAV API hívások, email küldés, webhook feldolgozás, PGMQ triggerelés. Ezek nem felelnek meg sem a frontend-nek (kliens oldali), sem a Python worker-nek (nehézsúlyú).
+A rendszernek serverless logikára van szüksége: NAV API hívások, email küldés, webhook feldolgozás, háttér kalkulációk, PGMQ triggerelés és push értesítések. Ezek nem felelnek meg sem a frontend-nek (kliens oldali), sem a Python worker-nek (nehézsúlyú aszinkron worker).
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — 54 deployed function + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — **58 deployed function** + `_shared/` közös kód.
 
-**Közös kód:** `_shared/` mappa — CORS headers, Supabase client, utility-k.
+**Közös kód:** `_shared/` mappa — CORS headers, Supabase client, error logging és utility-k.
 
 ---
 
-### Teljes Edge Function Katalógus
+### Teljes Edge Function Katalógus (58 db)
 
 #### 🏛️ NAV Integráció (7 db)
 
@@ -30,42 +30,35 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `query-nav-invoices` | ✅ | Bejövő NAV számlák lekérdezése (decrypt credentials → NAV API) |
 | `nav-tax-profile-sync` | ❌ | Adószám profil szinkronizáció NAV-ból |
 
-#### 📧 Email Küldés (8 db)
+#### 📧 Email Küldés & Riportok (10 db)
 
 | Function | JWT | Leírás |
 |----------|-----|---------|
-| `send-email` | ❌ | **Supabase Auth Hook** — Resend API-n keresztül küld emailt auth eventekre (recovery, email_change, magiclink). Signup típust **skipeli** (v147 óta) — a welcome email kezeli. |
-| `send-welcome-email` | ❌ | Regisztrációs üdvözlő email — a `handle_new_user` Postgres trigger hívja pg_net-en keresztül (nem a frontend). Custom `email_verify_token` alapú megerősítő linket tartalmaz. |
+| `send-email` | ❌ | **Supabase Auth Hook** — Resend API-n keresztül küld emailt auth eventekre (recovery, email_change, magiclink). Signup típust skipeli — a welcome email kezeli. |
+| `send-welcome-email` | ❌ | Regisztrációs üdvözlő email — a `handle_new_user` Postgres trigger hívja pg_net-en keresztül. Custom `email_verify_token` alapú megerősítő linket tartalmaz. |
 | `send-dunning-email` | ❌ | Fizetési felszólítás küldése |
 | `send-invoice-notification` | ✅ | Számla feldolgozás értesítés |
 | `send-notification-email` | ❌ | Általános értesítő email |
 | `send-weekly-summary` | ❌ | Heti összefoglaló email (cron) |
 | `send-monthly-summary` | ❌ | Havi összefoglaló email (cron) |
 | `send-accounty-email` | ❌ | eaisyBooks modul — hiányzó dokumentum értesítés |
+| `send-accounty-weekly-report` | ❌ | eaisyBooks heti összefoglaló riport küldése könyvelőknek |
+| `send-accounty-monthly-report` | ❌ | eaisyBooks havi összefoglaló riport küldése könyvelőknek |
 
-#### 📥 Email Fogadás (3 db)
+#### 📥 Email Fogadás & Saját Levelező (5 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
 | `process-mailgun-webhook` | ❌ | Bejövő email feldolgozás (Mailgun webhook → attachment → Storage → DB) |
 | `create-email-alias` | ✅ | Email alias létrehozása (cegnev@inbox.visibill.hu) |
 | `delete-email-alias` | ✅ | Email alias törlése |
-
-#### 📧 Saját Levelező Integráció (2 db)
-
-| Function | JWT | Leírás |
-|----------|-----|--------|
 | `test-email-connection` | ✅ | IMAP/SMTP kapcsolat tesztelése és hitelesítése Vault feloldással |
 | `delete-email-settings` | ✅ | Saját levelező beállítások és Vault titkok biztonságos törlése / leválasztása |
 
-#### ⚡ Trigger / Queue (6 db)
+#### ⚡ Queue & Export Generálás (2 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
-| `trigger-invoice-processing` | ✅ | Számla feldolgozás indítása → PGMQ enqueue |
-| `trigger-transaction-processing` | ✅ | Tranzakció feldolgozás indítása → PGMQ enqueue |
-| `trigger-bank-statement-processing` | ✅ | Bankkivonat feldolgozás indítása → PGMQ enqueue |
-| `trigger-salary-processing` | ❌ | Béradat feldolgozás indítása → PGMQ enqueue |
 | `trigger-nav-categorization` | ✅ | NAV számla GL kategorizálás indítása → PGMQ enqueue |
 | `generate-pdf-export` | ✅ | PDF export v13 — Auth + invoice query + job INSERT + PGMQ enqueue. Feldolgozás a Python Workerben (`pdf_export_processor.py`). |
 
@@ -76,7 +69,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `invite-user` | ❌ | Felhasználó meghívás (email + role assignment) |
 | `join-company` | ✅ | Meghívás elfogadása — céghez csatlakozás |
 | `validate-employee-token` | ❌ | Alkalmazotti token validáció (munkaóra app) |
-| `verify-email` | ❌ | Custom token alapú email megerősítés (v22+): `profiles.email_verified = true` ÉS `auth.users.email_confirmed_at = NOW()` (admin API). Így a Supabase "Confirm email" setting BE lehet kapcsolva. |
+| `verify-email` | ❌ | Custom token alapú email megerősítés: `profiles.email_verified = true` ÉS `auth.users.email_confirmed_at = NOW()` (admin API). |
 
 #### 🔑 NAV Credentials (2 db)
 
@@ -85,19 +78,23 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `save-credentials` | ❌ | NAV API credentials titkosított mentése (AES-256-GCM → `save_nav_credentials` RPC) |
 | `delete-nav-credentials` | ✅ | NAV API credentials törlése |
 
-#### 📱 Accounty Modul (11 db)
+#### 📱 eaisyBooks / Accounty Modul (15 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
 | `accounty-seed` | ❌ | Accounty adatok inicializálása céghez |
-| `accounty-detect-missing` | ❌ | Hiányzó dokumentumok detektálása (cron). Talált hiányokról email értesítést küld a hozzárendelt könyvelőknek ÉS az ügyfél kapcsolattartónak (`send-accounty-notification`, dual-mode). |
+| `accounty-detect-missing` | ❌ | Hiányzó dokumentumok detektálása (cron). Talált hiányokról email értesítést küld (`send-accounty-notification`). |
 | `accounty-detect-bank` | ❌ | Hiányzó bankkivonatok detektálása (cron) |
 | `accounty-generate-deadlines` | ❌ | Kötelezettségek határidő generálás (cron) |
+| `accounty-check-deadlines` | ❌ | Közeledő és lejárt adóügyi határidők ellenőrzése és riasztások küldése |
+| `accounty-generate-xml` | ❌ | NAV 08/SZJA/ÁFA bevallás XML állományok generálása |
 | `accounty-ai-phone` | ❌ | AI-alapú telefonos asszisztens (hívás fogadás) |
 | `accounty-ai-chat` | ❌ | AI chat asszisztens az eaisyBooks modulhoz |
-| `send-accounty-notification` | ❌ | eaisyBooks email értesítés — dual-mode: (A) könyvelő: `accounty_email_preferences` opt-in check, (B) ügyfél: `recipient_type='client_contact'` + kék template (`wrapClientHtml`). Aszinkron meghívja a `send-web-push`-t is. Resend API (`info@mail.visibill.hu`). Log: `outgoing_emails`. (A-030) |
-| `send-web-push` | ❌ | eaisyBooks Web Push értesítés kiküldése. Ellenőrzi az `accounty_push_preferences` táblát, lekéri az aktív eszközöket az `accounty_push_subscriptions` táblából, és VAPID kulcsokkal push-t küld. |
-| `send-accounty-digest` | ❌ | Napi/heti Digest email kiküldése a könyvelőknek. Óránként indul, és elvégzi a szűrést (`accounty_email_preferences`), majd Resend API-val kiküldi az összefoglalót a kért modulokkal (A-034). |
+| `accounty-ai-categorize` | ❌ | eaisyBooks számlák és tételek intelligens AI kategorizálása |
+| `accounty-ai-depreciation` | ❌ | Tárgyi eszközök automatikus értékcsökkenés AI számítása |
+| `send-accounty-notification` | ❌ | eaisyBooks email értesítés — dual-mode: könyvelő és ügyfél kapcsolattartó. |
+| `send-web-push` | ❌ | eaisyBooks Web Push értesítés kiküldése VAPID kulcsokkal. |
+| `send-accounty-digest` | ❌ | Napi/heti Digest email kiküldése a könyvelőknek (óránkénti cron). |
 | `validate-partner-code` | ❌ | Meghívó kód (share_token) read-only validáció — cég adatok visszaadása |
 | `join-company-as-accountant` | ❌ | Meghívó kód → `accounty_assignments` INSERT (könyvelő hozzárendelés) |
 
@@ -108,46 +105,36 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `nylas-auth` | ✅ | Nylas OAuth flow indítása |
 | `nylas-callback` | ❌ | Nylas OAuth callback kezelése |
 
-#### 💳 Fizetés / Subscription — ⛔ Teljes mértékben eltávolítva (A-015)
-
-| Function | JWT | Leírás | Státusz |
-|----------|-----|--------|---------|
-| `check-subscription` | — | Előfizetés ellenőrzése | ⛔ **Eltávolítva** — nem létezik a `supabase/functions/` könyvtárban |
-| `check-subscription-status` | — | Előfizetési státusz lekérdezés | ⛔ **Eltávolítva** — nem létezik a `supabase/functions/` könyvtárban |
-| `create-checkout` | ✅ | Stripe checkout session | ⛔ Legacy (A-015) |
-| `customer-portal` | ✅ | Stripe customer portal | ⛔ Legacy (A-015) |
-
-#### 🛠️ Management & Egyéb (6 db)
+#### 🛠️ Management & Üzemeltetés (7 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
-| `management-stats` | ❌ | Management dashboard — 14 action (overview, company/user detail, permissions, files+bulk status update, errors CRUD+retry, superadmin 27 modul). Worker-status action: cross-project containers, queues (PGMQ), active_processing (invoice_uploads + transaction_uploads `processing_status='processing'`), error count (`processing_status='error'`). Oszlop-kompatibilis (VSWEB hiányzó oszlopok kezelése). Service_role auth. |
-| `impersonate-company` | ✅ | Support Admin impersonation flow (start/stop). Kezeli az ideiglenes `accounty_assignments` sorok beillesztését és törlését az ügyfelekhez. (Lásd: A-026) |
-| `create-management-user` | — | ⛔ **Eltávolítva** — nincs meg a `supabase/functions/` könyvtárban |
+| `management-stats` | ❌ | Management dashboard — 14 action (áttekintés, cég/user adatok, jogosultságok, hibakezelés, worker állapot). |
+| `impersonate-company` | ✅ | Support Admin impersonation flow (start/stop) az ideiglenes hozzáféréshez. |
 | `export-user-data` | ✅ | GDPR adatexport — felhasználó összes adata ZIP-ben |
 | `get-invoice-image-url` | ❌ | Számla kép signed URL generálása (Storage) |
 | `check-missing-invoices` | ❌ | Hiányzó számlák ellenőrzése (cron) |
 | `check-payment-deadlines` | ❌ | Fizetési határidők ellenőrzése (cron) |
-| `sandbox-storage-cleanup` | ❌ | SANDBOX cég mock számlaképek törlése Storage-ból + DB melleklet_url NULL-ra. Admin-only (`x-admin-secret` header). Dry-run mód támogatott. |
+| `sandbox-storage-cleanup` | ❌ | SANDBOX cég mock számlaképek törlése Storage-ból. |
 
 #### 🔌 External API (1 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
-| `openclaw-api` | ❌ | Read-only REST API külső integrációkhoz (OpenClaw). Saját API key auth (SHA-256 hash, `api_keys` tábla). 4 action: `help`, `list-tables`, `schema`, `query`. 120+ tábla olvasható, 6 szenzitív tábla blokkolva. Rate limiting (100 req/perc/kulcs). |
+| `openclaw-api` | ❌ | Read-only REST API külső integrációkhoz (OpenClaw). Saját API key auth (SHA-256 hash, `api_keys` tábla). |
 
-#### 🗓️ Egyéb / Cron (2 db)
+#### 🗓️ MNB & Jogi Frissítések (2 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
 | `fetch-mnb-rates` | ❌ | MNB SOAP API → `daily_exchange_rates` tábla upsert (cron + dashboard auto-trigger) |
 | `fetch-legal-updates` | ❌ | Jogi frissítések letöltése (cron) |
 
-#### 🚚 Szállitmányozás / HRTSPED (1 db)
+#### 🚚 Szállítmányozás / HRTSPED (1 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
-| `shipment-retroactive-match` | ❌ | DR-031: Retroaktív shipment↔invoice párosítás invoice-first életciklushöz. A `ShipmentImportPage` hívja Excel import után (1 POST/import). Tábla: `shipment_matches`, `invoices`, `transport_documents`, `shipments`. 90 napos ablak. Service_role auth. |
+| `shipment-retroactive-match` | ❌ | Retroaktív shipment↔invoice párosítás Excel import után. |
 
 ---
 
@@ -155,15 +142,8 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 | JWT beállítás | Darabszám | Mikor |
 |---|---|---|
-| `verify_jwt: true` | 17 | Frontend-ből közvetlenül hívott function-ök |
-| `verify_jwt: false` | 33 | Webhook-ok, cron jobok, más EF-ek által hívottak, service_role auth, API key auth |
-
-**Megjegyzés:** `verify_jwt: false` nem jelent védtelenséget — ezek a function-ök saját auth-ot implementálnak:
-- Webhook-ok: HMAC signature verification (Mailgun)
-- Cron jobok: Supabase Cron scheduler hívja (internal)
-- Service role: `SUPABASE_SERVICE_ROLE_KEY` env var-ral autentikál
-- Nylas callback: OAuth state validation
-- API key auth: `openclaw-api` — SHA-256 hash lookup az `api_keys` táblából, saját rate limiting
+| `verify_jwt: true` | 13 | Frontend-ből közvetlenül, bejelentkezett felhasználói JWT-vel hívott function-ök |
+| `verify_jwt: false` | 45 | Webhook-ok, cron jobok, belső hívások, service_role auth, API key auth, magic link tokenek |
 
 ---
 
@@ -171,22 +151,17 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 **Pozitív:**
 - Gyors cold start (Deno, ~50ms)
-- Nincs szerver karbantartás — Supabase kezeli
-- Natív Supabase integráció (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` env vars)
-- A functions verziókezelve vannak a repo-ban (`supabase/functions/`)
+- Teljes szervermentes üzemeltetés a Supabase platformon.
+- Verziókezelt forráskód a `supabase/functions/` könyvtárban.
 
 **Negatív:**
-- Deno runtime — npm csomagok korlátozott támogatása (`esm.sh` wrapper szükséges)
-- 60s timeout (hosszú NAV API hívások közel a limithez)
-- Nincs lokális hibakeresés (Supabase CLI `serve` korlátozottan működik)
-- 49 function karbantartása nehézkes — a legacy Stripe EF-ek konszolidálhatók
+- 60s végrehajtási időkorlát (a nehéz számítások a Python workerbe kerültek).
 
 ## Kapcsolódó
 - [A-011: Mailgun Email Processing](./A-011-email-processing.md)
 - [A-012: NAV Integration](./A-012-nav-integration.md)
 - [A-010: Credential Encryption](./A-010-credential-encryption.md)
-- [A-015: Stripe Removal](./A-015-stripe-removal.md) (legacy EF-ek)
 - [A-019: Management Dashboard](./A-019-management-dashboard.md)
-- [A-021: Email Auth Flow Redesign](./A-021-email-auth-flow-redesign.md) (send-email hook, verify-email, signup single email)
 - [A-030: Accounty Email Notification Architecture](./A-030-accounty-email-notifications.md)
 - [A-034: Accounty Digest Emails](./A-034-accounty-digest-emails.md)
+- [A-052: Multi-Profile Email Accounts](./A-052-multi-profile-email-accounts-vault-integration.md)

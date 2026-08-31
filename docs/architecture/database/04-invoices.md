@@ -95,10 +95,12 @@
 | gross_amount | numeric | ✓ |  |
 | product_code | text | ✓ |  |
 | gl_classifications | jsonb | ✓ | `'{}'::jsonb` |
+| project_id | uuid | ✓ | NULL |
+| notes | text | ✓ | NULL |
 | created_at | timestamp with time zone | ✓ | `now()` |
 | exclude_from_accounting | boolean | — | `false` |
 
-**FK:** `invoice_id` → `invoices.id`
+**FK:** `invoice_id` → `invoices.id`, `project_id` → `projects.id`
 
 **Indexek:** `idx_invoice_items_invoice_id`
 

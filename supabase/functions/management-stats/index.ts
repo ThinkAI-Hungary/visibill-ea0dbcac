@@ -3217,7 +3217,7 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
         .from("llm_koltsegek")
         .select("id, created_at, pipeline, file_name, company_id, model_name, total_tokens, estimated_cost_usd, processing_duration_ms, worker_id, upload_id")
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(200);
       if (periodSince) recentQuery = recentQuery.gte("created_at", periodSince);
       const { data } = await recentQuery;
 
@@ -3315,41 +3315,67 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
             uploadSourceMap.set(u.id, "report_uploads");
           }
         } catch (_) {}
+
+        // Query gl_upload_notifications
+        try {
+          const { data: glUploads } = await pc.client
+            .from("gl_upload_notifications")
+            .select("id, processing_status, error_message")
+            .in("id", uploadIds);
+          for (const u of (glUploads || [])) {
+            const hasError = u.processing_status === "error" || u.processing_status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            uploadSourceMap.set(u.id, "gl_upload_notifications");
+          }
+        } catch (_) {}
+
+        // Query accounty_uploads
+        try {
+          const { data: accUploads } = await pc.client
+            .from("accounty_uploads")
+            .select("id, status, error_message, file_path")
+            .in("id", uploadIds);
+          for (const u of (accUploads || [])) {
+            const hasError = u.status === "error" || u.status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            if (u.file_path) uploadUrlMap.set(u.id, u.file_path);
+            uploadSourceMap.set(u.id, "accounty_uploads");
+          }
+        } catch (_) {}
       }
 
-      return (data || [])
-        .map((r: any) => {
-          const llm = r.upload_id ? llmDetailsMap.get(r.upload_id) : null;
-          return {
-            id: r.id,
-            created_at: r.created_at,
-            pipeline: r.pipeline,
-            file_name: r.file_name,
-            company_name: companyNameMap.get(r.company_id) || null,
-            model_name: r.model_name,
-            total_tokens: r.total_tokens || 0,
-            estimated_cost_usd: llm ? llm.cost : (parseFloat(r.estimated_cost_usd) || 0),
-            processing_duration_ms: llm ? llm.duration : (r.processing_duration_ms || 0),
-            worker_id: r.worker_id || `worker-${pc.name.toLowerCase()}`,
-            project: pc.name,
-            upload_id: r.upload_id || null,
-            status: r.upload_id ? (uploadStatusMap.get(r.upload_id) || "OK") : "OK",
-            file_url: r.upload_id ? (uploadUrlMap.get(r.upload_id) || null) : null,
-            source: r.upload_id ? (uploadSourceMap.get(r.upload_id) || null) : null,
-          };
-        })
-        .filter((r: any) => !r.upload_id || r.source !== null);
+      return (data || []).map((r: any) => {
+        const llm = r.upload_id ? llmDetailsMap.get(r.upload_id) : null;
+        const resolvedSource = r.upload_id ? (uploadSourceMap.get(r.upload_id) || r.pipeline || "upload") : (r.pipeline || "direct");
+        return {
+          id: r.id,
+          created_at: r.created_at,
+          pipeline: r.pipeline,
+          file_name: r.file_name,
+          company_name: companyNameMap.get(r.company_id) || null,
+          model_name: r.model_name,
+          total_tokens: r.total_tokens || 0,
+          estimated_cost_usd: llm ? llm.cost : (parseFloat(r.estimated_cost_usd) || 0),
+          processing_duration_ms: llm ? llm.duration : (r.processing_duration_ms || 0),
+          worker_id: r.worker_id || `worker-${pc.name.toLowerCase()}`,
+          project: pc.name,
+          upload_id: r.upload_id || null,
+          status: r.upload_id ? (uploadStatusMap.get(r.upload_id) || "OK") : "OK",
+          file_url: r.upload_id ? (uploadUrlMap.get(r.upload_id) || null) : null,
+          source: resolvedSource,
+        };
+      });
     } catch (e) {
       return [];
     }
   });
   const recentResults = await Promise.all(recentFetches);
-  // Keep top 20 per project so every container always has recent jobs
+  // Keep top 100 per project so every container always has recent jobs
   const raw_recent_jobs = recentResults
     .map(projectJobs => 
       projectJobs
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 20)
+        .slice(0, 100)
     )
     .flat()
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

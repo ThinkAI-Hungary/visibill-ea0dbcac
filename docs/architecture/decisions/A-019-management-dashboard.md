@@ -23,13 +23,14 @@ management-stats Edge Function
     ↓ JSON response
 ```
 
-### Hozzáférés-védelem (5 réteg)
+### Hozzáférés-védelem (6 réteg)
 
 1. **`useAppReady()`:** Profile query-ból felismeri a `management`/`thinkai` role-t → `redirectTarget = 'management'`
 2. **`ProtectedLayout`:** A `/` és scoped route-okból azonnal `<Navigate to="/management">` — sidebar nem renderel
 3. **`ProtectedRoute`:** A `/accounty` és bármely más route-ból is redirect — `isPending` alatt `null`-t renderel (zero-flash guard)
-4. **Edge Function JWT:** `admin.auth.getUser(token)` — érvényes JWT token szükséges
-5. **Role check:** `profiles.role` = `'management'` vagy `'thinkai'` — csak ezekkel a role-okkal rendelkező user kaphat adatot
+4. **`ManagementRoute` Guard (`src/routes/authRoutes.tsx`):** Ha nem-management felhasználó keresi fel a `/management` route-ot, azonnal a `<NotFound />` (404) hibaoldalt kapja, megelőzve az információszivárgást és a bundle letöltést (részletek: [A-066](./A-066-management-route-access-control-and-not-found-guard.md))
+5. **Edge Function JWT:** `admin.auth.getUser(token)` — érvényes JWT token szükséges
+6. **Role check:** `profiles.role` = `'management'` vagy `'thinkai'` — csak ezekkel a role-okkal rendelkező user kaphat adatot
 
 ```typescript
 // Edge Function: management-stats/index.ts

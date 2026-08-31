@@ -93,6 +93,14 @@ Ha a funkció új felületi elemet (dialógus, táblázat, modal, gomb, badge, s
 | `docs/design/06-state-management.md` | Context-ek, React Query, URL state |
 | `docs/design/12-dialogs-modals.md` | Async Modal UX (API → await refetch → close → toast) |
 
+### 1.4b KÖTELEZŐ: Vercel React Best Practices & Composition Minták Betöltése
+Ha a tervezett funkció bármilyen React frontend kódot érint (komponensek, oldalak, hookok, állapotkezelés, modálok):
+- **KÖTELEZŐ beolvasni a `vercel-react-best-practices` skillt:**  
+  `view_file C:\Users\Morfi\.gemini\config\skills\react-best-practices\SKILL.md`
+- **KÖTELEZŐ beolvasni a `vercel-composition-patterns` skillt:**  
+  `view_file C:\Users\Morfi\.gemini\config\skills\composition-patterns\SKILL.md`
+- Ennek mentén tervezendő a renderelési teljesítmény (felesleges re-renderek kizárása, memoizáció, stabil hook dependencyk) és a tiszta kompozíció (anti-boolean prop explosion, explicit variánsok, compound components).
+
 ---
 
 ## FÁZIS 2: Döntési Mátrix
@@ -134,7 +142,7 @@ Készíts egy **teljes döntési mátrixot** — minden döntéspontot listázz 
 > Mielőtt a Fő Agens a felhasználó elé tárná a Döntési Mátrixot és a tervet, **köteles elindítani egy Spec Reviewer Subagentet egy tiszta kontextusban**.
 
 ### 2.1.1 Spec Reviewer Mandátum
-A Spec Reviewer feladata, hogy független, kritikus szemmel átvizsgálja a Fő Agens által készített tervet az alábbi 5 dimenzióban:
+A Spec Reviewer feladata, hogy független, kritikus szemmel átvizsgálja a Fő Agens által készített tervet az alábbi 6 dimenzióban:
 
 1. **ADR & Architektúra Konzisztencia:**
    - Nem sérti-e meg az A-003 (Multi-tenancy `company_id` RLS), A-009 (RBAC szerepkörök), A-005 (Edge Functions) előírásait?
@@ -145,7 +153,10 @@ A Spec Reviewer feladata, hogy független, kritikus szemmel átvizsgálja a Fő 
    - N+1 query kockázat vagy kliens-oldali szűrés nagy adathalmazon?
 4. **Biztonság & Multi-tenancy (STRIDE check):**
    - Garantált-e, hogy egyetlen cég adata sem szivároghat át egy másikhoz?
-5. **Dekompozíciós megfelelőség:**
+5. **Vercel React & Composition Minőség:**
+   - Nincs-e re-render kockázat vagy felesleges state duplikáció?
+   - Tiszta kompozíciós mintákat követ-e a komponenshierarchia (anti-boolean prop explosion)?
+6. **Dekompozíciós megfelelőség:**
    - Elég atomiak-e a micro-modulok? Van-e egy lépésben túl sok fájl?
 
 ### 2.1.2 Spec Reviewer Integráció
@@ -214,6 +225,11 @@ Az Orchestrator az egymástól független micro-modulok implementálására **eg
 - [pontos fájl elérési utak]
 ### Meglévő pattern-ek (KÖTELEZŐ követni)
 - [hivatkozott design és hook pattern-ek]
+- **React Frontend moduloknál KÖTELEZŐ betölteni & követni:**
+  - `vercel-react-best-practices` (`view_file C:\Users\Morfi\.gemini\config\skills\react-best-practices\SKILL.md`)
+  - `vercel-composition-patterns` (`view_file C:\Users\Morfi\.gemini\config\skills\composition-patterns\SKILL.md`)
+  - *Anti-Boolean Prop szabály:* Kerüld a sok boolean flaget, használj compound kompozíciót vagy explicit variánsokat.
+  - *Render Teljesítmény:* Memoizáld a callbackeket (`useCallback`), izoláld a gyorsan változó állapotokat.
 ### Verifikációs szerződés
 - BUILD: `npm run build` → SIKERES
 - SMOKE: [specifikus elvárás amit a Checker ellenőrizni fog]
@@ -227,8 +243,8 @@ A Checker független kontextusban fut, és az alábbi objektív bizonyítékokat
 |---|---|---|
 | **DB / Migration** | `execute_sql` lekérdezések futtatása | Tábla/oszlop létezik, index aktív, RLS tiltja az idegen `company_id`-t |
 | **RPC / Edge Function** | `curl` vagy `supabase functions invoke` | 200 státusz + NEM üres, valid JSON válasz |
-| **React Hook** | Browser / Node környezet ellenőrzés | Hook nem `undefined`/üres tömböt ad, ha van adat az adatbázisban |
-| **UI Komponens / Oldal** | **Browser Subagent** (`http://localhost:5173`) | **Screenshot készül:** az elem tényleges adattal renderelődik (nem skeleton), 0 db console error |
+| **React Hook** | Browser / Node környezet ellenőrzés | Hook nem `undefined`/üres tömböt ad, ha van adat az adatbázisban; stabil dependencyk (nincs loop) |
+| **UI Komponens / Oldal** | **Browser Subagent** (`http://localhost:5173`) + Kód Ellenőrzés | **Screenshot készül:** az elem tényleges adattal renderelődik (nem skeleton), 0 db console error, nincs felesleges re-render vagy boolean prop proliferáció |
 
 ### 3.3 Retry Loop — Új Sub-Agent Tanulságokkal
 

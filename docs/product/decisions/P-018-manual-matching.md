@@ -24,3 +24,7 @@
 
 **Rationale:** Stabil és auditálható megoldás. A deviza-tudatos összehasonlítás megoldja az EUR/USD tranzakciók helyes párosítását. A minimum 10 tétel biztosítja, hogy a felhasználó soha ne lásson üres listát, ami félrevezető volt. A debounced keresés és fix spinner pozíció megszünteti a gépelés közbeni villódzást.
 
+## Kapcsolódó
+- [A-059: TransactionMatchingCore & Moduláris UI Architektúra](../../architecture/decisions/A-059-transaction-matching-core-and-modular-ui.md)
+- [P-017: AI Párosítás & Kapcsolódó Tranzakciók Megjelenítése](./P-017-matching-display.md)
+

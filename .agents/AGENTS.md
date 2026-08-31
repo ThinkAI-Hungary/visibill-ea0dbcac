@@ -47,3 +47,4 @@ Minden fejlesztési feladatot egy szigorú, komplexitás alapú eszkalációs fo
 ### 5. React Frontend Fejlesztés (React Frontend Development)
 * **Kötelező:** Bármilyen olyan feladatnál, ami **React frontend kódhoz nyúl** (komponensek, oldalak, hookok, állapotkezelés, styling):
   * **Kötelező** betölteni és követni a **`vercel-react-best-practices`** ([react-best-practices/SKILL.md](file:///C:/Users/Morfi/.gemini/config/skills/react-best-practices/SKILL.md)) skillben található Vercel és React best practices irányelveket (különös tekintettel a felesleges re-renderelések megelőzésére, a helyes state management-re és a teljesítmény-optimalizációra).
+  * **Kötelező** betölteni és követni a **`vercel-composition-patterns`** ([composition-patterns/SKILL.md](file:///C:/Users/Morfi/.gemini/config/skills/composition-patterns/SKILL.md)) skillt (különös tekintettel az anti-boolean prop explosion szabályra, a compound komponensekre és a tiszta provider architektúrára).

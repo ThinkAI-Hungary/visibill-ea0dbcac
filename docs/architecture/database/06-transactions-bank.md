@@ -2,7 +2,7 @@
 
 > Banki tranzakciók, számla-tranzakció párosítás, bankkivonatok, SZÉP kártya.
 
-**Táblák ebben a csoportban:** 8
+**Táblák ebben a csoportban:** 10
 
 ---
 
@@ -235,6 +235,54 @@
 **FK:** `company_id` → `companies.id`, `upload_id` → `transaction_uploads.id`
 
 **Indexek:** `idx_szep_company_date`, `idx_szep_issuer_bank`, `idx_szep_sub_account`, `idx_szep_unique_transaction`, `idx_szep_upload`
+
+---
+
+### `payment_transfers`
+
+> Kifizetésre előkészített és banki export állományba (GIRO/SEPA/OTP) gyűjtött utalási tételek.
+
+**RLS:** ✅ | **Sorok:** Dinamikus
+
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `company_id` | uuid | — | — | FK → `companies.id` (CASCADE) |
+| `bank_account_id` | uuid | ✓ | NULL | FK → `company_bank_accounts.id` (Indító bankszámla) |
+| `partner_name` | text | — | — | Kedvezményezett neve |
+| `partner_account` | text | — | — | Kedvezményezett bankszámlaszáma / IBAN |
+| `amount` | decimal(15,2) | — | — | Átutalandó összeg |
+| `currency` | text | — | `'HUF'` | Utalás devizaneme |
+| `narrative` | text | ✓ | NULL | Átutalási közlemény |
+| `invoice_ids` | uuid[] | — | — | Hivatkozott számlák azonosítói |
+| `invoice_sources` | text[] | — | — | Számla források (`'nav'`, `'manual'`) |
+| `status` | text | — | `'pending'` | Státusz: `'pending'`, `'sent'`, `'matched'` |
+| `matched_transaction_id` | uuid | ✓ | NULL | FK → `transactions.id` (Beérkezett banki tétel) |
+| `created_at` | timestamp with time zone | — | `now()` | Létrehozás ideje |
+| `updated_at` | timestamp with time zone | — | `now()` | Módosítás ideje |
+
+**FK:** `bank_account_id` → `company_bank_accounts.id`, `company_id` → `companies.id`, `matched_transaction_id` → `transactions.id`
+
+---
+
+### `transaction_rules`
+
+> Automatikus tranzakció-kategorizálási és partner-felismerési szabályok.
+
+**RLS:** ✅ | **Sorok:** Dinamikus
+
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `company_id` | uuid | — | — | FK → `companies.id` (CASCADE) |
+| `pattern` | text | — | — | Keresési minta (leírásban vagy partnerben) |
+| `match_field` | text | — | `'description'` | Mező: `'description'`, `'partner_name'` |
+| `gl_account_id` | uuid | ✓ | NULL | FK → `gl_accounts.id` |
+| `category_id` | uuid | ✓ | NULL | FK → `categories.id` |
+| `is_active` | boolean | — | `true` | Aktív-e a szabály |
+| `created_at` | timestamp with time zone | — | `now()` | Létrehozás ideje |
+
+**FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`
 
 ---
 

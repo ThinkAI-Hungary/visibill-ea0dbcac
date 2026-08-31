@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
+import { invalidateTransactionQueries } from '@/lib/cache';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -253,8 +254,9 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
   const handleSync = useCallback(async () => {
     setSyncing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ['transactions', selectedCompany?.id || ''] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.transactionFilterOptions(selectedCompany?.id || '') });
+      if (selectedCompany?.id) {
+        await invalidateTransactionQueries(queryClient, selectedCompany.id);
+      }
       toast({ title: 'Tranzakciók frissítve!' });
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'useTransactionData', action: 'error', message: 'Sync error:', error: error });
@@ -307,8 +309,7 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
         .in('id', ids)
         .eq('company_id', selectedCompany.id);
       if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['transactions', selectedCompany.id] });
-      await queryClient.invalidateQueries({ queryKey: ['tx-kpis', selectedCompany.id] });
+      await invalidateTransactionQueries(queryClient, selectedCompany.id);
       await queryClient.invalidateQueries({ queryKey: ['tx-duplicates', selectedCompany.id] });
       const label = matchType === 'no_match_category' ? 'Rendezettnek jelölve' : 'Nincs számla jelölés';
       toast({ title: `${ids.length} tranzakció frissítve`, description: label });

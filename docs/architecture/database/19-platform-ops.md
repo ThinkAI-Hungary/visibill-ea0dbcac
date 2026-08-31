@@ -2,7 +2,7 @@
 
 > Hibalogok, audit trail, LLM költségek, API kulcsok, email aliasok, devizaárfolyamok, visszajelzések.
 
-**Táblák ebben a csoportban:** 9
+**Táblák ebben a csoportban:** 10
 
 ---
 
@@ -241,6 +241,33 @@
 **FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`
 
 **Indexek:** `idx_dunning_sends_company_id`, `idx_dunning_sends_user_id`
+
+---
+
+### `pdf_export_jobs`
+
+> Aszinkron PDF számlakép és kontírozó lap export generálási feladatok és letöltési linkek nyilvántartása (24 órás lejárattal és pg_cron automatikus törléssel).
+
+**RLS:** ✅ | **Sorok:** Dinamikus
+
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs (job ID) |
+| `company_id` | uuid | — | — | FK → `companies.id` (CASCADE) |
+| `user_id` | uuid | — | — | FK → `auth.users.id` |
+| `status` | text | — | `'pending'` | Státusz: `'pending'`, `'processing'`, `'completed'`, `'failed'` |
+| `total_invoices` | integer | — | `0` | Exportálandó számlák darabszáma |
+| `processed_invoices` | integer | — | `0` | Már feldolgozott számlák darabszáma |
+| `file_url` | text | ✓ | NULL | Generált ZIP/PDF letöltési URL |
+| `file_size_bytes` | bigint | ✓ | NULL | Fájl mérete bájtokban |
+| `error_message` | text | ✓ | NULL | Hibaüzenet sikertelenség esetén |
+| `include_posting_slip` | boolean | — | `false` | Kontírozó lap generálása bekapcsolva |
+| `created_at` | timestamp with time zone | — | `now()` | Job indításának ideje |
+| `completed_at` | timestamp with time zone | ✓ | NULL | Job befejezésének ideje |
+
+**FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`
+
+**Indexek:** `idx_pdf_export_jobs_company_user`, `idx_pdf_export_jobs_status`
 
 ---
 

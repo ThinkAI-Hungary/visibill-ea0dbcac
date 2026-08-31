@@ -88,28 +88,56 @@ src/
 │   ├── ErrorBoundary.tsx       # ❌ Hibakezelő boundary
 │   └── ...                     # Egyéb standalone komponensek
 │
-├── pages/                      # 📄 28 lazy-loaded page komponens
+├── features/                   # 🎯 Domain-Driven Feature Szeletek
+│   └── invoices/               #    Számla kezelés teljes dekomponált feature szelete
+│       ├── types/              #       Domain típusok, tab slugok, navigáció
+│       ├── context/            #       InvoiceContext & useInvoiceContext compound provider
+│       ├── utils/              #       invoiceRelations reláció & matching segédfüggvények
+│       ├── components/         #       header, filters, table, actions, dialogs almodulok
+│       ├── InvoicesFeature.tsx #       Feature orchestrator nézet
+│       └── index.ts            #       Publikus barrel export
+│
+├── routes/                     # 🛣️ Moduláris Route Konfiguráció
+│   ├── eaisybillRoutes.tsx     #    eaisybill alapútvonalak
+│   ├── accountyRoutes.tsx      #    eaisyBooks / könyvelési útvonalak
+│   ├── adminRoutes.tsx         #    Management és Superadmin útvonalak
+│   └── publicRoutes.tsx        #    Publikus és auth útvonalak
+│
+├── app/                        # 🚀 Platform Bootstrap Shell
+│   └── AppProviders.tsx        #    Központi Provider hierarchia
+│
+├── pages/                      # 📄 60+ lazy-loaded page komponens (eaisybill + eaisybooks)
 │   ├── Index.tsx               #    Dashboard
-│   ├── Auth.tsx                #    Bejelentkezés (65KB!)
-│   ├── InvoicesPage.tsx        #    Számlák (80KB - legnagyobb)
-│   ├── ManualUpload.tsx        #    Feltöltés (65KB)
+│   ├── Auth.tsx                #    Bejelentkezés
+│   ├── InvoicesPage.tsx        #    Számlák (vékony 18 soros facade -> InvoicesFeature)
+│   ├── ManualUpload.tsx        #    Feltöltés
+│   ├── TransfersPage.tsx       #    Banki utalások
+│   ├── JournalsPage.tsx        #    Könyvelési naplók
 │   └── ...
 │
-├── contexts/                   # 🌐 4 React Context
+├── contexts/                   # 🌐 4 Globális React Context
 │   ├── AuthContext.tsx          #    Autentikáció
 │   ├── CompanyContext.tsx       #    Cégválasztás
 │   ├── DateRangeContext.tsx     #    Globális dátumszűrő
 │   └── ThemeContext.tsx         #    Sötét/világos téma
 │
-├── hooks/                      # 🪝 31 custom hook
+├── hooks/                      # 🪝 55+ custom hook
 │   ├── useInvoiceData.ts       #    Számla adatok query
 │   ├── useTransactionData.ts   #    Tranzakció query
-│   ├── useDashboardData.ts     #    Dashboard KPI-k (26KB)
+│   ├── useDashboardData.ts     #    Dashboard KPI-k
 │   ├── useAppReady.ts          #    App inicializáció gate
 │   ├── useSessionGuard.ts      #    Session timeout
+│   ├── useEaisybillPermissions.ts # Moduláris jogosultságok
 │   └── ...
 │
-├── lib/                        # 📚 28 utility fájl
+├── lib/                        # 📚 Központi Utilities & Deep Modulok
+│   ├── documents/              #    📄 Egységes DocumentEngine (PDF, XML, XLSX, CSV, HTML Preview)
+│   │   ├── core/               #       types, DocumentEngine, libraryLoader, downloadHelper
+│   │   ├── encoding/           #       hungarianEncoding (Latin-1/Latin-2), xmlSanitizer (ÁNYK)
+│   │   ├── adapters/           #       PdfAdapter (jsPDF+autotable), XmlAdapter, SpreadsheetAdapter, HtmlPreviewAdapter
+│   │   └── templates/          #       Bérjegyzék, pénztárbizonylat, ÁFA bevallás, beszámoló, táblázat
+│   ├── cache/                  #    ⚡ Moduláris Query Keys és Cache Invalidators
+│   ├── matching/               #    🔄 TransactionMatchingCore és párosítási algoritmusok
 │   ├── navigation.ts           #    Scoped routing utilities
 │   ├── constants.ts            #    Storage key-ek
 │   ├── queryKeys.ts            #    React Query kulcsok

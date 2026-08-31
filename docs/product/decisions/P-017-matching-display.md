@@ -18,6 +18,7 @@
 - Részletek dialógusban megtekinthetők (`TransactionDetailsDialog.tsx`).
 
 ## Kapcsolódó
+- [A-059: TransactionMatchingCore & Moduláris UI Architektúra](../../architecture/decisions/A-059-transaction-matching-core-and-modular-ui.md)
 - [P-054: Scalable Server-Side Invoice Pagination & Page-Level Batch Matching UX](./P-054-server-side-invoice-pagination-and-kpi-filters-ux.md)
 - [A-014: React Query Cache Stratégia](../../architecture/decisions/A-014-react-query-cache.md)
 - [P-018: Manuális párosítás felülírás](./P-018-manual-matching.md)

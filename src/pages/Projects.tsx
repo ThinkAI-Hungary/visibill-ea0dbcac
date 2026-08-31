@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
@@ -30,7 +30,10 @@ import { useProjectLaborCosts } from '@/hooks/useProjectLaborCosts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { IconPicker, ColorPicker, resolveIcon } from '@/components/IconPicker';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ProjectFlowchart } from '@/components/ProjectFlowchart';
+
+const ProjectFlowchart = lazy(() =>
+  import('@/components/ProjectFlowchart').then(m => ({ default: m.ProjectFlowchart }))
+);
 
 const ProjectSkeleton = () => {
   return (
@@ -208,71 +211,79 @@ const Projects = () => {
   const { data: queryData, isLoading: initialLoading } = useQuery({
     queryKey: queryKeys.projects(selectedCompany?.id || ''),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('id, name, description, status, budget, start_date, end_date, project_type, project_code, client_name, company_id, user_id, created_at, updated_at, icon, color')
-        .eq('company_id', selectedCompany!.id)
-        .order('created_at', { ascending: false });
+      const PAGE_SIZE = 1000;
 
-      if (error) throw error;
-      const projectsList = (data || []).map(p => ({
+      // Parallelize fetching projects, directly assigned invoices, and line item assignments
+      const [projectsRes, directlyLinkedInvoices, lineItemAssignments] = await Promise.all([
+        supabase
+          .from('projects')
+          .select('id, name, description, status, budget, start_date, end_date, project_type, project_code, client_name, company_id, user_id, created_at, updated_at, icon, color')
+          .eq('company_id', selectedCompany!.id)
+          .order('created_at', { ascending: false }),
+
+        (async () => {
+          let directlyLinkedInvoices: any[] = [];
+          let invFrom = 0;
+          while (true) {
+            const { data: batch, error: invoiceError } = await supabase
+              .from('nav_invoices')
+              .select('id, invoice_number, supplier_name, customer_name, invoice_gross_amount, invoice_direction, currency, invoice_issue_date, project_id')
+              .eq('company_id', selectedCompany!.id)
+              .not('project_id', 'is', null)
+              .range(invFrom, invFrom + PAGE_SIZE - 1);
+
+            if (invoiceError) throw invoiceError;
+            directlyLinkedInvoices = directlyLinkedInvoices.concat(batch || []);
+            if (!batch || batch.length < PAGE_SIZE) break;
+            invFrom += PAGE_SIZE;
+          }
+          return directlyLinkedInvoices;
+        })(),
+
+        (async () => {
+          let lineItemAssignments: any[] = [];
+          let itemFrom = 0;
+          while (true) {
+            const { data: batch, error: itemsError } = await supabase
+              .from('nav_invoice_items')
+              .select(`
+                id,
+                project_id,
+                net_amount,
+                vat_amount,
+                gross_amount,
+                line_number,
+                line_description,
+                nav_invoices!inner(
+                  id,
+                  invoice_number,
+                  supplier_name,
+                  customer_name,
+                  invoice_gross_amount,
+                  invoice_direction,
+                  currency,
+                  invoice_issue_date,
+                  company_id
+                )
+              `)
+              .eq('nav_invoices.company_id', selectedCompany!.id)
+              .not('project_id', 'is', null)
+              .range(itemFrom, itemFrom + PAGE_SIZE - 1);
+
+            if (itemsError) throw itemsError;
+            lineItemAssignments = lineItemAssignments.concat(batch || []);
+            if (!batch || batch.length < PAGE_SIZE) break;
+            itemFrom += PAGE_SIZE;
+          }
+          return lineItemAssignments;
+        })()
+      ]);
+
+      if (projectsRes.error) throw projectsRes.error;
+      const projectsList = (projectsRes.data || []).map(p => ({
         ...p,
         project_type: p.project_type || 'one_time'
       })) as Project[];
-
-      // 1. Fetch detailed directly assigned invoices (bypasses 1000-row limit)
-      const PAGE_SIZE = 1000;
-      let directlyLinkedInvoices: any[] = [];
-      let invFrom = 0;
-      while (true) {
-        const { data: batch, error: invoiceError } = await supabase
-          .from('nav_invoices')
-          .select('id, invoice_number, supplier_name, customer_name, invoice_gross_amount, invoice_direction, currency, invoice_issue_date, project_id')
-          .eq('company_id', selectedCompany!.id)
-          .not('project_id', 'is', null)
-          .range(invFrom, invFrom + PAGE_SIZE - 1);
-
-        if (invoiceError) throw invoiceError;
-        directlyLinkedInvoices = directlyLinkedInvoices.concat(batch || []);
-        if (!batch || batch.length < PAGE_SIZE) break;
-        invFrom += PAGE_SIZE;
-      }
-
-      // 2. Fetch all line items with explicit project_id, along with their parent invoices
-      let lineItemAssignments: any[] = [];
-      let itemFrom = 0;
-      while (true) {
-        const { data: batch, error: itemsError } = await supabase
-          .from('nav_invoice_items')
-          .select(`
-            id,
-            project_id,
-            net_amount,
-            vat_amount,
-            gross_amount,
-            line_number,
-            line_description,
-            nav_invoices!inner(
-              id,
-              invoice_number,
-              supplier_name,
-              customer_name,
-              invoice_gross_amount,
-              invoice_direction,
-              currency,
-              invoice_issue_date,
-              company_id
-            )
-          `)
-          .eq('nav_invoices.company_id', selectedCompany!.id)
-          .not('project_id', 'is', null)
-          .range(itemFrom, itemFrom + PAGE_SIZE - 1);
-
-        if (itemsError) throw itemsError;
-        lineItemAssignments = lineItemAssignments.concat(batch || []);
-        if (!batch || batch.length < PAGE_SIZE) break;
-        itemFrom += PAGE_SIZE;
-      }
 
       // We will build a mapping of: projectId -> Map of invoiceId -> invoice details + portion amount
       const projectInvoicePortions = new Map<string, Map<string, {
@@ -738,10 +749,12 @@ const Projects = () => {
   if (selectedFlowchartProject) {
     return (
       <div className="container mx-auto px-4 py-8 page-animate">
-        <ProjectFlowchart
-          project={selectedFlowchartProject}
-          onBack={() => setSelectedFlowchartProject(null)}
-        />
+        <Suspense fallback={<ProjectSkeleton />}>
+          <ProjectFlowchart
+            project={selectedFlowchartProject}
+            onBack={() => setSelectedFlowchartProject(null)}
+          />
+        </Suspense>
       </div>
     );
   }

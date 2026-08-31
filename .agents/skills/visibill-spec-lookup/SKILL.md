@@ -245,6 +245,13 @@ npm run build
   - Ha UI érintett: releváns design doc frissítés
   - Ha route változott: `information-architecture.md` frissítés
 
+### ⚛️ React frontend érintettség (komponens, hook, modal, UI, layout)
+→ **KÖTELEZŐ: Olvasd be a React minőségi skilleket:**
+```
+view_file C:\Users\Morfi\.gemini\config\skills\react-best-practices\SKILL.md
+view_file C:\Users\Morfi\.gemini\config\skills\composition-patterns\SKILL.md
+```
+
 ### ⚠️ DB/SQL érintettség (migration, RPC, RLS, Edge Function query)
 → **KÖTELEZŐ: Olvasd be a `visibill-db-checklist` skillt:**
 ```

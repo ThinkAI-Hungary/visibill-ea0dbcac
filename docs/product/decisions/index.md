@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-08-29  
-> **Összesen:** 54 döntés | ✅ Decided: 50 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-08-31  
+> **Összesen:** 58 döntés | ✅ Decided: 54 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -33,6 +33,8 @@
 | P-045 | PDF Export UX & Banner viselkedés (auto-download, fallback, toast) | ✅ Decided | [P-045](./P-045-pdf-export-ux.md) |
 | P-046 | Pénztárbizonylatok feltöltési fül (vouchers tab + elkülönített upload) | ✅ Decided | [P-046](./P-046-penztarbizonylat-upload-ux.md) |
 | P-054 | Scalable Server-Side Invoice Pagination & KPI Card Filtering UX | ✅ Decided | [P-054](./P-054-server-side-invoice-pagination-and-kpi-filters-ux.md) |
+| P-057 | Számla Kezelő Moduláris Felület (Invoices Feature Slice) UX | ✅ Decided | [P-057](./P-057-invoices-feature-slice-ux.md) |
+| P-058 | Egységes Export & Dokumentumgeneráló Motor (DocumentEngine) UX | ✅ Decided | [P-058](./P-058-unified-document-engine-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 
@@ -143,3 +145,10 @@
 |---|--------|---------|------|
 | P-050 | Projekt interaktív folyamatábra (Flowchart) UX és logika | ✅ Decided | [P-050](./P-050-project-flowchart-ux.md) |
 | P-052 | Tárgyi Eszközök Projektekhez Rendelése (TENY Project Assignment) UX | ✅ Decided | [P-052](./P-052-fixed-assets-project-assignment-ux.md) |
+
+## 📖 Könyvelés & Banki Utalások
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-055 | Könyvelési Napló (Accounting Journals) UX | ✅ Decided | [P-055](./P-055-accounting-journals-ux.md) |
+| P-056 | Banki Utalások és Csomagkészítés (Bank Transfers) UX | ✅ Decided | [P-056](./P-056-bank-transfers-export-ux.md) |

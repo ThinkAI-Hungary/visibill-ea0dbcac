@@ -41,9 +41,12 @@ lehetővé téve linkek megosztását azonos nézettel:
 | `proj` | Projekt | `all` |
 | `cat` | Kategória | `all` |
 | `pm` | Fizetési mód | `all` |
+| `cont` | Folyamatos szolgáltatás | `all` |
 | `kpi` | KPI szűrő (párosított/javasolt/nincs) | `all` |
 | `sf` / `sd` | Rendezés mező/irány | `invoice_issue_date` / `desc` |
 | `p` / `ps` | Oldal / Oldalméret | `1` / `50` |
+| `invoice` | Kijelölt / kinyitott számla ID | `""` |
+| `action` | Deep-linkelt dialógus akció (`items`, `view`, `edit`, `files`) | `""` |
 
 **Publikus route-ok** (auth nélkül):
 
@@ -144,7 +147,7 @@ Visibill
 ├── Ügyfélportál (publikus)
 │   └── /portal/:token             Magic link-es ügyfélportál
 │
-└── Admin
+└── Admin (management / thinkai role only — egyébként 404 NotFound)
     └── /management                Admin management panel
         ├── Áttekintés tab          Cégek, felhasználók, LLM költségek, Hibajegyek, Applikáció hibák (legtöbb hibás cég és felhasználó összegzéssel), Utolsó fájlok
         ├── Hibák tab               Error log tábla (filter, bulk delete/retry)
@@ -153,81 +156,51 @@ Visibill
 
 ---
 
-## 3. Jelenlegi Sidebar Navigáció (Flat)
+## 3. Sidebar Navigáció (6 Csoport)
 
-19 menüpont, egyetlen szinten:
+A sidebar 6 logikai, összecsukható (collapsible) csoportba rendezi a modulokat, moduláris jogosultságkezeléssel (`useEaisybillPermissions`) és hover/focus alapú lazy prefetch támogatással:
 
-| # | Menüpont | Route | Ikon | Employee látja? |
-|---|----------|-------|------|----------------|
-| 1 | Irányítópult | `/` | LayoutDashboard | ❌ |
-| 2 | Kategóriák | `/categories` | Tags | ❌ |
-| 3 | Projektek | `/projects` | FolderKanban | ❌ |
-| 4 | Partnertörzs | `/partners` | Users | ❌ |
-| 5 | Számlák | `/invoices` | FileText | ❌ |
-| 6 | Kintlévőség | `/kintlevo` | ReceiptText | ❌ |
-| 7 | Tranzakciók | `/transactions` | Landmark | ❌ |
-| 8 | Főkönyv | `/general-ledger` | BookOpen | ❌ |
-| 9 | Eredménykimutatás | `/profit-and-loss` | BarChart3 | ❌ |
-| 10 | Mérleg | `/balance-sheet` | Scale | ❌ |
-| 11 | Beszámoló | `/annual-report` | ClipboardCheck | ❌ |
-| 12 | Feltöltés | `/upload` | Upload | ❌ |
-| 13 | Bérek/járulékok | `/salaries` | Wallet | ❌ |
-| 14 | Munkaidő | `/working-time` | Clock | ✅ |
-| 15 | Házipénztár | `/petty-cash` | Banknote | ❌ |
-| 16 | TENY | `/teny` | Package2 | ❌ |
-| 17 | Integrációk | `/integrations` | Plug | ❌ |
-| 18 | Árfolyamok | `/exchange-rates` | TrendingUp | ❌ |
+### 1. 📊 Áttekintés (`overview`)
+- **Irányítópult** (`/`) – Fő KPI mutatók, bevételek, költségek, cash-flow
+- **Kategóriák** (`/categories`) – Főkönyvi számlák és kategóriák összerendelése
+- **Projektek** (`/projects`) – Projekttörzs és költségkeretek
+- **Partnertörzs** (`/partners`) – Vevők és szállítók nyilvántartása
 
+### 2. 🏦 Pénzügyek (`finance`)
+- **Számlák** (`/invoices`) – Bejövő/kimenő kézi és NAV számlák
+- **Kintlévőség** (`/kintlevo`) – Vevői követelések és fizetési felszólítások
+- **Tranzakciók** (`/transactions`) – Banki tranzakciók és futár elszámolások
+- **Házipénztár** (`/petty-cash`) – Készpénz bevételek és kiadások
+- **Utalások** (`/transfers`) – Szállítói számlák banki utalási csomagba (GIRO/SEPA) gyűjtése
 
-**Footer elemek** (nem menüpont):
-- Beállítások (`/settings`) — ikon gomb
-- Kijelentkezés — ikon gomb
-- Téma váltó (dark/light) — ikon gomb
-- Sidebar collapse toggle
+### 3. 📖 Könyvelés (`accounting`)
+- **Főkönyv** (`/general-ledger`) – Főkönyvi karton és számlalapok
+- **Eredménykimutatás** (`/profit-and-loss`) – PnL riport
+- **Mérleg** (`/balance-sheet`) – Mérlegkimutatás
+- **Beszámoló** (`/annual-report`) – Éves számviteli beszámoló
+- **ÁFA Bevallás** (`/vat-return`) – Havi/negyedéves ÁFA analitika és bevallás
+- **Napló** (`/journals`) – Kettős könyvviteli zárt naplók (Vevő, Szállító, Bank, Pénztár, Vegyes, Bérfeladás)
 
----
+### 4. 👥 HR & Eszközök (`hr`)
+- **Bérek/járulékok** (`/salaries`) – Bérszámfejtési bizonylatok és feladások
+- **Munkaidő** (`/working-time`) – Munkaidő és jelenlét nyilvántartás (Employee szerepkörnek is)
+- **TENY** (`/teny`) – Tárgyi eszközök nyilvántartása és értékcsökkenés
 
-## 4. Tervezett Sidebar Csoportosítás (P-006)
+### 5. 🚚 Szállítmányozás (`shipment`)
+- **Fuvarok** (`/shipments`) – Fuvarlevelek és CMR megbízások
+- **Excel Import** (`/shipments/import`) – Tömeges fuvarlevél import
+- **Eszkaláció** (`/shipments/escalated`) – Eltérő és problémás fuvarok kezelése
 
-> A P-006 döntés alapján a sidebar collapsible kategóriákba rendezendő.
+### 6. ⚙️ Rendszer (`system`)
+- **Integrációk** (`/integrations`) – NAV Online Számla és egyéb API kapcsolatok
+- **Árfolyamok** (`/exchange-rates`) – MNB napi hivatalos devizaárfolyamok
+- **Jegyzetek** (`/notes`) – Kétpaneles belső és megosztott cégjegyzetek
 
-```
-Sidebar
-├── 📊 Áttekintés
-│   ├── Irányítópult
-│   └── Analitika
-│
-├── 📄 Számlázás
-│   ├── Számlák
-│   ├── Feltöltés
-│   ├── Kintlévőség
-│   └── Partnertörzs
-│
-├── 🏦 Pénzügyek
-│   ├── Tranzakciók
-│   ├── Főkönyv
-│   ├── Házipénztár
-│   └── Árfolyamok
-│
-├── 📒 Riportok
-│   ├── Eredménykimutatás
-│   ├── Mérleg
-│   └── Beszámoló
-│
-├── 🏷️ Törzsadatok
-│   ├── Kategóriák
-│   ├── Projektek
-│   └── TENY
-│
-├── 👥 HR
-│   ├── Bérek/járulékok
-│   └── Munkaidő
-│
-└── ⚙️ Rendszer
-    ├── Integrációk
-    ├── Jegyzetek
-    └── Beállítások
-```
+**Footer elemek:**
+- Beállítások (`/settings`)
+- Kijelentkezés
+- Téma váltó (dark/light)
+- Hibajegyek gomb (olvasatlan badge számlálóval)
 
 ---
 

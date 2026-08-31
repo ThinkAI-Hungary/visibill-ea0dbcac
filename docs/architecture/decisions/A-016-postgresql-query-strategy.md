@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-Q3 (implementálva) → Folyamatosan bővül  
-**Utoljára frissítve:** 2026-06-24
+**Utoljára frissítve:** 2026-08-31
 
 ## Context
 
@@ -45,7 +45,7 @@ await supabase.from('invoices').update({ status: 'verified' }).eq('id', invoiceI
 
 ### 2. Teljes RPC Function Katalógus
 
-**Összesen: 82 function** a `public` sémában.
+**Összesen: ~90+ function** a `public` sémában.
 
 ---
 
@@ -85,6 +85,12 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `seed_default_vat_codes(p_company_id)` | INVOKER | VatReturnPage.tsx | ÁFA kódok inicializálás |
 | `assign_supplier_default_projects(p_company_id)` | DEFINER | ProjectsPage.tsx | Szállítók alapértelmezett projektjének beállítása |
 | `delete_upload_with_data(p_upload_id, p_upload_type)` | DEFINER | InvoiceFilesDialog, UploadedFilesModal | Feltöltés cascade törlés (B mód) — töröl: invoices/transactions/transport_docs/shipment_matches/costs. `p_upload_type`: `'invoice'\|'transaction'\|'report'`. Returns: `{deleted_invoices, deleted_transactions, deleted_transport_docs}` |
+| `settle_storno_invoice_group(p_company_id, p_invoice_ids, p_sources, p_note)` | DEFINER | InvoiceTable / NAV table | Sztornó számlaláncolat manuális lezárása |
+| `reopen_storno_invoice_group(p_company_id, p_invoice_ids, p_sources)` | DEFINER | InvoiceTable / NAV table | Lezárt sztornó számlaláncolat újranyitása |
+| `acc_get_next_journal_number(p_journal_id, p_year)` | DEFINER | JournalsPage.tsx | Ugrásmentes folyósorszám kiosztás naplózáshoz |
+| `acc_post_journal_entry(p_header_id, p_user_id)` | DEFINER | JournalsPage.tsx | Könyvelési tétel egyensúly-ellenőrzött véglegesítése |
+| `acc_storno_journal_entry(p_header_id, p_user_id, p_reason, p_create_correction)` | DEFINER | JournalsPage.tsx | Könyvelési tétel ellenirányú sztornózása és javító piszkozat |
+| `acc_seed_default_journals(p_company_id)` | DEFINER | CompanyContext.tsx | 9 alapértelmezett kettős könyvviteli napló létrehozása |
 
 #### 🔑 2.3 Auth & Credential RPC-k
 

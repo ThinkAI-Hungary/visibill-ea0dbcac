@@ -132,23 +132,62 @@ Egyedi színkódolás tranzakció típusonként:
 
 ### Sötét Mód
 
-A sötét mód változatok erősebb (alacsonyabb lightness) hátteret (`30–40%`) és fehér vagy világos szöveget (`85–100% lightness`) használnak. Az értékek a `src/index.css` `.dark` blokkjában találhatók.
+| Típus | Háttér token | Szöveg token | Szín leírás |
+|-------|-------------|-------------|-------------|
+| Szállító (`supplier`) | `220 70% 40%` | `0 0% 100%` | Sötétebb kék háttér, fehér szöveg |
+| Vevő (`customer`) | `142 71% 35%` | `0 0% 100%` | Mélyzöld háttér, fehér szöveg |
+| Átutalás (`transfer`) | `200 60% 30%` | `200 80% 85%` | Mélykék háttér, világoskék szöveg |
+| Bankdíj (`bankfee`) | `30 90% 40%` | `0 0% 100%` | Narancsbarna háttér, fehér szöveg |
+| Kártyadíj (`cardfee`) | `35 70% 35%` | `35 90% 85%` | Mély sárgásbarna háttér |
+| Hitel (`loan`) | `330 60% 40%` | `0 0% 100%` | Mély rózsaszín / bordó |
+| ATM (`atm`) | `25 50% 30%` | `0 0% 100%` | Mélybarna háttér |
+| Készpénz ki (`cashout`) | `25 40% 35%` | `0 0% 100%` | Sötétbarna háttér |
+| Készpénz be (`cashin`) | `142 40% 30%` | `142 50% 85%` | Mély mohazöld háttér |
+| Bér (`salary`) | `270 40% 35%` | `270 50% 85%` | Sötétlila háttér |
+| Adó (`tax`) | `270 60% 30%` | `0 0% 100%` | Sötétibolya háttér |
+| Bankköltség (`bankcost`) | `180 50% 28%` | `180 60% 85%` | Sötét petrol háttér |
+| Kamat (`interest`) | `55 60% 30%` | `55 70% 85%` | Sötét olajbarna |
+| ATM készpénz (`atmcash`) | `15 55% 30%` | `15 65% 85%` | Sötét vörösesbarna |
 
 > **Fontos:** A szövegszín NEM hardkódolt `text-white` — a `--tr-xxx-text` CSS változó dark mode-ban `0 0% 100%` (fehér), light mode-ban sötét értéket vesz fel. Így mindkét mód egyetlen Tailwind osztállyal kezelhető: `text-[hsl(var(--tr-xxx-text))]`.
 
-**Bug (javítva 2026-06-24):** A `getTypeBgClass()` függvény korábban `text-white`-t használt minden típusnál. Light mode-ban a 92% lightness pasztell háttéren ez olvashatatlan fehér szöveget eredményezett. Javítás: `text-[hsl(var(--tr-xxx-text))]` minden típusnál.
-
 ---
 
-## Sor Státusz Színek
+## Egységes Táblázat Sorszín Rendszer (Unified Row Status)
 
-Táblázat sorok kiemelésére használt színek:
+A számlák, tranzakciók és futárjelentések táblázatai azonos, bal oldali 3px szegéllyel és áttetsző háttérrel rendelkező színkódolást alkalmaznak:
 
-| Státusz | Világos háttér | Világos szöveg | Sötét háttér | Sötét szöveg |
-|---------|---------------|----------------|-------------|-------------|
-| Success | `142 60% 88%` | `142 75% 10%` | `142 71% 8%` | `142 71% 65%` |
-| Error | `0 70% 92%` | `0 85% 20%` | `0 84% 8%` | `0 84% 70%` |
-| Warning | `41 80% 90%` | `41 92% 15%` | `41 85% 8%` | `41 85% 65%` |
+| Státusz Kulcs | Jelentés | Világos háttér / szegély | Sötét háttér / szegély |
+|---|---|---|---|
+| `--row-matched-*` | **Párosítva** | `hsla(149, 80%, 80%, 0.85)` / `hsl(160, 84%, 39%)` | `hsla(152, 69%, 17%, 0.5)` / `hsl(160, 84%, 39%)` |
+| `--row-suggested-*` | **AI Javaslat** | `hsla(48, 96%, 80%, 0.85)` / `hsl(48, 96%, 47%)` | `hsla(32, 81%, 25%, 0.5)` / `hsl(48, 96%, 47%)` |
+| `--row-settled-*` | **Rendezve / Sztornó zárva** | `hsla(214, 95%, 85%, 0.7)` / `hsl(217, 91%, 60%)` | `hsla(212, 72%, 24%, 0.4)` / `hsl(217, 91%, 60%)` |
+| `--row-noinvoice-*` | **Számla nélkül** | `hsla(269, 100%, 88%, 0.75)` / `hsl(271, 91%, 65%)` | `hsla(274, 66%, 32%, 0.4)` / `hsl(271, 91%, 65%)` |
+| `--row-missing-*` | **Hiányzó számla** | `hsla(204, 94%, 86%, 0.75)` / `hsl(199, 89%, 48%)` | `hsla(202, 80%, 24%, 0.4)` / `hsl(199, 89%, 48%)` |
+| `--row-unmatched-*` | **Párosítatlan** | `hsla(356, 100%, 85%, 0.80)` / `hsl(351, 95%, 72%)` | `hsla(348, 83%, 15%, 0.4)` / `hsl(351, 95%, 72%)` |
+
+### Sorszintű Hover Fényerő-Shift (`data-row-hover`)
+
+Mivel a státusz sorok színes háttérrel rendelkeznek, a sima `hover:bg-muted` elfedné a státuszt. A `tr[data-row-hover]:hover td` szabály egy finom gradient világosítást (`rgba(0,0,0,0.03)` light / `rgba(255,255,255,0.06)` dark) tesz a meglévő háttérre.
+
+### Automatikus Badge Hairline Szegély (`color-mix`)
+
+Minden badge és státusz span automatikusan a saját szövegszínéből kevert 15%-os szegélyt kap:
+```css
+span[class*="inline-flex"][class*="items-center"][class*="bg-"][class*="text-"],
+.badge {
+  border: 1px solid currentColor !important;
+  border-color: color-mix(in srgb, currentColor 15%, transparent) !important;
+}
+```
+
+### Recharts Tooltip Változók
+
+| Változó | Világos | Sötét |
+|---|---|---|
+| `--tooltip-bg` | `white` | `#1e293b` |
+| `--tooltip-text` | `#1e293b` | `#e2e8f0` |
+| `--tooltip-cursor` | `#f8fafc` | `rgba(255, 255, 255, 0.05)` |
 
 ---
 

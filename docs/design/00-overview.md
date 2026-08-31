@@ -1,7 +1,7 @@
 # eaisybill Design System — Áttekintés
 
-> **Utolsó frissítés:** 2026-07-22  
-> **Verzió:** 2.0  
+> **Utolsó frissítés:** 2026-08-31  
+> **Verzió:** 2.1  
 > **Scope:** Platform-szintű design rendszer — minden eaisybill termékre alkalmazandó
 
 ---
@@ -19,18 +19,18 @@ Ez a `docs/design/` mappa tartalmazza az eaisybill platform **vizuális design r
 | # | Dokumentum | Leírás |
 |---|------------|--------|
 | 00 | [Áttekintés](./00-overview.md) | Ez a fájl — tartalomjegyzék és magasszintű összefoglaló |
-| 02 | [Design Tokens & Színrendszer](./02-design-tokens.md) | CSS változók, HSL színpaletta, sötét/világos mód |
-| 03 | [Tipográfia & Ikonok](./03-typography-icons.md) | Betűtípusok, méretezés, Lucide ikonok |
-| 04 | [Komponens Könyvtár](./04-component-library.md) | shadcn/ui komponensek, egyedi komponensek, variánsok |
-| 05 | [Layout & Navigáció](./05-layout-navigation.md) | App shell, sidebar, collapsible nav groups, scoped routing |
+| 02 | [Design Tokens & Színrendszer](./02-design-tokens.md) | CSS változók, HSL színpaletta, sötét/világos mód, tranzakció- és sorszínek |
+| 03 | [Tipográfia & Ikonok](./03-typography-icons.md) | Betűtípusok, méretezés, Lucide ikonok, brand tipográfia |
+| 04 | [Komponens Könyvtár](./04-component-library.md) | shadcn/ui komponensek, 14+ egyedi komponens, variánsok |
+| 05 | [Layout & Navigáció](./05-layout-navigation.md) | App shell, zárt viewport, sidebar, 6 nav group, scoped routing |
 | 07 | [Betöltés & Skeleton Patternek](./07-loading-patterns.md) | Loading spinnerek, skeleton-ök, lazy loading |
-| 08 | [Interakciók & Animációk](./08-interactions-animations.md) | Hover, transition, page-animate, micro-animációk |
-| 09 | [Hibakezelés & Feedback](./09-error-handling-feedback.md) | Error boundary, toast, validation, empty state |
-| 10 | [Accessibility & UX Patternek](./10-accessibility-ux.md) | Keyboard nav, focus management, a11y patternek |
-| 11 | [Adatmegjelenítés & Táblázatok](./11-data-display-tables.md) | Táblázat stílus, pagination, chart-ok, pénzügyi számok |
-| 12 | [Dialógusok & Felugró ablakok](./12-dialogs-modals.md) | Dialog, Sheet, Popover, Drawer patternek |
+| 08 | [Interakciók & Animációk](./08-interactions-animations.md) | View Transition API, hover, transition, stagger-1..8, micro-animációk |
+| 09 | [Hibakezelés & Feedback](./09-error-handling-feedback.md) | Error boundary, LiveNotificationProvider 3-tier toast, Feedback FAB + DOM capture |
+| 10 | [Accessibility & UX Patternek](./10-accessibility-ux.md) | Keyboard nav, focus management, 900px auth scaler, print szabályok |
+| 11 | [Adatmegjelenítés & Táblázatok](./11-data-display-tables.md) | Compact table, auto layout, UnifiedPagination, pénzügyi számformázás |
+| 12 | [Dialógusok & Felugró ablakok](./12-dialogs-modals.md) | Dialog, Sheet, Popover, Drawer, TransactionDetailsDialog (moduláris sub-komponensek), ExpandedInvoiceRow |
 | 13 | [Fájl Előnézet Pattern](./13-file-preview-pattern.md) | `FilePreviewModal` shared utility — PDF, kép, Excel, CSV egységes előnézet |
-| — | [App Mode Switcher Koncepciók](./app-mode-switcher-concepts.md) | ⏳ 10 design koncepció az eaisyBill↔eaisyBooks váltóhoz (döntésre vár) |
+| — | [App Mode Switcher](./app-mode-switcher-concepts.md) | ✅ Implementált Pill Toggle + Teal Glow váltó (eaisyBill ↔ eaisyBooks) |
 
 ### Átkerült a `docs/architecture/` mappába
 

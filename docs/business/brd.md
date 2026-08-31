@@ -44,12 +44,11 @@ A két alkalmazás egyetlen React SPA-ként fut, közös `App.tsx` routing-gal. 
 ### REQ-3.1: Tech stack
 | Réteg | Technológia |
 |-------|-------------|
-| Frontend | React + Vite + TypeScript + shadcn/ui |
+| Frontend | React + Vite + TypeScript + shadcn/ui + Tailwind CSS |
 | Backend | Supabase (PostgreSQL) + Edge Functions (Deno) |
-| Worker | Python (Docker, PGMQ queue) |
-| OCR/AI | AWS Textract + OpenAI GPT |
-| Email | Mailgun |
-| Fizetés | Stripe |
+| Worker | Python 3.12 (Docker, asyncio, PGMQ queue, MarkItDown) |
+| OCR/AI | LiteLLM (DeepSeek-V3 / GPT-4o Vision / Claude 3.5 Sonnet) |
+| Email | Mailgun Webhook + Resend Auth Hook + IMAP/SMTP Vault integráció |
 | NAV | NAV Online Számla API v3 |
 
 **Státusz:** ✅ Decided  

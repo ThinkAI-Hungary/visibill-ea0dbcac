@@ -1,46 +1,45 @@
-# App Mode Switcher — Design Koncepciók
+# App Mode Switcher — Design & Megvalósítás
 
-> **Státusz:** ⏳ Döntésre vár (management jóváhagyás)
-> **Dátum:** 2026-06-14
-> **Mockup fájl:** `scratch/app-switcher-mockups.html` (lokális preview)
-> **Érintett fájlok:** `AppSidebar.tsx` (L306-332), `AccountyLayout.tsx` (L196-228)
+> **Státusz:** ✅ **DECIDED & IMPLEMENTED (2026-06-20)**
+> **Komponens:** [`src/components/AppModeSwitcher.tsx`](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/AppModeSwitcher.tsx)
+> **Kiválasztott minta:** **① Pill Toggle + Teal Glow Indicator**
+> **Érintett keretek:** `AppSidebar.tsx`, `AccountyLayout.tsx`
 >
-> **❗ Megjegyzés:** Az "Accounty" rebrandelve lett **eaisyBooks**-ra. A kódban (`AccountyLayout`, `/accounty/` route) továbbra is a legacy név él. A váltó UI-ban az új brand nevet (eaisyBooks) kell megjeleníteni.
+> **Brand Nevek:** **eaisyBill** (számlázás & pénzügyi analitika) ↔ **eaisyBooks** (kettős könyvvitel, bérszámfejtés, bevallások).
 
 ---
 
-## Kontextus
+## Megvalósított Production Implementáció (`AppModeSwitcher.tsx`)
 
-Az eaisyBill és eaisyBooks (korábban: Accounty) nézet közötti váltás jelenleg a sidebar header-ben egy egyszerű szöveges link:
+A kiválasztott és implementált megoldás a **Gradient Border Glow Pill** komponens:
 
+```tsx
+<AppModeSwitcher
+  activeMode="eaisybill" // 'eaisybill' | 'accounty'
+  isCollapsed={false}     // boolean
+  showToggle={hasAccess}  // boolean (jogosultság-függő)
+/>
 ```
-eaisyBill | eaisyBooks
-```
 
-A cél: egy designosabb, professzionális váltó komponens, ami:
-- Egyértelmű vizuális jelzést ad, melyik mód aktív
-- Illeszkedik a meglévő dark theme-hez (teal `#2dd4bf` = eaisyBill, red `#ef4444` = eaisyBooks)
-- Működik collapsed sidebar-ban is (opcionális, de előny)
-- Támogat notification badge-et (pl. jóváhagyásra váró elemek száma)
+### Vizuális & Viselkedési Tulajdonságok
 
----
+1. **Expanded Nézet:**
+   - Kerekített pill konténer (`rounded-full bg-muted/65 dark:bg-[#0d0e10]/60 border border-border/50`).
+   - Két állapot: `e-ai-sy-Bill` és `e-ai-sy-Books`.
+   - Az aktív oldal alatt ragyogó teal glow jelzőcsík: `w-8 h-[3px] rounded-full bg-primary shadow-[0_0_8px_#14D4B8]`.
+   - Inaktív oldal: `opacity-60 hover:opacity-100 transition-all`.
 
-## Jelenlegi implementáció
+2. **Collapsed Nézet:**
+   - Függőleges 36px széles kapszula (`rounded-full w-9 p-1`).
+   - `eB` és `eK` 28×28px méretű kör gombok.
+   - Az aktív kör alatt 12px széles ragyogó teal vonalka: `shadow-[0_0_6px_#14D4B8]`.
 
-### AppSidebar.tsx (eaisybill oldal)
-- **Fájl:** [`src/components/AppSidebar.tsx`](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/AppSidebar.tsx#L306-L332)
-- **Expanded:** `eaisybill | Accounty` — a "Accounty" egy `<Link to="/accounty">`
-- **Collapsed:** `eai` felett `A` link, elválasztó vonallal
+3. **Jogosultság-tudatos (Single-app) Fallback:**
+   - Ha a felhasználónak csak az egyik apphoz van jogosultsága (`showToggle = false`), a komponens nem renderel kapcsolót, hanem statikus brand logót (`eaisyBill` / `eaisyBooks` vagy `eB` / `eK`).
 
-### AccountyLayout.tsx (Accounty oldal)
-- **Fájl:** [`src/pages/Accounty/AccountyLayout.tsx`](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/pages/Accounty/AccountyLayout.tsx#L196-L228)
-- **Expanded:** `eaisybill | Accounty` — az "eaisybill" egy `<Link to="/">`
-- **Collapsed:** `eai` felett `A` link
-
-### Navigáció
-- eaisybill → Accounty: `<Link to="/accounty">`
-- Accounty → eaisybill: `<Link to="/">`
-- Nem SPA state toggle — **valódi route váltás** (teljes layout csere)
+4. **Navigáció & Állapot:**
+   - Valódi React Router `<Link>` navigáció (`/` ↔ `/eaisybooks`).
+   - `localStorage.setItem('visibill_switch_pending', 'eaisybill' | 'eaisybooks')` menti a függőben lévő módot.
 
 ---
 

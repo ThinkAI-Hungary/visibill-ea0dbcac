@@ -5,10 +5,9 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-/** jsPDF Helvetica only supports Latin-1. Hungarian ő/ű are Latin-2. */
-function hu(text: string): string {
-  return text.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
-}
+import { normalizeHungarianForPdf } from './documents/encoding/hungarianEncoding';
+
+const hu = (text: string): string => normalizeHungarianForPdf(text);
 
 const fmt = (n: number) => n.toLocaleString('hu-HU');
 

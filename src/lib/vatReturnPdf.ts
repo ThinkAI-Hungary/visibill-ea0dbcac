@@ -21,9 +21,10 @@ const fmtEft = (v: number | null | undefined): string => {
   return new Intl.NumberFormat('hu-HU').format(v);
 };
 
-const esc = (s: unknown): string => String(s ?? '')
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+import { escapeXml } from './documents/encoding/xmlSanitizer';
+import { createPreviewBlobUrl } from './documents/core/downloadHelper';
+
+const esc = (s: unknown): string => escapeXml(s);
 
 const MONTHS = ['január','február','március','április','május','június','július','augusztus','szeptember','október','november','december'];
 
@@ -348,6 +349,5 @@ export const generateVatReturnPdf = (data: VatReturnPdfData) => {
 
 export const generateVatReturnPreviewUrl = (data: VatReturnPdfData): string => {
   const html = buildVatReturnHtml(data);
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  return URL.createObjectURL(blob);
+  return createPreviewBlobUrl(html, 'text/html;charset=utf-8');
 };

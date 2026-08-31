@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
+import { invalidatePartnerQueries } from "@/lib/cache";
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 
 import { supabase } from "@/integrations/supabase/client";
@@ -62,6 +63,7 @@ import {
   PartnerInvoiceDetailDialog,
   type PartnerInvoice,
 } from "@/components/partners/PartnerInvoiceDetailDialog";
+import { decodeHtmlEntities, getInitials as _getInitials, getAvatarColor } from '@/lib/helpers';
 
 const DEFAULT_PAGE_SIZE = 15;
 
@@ -90,9 +92,6 @@ interface Partner {
   custom_bg_color?: string | null;
   related_party?: boolean;
 }
-
-// Import shared helpers
-import { decodeHtmlEntities, getInitials as _getInitials, getAvatarColor } from '@/lib/helpers';
 
 // Partner-specific getInitials with HTML entity decoding
 const getInitials = (name: string): string => {
@@ -497,8 +496,9 @@ export default function PartnersPage() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.partnersFull(selectedCompany?.id || '') });
-      queryClient.invalidateQueries({ queryKey: queryKeys.partners(selectedCompany?.id || '') });
+      if (selectedCompany?.id) {
+        invalidatePartnerQueries(queryClient, selectedCompany.id);
+      }
       toast({
         title: editingPartner ? "Partner frissítve" : "Partner létrehozva",
         description: "A partner sikeresen mentve.",
@@ -524,8 +524,9 @@ export default function PartnersPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.partnersFull(selectedCompany?.id || '') });
-      queryClient.invalidateQueries({ queryKey: queryKeys.partners(selectedCompany?.id || '') });
+      if (selectedCompany?.id) {
+        invalidatePartnerQueries(queryClient, selectedCompany.id);
+      }
       toast({
         title: "Partner törölve",
         description: "A partner sikeresen törölve.",

@@ -2,7 +2,7 @@
 
 > NAV Online Számla rendszer — bejövő/kimenő számlák, szinkron logok.
 
-**Táblák ebben a csoportban:** 3
+**Táblák ebben a csoportban:** 4
 
 ---
 
@@ -89,13 +89,15 @@ Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-a
 | vat_amount | numeric | ✓ |  |
 | gross_amount | numeric | ✓ |  |
 | product_code | text | ✓ |  |
+| project_id | uuid | ✓ | NULL |
+| notes | text | ✓ | NULL |
 | created_at | timestamp with time zone | ✓ | `now()` |
 | gl_classifications | jsonb | ✓ | `'{}'::jsonb` |
 | exclude_from_accounting | boolean | — | `false` |
 
-**FK:** `nav_invoice_id` → `nav_invoices.id`
+**FK:** `nav_invoice_id` → `nav_invoices.id`, `project_id` → `projects.id`
 
-**Indexek:** `idx_nav_invoice_items_nav_invoice_id`
+**Indexek:** `idx_nav_invoice_items_nav_invoice_id`, `idx_nav_invoice_items_project_id`
 
 ---
 
@@ -122,6 +124,34 @@ Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-a
 **FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`
 
 **Indexek:** `idx_nav_sync_logs_company_id`, `idx_nav_sync_logs_user_id`, `nav_sync_logs_started_at_idx`
+
+---
+
+### `nav_outbound_invoices`
+
+> NAV-ból lekérdezett kimenő számlák gyorsítótárazott táblája.
+
+**RLS:** ✅ | **Sorok:** Dinamikus
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | — |
+| invoice_number | text | — | — |
+| customer_name | text | ✓ | — |
+| customer_tax_number | text | ✓ | — |
+| invoice_issue_date | date | ✓ | — |
+| invoice_delivery_date | date | ✓ | — |
+| payment_date | date | ✓ | — |
+| invoice_net_amount | numeric | ✓ | — |
+| invoice_vat_amount | numeric | ✓ | — |
+| invoice_gross_amount | numeric | ✓ | — |
+| currency | text | — | `'HUF'` |
+| created_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`
+
+**Indexek:** `idx_nav_outbound_invoices_company_date`, `idx_nav_outbound_invoices_number`
 
 ---
 

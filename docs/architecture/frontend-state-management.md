@@ -8,98 +8,10 @@
 
 ```
 ThemeContext           ← Téma (light/dark)
-  └── AuthContext      ← Auth session, user, signOut
-    └── CompanyContext  ← Cégválasztás, cégek listája
-      └── DateRangeContext ← Globális dátum szűrő
-        └── SubscriptionContext ← Előfizetési szint, limit-ek
+  └── AuthContext      ← Auth session, user, signOut, SessionGuard
+    └── CompanyContext  ← Cégválasztás, cégek listája, cégváltás
+      └── DateRangeContext ← Globális dátum szűrő (dateFrom, dateTo)
 ```
-
----
-
-## ThemeContext
-
-**Fájl:** `contexts/ThemeContext.tsx`
-
-| API | Típus | Leírás |
-|-----|-------|--------|
-| `theme` | `"light" \| "dark"` | Jelenlegi téma |
-| `setTheme(theme)` | function | Téma beállítás |
-
-**Megvalósítás:**
-- localStorage-ból olvassa a `eaisybill_theme` kulcsot
-- `document.documentElement.classList.add/remove("dark")` — HTML element szinten
-- `useMemo` + `useCallback` a stabil context value-ért (megakadályozza felesleges consumer re-rendereket)
-- `no-transitions` class: tiltja a per-element transition-öket témaváltás alatt
-- `theme-switching` class: pauseolja az animációkat (`animation-play-state: paused`) — NEM reseteli, megakadályozza a page-animate újraindulását
-- Double `requestAnimationFrame` a transition/animation újraengedélyezéséhez
-
----
-
-## AuthContext
-
-**Fájl:** `contexts/AuthContext.tsx`
-
-| API | Típus | Leírás |
-|-----|-------|--------|
-| `user` | `User \| null` | Supabase user objektum |
-| `session` | `Session \| null` | Auth session |
-| `isLoading` | `boolean` | Auth állapot betöltődik |
-| `isSigningOut` | `boolean` | Kijelentkezés folyamatban |
-| `isPasswordRecovery` | `boolean` | Jelszó recovery flow |
-| `clearPasswordRecovery()` | function | Recovery flag törlése |
-| `signOut()` | function | Kijelentkezés |
-| `sessionGuard` | object | Idle timeout state |
-
-**Session Guard:**
-- `sessionGuard.showWarning` — IdleWarningModal megjelenítése
-- `sessionGuard.secondsLeft` — Hátralévő másodpercek
-- `sessionGuard.stayActive()` — Session meghosszabbítás
-
----
-
-## CompanyContext
-
-**Fájl:** `contexts/CompanyContext.tsx`
-
-| API | Típus | Leírás |
-|-----|-------|--------|
-| `companies` | `Company[]` | User összes cége |
-| `selectedCompany` | `Company \| null` | Kiválasztott cég |
-| `setSelectedCompany(company)` | function | Cég kiválasztás |
-| `isInitialLoading` | `boolean` | Cégek betöltődnek |
-
-**Cég perzisztencia:** `selectedCompanyId` localStorage kulcs.
-
----
-
-## DateRangeContext
-
-**Fájl:** `contexts/DateRangeContext.tsx`
-
-| API | Típus | Leírás |
-|-----|-------|--------|
-| `dateFrom` | `Date` | Kezdő dátum |
-| `dateTo` | `Date` | Záró dátum |
-| `dateFromFormatted` | `string` | `YYYY-MM-DD` formátum |
-| `dateToFormatted` | `string` | `YYYY-MM-DD` formátum |
-| `setDateFrom(date)` | function | Kezdő dátum beállítás |
-| `setDateTo(date)` | function | Záró dátum beállítás |
-| `setThisMonth()` | function | Aktuális hónap preset |
-| `setPreviousMonth()` | function | Előző hónap preset |
-| `setThisYear()` | function | Aktuális év preset |
-
-**Perzisztencia:** `eaisybill_date_range` localStorage kulcs.
-
----
-
-## SubscriptionContext
-
-**Fájl:** `contexts/SubscriptionContext.tsx`
-
-| API | Típus | Leírás |
-|-----|-------|--------|
-| Előfizetési szint | string | Free / Pro / Enterprise |
-| Limitek | object | Használati korlátok |
 
 ---
 
@@ -118,14 +30,18 @@ const queryClient = new QueryClient({
 });
 ```
 
-### Query Key Rendszer
+### Moduláris Query Key & Cache Rendszer
 
-**Fájl:** `lib/queryKeys.ts`
+**Fő modulok:**
+- `src/lib/cache/keys/` — Domain-szeletelt query kulcs gyárak (`invoices`, `transactions`, `partners`, `payroll`, `gl`, `accounty`)
+- `src/lib/cache/invalidations.ts` — Koordinált, atomi invalidációs dispatcherek (`invalidateInvoiceQueries`, `invalidateTransactionQueries`, stb.)
+- `src/lib/queryKeys.ts` — 100%-ban visszafelé kompatibilis re-export a teljes alkalmazás számára
 
-Centralizált query key factory az összes Supabase lekérdezéshez, biztosítva:
-- Konzisztens cache invalidation
-- Company-scoped cache-elés
-- Date-range-scoped lekérdezések
+**Előnyök és garanciák:**
+- Konzisztens, atomi cache invalidáció kaszkád-kérések és race condition nélkül
+- Multi-tenant, cég-szintű (`companyId`) és dátumtartomány-alapú hatókör
+- Szigorú TypeScript `as const` tuple típusbiztonság a kulcsokban
+- 0 beragadt szellem-állapot az inkonzisztens elnevezések felszámolásával
 
 ---
 
@@ -243,24 +159,24 @@ const [tab, setTab] = useUrlTab('invoices', 'outbound_nav', VALID_TABS);
 | **Search megőrzés** | `location.search` megmarad tab váltáskor |
 | **Microtask defer** | `queueMicrotask()` — megelőzi a mid-render setState hibákat |
 
-### Invoice Filter URL Sync
+### Invoice Feature State & URL Sync (`src/features/invoices/context/InvoiceContext.tsx`)
 
-**Fájlok:** `hooks/useInvoiceFilters.ts` + `pages/InvoicesPage.tsx`
+**Fájlok:** `src/features/invoices/context/InvoiceContext.tsx` + `src/features/invoices/InvoicesFeature.tsx`
 
-A számla oldal összes szűrőjét URL query params-ként szinkronizálja, lehetővé téve a link megosztást:
+A számla oldal állapotkezelését a moduláris `<InvoiceProvider>` compound context fogja össze. Az összes szűrőt, rendezést, lapozást és dialógus-állapotot URL query paraméterekkel szinkronizálja:
 
 | Elem | Kezelés |
 |------|---------|
-| **Initializálás** | `useInvoiceFilters`: `useState(() => searchParams.get(...))` — URL-ből olvas |
-| **Szinkronizálás** | `InvoicesPage`: egységes `useEffect` → `setSearchParams()` |
+| **Initializálás** | `InvoiceContext`: `useState(() => searchParams.get(...))` — URL-ből olvas |
+| **Szinkronizálás** | `InvoiceContext`: egységes debounced `useEffect` → `setSearchParams(..., { replace: true })` |
 | **Nem-default only** | Csak az alapértéktől eltérő értékek kerülnek az URL-be |
-| **Param kulcsok** | Rövid kulcsok: `q`, `cur`, `idf`, `idt`, `kpi`, `sf`, `sd`, `p`, `ps` stb. |
-| **Exportált konstansok** | `FILTER_URL_KEYS`, `defaultFilters` (`useInvoiceFilters.ts`) |
+| **Param kulcsok** | Rövid kulcsok: `q`, `cur`, `idf`, `idt`, `kpi`, `sf`, `sd`, `p`, `ps`, `paid`, `sub`, `proj`, `cat`, `pm`, `cont` |
+| **Exportált konstansok** | `FILTER_URL_KEYS`, `defaultFilters` (`src/features/invoices/types`) |
 | **KPI filter** | Kattintható KPI kártyák: `?kpi=matched\|suggested\|unmatched` |
 | **KPI paginálás** | KPI aktív → **kliens-oldali** paginálás a teljes adathalmazból (`navInvoicesLookup`). KPI inaktív → szerver-oldali paginálás. |
 | **KPI totalPages** | `kpiFilteredNavTotalPages` / `kpiFilteredSubmittedTotalPages` — KPI szűrt darabszámból számolt oldalszám |
 | **KPI tab váltás** | KPI szűrő **megmarad** tab váltásnál; csak explicit user action törli |
-| **Megőrzés** | `?invoice=` és `?action=` parametérek megőrződnek |
+| **Deep-linkek** | `?invoice=<id>` (sor kinyitás) és `?action=items\|view\|edit\|files` (modális ablak automatikus megnyitása) |
 
 ### useFilterPersistence Hook
 

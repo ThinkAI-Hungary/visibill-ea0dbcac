@@ -96,6 +96,34 @@ toast({
 
 A `<Toaster />` az `App.tsx`-ben van mountolva, globálisan elérhető.
 
+### Valós Idejű Értesítési Központ (`LiveNotificationProvider`)
+
+**Fájl:** `src/components/LiveNotificationProvider.tsx` (38KB)
+
+A háttérben futó aszinkron feldolgozások (számla OCR, bankkivonat import, AI párosítás, hibajegy válaszok) állapotváltozásait egy 3-lépcsős realtime toast rendszer jelzi a felhasználónak:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 1. Supabase Realtime WebSocket (PostgreSQL CDC)             │
+│    Csatornák: 'upload_notifications', 'ticket_events'       │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ (fallback ha a WS megszakad)
+┌──────────────────────────────▼──────────────────────────────┐
+│ 2. 30s Polling Catch-up Query                               │
+│    Lekérdezi az utolsó check óta érkezett új eseményeket    │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────┐
+│ 3. Vizuális Toast + Audio Chime                             │
+│    • Kellemes, halk hangjelzés új eseménynél                │
+│    • Interaktív toast gomb: közvetlen ugrás a számlára      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Toast Interakciók:**
+- Sikeres feldolgozás: zöld ikon, bizonylatszám, „Megtekintés" akciógomb.
+- Hiba: piros ikon, hibaüzenet összefoglaló, „Részletek" gomb.
+
 ---
 
 ## Validáció
@@ -133,6 +161,7 @@ Centralizált validációs segédfüggvények:
   description="Próbáld módosítani a szűrőket vagy keresési feltételeket."
   onClearFilters={handleClear}
   clearLabel="Szűrők törlése"
+  className="py-12"
 />
 ```
 
@@ -169,11 +198,19 @@ Onboarding wizard az első bejelentkezéskor — cég létrehozás, kategória v
 | **A11y** | `aria-label="Visszajelzés küldése"` |
 | **Print** | `print:hidden` |
 
-### Feedback Dialog
+### Feedback Dialog & Instant Képernyőkép Capture
 
-**Fájl:** `components/FeedbackDialog.tsx` (11KB)
+**Fájl:** `components/FeedbackDialog.tsx` (22KB)
 
-Felhasználói visszajelzés küldése a FAB-on keresztül.
+A felhasználó a felugró modálban küldhet hibajelzést vagy ötletet:
+- **`html2canvas` integráció:** A FAB megnyomásakor automatikusan elkészíti az aktuális DOM nézet képernyőképét (a jelszómezőket és érzékeny inputokat kitakarva), amit a felhasználó előnézetben megtekinthet és opcionálisan csatolhat.
+- **5-csillagos értékelő widget:** Gyors élményértékelés.
+- **Kategória választó:** `Hiba`, `Ötlet`, `Egyéb`.
+- **Automatikus diagnosztikai metaadat csatolás:**
+  - Böngésző típusa és verziója (`navigator.userAgent`)
+  - Képernyőfelbontás és viewport méret (`window.innerWidth/innerHeight`)
+  - Aktuális útvonal és query paraméterek
+  - Aktív Cég ID és Felhasználó ID
 
 ---
 

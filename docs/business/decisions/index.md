@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-07-21  
-> **Összesen:** 42 döntés | ✅ Decided: 26 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
+> **Utoljára frissítve:** 2026-08-31  
+> **Összesen:** 46 döntés | ✅ Decided: 30 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
 
 ---
 
@@ -127,3 +127,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 040 | Számla Kapcsolatok és Párosítási Logikák (Matching & Relations) | ✅ Decided | [040-invoice-relations-matching.md](./040-invoice-relations-matching.md) |
 | 041 | Manuális Kifizetés Rögzítése (Máshogyan kiegyenlített tételek) | ✅ Decided | [041-manual-payment-recording.md](./041-manual-payment-recording.md) |
 | 042 | Sztornó Számla Üzleti Kezelési Szabály — atomikus lezárás, visszavonható | ✅ Decided | [042-storno-invoice-business-rule.md](./042-storno-invoice-business-rule.md) |
+| 043 | Könyvelési Naplók és Kettős Könyvviteli Folyószámlák | ✅ Decided | [043-accounting-journals.md](./043-accounting-journals.md) |
+| 044 | Banki Utalási Csomagok és Kifizetési Generálás | ✅ Decided | [044-bank-transfers.md](./044-bank-transfers.md) |
+| 045 | Számla Feature Szelet Üzleti Követelményei és Integritása | ✅ Decided | [045-invoices-feature-slice.md](./045-invoices-feature-slice.md) |
+| 046 | Egységes Dokumentum és Export Motor Szabályai | ✅ Decided | [046-unified-document-engine.md](./046-unified-document-engine.md) |

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateGlQueries } from '@/lib/cache';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -184,10 +185,14 @@ export function AddManualJournalEntryModal({
       setCreditSearch('');
 
       // Invalidate caches
-      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
-      queryClient.invalidateQueries({ queryKey: ['glItems'] });
-      queryClient.invalidateQueries({ queryKey: ['glJournalEntries'] });
-      queryClient.invalidateQueries({ queryKey: ['auditImports'] });
+      if (companyId) {
+        invalidateGlQueries(queryClient, companyId, presetId);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+        queryClient.invalidateQueries({ queryKey: ['glItems'] });
+        queryClient.invalidateQueries({ queryKey: ['glJournalEntries'] });
+        queryClient.invalidateQueries({ queryKey: ['auditImports'] });
+      }
 
       onSuccess?.();
       onOpenChange(false);

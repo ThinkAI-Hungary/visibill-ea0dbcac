@@ -3,21 +3,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format, subDays, addDays } from 'date-fns';
 import { useQueryClient } from '@tanstack/react-query';
+import { reportError } from '@/lib/errorReporter';
+import {
+  applyMatch,
+  unmatchTransaction,
+  verifyMatch,
+  markNoInvoice,
+  markInvoiceMissing,
+  revertStatus,
+} from '@/lib/matching/matchingService';
+import { invalidateMatchingQueries } from '@/lib/matching/matchingKeys';
+import {
+  toHuf,
+  filterAndSortTransactionCandidates,
+} from '@/lib/matching/candidateFinder';
+import { AvailableTransaction } from '@/lib/matching/types';
 
-// ── Types ──
-
-export interface AvailableTransaction {
-  id: string;
-  transaction_date: string;
-  amount: number;
-  description: string | null;
-  currency: string | null;
-  type: string | null;
-  matched_invoice_id: string | null;
-  confidence_score: number | null;
-  match_type: string | null;
-  is_verified: boolean | null;
-}
+export type { AvailableTransaction };
 
 export interface UseTransactionMatcherParams {
   /** The invoice ID to match transactions to */
@@ -33,8 +35,6 @@ export interface UseTransactionMatcherParams {
   /** Called after successful match/unmatch/verify operations */
   onUpdate?: () => void;
 }
-
-// ── Hook ──
 
 export function useTransactionMatcher({
   invoiceId,
@@ -52,30 +52,9 @@ export function useTransactionMatcher({
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
 
-  const invalidateAllMatches = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['invoiceKpis', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['transactions', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['navInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['page-invoice-transactions'] });
-    queryClient.invalidateQueries({ queryKey: ['matched-transactions-for-invoice'] });
-    queryClient.invalidateQueries({ queryKey: ['transactionInvoiceMatches', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['salaries', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['due-transfer-invoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['payment-transfers-history', companyId] });
+  const invalidateAll = useCallback(async () => {
+    await invalidateMatchingQueries(queryClient, companyId);
   }, [queryClient, companyId]);
-
-  // ── Approximate FX rates for frontend filtering ──
-  const approxRates: Record<string, number> = { EUR: 395, USD: 370, GBP: 470, CHF: 420 };
-  const toHuf = useCallback((amount: number, currency?: string) => {
-    const ccy = (currency || 'HUF').toUpperCase();
-    if (ccy !== 'HUF' && approxRates[ccy]) return amount * approxRates[ccy];
-    return amount;
-  }, []);
 
   // ── Fetch available (unmatched) transactions ──
   const fetchAvailableTransactions = useCallback(async () => {
@@ -99,74 +78,31 @@ export function useTransactionMatcher({
       if (error) throw error;
 
       // Only show unmatched transactions (no matched_invoice_id)
-      setAvailableTransactions(
-        (data || []).filter(tx => !tx.matched_invoice_id)
-      );
+      setAvailableTransactions((data || []).filter(tx => !tx.matched_invoice_id));
     } catch (error) {
-      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error fetching transactions:', error: error });
+      reportError({
+        type: 'db_query',
+        component: 'useTransactionMatcher',
+        action: 'error',
+        message: 'Error fetching transactions:',
+        error,
+      });
       toast({ title: 'Hiba a tranzakciók betöltésekor', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   }, [companyId, invoiceDate]);
 
-  // ── Filtered + sorted transactions ──
+  // ── Filtered + sorted transactions using matching core candidate finder ──
   const filteredTransactions = useMemo(() => {
-    const invAmt = Math.abs(invoiceAmount || 0);
-    let list = [...availableTransactions];
-
-    if (!search) {
-      // No search: filter by amount tolerance
-      if (invAmt > 0) {
-        list = list.filter(tx => {
-          const txHuf = Math.abs(toHuf(tx.amount || 0, tx.currency));
-          const invHuf = Math.abs(toHuf(invAmt, invoiceCurrency));
-          const diff = Math.abs(txHuf - invHuf);
-          const isCrossCurrency = (tx.currency || 'HUF').toUpperCase() !== (invoiceCurrency || 'HUF').toUpperCase();
-          const tolerance = isCrossCurrency ? 0.50 : 0.30;
-          return diff / invHuf <= tolerance;
-        });
-      }
-    } else {
-      // Searching: match text, no amount filter
-      const searchLower = search.toLowerCase();
-      const searchNormalized = search.replace(',', '.');
-
-      list = availableTransactions.filter(tx => {
-        if (tx.description?.toLowerCase().includes(searchLower)) return true;
-        if (tx.type?.toLowerCase().includes(searchLower)) return true;
-
-        // Amount match
-        if (tx.amount != null) {
-          const amt = Math.abs(tx.amount);
-          const amtStr = amt.toString();
-          const amtFixed2 = amt.toFixed(2);
-          const amtInt = Math.round(amt).toString();
-          if (amtStr.includes(searchNormalized) || amtFixed2.includes(searchNormalized) || amtInt.includes(searchNormalized)) return true;
-          if (amtStr.includes(search) || amtFixed2.includes(search)) return true;
-        }
-
-        // Date match
-        if (tx.transaction_date?.includes(search)) return true;
-
-        return false;
-      });
-    }
-
-    // Sort by proximity to invoice amount
-    const invHuf = Math.abs(toHuf(invAmt, invoiceCurrency));
-    list.sort((a, b) => {
-      const aHuf = Math.abs(toHuf(a.amount || 0, a.currency));
-      const bHuf = Math.abs(toHuf(b.amount || 0, b.currency));
-      const diffA = Math.abs(aHuf - invHuf);
-      const diffB = Math.abs(bHuf - invHuf);
-      return diffA - diffB;
+    return filterAndSortTransactionCandidates({
+      availableTransactions,
+      search,
+      invoiceAmount,
+      invoiceCurrency,
     });
+  }, [availableTransactions, search, invoiceAmount, invoiceCurrency]);
 
-    return list;
-  }, [availableTransactions, search, invoiceAmount, invoiceCurrency, toHuf]);
-
-  // ── Open search panel ──
   const openSearch = useCallback(() => {
     setShowSearch(true);
     setSearch('');
@@ -181,183 +117,166 @@ export function useTransactionMatcher({
   }, []);
 
   // ── Match: assign transaction to this invoice ──
-  const handleMatch = useCallback(async (transactionId?: string) => {
-    const txId = transactionId || selectedTransactionId;
-    if (!txId) return;
+  const handleMatch = useCallback(
+    async (transactionId?: string) => {
+      const txId = transactionId || selectedTransactionId;
+      if (!txId) return;
 
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({
-          matched_invoice_id: invoiceId,
-          is_verified: true,
-          match_type: 'manual',
-          confidence_score: 1.0,
-        })
-        .eq('id', txId);
+      setSaving(true);
+      try {
+        await applyMatch({
+          transactionId: txId,
+          invoiceId,
+          matchType: 'manual',
+          confidenceScore: 1.0,
+        });
 
-      if (error) throw error;
-
-      toast({ title: 'Tranzakció sikeresen párosítva!' });
-      invalidateAllMatches();
-      closeSearch();
-      onUpdate?.();
-    } catch (error) {
-      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error matching transaction:', error: error });
-      toast({ title: 'Hiba a párosítás mentésekor', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  }, [invoiceId, selectedTransactionId, onUpdate, closeSearch]);
+        toast({ title: 'Tranzakció sikeresen párosítva!' });
+        await invalidateAll();
+        closeSearch();
+        onUpdate?.();
+      } catch (error) {
+        reportError({
+          type: 'db_query',
+          component: 'useTransactionMatcher',
+          action: 'error',
+          message: 'Error matching transaction:',
+          error,
+        });
+        toast({ title: 'Hiba a párosítás mentésekor', variant: 'destructive' });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [invoiceId, selectedTransactionId, onUpdate, closeSearch, invalidateAll]
+  );
 
   // ── Unmatch: remove transaction ↔ invoice link ──
-  const handleUnmatch = useCallback(async (transactionId: string) => {
-    setSaving(true);
-    try {
-      // 1. Clear match on transactions table
-      const { error } = await supabase
-        .from('transactions')
-        .update({
-          matched_invoice_id: null,
-          is_verified: false,
-          match_type: null,
-        })
-        .eq('id', transactionId);
-
-      if (error) throw error;
-
-      // 2. Clear transaction_id on related invoices and salary records
-      await supabase
-        .from('invoices')
-        .update({ transaction_id: null, fizetve: false })
-        .eq('transaction_id', transactionId);
-
-      await supabase
-        .from('nav_invoices')
-        .update({ transaction_id: null, paid: false })
-        .eq('transaction_id', transactionId);
-
-      await supabase
-        .from('salary')
-        .update({ transaction_id: null, statusz: 'Nyitott' })
-        .eq('transaction_id', transactionId);
-
-      // 3. Delete from join table (transaction_invoice_matches)
-      await supabase
-        .from('transaction_invoice_matches')
-        .delete()
-        .eq('transaction_id', transactionId);
-
-      toast({ title: 'Párosítás megszüntetve!' });
-      invalidateAllMatches();
-      onUpdate?.();
-    } catch (error) {
-      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error unmatching transaction:', error: error });
-      toast({ title: 'Hiba a párosítás megszüntetésekor', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  }, [onUpdate]);
+  const handleUnmatch = useCallback(
+    async (transactionId: string) => {
+      setSaving(true);
+      try {
+        await unmatchTransaction(transactionId);
+        toast({ title: 'Párosítás megszüntetve!' });
+        await invalidateAll();
+        onUpdate?.();
+      } catch (error) {
+        reportError({
+          type: 'db_query',
+          component: 'useTransactionMatcher',
+          action: 'error',
+          message: 'Error unmatching transaction:',
+          error,
+        });
+        toast({ title: 'Hiba a párosítás megszüntetésekor', variant: 'destructive' });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [onUpdate, invalidateAll]
+  );
 
   // ── Verify: confirm a suggested match ──
-  const handleVerify = useCallback(async (transactionId: string) => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({ is_verified: true })
-        .eq('id', transactionId);
+  const handleVerify = useCallback(
+    async (transactionId: string) => {
+      setSaving(true);
+      try {
+        await verifyMatch(transactionId);
+        toast({ title: 'Párosítás jóváhagyva!' });
+        await invalidateAll();
+        onUpdate?.();
+      } catch (error) {
+        reportError({
+          type: 'db_query',
+          component: 'useTransactionMatcher',
+          action: 'error',
+          message: 'Error verifying match:',
+          error,
+        });
+        toast({ title: 'Hiba a jóváhagyás során', variant: 'destructive' });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [onUpdate, invalidateAll]
+  );
 
-      if (error) throw error;
+  // ── Mark no invoice ──
+  const handleMarkNoInvoice = useCallback(
+    async (transactionId: string) => {
+      setSaving(true);
+      try {
+        await markNoInvoice(transactionId);
+        toast({ title: 'Tranzakció megjelölve: Nincs hozzá számla' });
+        await invalidateAll();
+        onUpdate?.();
+      } catch (error) {
+        reportError({
+          type: 'db_query',
+          component: 'useTransactionMatcher',
+          action: 'error',
+          message: 'Error marking no invoice:',
+          error,
+        });
+        toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [onUpdate, invalidateAll]
+  );
 
-      toast({ title: 'Párosítás jóváhagyva!' });
-      invalidateAllMatches();
-      onUpdate?.();
-    } catch (error) {
-      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error verifying match:', error: error });
-      toast({ title: 'Hiba a jóváhagyás során', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  }, [onUpdate]);
-
-  // ── Mark no invoice (transaction has no related invoice at all) ──
-  const handleMarkNoInvoice = useCallback(async (transactionId: string) => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({
-          match_type: 'no_invoice',
-          matched_invoice_id: null,
-          is_verified: false,
-        })
-        .eq('id', transactionId);
-
-      if (error) throw error;
-
-      toast({ title: 'Tranzakció megjelölve: Nincs hozzá számla' });
-      invalidateAllMatches();
-      onUpdate?.();
-    } catch (error) {
-      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error marking no invoice:', error: error });
-      toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  }, [onUpdate]);
-
-  // ── Mark invoice missing (invoice exists but not uploaded yet) ──
-  const handleMarkInvoiceMissing = useCallback(async (transactionId: string) => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({
-          match_type: 'invoice_missing',
-          matched_invoice_id: null,
-          is_verified: false,
-        })
-        .eq('id', transactionId);
-
-      if (error) throw error;
-
-      toast({ title: 'Tranzakció megjelölve: Számla nincs feltöltve' });
-      invalidateAllMatches();
-      onUpdate?.();
-    } catch (error) {
-      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error marking invoice missing:', error: error });
-      toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  }, [onUpdate]);
+  // ── Mark invoice missing ──
+  const handleMarkInvoiceMissing = useCallback(
+    async (transactionId: string) => {
+      setSaving(true);
+      try {
+        await markInvoiceMissing(transactionId);
+        toast({ title: 'Tranzakció megjelölve: Számla nincs feltöltve' });
+        await invalidateAll();
+        onUpdate?.();
+      } catch (error) {
+        reportError({
+          type: 'db_query',
+          component: 'useTransactionMatcher',
+          action: 'error',
+          message: 'Error marking invoice missing:',
+          error,
+        });
+        toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [onUpdate, invalidateAll]
+  );
 
   // ── Revert special status back to unmatched ──
-  const handleRevertStatus = useCallback(async (transactionId: string) => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({ match_type: null })
-        .eq('id', transactionId);
-
-      if (error) throw error;
-
-      toast({ title: 'Státusz visszavonva' });
-      invalidateAllMatches();
-      onUpdate?.();
-    } catch (error) {
-      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error reverting status:', error: error });
-      toast({ title: 'Hiba a visszavonás során', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  }, [onUpdate]);
+  const handleRevertStatus = useCallback(
+    async (transactionId: string) => {
+      setSaving(true);
+      try {
+        await revertStatus(transactionId);
+        toast({ title: 'Státusz visszavonva' });
+        await invalidateAll();
+        onUpdate?.();
+      } catch (error) {
+        reportError({
+          type: 'db_query',
+          component: 'useTransactionMatcher',
+          action: 'error',
+          message: 'Error reverting status:',
+          error,
+        });
+        toast({ title: 'Hiba a visszavonás során', variant: 'destructive' });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [onUpdate, invalidateAll]
+  );
 
   return {
-    // State
     availableTransactions,
     filteredTransactions,
     loading,
@@ -367,8 +286,6 @@ export function useTransactionMatcher({
     selectedTransactionId,
     setSelectedTransactionId,
     showSearch,
-
-    // Actions
     openSearch,
     closeSearch,
     fetchAvailableTransactions,
@@ -378,10 +295,6 @@ export function useTransactionMatcher({
     handleMarkNoInvoice,
     handleMarkInvoiceMissing,
     handleRevertStatus,
-
-    // Helpers
     toHuf,
   };
 }
-
-import { reportError } from '@/lib/errorReporter';

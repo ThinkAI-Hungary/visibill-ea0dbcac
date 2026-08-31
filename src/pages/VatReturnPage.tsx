@@ -2026,7 +2026,11 @@ function VatReturnViewTab() {
               <ReturnHistoryTable
                 companyId={selectedCompany!.id}
                 currentReturnId={(vatReturn as any)?.id}
-                onNavigate={(y, m) => { setYear(y); setMonth(m); }}
+                onNavigate={(y, m, f) => {
+                  setYear(y);
+                  setMonth(m);
+                  if (f) setFrequency(f);
+                }}
               />
             </CardContent>
           </Card>

@@ -368,24 +368,98 @@ Számla táblázat sorok kibonthatók részletes nézetté, ami tartalmazza:
 
 ---
 
-## Metric Card Grid
+## Interaktív KPI Szűrőkártya Pattern (KPI Filter Cards)
 
-Dashboard KPI kártyák elrendezése:
+A felületek tetején (pl. Számlák, Banki Tranzakciók, Bérek) található KPI összegző kártyák nem pusztán statisztikai widgetek, hanem **gyors szűrőkapcsolóként (toggle filter)** is funkcionálnak:
 
 ```tsx
-<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-  <MetricCard title="Bevétel" ... />
-  <MetricCard title="Kiadás" ... />
-  <MetricCard title="Eredmény" ... />
-  <MetricCard title="Nyitott számlák" ... />
+<MetricCard
+  title="Függőben lévő tételek"
+  value="12 db"
+  active={activeFilter === 'pending'}
+  onClick={() => toggleFilter('pending')}
+  className={cn(
+    "cursor-pointer transition-all duration-200",
+    activeFilter === 'pending'
+      ? "border-primary bg-primary/5 ring-1 ring-primary/20 shadow-sm"
+      : "opacity-80 hover:opacity-100 hover:border-border"
+  )}
+/>
+```
+
+- **Pagináció szinkron:** Amikor a felhasználó rákattint egy KPI szűrőkártyára, a táblázat szűrése aktiválódik, és a `UnifiedPagination` automatikusan kliens-oldali lapszám-kalkulációra vált (`Math.ceil(filteredItems.length / pageSize)`).
+
+---
+
+## Lebegő Csoportos Műveleti Sáv (Floating Bulk Action Bar)
+
+Ha a táblázatban legalább 1 sor ki van jelölve a checkbox-szal, a képernyő alsó közepén megjelenik a lebegő műveleti sáv:
+
+```tsx
+<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-card/95 backdrop-blur-md border border-border shadow-2xl rounded-full px-6 py-3 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4">
+  <span className="text-xs font-semibold tabular-nums text-foreground">
+    {selectedCount} elem kijelölve
+  </span>
+  <Separator orientation="vertical" className="h-4" />
+  <Button size="sm" variant="outline" onClick={handleBulkMatch}>Tömeges párosítás</Button>
+  <Button size="sm" variant="outline" onClick={handleBulkCategory}>Kategória váltás</Button>
+  <Button size="sm" variant="destructive" onClick={handleBulkDelete}>Törlés</Button>
+  <Button size="sm" variant="ghost" onClick={handleClearSelection}>Mégse</Button>
 </div>
 ```
 
-| Breakpoint | Oszlopok |
-|-----------|---------|
-| `< sm` | 1 |
-| `sm` – `lg` | 2 |
-| `lg+` | 4 |
+---
+
+## Könyvelési (eaisyBooks) Tábla & Főkönyvi Konvenciók
+
+A kettős könyvvitel felületein (Főkönyvi kivonat, Naplók, Analitika) az alábbi szigorú elrendezési szabályok érvényesek:
+
+1. **Tartozik / Követel (T / K) Kettős Oszloprendszer:**
+   - Tartozik (Debit): Semleges / halvány kék kódolás (`text-foreground`).
+   - Követel (Credit): Semleges / halvány borostyán kódolás (`text-foreground`).
+   - Egyenleg (Balance): Előjel-tudatos színezés: Pozitív = `text-emerald-700 dark:text-emerald-400`, Negatív = `text-rose-600 dark:text-rose-400`.
+2. **Lezárt Időszak Indikátor:**
+   - Ha egy könyvelési időszak le van zárva, a fejlécben megjelenik a lakat ikon (`Lock` sárga színben), a táblázat sorai read-only módba lépnek, és a fejléc alatt a `PeriodClosingSettings` sáv figyelmeztet.
+3. **Audit Trail Nyomkövetés:**
+   - Minden kézi főkönyvi és napló tételnél elérhető az `AuditTrailDialog`, amely megjeleníti a módosítás előtti és utáni JSON diff állapotot, a felhasználót és az időbélyeget.
+
+---
+
+## Chart & Recharts Vizualizációs Standardok
+
+### Tooltip Doboz Szabvány
+
+Minden Recharts diagram egységes, lebegő glassmorphism stílust kap:
+
+```tsx
+<Tooltip
+  content={({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="bg-popover/90 backdrop-blur-md border border-border rounded-lg p-3 shadow-xl text-xs">
+        <p className="font-semibold text-foreground mb-1">{label}</p>
+        {payload.map((entry, idx) => (
+          <div key={idx} className="flex items-center justify-between gap-4 py-0.5">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: entry.color }} />
+              {entry.name}:
+            </span>
+            <span className="font-mono tabular-nums font-medium text-foreground">
+              {formatCurrency(Number(entry.value))}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }}
+/>
+```
+
+### Kategória Fánkdiagram (Category Donut Chart)
+
+- **Központi Összegző:** A fánk közepén megjelenik a teljes időszaki kiadás/bevétel (`text-lg font-bold`) és felirat.
+- **Interaktív Cikk-Kiemelés:** Az aktív cikk hover állapotban 4px-rel kintebb tolódik (`outerRadius + 4px`).
+- **Oldalsó Legenda:** A fánkdiagram mellett görgethető táblázat mutatja a kategóriák százalékos részesedését mini progress barokkal.
 
 ---
 

@@ -222,6 +222,117 @@ A csoport fejléc mellett lévő `ChevronRight` ikon 90°-os forgást kap nyitot
 
 ---
 
+## View Transition API & Témaváltás
+
+A sötét és világos téma közötti váltáskor a böngésző natív View Transition API-ja fut le 100ms ultra-gyors átmenettel:
+
+```css
+/* View Transition: ultra-fast full-page crossfade on theme switch */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 100ms;
+  animation-timing-function: ease-out;
+  mix-blend-mode: normal !important;
+}
+
+/* Suppress all per-element transitions during theme switch */
+.no-transitions,
+.no-transitions *,
+.no-transitions *::before,
+.no-transitions *::after {
+  transition: none !important;
+}
+
+/* Freeze all animations in place during theme switch (pause, don't reset) */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  animation-play-state: paused !important;
+}
+```
+
+---
+
+## Staggered Kártya és Lista Animációk (`.stagger-1` .. `.stagger-8`)
+
+Kártyarácsok és összetett listák egymás utáni, lépcsőzetes megjelenítéséhez a `stepFadeIn` animáció késleltetett osztályait használjuk:
+
+```css
+.stagger-1 { animation: stepFadeIn 0.4s ease-out 0.05s both; }
+.stagger-2 { animation: stepFadeIn 0.4s ease-out 0.10s both; }
+.stagger-3 { animation: stepFadeIn 0.4s ease-out 0.15s both; }
+.stagger-4 { animation: stepFadeIn 0.4s ease-out 0.20s both; }
+.stagger-5 { animation: stepFadeIn 0.4s ease-out 0.25s both; }
+.stagger-6 { animation: stepFadeIn 0.4s ease-out 0.30s both; }
+.stagger-7 { animation: stepFadeIn 0.4s ease-out 0.35s both; }
+.stagger-8 { animation: stepFadeIn 0.4s ease-out 0.40s both; }
+```
+
+---
+
+## Card Ripple Egérkövető Fényeffekt (`.card-ripple`)
+
+Interaktív kártyák fölé vitt egérmutató pozícióját dinamikusan követő radiális primary gradient spotlight:
+
+```css
+.card-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.card-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), hsl(var(--primary) / 0.08) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.card-ripple:hover::after {
+  opacity: 1;
+}
+```
+
+---
+
+## Onboarding Fényhatás (`.animate-help-glow`)
+
+Kiemelt súgó és tour elemek 5 másodperces, diszkrét lélegző fényeffektusa:
+
+```css
+.animate-help-glow {
+  animation: helpGlowBreath 5s ease-in-out infinite;
+}
+@keyframes helpGlowBreath {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1.02);
+    box-shadow: 0 0 4px rgba(16, 185, 129, 0.1);
+  }
+  50% {
+    opacity: 0.82;
+    transform: scale(1.01);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+  }
+}
+```
+
+---
+
+## Tab & Content Áttűnések (`.tab-content-animate`)
+
+```css
+.tab-content-animate {
+  animation: tabFadeSlide 0.3s ease-out both;
+}
+@keyframes tabFadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+```
+
+---
+
 ## Rotate Animáció (Sun/Moon)
 
 A témaváltó ikon forgó animációt használ:

@@ -2,7 +2,7 @@
 
 > Foglalkoztatottak, jogviszonyok, bérszámfejtési ciklusok, bérelemek, nyilatkozatok, cafeteria, letiltások.
 
-**Táblák ebben a csoportban:** 13
+**Táblák ebben a csoportban:** 14
 
 ---
 
@@ -66,6 +66,7 @@
 | feor_code | text | ✓ |  |
 | job_title | text | ✓ |  |
 | location_id | uuid | ✓ |  |
+| project_id | uuid | ✓ | NULL |
 | cost_center | text | ✓ |  |
 | department | text | ✓ |  |
 | base_salary | numeric | ✓ |  |
@@ -78,7 +79,7 @@
 | created_at | timestamp with time zone | ✓ | `now()` |
 | updated_at | timestamp with time zone | ✓ | `now()` |
 
-**FK:** `company_id` → `companies.id`, `employee_id` → `accounty_employees.id`
+**FK:** `company_id` → `companies.id`, `employee_id` → `accounty_employees.id`, `project_id` → `projects.id`
 
 **Indexek:** `idx_accounty_employments_company`, `idx_accounty_employments_employee`, `idx_accounty_employments_job_code`, `idx_accounty_employments_status`
 
@@ -348,6 +349,26 @@
 
 ---
 
+### `accounty_dependents`
+
+> Családi adókedvezmény és pótszabadság alapjául szolgáló eltartottak / kedvezményezett gyermekek nyilvántartása.
+
+**RLS:** ✅ | **Sorok:** Dinamikus
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| `id` | uuid | — | `gen_random_uuid()` |
+| `employee_id` | uuid | — | — |
+| `name` | text | — | — |
+| `tax_id` | text | ✓ | — |
+| `birth_date` | date | ✓ | — |
+| `relationship` | text | — | `'gyermek'` |
+| `is_beneficiary` | boolean | — | `true` |
+| `created_at` | timestamp with time zone | — | `now()` |
+| `updated_at` | timestamp with time zone | — | `now()` |
+
+---
+
 ### `accounty_job_codes`
 
 > NAV jogviszonykódok master táblája. Az 1115-ös kód 2026.01.01-től automatikusan aktív.
@@ -356,20 +377,20 @@
 
 | Oszlop | Típus | Null | Default |
 |--------|-------|------|---------|
-| code | text | — |  |
-| name | text | — |  |
-| is_insured | boolean | ✓ | `true` |
-| min_contribution_base_rule | text | ✓ |  |
-| valid_from | date | ✓ |  |
-| valid_until | date | ✓ |  |
-| description | text | ✓ |  |
-| id | uuid | ✓ | `gen_random_uuid()` |
-| is_active | boolean | ✓ | `true` |
-| valid_to | date | ✓ |  |
-| nav_reference_url | text | ✓ |  |
-| notes | text | ✓ |  |
-| created_at | timestamp with time zone | ✓ | `now()` |
-| updated_at | timestamp with time zone | ✓ | `now()` |
+| `code` | text | — | — |
+| `name` | text | — | — |
+| `is_insured` | boolean | ✓ | `true` |
+| `min_contribution_base_rule` | text | ✓ | — |
+| `valid_from` | date | ✓ | — |
+| `valid_until` | date | ✓ | — |
+| `description` | text | ✓ | — |
+| `id` | uuid | ✓ | `gen_random_uuid()` |
+| `is_active` | boolean | ✓ | `true` |
+| `valid_to` | date | ✓ | — |
+| `nav_reference_url` | text | ✓ | — |
+| `notes` | text | ✓ | — |
+| `created_at` | timestamp with time zone | ✓ | `now()` |
+| `updated_at` | timestamp with time zone | ✓ | `now()` |
 
 ---
 

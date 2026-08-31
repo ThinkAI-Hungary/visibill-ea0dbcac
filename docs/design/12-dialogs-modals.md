@@ -87,21 +87,23 @@
 
 ### Tranzakció Dialog
 
-| Dialog | Fájl | Méret |
-|--------|------|-------|
-| `TransactionDetailsDialog` | 46KB | XL — legnagyobb dialog! |
+| Dialog | Fájl | Méret | Leírás |
+|--------|------|-------|--------|
+| `TransactionDetailsDialog` | `src/components/TransactionDetailsDialog.tsx` | ~10KB (218 sor) | **Moduláris Dialog Orchestrator (A-059)**: Tranzakció fejléc, kártya, párosított bizonylatok, többszörös párosítások, manuális kereső, főkönyvi számlaválasztó és jegyzetek sub-komponensekből (`src/components/transaction-details/`). |
 
-### Egyéb Dialógusok
+### Egyéb Dialógusok & Részlet Panelek
 
-| Dialog | Fájl | Felhasználás |
-|--------|------|-------------|
-| `AssetActivationDialog` | 15KB | TENY aktiválás |
-| `ChangePasswordDialog` | 8KB | Jelszó módosítás |
-| `FeedbackDialog` | 12KB | Visszajelzés küldés (`sm:max-w-[720px]`, 2-oszlopos grid, open reset) |
-| `IdleWarningModal` | 3KB | Inaktivitás figyelmeztetés |
-| `UnsavedChangesDialog` | 1KB | Mentetlen változások |
-| `SupplierInvoiceAssignment` | 14KB | Szállító-számla összerendelés |
-| `ExpandedInvoiceRow` (belső) | – | Tranzakció kereső/hozzárendelés (Dialog-ba migrálva 2026-06-18) |
+| Komponens | Fájl | Méret | Felhasználás |
+|-----------|------|-------|-------------|
+| `AssetActivationDialog` | `src/components/AssetActivationDialog.tsx` | 21KB | TENY tárgyi eszköz aktiválási varázsló |
+| `ChangePasswordDialog` | `src/components/ChangePasswordDialog.tsx` | 8KB | Jelszó módosítás és megerősítés |
+| `ChangeEmailDialog` | `src/components/ChangeEmailDialog.tsx` | 9KB | Email cím módosítási folyamat |
+| `CMREscalationDialog` | `src/components/CMREscalationDialog.tsx` | 15KB | Szállítmányozási fuvar-számla eltérés eszkaláció |
+| `FeedbackDialog` | `src/components/FeedbackDialog.tsx` | 22KB | Visszajelzés küldés instant DOM canvas screenshot csatolással (`sm:max-w-[720px]`, 2-oszlopos grid) |
+| `IdleWarningModal` | `src/components/IdleWarningModal.tsx` | 3KB | Inaktivitás visszaszámláló és session hosszabbítás (z-[9999]) |
+| `UnsavedChangesDialog` | `src/components/UnsavedChangesDialog.tsx` | 1.3KB | React Router `useBlocker` elnavigálás védelem |
+| `SupplierInvoiceAssignment` | `src/components/SupplierInvoiceAssignment.tsx` | 15KB | Szállító-számla tömeges projekt összerendelés |
+| `ExpandedInvoiceRow` | `src/components/ExpandedInvoiceRow.tsx` | 80KB | Kétoszlopos lenyitható számlarészlet: balra képelőnézet és ÁFA bontás, jobbra banki tranzakció és tételes GL osztályozás |
 
 ---
 

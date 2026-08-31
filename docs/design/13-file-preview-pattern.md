@@ -176,6 +176,31 @@ setPreviewUrl(blobUrl); // felesleges letöltés + memory leak kockázat
 
 ---
 
+---
+
+## Feltöltési Dropzone & Batch Fájlkezelési Patternek
+
+### 1. Drag & Drop Zóna Állapotai (`src/pages/UploadInvoices.tsx`)
+
+| Állapot | Vizuális Stílus | Jelzés |
+|---|---|---|
+| **Alap (Idle)** | `border-dashed border-2 border-border/80 bg-muted/20 hover:border-primary/50 hover:bg-muted/40 rounded-xl p-8` | Kattints vagy húzd ide a fájlokat |
+| **Aktív húzás (Drag-over)** | `border-primary bg-primary/10 ring-4 ring-primary/10 scale-[1.01]` | Engedd el a fájlokat a feltöltéshez |
+| **Érvénytelen fájl (Reject)** | `border-destructive bg-destructive/10 ring-4 ring-destructive/10` | Nem támogatott fájlformátum vagy méretkorlát túllépés |
+
+### 2. Többfájlos Feltöltési Várólista (Multi-File Queue)
+
+- **Fájltípus Ikonok:** PDF = Piros (`FileText` text-red-500), Kép = Kék (`Image` text-blue-500), Excel/CSV = Zöld (`Table` text-emerald-500).
+- **Folyamatjelző:** Minden feltöltés alatt álló sorhoz `h-1.5 rounded-full bg-primary` animált csík és KB/MB méretjelző tartozik.
+- **Állapotjelzők:** Feltöltés alatt (`animate-spin`), OCR feldolgozás alatt (`animate-pulse`), Kész (`CheckCircle2` text-success), Hiba (`AlertCircle` text-destructive).
+
+### 3. Csatolt Fájlok Batch Menedzser (`InvoiceFilesDialog.tsx`, `UploadedFilesModal.tsx`)
+
+- **A / B Nézetváltó:** Gombbal váltható a kompakt táblázatos lista és a vizuális képrács (thumbnail gallery).
+- **Tömeges Műveletek:** Összes kijelölése checkbox, tömeges ZIP letöltés és megerősítéshez kötött tömeges törlés.
+
+---
+
 ## Kapcsolódó
 
 - [ADR A-044: Shared FilePreviewModal utility](../architecture/decisions/A-044-shared-file-preview-modal.md)

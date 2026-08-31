@@ -5,7 +5,11 @@ import { cn } from '@/lib/utils';
 
 const fmtEft = (v: number | null | undefined) => (v === null || v === undefined) ? '—' : `${v.toLocaleString('hu-HU')} eFt`;
 
-type HistoryProps = { companyId: string; currentReturnId?: string; onNavigate: (y: number, m: number) => void };
+type HistoryProps = {
+  companyId: string;
+  currentReturnId?: string;
+  onNavigate: (y: number, m: number, frequency?: 'H' | 'N' | 'E') => void;
+};
 
 export function ReturnHistoryTable({ companyId, currentReturnId, onNavigate }: HistoryProps) {
   const { data: history = [] } = useQuery({
@@ -13,7 +17,7 @@ export function ReturnHistoryTable({ companyId, currentReturnId, onNavigate }: H
     queryFn: async () => {
       const { data } = await supabase
         .from('vat_returns')
-        .select('id, period_year, period_month, status, total_payable_tax, total_deductible_tax, net_result, amount_to_pay, amount_reclaimable, updated_at')
+        .select('id, period_year, period_month, frequency, status, total_payable_tax, total_deductible_tax, net_result, amount_to_pay, amount_reclaimable, updated_at')
         .eq('company_id', companyId)
         .order('period_year', { ascending: false })
         .order('period_month', { ascending: false })
@@ -39,25 +43,31 @@ export function ReturnHistoryTable({ companyId, currentReturnId, onNavigate }: H
         <div className="col-span-2 text-right">Egyenleg</div>
         <div className="col-span-2 text-right">Utoljára</div>
       </div>
-      {history.map((ret: any) => (
-        <button
-          key={ret.id ?? `${ret.period_year}-${ret.period_month}`}
-          className={cn(
-            "grid grid-cols-12 gap-2 px-4 py-2.5 text-sm w-full text-left hover:bg-muted/30 transition-colors",
-            ret.id === currentReturnId && "bg-primary/5 border-l-2 border-l-primary"
-          )}
-          onClick={() => onNavigate(ret.period_year, ret.period_month)}
-        >
-          <div className="col-span-2 font-medium">{ret.period_year}/{String(ret.period_month).padStart(2, '0')}</div>
-          <div className="col-span-2"><Badge className={cn("text-[10px]", statusColor(ret.status))}>{statusLabel(ret.status)}</Badge></div>
-          <div className="col-span-2 text-right tabular-nums text-red-500">{fmtEft(Math.round((ret.total_payable_tax || 0) / 1000))}</div>
-          <div className="col-span-2 text-right tabular-nums text-emerald-600">{fmtEft(Math.round((ret.total_deductible_tax || 0) / 1000))}</div>
-          <div className={cn("col-span-2 text-right tabular-nums font-medium", (ret.net_result || 0) > 0 ? 'text-red-500' : 'text-emerald-600')}>
-            {fmtEft(Math.round((ret.net_result || 0) / 1000))}
-          </div>
-          <div className="col-span-2 text-right text-xs text-muted-foreground">{ret.updated_at?.substring(0, 10)}</div>
-        </button>
-      ))}
+      {history.map((ret: any, idx: number) => {
+        const rowKey = ret.id || `${ret.period_year}-${ret.period_month}-${ret.frequency || 'H'}-${idx}`;
+        const freqLabel = ret.frequency === 'N' ? ' (Negyedév)' : ret.frequency === 'E' ? ' (Éves)' : '';
+        return (
+          <button
+            key={rowKey}
+            className={cn(
+              "grid grid-cols-12 gap-2 px-4 py-2.5 text-sm w-full text-left hover:bg-muted/30 transition-colors",
+              ret.id === currentReturnId && "bg-primary/5 border-l-2 border-l-primary"
+            )}
+            onClick={() => onNavigate(ret.period_year, ret.period_month, ret.frequency)}
+          >
+            <div className="col-span-2 font-medium">
+              {ret.period_year}/{String(ret.period_month).padStart(2, '0')}{freqLabel}
+            </div>
+            <div className="col-span-2"><Badge className={cn("text-[10px]", statusColor(ret.status))}>{statusLabel(ret.status)}</Badge></div>
+            <div className="col-span-2 text-right tabular-nums text-red-500">{fmtEft(Math.round((ret.total_payable_tax || 0) / 1000))}</div>
+            <div className="col-span-2 text-right tabular-nums text-emerald-600">{fmtEft(Math.round((ret.total_deductible_tax || 0) / 1000))}</div>
+            <div className={cn("col-span-2 text-right tabular-nums font-medium", (ret.net_result || 0) > 0 ? 'text-red-500' : 'text-emerald-600')}>
+              {fmtEft(Math.round((ret.net_result || 0) / 1000))}
+            </div>
+            <div className="col-span-2 text-right text-xs text-muted-foreground">{ret.updated_at?.substring(0, 10)}</div>
+          </button>
+        );
+      })}
     </div>
   );
 }

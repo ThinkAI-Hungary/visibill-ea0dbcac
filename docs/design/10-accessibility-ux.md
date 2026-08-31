@@ -161,7 +161,47 @@ Külön dark mode verzió: `hsl(222 37% 10%)` háttér.
 
 ---
 
-## Print Támogatás
+## Zárt Viewport Layout Invariáns
+
+Az eaisybill nem hagyományos, lefelé scrollozódó weboldalként viselkedik, hanem szigorúan **zárt asztali keretként (desktop application shell)**. A görgetés kizárólag a dedikált belső konténerekben (`<main className="overflow-y-auto">`, `ScrollArea`) engedélyezett:
+
+```css
+html {
+  height: 100%;
+  overflow: hidden !important;
+}
+
+body {
+  height: 100%;
+  overflow: hidden !important;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+```
+
+---
+
+## Képernyőmagasság Adaptáció (Auth Viewport Scaler)
+
+Kisebb laptop képernyőkön (< 900px magasság) a bejelentkezési és regisztrációs oldalak nem csúsznak szét és nem kényszerítenek scrollozást, hanem automatikusan 90%-ra skálázódnak:
+
+```css
+@media (max-height: 900px) {
+  .auth-root {
+    transform: scale(0.9);
+    transform-origin: top left;
+    width: 111.111%; /* 100 / 0.9 */
+    height: 111.111vh;
+  }
+}
+```
+
+---
+
+## Print Támogatás & Nyomtatási Szabályok
 
 | Elem | Viselkedés |
 |------|-----------|
@@ -174,10 +214,28 @@ Külön dark mode verzió: `hsl(222 37% 10%)` háttér.
 
 ```css
 @media print {
-  @page { size: landscape; margin: 15mm; }
+  @page {
+    size: landscape;
+    margin: 15mm;
+  }
+  
   html, body, #root {
     height: auto !important;
+    min-height: auto !important;
     overflow: visible !important;
+  }
+
+  /* Kompakt cellaméretek a papíron */
+  table th, table td {
+    padding: 4px 6px !important;
+    font-size: 11px !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+  
+  /* Sorok oldalhatáron történő kettévágásának megakadályozása */
+  tr {
+    page-break-inside: avoid !important;
   }
 }
 ```

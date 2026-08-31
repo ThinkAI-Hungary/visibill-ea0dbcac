@@ -4,38 +4,43 @@
 
 ---
 
-## App Shell Architektúra
+## App Shell & Moduláris Router Architektúra (ADR A-060)
 
 ```
-┌─────────────────────────────────────────────────┐
-│ BrowserRouter                                   │
-│  ├── /auth               → Auth (standalone)    │
-│  ├── /reset-password     → ResetPassword         │
-│  ├── /management         → ManagementDashboard   │
-│  │                                               │
-│  └── ProtectedLayout ◄── Auth gate              │
-│       ├── AppLayout                              │
-│       │   ├── AppSidebar (bal oldal)             │
-│       │   └── Main Area                          │
-│       │       ├── TopBar (GlobalDatePicker)       │
-│       │       └── ContentArea                    │
-│       │           └── ScopedLayout               │
-│       │               └── <Outlet /> (page)      │
-│       └── FeedbackFab (jobb alsó sarok)          │
-└─────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│ App.tsx (Root Orchestrator <65 sor)                                    │
+│  ├── bootstrap.ts (Pre-render URL hash handler & error deszerializáló) │
+│  ├── queryClient.ts (React Query kliens & globális error listenerek)   │
+│  │                                                                     │
+│  └── BrowserRouter                                                     │
+│       ├── renderAuthRoutes()        → /auth, /reset-password, /mgmt    │
+│       ├── renderAccountyRoutes()    → /eaisybooks/* (portfólió & client)│
+│       │                                                                │
+│       └── ProtectedLayout ◄── Auth gate (eaisybill)                   │
+│            ├── ScopedLayout (/:companyId/:dateRange)                   │
+│            │    ├── renderEaisybillScopedRoutes()                      │
+│            │    └── renderShipmentScopedRoutes()                       │
+│            └── Legacy & Fallback Redirects                             │
+│                 ├── renderEaisybillLegacyAndFallbackRoutes()           │
+│                 └── renderShipmentLegacyRoutes()                       │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Komponens Felelősségek
+### Komponens & Modul Felelősségek
 
-| Komponens | Felelősség |
-|-----------|-----------|
-| **ProtectedLayout** | Auth gate — semmi nem renderelődik amíg auth+company+role nem kész |
-| **AppLayout** | Shell layout — Sidebar + TopBar + Content. Stabil, nem mount-ol újra |
-| **AppSidebar** | Navigációs sidebar — `React.memo()`, collapsible csoportokkal |
-| **TopBar** | Globális dátumszűrő — `React.memo()`, elrejtve employee-knál |
-| **ContentArea** | Lazy route Suspense boundary — `React.memo()` |
-| **ScopedLayout** | URL ↔ Context szinkronizáció layer |
-| **FeedbackFab** | Fix pozíciójú visszajelzés gomb |
+| Modul / Komponens | Felelősség |
+|-------------------|-----------|
+| **`src/app/bootstrap.ts`** | Pre-render platform inicializáció, Supabase URL hash elkapás, hiba-parser |
+| **`src/app/queryClient.ts`** | Globális React Query kliens, hibariportolás |
+| **`src/routes/authRoutes.tsx`** | Standalone auth, recovery, portál és management útvonalak |
+| **`src/routes/eaisybillRoutes.tsx`** | Scoped eaisybill útvonalak (`/:companyId/:dateRange/*`) és legacy flat redirectek |
+| **`src/routes/accountyRoutes.tsx`** | eaisybooks (Accounty) portfólió, bérszámfejtés, EV, TAO és admin útvonalak |
+| **`src/routes/shipmentRoutes.tsx`** | HRTSPED fuvarozási és eszkalációs útvonalak |
+| **`src/routes/redirects.tsx`** | `RootRedirect`, `AccountyRootRedirect`, `LegacyRedirect` egységes motor |
+| **`src/routes/shellComponents.tsx`** | `ProtectedPage`, `RemoveInitialLoader`, `ScrollToTop` segédkomponensek |
+| **`ProtectedLayout`** | Auth gate — semmi nem renderelődik amíg auth+company+role nem kész |
+| **`AppLayout`** | Shell layout — Sidebar + TopBar + Content. Stabil, nem mount-ol újra |
+| **`ScopedLayout`** | URL ↔ Context szinkronizáció layer |
 
 ---
 
@@ -75,15 +80,16 @@
 └──────────────────────┘
 ```
 
-### 5 Navigációs Csoport
+### 6 Navigációs Csoport
 
 | Kulcs | Csoport név | Ikon | Menüelemek |
 |-------|------------|------|------------|
 | `overview` | Áttekintés | `LayoutDashboard` | Irányítópult, Kategóriák, Projektek, Partnertörzs |
-| `finance` | Pénzügyek | `Landmark` | Számlák, Kintlévőség, Tranzakciók, Házipénztár |
-| `accounting` | Könyvelés | `BookOpen` | Főkönyv, Eredménykimutatás, Mérleg, Beszámoló, ÁFA Bevallás |
-| `hr` | HR & Eszközök | `Users` | Feltöltés, Bérek/járulékok, Munkaidő, TENY |
-| `system` | Rendszer | `Wrench` | Integrációk, Árfolyamok |
+| `finance` | Pénzügyek | `Landmark` | Számlák, Kintlévőség, Tranzakciók, Házipénztár, Utalások |
+| `accounting` | Könyvelés | `BookOpen` | Főkönyv, Eredménykimutatás, Mérleg, Beszámoló, ÁFA Bevallás, Napló |
+| `hr` | HR & Eszközök | `Users` | Bérek/járulékok, Munkaidő, TENY |
+| `shipment` | Szállítmányozás | `Truck` | Fuvarok, Excel Import, Eszkaláció |
+| `system` | Rendszer | `Wrench` | Integrációk, Árfolyamok, Jegyzetek |
 
 ### Csoport Fejléc Stílus
 
@@ -403,3 +409,28 @@ A Control Center (`ControlCenter` component) és a Tickets Page (`TicketsPage` `
 | 3 | `divide-y` nincs kombinálva egyedi `border-l-*`-gal? | Lista elemek saját border logikával |
 | 4 | Aktív border mindig foglal helyet (transparent)? | Kiválasztható lista elemek |
 | 5 | Tab gombok fix szélességűek (`w-fit` + `whitespace-nowrap`)? | Tab / sub-tab switcher-ek |
+
+---
+
+## Kétoszlopos Mester-Részlet Elrendezés (Master-Detail Split Layout)
+
+Ügyfélszolgálati hibajegyek (`TicketDetailView.tsx`), szállítmányozási fuvarok (`CourierReportTab.tsx`) és részletes beállítások esetén a rendszer kétoszlopos osztott panelt alkalmaz:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Bal Oldal (380px fix)            │ Jobb Oldal (flex-1)      │
+│ ┌──────────────────────────────┐ │ ┌──────────────────────┐ │
+│ │ 🔍 Kereső + Státusz szűrő   │ │ │ Fejléc & Akció gombok│ │
+│ ├──────────────────────────────┤ │ ├──────────────────────┤ │
+│ │ Lista tétel 1 (aktív)        │ │ │ Idővonal / Üzenetek  │ │
+│ │ Lista tétel 2                │ │ │                      │ │
+│ │ Lista tétel 3                │ │ ├──────────────────────┤ │
+│ │                              │ │ │ RichText válaszmező  │ │
+│ └──────────────────────────────┘ │ └──────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Szabályok:**
+- A bal oldali lista és a jobb oldali beszélgetésfolyam egymástól függetlenül görgethető (`overflow-y-auto min-h-0`).
+- A felhasználói üzenetek jobbra igazítottak (`bg-primary/10 border-primary/20`), a support és rendszerüzenetek balra zártak (`bg-muted/50 border-border/50`).
+- Az események (státuszváltás, lezárás, prioritás emelés) a beszélgetési tengelyen középre zárt, kerek ikonnal ellátott audit badge-ként jelennek meg.

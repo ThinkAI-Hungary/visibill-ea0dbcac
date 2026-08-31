@@ -226,17 +226,61 @@ iOS stílusú toggle kapcsoló szöveges label-lel:
 - Opcionális „Szűrők törlése" gomb
 
 ### Table Skeleton / Placeholder Rows
-- `ui/table-skeleton.tsx` — teljes tábla skeleton
-- `ui/table-placeholder-rows.tsx` — üres placeholder sorok
+- `ui/table-skeleton.tsx` — Teljes oszlop-tudatos tábla skeleton shimmer animációval (`animate-shimmer`).
+- `ui/table-placeholder-rows.tsx` — Üres placeholder sorok, melyek garantálják a nulla kumulatív elrendezés-eltolódást (CLS = 0) a fix magasságú paginált táblázatokban.
 
 ### Financial Skeleton
-**Fájl:** `ui/financial-skeleton.tsx` — Pénzügyi oldal specifikus skeleton layout
+**Fájl:** `ui/financial-skeleton.tsx` — Pénzügyi oldalak (Mérleg, Eredménykimutatás, Főkönyv) specifikus skeleton elrendezése kártyákkal és hierarchikus sorokkal.
 
 ### Rich Text Editor
-**Fájl:** `ui/rich-text-editor.tsx` — TipTap alapú rich text szerkesztő
+**Fájl:** `ui/rich-text-editor.tsx` — TipTap alapú rich text szerkesztő formázó eszköztárral (Félkövér, Dőlt, Felsorolás, Számozott lista, Idézet, Kódblokk, Linkek) belső jegyzetekhez és megjegyzésekhez.
 
 ### Partner Type Filter
-**Fájl:** `ui/partner-type-filter.tsx` — Partner típus szűrő (vevő/szállító)
+**Fájl:** `ui/partner-type-filter.tsx` — Háromállású szegmentált toggle csoport (Összes / Belföldi / Külföldi).
+
+### AppModeSwitcher
+**Fájl:** `components/AppModeSwitcher.tsx`
+- **Expanded:** Pill container (`rounded-full`), áttetsző háttér, aktív oldal alatt ragyogó teal glow vonallal (`shadow-[0_0_8px_#14D4B8]`), `eaisybill` és `eaisyBooks` brand feliratokkal.
+- **Collapsed:** Függőleges 36px mini pill `eB` és `eK` kör alakú gombokkal és alsó világító vonallal.
+- **Állapot:** `localStorage.visibill_switch_pending` perzisztencia.
+
+### ProjectFlowchart
+**Fájl:** `components/ProjectFlowchart.tsx` (52KB)
+- Interaktív SVG bezier-görbékkel összekötött mérföldkő- és fázisgráf.
+- Zoom, pan és drag képesség, kapcsolódó számlák és költségkeret vs. tény költés (burn-rate) vizuális progress barokkal.
+
+### FeedbackFab & FeedbackDialog
+**Fájl:** `components/FeedbackFab.tsx` + `FeedbackDialog.tsx`
+- Jobb alsó sarokba rögzített Floating Action Button (`fixed bottom-4 right-4 z-50`).
+- `html2canvas` integráció: instant DOM screenshot capture (jelszómezők kitakarásával).
+- 5-csillagos értékelő, kategóriaválasztó és böngésző/OS diagnosztikai metaadatok automatikus rögzítése.
+
+### LiveNotificationProvider
+**Fájl:** `components/LiveNotificationProvider.tsx` (38KB)
+- 3-szintű valós idejű értesítési központ:
+  1. Supabase Realtime PostgreSQL CDC WebSocket csatorna (`upload_notifications`, `ticket_events`).
+  2. 30 másodperces polling catch-up fallback.
+  3. Hangjelzés (audio chime) + interaktív toast közvetlen számla/hibajegy deep linkkel.
+
+### CompanySelector
+**Fájl:** `components/CompanySelector.tsx`
+- Kereshető `Command` popover cégváltó determinisztikus pasztell avatar generátorral (név-hash alapján), szerepkör badge-ekkel (`owner`, `admin`, `member`), és beépített „Csatlakozás céghez" / „Új cég" modálokkal.
+
+### GlobalDatePicker
+**Fájl:** `components/GlobalDatePicker.tsx`
+- TopBar-ba épített scoped dátumtartomány-választó gyorsgombokkal (*„Ez a hónap"*, *„Előző hónap"*, *„Ez az év"*), és kétnaptáras popoverrel, szinkronban a scoped URL-lel.
+
+### ProductTour & ProductTourTooltip
+**Fájl:** `components/ProductTour.tsx` + `ProductTourTooltip.tsx`
+- React Joyride alapú interaktív onboarding bejárás `data-tour` célpontokkal és glassmorphism lebegő lépéstájékoztatókkal.
+
+### UnsavedChangesDialog
+**Fájl:** `components/UnsavedChangesDialog.tsx`
+- React Router `useBlocker` védelem a piszkozat bizonylatok és űrlapok elnavigálásakor történő véletlen adatvesztése ellen.
+
+### SupportModeBanner & OfflineBanner
+**Fájl:** `components/SupportModeBanner.tsx` + `OfflineBanner.tsx`
+- Sticky rendszerjelző sávok: Superadmin megfigyelő mód figyelmeztetés kilépés gombbal, valamint offline hálózati kapcsolatvesztés riasztás.
 
 ---
 

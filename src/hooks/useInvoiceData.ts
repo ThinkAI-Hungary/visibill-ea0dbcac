@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
+import { invalidateInvoiceQueries, invalidatePartnerQueries } from '@/lib/cache';
 import { supabase } from '@/integrations/supabase/client';
 
 // ── Types ──
@@ -256,14 +257,9 @@ export function useInvoiceData(
   });
 
   const invalidateInvoiceData = () => {
+    invalidateInvoiceQueries(queryClient, companyId);
+    invalidatePartnerQueries(queryClient, companyId);
     queryClient.invalidateQueries({ queryKey: ['invoiceKpis', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['page-invoice-transactions'] });
-    queryClient.invalidateQueries({ queryKey: ['matched-transactions-for-invoice'] });
-    queryClient.invalidateQueries({ queryKey: ['partners', companyId] });
     queryClient.invalidateQueries({ queryKey: ['categories', companyId] });
     queryClient.invalidateQueries({ queryKey: ['projectsList', companyId] });
     queryClient.invalidateQueries({ queryKey: ['courierReports', companyId] });

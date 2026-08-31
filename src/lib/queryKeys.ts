@@ -1,9 +1,30 @@
 /**
  * Centralized TanStack Query key factory.
+ * Re-exports domain-specific keys and coordinated invalidation dispatchers from @/lib/cache.
  * Every query key includes company_id so cache is scoped per company.
  * Date-dependent queries also include date range in the key.
  */
+
+export * from './cache';
+
+import {
+  invoiceKeys,
+  transactionKeys,
+  partnerKeys,
+  payrollKeys,
+  glKeys,
+  accountyKeys,
+} from './cache';
+
 export const queryKeys = {
+  // ── Domain Specific Sub-Factories ──
+  invoiceDomain: invoiceKeys,
+  transactionDomain: transactionKeys,
+  partnerDomain: partnerKeys,
+  payrollDomain: payrollKeys,
+  glDomain: glKeys,
+  accountyDomain: accountyKeys,
+
   // ── Companies ──
   companies: (userId: string) =>
     ['companies', userId] as const,

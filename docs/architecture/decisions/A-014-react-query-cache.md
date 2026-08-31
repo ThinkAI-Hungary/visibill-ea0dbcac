@@ -26,17 +26,23 @@ const queryClient = new QueryClient({
 });
 ```
 
-**Query Key Pattern:**
+**Query Key & Invalidation Pattern (Modular Registry — 2026-08):**
 ```typescript
-// src/lib/queryKeys.ts
-export const queryKeys = {
-  invoices: (companyId: string, dateRange: string) => 
-    ['invoices', companyId, dateRange],
-  dashboard: (companyId: string, dateRange: string) => 
-    ['dashboard', companyId, dateRange],
+// src/lib/cache/keys/invoices.keys.ts
+export const invoiceKeys = {
+  all: (companyId: string) => ['invoices', companyId] as const,
+  navInvoices: (companyId: string, dateFrom?: string, dateTo?: string) =>
+    ['navInvoices', companyId, dateFrom, dateTo] as const,
   // ...
 };
+
+// src/lib/cache/invalidations.ts
+export async function invalidateInvoiceQueries(queryClient: QueryClient, companyId: string) {
+  // Atomi koordinált érvénytelenítés az összes kapcsolódó számla és KPI nézetre
+}
 ```
+
+A `src/lib/cache/` modulban domain-szeletelt felépítést használunk (`invoices`, `transactions`, `partners`, `payroll`, `gl`, `accounty`), miközben a `src/lib/queryKeys.ts` 100%-ban visszafelé kompatibilis re-exportként működik.
 
 **A companyId és dateRange benne van a cache kulcsban** → cégváltás automatikusan új lekérdezést triggerel.
 

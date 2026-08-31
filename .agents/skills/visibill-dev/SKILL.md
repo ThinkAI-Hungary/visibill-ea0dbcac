@@ -101,9 +101,11 @@ Ha a user leírja hogyan működik valami → **ellenőrizd a kódban** mielőtt
 > Ha a feladat bármilyen DB műveletet érint (migration, RPC, RLS, Edge Function query, frontend Supabase query):  
 > **KÖTELEZŐ beolvasni a `visibill-db-checklist` skillt!**
 
-### 1.4b React frontend érintettség → vercel-react-best-practices betöltés
-> Ha a feladat bármilyen React kód módosításával jár:  
-> **KÖTELEZŐ beolvasni a `vercel-react-best-practices` skillt!**
+### 1.4b React frontend érintettség → vercel-react-best-practices & composition-patterns betöltés
+> Ha a feladat bármilyen React kód módosításával jár (komponens, hook, modal, oldal):  
+> - **KÖTELEZŐ beolvasni:** `view_file C:\Users\Morfi\.gemini\config\skills\react-best-practices\SKILL.md`
+> - **KÖTELEZŐ beolvasni:** `view_file C:\Users\Morfi\.gemini\config\skills\composition-patterns\SKILL.md`
+> - *Szabály:* Minimalizáld a re-rendereket (useCallback/useMemo), kövess tiszta kompozíciót (anti-boolean prop explosion).
 
 ### 1.4c KÖTELEZŐ: Design Pattern Kontextus Betöltése
 > [!IMPORTANT]
@@ -201,9 +203,9 @@ A Quality Auditor Subagent az alábbi 4 ellenőrzést végzi el önállóan:
 4. Five-Axis Minőségi Audit:
    □ Correctness (spec-et lefedi, edge case-ek kezelve)
    □ Readability (tiszta elnevezések, érthető kód)
-   □ Architecture (nem töri meg a meglévő rendszert)
+   □ Architecture & Composition (nincs boolean prop proliferáció, tiszta kompozíció)
    □ Security (RLS aktív, input validáció)
-   □ Performance (nincs N+1, optimalizált renderelés)
+   □ Performance & Rendering (nincs N+1, nincs felesleges re-render, stabil hook dependencyk)
 ```
 
 ### 4.1 Subagent Verdikt & Hiba Visszacsatolás
