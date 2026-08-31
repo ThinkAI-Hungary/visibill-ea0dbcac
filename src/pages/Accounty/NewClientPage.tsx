@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { reportError } from '@/lib/errorReporter';
 import { useToast } from '@/components/ui/use-toast';
+import { seedAccountyAssignments } from '@/utils/seedAccounty';
 
 import ClientDetailsStep from './new-client/ClientDetailsStep';
 import IntegrationStep from './new-client/IntegrationStep';
@@ -174,14 +175,27 @@ export default function NewClientPage() {
           const firmId = myAssign?.accounting_firm_id || companyId;
           const assignRole = myAssign?.role || 'iroda_admin';
 
-          const { error: assignErr } = await supabase.from('accounty_assignments').upsert({
-            accountant_user_id: user.id,
-            company_id: companyId,
-            accounting_firm_id: firmId,
-            role: assignRole,
-            is_primary: true,
-          } as any, { onConflict: 'accountant_user_id,company_id' });
-          if (assignErr) throw assignErr;
+          let assignErr: any;
+          if (myAssign) {
+            // Normal case: user has existing assignments, try direct client-side insert
+            const { error } = await supabase.from('accounty_assignments').upsert({
+              accountant_user_id: user.id,
+              company_id: companyId,
+              accounting_firm_id: firmId,
+              role: assignRole,
+              is_primary: true,
+            } as any, { onConflict: 'accountant_user_id,company_id' });
+            assignErr = error;
+          }
+
+          // Bootstrap case or direct fallback: call the seed Edge Function to bypass RLS
+          if (!myAssign || assignErr) {
+            console.log("No existing assignment or direct assignment failed, invoking seedAccountyAssignments...");
+            const seedResult = await seedAccountyAssignments();
+            if (seedResult && seedResult.error) {
+              throw new Error(seedResult.error);
+            }
+          }
           await supabase.from('accounty_communication_preferences').upsert({
             company_id: companyId, contact_name: contactName || null, contact_email: contactEmail || null, contact_phone: contactPhone || null,
             channel_email: selectedChannels.includes('email'), channel_viber: selectedChannels.includes('viber'), channel_sms: selectedChannels.includes('telegram'), channel_phone: false, auto_reminder: true,
