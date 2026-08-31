@@ -141,9 +141,22 @@ function startOfMonthIso() {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
-/** Paginate through all auth users (Supabase Admin API returns max 1000/page). */
+/** Paginate through all auth users (fast path: get_auth_emails RPC, fallback: GoTrue Admin API). */
 async function listAllAuthUsers(admin: ReturnType<typeof createClient>): Promise<Map<string, string>> {
   const emailByUserId = new Map<string, string>();
+
+  // 1. Fast path: query auth.users via get_auth_emails SQL RPC (service_role) - runs in ~1-2ms
+  try {
+    const { data: rows, error } = await admin.rpc("get_auth_emails" as any);
+    if (!error && rows && Array.isArray(rows) && rows.length > 0) {
+      for (const r of rows as Array<{ id: string; email: string }>) {
+        emailByUserId.set(r.id, r.email || "");
+      }
+      return emailByUserId;
+    }
+  } catch { /* ignore — fallback to Admin API below */ }
+
+  // 2. Fallback: GoTrue Admin API pagination
   const PAGE_SIZE = 1000;
   let page = 1;
   let hasMore = true;
@@ -158,18 +171,6 @@ async function listAllAuthUsers(admin: ReturnType<typeof createClient>): Promise
 
     hasMore = data.users.length === PAGE_SIZE;
     page++;
-  }
-
-  // Fallback: if Admin API returned nothing, query auth.users via SQL (service_role)
-  if (emailByUserId.size === 0) {
-    try {
-      const { data: rows } = await admin.rpc("get_auth_emails" as any);
-      if (rows && Array.isArray(rows)) {
-        for (const r of rows as Array<{ id: string; email: string }>) {
-          emailByUserId.set(r.id, r.email || "");
-        }
-      }
-    } catch { /* ignore — best-effort fallback */ }
   }
 
   return emailByUserId;
@@ -892,11 +893,12 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
   }
 
 
-  const monthlyCostsByCompany = new Map<string, { cost: number; input: number; output: number; name?: string; project?: string }>();
+  const monthlyCostsByCompany = new Map<string, { cost: number; totalCost: number; input: number; output: number; name?: string; project?: string }>();
   for (const row of monthlyLlm) {
     if (!row.company_id) continue;
-    const current = monthlyCostsByCompany.get(row.company_id) || { cost: 0, input: 0, output: 0, name: row.company_name_override, project: row.project };
+    const current = monthlyCostsByCompany.get(row.company_id) || { cost: 0, totalCost: 0, input: 0, output: 0, name: row.company_name_override, project: row.project };
     current.cost += Number(row.estimated_cost_usd || 0);
+    current.totalCost += Number(row.total_all_time_cost || row.estimated_cost_usd || 0);
     current.input += Number(row.input_tokens || 0);
     current.output += Number(row.output_tokens || 0);
     monthlyCostsByCompany.set(row.company_id, current);
@@ -910,7 +912,7 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
       companiesByUser.get(member.user_id)!.push({ id: company.id, name: company.name, role: roleLabel(member.role) });
     }
 
-    const llm = monthlyCostsByCompany.get(company.id) || { cost: 0, input: 0, output: 0 };
+    const llm = monthlyCostsByCompany.get(company.id) || { cost: 0, totalCost: 0, input: 0, output: 0 };
 
     return {
       id: company.id,
@@ -933,29 +935,22 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
   const totalMonthlyCostUsd = [...monthlyCostsByCompany.values()].reduce((sum, item) => sum + item.cost, 0);
   const totalMonthlyInputTokens = [...monthlyCostsByCompany.values()].reduce((sum, item) => sum + item.input, 0);
   const totalMonthlyOutputTokens = [...monthlyCostsByCompany.values()].reduce((sum, item) => sum + item.output, 0);
-  let mostExpensiveCompany = null;
-  let maxCompanyCost = 0;
-  
-  for (const c of companySummaries) {
-    if (c.monthlyCostUsd > maxCompanyCost) {
-      maxCompanyCost = c.monthlyCostUsd;
-      mostExpensiveCompany = {
-        id: c.id,
-        name: c.name,
-        totalCostUsd: c.monthlyCostUsd,
-        monthlyCostUsd: c.monthlyCostUsd,
-      };
-    }
-  }
+  let mostExpensiveCompany: { id: string; name: string; totalCostUsd: number; monthlyCostUsd: number; project?: string } | null = null;
+  let maxAllTimeCost = 0;
 
   for (const [companyId, val] of monthlyCostsByCompany.entries()) {
-    if (val.project !== "PROD" && val.cost > maxCompanyCost) {
-      maxCompanyCost = val.cost;
+    const allTimeCost = val.totalCost > 0 ? val.totalCost : val.cost;
+    if (allTimeCost > maxAllTimeCost) {
+      maxAllTimeCost = allTimeCost;
+      const prodCompany = companies.find((c) => c.id === companyId);
+      const rawName = prodCompany?.name || val.name || "Ismeretlen cég";
+      const displayName = val.project && val.project !== "PROD" ? `${rawName} (${val.project})` : rawName;
       mostExpensiveCompany = {
         id: companyId,
-        name: val.name || "N/A",
-        totalCostUsd: val.cost,
-        monthlyCostUsd: val.cost,
+        name: displayName,
+        totalCostUsd: Math.round(allTimeCost * 10000) / 10000,
+        monthlyCostUsd: Math.round(val.cost * 10000) / 10000,
+        project: val.project || "PROD",
       };
     }
   }
@@ -1046,14 +1041,7 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
       totalMonthlyCostUsd,
       totalMonthlyInputTokens,
       totalMonthlyOutputTokens,
-      mostExpensiveCompany: mostExpensiveCompany
-        ? {
-            id: mostExpensiveCompany.id,
-            name: mostExpensiveCompany.name,
-            totalCostUsd: mostExpensiveCompany.monthlyCostUsd,
-            monthlyCostUsd: mostExpensiveCompany.monthlyCostUsd,
-          }
-        : null,
+      mostExpensiveCompany,
     },
   };
 }
@@ -1381,7 +1369,7 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
       .eq("processing_status", "error"),
     // 7th source: frontend app error logs
     admin.from("app_error_logs")
-      .select("id, created_at, message, error_type, component, action, company_id, user_id, context")
+      .select("id, created_at, message, error_type, component, action, company_id, user_id, context, stack_trace, url")
       .eq("severity", "error")
       .order("created_at", { ascending: false })
       .limit(500),
@@ -1452,6 +1440,8 @@ async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
             ? 'Mailgun'
             : (row.user_id ? (profileByUserId.get(row.user_id) as string || null) : null),
         context: isAppLog ? (row.context || null) : null,
+        stack_trace: isAppLog ? (row.stack_trace || null) : null,
+        url: isAppLog ? (row.url || null) : null,
       });
     }
   }
@@ -2579,7 +2569,32 @@ async function buildFiles(admin: ReturnType<typeof createClient>, url: URL) {
   const dateFrom = url.searchParams.get("dateFrom") || "";
   const dateTo = url.searchParams.get("dateTo") || "";
   const sortBy = url.searchParams.get("sortBy") || "created_at";
-  const sortDir = url.searchParams.get("sortDir") === "asc" ? "ASC" : "DESC";
+  const sortDir = url.searchParams.get("sortDir") === "asc" ? "asc" : "desc";
+
+  // Fast-path: RPC get_management_files
+  try {
+    const { data: rpcRes, error: rpcErr } = await admin.rpc("get_management_files" as any, {
+      p_page: page,
+      p_page_size: pageSize,
+      p_sort_by: sortBy,
+      p_sort_dir: sortDir,
+      p_search: search || null,
+      p_company_id: companyId || null,
+      p_user_id: userId || null,
+      p_file_type: fileType || null,
+      p_status: status || null,
+      p_date_from: dateFrom ? dateFrom : null,
+      p_date_to: dateTo ? `${dateTo}T23:59:59.999Z` : null,
+    });
+    if (!rpcErr && rpcRes && typeof rpcRes === "object") {
+      return rpcRes;
+    }
+    if (rpcErr) {
+      console.warn("[buildFiles] get_management_files RPC returned error, using fallback:", rpcErr);
+    }
+  } catch (e) {
+    console.warn("[buildFiles] get_management_files RPC exception, using fallback:", e);
+  }
 
   const fetchTable = async (tableName: string, typeKey: string, typeLabel: string) => {
     if (fileType && fileType !== typeKey) return [];
@@ -3533,6 +3548,79 @@ async function buildWorkerStatus(admin: ReturnType<typeof createClient>, period:
       console.warn(`[worker-status] transaction processing query failed for ${pc.name}:`, e);
     }
 
+    // Query bank_statement_uploads
+    try {
+      const { data } = await pc.client
+        .from("bank_statement_uploads")
+        .select("id, file_name, company_id, processing_status, created_at, updated_at")
+        .eq("processing_status", "processing")
+        .order("updated_at", { ascending: false })
+        .limit(50);
+      for (const r of (data || [])) {
+        results.push({
+          ...r,
+          pipeline_type: "bank_statement",
+          document_category: "bank_statement",
+          source: "bank_statement_uploads",
+        });
+      }
+    } catch (_) {}
+
+    // Query report_uploads
+    try {
+      const { data } = await pc.client
+        .from("report_uploads")
+        .select("id, file_name, company_id, processing_status, created_at, updated_at")
+        .eq("processing_status", "processing")
+        .order("updated_at", { ascending: false })
+        .limit(50);
+      for (const r of (data || [])) {
+        results.push({
+          ...r,
+          pipeline_type: "report",
+          document_category: "report",
+          source: "report_uploads",
+        });
+      }
+    } catch (_) {}
+
+    // Query gl_upload_notifications
+    try {
+      const { data } = await pc.client
+        .from("gl_upload_notifications")
+        .select("id, file_name, company_id, processing_status, created_at, updated_at")
+        .eq("processing_status", "processing")
+        .order("updated_at", { ascending: false })
+        .limit(50);
+      for (const r of (data || [])) {
+        results.push({
+          ...r,
+          pipeline_type: "gl_journal",
+          document_category: "general_ledger",
+          source: "gl_upload_notifications",
+        });
+      }
+    } catch (_) {}
+
+    // Query accounty_uploads
+    try {
+      const { data } = await pc.client
+        .from("accounty_uploads")
+        .select("id, file_name, company_id, status, created_at, updated_at")
+        .eq("status", "processing")
+        .order("updated_at", { ascending: false })
+        .limit(50);
+      for (const r of (data || [])) {
+        results.push({
+          ...r,
+          pipeline_type: "accounty",
+          document_category: "accounty_upload",
+          processing_status: r.status,
+          source: "accounty_uploads",
+        });
+      }
+    } catch (_) {}
+
     // Resolve company names for all results
     const companyIds = [...new Set(results.map((r: any) => r.company_id).filter(Boolean))];
     let companyNameMap = new Map<string, string>();
@@ -3698,7 +3786,7 @@ async function buildLLMCosts(admin: ReturnType<typeof createClient>, period: str
     for (const tc of (agg.top_companies || [])) {
       if (!tc.company_id) continue;
       const cKey = `${project}:${tc.company_id}`;
-      const name = companyNameMap.get(tc.company_id) || tc.company_id.substring(0, 8);
+      const name = tc.company_name || companyNameMap.get(tc.company_id) || tc.company_id.substring(0, 8);
       const existing = companyAgg.get(cKey) || { name, cost: 0, jobs: 0, project };
       companyAgg.set(cKey, { name, cost: existing.cost + Number(tc.cost || 0), jobs: existing.jobs + Number(tc.jobs || 0), project });
     }
@@ -3827,6 +3915,7 @@ async function fetchMultiProjectMonthlyLlm(admin: ReturnType<typeof createClient
       return rows.map((row: any) => ({
         company_id: row.company_id,
         estimated_cost_usd: row.cost,
+        total_all_time_cost: Number(row.total_all_time_cost ?? row.cost ?? 0),
         input_tokens: row.input_tokens,
         output_tokens: row.output_tokens,
         total_tokens: (row.input_tokens || 0) + (row.output_tokens || 0),

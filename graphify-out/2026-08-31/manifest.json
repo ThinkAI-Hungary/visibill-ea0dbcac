@@ -3085,8 +3085,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
-    "mtime": 1786464814.005735,
-    "ast_hash": "cf6a5b879dc33afad47393eb05894bf9",
+    "mtime": 1788144183.5305989,
+    "ast_hash": "06c7d68a6e1bebcac11694bd78cfd8ba",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-020-auth-trigger-chain-incident.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788142485.3081326,
-    "ast_hash": "182776d0408b160840b21948ff6bf70e",
+    "mtime": 1788144176.177693,
+    "ast_hash": "1cf7456f666c345bbd6b1fc3f370f31e",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3560,8 +3560,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
-    "mtime": 1787933089.4305952,
-    "ast_hash": "33bf22fbb213573f5dbcc4c7bd3fc450",
+    "mtime": 1788144191.8915224,
+    "ast_hash": "e54d0fad1bd5fa91fc1e58cb4783321e",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-039-global-search.md": {
@@ -3575,8 +3575,8 @@
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1788137289.756202,
-    "ast_hash": "5fe127e42b0fc04f1a373c6bd2ffa83f",
+    "mtime": 1788144204.9476106,
+    "ast_hash": "0758c772aeea3292cce6cad0d1ca5234",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -8052,6 +8052,16 @@
   "supabase/migrations/20260831_add_nav_invoice_items_project_id_index.sql": {
     "mtime": 1788143950.018655,
     "ast_hash": "4515386471b83a1d0316a2244b707978",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-066-management-route-access-control-and-not-found-guard.md": {
+    "mtime": 1788144154.1147945,
+    "ast_hash": "ca55c03b49f88e7d353f92917b1fefff",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-067-projects-query-parallelization-and-partial-indexing.md": {
+    "mtime": 1788144160.8303597,
+    "ast_hash": "626e214506a7ba77f469152f1b230d27",
     "semantic_hash": ""
   }
 }

@@ -124,7 +124,7 @@ export function ManualUploadFeature() {
       <UploadedFilesModal
         open={filesModalOpen}
         onOpenChange={setFilesModalOpen}
-        activeTab={activeTab === 'bank' ? 'transactions' : (activeTab as any)}
+        activeTab={activeTab as any}
       />
     </div>
   );

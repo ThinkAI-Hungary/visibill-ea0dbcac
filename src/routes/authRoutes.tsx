@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react";
-import { Route } from "react-router-dom";
+import { Navigate, Route } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ProtectedPage, RemoveInitialLoader } from "./shellComponents";
@@ -19,7 +19,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
  * Renders NotFound (404) for any user whose profile role is not 'management' or 'thinkai'.
  */
 export function ManagementRoute() {
-  const { user } = useAuth();
+  const { user, loading: authLoading, isSigningOut } = useAuth();
 
   const { data: profileData, isPending } = useQuery({
     queryKey: ['profile-check', user?.id],
@@ -38,6 +38,31 @@ export function ManagementRoute() {
     gcTime: 10 * 60 * 1000,
   });
 
+  // Sign-out transition overlay (matching ProtectedLayout)
+  if (isSigningOut) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 rounded-full border-4 border-primary border-r-transparent animate-spin" />
+          <p className="text-sm font-medium text-muted-foreground animate-pulse">
+            Kijelentkezés...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Initial auth check in progress
+  if (authLoading) {
+    return <LoadingSpinner message="Betöltés..." />;
+  }
+
+  // Unauthenticated / signed out user → redirect to /auth
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Profile role check in progress for logged-in user
   if (isPending) {
     return <LoadingSpinner message="Jogosultság ellenőrzése..." />;
   }

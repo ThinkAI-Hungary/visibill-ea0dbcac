@@ -130,23 +130,23 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const tableName = activeTab === 'invoices' ? 'invoice_uploads'
     : activeTab === 'vouchers' ? 'invoice_uploads'
     : activeTab === 'salaries' ? 'salary_files'
-    : activeTab === 'bank-statements' ? 'bank_statement_uploads'
+    : (activeTab === 'bank' || activeTab === 'bank-statements') ? 'bank_statement_uploads'
     : activeTab === 'reports' ? 'report_uploads'
     : 'transaction_uploads';
   const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" />
     : activeTab === 'vouchers' ? <Coins className="h-5 w-5" />
     : activeTab === 'salaries' ? <Banknote className="h-5 w-5" />
-    : activeTab === 'bank-statements' ? <CreditCard className="h-5 w-5" />
+    : (activeTab === 'bank' || activeTab === 'bank-statements') ? <CreditCard className="h-5 w-5" />
     : activeTab === 'reports' ? <Package className="h-5 w-5" />
     : <Landmark className="h-5 w-5" />;
   const title = activeTab === 'invoices' ? 'Számla feltöltési'
     : activeTab === 'vouchers' ? 'Pénztárbizonylat feltöltési'
     : activeTab === 'salaries' ? 'Bér/járulék feltöltési'
-    : activeTab === 'bank-statements' ? 'Bankkivonat feltöltési'
+    : (activeTab === 'bank' || activeTab === 'bank-statements') ? 'Bankkivonat feltöltési'
     : activeTab === 'reports' ? 'Riport feltöltési'
     : 'Tranzakció feltöltési';
 
-  const isValidTab = activeTab === 'invoices' || activeTab === 'vouchers' || activeTab === 'transactions' || activeTab === 'salaries' || activeTab === 'bank-statements' || activeTab === 'reports';
+  const isValidTab = activeTab === 'invoices' || activeTab === 'vouchers' || activeTab === 'transactions' || activeTab === 'salaries' || activeTab === 'bank' || activeTab === 'bank-statements' || activeTab === 'reports';
 
   // ── Main data query (records + processed IDs + user names) ──
   const { data, isLoading: loading } = useQuery({
@@ -326,7 +326,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           const toastTitle = activeTab === 'invoices' ? 'Számlák feldolgozva!'
             : activeTab === 'vouchers' ? 'Pénztárbizonylatok feldolgozva!'
             : activeTab === 'salaries' ? 'Bér/járulékok feldolgozva!'
-            : activeTab === 'bank-statements' ? 'Bankkivonat feldolgozva!'
+            : (activeTab === 'bank' || activeTab === 'bank-statements') ? 'Bankkivonat feldolgozva!'
             : activeTab === 'reports' ? 'Riport feldolgozva!'
             : 'Tranzakciók feldolgozva!';
 
@@ -350,7 +350,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
         } else if (activeTab === 'salaries') {
           queryClient.invalidateQueries({ queryKey: ['salaries'] });
           queryClient.invalidateQueries({ queryKey: ['salary_files'] });
-        } else if (activeTab === 'bank-statements') {
+        } else if (activeTab === 'bank' || activeTab === 'bank-statements') {
           queryClient.invalidateQueries({ queryKey: ['bankStatements'] });
         } else if (activeTab === 'reports') {
           queryClient.invalidateQueries({ queryKey: ['courierReports'] });

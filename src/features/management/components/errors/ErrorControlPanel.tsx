@@ -1016,42 +1016,75 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers }: E
                       {isExpanded && (
                         <tr>
                           <td colSpan={10} className="p-0">
-                            <div className="bg-muted/20 border-t border-border px-6 py-4 animate-in slide-in-from-top-1 duration-200">
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
+                            <div className="bg-muted/20 border-t border-border px-6 py-4 animate-in slide-in-from-top-1 duration-200 space-y-4">
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-sm">
                                 <div>
                                   <p className="text-muted-foreground text-xs mb-1">Forrás tábla</p>
                                   <p className="text-foreground font-medium">{r.source}</p>
                                 </div>
                                 <div>
                                   <p className="text-muted-foreground text-xs mb-1">Rekord ID</p>
-                                  <p className="text-foreground font-mono text-xs">{r.id}</p>
+                                  <p className="text-foreground font-mono text-xs select-all truncate">{r.id}</p>
                                 </div>
                                 <div>
                                   <p className="text-muted-foreground text-xs mb-1">Felhasználó</p>
                                   <p className="text-foreground">{r.user_name || '—'}</p>
                                 </div>
                                 <div>
+                                  <p className="text-muted-foreground text-xs mb-1">Cég</p>
+                                  <p className="text-foreground">{r.company_name || '—'}</p>
+                                </div>
+                                <div>
                                   <p className="text-muted-foreground text-xs mb-1">Időpont</p>
                                   <p className="text-foreground tabular-nums">{new Date(r.created_at).toLocaleString('hu-HU')}</p>
                                 </div>
                               </div>
+
+                              {r.url && (
+                                <div>
+                                  <p className="text-muted-foreground text-xs mb-1">Útvonal / Oldal</p>
+                                  <p className="text-foreground font-mono text-xs bg-muted/40 px-2.5 py-1.5 rounded border border-border/50 select-all">{r.url}</p>
+                                </div>
+                              )}
+
                               <div>
-                                <p className="text-muted-foreground text-xs mb-1">Teljes hibaüzenet</p>
-                                <pre className="text-xs text-destructive/90 bg-destructive/5 border border-destructive/10 rounded-lg p-3 whitespace-pre-wrap break-all max-h-[300px] overflow-y-auto">
+                                <p className="text-muted-foreground text-xs mb-1 font-medium">Teljes hibaüzenet</p>
+                                <pre className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3 whitespace-pre-wrap break-all max-h-[300px] overflow-y-auto font-mono">
                                   {r.error_message || 'Nincs hibaüzenet'}
                                 </pre>
                               </div>
+
                               {r.context && Object.keys(r.context).length > 0 && (
-                                <div className="mt-3">
-                                  <p className="text-muted-foreground text-xs mb-1">Kontextus</p>
-                                  <div className="flex flex-wrap gap-2">
+                                <div>
+                                  <p className="text-muted-foreground text-xs mb-2 font-medium">Kontextus & Részletek</p>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                     {Object.entries(r.context).map(([k, v]) => (
-                                      <span key={k} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent/50 border border-border text-xs">
-                                        <span className="text-muted-foreground">{k}:</span>
-                                        <span className="font-medium text-foreground">{String(v)}</span>
-                                      </span>
+                                      <div key={k} className="p-2.5 rounded-md bg-card border border-border text-xs">
+                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                          <span className="font-semibold text-foreground/90">{k}</span>
+                                          <span className="text-[10px] text-muted-foreground uppercase">{typeof v}</span>
+                                        </div>
+                                        <div className="text-muted-foreground">
+                                          {typeof v === 'object' && v !== null ? (
+                                            <pre className="text-[11px] font-mono bg-muted/40 p-2 rounded max-h-48 overflow-auto whitespace-pre-wrap break-all text-foreground">
+                                              {JSON.stringify(v, null, 2)}
+                                            </pre>
+                                          ) : (
+                                            <span className="font-mono text-foreground">{String(v)}</span>
+                                          )}
+                                        </div>
+                                      </div>
                                     ))}
                                   </div>
+                                </div>
+                              )}
+
+                              {(r.stack_trace || ((r.context?.error_details as any)?.stack)) && (
+                                <div>
+                                  <p className="text-muted-foreground text-xs mb-1 font-medium">Stack Trace</p>
+                                  <pre className="text-[11px] font-mono text-muted-foreground bg-muted/40 border border-border/50 rounded-lg p-3 whitespace-pre-wrap break-all max-h-[220px] overflow-y-auto">
+                                    {r.stack_trace || ((r.context?.error_details as any)?.stack)}
+                                  </pre>
                                 </div>
                               )}
                             </div>

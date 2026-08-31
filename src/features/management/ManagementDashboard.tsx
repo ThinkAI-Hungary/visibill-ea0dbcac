@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams, Navigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { FilePreviewModal, useFilePreview } from '@/components/ui/FilePreviewModal';
@@ -75,20 +75,6 @@ export function ManagementDashboard() {
     }
     return m;
   }, [overview?.companies]);
-
-  const queryClient = useQueryClient();
-
-  // Reset queries on navigating to overview to trigger fresh fetches & skeleton loading state
-  useEffect(() => {
-    if (view === 'overview') {
-      queryClient.resetQueries({ queryKey: ['management-overview'] });
-      queryClient.resetQueries({ queryKey: ['llm-costs-trend'] });
-      queryClient.resetQueries({ queryKey: ['llm-costs-all-time'] });
-      queryClient.resetQueries({ queryKey: ['worker-status'] });
-      queryClient.resetQueries({ queryKey: ['management-files-latest'] });
-      queryClient.resetQueries({ queryKey: ['tickets'] });
-    }
-  }, [view, queryClient]);
 
   const selectedCompanyName = overview?.companies.find(c => c.id === selectedCompanyId)?.name;
   const selectedUserObj = overview?.users.find(u => u.user_id === selectedUserId);
