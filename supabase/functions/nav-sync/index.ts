@@ -96,9 +96,10 @@ Deno.serve(async (req) => {
       if (invoices.length > 0) {
         // Deduplicate by invoice_number to prevent
         // "ON CONFLICT DO UPDATE command cannot affect row a second time" error
+        const effectiveCompanyId = syncParams.companyId || credentials.company_id || null;
         const invoicesRaw = invoices.map(invoice => ({
               ...invoice,
-              company_id: credentials.company_id,
+              company_id: effectiveCompanyId,
               user_id: user.id,
               fetched_at: new Date().toISOString()
             }));

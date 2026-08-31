@@ -14,7 +14,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ───────────────────────────────────────────────────
-export type ErrorType = 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'realtime' | 'unhandled';
+export type ErrorType = 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'realtime' | 'unhandled' | 'edge_function' | 'frontend';
 export type Severity = 'error' | 'warning' | 'info';
 
 export interface ReportErrorOptions {
@@ -75,7 +75,7 @@ function getCompanyId(): string | null {
 function extractErrorDetails(err: unknown): { message?: string; name?: string; stack?: string; details?: unknown } {
   if (!err) return {};
   if (err instanceof Error) {
-    return { message: err.message, name: err.name, stack: err.stack, details: err.cause };
+    return { message: err.message, name: err.name, stack: err.stack, details: (err as any).cause };
   }
   if (typeof err === 'object') {
     const obj = err as Record<string, unknown>;
@@ -160,7 +160,7 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
             name: opts.error.name,
             message: opts.error.message,
             stack: opts.error.stack,
-            ...(opts.error.cause ? { cause: String(opts.error.cause) } : {}),
+            ...((opts.error as any).cause ? { cause: String((opts.error as any).cause) } : {}),
           };
         } else if (typeof opts.error === 'object') {
           sanitizedContext.error_details = sanitizeContext(opts.error as Record<string, unknown>);

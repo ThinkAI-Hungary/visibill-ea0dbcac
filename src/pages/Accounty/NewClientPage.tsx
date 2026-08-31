@@ -108,14 +108,32 @@ export default function NewClientPage() {
           const tax = taxNumber || '12345678-1-23';
           const { data: existing } = await supabase.from('companies').select('id').eq('tax_number', tax).maybeSingle();
           let companyId: string;
-          if (existing) { companyId = existing.id; }
-          else {
-            const { data: newCompany, error: compErr } = await supabase.from('companies').insert({ name, tax_number: tax }).select('id').single();
+          if (existing) {
+            companyId = existing.id;
+          } else {
+            const { data: newCompany, error: compErr } = await supabase.from('companies').insert({ name, tax_number: tax, owner_id: user.id } as any).select('id').single();
             if (compErr) throw compErr;
             companyId = newCompany.id;
           }
+
+          // Resolve user's accounting firm ID and role
+          const { data: myAssign } = await supabase
+            .from('accounty_assignments')
+            .select('accounting_firm_id, role')
+            .eq('accountant_user_id', user.id)
+            .not('accounting_firm_id', 'is', null)
+            .limit(1)
+            .maybeSingle();
+
+          const firmId = myAssign?.accounting_firm_id || companyId;
+          const assignRole = myAssign?.role || 'iroda_admin';
+
           const { error: assignErr } = await supabase.from('accounty_assignments').upsert({
-            accountant_user_id: user.id, company_id: companyId, role: 'junior', is_primary: true,
+            accountant_user_id: user.id,
+            company_id: companyId,
+            accounting_firm_id: firmId,
+            role: assignRole,
+            is_primary: true,
           } as any, { onConflict: 'accountant_user_id,company_id' });
           if (assignErr) throw assignErr;
           await supabase.from('accounty_communication_preferences').upsert({

@@ -445,9 +445,9 @@
     "semantic_hash": "690594953770aff80b0787de83a31fc2"
   },
   "src/components/settings/BusinessSection.tsx": {
-    "mtime": 1780305936.2962174,
-    "ast_hash": "a33f8c6966377de273814366af6c49fd",
-    "semantic_hash": "a33f8c6966377de273814366af6c49fd"
+    "mtime": 1788178632.445409,
+    "ast_hash": "65dfe54dc1eb22214e7e7177e4c2f280",
+    "semantic_hash": ""
   },
   "src/components/settings/InviteUserDialog.tsx": {
     "mtime": 1783413875.6083412,
@@ -1385,8 +1385,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/NewClientPage.tsx": {
-    "mtime": 1787568622.8903432,
-    "ast_hash": "3f6c628af2ee725fa2092235476cb573",
+    "mtime": 1788178091.2022097,
+    "ast_hash": "5f157255a2d1f05c0392addae89a3c6b",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollCyclePage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788176973.301973,
-    "ast_hash": "634b4092ff7854e4af9bbcbdda4e755a",
+    "mtime": 1788179437.1627035,
+    "ast_hash": "95affc2a5d98ddf3d546255693fe51a6",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788137938.0734744,
-    "ast_hash": "b1c2d84e4e5b92afa7fe43742c480f08",
+    "mtime": 1788178206.6398776,
+    "ast_hash": "0398abb523c1d755fb8b0c866bb6bece",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -3590,8 +3590,8 @@
     "semantic_hash": ""
   },
   "src/lib/errorReporter.ts": {
-    "mtime": 1788176338.577554,
-    "ast_hash": "f353670b3a8bb850c684ef5f15d83225",
+    "mtime": 1788178083.37657,
+    "ast_hash": "3be97a27fde24fa1fe555b36eca43f8d",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/error-logger.ts": {
@@ -5385,8 +5385,8 @@
     "semantic_hash": ""
   },
   "src/hooks/usePdfExport.ts": {
-    "mtime": 1785270798.2010298,
-    "ast_hash": "7903c428f9c3f6d4171e5534b9e937bd",
+    "mtime": 1788178955.2812464,
+    "ast_hash": "d7c3dff6e9f02708510776116e34dc85",
     "semantic_hash": ""
   },
   "supabase/functions/generate-pdf-export/index.ts": {
@@ -8097,6 +8097,56 @@
   "docs/architecture/decisions/A-070-multi-channel-upload-storage-bucket-alignment.md": {
     "mtime": 1788176951.9364085,
     "ast_hash": "b9e0836e5c1876d51ae67bd29a3d64a4",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260831150000_create_missing_accounty_ev_and_org_tables.sql": {
+    "mtime": 1788177647.512174,
+    "ast_hash": "dfcbb84cb7fe1c4a9465bbd4d14460a3",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260831151500_fix_accounty_assignments_insert_rls.sql": {
+    "mtime": 1788178002.0305417,
+    "ast_hash": "60f257bc5602c678eb7c2d6ed429b96f",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-071-ev-and-org-tables-restoration.md": {
+    "mtime": 1788178155.457586,
+    "ast_hash": "4697b6e2b702086e83827310901c6017",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-072-accounting-assignments-insert-rls.md": {
+    "mtime": 1788178163.1612206,
+    "ast_hash": "2b6224a78855c8e75ab59de2c404e2ff",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-059-accounty-manual-client-onboarding-ux.md": {
+    "mtime": 1788178194.7301395,
+    "ast_hash": "9ac33b1f2df7016d2a3d5bcc096b4d85",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-073-defensive-prop-normalization-and-settings-resilience.md": {
+    "mtime": 1788178739.1060255,
+    "ast_hash": "4ad13add6f2ae9aec758dc0f8637cda0",
+    "semantic_hash": ""
+  },
+  "src/hooks/__tests__/usePdfExport.test.ts": {
+    "mtime": 1788178970.111645,
+    "ast_hash": "d37f4bbbad42795a0b3d04dc4b9b717f",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-074-pdf-export-edge-function-invocation-resilience.md": {
+    "mtime": 1788179014.7266695,
+    "ast_hash": "c19e1cad6d9ebee62de327c0757d6956",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260831153000_fix_get_company_counts_null_keys.sql": {
+    "mtime": 1788179359.4507787,
+    "ast_hash": "1137df2d1b374ec2f5e75e3a1a595c62",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-075-management-overview-null-safety-in-rpc-aggregations.md": {
+    "mtime": 1788179417.4825573,
+    "ast_hash": "7f4026cdd15211ed52d5b6a66ec18067",
     "semantic_hash": ""
   }
 }

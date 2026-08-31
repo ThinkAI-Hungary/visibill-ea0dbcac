@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-08-31  
-> **Összesen:** 70 döntés | ✅ Decided: 68 | ⛔ Superseded: 2
+> **Összesen:** 75 döntés | ✅ Decided: 73 | ⛔ Superseded: 2
 
 ---
 
@@ -32,6 +32,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
 | A-005 | Edge Functions (Deno) — 58 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
 | A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
+| A-074 | PDF Export Edge Function Invocation Resilience | ✅ Decided | [A-074](./A-074-pdf-export-edge-function-invocation-resilience.md) |
 
 ## 🤖 AI & Feldolgozás
 
@@ -59,6 +60,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-021 | Email Auth Flow Redesign — Email change, signup single email, hash interception | ✅ Decided | [A-021](./A-021-email-auth-flow-redesign.md) |
 | A-026 | Support Admin Ideiglenes Hozzáférés (Impersonation & Full RLS Access) | ✅ Decided | [A-026](./A-026-support-impersonation-access.md) |
 | A-049 | Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete) | ✅ Decided | [A-049](./A-049-user-deletion-soft-delete-strategy.md) |
+| A-072 | Robust Accounting Firm Assignment RLS & Direct Client Creation | ✅ Decided | [A-072](./A-072-accounting-assignments-insert-rls.md) |
 
 ## 📧 Email & Integráció
 
@@ -89,6 +91,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-057 | Könyvelési Napló Rendszer Architektúra (Accounting Journals) | ✅ Decided | [A-057](./A-057-accounting-journals-architecture.md) |
 | A-058 | Banki Utalások és Csomagkészítés Architektúra (Bank Transfers) | ✅ Decided | [A-058](./A-058-bank-transfers-architecture.md) |
 | A-068 | Szerver-oldali Fájl Lapozás és Összesítés (`get_management_files` RPC) | ✅ Decided | [A-068](./A-068-management-files-rpc-pagination.md) |
+| A-071 | Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity | ✅ Decided | [A-071](./A-071-ev-and-org-tables-restoration.md) |
 
 ## 🖥️ Frontend
 
@@ -110,6 +113,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-066 | Management Route Access Control és NotFound Guard | ✅ Decided | [A-066](./A-066-management-route-access-control-and-not-found-guard.md) |
 | A-067 | Projects Oldal Lekérdezés Párhuzamosítás és Parciális Indexelés | ✅ Decided | [A-067](./A-067-projects-query-parallelization-and-partial-indexing.md) |
 | A-070 | Multi-Channel Upload Storage Bucket Alignment & Synchronized History Mapping | ✅ Decided | [A-070](./A-070-multi-channel-upload-storage-bucket-alignment.md) |
+| A-073 | Defensive Prop Normalization & Settings Component Resilience | ✅ Decided | [A-073](./A-073-defensive-prop-normalization-and-settings-resilience.md) |
 
 ## 💳 Fizetés
 
@@ -137,6 +141,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-050 | Server-Side Aggregation & N+1 Query Optimization | ✅ Decided | [A-050](./A-050-server-side-aggregation-and-n-plus-1-optimization.md) |
 | A-061 | Decomposing the Monolithic Super-Admin & Management Dashboard | ✅ Decided | [A-061](./A-061-decompose-management-dashboard.md) |
 | A-069 | Centralized Frontend Error Ingestion, Stack Trace & Context Deserialization | ✅ Decided | [A-069](./A-069-frontend-error-reporting-and-context-inspection.md) |
+| A-075 | Management Overview Null-Safety in SQL JSON Aggregations | ✅ Decided | [A-075](./A-075-management-overview-null-safety-in-rpc-aggregations.md) |
 
 
 

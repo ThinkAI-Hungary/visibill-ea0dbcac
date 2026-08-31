@@ -382,22 +382,9 @@ export function usePdfExport(): PdfExportState {
     setIsStarting(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('No active session');
-      }
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
       // Single EF call — creates job + enqueues PGMQ message for worker
-      const resp = await fetch(`${supabaseUrl}/functions/v1/generate-pdf-export`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
+      const { data: result, error: invokeError } = await supabase.functions.invoke('generate-pdf-export', {
+        body: {
           companyId,
           dateFrom: params.dateFrom,
           dateTo: params.dateTo,
@@ -405,12 +392,14 @@ export function usePdfExport(): PdfExportState {
           exportMode: params.exportMode || (params.includePostingSlips ? 'posting_slips' : 'standard'),
           includePostingSlips: params.includePostingSlips || params.exportMode === 'posting_slips',
           invoiceList: params.invoiceList,
-        }),
+        },
       });
 
-      const result = await resp.json();
+      if (invokeError) {
+        throw invokeError;
+      }
 
-      if (result.error) {
+      if (result?.error) {
         throw new Error(result.error);
       }
 
@@ -424,7 +413,7 @@ export function usePdfExport(): PdfExportState {
 
       toast({
         title: 'PDF export elindítva',
-        description: `${result.totalInvoices} számla feldolgozása folyamatban...`,
+        description: `${result?.totalInvoices || 0} számla feldolgozása folyamatban...`,
       });
 
     } catch (error: any) {
@@ -433,7 +422,7 @@ export function usePdfExport(): PdfExportState {
         description: error.message || 'Nem sikerült elindítani az exportot',
         variant: 'destructive',
       });
-      reportError({ type: 'db_query', component: 'usePdfExport', action: 'error', message: 'Export start failed', error });
+      reportError({ type: 'edge_function', component: 'usePdfExport', action: 'error', message: 'Export start failed', error });
     } finally {
       setIsStarting(false);
     }
