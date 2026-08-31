@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
+import { useActivePreset } from '@/hooks/useActivePreset';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { activePresetId } = useActivePreset(selectedCompany?.id);
 
   // Form states
   const [journalId, setJournalId] = useState<string>('');
@@ -68,18 +70,18 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
   }, [journals, journalId, entryId]);
 
   const { data: glAccounts = [] } = useQuery({
-    queryKey: ['gl-accounts-lookup', selectedCompany?.id],
+    queryKey: ['gl-accounts-lookup', activePresetId],
     queryFn: async () => {
-      if (!selectedCompany?.id) return [];
+      if (!activePresetId) return [];
       const { data, error } = await supabase
         .from('gl_accounts')
         .select('id, gl_number, short_name')
-        .eq('company_id', selectedCompany.id)
+        .eq('preset_id', activePresetId)
         .order('gl_number');
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedCompany?.id,
+    enabled: !!activePresetId,
   });
 
   const { data: partners = [] } = useQuery({

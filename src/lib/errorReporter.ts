@@ -120,6 +120,19 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
       : console.error(tag, opts.message);
   }
 
+  // 1.5 Filter out expected client-side validation errors and chunk loading errors from DB logs
+  const errDetails = extractErrorDetails(opts.error);
+  const errMsg = ((opts.message || '') + ' ' + (errDetails.message || '')).toLowerCase();
+  const isExcluded = 
+    errMsg.includes('failed to fetch dynamically imported module') ||
+    errMsg.includes('chunkloaderror') ||
+    errMsg.includes('loading chunk') ||
+    errMsg.includes('nincs aktív jogviszony') ||
+    errMsg.includes('nincs számfejtési ciklus') ||
+    errMsg.includes('nincsenek számfejtési adatok');
+
+  if (isExcluded) return;
+
   // 2. Rate limit check
   if (isRateLimited()) return;
 

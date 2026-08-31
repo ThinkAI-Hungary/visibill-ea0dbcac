@@ -88,7 +88,7 @@ export function useEmployeeJobs(companyId: string, employeeId: string) {
         insured: true, minimumBase: false, employer: '',
       }));
     },
-    enabled: !!companyId && !!employeeId,
+    enabled: !!companyId && companyId !== 'undefined' && companyId !== 'null' && !!employeeId && employeeId !== 'undefined' && employeeId !== 'null',
   });
 }
 
@@ -183,7 +183,7 @@ export function useDeclarations(companyId: string) {
         data: r.parameters || {}, filedAt: r.created_at,
       }));
     },
-    enabled: !!companyId,
+    enabled: !!companyId && companyId !== 'undefined' && companyId !== 'null',
   });
 }
 
@@ -218,7 +218,7 @@ export function useFilings(companyId: string, filingType?: string) {
         status: r.status, data: r.xml_data ? { xml: r.xml_data } : {}, submittedAt: r.submitted_at,
       }));
     },
-    enabled: !!companyId,
+    enabled: !!companyId && companyId !== 'undefined' && companyId !== 'null',
   });
 }
 
@@ -238,7 +238,7 @@ export function useTransfers(companyId: string, period?: string) {
         netSalary: r.net_salary || 0, period: r.period, status: r.status,
       }));
     },
-    enabled: !!companyId,
+    enabled: !!companyId && companyId !== 'undefined' && companyId !== 'null',
   });
 }
 
@@ -258,7 +258,7 @@ export function useAccountyDocuments(companyId: string, docType?: string) {
         fileUrl: r.file_url || '', period: r.period || '', generatedAt: r.generated_at,
       }));
     },
-    enabled: !!companyId,
+    enabled: !!companyId && companyId !== 'undefined' && companyId !== 'null',
   });
 }
 

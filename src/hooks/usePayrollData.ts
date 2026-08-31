@@ -271,7 +271,7 @@ export function usePayrollEmployees(companyId: string) {
       if (error) throw error;
       return (data || []) as PayrollEmployee[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && companyId !== 'undefined' && companyId !== 'null',
     staleTime: 30_000,
   });
 }
@@ -289,7 +289,7 @@ export function usePayrollEmployee(employeeId: string) {
       if (error) throw error;
       return data as PayrollEmployee;
     },
-    enabled: !!employeeId,
+    enabled: !!employeeId && employeeId !== 'undefined' && employeeId !== 'null',
   });
 }
 
@@ -360,7 +360,7 @@ export function usePayrollEmployments(employeeId: string) {
       if (error) throw error;
       return (data || []) as PayrollEmployment[];
     },
-    enabled: !!employeeId,
+    enabled: !!employeeId && employeeId !== 'undefined' && employeeId !== 'null',
   });
 }
 
@@ -610,7 +610,7 @@ export function useEmployeeSalaryHistory(employmentId: string) {
         cycle_status: row.accounty_payroll_cycles?.status || 'unknown',
       }));
     },
-    enabled: !!employmentId,
+    enabled: !!employmentId && employmentId !== 'undefined' && employmentId !== 'null',
   });
 }
 
@@ -627,7 +627,7 @@ export function usePayrollDeclarations(employeeId: string) {
       if (error) throw error;
       return (data || []) as PayrollDeclaration[];
     },
-    enabled: !!employeeId,
+    enabled: !!employeeId && employeeId !== 'undefined' && employeeId !== 'null',
   });
 }
 
@@ -742,7 +742,7 @@ export function usePayrollDependents(employeeId: string) {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!employeeId,
+    enabled: !!employeeId && employeeId !== 'undefined' && employeeId !== 'null',
   });
 }
 
@@ -835,7 +835,7 @@ export function usePayrollFilings(companyId: string) {
       if (error) throw error;
       return (data || []) as PayrollFiling[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && companyId !== 'undefined' && companyId !== 'null',
   });
 }
 
@@ -935,7 +935,7 @@ export function usePayrollLeaves(employmentId: string) {
       if (error) throw error;
       return (data || []) as PayrollLeave[];
     },
-    enabled: !!employmentId,
+    enabled: !!employmentId && employmentId !== 'undefined' && employmentId !== 'null',
   });
 }
 
@@ -961,7 +961,7 @@ export function usePayrollCafeteria(employmentId: string, cycleId?: string) {
       if (error) throw error;
       return (data || []) as PayrollCafeteriaItem[];
     },
-    enabled: !!employmentId,
+    enabled: !!employmentId && employmentId !== 'undefined' && employmentId !== 'null',
   });
 }
 
@@ -1022,7 +1022,7 @@ export function usePayrollGarnishments(employeeId: string) {
       if (error) throw error;
       return (data || []) as PayrollGarnishment[];
     },
-    enabled: !!employeeId,
+    enabled: !!employeeId && employeeId !== 'undefined' && employeeId !== 'null',
   });
 }
 
