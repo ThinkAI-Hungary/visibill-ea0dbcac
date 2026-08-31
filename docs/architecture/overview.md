@@ -33,8 +33,8 @@ A Visibill egy három rétegű rendszer:
 │  ├─────────────────────────────────────────┤ │
 │  │  Storage (számla képek, PDF-ek)         │ │
 │  ├─────────────────────────────────────────┤ │
-│  │  Edge Functions (48 Deno function)      │ │
-│  │   • NAV sync, email, trigger-ek         │ │
+│  │  Edge Functions (58 Deno function)      │ │
+│  │   • NAV sync (_shared/nav), email       │ │
 │  │   • MNB árfolyam letöltés (SOAP API)    │ │
 │  │   • CORS, auth validation               │ │
 │  └─────────────────────────────────────────┘ │

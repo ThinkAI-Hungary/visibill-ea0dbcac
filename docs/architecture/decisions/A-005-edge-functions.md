@@ -12,7 +12,9 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 **Supabase Edge Functions** (Deno runtime) — **58 deployed function** + `_shared/` közös kód.
 
-**Közös kód:** `_shared/` mappa — CORS headers, Supabase client, error logging és utility-k.
+**Közös kód:** `_shared/` mappa:
+- `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
+- `_shared/cors.ts`, `_shared/supabase.ts` — CORS headers, Supabase client és segédfüggvények.
 
 ---
 
@@ -23,11 +25,11 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | Function | JWT | Leírás |
 |----------|-----|--------|
 | `nav` | ❌ | NAV API proxy — általános NAV hívások |
-| `nav-auto-sync` | ❌ | Automatikus NAV szinkronizáció (cron-ból hívva) |
-| `nav-sync` | ✅ | Manuális NAV számla szinkronizáció (user-initiated) |
-| `nav-token` | ✅ | NAV API token generálás/exchange |
-| `nav-query-outbound-invoices` | ✅ | Kimenő számlák lekérdezése NAV-tól |
-| `query-nav-invoices` | ✅ | Bejövő NAV számlák lekérdezése (decrypt credentials → NAV API) |
+| `nav-auto-sync` | ❌ | Automatikus NAV szinkronizáció és webhook triggerelés (`NavIngestionService`) |
+| `nav-sync` | ✅ | Manuális NAV számla szinkronizáció (`NavIngestionService`) |
+| `nav-token` | ✅ | NAV API hitelesítő adatok validálása és token exchange (`NavClient`) |
+| `nav-query-outbound-invoices` | ✅ | Kimenő számlák és tételsorok lekérdezése (`NavIngestionService`) |
+| `query-nav-invoices` | ✅ | NAV számlák keresése és szűrése (`NavIngestionService`) |
 | `nav-tax-profile-sync` | ❌ | Adószám profil szinkronizáció NAV-ból |
 
 #### 📧 Email Küldés & Riportok (10 db)

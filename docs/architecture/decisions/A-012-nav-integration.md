@@ -1,67 +1,74 @@
 # A-012: NAV Online Számla API v3 Integráció
 
 **Status:** Decided  
-**Date:** 2025-10
-**Utoljára frissítve:** 2026-07-29
+**Date:** 2025-10  
+**Utoljára frissítve:** 2026-08-31
 
 ## Context
 
-A magyar adórendszer megköveteli a NAV Online Számla rendszer használatát. A Visibill-nek kétirányú integrációra van szüksége: bejövő + kimenő számlák lekérdezése.
+A magyar adórendszer megköveteli a NAV Online Számla rendszer használatát. A Visibill-nek kétirányú integrációra van szüksége: bejövő + kimenő számlák és tételsorok lekérdezése, partner törzsadatok automatikus szinkronizálása és GL kategorizálás.
 
 ## Decision
 
-**NAV Online Számla API v3** — közvetlen REST API integráció Edge Function-ökön keresztül.
+**NAV Online Számla API v3** — közvetlen REST API integráció konszolidált központi klienssel és Edge Function-ökön keresztül.
 
-**Edge Functions:**
-| Function | Feladat |
-|----------|---------|
-| `nav-token` | Token csere (XML → AES-128-ECB aláírás) |
-| `nav-sync` | Bejövő számlák lekérdezése (manuális trigger) |
-| `nav-auto-sync` | Automatikus napi szinkronizáció (cron) |
-| `nav-query-outbound-invoices` | Kimenő számlák lekérdezése |
-| `query-nav-invoices` | NAV számlák keresése szűrőkkel |
-| `nav-tax-profile-sync` | Adóalany profil szinkronizálás |
-| `delete-nav-credentials` | NAV kapcsolat bontása |
+### 🏛️ Központi Modulcsomag (`supabase/functions/_shared/nav/`)
 
-**Auth flow:**
-1. Felhasználó megadja: technikai felhasználó login + jelszó + aláírókulcs + cserekulcs
-2. Credentials titkosítva tárolva (lásd A-010)
-3. API híváskor: token generálás → AES-128-ECB aláírás → NAV REST API
+Az 5 különböző Edge Function közötti korábbi kódduplikáció (3700+ sor) helyett egy központi, mély modulcsomag felel a NAV kommunikációért és adatbázis-mentésért:
 
-**Adatfolyam:**
-- NAV-ból kapott számlák → `nav_invoices` tábla (+ `nav_invoice_items`)
-- **Egyszerűsített számlák kezelése (2026-07-18):** Az egyszerűsített számláknál (`SIMPLIFIED`) a NAV XML-ben hiányzó tételszintű nettó és ÁFA összegeket, valamint a fő bizonylatszintű nettó/ÁFA összegeket az Edge Function automatikusan kiszámítja a bruttó összegekből (`lineGrossAmountSimplified`) és a hozzájuk tartozó adókulcs-tartalomból (`vatContent`). A `vatContent` értéke (pl. `0.2126`, `0.1525`, `0.0476`) leképezésre kerül a standard ÁFA kulcsoknak megfelelően (pl. `0.27`, `0.18`, `0.05`).
-- **Negatív és helyesbítő számlák támogatása:** A negatív és storno számlák (pl. jóváírások, sztornók) kezelése érdekében a főösszegek vizsgálata a korábbi `totalGross > 0` helyett `totalGross !== 0` alapon történik, így a negatív összegek is helyesen mentésre kerülnek.
-- **Bruttó összeg fallback számítása:** Ha a számlázó szoftver a NAV XML-ben nem adta meg a felső szintű `<invoiceGrossAmount>` (vagy `<invoiceGrossAmountHUF>`) elemet, az Edge Function automatikusan visszalép a `<invoiceNetAmount>` és `<invoiceVatAmount>` összeadására a bruttó összeg kiszámításához.
-- **Többfelhasználós cégek szinkronizációja:** A NAV számlák részleteinek lekérdezésekor a lekérdezés kizárólag a `company_id`-re szűr, a `user_id` szűrése elhagyásra került. Ezzel biztosított, hogy ha a cégen belül egy másik felhasználó kezdeményezte a számlák beolvasását, a részletek lekérése és mentése akkor is sikeres legyen a cég érvényes NAV hitelesítő adataival.
-- **Automatikus `validation_status` előléptetés (2026-07-28):** Minden sikeres NAV API szinkronizáció (`nav-query-outbound-invoices`, `nav-sync`) automatikusan `valid` státuszra lépteti elő a cég `user_nav_credentials` rekordját (`validation_status = 'valid'`, `last_validated_at = NOW()`), megelőzve az esetleges beragadt `pending` állapotot és biztosítva az éjszakai automatikus cron szinkronizáció folyamatosságát. Emellett a `save_nav_credentials` eljárás a sikeres felületi teszt után közvetlenül `valid` státusszal hozza létre/frissíti a rekordot.
-- **`save_nav_credentials` regresszió javítás (2026-07-29):** A 07-28-as migráció regressziót okozott: a `software_id` formátuma `VISIBILL_XXXXXXXX`-re változott (helyes: `HU` + 8 jegyű adószám + 8 hex karakter = 18 karakter), a Vault secret nevek inkonzisztenssé váltak, és az idempotens törlés (DELETE before CREATE) kimaradt. Javítva: `software_id` helyes formátum, `nav_*_company_` + company_id Vault nevek, idempotens secret kezelés, `company_id IS NULL` validáció visszaállítva.
-- A számlák automatikusan GL kategorizálást kapnak (PGMQ → Worker)
+| Modul | Felelősség |
+|-------|------------|
+| [`types.ts`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/functions/_shared/nav/types.ts) | Erősen típusos interfészek (`NavCredentials`, `NavSyncOptions`, `NavInvoiceDigest`, `InvoiceDetails`, `InvoiceLineItem`, `NavValidationResult`, `NavSyncResult`). |
+| [`crypto.ts`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/functions/_shared/nav/crypto.ts) | NAV v3 kriptográfia: `generateRequestId()` (RID + 13 alfanumerikus karakter), `formatCompactTimestamp()`, `hashPassword()` (SHA-512) és `createSignature()` (SHA3-512 a `@noble/hashes` segítségével). |
+| [`xml-builder.ts`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/functions/_shared/nav/xml-builder.ts) | `TokenExchangeRequest`, `QueryInvoiceDigestRequest`, és `QueryInvoiceDataRequest` XML borítéképítők. |
+| [`xml-parser.ts`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/functions/_shared/nav/xml-parser.ts) | `parseNavError()`, `parseTokenResponse()`, `parseInvoiceDigestXml()`, `parseInvoiceDataXml()` (egyszerűsített számla ÁFA kalkulációval, bruttó fallbackkel és önzáró/üres tag regex kezeléssel). |
+| [`nav-client.ts`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/functions/_shared/nav/nav-client.ts) | Tiszta protokoll kliens (`validateCredentials`, `requestToken`, `queryInvoiceDigest`, `queryInvoiceData`, `fetchAllInvoices`). |
+| [`nav-ingestion-service.ts`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/functions/_shared/nav/nav-ingestion-service.ts) | Tranzakciós adatbázis szinkronizáció, `nav_invoices` dedup batch upsert, szülő számla attribútum frissítés, `nav_invoice_items` idempotens delete-before-insert mentés, `partners` cache-elés (ADR A-024), és `nav_sync_logs` állapotkezelés. |
+| [`index.ts`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/functions/_shared/nav/index.ts) | Barrel export. |
 
-**Partner caching (2026-06-29):**
+---
 
-A `nav-auto-sync` és `nav-query-outbound-invoices` EF-ek a NAV számlákból automatikusan partner rekordokat hoznak létre/frissítenek a `partners` táblában. A logika:
+### ⚡ Edge Functions Katalógus
 
-1. **Prefix-based dedup:** Az adószám első 8 számjegye (törzsszám) alapján keres meglévő partnert — így `11223344-2-41` és `11223344-1-03` nem hoz létre duplikátumot
-2. **Szelektív frissítés:** Meglévő partner esetén csak `address` (ha NULL) és `partner_type → 'both'` (ha eltérő irány) frissül — soha nem ír felül meglévő adatot
-3. **Batch insert:** Csak tényleg új partnerek kerülnek INSERT-be
+| Function | JWT | Feladat |
+|----------|-----|---------|
+| `nav-token` | ✅ | Hitelesítő adatok validálása és token csere (`NavClient`) |
+| `nav-sync` | ✅ | Manuális felhasználói számla szinkronizáció (`NavIngestionService`) |
+| `nav-auto-sync` | ❌ (`CRON_SECRET`) | Automatikus napi szinkronizáció és webhook triggerelés (`NavIngestionService`) |
+| `nav-query-outbound-invoices` | ✅ | Kimenő számlák és tételsorok lekérdezése (`NavIngestionService`) |
+| `query-nav-invoices` | ✅ | NAV számlák keresése és szűrése (`NavIngestionService`) |
+| `nav-tax-profile-sync` | ❌ | Adóalany profil szinkronizálás |
+| `delete-nav-credentials` | ✅ | NAV kapcsolat bontása és Vault secret törlés |
 
-> Részletek: [A-024: Partner Upsert Strategy](./A-024-partner-upsert-strategy.md)
+---
+
+### 🔄 Adatfolyam és Szabályok
+
+1. **Egyszerűsített számlák kezelése:** Az egyszerűsített számláknál (`SIMPLIFIED`) a NAV XML-ben hiányzó tételszintű nettó és ÁFA összegeket az Edge Function automatikusan kiszámítja a bruttó összegekből (`lineGrossAmountSimplified`) és a hozzájuk tartozó adókulcs-tartalomból (`vatContent`). A `vatContent` értéke (pl. `0.2126`, `0.1525`, `0.0476`) leképezésre kerül a standard ÁFA kulcsoknak megfelelően (`0.27`, `0.18`, `0.05`).
+2. **Negatív és helyesbítő számlák támogatása:** A negatív és storno számlák kezelése érdekében a főösszegek vizsgálata `totalGross !== 0` alapon történik, így a negatív összegek is helyesen mentésre kerülnek.
+3. **Bruttó összeg fallback számítása:** Ha a NAV XML-ben nincs felső szintű `<invoiceGrossAmount>` elem, az összeadás automatikusan visszalép a `<invoiceNetAmount> + <invoiceVatAmount>` összegre.
+4. **Idempotens tételsor mentés (`nav_invoice_items`):** Mivel a `nav_invoice_items` táblán nincs összetett `UNIQUE (nav_invoice_id, line_number)` index, a tételek mentése idempotens **delete-before-insert** mintával történik a szülő `nav_invoice_id` alapján.
+5. **Szülő számla attribútum frissítés:** A részletek (`queryInvoiceData`) letöltésekor a szülő `nav_invoices` rekord automatikusan frissül a partner címével (`supplier_address`, `customer_address`), pénzforgalmi jelzővel (`is_cash_accounting`), storno hivatkozással (`original_invoice_number`) és a `details_fetched = true` jelzővel.
+6. **Automatikus `validation_status` előléptetés:** Minden sikeres NAV API szinkronizáció automatikusan `valid` státuszra lépteti elő a cég `user_nav_credentials` rekordját.
+7. **Partner caching (ADR A-024):** 8-jegyű adószám prefix dedup, új partnerek batch insertje és meglévő partner automatikus upgrade-elése `both` típusra.
+8. **Automatikus 30 napos dátumszeletelés (`splitDateRange`):** A NAV Online Számla v3 API maximum 35 napos intervallumot engedélyez. A `NavClient.fetchAllInvoices` motor 30 napnál hosszabb intervallum esetén (pl. a `nav-auto-sync` 90 napos intervalluma vagy egyedi szűrések) automatikusan szeletekre bontja a kéréseket, és összefűzi a lapozott eredményeket, megakadályozva a `DATE_INTERVAL_PARAM_EXCEEDED` hibákat.
+9. **Egységes Frontend Válasz-szerződés:** Minden számla lekérdező és szinkronizáló Edge Function egységes formátumban szolgáltatja a válaszát: `{ success: true, totalInvoices: number, count: number, detailsFetched: number, invoices: NavInvoiceDigest[], logId?: string }`.
+10. **Többfelhasználós Hitelesítés Validálás (`nav-token`):** A `validate_credentials` művelet közvetlenül `company_id` alapon frissíti a `user_nav_credentials` validációs státuszát, így a céghez hozzárendelt könyvelők vagy munkatársak is sikeresen ellenőrizhetik és aktiválhatják a cég NAV kapcsolatát anélkül, hogy a `user_id` eltérése blokkolná a folyamatot.
+11. **XML Namespace Előtagok Kezelése (`xml-parser.ts`):** A NAV Online Számla v3 éles válaszai XML namespace prefixeket (`ns2:`, `common:`, `ns3:`) tartalmaznak (pl. `<ns2:invoiceDigest>`, `<ns2:invoiceNumber>`). Az összes reguláris kifejezés és tag-kinyerő függvény (`extractTag`, `extractTaxNumber`, `digestRegex`, `lineRegex`, `parseInvoiceDigestXml`, `parseInvoiceDataXml`) prefix-agnosztikus (`/(?:<\w+:)?tag/`), garantálva a számlák és tételsorok hibátlan feldolgozását minden környezetben.
+
+---
 
 ## Consequences
 
 **Pozitív:**
-- Kétirányú szinkronizáció — a felhasználó nem kell manuálisan bevinnie a NAV számlákat
-- Automatikus napi szinkron — mindig naprakész adatok
-- XML ↔ JSON konverzió az Edge Function-ben — a frontend JSON-t kap
-- Partner caching — partnerek automatikusan megjelennek a partnertörzsben
+- Tiszta, moduláris architektúra: 3700+ sor duplikált XML/kripto kód helyett 5 db karcsú adapter függvény (~50-100 sor).
+- Könnyű tesztelhetőség és karbantarthatóság: 100%-ban lefedett Vitest unit tesztek és élesben ellenőrzött TokenExchange.
+- Kétirányú szinkronizáció és automatikus partner törzs feltöltés.
 
-**Negatív:**
-- A NAV API instabil (időnként 500-as hibákat dob, lassú válaszidő)
-- Az XML aláírás komplex (AES-128-ECB, SHA-512 hash, RequestSignature)
-- A NAV API rate limit-eket alkalmaz (nem dokumentált)
+**Negatív / Kockázatok:**
+- A NAV API időnként lassú vagy 500-as hibát adhat — ezt a `NavIngestionService` strukturált hibanaplózással és `nav_sync_logs` státuszkezeléssel tompítja.
 
 ## Kapcsolódó
 - [A-024: Partner Upsert Strategy](./A-024-partner-upsert-strategy.md) — partner dedup, foreign, both upgrade
-- [A-010: Credential titkosítás](./A-010-credential-encryption.md) — NAV credentials
-
+- [A-010: Credential titkosítás](./A-010-credential-encryption.md) — NAV credentials titkosítása
+- [A-005: Edge Functions](./A-005-edge-functions.md) — Edge Function katalógus

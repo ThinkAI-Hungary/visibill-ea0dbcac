@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788179020.7724352,
-    "ast_hash": "1d4b9010cda4f7d7f7367b7119473f85",
+    "mtime": 1788179437.1627035,
+    "ast_hash": "95affc2a5d98ddf3d546255693fe51a6",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -8137,6 +8137,16 @@
   "docs/architecture/decisions/A-074-pdf-export-edge-function-invocation-resilience.md": {
     "mtime": 1788179014.7266695,
     "ast_hash": "c19e1cad6d9ebee62de327c0757d6956",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260831153000_fix_get_company_counts_null_keys.sql": {
+    "mtime": 1788179359.4507787,
+    "ast_hash": "1137df2d1b374ec2f5e75e3a1a595c62",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-075-management-overview-null-safety-in-rpc-aggregations.md": {
+    "mtime": 1788179417.4825573,
+    "ast_hash": "7f4026cdd15211ed52d5b6a66ec18067",
     "semantic_hash": ""
   }
 }

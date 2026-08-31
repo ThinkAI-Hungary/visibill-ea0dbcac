@@ -3050,8 +3050,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-012-nav-integration.md": {
-    "mtime": 1788217256.4875567,
-    "ast_hash": "691bee6615ded7a6aa996b59862b0151",
+    "mtime": 1788216236.7913907,
+    "ast_hash": "8f154f9f6f1f03f83fa8c28970a9033c",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-013-scoped-routing.md": {
