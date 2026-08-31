@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-08-31  
-> **Összesen:** 59 döntés | ✅ Decided: 55 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-01  
+> **Összesen:** 60 döntés | ✅ Decided: 56 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -88,6 +88,7 @@
 | P-033 | Bérszámfejtési ciklus workflow | ✅ Decided | [P-033](./P-033-payroll-cycle.md) |
 | P-034 | Jóváhagyási sor (Approval Queue) | ✅ Decided | [P-034](./P-034-approval-queue.md) |
 | P-059 | eaisyBooks Kliens Regisztráció és Iroda Hozzárendelés UX | ✅ Decided | [P-059](./P-059-accounty-manual-client-onboarding-ux.md) |
+| P-060 | Modular UX for Statutory Reporting, VAT 2665 Calculator/Replica and Reusable Popover DatePicker | ✅ Decided | [P-060](./P-060-statutory-reporting-and-vat-return-modular-ux.md) |
 
 ## 🔍 Keresés
 

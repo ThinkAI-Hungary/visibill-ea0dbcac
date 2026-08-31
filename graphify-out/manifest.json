@@ -1445,8 +1445,8 @@
     "semantic_hash": ""
   },
   "src/pages/AnnualReportPage.tsx": {
-    "mtime": 1787568622.9028497,
-    "ast_hash": "b2bbc9c960b6b2e29e9f717b77eb5fe3",
+    "mtime": 1788219381.0668073,
+    "ast_hash": "8daba2e69f534789fe854514a852c4bf",
     "semantic_hash": ""
   },
   "src/pages/Auth.tsx": {
@@ -1570,8 +1570,8 @@
     "semantic_hash": ""
   },
   "src/pages/VatReturnPage.tsx": {
-    "mtime": 1788139996.2165778,
-    "ast_hash": "c659c90888772e54c2059b2a938be6df",
+    "mtime": 1788219559.2800634,
+    "ast_hash": "82d15d8919594835462b8ce1cf332eb5",
     "semantic_hash": ""
   },
   "src/pages/WorkingTimePage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788179437.1627035,
-    "ast_hash": "95affc2a5d98ddf3d546255693fe51a6",
+    "mtime": 1788220496.8903086,
+    "ast_hash": "482dc7ba3a7d5ce4f83abca5b6b36993",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788178206.6398776,
-    "ast_hash": "0398abb523c1d755fb8b0c866bb6bece",
+    "mtime": 1788220521.0910163,
+    "ast_hash": "4033ebccdceac892a15f6b53a7ae19cf",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -8222,6 +8222,141 @@
   "supabase/migrations/20260901000000_opening_entries_module.sql": {
     "mtime": 1788212014.2291157,
     "ast_hash": "d3c88954f54759a168291eefe971b370",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/__tests__/annualReportEngine.test.ts": {
+    "mtime": 1788219266.1153338,
+    "ast_hash": "a77a77711cbd462d4a808042a5448c9d",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/components/AnnualReportContainer.tsx": {
+    "mtime": 1788219369.769996,
+    "ast_hash": "b4d28b7bff8658e2ff940d5976d5fb31",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/components/steps/Step1Alapadatok.tsx": {
+    "mtime": 1788220207.766784,
+    "ast_hash": "cea56cab53819d408205fa07c51f539c",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/components/steps/Step2Adatimport.tsx": {
+    "mtime": 1788219320.4581485,
+    "ast_hash": "70e05958418825517e1b6914d2e27600",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/components/steps/Step3Validacio.tsx": {
+    "mtime": 1788219326.8039331,
+    "ast_hash": "ee77a02cfdcd0e2614df3f094012c310",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/components/steps/Step4KiegMelleklet.tsx": {
+    "mtime": 1788219337.922962,
+    "ast_hash": "985c7141e5ffe1b9b8ba1129b964c56b",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/components/steps/Step5Osztalek.tsx": {
+    "mtime": 1788220221.6962056,
+    "ast_hash": "66078caab9b0454d1f5579c20aa26aef",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/components/steps/Step6Export.tsx": {
+    "mtime": 1788219358.8954012,
+    "ast_hash": "0e82e52472a9c4dd292826be1ff475a0",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/core/annualReportEngine.ts": {
+    "mtime": 1788219257.6764815,
+    "ast_hash": "2371a6ccfa0d945e3c3f95d6e9b5d716",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/hooks/useAnnualReportData.ts": {
+    "mtime": 1788219304.8560543,
+    "ast_hash": "e70726106242dfa95e0d87324b587636",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/index.ts": {
+    "mtime": 1788219374.2540529,
+    "ast_hash": "52616d1931ecd0da5a43775eff9055d0",
+    "semantic_hash": ""
+  },
+  "src/features/annual-report/types.ts": {
+    "mtime": 1788219090.4505353,
+    "ast_hash": "92d3bbef0203acc36f645d5e963d40dc",
+    "semantic_hash": ""
+  },
+  "src/features/vat/__tests__/vatEngine.test.ts": {
+    "mtime": 1788219472.8039784,
+    "ast_hash": "70684a8b4f7211488ccbc0fcbee5e452",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatA60Table.tsx": {
+    "mtime": 1788219508.6150515,
+    "ast_hash": "8b26ec571cd8c4d44bd738f118fe6c20",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatCalculatorView.tsx": {
+    "mtime": 1788219533.5759358,
+    "ast_hash": "93b2ae476ef2e0894d0578b9c3b3bd94",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatNav65Replica.tsx": {
+    "mtime": 1788219500.211365,
+    "ast_hash": "11fd62bf97ead62f8db81eb82e3d6ab5",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatReturnContainer.tsx": {
+    "mtime": 1788219547.1135426,
+    "ast_hash": "d120d33f6c43cc230db6bf123f96fcb6",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatReturnViewTab.tsx": {
+    "mtime": 1788219541.8946064,
+    "ast_hash": "331bc5225515f12795fe23d041880660",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatXmlValidationDialog.tsx": {
+    "mtime": 1788219514.4184842,
+    "ast_hash": "9b584f1bcc04493a83b99c74c5e44e80",
+    "semantic_hash": ""
+  },
+  "src/features/vat/core/vatEngine.ts": {
+    "mtime": 1788219465.799752,
+    "ast_hash": "85662473993634eb24e992d8807e9f54",
+    "semantic_hash": ""
+  },
+  "src/features/vat/hooks/useVatReturnData.ts": {
+    "mtime": 1788219493.0946772,
+    "ast_hash": "655fc1b576f3e6465e2a4234bebbc0f8",
+    "semantic_hash": ""
+  },
+  "src/features/vat/index.ts": {
+    "mtime": 1788219551.2196388,
+    "ast_hash": "4e14c2cd89e52fdb110b6cadf803a3cd",
+    "semantic_hash": ""
+  },
+  "src/features/vat/types.ts": {
+    "mtime": 1788219455.537692,
+    "ast_hash": "1e1f8c3907f61e568f1545e2f8328d7d",
+    "semantic_hash": ""
+  },
+  "src/components/ui/__tests__/date-picker.test.tsx": {
+    "mtime": 1788220227.6712677,
+    "ast_hash": "a8375e4e378eae253ee69e04ae616d7b",
+    "semantic_hash": ""
+  },
+  "src/components/ui/date-picker.tsx": {
+    "mtime": 1788220195.5801349,
+    "ast_hash": "db8aea054e73ce8ea9321e794ea7ae45",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-076-statutory-reporting-and-vat-return-monolith-modularization.md": {
+    "mtime": 1788220484.075185,
+    "ast_hash": "e9b42ce01a66120dad72d8cd3f84319e",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-060-statutory-reporting-and-vat-return-modular-ux.md": {
+    "mtime": 1788220505.7210383,
+    "ast_hash": "d4a05fc9beee85e6f29cee8f610c0e0e",
     "semantic_hash": ""
   }
 }
