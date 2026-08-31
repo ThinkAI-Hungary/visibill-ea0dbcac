@@ -73,7 +73,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
         .from('gl_accounts')
-        .select('id, gl_number, name')
+        .select('id, gl_number, short_name')
         .eq('company_id', selectedCompany.id)
         .order('gl_number');
       if (error) throw error;
@@ -404,7 +404,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                             <SelectContent className="max-h-[300px]">
                               {glAccounts.map((gl: any) => (
                                 <SelectItem key={gl.id} value={gl.id} className="font-mono text-xs">
-                                  {gl.gl_number} - {gl.name}
+                                  {gl.gl_number} - {gl.short_name}
                                 </SelectItem>
                               ))}
                             </SelectContent>

@@ -243,10 +243,11 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
         // Deduplicate by gl_number to avoid unique constraint violation
         const seenGlNumbers = new Set<string>();
         const insertData = rawInsertData.filter(item => {
-          if (seenGlNumbers.has(item.gl_number)) {
+          const cleanKey = item.gl_number.toUpperCase().replace(/\s+/g, '').replace(/\.$/, '');
+          if (seenGlNumbers.has(cleanKey)) {
             return false;
           }
-          seenGlNumbers.add(item.gl_number);
+          seenGlNumbers.add(cleanKey);
           return true;
         });
 
