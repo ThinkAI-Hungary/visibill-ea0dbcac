@@ -529,34 +529,47 @@ export default function Settings() {
   const [companyName, setCompanyName] = useState('');
   const [companyTaxNumber, setCompanyTaxNumber] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
+  const [companyDescription, setCompanyDescription] = useState('');
+  const [companyPrimaryTeaor, setCompanyPrimaryTeaor] = useState('');
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [savingCompany, setSavingCompany] = useState(false);
   const [initialProfile, setInitialProfile] = useState<Profile | null>(null);
-  const [initialCompanyData, setInitialCompanyData] = useState<{ name: string; taxNumber: string; address: string } | null>(null);
+  const [initialCompanyData, setInitialCompanyData] = useState<{ name: string; taxNumber: string; address: string; description: string; primaryTeaor: string } | null>(null);
 
   const [systemSettings, setSystemSettings] = useState<SystemSettings>({
     theme, language: 'hu', date_format: 'DD/MM/YYYY', number_format: '1 234 567,89', timezone: 'Europe/Budapest',
   });
 
-  // Sync company data
   useEffect(() => {
     if (selectedCompany) {
       setCompanyName(selectedCompany.name);
       setCompanyTaxNumber(selectedCompany.tax_number || '');
       setCompanyAddress(selectedCompany.address || '');
-      setInitialCompanyData({ name: selectedCompany.name, taxNumber: selectedCompany.tax_number || '', address: selectedCompany.address || '' });
+      setCompanyDescription(selectedCompany.description || '');
+      setCompanyPrimaryTeaor(selectedCompany.primary_teaor || '');
+      setInitialCompanyData({ 
+        name: selectedCompany.name, 
+        taxNumber: selectedCompany.tax_number || '', 
+        address: selectedCompany.address || '',
+        description: selectedCompany.description || '',
+        primaryTeaor: selectedCompany.primary_teaor || '',
+      });
     }
   }, [selectedCompany]);
 
-  // Unsaved changes
   const hasUnsavedChanges = useMemo(() => {
     if (!initialDataLoaded || !initialProfile) return false;
     const profileChanged = profile.name !== initialProfile.name || profile.company !== initialProfile.company || profile.position !== initialProfile.position;
     let companyChanged = false;
     if (initialCompanyData && selectedCompany) {
-      companyChanged = companyName !== initialCompanyData.name || companyTaxNumber !== initialCompanyData.taxNumber || companyAddress !== initialCompanyData.address;
+      companyChanged = companyName !== initialCompanyData.name || 
+                       companyTaxNumber !== initialCompanyData.taxNumber || 
+                       companyAddress !== initialCompanyData.address ||
+                       companyDescription !== initialCompanyData.description ||
+                       companyPrimaryTeaor !== initialCompanyData.primaryTeaor;
     }
     return profileChanged || companyChanged;
-  }, [profile, initialProfile, companyName, companyTaxNumber, companyAddress, initialCompanyData, selectedCompany, initialDataLoaded]);
+  }, [profile, initialProfile, companyName, companyTaxNumber, companyAddress, companyDescription, companyPrimaryTeaor, initialCompanyData, selectedCompany, initialDataLoaded]);
 
   const { showDialog, confirmNavigation, cancelNavigation } = useUnsavedChanges(hasUnsavedChanges);
 
@@ -681,15 +694,69 @@ export default function Settings() {
     setLoading(false);
   };
 
+  const handleGenerateDescription = async () => {
+    if (!companyName.trim()) {
+      toast({ title: 'Kérjük, add meg a cég nevét a generáláshoz!', variant: 'destructive' });
+      return;
+    }
+    if (!companyPrimaryTeaor.trim()) {
+      toast({ title: 'Kérjük, add meg az elsődleges TEÁOR kódot a generáláshoz!', variant: 'destructive' });
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-company-description', {
+        body: { teaorCode: companyPrimaryTeaor.trim(), companyName: companyName.trim() }
+      });
+
+      if (error) throw error;
+      if (data?.description) {
+        setCompanyDescription(data.description);
+        toast({ title: 'Cégleírás sikeresen generálva!' });
+      } else {
+        throw new Error('Nem érkezett leírás a szervertől.');
+      }
+    } catch (err: any) {
+      reportError({ type: 'edge_function', component: 'Settings', action: 'error', message: 'Error generating description:', error: err });
+      toast({
+        title: 'Generálás sikertelen',
+        description: err.message || 'Hiba történt a generálás során',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
+
   const saveCompanyData = async () => {
     if (!selectedCompany || !companyName.trim()) return;
     setSavingCompany(true);
     try {
-      const { error } = await supabase.from('companies').update({ name: companyName.trim(), tax_number: companyTaxNumber.trim() || null, address: companyAddress.trim() || null }).eq('id', selectedCompany.id);
+      const { error } = await supabase.from('companies').update({ 
+        name: companyName.trim(), 
+        tax_number: companyTaxNumber.trim() || null, 
+        address: companyAddress.trim() || null,
+        description: companyDescription.trim() || null,
+        primary_teaor: companyPrimaryTeaor.trim() || null,
+      }).eq('id', selectedCompany.id);
       if (error) throw error;
       await refreshCompanies();
-      setSelectedCompany({ ...selectedCompany, name: companyName.trim(), tax_number: companyTaxNumber.trim() || null, address: companyAddress.trim() || null });
-      setInitialCompanyData({ name: companyName.trim(), taxNumber: companyTaxNumber.trim(), address: companyAddress.trim() });
+      setSelectedCompany({ 
+        ...selectedCompany, 
+        name: companyName.trim(), 
+        tax_number: companyTaxNumber.trim() || null, 
+        address: companyAddress.trim() || null,
+        description: companyDescription.trim() || null,
+        primary_teaor: companyPrimaryTeaor.trim() || null,
+      });
+      setInitialCompanyData({ 
+        name: companyName.trim(), 
+        taxNumber: companyTaxNumber.trim(), 
+        address: companyAddress.trim(),
+        description: companyDescription.trim(),
+        primaryTeaor: companyPrimaryTeaor.trim(),
+      });
       toast({ title: 'Siker', description: 'Cég adatai sikeresen mentve.' });
     } catch (err) { reportError({ type: 'db_query', component: 'Settings', action: 'saveCompanyData', message: 'Company update failed', error: err }); toast({ title: 'Hiba történt', description: 'A cég adatainak mentése sikertelen.', variant: 'destructive' }); }
     finally { setSavingCompany(false); }
@@ -769,6 +836,12 @@ export default function Settings() {
             setCompanyTaxNumber={setCompanyTaxNumber}
             companyAddress={companyAddress}
             setCompanyAddress={setCompanyAddress}
+            companyDescription={companyDescription}
+            setCompanyDescription={setCompanyDescription}
+            companyPrimaryTeaor={companyPrimaryTeaor}
+            setCompanyPrimaryTeaor={setCompanyPrimaryTeaor}
+            isGeneratingDescription={isGeneratingDescription}
+            onGenerateDescription={handleGenerateDescription}
             savingCompany={savingCompany}
             onSave={saveCompanyData}
             companies={companies}

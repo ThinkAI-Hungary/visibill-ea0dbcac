@@ -1,6 +1,7 @@
 import React from 'react';
-import { Check, Building2, Mail, FileText, Smartphone, Send, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Check, Building2, Mail, FileText, Smartphone, Send, Loader2, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -44,6 +45,12 @@ interface ClientDetailsStepProps {
   handleUploadClick: () => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  primaryTeaor: string;
+  setPrimaryTeaor: (v: string) => void;
+  companyDescription: string;
+  setCompanyDescription: (v: string) => void;
+  isGeneratingDescription: boolean;
+  handleGenerateDescription: () => void;
 }
 
 export default function ClientDetailsStep(props: ClientDetailsStepProps) {
@@ -60,6 +67,9 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
     personalData, setPersonalData,
     isUploadingDocs, docsUploaded, setDocsUploaded,
     handleUploadClick, fileInputRef, handleFileChange,
+    primaryTeaor, setPrimaryTeaor,
+    companyDescription, setCompanyDescription,
+    isGeneratingDescription, handleGenerateDescription,
   } = props;
 
   return (
@@ -215,6 +225,39 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
                 className="bg-card border-border"
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label className="text-xs text-slate-700 dark:text-slate-300 font-medium">Elsődleges TEÁOR kód</Label>
+              <Input 
+                placeholder="Pl. 6201" 
+                maxLength={4}
+                className="bg-card border-border"
+                value={primaryTeaor}
+                onChange={(e) => setPrimaryTeaor(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              />
+            </div>
+            <div className="space-y-2 col-span-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-slate-700 dark:text-slate-300 font-medium">Cég tevékenységének bemutatása (AI alapú kontírozáshoz)</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-primary hover:text-primary/80 gap-1 px-2"
+                  onClick={handleGenerateDescription}
+                  disabled={isGeneratingDescription || !primaryTeaor.trim()}
+                >
+                  <Sparkles className={cn("h-3.5 w-3.5", isGeneratingDescription && "animate-spin")} />
+                  {isGeneratingDescription ? 'Generálás...' : 'Generálás AI-jal'}
+                </Button>
+              </div>
+              <Textarea 
+                placeholder="Mutasd be röviden a cég tevékenységét és üzletmenetét a pontosabb automatikus könyvelés érdekében..." 
+                className="bg-card border-border min-h-[80px]"
+                value={companyDescription}
+                onChange={(e) => setCompanyDescription(e.target.value)}
+                rows={3}
               />
             </div>
           </div>

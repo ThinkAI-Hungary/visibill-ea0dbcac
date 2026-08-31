@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users, LogOut } from 'lucide-react';
+import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users, LogOut, Sparkles } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -95,6 +96,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   const [companyName, setCompanyName] = useState('');
   const [companyTaxNumber, setCompanyTaxNumber] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
+  const [primaryTeaor, setPrimaryTeaor] = useState('');
+  const [companyDescription, setCompanyDescription] = useState('');
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [step1Tab, setStep1Tab] = useState('create');
   const [joinCode, setJoinCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
@@ -224,6 +228,41 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
     }
   };
 
+  const handleGenerateDescription = async () => {
+    if (!companyName.trim()) {
+      toast({ title: 'Kérjük, add meg a cég nevét a generáláshoz!', variant: 'destructive' });
+      return;
+    }
+    if (!primaryTeaor.trim()) {
+      toast({ title: 'Kérjük, add meg az elsődleges TEÁOR kódot a generáláshoz!', variant: 'destructive' });
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-company-description', {
+        body: { teaorCode: primaryTeaor.trim(), companyName: companyName.trim() }
+      });
+
+      if (error) throw error;
+      if (data?.description) {
+        setCompanyDescription(data.description);
+        toast({ title: 'Cégleírás sikeresen generálva!' });
+      } else {
+        throw new Error('Nem érkezett leírás a szervertől.');
+      }
+    } catch (err: any) {
+      reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'error', message: 'Error generating description:', error: err });
+      toast({
+        title: 'Generálás sikertelen',
+        description: err.message || 'Hiba történt a generálás során',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
+
   const handleFinishOnboarding = async () => {
     if (!user) return;
 
@@ -250,6 +289,8 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
           tax_number: companyTaxNumber.trim(),
           address: companyAddress.trim() || null,
           owner_id: user.id,
+          primary_teaor: primaryTeaor.trim() || null,
+          description: companyDescription.trim() || null,
         })
         .select()
         .single();
@@ -540,6 +581,41 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
               value={companyAddress}
               onChange={(e) => setCompanyAddress(e.target.value)}
               placeholder="Pl. 1234 Budapest, Példa utca 1."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="primary-teaor">Elsődleges TEÁOR kód</Label>
+            <Input
+              id="primary-teaor"
+              value={primaryTeaor}
+              onChange={(e) => setPrimaryTeaor(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              placeholder="Pl. 6201"
+              maxLength={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="company-description">Cég tevékenységének bemutatása (AI alapú kontírozáshoz)</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-primary hover:text-primary/80 gap-1 px-2"
+                onClick={handleGenerateDescription}
+                disabled={isGeneratingDescription || !primaryTeaor.trim()}
+              >
+                <Sparkles className={cn("h-3.5 w-3.5", isGeneratingDescription && "animate-spin")} />
+                {isGeneratingDescription ? 'Generálás...' : 'Generálás AI-jal'}
+              </Button>
+            </div>
+            <Textarea
+              id="company-description"
+              value={companyDescription}
+              onChange={(e) => setCompanyDescription(e.target.value)}
+              placeholder="Mutasd be röviden a cég tevékenységét és üzletmenetét a pontosabb automatikus könyvelés érdekében..."
+              rows={3}
             />
           </div>
         </TabsContent>

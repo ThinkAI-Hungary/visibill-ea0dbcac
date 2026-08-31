@@ -141,6 +141,7 @@ const NavDeadlinesPage = lazy(() => import("@/pages/Accounty/NavDeadlinesPage"))
 const AccountyOnboardingPage = lazy(() => import("@/pages/Accounty/OnboardingPage"));
 const AiAssistantPage = lazy(() => import("@/pages/Accounty/AiAssistantPage"));
 const ProfileSettingsPage = lazy(() => import("@/pages/Accounty/ProfileSettingsPage"));
+const PromptsPage = lazy(() => import("@/pages/Accounty/PromptsPage"));
 
 export function renderAccountyRoutes() {
   return (
@@ -276,6 +277,7 @@ export function renderAccountyRoutes() {
           <Route path="invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientInvoicesPage /></Suspense>} />
 
           {/* Settings and others */}
+          <Route path="prompts" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PromptsPage /></Suspense>} />
           <Route path="cegkapu" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CegkapuSettingsPage /></Suspense>} />
           <Route path="representation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RepresentationPage /></Suspense>} />
           <Route path="data-retention" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><DataRetentionPage /></Suspense>} />

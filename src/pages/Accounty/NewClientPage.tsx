@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { reportError } from '@/lib/errorReporter';
+import { useToast } from '@/components/ui/use-toast';
 
 import ClientDetailsStep from './new-client/ClientDetailsStep';
 import IntegrationStep from './new-client/IntegrationStep';
@@ -14,13 +15,52 @@ import IntegrationStep from './new-client/IntegrationStep';
 export default function NewClientPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [integrationType, setIntegrationType] = useState<'rlb' | 'novitax' | 'other' | null>(null);
 
   const [clientName, setClientName] = useState('');
   const [taxNumber, setTaxNumber] = useState('');
+  const [primaryTeaor, setPrimaryTeaor] = useState('');
+  const [companyDescription, setCompanyDescription] = useState('');
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const handleGenerateDescription = async () => {
+    if (!clientName.trim()) {
+      toast({ title: 'Kérjük, add meg a cég nevét a generáláshoz!', variant: 'destructive' });
+      return;
+    }
+    if (!primaryTeaor.trim()) {
+      toast({ title: 'Kérjük, add meg az elsődleges TEÁOR kódot a generáláshoz!', variant: 'destructive' });
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-company-description', {
+        body: { teaorCode: primaryTeaor.trim(), companyName: clientName.trim() }
+      });
+
+      if (error) throw error;
+      if (data?.description) {
+        setCompanyDescription(data.description);
+        toast({ title: 'Cégleírás sikeresen generálva!' });
+      } else {
+        throw new Error('Nem érkezett leírás a szervertől.');
+      }
+    } catch (err: any) {
+      reportError({ type: 'edge_function', component: 'NewClientPage', action: 'error', message: 'Failed to generate description:', error: err });
+      toast({
+        title: 'Generálás sikertelen',
+        description: err.message || 'Hiba történt a generálás során',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
 
   const [useVisibillAccount, setUseVisibillAccount] = useState(false);
   const [selectedChannels, setSelectedChannels] = useState<string[]>(['email']);
@@ -110,7 +150,12 @@ export default function NewClientPage() {
           let companyId: string;
           if (existing) { companyId = existing.id; }
           else {
-            const { data: newCompany, error: compErr } = await supabase.from('companies').insert({ name, tax_number: tax }).select('id').single();
+            const { data: newCompany, error: compErr } = await supabase.from('companies').insert({ 
+              name, 
+              tax_number: tax,
+              primary_teaor: primaryTeaor.trim() || null,
+              description: companyDescription.trim() || null,
+            }).select('id').single();
             if (compErr) throw compErr;
             companyId = newCompany.id;
           }
@@ -183,6 +228,10 @@ export default function NewClientPage() {
               useVisibillAccount={useVisibillAccount} setUseVisibillAccount={setUseVisibillAccount}
               clientName={clientName} setClientName={setClientName}
               taxNumber={taxNumber} setTaxNumber={setTaxNumber}
+              primaryTeaor={primaryTeaor} setPrimaryTeaor={setPrimaryTeaor}
+              companyDescription={companyDescription} setCompanyDescription={setCompanyDescription}
+              isGeneratingDescription={isGeneratingDescription}
+              handleGenerateDescription={handleGenerateDescription}
               validationErrors={validationErrors} setValidationErrors={setValidationErrors}
               contactName={contactName} setContactName={setContactName}
               contactEmail={contactEmail} setContactEmail={setContactEmail}

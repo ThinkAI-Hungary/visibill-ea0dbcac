@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building2, AlertCircle, Info, MapPin, Plus, X } from 'lucide-react';
+import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles } from 'lucide-react';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,6 +15,8 @@ interface Company {
   owner_id: string;
   tax_number: string | null;
   address: string | null;
+  description?: string | null;
+  primary_teaor?: string | null;
   created_at: string;
 }
 
@@ -27,6 +29,12 @@ interface Props {
   setCompanyTaxNumber: (v: string) => void;
   companyAddress: string;
   setCompanyAddress: (v: string) => void;
+  companyDescription: string;
+  setCompanyDescription: (v: string) => void;
+  companyPrimaryTeaor: string;
+  setCompanyPrimaryTeaor: (v: string) => void;
+  isGeneratingDescription: boolean;
+  onGenerateDescription: () => void;
   savingCompany: boolean;
   onSave: () => void;
   companies: Company[];
@@ -37,6 +45,8 @@ interface Props {
 export function BusinessSection({
   selectedCompany, userId, companyName, setCompanyName,
   companyTaxNumber, setCompanyTaxNumber, companyAddress, setCompanyAddress,
+  companyDescription, setCompanyDescription, companyPrimaryTeaor, setCompanyPrimaryTeaor,
+  isGeneratingDescription, onGenerateDescription,
   savingCompany, onSave, companies, setSelectedCompany, children,
 }: Props) {
   const isOwner = selectedCompany?.owner_id === userId;
@@ -122,6 +132,31 @@ export function BusinessSection({
               <div className="space-y-2">
                 <Label htmlFor="company_address">Székhely</Label>
                 <Textarea id="company_address" value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." rows={3} disabled={!isOwner} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company_teaor">Elsődleges TEÁOR kód</Label>
+                  <Input id="company_teaor" value={companyPrimaryTeaor} onChange={e => setCompanyPrimaryTeaor(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Pl. 6201" maxLength={4} disabled={!isOwner} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="company_description">Cég tevékenységének bemutatása (AI alapú kontírozáshoz)</Label>
+                  {isOwner && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-primary hover:text-primary/80 gap-1 px-2"
+                      onClick={onGenerateDescription}
+                      disabled={isGeneratingDescription || !companyPrimaryTeaor.trim()}
+                    >
+                      <Sparkles className={`h-3.5 w-3.5 ${isGeneratingDescription ? 'animate-spin' : ''}`} />
+                      {isGeneratingDescription ? 'Generálás...' : 'Generálás AI-al'}
+                    </Button>
+                  )}
+                </div>
+                <Textarea id="company_description" value={companyDescription} onChange={e => setCompanyDescription(e.target.value)} placeholder="Mutasd be röviden a cég tevékenységét és üzletmenetét a pontosabb automatikus könyvelés érdekében..." rows={3} disabled={!isOwner} />
               </div>
               <div className="flex items-center gap-4 pt-2">
                 {isOwner && (

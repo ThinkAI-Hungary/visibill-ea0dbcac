@@ -32,7 +32,8 @@ import {
   Shield,
   Coins,
   ArrowLeft,
-  ClipboardList
+  ClipboardList,
+  Brain
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -326,6 +327,7 @@ export default function AccountySidebar({
                 { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/tao`, name: 'Társasági Adó', icon: Landmark },
                 { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, name: 'Bérszámfejtés', icon: Calculator },
                 { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/filings`, name: 'NAV bevallások', icon: ClipboardList },
+                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/prompts`, name: 'Könyvelési Szabályok', icon: Brain },
                 { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, name: 'Beállítások / Cégkapu', icon: Settings },
               ].map((item, idx) => {
                 if ('type' in item) return <li key={`div-${idx}`} className="my-1 mx-2 h-px bg-border/50" />;
@@ -449,6 +451,7 @@ export default function AccountySidebar({
                 { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/tao`, label: 'Társasági Adó', icon: Landmark, id: 'tao' },
                 { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, label: 'Bérszámfejtés', icon: Calculator, id: 'payroll' },
                 { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/filings`, label: 'NAV bevallások', icon: ClipboardList, id: 'filings' },
+                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/prompts`, label: 'Könyvelési Szabályok', icon: Brain, id: 'prompts' },
                 { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, label: 'Beállítások / Cégkapu', icon: Settings, id: 'settings' },
               ].map(item => {
                 const pathWithoutHash = item.to.split('#')[0];

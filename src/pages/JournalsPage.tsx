@@ -25,7 +25,9 @@ import {
   CornerDownRight,
   ShieldCheck,
   Calendar,
-  Bot
+  Bot,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
@@ -95,7 +97,7 @@ export default function JournalsPage() {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 30;
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   // Reset page and selection when search or journal changes
   useEffect(() => {
@@ -233,6 +235,26 @@ export default function JournalsPage() {
       toast({ title: "Könyvelési hiba", description: err.message, variant: "destructive" });
     }
   });
+  
+  // Bulk update status mutation (for approval / discard)
+  const bulkUpdateStatusMutation = useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
+      const { error } = await supabase
+        .from('acc_journal_headers')
+        .update({ status })
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      setSelectedEntryIds(new Set());
+      const label = STATUS_LABELS[variables.status]?.label || variables.status;
+      toast({ title: `Kijelölt tételek állapota frissítve: ${label}` });
+    },
+    onError: (err) => {
+      toast({ title: "Hiba a tömeges módosítás során", description: err.message, variant: "destructive" });
+    }
+  });
 
   // Storno entry mutation
   const stornoMutation = useMutation({
@@ -344,7 +366,8 @@ export default function JournalsPage() {
   );
 
   return (
-    <div className="flex flex-col space-y-4 p-6 min-h-[calc(100vh-4rem)] bg-background">
+    <TooltipProvider>
+      <div className="flex flex-col space-y-4 p-6 min-h-[calc(100vh-4rem)] bg-background">
       <PageHeader
         title="Könyvelési Naplók"
         description="A vállalkozás kettős könyvvitelének naplónemenkénti, idősoros és zárt nyilvántartása."
@@ -401,33 +424,31 @@ export default function JournalsPage() {
           <div className="flex items-center pl-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
         ) : (
           journals.map((j: any) => (
-            <TooltipProvider key={j.id} delayDuration={300}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => setSelectedJournalId(j.id)}
-                    className={cn(
-                      "flex items-center gap-3 pl-3 pr-4 h-12 rounded-lg text-xs transition-all border shrink-0 text-left justify-between flex-1 min-w-[80px]",
-                      selectedJournalId === j.id
-                        ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
-                        : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
-                    )}
-                  >
-                    <div className="flex flex-col min-w-0 pr-1 leading-tight flex-1">
-                      <span className={cn("font-bold text-[11px] leading-tight truncate", selectedJournalId === j.id ? "text-primary-foreground" : "text-foreground")}>{j.code}</span>
-                      <span className={cn("text-[8px] leading-none truncate", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>{j.name}</span>
-                    </div>
-                    <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
-                      {j.currency}
-                    </Badge>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-slate-900 border-slate-800 text-slate-100 p-2 text-xs shadow-md">
-                  <p className="font-semibold text-white">{j.code} - {j.name}</p>
-                  <p className="text-[10px] text-slate-400">Pénznem: {j.currency}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Tooltip key={j.id} delayDuration={300}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setSelectedJournalId(j.id)}
+                  className={cn(
+                    "flex items-center gap-3 pl-3 pr-4 h-12 rounded-lg text-xs transition-all border shrink-0 text-left justify-between flex-1 min-w-[80px]",
+                    selectedJournalId === j.id
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
+                      : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
+                  )}
+                >
+                  <div className="flex flex-col min-w-0 pr-1 leading-tight flex-1">
+                    <span className={cn("font-bold text-[11px] leading-tight truncate", selectedJournalId === j.id ? "text-primary-foreground" : "text-foreground")}>{j.code}</span>
+                    <span className={cn("text-[8px] leading-none truncate", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>{j.name}</span>
+                  </div>
+                  <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
+                    {j.currency}
+                  </Badge>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-slate-900 border-slate-800 text-slate-100 p-2 text-xs shadow-md">
+                <p className="font-semibold text-white">{j.code} - {j.name}</p>
+                <p className="text-[10px] text-slate-400">Pénznem: {j.currency}</p>
+              </TooltipContent>
+            </Tooltip>
           ))
         )}
       </div>
@@ -436,7 +457,7 @@ export default function JournalsPage() {
         {/* Full-width list table */}
         <div className="col-span-12 space-y-4">
           {/* Filters */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 h-4 text-muted-foreground" />
               <Input
@@ -446,62 +467,28 @@ export default function JournalsPage() {
                 className="pl-9 bg-card border-border"
               />
             </div>
+            
+            {/* Items per page selector */}
+            <div className="flex items-center gap-2 shrink-0 bg-card border border-border rounded-lg px-3 h-10 text-xs">
+              <span className="text-muted-foreground font-medium">Sorok száma:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent border-none focus:outline-none cursor-pointer font-bold text-foreground"
+              >
+                <option value={50} className="bg-card">50</option>
+                <option value={100} className="bg-card">100</option>
+                <option value={200} className="bg-card">200</option>
+              </select>
+            </div>
           </div>
 
           {/* List Table */}
-          <Card className="border border-border bg-card/60 backdrop-blur-md overflow-hidden">
-            {selectedEntryIds.size > 0 && (
-              <div className="flex items-center justify-between px-4 py-2.5 bg-primary/5 border-b border-border/80 animate-in fade-in slide-in-from-top-1 duration-200">
-                <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-                  <span className="bg-primary/10 px-2 py-0.5 rounded-full tabular-nums">
-                    {selectedEntryIds.size}
-                  </span>
-                  <span>tétel kijelölve a tömeges műveletekhez</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs gap-1.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-950 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-                    onClick={() => bulkPostMutation.mutate(Array.from(selectedEntryIds))}
-                    disabled={bulkPostMutation.isPending}
-                  >
-                    {bulkPostMutation.isPending ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                    )}
-                    Kijelöltek könyvelése
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs gap-1.5 border-destructive/20 text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      if (confirm(`Biztosan törölni szeretné a kijelölt ${selectedEntryIds.size} db piszkozatot?`)) {
-                        bulkDeleteMutation.mutate(Array.from(selectedEntryIds));
-                      }
-                    }}
-                    disabled={bulkDeleteMutation.isPending}
-                  >
-                    {bulkDeleteMutation.isPending ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-3.5 h-3.5" />
-                    )}
-                    Kijelöltek törlése
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 text-xs px-2 text-muted-foreground"
-                    onClick={() => setSelectedEntryIds(new Set())}
-                  >
-                    Mégse
-                  </Button>
-                </div>
-              </div>
-            )}
+          <Card className="border border-border bg-card overflow-hidden">
+
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
@@ -581,18 +568,16 @@ export default function JournalsPage() {
                             <td className="py-1 px-2 font-mono">{e.document_id}</td>
                             <td className="py-1 px-2 font-medium text-foreground">{e.partner?.name || '—'}</td>
                             <td className="py-1 px-2">
-                              <TooltipProvider delayDuration={0}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="truncate max-w-[200px] font-medium text-foreground cursor-default">
-                                      {e.description}
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="max-w-[400px] bg-slate-900 border-slate-800 text-slate-100 p-2 text-xs shadow-md">
-                                    <p className="whitespace-pre-wrap">{e.description}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <Tooltip delayDuration={0}>
+                                <TooltipTrigger asChild>
+                                  <div className="truncate max-w-[200px] font-medium text-foreground cursor-default">
+                                    {e.description}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[400px] bg-slate-900 border-slate-800 text-slate-100 p-2 text-xs shadow-md">
+                                  <p className="whitespace-pre-wrap">{e.description}</p>
+                                </TooltipContent>
+                              </Tooltip>
                             </td>
                             <td className="py-1 px-2 text-right font-semibold tabular-nums">
                               <div className="flex flex-col items-end">
@@ -651,8 +636,8 @@ export default function JournalsPage() {
                 </table>
               </div>
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/20 text-xs">
+              {totalItems > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/20 text-xs flex-wrap gap-3">
                   <div className="text-muted-foreground">
                     Összesen <span className="font-semibold text-foreground">{totalItems}</span> tételből{' '}
                     <span className="font-semibold text-foreground">
@@ -661,29 +646,31 @@ export default function JournalsPage() {
                     </span>{' '}
                     megjelenítve
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="h-8"
-                    >
-                      Előző
-                    </Button>
-                    <div className="flex items-center px-3 font-medium">
-                      {currentPage} / {totalPages}
+                  {totalPages > 1 && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="h-8"
+                      >
+                        Előző
+                      </Button>
+                      <div className="flex items-center px-3 font-medium">
+                        {currentPage} / {totalPages}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="h-8"
+                      >
+                        Következő
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className="h-8"
-                    >
-                      Következő
-                    </Button>
-                  </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -873,6 +860,88 @@ export default function JournalsPage() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+
+      {selectedEntryIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl bg-card border border-primary/30 shadow-2xl rounded-2xl px-6 py-4 flex items-center justify-between z-[9999] animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center gap-3 text-sm font-semibold text-primary">
+            <span className="bg-primary/10 px-3 py-1 rounded-full text-xs font-bold tabular-nums text-primary-foreground dark:text-primary">
+              {selectedEntryIds.size}
+            </span>
+            <span>tétel kijelölve a tömeges műveletekhez</span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-950 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+              onClick={() => bulkPostMutation.mutate(Array.from(selectedEntryIds))}
+              disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
+            >
+              {bulkPostMutation.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-3.5 h-3.5" />
+              )}
+              Kijelöltek könyvelése
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5 border-sky-200 text-sky-700 hover:bg-sky-50 dark:border-sky-950 dark:text-sky-400 dark:hover:bg-sky-950/30"
+              onClick={() => bulkUpdateStatusMutation.mutate({ ids: Array.from(selectedEntryIds), status: 'JOVAHAGYASRA_VAR' })}
+              disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
+            >
+              {bulkUpdateStatusMutation.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              )}
+              Jóváhagyásra küldés
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5 border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800/30"
+              onClick={() => bulkUpdateStatusMutation.mutate({ ids: Array.from(selectedEntryIds), status: 'ELVETVE' })}
+              disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
+            >
+              {bulkUpdateStatusMutation.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <XCircle className="w-3.5 h-3.5" />
+              )}
+              Kijelöltek elvetése
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5 border-destructive/20 text-destructive hover:bg-destructive/10"
+              onClick={() => {
+                if (confirm(`Biztosan törölni szeretné a kijelölt ${selectedEntryIds.size} db piszkozatot?`)) {
+                  bulkDeleteMutation.mutate(Array.from(selectedEntryIds));
+                }
+              }}
+              disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
+            >
+              {bulkDeleteMutation.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5" />
+              )}
+              Kijelöltek törlése
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 text-xs px-2 text-muted-foreground"
+              onClick={() => setSelectedEntryIds(new Set())}
+            >
+              Mégse
+            </Button>
+          </div>
+        </div>
+      )}
+      </div>
+    </TooltipProvider>
   );
 }
