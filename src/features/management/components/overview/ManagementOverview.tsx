@@ -233,9 +233,8 @@ export function ManagementOverview({
     return uniqueFiles.slice(0, 4);
   }, [recentFilesData]);
 
-  const isOverviewLoading = overviewLoading || bentoLlmCostsLoading || workerStatusLoading || recentFilesLoading || ticketsLoading;
-
-  if (isOverviewLoading) {
+  // Only show the full-page OverviewSkeleton when overview itself is missing during initial cold load
+  if (overviewLoading && !overview) {
     return <OverviewSkeleton />;
   }
 
@@ -252,13 +251,21 @@ export function ManagementOverview({
           loading={overviewLoading}
           sub={overview ? `In: ${(overview.llmOverview.totalMonthlyInputTokens / 1000).toFixed(1)}k · Out: ${(overview.llmOverview.totalMonthlyOutputTokens / 1000).toFixed(1)}k token` : undefined} />
         {overviewLoading ? (
-          <StatCard icon={Trophy} label="Legdrágább cég" value="..." loading sub="..." />
+          <StatCard icon={Trophy} label="Legdrágább cég (összesen)" value="..." loading sub="..." />
         ) : overview?.llmOverview.mostExpensiveCompany ? (
           <Card
-            className="cursor-pointer hover:bg-accent/30 transition-colors duration-150"
-            onClick={() => onOpenCompany(overview.llmOverview.mostExpensiveCompany!.id)}
+            className={`transition-colors duration-150 ${(!overview.llmOverview.mostExpensiveCompany.project || overview.llmOverview.mostExpensiveCompany.project === 'PROD') ? 'cursor-pointer hover:bg-accent/30' : 'cursor-default'}`}
+            onClick={() => {
+              if (!overview.llmOverview.mostExpensiveCompany?.project || overview.llmOverview.mostExpensiveCompany.project === 'PROD') {
+                onOpenCompany(overview.llmOverview.mostExpensiveCompany.id);
+              }
+            }}
             role="button" tabIndex={0}
-            onKeyDown={e => { if (e.key === 'Enter') onOpenCompany(overview.llmOverview.mostExpensiveCompany!.id); }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && (!overview.llmOverview.mostExpensiveCompany?.project || overview.llmOverview.mostExpensiveCompany.project === 'PROD')) {
+                onOpenCompany(overview.llmOverview.mostExpensiveCompany.id);
+              }
+            }}
           >
             <CardContent className="flex items-center gap-4 p-5">
               <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-warning/10 border border-warning/20 shrink-0">
@@ -266,7 +273,7 @@ export function ManagementOverview({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-foreground truncate">{overview.llmOverview.mostExpensiveCompany.name}</p>
-                <p className="text-xs text-muted-foreground">Legdrágább cég</p>
+                <p className="text-xs text-muted-foreground">Legdrágább cég (összesen)</p>
                 <p className="text-[11px] text-muted-foreground/60 mt-0.5 tabular-nums">
                   Össz: ${overview.llmOverview.mostExpensiveCompany.totalCostUsd.toFixed(4)} · Havi: ${overview.llmOverview.mostExpensiveCompany.monthlyCostUsd.toFixed(4)}
                 </p>
@@ -274,7 +281,7 @@ export function ManagementOverview({
             </CardContent>
           </Card>
         ) : (
-          <StatCard icon={Trophy} label="Legdrágább cég" value="—" sub="Nincs LLM költség" />
+          <StatCard icon={Trophy} label="Legdrágább cég (összesen)" value="—" sub="Nincs LLM költség" />
         )}
       </div>
 
@@ -348,13 +355,13 @@ export function ManagementOverview({
                         <div className="flex justify-between">
                           <span>Input token:</span>
                           <span className="font-medium text-foreground">
-                            {bentoLlmCostsAllTime ? `${(bentoLlmCostsAllTime.kpi.total_input_tokens / 1000).toFixed(1)}k ($${allTimeTokenCosts.inputCost.toFixed(4)})` : '—'}
+                            {bentoLlmCostsAllTime?.kpi ? `${(bentoLlmCostsAllTime.kpi.total_input_tokens / 1000).toFixed(1)}k ($${allTimeTokenCosts.inputCost.toFixed(4)})` : '—'}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Output token:</span>
                           <span className="font-medium text-foreground">
-                            {bentoLlmCostsAllTime ? `${(bentoLlmCostsAllTime.kpi.total_output_tokens / 1000).toFixed(1)}k ($${allTimeTokenCosts.outputCost.toFixed(4)})` : '—'}
+                            {bentoLlmCostsAllTime?.kpi ? `${(bentoLlmCostsAllTime.kpi.total_output_tokens / 1000).toFixed(1)}k ($${allTimeTokenCosts.outputCost.toFixed(4)})` : '—'}
                           </span>
                         </div>
                       </div>
@@ -366,6 +373,16 @@ export function ManagementOverview({
                   <span className="text-xs font-semibold text-muted-foreground block">Költség Megoszlás (Modellek)</span>
                   <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
                     {(() => {
+                      if (bentoLlmCostsLoading && rawModels.length === 0) {
+                        return (
+                          <div className="space-y-2 py-1 animate-pulse">
+                            <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
+                            <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-4/5"></div>
+                            <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-2/3"></div>
+                          </div>
+                        );
+                      }
+
                       if (rawModels.length === 0) {
                         return <div className="text-center text-muted-foreground/60 text-[10px] py-2">Nincs modell adat</div>;
                       }
@@ -432,12 +449,40 @@ export function ManagementOverview({
         {/* Bento Col 2: Worker Status & Feldolgozási hibák */}
         <div className="flex flex-col space-y-4 h-full">
           <Card className="p-5">
-            {(() => {
+            {workerStatusLoading && !workerStatusData ? (
+              <div className="space-y-4 animate-pulse">
+                <div className="flex justify-between items-center">
+                  <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3"></div>
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-16"></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="h-12 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+                  <div className="h-12 bg-zinc-200/60 dark:bg-zinc-900/60 rounded"></div>
+                </div>
+                <div className="space-y-3 pt-2">
+                  <div className="space-y-1">
+                    <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/4"></div>
+                    <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/4"></div>
+                    <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
+                  </div>
+                </div>
+                <div className="border-t border-zinc-200 dark:border-zinc-900 pt-4 space-y-3">
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2"></div>
+                  <div className="h-10 bg-zinc-200/60 dark:bg-zinc-900 rounded"></div>
+                </div>
+              </div>
+            ) : (() => {
               const isHealthy = workerStatusData?.containers?.length > 0 
                 ? workerStatusData.containers.every((c: any) => c.is_healthy) 
                 : true;
               const healthyCount = workerStatusData?.summary?.healthy_containers ?? 0;
               const totalCount = workerStatusData?.summary?.total_containers ?? 0;
+              const totalProcessing = workerStatusData?.summary?.total_processing ?? workerStatusData?.active_processing?.length ?? 0;
+              const totalQueuePending = workerStatusData?.summary?.total_queue_pending ?? workerStatusData?.queues?.reduce((acc: number, q: any) => acc + (q.queue_length || 0), 0) ?? 0;
+              const totalActiveOrPending = totalProcessing + totalQueuePending;
 
               return (
                 <>
@@ -467,10 +512,19 @@ export function ManagementOverview({
                           {isHealthy ? 'Fut (Egészséges)' : 'Hiba (Unhealthy)'}
                         </span>
                       </div>
-                      <div className="p-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40">
+                      <div 
+                        onClick={onOpenWorker}
+                        className="p-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-900 transition-colors"
+                      >
                         <span className="text-[9px] text-muted-foreground block">Feldolgozás alatt</span>
-                        <span className="font-bold text-teal-600 dark:text-teal-400 mt-0.5 block">
-                          {workerStatusData?.queues?.reduce((acc: number, q: any) => acc + (q.visible_messages || 0), 0) ?? 0} elem
+                        <span className={`font-bold mt-0.5 block ${totalActiveOrPending > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-teal-600 dark:text-teal-400'}`}>
+                          {totalActiveOrPending > 0
+                            ? (totalProcessing > 0 && totalQueuePending > 0
+                                ? `${totalProcessing} aktív (+${totalQueuePending} sorban)`
+                                : totalProcessing > 0
+                                  ? `${totalProcessing} aktív`
+                                  : `${totalQueuePending} sorban`)
+                            : '0 elem'}
                         </span>
                       </div>
                     </div>
@@ -604,7 +658,14 @@ export function ManagementOverview({
                   </div>
                 </div>
                 <div className="h-20 w-full flex items-end justify-between gap-4 pt-5 px-2">
-                  {chartData.length > 0 ? (
+                  {bentoLlmCostsLoading && chartData.length === 0 ? (
+                    <div className="h-full w-full flex items-end justify-between gap-3 animate-pulse">
+                      <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+                      <div className="h-14 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+                      <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+                      <div className="h-16 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+                    </div>
+                  ) : chartData.length > 0 ? (
                     chartData.map((d: any, i: number, arr: any[]) => (
                       <div
                         key={d.key}
@@ -644,22 +705,35 @@ export function ManagementOverview({
                 Hibajegyek
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div 
-                onClick={onOpenTickets}
-                className="py-1.5 px-3 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 text-center cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-900 transition-colors"
-              >
-                <span className="text-[9px] text-zinc-500 block mb-1">Új (felelős nélkül)</span>
-                <span className="text-xl font-black text-teal-600 dark:text-teal-400">{ticketsOverview.newUnassigned}</span>
+            {ticketsLoading && !ticketsData ? (
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="py-1.5 px-3 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 text-center animate-pulse">
+                  <span className="text-[9px] text-zinc-500 block mb-1">Új (felelős nélkül)</span>
+                  <div className="h-6 w-8 bg-zinc-200 dark:bg-zinc-800 rounded mx-auto mt-0.5"></div>
+                </div>
+                <div className="py-1.5 px-3 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 text-center animate-pulse">
+                  <span className="text-[9px] text-zinc-500 block mb-1">Megoldott</span>
+                  <div className="h-6 w-8 bg-zinc-200 dark:bg-zinc-800 rounded mx-auto mt-0.5"></div>
+                </div>
               </div>
-              <div 
-                onClick={onOpenTickets}
-                className="py-1.5 px-3 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 text-center cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-900 transition-colors"
-              >
-                <span className="text-[9px] text-zinc-500 block mb-1">Megoldott</span>
-                <span className="text-xl font-bold text-zinc-700 dark:text-zinc-300">{ticketsOverview.resolved}</span>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div 
+                  onClick={onOpenTickets}
+                  className="py-1.5 px-3 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 text-center cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-900 transition-colors"
+                >
+                  <span className="text-[9px] text-zinc-500 block mb-1">Új (felelős nélkül)</span>
+                  <span className="text-xl font-black text-teal-600 dark:text-teal-400">{ticketsOverview.newUnassigned}</span>
+                </div>
+                <div 
+                  onClick={onOpenTickets}
+                  className="py-1.5 px-3 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 text-center cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-900 transition-colors"
+                >
+                  <span className="text-[9px] text-zinc-500 block mb-1">Megoldott</span>
+                  <span className="text-xl font-bold text-zinc-700 dark:text-zinc-300">{ticketsOverview.resolved}</span>
+                </div>
               </div>
-            </div>
+            )}
           </Card>
 
           {/* Applikáció hibák card */}
@@ -739,7 +813,14 @@ export function ManagementOverview({
               <span className="text-[10px] text-muted-foreground">Frissítve</span>
             </div>
             <div className="space-y-1 text-xs flex-1 flex flex-col justify-start">
-              {recentFilesList.length > 0 ? (
+              {recentFilesLoading && !recentFilesData ? (
+                <div className="space-y-1.5 py-0.5 animate-pulse flex-1 flex flex-col justify-end">
+                  <div className="h-7 bg-zinc-200/60 dark:bg-zinc-900/60 rounded w-full"></div>
+                  <div className="h-7 bg-zinc-200/60 dark:bg-zinc-900/60 rounded w-full"></div>
+                  <div className="h-7 bg-zinc-200/60 dark:bg-zinc-900/60 rounded w-full"></div>
+                  <div className="h-7 bg-zinc-200/60 dark:bg-zinc-900/60 rounded w-full"></div>
+                </div>
+              ) : recentFilesList.length > 0 ? (
                 recentFilesList.map((f: any) => (
                   <button
                     key={f.id}

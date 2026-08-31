@@ -77,7 +77,7 @@ describe('DocumentUploadService & ChannelConfigs', () => {
       });
 
       expect(CHANNEL_CONFIGS.bank.targetTable).toBe('bank_statement_uploads');
-      expect(CHANNEL_CONFIGS.bank.storageBucket).toBe('bank-statement-uploads');
+      expect(CHANNEL_CONFIGS.bank.storageBucket).toBe('bank-statements');
 
       expect(CHANNEL_CONFIGS.salaries.targetTable).toBe('invoice_uploads');
       expect(CHANNEL_CONFIGS.salaries.defaultMetadata).toEqual({

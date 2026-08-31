@@ -156,4 +156,30 @@ describe('ManagementRoute Guard', () => {
     expect(dashboard).toBeInTheDocument();
     expect(screen.queryByTestId('not-found-page')).not.toBeInTheDocument();
   });
+
+  it('redirects to /auth when user is null / unauthenticated (does NOT hang on Jogosultság ellenőrzése)', () => {
+    (useAuth as any).mockReturnValue({
+      user: null,
+      loading: false,
+      isSigningOut: false,
+    });
+
+    renderWithProviders(<ManagementRoute />);
+    expect(screen.queryByText(/Jogosultság ellenőrzése/i)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('management-dashboard')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('not-found-page')).not.toBeInTheDocument();
+  });
+
+  it('renders signing out overlay when isSigningOut is true', () => {
+    (useAuth as any).mockReturnValue({
+      user: null,
+      loading: false,
+      isSigningOut: true,
+    });
+
+    renderWithProviders(<ManagementRoute />);
+    expect(screen.getByText(/Kijelentkezés.../i)).toBeInTheDocument();
+    expect(screen.queryByText(/Jogosultság ellenőrzése/i)).not.toBeInTheDocument();
+  });
 });
+

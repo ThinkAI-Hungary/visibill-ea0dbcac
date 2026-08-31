@@ -60,12 +60,14 @@ export function BusinessSection({
   const [addingLocation, setAddingLocation] = useState(false);
 
   const handleAddLocation = async () => {
-    if (!newLocationName.trim() || !newLocationAddress.trim()) return;
+    const name = (newLocationName || '').trim();
+    const address = (newLocationAddress || '').trim();
+    if (!name || !address) return;
     setAddingLocation(true);
     try {
       await addLocation.mutateAsync({
-        name: newLocationName.trim(),
-        address: newLocationAddress.trim(),
+        name,
+        address,
         location_type: 'branch',
       });
       toast({ title: 'Siker', description: 'Telephely sikeresen hozzáadva.' });
@@ -122,16 +124,16 @@ export function BusinessSection({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="company_name">Cég neve *</Label>
-                  <Input id="company_name" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Pl. Példa Kft." disabled={!isOwner} />
+                  <Input id="company_name" value={companyName || ''} onChange={e => setCompanyName(e.target.value)} placeholder="Pl. Példa Kft." disabled={!isOwner} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="tax_number">Adószám</Label>
-                  <Input id="tax_number" value={companyTaxNumber} onChange={e => setCompanyTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" disabled={!isOwner} />
+                  <Input id="tax_number" value={companyTaxNumber || ''} onChange={e => setCompanyTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" disabled={!isOwner} />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company_address">Székhely</Label>
-                <Textarea id="company_address" value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." rows={3} disabled={!isOwner} />
+                <Textarea id="company_address" value={companyAddress || ''} onChange={e => setCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." rows={3} disabled={!isOwner} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -160,7 +162,7 @@ export function BusinessSection({
               </div>
               <div className="flex items-center gap-4 pt-2">
                 {isOwner && (
-                  <Button onClick={onSave} disabled={!companyName.trim() || savingCompany}>
+                  <Button onClick={onSave} disabled={!companyName?.trim() || savingCompany}>
                     {savingCompany ? 'Mentés...' : 'Cég adatainak mentése'}
                   </Button>
                 )}
@@ -228,7 +230,7 @@ export function BusinessSection({
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    disabled={!newLocationName.trim() || !newLocationAddress.trim() || addingLocation}
+                    disabled={!newLocationName?.trim() || !newLocationAddress?.trim() || addingLocation}
                     onClick={handleAddLocation}
                   >
                     {addingLocation ? 'Hozzáadás...' : 'Hozzáadás'}

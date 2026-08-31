@@ -47,7 +47,7 @@ interface UploadedFilesModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Which tab is active — determines which table to query */
-  activeTab: 'invoices' | 'vouchers' | 'transactions' | 'salaries' | 'reports';
+  activeTab: 'invoices' | 'vouchers' | 'bank' | 'transactions' | 'salaries' | 'reports';
 }
 
 interface UploadRecord {
@@ -76,6 +76,14 @@ const TAB_CONFIG = {
     label: 'Pénztárbizonylatok',
     icon: Coins,
     filter: (q: any) => q.eq('document_category', 'penztarbizonylat'),
+  },
+  bank: {
+    table: 'bank_statement_uploads',
+    bucket: 'bank-statements',
+    uploadType: 'bank',
+    label: 'Bankkivonatok',
+    icon: Landmark,
+    filter: null,
   },
   transactions: {
     table: 'transaction_uploads',

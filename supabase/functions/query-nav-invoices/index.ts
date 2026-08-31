@@ -63,8 +63,10 @@ Deno.serve(async (req) => {
 
     // Step 3: Save to database (using nav_invoices table)
     if (invoices.length > 0) {
+      const effectiveCompanyId = companyId || credentials.company_id || null;
       const invoicesToInsert = invoices.map(inv => ({
         ...inv,
+        company_id: effectiveCompanyId,
         user_id: user.id,
         invoice_direction: invoiceDirection,
         fetched_at: new Date().toISOString()

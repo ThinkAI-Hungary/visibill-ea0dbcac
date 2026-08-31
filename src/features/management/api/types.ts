@@ -34,6 +34,7 @@ export interface OverviewData {
       name: string;
       totalCostUsd: number;
       monthlyCostUsd: number;
+      project?: string;
     } | null;
   };
 }
@@ -94,6 +95,8 @@ export interface ErrorRow {
   user_id: string | null;
   user_name: string | null;
   context: Record<string, unknown> | null;
+  stack_trace?: string | null;
+  url?: string | null;
   project?: string;
 }
 

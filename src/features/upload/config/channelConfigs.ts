@@ -57,8 +57,8 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     cardDescription: 'Tölts fel PDF, CSV vagy Excel bankkivonatokat. Az AI automatikusan felismeri a bankot (OTP, Erste, K&H, Raiffeisen, Revolut, Wise, stb.) és kinyeri a tranzakciókat.',
     icon: Landmark,
     targetTable: 'bank_statement_uploads',
-    storageBucket: 'bank-statement-uploads',
-    storageFolder: 'statements',
+    storageBucket: 'bank-statements',
+    storageFolder: '',
     notificationType: 'bank',
     allowedExtensions: ['.pdf', '.csv', '.xls', '.xlsx'],
     allowedMimeTypes: [

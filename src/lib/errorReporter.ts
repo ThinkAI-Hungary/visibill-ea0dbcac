@@ -14,7 +14,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ───────────────────────────────────────────────────
-export type ErrorType = 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'realtime' | 'unhandled';
+export type ErrorType = 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'realtime' | 'unhandled' | 'edge_function' | 'frontend';
 export type Severity = 'error' | 'warning' | 'info';
 
 export interface ReportErrorOptions {
@@ -72,6 +72,27 @@ function getCompanyId(): string | null {
   }
 }
 
+function extractErrorDetails(err: unknown): { message?: string; name?: string; stack?: string; details?: unknown } {
+  if (!err) return {};
+  if (err instanceof Error) {
+    return { message: err.message, name: err.name, stack: err.stack, details: (err as any).cause };
+  }
+  if (typeof err === 'object') {
+    const obj = err as Record<string, unknown>;
+    const msg = typeof obj.message === 'string' ? obj.message
+      : typeof obj.error === 'string' ? obj.error
+      : typeof obj.error_description === 'string' ? obj.error_description
+      : typeof obj.details === 'string' ? obj.details
+      : typeof obj.hint === 'string' ? obj.hint
+      : typeof obj.msg === 'string' ? obj.msg
+      : undefined;
+    const name = typeof obj.name === 'string' ? obj.name : typeof obj.code === 'string' ? String(obj.code) : undefined;
+    const stack = typeof obj.stack === 'string' ? obj.stack : undefined;
+    return { message: msg, name, stack, details: obj };
+  }
+  return { message: String(err) };
+}
+
 // ─── Main reporter ──────────────────────────────────────────
 export async function reportError(opts: ReportErrorOptions): Promise<void> {
   // 1. Always log to console — with full error details
@@ -116,29 +137,16 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     const companyId = getCompanyId();
     
     // 3.1. Robust error message reconstruction
-    let finalMessage = opts.message;
-    if (finalMessage === '[object Object]' || !finalMessage || finalMessage.trim() === '') {
-      if (opts.error) {
-        if (opts.error instanceof Error) {
-          finalMessage = opts.error.message;
-        } else if (typeof opts.error === 'object') {
-          try {
-            const obj = opts.error as Record<string, unknown>;
-            finalMessage = typeof obj.message === 'string'
-              ? obj.message
-              : typeof obj.error === 'string'
-                ? obj.error
-                : JSON.stringify(opts.error);
-          } catch {
-            finalMessage = String(opts.error);
-          }
-        } else {
-          finalMessage = String(opts.error);
-        }
-      }
-      // Fallback if still empty or generic
-      if (!finalMessage || finalMessage === '[object Object]') {
-        finalMessage = `Hiba történt a(z) ${opts.component} komponensben (${opts.action})`;
+    const errDetails = extractErrorDetails(opts.error);
+    let finalMessage = (opts.message || '').trim();
+
+    if (!finalMessage || finalMessage === '[object Object]') {
+      finalMessage = errDetails.message || `Hiba történt a(z) ${opts.component} komponensben (${opts.action})`;
+    } else if (errDetails.message) {
+      if (finalMessage.endsWith(':')) {
+        finalMessage = `${finalMessage} ${errDetails.message}`;
+      } else if (!finalMessage.toLowerCase().includes(errDetails.message.toLowerCase())) {
+        finalMessage = `${finalMessage}: ${errDetails.message}`;
       }
     }
 
@@ -152,6 +160,7 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
             name: opts.error.name,
             message: opts.error.message,
             stack: opts.error.stack,
+            ...((opts.error as any).cause ? { cause: String((opts.error as any).cause) } : {}),
           };
         } else if (typeof opts.error === 'object') {
           sanitizedContext.error_details = sanitizeContext(opts.error as Record<string, unknown>);
@@ -164,8 +173,8 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     }
 
     // Extract stack trace
-    let stackTrace: string | null = null;
-    if (opts.error instanceof Error) {
+    let stackTrace: string | null = errDetails.stack?.slice(0, 3000) ?? null;
+    if (!stackTrace && opts.error instanceof Error) {
       stackTrace = opts.error.stack?.slice(0, 3000) ?? null;
     }
 

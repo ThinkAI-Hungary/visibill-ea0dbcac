@@ -60,7 +60,7 @@ export function normalizeStatus(status: string | null, errorMessage?: string | n
   if (errorMessage && !isCompleted) return 'error';
   if (!status) return 'pending';
   switch (status) {
-    case 'done': case 'completed': case 'processed': return 'success';
+    case 'done': case 'completed': case 'processed': case 'webhook_sent': case 'cmr_attached': return 'success';
     case 'dismissed': return 'dismissed';
     case 'ignored': return 'dismissed';
     case 'error': case 'failed': case 'webhook_failed': return 'error';
@@ -77,9 +77,10 @@ export const STATUS_DISPLAY: Record<StatusCategory, { label: string; cls: string
 };
 
 export const STATUS_FILTER_VALUES: Record<string, string> = {
-  success: 'done,completed,processed',
-  pending: 'processing,pending',
-  error: 'error,failed,ignored,dismissed,webhook_failed',
+  success: 'success,done,completed,processed,webhook_sent,cmr_attached',
+  pending: 'pending,processing',
+  error: 'error,failed,webhook_failed',
+  dismissed: 'dismissed,ignored',
 };
 
 export function processingStatusBadge(status: string | null, errorMessage?: string | null) {
