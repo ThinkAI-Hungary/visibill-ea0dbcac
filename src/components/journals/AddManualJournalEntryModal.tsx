@@ -18,6 +18,7 @@ interface AddManualJournalEntryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   entryId?: string | null;
+  onOpenOpeningWizard?: () => void;
 }
 
 interface JournalLineInput {
@@ -29,7 +30,7 @@ interface JournalLineInput {
   description: string;
 }
 
-export default function AddManualJournalEntryModal({ open, onOpenChange, entryId }: AddManualJournalEntryModalProps) {
+export default function AddManualJournalEntryModal({ open, onOpenChange, entryId, onOpenOpeningWizard }: AddManualJournalEntryModalProps) {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -65,13 +66,25 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     enabled: !!selectedCompany?.id,
   });
 
-  // Set default journal to VE (Vegyes) if available
+  // Set default journal to VE (Vegyes) if available (avoid default NY)
   useEffect(() => {
     if (journals.length > 0 && !journalId && !entryId) {
       const veJournal = journals.find((j: any) => j.code === 'VE');
-      setJournalId(veJournal ? veJournal.id : journals[0].id);
+      const defaultJ = veJournal || journals.find((j: any) => j.code !== 'NY') || journals[0];
+      setJournalId(defaultJ.id);
     }
   }, [journals, journalId, entryId]);
+
+  // Automatically launch Opening Wizard if NY journal is selected or active
+  useEffect(() => {
+    if (open && journalId && journals.length > 0) {
+      const selectedJ = journals.find((j: any) => j.id === journalId);
+      if (selectedJ?.code === 'NY' && onOpenOpeningWizard) {
+        onOpenChange(false);
+        onOpenOpeningWizard();
+      }
+    }
+  }, [open, journalId, journals, onOpenOpeningWizard, onOpenChange]);
 
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['gl-accounts-lookup', activePresetId],
@@ -296,7 +309,15 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="journal">Napló</Label>
-                <Select value={journalId} onValueChange={setJournalId}>
+                <Select value={journalId} onValueChange={(val) => {
+                  const selectedJ = journals.find((j: any) => j.id === val);
+                  if (selectedJ?.code === 'NY' && onOpenOpeningWizard) {
+                    onOpenChange(false);
+                    onOpenOpeningWizard();
+                    return;
+                  }
+                  setJournalId(val);
+                }}>
                   <SelectTrigger id="journal">
                     <SelectValue placeholder="Válasszon naplót..." />
                   </SelectTrigger>

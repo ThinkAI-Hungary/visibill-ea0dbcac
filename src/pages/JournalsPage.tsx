@@ -30,6 +30,7 @@ import {
   XCircle
 } from 'lucide-react';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
+import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
 import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
 import { useActivePreset } from '@/hooks/useActivePreset';
@@ -107,6 +108,7 @@ export default function JournalsPage() {
   
   // Modals state
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
+  const [openingWizardOpen, setOpeningWizardOpen] = useState(false);
   const [periodClosingOpen, setPeriodClosingOpen] = useState(false);
   const [auditEntryId, setAuditEntryId] = useState<string | null>(null);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -115,6 +117,32 @@ export default function JournalsPage() {
   const [stornoOpen, setStornoOpen] = useState(false);
   const [stornoTarget, setStornoTarget] = useState<{ headerId: string; correct: boolean } | null>(null);
   const [stornoReason, setStornoReason] = useState('');
+
+  // Fetch existing NY journal entries count
+  const { data: nyEntriesCount = 0 } = useQuery({
+    queryKey: ['acc-ny-entries-count', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return 0;
+      const { data: nyJ } = await supabase
+        .from('acc_journals')
+        .select('id')
+        .eq('company_id', selectedCompany.id)
+        .eq('code', 'NY')
+        .maybeSingle();
+
+      if (!nyJ) return 0;
+
+      const { count, error } = await supabase
+        .from('acc_journal_headers')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', selectedCompany.id)
+        .eq('journal_id', nyJ.id);
+
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: !!selectedCompany?.id,
+  });
 
   // Fetch journals
   const { data: journals = [], isLoading: loadingJournals, refetch: refetchJournals } = useQuery({
@@ -287,11 +315,15 @@ export default function JournalsPage() {
   // Delete draft mutation
   const deleteMutation = useMutation({
     mutationFn: async (headerId: string) => {
-      const { error } = await supabase.from('acc_journal_headers').delete().eq('id', headerId);
-      if (error) throw error;
+      const { error: linesErr } = await supabase.from('acc_journal_lines').delete().eq('header_id', headerId);
+      if (linesErr) throw linesErr;
+
+      const { error: headerErr } = await supabase.from('acc_journal_headers').delete().eq('id', headerId);
+      if (headerErr) throw headerErr;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['acc-ny-entries-count'] });
       setSelectedEntry(null);
       toast({ title: "Piszkozat törölve" });
     },
@@ -303,11 +335,15 @@ export default function JournalsPage() {
   // Bulk delete mutation
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error } = await supabase.from('acc_journal_headers').delete().in('id', ids);
-      if (error) throw error;
+      const { error: linesErr } = await supabase.from('acc_journal_lines').delete().in('header_id', ids);
+      if (linesErr) throw linesErr;
+
+      const { error: headerErr } = await supabase.from('acc_journal_headers').delete().in('id', ids);
+      if (headerErr) throw headerErr;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['acc-ny-entries-count'] });
       setSelectedEntryIds(new Set());
       toast({ title: "Kijelölt piszkozatok sikeresen törölve" });
     },
@@ -364,6 +400,9 @@ export default function JournalsPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const selectedJournal = journals.find((j: any) => j.id === selectedJournalId);
+  const isNyJournal = selectedJournal?.code === 'NY';
 
   return (
     <TooltipProvider>
@@ -427,7 +466,12 @@ export default function JournalsPage() {
             <Tooltip key={j.id} delayDuration={300}>
               <TooltipTrigger asChild>
                 <button
-                  onClick={() => setSelectedJournalId(j.id)}
+                  onClick={() => {
+                    setSelectedJournalId(j.id);
+                    if (j.code === 'NY' && nyEntriesCount === 0) {
+                      setOpeningWizardOpen(true);
+                    }
+                  }}
                   className={cn(
                     "flex items-center gap-3 pl-3 pr-4 h-12 rounded-lg text-xs transition-all border shrink-0 text-left justify-between flex-1 min-w-[80px]",
                     selectedJournalId === j.id
@@ -456,6 +500,34 @@ export default function JournalsPage() {
       <div className="grid grid-cols-12 gap-4 items-start">
         {/* Full-width list table */}
         <div className="col-span-12 space-y-4">
+          {/* Special NY (Nyitó Napló) Banner */}
+          {isNyJournal && (
+            <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-primary/10 text-primary rounded-xl">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm flex items-center gap-2">
+                      <span>Nyitó Napló (NY) — Sztv. 491. Technikai Nyitómérleg</span>
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">Mérlegfolytonosság</Badge>
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Az előző évi záró mérleg felvezetése a 491. Nyitómérleg számlával szemben (Kötelező validáció: Σ T = Σ K).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button size="sm" className="gap-1.5 shadow-sm" onClick={() => setOpeningWizardOpen(true)}>
+                    <BookOpen className="w-4 h-4" /> Nyitó Varázsló indítása
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Filters */}
           <div className="flex gap-3 items-center">
             <div className="relative flex-1">
@@ -621,7 +693,7 @@ export default function JournalsPage() {
                                     <Button size="icon" variant="ghost" className="w-6 h-6 text-primary" title="Szerkesztés" onClick={() => { setEditingEntryId(e.id); setManualEntryOpen(true); }}>
                                       <FileSpreadsheet className="w-3.5 h-3.5" />
                                     </Button>
-                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-destructive" title="Piszkozat törlése" onClick={() => { if (confirm("Biztosan törli ezt a piszkozatot?")) deleteMutation.mutate(e.id); }}>
+                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-destructive" title="Piszkozat törlése" onClick={(ev) => { ev.stopPropagation(); if (confirm("Biztosan törli ezt a piszkozatot?")) deleteMutation.mutate(e.id); }}>
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </Button>
                                   </>
@@ -916,7 +988,8 @@ export default function JournalsPage() {
               size="sm"
               variant="outline"
               className="h-8 text-xs gap-1.5 border-destructive/20 text-destructive hover:bg-destructive/10"
-              onClick={() => {
+              onClick={(ev) => {
+                ev.stopPropagation();
                 if (confirm(`Biztosan törölni szeretné a kijelölt ${selectedEntryIds.size} db piszkozatot?`)) {
                   bulkDeleteMutation.mutate(Array.from(selectedEntryIds));
                 }
@@ -940,6 +1013,33 @@ export default function JournalsPage() {
             </Button>
           </div>
         </div>
+      )}
+
+      {/* Modals */}
+      <AddManualJournalEntryModal
+        open={manualEntryOpen}
+        onOpenChange={setManualEntryOpen}
+        entryId={editingEntryId}
+        onOpenOpeningWizard={() => setOpeningWizardOpen(true)}
+      />
+
+      <OpeningJournalWizardModal
+        open={openingWizardOpen}
+        onOpenChange={setOpeningWizardOpen}
+      />
+
+      <PeriodClosingSettings
+        open={periodClosingOpen}
+        onOpenChange={setPeriodClosingOpen}
+      />
+
+      {auditEntryId && (
+        <AuditTrailDialog
+          open={!!auditEntryId}
+          onOpenChange={(o) => !o && setAuditEntryId(null)}
+          entityId={auditEntryId}
+          entityType="acc_journal_headers"
+        />
       )}
       </div>
     </TooltipProvider>
