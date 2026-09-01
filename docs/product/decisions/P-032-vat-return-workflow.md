@@ -26,9 +26,14 @@
   - Távközlési számlák (Telekom, Yettel, Vodafone/One, Digi) automatikus észlelése és egykattintásos 70/30 beállítása a 27%-os telefon tételekre (az 5%-os internet tételek 100%-os levonhatóságának megőrzésével)
   - `calculate_vat_return` motorban a levonható arányos adóalap és adó összegzése a 66. sorba és az M-lapokra
   - Transzparens megjelenítés a `VatRowDrillDown` fúrási nézetben
-- **ÁNYK XML & PDF Export:**
-  - 2665 nyomtatványnak megfelelő hivatalos XML generálás és XML struktúra validáció
+- **ÁNYK XML & PDF Export (ADR A-080):**
+  - 2665 / 2565 / 2465 nyomtatványnak megfelelő hivatalos AbevJava XML generálás és XML struktúra validáció
   - PDF nyomtatási lehetőség a hivatalos formátum szerint
 
 **Rationale:** A tab-alapú és replika megközelítés lehetővé teszi a könyvelőnek a NAV 65-ös nyomtatvány szerinti közvetlen áttekintést. Az A60-as keresztellenőrzés és a tételszintű 70/30-as levonhatósági motor garantálja, hogy a távközlési és közösségi számlák adatai pontosan és automatikusan egyezzenek a bevallás soraival.
+
+## Kapcsolódó
+- [A-080: NAV ÁNYK 2665 ÁFA-Bevallás és 65M Összesítő Jelentés Szabványos XML Export](../../architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md)
+- [A-078: Telefonszámla ÁFA Részleges Levonhatóság](../../architecture/decisions/A-078-telecom-vat-deductibility-rules.md)
+- [A-063: Egységes DocumentEngine Architektúra](../../architecture/decisions/A-063-unified-document-engine-architecture.md)
 

@@ -1,12 +1,10 @@
 /**
- * 2665 ÁFA bevallás template for DocumentEngine.
+ * ÁFA bevallás (2665 / 2565 / 2465) template for DocumentEngine.
  * Supports HTML print preview, PDF generation, and ÁNYK XML generation.
  */
 
 import { DocumentDescriptor } from '../core/types';
 import { DocumentEngine } from '../core/DocumentEngine';
-import { escapeXml, buildAnykEnvelope, buildXmlTag } from '../encoding/xmlSanitizer';
-import { downloadString } from '../core/downloadHelper';
 
 export interface VatReturnData {
   companyName: string;
@@ -29,7 +27,7 @@ export function buildVatReturnDescriptor(data: VatReturnData): DocumentDescripto
     ? `${data.periodYear}. ${Math.ceil(data.periodMonth / 3)}. negyedév`
     : `${data.periodYear}. év`;
 
-  const lineMap = new Map(data.lines.map(l => [l.row_number, l]));
+  const formId = `${data.periodYear % 100}65`;
 
   // Build ÁNYK XML Payload
   const taxParts = (data.companyTaxNumber || '').split('-');
@@ -55,13 +53,16 @@ export function buildVatReturnDescriptor(data: VatReturnData): DocumentDescripto
   }
 
   const anykFields: Record<string, any> = {
-    '01_adoszam_torzs': taxNum8,
-    '01_adoszam_afa': taxNumVat,
-    '01_adoszam_megye': taxNumCounty,
-    '01_nev': data.companyName,
-    '01_idoszak_tol': periodFrom,
-    '01_idoszak_ig': periodTo,
-    '01_gyakorisag': data.frequency,
+    '01_0001_adoszam_torzs': taxNum8,
+    '01_0002_adoszam_afa': taxNumVat,
+    '01_0003_adoszam_megye': taxNumCounty,
+    '01_0004_adoszam_teljes': data.companyTaxNumber,
+    '01_0006_adozo_nev': data.companyName,
+    '01_0007_szekhely_cim': data.companyAddress,
+    '01_0010_adoev': data.periodYear,
+    '01_0011_idoszak_tol': periodFrom,
+    '01_0012_idoszak_ig': periodTo,
+    '01_0013_gyakorisag': data.frequency,
   };
 
   data.lines.forEach(line => {
@@ -73,22 +74,45 @@ export function buildVatReturnDescriptor(data: VatReturnData): DocumentDescripto
     }
   });
 
+  if (data.mLines && data.mLines.length > 0) {
+    anykFields['M_partner_osszesen'] = data.mLines.length;
+    data.mLines.forEach((m, idx) => {
+      const pIdx = idx + 1;
+      anykFields[`M_${pIdx}_0001_adoszam`] = m.partner_tax_number;
+      anykFields[`M_${pIdx}_0002_nev`] = m.partner_name;
+      anykFields[`M_${pIdx}_0003_szamlak_szama`] = m.invoice_count;
+      anykFields[`M_${pIdx}_0004_alap`] = m.base_amount_rounded;
+      anykFields[`M_${pIdx}_0005_afa`] = m.tax_amount_rounded;
+      if (m.tax_5_amount != null) anykFields[`M_${pIdx}_0006_afa_5`] = m.tax_5_amount;
+      if (m.tax_18_amount != null) anykFields[`M_${pIdx}_0007_afa_18`] = m.tax_18_amount;
+      if (m.tax_27_amount != null) anykFields[`M_${pIdx}_0008_afa_27`] = m.tax_27_amount;
+    });
+  }
+
+  const currentDate = new Date().toISOString().substring(0, 10);
+  anykFields['03_0001_nyilatkozat_adat_valos'] = 1;
+  anykFields['03_0002_kelt_hely'] = 'Budapest';
+  anykFields['03_0003_kelt_datum'] = currentDate;
+
   const tableRows = data.lines.map(l => [
     `${l.row_number}. sor`,
     l.base_amount_rounded != null ? `${new Intl.NumberFormat('hu-HU').format(l.base_amount_rounded)} E Ft` : '-',
     l.tax_amount_rounded != null ? `${new Intl.NumberFormat('hu-HU').format(l.tax_amount_rounded)} E Ft` : '-',
   ]);
 
+  const monthStr = String(data.periodMonth).padStart(2, '0');
+  const safeName = (data.companyName || 'Ceg').replace(/\s+/g, '_');
+
   return {
     type: 'vat_return',
     metadata: {
-      title: 'ÁFA BEVALLÁS (2665)',
+      title: `ÁFA BEVALLÁS (${formId})`,
       subtitle: `${periodLabel} — Adatok ezer forintban (E Ft)`,
       companyName: data.companyName,
       companyTaxNumber: data.companyTaxNumber,
       companyAddress: data.companyAddress,
       period: periodLabel,
-      filename: `2665_afa_${data.periodYear}_${data.periodMonth}`,
+      filename: `NAV_${formId}_${data.periodYear}_${monthStr}_${safeName}`,
       themeColor: [15, 116, 103],
     },
     sections: [
@@ -101,7 +125,7 @@ export function buildVatReturnDescriptor(data: VatReturnData): DocumentDescripto
     ],
     rawPayload: {
       anykOptions: {
-        formId: '2665',
+        formId,
         formVersion: '1.0',
         softwareName: 'Visibill / eaisyBooks',
       },

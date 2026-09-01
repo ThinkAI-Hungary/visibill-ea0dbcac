@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1788137729.1401577,
-    "ast_hash": "c6eac9dd601132e75e23022c9d1f77b5",
+    "mtime": 1788298500.9535024,
+    "ast_hash": "946ec77e0ca6a3b24c61ba4514725d34",
     "semantic_hash": ""
   },
   "src/main.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788296240.7108998,
-    "ast_hash": "febc208657a5c752f0918c569e6759f5",
+    "mtime": 1788298935.7138302,
+    "ast_hash": "67efaa2a17e717988e22f827a13f01b5",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3540,8 +3540,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-032-vat-return-workflow.md": {
-    "mtime": 1788282466.1022985,
-    "ast_hash": "d7572274379cba75108e9397a8ae0044",
+    "mtime": 1788298944.5477874,
+    "ast_hash": "54b80e1193fd906acf039642f53ef4c3",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-033-payroll-cycle.md": {
@@ -7710,8 +7710,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/documentEngine.test.ts": {
-    "mtime": 1788137799.062821,
-    "ast_hash": "4e655386ec299d996c0a855d6ea4ccad",
+    "mtime": 1788298542.2656717,
+    "ast_hash": "84bd2ac295ed4c4645443928e20f7db6",
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/hungarianEncoding.test.ts": {
@@ -7740,8 +7740,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/adapters/XmlDocumentAdapter.ts": {
-    "mtime": 1788137626.0048726,
-    "ast_hash": "910b3d76f74b2370c6bf9e26f90336bd",
+    "mtime": 1788298662.3644848,
+    "ast_hash": "8193322743aed128699e268111b7eeac",
     "semantic_hash": ""
   },
   "src/lib/documents/core/DocumentEngine.ts": {
@@ -7805,8 +7805,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/templates/vatReturnTemplate.ts": {
-    "mtime": 1788137679.6295054,
-    "ast_hash": "4075f7270c75195076cc7d1a6ba325ec",
+    "mtime": 1788298672.2379885,
+    "ast_hash": "42e788ddff848d50e01efe448e41389e",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-061-decompose-management-dashboard.md": {
@@ -8305,8 +8305,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnViewTab.tsx": {
-    "mtime": 1788219541.8946064,
-    "ast_hash": "331bc5225515f12795fe23d041880660",
+    "mtime": 1788298592.3616948,
+    "ast_hash": "1dfca6a7ac2e61a6241f59e4f7f1f0ae",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatXmlValidationDialog.tsx": {
@@ -8315,8 +8315,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/core/vatEngine.ts": {
-    "mtime": 1788219465.799752,
-    "ast_hash": "85662473993634eb24e992d8807e9f54",
+    "mtime": 1788298699.2580366,
+    "ast_hash": "7b626f42f50e13b4faddad58d37bcc5f",
     "semantic_hash": ""
   },
   "src/features/vat/hooks/useVatReturnData.ts": {
@@ -8642,6 +8642,21 @@
   "docs/product/decisions/P-062-company-prompt-rules-library-and-error-boundary-ux.md": {
     "mtime": 1788296220.6229074,
     "ast_hash": "85b5c4bc2c40af0566b371a46f53b813",
+    "semantic_hash": ""
+  },
+  "scripts/test-real-vat-export.ts": {
+    "mtime": 1788298771.13581,
+    "ast_hash": "57940d7ba83091eac6f9fb88add71e48",
+    "semantic_hash": ""
+  },
+  "src/lib/__tests__/vatReturnXml.test.ts": {
+    "mtime": 1788298546.4376779,
+    "ast_hash": "5df8409ccb6b520d021806656736c127",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
+    "mtime": 1788298918.5810113,
+    "ast_hash": "e91f8919f464a10c2f18af7845e9c84b",
     "semantic_hash": ""
   }
 }

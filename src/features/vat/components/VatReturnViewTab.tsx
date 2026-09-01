@@ -27,10 +27,12 @@ import { generateVatReturnPdf } from '@/lib/vatReturnPdf';
 import { generateVatReturnXml } from '@/lib/vatReturnXml';
 import { MONTHS } from '../types';
 import { useVatReturnData } from '../hooks/useVatReturnData';
+import { useToast } from '@/hooks/use-toast';
 import { VatCalculatorView } from './VatCalculatorView';
 import { VatNav65Replica } from './VatNav65Replica';
 
 export function VatReturnViewTab() {
+  const { toast } = useToast();
   const vatData = useVatReturnData();
   const {
     selectedCompany,
@@ -198,6 +200,10 @@ export function VatReturnViewTab() {
                       lines: lines as any[],
                       mLines: mLines as any[],
                     });
+                    toast({
+                      title: 'PDF nyomtatás elindítva',
+                      description: 'Az ÁFA bevallás nyomtatási nézete megnyílt.',
+                    });
                   }}
                 >
                   <FileSpreadsheet className="w-4 h-4 mr-2" /> PDF nyomtatás
@@ -205,15 +211,27 @@ export function VatReturnViewTab() {
                 <DropdownMenuItem
                   onClick={() => {
                     if (!vatReturn || !selectedCompany) return;
+                    const taxNum = (selectedCompany as any).tax_number || '';
+                    if (!taxNum) {
+                      toast({
+                        title: 'Hiányzó adószám',
+                        description: 'A cég adószáma hiányzik a beállításokból, kérlek ellenőrizd!',
+                        variant: 'destructive',
+                      });
+                    }
                     generateVatReturnXml({
                       companyName: selectedCompany.name || '',
-                      companyTaxNumber: (selectedCompany as any).tax_number || '',
+                      companyTaxNumber: taxNum,
                       companyAddress: (selectedCompany as any).address || '',
                       periodYear: year,
                       periodMonth: month,
                       frequency,
                       lines: lines as any[],
                       mLines: mLines as any[],
+                    });
+                    toast({
+                      title: 'ÁNYK XML letöltve',
+                      description: `A ${year % 100}65 ÁNYK-kompatibilis XML fájl elkészült és letöltésre került.`,
                     });
                   }}
                 >

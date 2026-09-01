@@ -8085,8 +8085,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-069-frontend-error-reporting-and-context-inspection.md": {
-    "mtime": 1788176943.4818504,
-    "ast_hash": "2a6f747d6440216eda2d2965cd964b68",
+    "mtime": 1788296937.5674276,
+    "ast_hash": "ebf0144b710568c56fe4174e594d2456",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-070-multi-channel-upload-storage-bucket-alignment.md": {

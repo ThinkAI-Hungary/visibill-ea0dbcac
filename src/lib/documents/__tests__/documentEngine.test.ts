@@ -122,9 +122,9 @@ describe('DocumentEngine', () => {
       expect(descriptor.sections[0].type).toBe('table');
     });
 
-    it('builds a valid VAT Return descriptor with ÁNYK payload', () => {
+    it('builds a valid VAT Return descriptor with ÁNYK payload', async () => {
       const descriptor = buildVatReturnDescriptor({
-        companyName: 'Példa Kft.',
+        companyName: 'Példa & Társa Kft.',
         companyTaxNumber: '11223344-2-41',
         companyAddress: 'Budapest, Fő utca 1.',
         periodYear: 2026,
@@ -133,11 +133,23 @@ describe('DocumentEngine', () => {
         lines: [
           { row_number: '01', base_amount_rounded: 1000, tax_amount_rounded: 270 },
         ],
+        mLines: [
+          { partner_name: 'Beszállító Kft.', partner_tax_number: '99887766-2-41', invoice_count: 2, base_amount_rounded: 500, tax_amount_rounded: 135, tax_27_amount: 135 },
+        ],
       });
 
       expect(descriptor.type).toBe('vat_return');
       expect(descriptor.rawPayload?.anykOptions?.formId).toBe('2665');
-      expect(descriptor.rawPayload?.fields['01_adoszam_torzs']).toBe('11223344');
+      expect(descriptor.rawPayload?.fields['01_0001_adoszam_torzs']).toBe('11223344');
+      expect(descriptor.rawPayload?.fields['M_1_0001_adoszam']).toBe('99887766-2-41');
+
+      const { contentString, mimeType } = await DocumentEngine.render(descriptor, 'xml');
+      expect(mimeType).toBe('application/xml;charset=utf-8');
+      expect(contentString).toContain('<nyomtatvanyok xmlns="http://schema.nav.gov.hu/anyk/1.0">');
+      expect(contentString).toContain('<nyomtatvanyazonosito>2665</nyomtatvanyazonosito>');
+      expect(contentString).toContain('<mezo eazon="01_0001_adoszam_torzs">11223344</mezo>');
+      expect(contentString).toContain('<mezo eazon="01_0006_adozo_nev">Példa &amp; Társa Kft.</mezo>');
+      expect(contentString).toContain('<mezo eazon="sor_01_alap">1000</mezo>');
     });
 
     it('builds a valid Annual Report descriptor', () => {

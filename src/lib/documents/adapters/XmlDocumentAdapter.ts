@@ -4,7 +4,7 @@
  */
 
 import { DocumentDescriptor } from '../core/types';
-import { buildAnykEnvelope, escapeXml, buildXmlTag } from '../encoding/xmlSanitizer';
+import { buildAnykEnvelope, escapeXml } from '../encoding/xmlSanitizer';
 
 export class XmlDocumentAdapter {
   /**
@@ -19,7 +19,7 @@ export class XmlDocumentAdapter {
 
     if (raw.anykOptions) {
       const fieldXml = Object.entries(raw.fields || {})
-        .map(([key, val]) => `      ${buildXmlTag(key, val)}`)
+        .map(([key, val]) => `      <mezo eazon="${escapeXml(key)}">${escapeXml(val)}</mezo>`)
         .join('\n');
       return buildAnykEnvelope(raw.anykOptions, fieldXml);
     }
