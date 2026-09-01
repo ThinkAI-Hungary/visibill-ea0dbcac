@@ -230,7 +230,7 @@ Egységes nézet az összes ügyfél hiányzó számláiról. Prioritás szűré
 **Státusz:** ✅ Decided
 
 ### REQ-8b.3: Bérszámfejtés portfólió
-Több ügyfél bérszámfejtésének kezelése. Ügyfélenkénti almenük: Foglalkoztatottak, Riportok, NAV bevallások, Ügyfélportál, Paraméterek. Bérszámfejtési ciklus kezelés (PayrollCyclePage). Foglalkoztatott felvétel wizard, kiléptetési wizard, jogviszony módosítás. Jogviszonykódok admin kezelése.  
+Több ügyfél bérszámfejtésének kezelése. Ügyfélenkénti almenük: Foglalkoztatottak, Riportok, NAV bevallások, Ügyfélportál, Paraméterek. Bérszámfejtési ciklus kezelés (PayrollCyclePage). Foglalkoztatott felvétel wizard, kiléptetési wizard, jogviszony módosítás. Jogviszonykódok admin kezelése. Dolgozói törzsadatok és jogviszonyok tömeges importja (Excel/CSV sablon + NAV 08 ÁNYK XML) és többhavi bérszámfejtési ciklusok visszamenőleges gyors rekonstrukciója (PayrollReconstructionDialog).  
 **Státusz:** ✅ Decided
 
 ### REQ-8b.4: TAO / KIVA modul

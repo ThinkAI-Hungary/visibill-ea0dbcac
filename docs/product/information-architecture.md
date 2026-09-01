@@ -113,6 +113,8 @@ Visibill
 │   │   ├── /employees             Alkalmazottak
 │   │   ├── /employees/new         Új alkalmazott wizard
 │   │   ├── /employees/:empId      Alkalmazott részletek
+│   │   ├── /import                Dolgozók és jogviszonyok tömeges importja (Excel / CSV sablon + NAV 08 ÁNYK XML)
+│   │   ├── [Dialog] /reconstruct  Többhavi 08-as ÁNYK XML kötegelt bérszámfejtési ciklus és kalkuláció rekonstrukció
 │   │   ├── /cycle/new             Új bérciklus
 │   │   ├── /cycle/:cycleId        Bérciklus szerkesztés
 │   │   ├── /filings               Bevallások

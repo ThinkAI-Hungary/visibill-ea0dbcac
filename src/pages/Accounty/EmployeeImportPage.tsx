@@ -1,31 +1,18 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Upload, FileSpreadsheet, Download, CheckCircle, XCircle,
   AlertTriangle, Loader2, Trash2, Users, Eye, RefreshCw, ChevronDown,
-  FileText, Table
+  FileText, Table, FileCode, CheckSquare, Calendar, Building2, Sparkles, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useCreateEmployee } from '@/hooks/usePayrollData';
-
-interface ImportRow {
-  id: number;
-  surname: string;
-  firstName: string;
-  birthDate: string;
-  tajNumber: string;
-  taxId: string;
-  jobCode: string;
-  startDate: string;
-  feor: string;
-  weeklyHours: string;
-  baseSalary: string;
-  valid: boolean;
-  errors: string[];
-}
-
+import { useBulkImportPayroll } from '@/hooks/useBulkImportPayroll';
+import { parseFiling08Xml, normalizeDate, readTextFileWithEncoding, type Parsed08Document, type Parsed08Employee } from '@/lib/payroll/nav08XmlParser';
+import { buildReconstructionPlan } from '@/lib/payroll/payrollReconstructionEngine';
+import { usePayrollEmployees, useCompanyEmployments, usePayrollCycles } from '@/hooks/usePayrollData';
 
 const TEMPLATE_HEADERS = ['Vezetéknév', 'Keresztnév', 'Születési dátum', 'TAJ-szám', 'Adóazonosító jel', 'Jogviszonykód', 'Belépés dátuma', 'FEOR', 'Heti óraszám', 'Alapbér (Ft)'];
 
@@ -34,135 +21,213 @@ const SAMPLE_ROWS = [
   ['Kiss', 'Béla', '1990-07-22', '987 654 321', '1234567890', '1101', '2026-02-01', '3312', '40', '380000'],
 ];
 
+function parseCleanNumber(val: string | null | undefined): number {
+  if (!val) return 0;
+  const clean = val.replace(/\s/g, '').replace(/Ft/gi, '').replace(/,/g, '.');
+  const n = parseFloat(clean);
+  return isNaN(n) ? 0 : Math.round(n);
+}
+
 export default function EmployeeImportPage() {
   const { companyId } = useParams<{ companyId: string }>();
-  const id = companyId;
+  const id = companyId || '';
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
+  const xmlFileRef = useRef<HTMLInputElement>(null);
+
+  const [activeTab, setActiveTab] = useState<'excel' | 'nav08'>('excel');
   const [phase, setPhase] = useState<'upload' | 'preview' | 'importing' | 'done'>('upload');
-  const [rows, setRows] = useState<ImportRow[]>([]);
   const [dragging, setDragging] = useState(false);
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
 
-  const validCount = rows.filter(r => r.valid).length;
-  const errorCount = rows.filter(r => !r.valid).length;
+  // Excel parsed rows converted to standard Parsed08Employee
+  const [parsedEmployees, setParsedEmployees] = useState<Parsed08Employee[]>([]);
+  // NAV 08 Document if active
+  const [parsed08Doc, setParsed08Doc] = useState<Parsed08Document | null>(null);
+  const [createCycleOption, setCreateCycleOption] = useState(true);
 
-  const parseCSVContent = useCallback((text: string) => {
-    // Remove BOM if present
+  const { data: existingEmployees = [] } = usePayrollEmployees(id);
+  const { data: existingEmployments = [] } = useCompanyEmployments(id);
+  const { data: existingCycles = [] } = usePayrollCycles(id);
+
+  const { importEmployees, reconstructCycles, isProcessing, progress } = useBulkImportPayroll();
+
+  const validCount = parsedEmployees.filter(r => r.valid).length;
+  const errorCount = parsedEmployees.filter(r => !r.valid).length;
+
+  // Reconstruction plan summary if NAV 08 doc is available
+  const plan = useMemo(() => {
+    if (!parsed08Doc) return null;
+    return buildReconstructionPlan(parsed08Doc, existingEmployees, existingEmployments, existingCycles);
+  }, [parsed08Doc, existingEmployees, existingEmployments, existingCycles]);
+
+  // CSV parsing
+  const parseCSVContent = useCallback((text: string): Parsed08Employee[] => {
     const clean = text.replace(/^\uFEFF/, '');
     const lines = clean.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) return []; // header only or empty
+    if (lines.length < 2) return [];
 
-    // Detect delimiter (semicolon or comma)
     const header = lines[0];
     const delimiter = header.includes(';') ? ';' : ',';
-
-    // Skip header row
     const dataLines = lines.slice(1);
-    return dataLines.map((line, idx) => {
+
+    const headerCols = header.split(delimiter).map(c =>
+      c.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\s_\-]/g, '')
+    );
+
+    const findCol = (keywords: string[], fallbackIdx: number): number => {
+      const idx = headerCols.findIndex(h => keywords.some(k => h.includes(k)));
+      return idx >= 0 ? idx : fallbackIdx;
+    };
+
+    const lastNameIdx = findCol(['vezetek', 'csalad', 'surname', 'lastname'], 0);
+    const firstNameIdx = findCol(['kereszt', 'firstname', 'utonev'], 1);
+    const birthDateIdx = findCol(['szulet', 'birth'], 2);
+    const tajIdx = findCol(['taj'], 3);
+    const taxIdIdx = findCol(['adoazon', 'adokartya', 'taxid'], 4);
+    const jobCodeIdx = findCol(['jogviszony', 'jobcode', 't1041'], 5);
+    const startDateIdx = findCol(['belep', 'start', 'kezdet'], 6);
+    const feorIdx = findCol(['feor'], 7);
+    const weeklyHoursIdx = findCol(['ora', 'hours', 'munkaido'], 8);
+    const baseSalaryIdx = findCol(['alapber', 'ber', 'salary', 'brutto'], 9);
+
+    return dataLines.map((line) => {
       const cols = line.split(delimiter).map(c => c.trim());
-      const surname = cols[0] || '';
-      const firstName = cols[1] || '';
-      const birthDate = cols[2] || '';
-      const tajNumber = cols[3] || '';
-      const taxId = cols[4] || '';
-      const jobCode = cols[5] || '';
-      const startDate = cols[6] || '';
-      const feor = cols[7] || '';
-      const weeklyHours = cols[8] || '';
-      const baseSalary = cols[9] || '';
+      const surname = cols[lastNameIdx] || '';
+      const firstName = cols[firstNameIdx] || '';
+      const birthDate = normalizeDate(cols[birthDateIdx]);
+      const tajNumber = (cols[tajIdx] || '').replace(/[\s-]/g, '');
+      const taxId = (cols[taxIdIdx] || '').replace(/[\s-]/g, '');
+      const jobCode = cols[jobCodeIdx] || '1101';
+      const startDate = normalizeDate(cols[startDateIdx]) || `${new Date().getFullYear()}-01-01`;
+      const feor = cols[feorIdx] || '';
+      const weeklyHours = parseCleanNumber(cols[weeklyHoursIdx]) || 40;
+      const baseSalary = parseCleanNumber(cols[baseSalaryIdx]) || 0;
 
       const errors: string[] = [];
+      const warnings: string[] = [];
       if (!surname) errors.push('Vezetéknév hiányzik');
       if (!firstName) errors.push('Keresztnév hiányzik');
-      if (!birthDate) errors.push('Születési dátum hiányzik');
-      const tajClean = tajNumber.replace(/[\s-]/g, '');
-      if (tajClean && tajClean.length !== 9) errors.push('TAJ szám formátum hibás (9 jegy szükséges)');
-      if (!tajClean) errors.push('TAJ-szám hiányzik');
-      if (!taxId) errors.push('Adóazonosító hiányzik');
-      if (!startDate) errors.push('Belépés dátuma hiányzik');
+      if (tajNumber && tajNumber.length !== 9) warnings.push('TAJ formátum nem 9 számjegy');
+      if (!tajNumber && !taxId) errors.push('TAJ-szám vagy adóazonosító megadása kötelező');
 
       return {
-        id: idx + 1,
-        surname,
+        lastName: surname,
         firstName,
         birthDate,
         tajNumber,
         taxId,
         jobCode,
+        employmentType: 'munkaviszony',
         startDate,
-        feor,
+        feorCode: feor,
         weeklyHours,
         baseSalary,
+        grossSalary: baseSalary,
+        taxBase: baseSalary,
+        szjaAmount: Math.round(baseSalary * 0.15),
+        tbBase: baseSalary,
+        tbAmount: Math.round(baseSalary * 0.185),
+        szochoBase: baseSalary,
+        szochoAmount: Math.round(baseSalary * 0.13),
+        totalDeductions: Math.round(baseSalary * 0.335),
+        netSalary: Math.max(0, Math.round(baseSalary * 0.665)),
         valid: errors.length === 0,
         errors,
-      } as ImportRow;
+        warnings,
+      };
     });
   }, []);
 
-  const parseExcelXML = useCallback((text: string): ImportRow[] => {
-    // Parse XML Spreadsheet 2003 format
+  // Excel XML 2003 parsing
+  const parseExcelXML = useCallback((text: string): Parsed08Employee[] => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(text, 'text/xml');
     const rowElements = doc.querySelectorAll('Row');
     if (rowElements.length < 2) return [];
 
-    const dataRows: ImportRow[] = [];
-    // Skip first row (header)
+    // Header matching from first row
+    const headerCells = rowElements[0].querySelectorAll('Data');
+    const headerCols = Array.from(headerCells).map(c =>
+      (c.textContent || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\s_\-]/g, '')
+    );
+
+    const findCol = (keywords: string[], fallbackIdx: number): number => {
+      const idx = headerCols.findIndex(h => keywords.some(k => h.includes(k)));
+      return idx >= 0 ? idx : fallbackIdx;
+    };
+
+    const lastNameIdx = findCol(['vezetek', 'csalad', 'surname', 'lastname'], 0);
+    const firstNameIdx = findCol(['kereszt', 'firstname', 'utonev'], 1);
+    const birthDateIdx = findCol(['szulet', 'birth'], 2);
+    const tajIdx = findCol(['taj'], 3);
+    const taxIdIdx = findCol(['adoazon', 'adokartya', 'taxid'], 4);
+    const jobCodeIdx = findCol(['jogviszony', 'jobcode', 't1041'], 5);
+    const startDateIdx = findCol(['belep', 'start', 'kezdet'], 6);
+    const feorIdx = findCol(['feor'], 7);
+    const weeklyHoursIdx = findCol(['ora', 'hours', 'munkaido'], 8);
+    const baseSalaryIdx = findCol(['alapber', 'ber', 'salary', 'brutto'], 9);
+
+    const result: Parsed08Employee[] = [];
     for (let i = 1; i < rowElements.length; i++) {
       const cells = rowElements[i].querySelectorAll('Data');
       const cols = Array.from(cells).map(c => c.textContent?.trim() || '');
 
-      const surname = cols[0] || '';
-      const firstName = cols[1] || '';
-      const birthDate = cols[2] || '';
-      const tajNumber = cols[3] || '';
-      const taxId = cols[4] || '';
-      const jobCode = cols[5] || '';
-      const startDate = cols[6] || '';
-      const feor = cols[7] || '';
-      const weeklyHours = cols[8] || '';
-      const baseSalary = cols[9] || '';
+      const surname = cols[lastNameIdx] || '';
+      const firstName = cols[firstNameIdx] || '';
+      const birthDate = normalizeDate(cols[birthDateIdx]);
+      const tajNumber = (cols[tajIdx] || '').replace(/[\s-]/g, '');
+      const taxId = (cols[taxIdIdx] || '').replace(/[\s-]/g, '');
+      const jobCode = cols[jobCodeIdx] || '1101';
+      const startDate = normalizeDate(cols[startDateIdx]) || `${new Date().getFullYear()}-01-01`;
+      const feor = cols[feorIdx] || '';
+      const weeklyHours = parseCleanNumber(cols[weeklyHoursIdx]) || 40;
+      const baseSalary = parseCleanNumber(cols[baseSalaryIdx]) || 0;
 
-      // Skip completely empty rows
       if (!surname && !firstName && !tajNumber) continue;
 
       const errors: string[] = [];
+      const warnings: string[] = [];
       if (!surname) errors.push('Vezetéknév hiányzik');
       if (!firstName) errors.push('Keresztnév hiányzik');
-      if (!birthDate) errors.push('Születési dátum hiányzik');
-      const tajClean = tajNumber.replace(/[\s-]/g, '');
-      if (tajClean && tajClean.length !== 9) errors.push('TAJ szám formátum hibás (9 jegy szükséges)');
-      if (!tajClean) errors.push('TAJ-szám hiányzik');
-      if (!taxId) errors.push('Adóazonosító hiányzik');
-      if (!startDate) errors.push('Belépés dátuma hiányzik');
+      if (!tajNumber && !taxId) errors.push('TAJ-szám vagy adóazonosító kötelező');
 
-      dataRows.push({
-        id: i,
-        surname,
+      result.push({
+        lastName: surname,
         firstName,
         birthDate,
         tajNumber,
         taxId,
         jobCode,
+        employmentType: 'munkaviszony',
         startDate,
-        feor,
+        feorCode: feor,
         weeklyHours,
         baseSalary,
+        grossSalary: baseSalary,
+        taxBase: baseSalary,
+        szjaAmount: Math.round(baseSalary * 0.15),
+        tbBase: baseSalary,
+        tbAmount: Math.round(baseSalary * 0.185),
+        szochoBase: baseSalary,
+        szochoAmount: Math.round(baseSalary * 0.13),
+        totalDeductions: Math.round(baseSalary * 0.335),
+        netSalary: Math.max(0, Math.round(baseSalary * 0.665)),
         valid: errors.length === 0,
         errors,
+        warnings,
       });
     }
-    return dataRows;
+    return result;
   }, []);
 
-  const processFile = useCallback((file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
+  // Process Excel / CSV file
+  const processExcelFile = useCallback(async (file: File) => {
+    try {
+      const text = await readTextFileWithEncoding(file);
       if (!text) return;
 
-      let parsed: ImportRow[];
+      let parsed: Parsed08Employee[];
       if (file.name.endsWith('.xls') || file.name.endsWith('.xml')) {
         parsed = parseExcelXML(text);
       } else {
@@ -170,59 +235,76 @@ export default function EmployeeImportPage() {
       }
 
       if (parsed.length === 0) {
-        toast({ title: 'Hiba', description: 'A fájl üres vagy nem megfelelő formátúmú. Kérjük használja a sablont.', variant: 'destructive' });
+        toast({ title: 'Hiba', description: 'A fájl üres vagy nem megfelelő formátumú. Kérjük használja a sablont.', variant: 'destructive' });
         return;
       }
 
-      setRows(parsed);
+      setParsedEmployees(parsed);
+      setParsed08Doc(null);
       setPhase('preview');
-    };
-    reader.readAsText(file, 'UTF-8');
-  }, [parseCSVContent, parseExcelXML]);
+    } catch (err: any) {
+      toast({ title: 'Fájlolvasási hiba', description: err.message, variant: 'destructive' });
+    }
+  }, [parseCSVContent, parseExcelXML, toast]);
 
-  const handleFileSelect = useCallback((e?: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e?.target?.files?.[0] || fileRef.current?.files?.[0];
-    if (!file) return;
-    processFile(file);
-  }, [processFile]);
+  // Process NAV 08 XML file
+  const processNav08File = useCallback(async (file: File) => {
+    try {
+      const text = await readTextFileWithEncoding(file);
+      if (!text) return;
+
+      const doc = parseFiling08Xml(text);
+      if (doc.parseErrors.length > 0 && doc.employees.length === 0) {
+        toast({
+          variant: 'destructive',
+          title: '08-as XML feldolgozási hiba',
+          description: doc.parseErrors.join(', '),
+        });
+        return;
+      }
+
+      setParsed08Doc(doc);
+      setParsedEmployees(doc.employees);
+      setPhase('preview');
+    } catch (err: any) {
+      toast({ title: 'XML olvasási hiba', description: err.message, variant: 'destructive' });
+    }
+  }, [toast]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file) processFile(file);
-  }, [processFile]);
+    if (!file) return;
 
-  const createEmployee = useCreateEmployee();
+    if (activeTab === 'nav08') {
+      processNav08File(file);
+    } else {
+      processExcelFile(file);
+    }
+  }, [activeTab, processNav08File, processExcelFile]);
 
-  const handleImport = async () => {
+  // Execute Import
+  const handleExecuteImport = async () => {
     if (!id) return;
-    const validRows = rows.filter(r => r.valid);
+    const validRows = parsedEmployees.filter(r => r.valid);
     if (validRows.length === 0) return;
+
     setPhase('importing');
+
     try {
-      for (const row of validRows) {
-        await createEmployee.mutateAsync({
-          company_id: id,
-          first_name: row.firstName,
-          last_name: row.surname,
-          birth_name: null,
-          birth_place: null,
-          birth_date: row.birthDate || null,
-          mothers_name: null,
-          gender: null,
-          nationality: 'magyar',
-          taj_number: row.tajNumber || null,
-          tax_id: row.taxId || null,
-          id_card_number: null,
-          address: null,
-          temp_address: null,
-          email: null,
-          phone: null,
-          bank_account: null,
-          iban: null,
-          status: 'active',
-          avatar_url: null,
+      if (activeTab === 'nav08' && parsed08Doc && createCycleOption) {
+        // Rekonstruáljuk a bérszámfejtési ciklust is
+        await reconstructCycles({
+          companyId: id,
+          documents: [parsed08Doc],
+          overwriteExisting: true,
+        });
+      } else {
+        // Csak a dolgozókat és jogviszonyaikat importáljuk
+        await importEmployees({
+          companyId: id,
+          employees: validRows,
         });
       }
       setPhase('done');
@@ -245,14 +327,13 @@ export default function EmployeeImportPage() {
   };
 
   const downloadExcel = () => {
-    // Generate XML Spreadsheet 2003 format (.xlsx compatible)
     const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const headerCells = TEMPLATE_HEADERS.map(h =>
       `<Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`
     ).join('');
     const dataRows = SAMPLE_ROWS.map(row => {
       const cells = row.map((val, i) => {
-        const isNumber = i >= 8; // weeklyHours, baseSalary
+        const isNumber = i >= 8;
         return `<Cell><Data ss:Type="${isNumber ? 'Number' : 'String'}">${escapeXml(val)}</Data></Cell>`;
       }).join('');
       return `<Row>${cells}</Row>`;
@@ -289,137 +370,222 @@ export default function EmployeeImportPage() {
     setShowTemplateMenu(false);
   };
 
-  const removeRow = (rowId: number) => setRows(prev => prev.filter(r => r.id !== rowId));
+  const removeRow = (idx: number) => {
+    setParsedEmployees(prev => prev.filter((_, i) => i !== idx));
+  };
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to={`/eaisybooks/payroll/${id}/employees`} className="p-2 rounded-lg hover:bg-muted transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg shadow-green-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25">
             <FileSpreadsheet className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Excel importálás</h1>
-            <p className="text-sm text-slate-500">Foglalkoztatottak tömeges felvitele CSV/Excel fájlból</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Dolgozói Tömeges Import Központ</h1>
+            <p className="text-sm text-slate-500">Munkavállalók, jogviszonyok és havi bérszámfejtések betöltése</p>
           </div>
         </div>
-        <div className="relative">
-          <Button
-            onClick={() => setShowTemplateMenu(p => !p)}
-            variant="outline"
-            className="gap-1.5"
-          >
-            <Download className="w-4 h-4" /> Sablon letöltése <ChevronDown className="w-3 h-3 ml-0.5" />
-          </Button>
-          {showTemplateMenu && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowTemplateMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                <button
-                  onClick={downloadExcel}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <div className="p-1.5 bg-green-100 dark:bg-green-900/40 rounded-lg">
-                    <Table className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-100">Excel sablon (.xls)</p>
-                    <p className="text-[11px] text-slate-400">Megnyitható Excelben</p>
-                  </div>
-                </button>
-                <div className="border-t border-border" />
-                <button
-                  onClick={downloadCSV}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-                    <FileText className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-100">CSV sablon (.csv)</p>
-                    <p className="text-[11px] text-slate-400">Pontosvesszővel elválasztva, UTF-8</p>
-                  </div>
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+
+        {activeTab === 'excel' && (
+          <div className="relative">
+            <Button
+              onClick={() => setShowTemplateMenu(p => !p)}
+              variant="outline"
+              className="gap-1.5"
+            >
+              <Download className="w-4 h-4" /> Sablon letöltése <ChevronDown className="w-3 h-3 ml-0.5" />
+            </Button>
+            {showTemplateMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowTemplateMenu(false)} />
+                <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                  <button
+                    onClick={downloadExcel}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <div className="p-1.5 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                      <Table className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900 dark:text-slate-100">Excel sablon (.xls)</p>
+                      <p className="text-[11px] text-slate-400">Megnyitható Excelben</p>
+                    </div>
+                  </button>
+                  <div className="border-t border-border" />
+                  <button
+                    onClick={downloadCSV}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900 dark:text-slate-100">CSV sablon (.csv)</p>
+                      <p className="text-[11px] text-slate-400">Pontosvesszővel elválasztva</p>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Upload phase */}
+      {/* Tabs */}
       {phase === 'upload' && (
-        <div className="space-y-4">
-          <div
-            className={cn(
-              'border-2 border-dashed rounded-2xl p-16 text-center transition-all cursor-pointer',
-              dragging ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 scale-[1.01]' : 'border-border hover:border-emerald-400'
-            )}
-            onDragOver={e => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => fileRef.current?.click()}
-          >
-            <Upload className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-            <p className="text-lg font-bold text-slate-700 dark:text-slate-300">
-              Húzd ide a fájlt vagy kattints a tallózáshoz
-            </p>
-            <p className="text-sm text-slate-400 mt-2">
-              Támogatott formátumok: .csv, .xlsx, .xls — Max. 500 sor
-            </p>
-            <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileSelect} />
-          </div>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+          <TabsList className="grid grid-cols-2 max-w-md mx-auto mb-6">
+            <TabsTrigger value="excel" className="gap-2">
+              <FileSpreadsheet className="w-4 h-4" /> Excel / CSV Sablon
+            </TabsTrigger>
+            <TabsTrigger value="nav08" className="gap-2">
+              <FileCode className="w-4 h-4" /> NAV 08 (2608 / 2508 / 2408) XML
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Instructions */}
-          <div className="bg-card rounded-xl border border-border p-6 space-y-3">
-            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Importálási útmutató</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="space-y-2">
-                <p className="text-slate-600 dark:text-slate-400">
-                  <strong>1.</strong> Töltse le a sablont a fenti gombbal
-                </p>
-                <p className="text-slate-600 dark:text-slate-400">
-                  <strong>2.</strong> Töltse ki az adatokat a megfelelő oszlopokba
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-slate-600 dark:text-slate-400">
-                  <strong>3.</strong> Töltse fel a kitöltött fájlt
-                </p>
-                <p className="text-slate-600 dark:text-slate-400">
-                  <strong>4.</strong> Ellenőrizze az adatokat, majd importáljon
-                </p>
-              </div>
+          {/* Tab 1: Excel / CSV */}
+          <TabsContent value="excel" className="space-y-4">
+            <div
+              className={cn(
+                'border-2 border-dashed rounded-2xl p-16 text-center transition-all cursor-pointer bg-card',
+                dragging ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 scale-[1.01]' : 'border-border hover:border-emerald-400'
+              )}
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => fileRef.current?.click()}
+            >
+              <Upload className="w-12 h-12 mx-auto mb-4 text-emerald-500" />
+              <p className="text-lg font-bold text-slate-700 dark:text-slate-300">
+                Húzd ide az Excel vagy CSV fájlt
+              </p>
+              <p className="text-sm text-slate-400 mt-2">
+                Támogatott: .xlsx, .xls, .csv — Automatikusan létrehozza a dolgozót és az aktív jogviszonyt
+              </p>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) processExcelFile(f);
+                  if (e.target) e.target.value = '';
+                }}
+              />
             </div>
-            <div className="grid grid-cols-5 gap-2 mt-3">
-              {TEMPLATE_HEADERS.map(h => (
-                <div key={h} className="text-xs bg-slate-100 dark:bg-slate-800 rounded-lg px-2 py-1.5 text-center text-slate-600 dark:text-slate-400 font-mono">{h}</div>
-              ))}
+          </TabsContent>
+
+          {/* Tab 2: NAV 08 XML */}
+          <TabsContent value="nav08" className="space-y-4">
+            <div
+              className={cn(
+                'border-2 border-dashed rounded-2xl p-16 text-center transition-all cursor-pointer bg-card',
+                dragging ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 scale-[1.01]' : 'border-border hover:border-blue-400'
+              )}
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => xmlFileRef.current?.click()}
+            >
+              <FileCode className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+              <p className="text-lg font-bold text-slate-700 dark:text-slate-300">
+                Húzd ide a NAV 08 (2608 / 2508 / 2408) ÁNYK XML fájlt
+              </p>
+              <p className="text-sm text-slate-400 mt-2">
+                Kinyeri az összes dolgozót (08M lapok), jogviszonyt és a lejelentett havi bérszámfejtési adatokat
+              </p>
+              <input
+                ref={xmlFileRef}
+                type="file"
+                accept=".xml"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) processNav08File(f);
+                  if (e.target) e.target.value = '';
+                }}
+              />
             </div>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       )}
 
-      {/* Preview phase */}
+      {/* Preview Phase */}
       {phase === 'preview' && (
-        <div className="space-y-4">
-          {/* Summary */}
+        <div className="space-y-6">
+          {/* NAV 08 Banner / Info if applicable */}
+          {parsed08Doc && plan && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/50 rounded-2xl p-6 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white font-mono">
+                      NAV {parsed08Doc.filingType}
+                    </span>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                      {parsed08Doc.companyName || 'Beolvasott cégadatok'} — {parsed08Doc.year}. {parsed08Doc.month}. hónap
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-500 font-mono">
+                    Adószám: {parsed08Doc.companyTaxNumber || 'Nincs megadva'} | {parsed08Doc.employeeCount} biztosított M-lapja feldolgozva
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-blue-200/60 dark:border-blue-800/40">
+                  <input
+                    type="checkbox"
+                    id="createCycleCheck"
+                    checked={createCycleOption}
+                    onChange={e => setCreateCycleOption(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                  />
+                  <label htmlFor="createCycleCheck" className="text-sm font-medium text-slate-800 dark:text-slate-200 cursor-pointer">
+                    Havi számfejtési ciklus felépítése erre a hónapra ({parsed08Doc.year}/{parsed08Doc.month})
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-blue-200/60 dark:border-blue-800/40 text-xs">
+                <div>
+                  <span className="text-slate-500">Összes Bruttó Bér:</span>
+                  <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{parsed08Doc.totalGrossSalary.toLocaleString('hu-HU')} Ft</p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Levont SZJA (15%):</span>
+                  <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{parsed08Doc.totalSzja.toLocaleString('hu-HU')} Ft</p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Levont TB (18,5%):</span>
+                  <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{parsed08Doc.totalTb.toLocaleString('hu-HU')} Ft</p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Fizetendő SZOCHO (13%):</span>
+                  <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{parsed08Doc.totalSzocho.toLocaleString('hu-HU')} Ft</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Stats Bar */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
               <Users className="w-5 h-5 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">{rows.length}</p>
-                <p className="text-xs text-slate-500">Összes sor</p>
+                <p className="text-2xl font-bold">{parsedEmployees.length}</p>
+                <p className="text-xs text-slate-500">Összes dolgozó</p>
               </div>
             </div>
             <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
               <CheckCircle className="w-5 h-5 text-emerald-500" />
               <div>
                 <p className="text-2xl font-bold text-emerald-600">{validCount}</p>
-                <p className="text-xs text-slate-500">Érvényes</p>
+                <p className="text-xs text-slate-500">Érvényes & menthető</p>
               </div>
             </div>
             <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
@@ -431,16 +597,24 @@ export default function EmployeeImportPage() {
             </div>
           </div>
 
-          {/* Data table */}
+          {/* Table */}
           <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-            <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Importálandó adatok előnézete</h2>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => { setPhase('upload'); setRows([]); }} className="gap-1 text-xs">
-                  <RefreshCw className="w-3 h-3" /> Új fájl
-                </Button>
-              </div>
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between dark:bg-slate-900/30">
+              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Importálandó Dolgozók és Jogviszonyok</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setPhase('upload');
+                  setParsedEmployees([]);
+                  setParsed08Doc(null);
+                }}
+                className="gap-1 text-xs"
+              >
+                <RefreshCw className="w-3 h-3" /> Új fájl választása
+              </Button>
             </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -451,36 +625,45 @@ export default function EmployeeImportPage() {
                     <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">TAJ</th>
                     <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">Adóaz.</th>
                     <th className="px-3 py-2 text-xs font-bold text-slate-500 text-center">Jogv.</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">Belépés</th>
+                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">Kezdés</th>
                     <th className="px-3 py-2 text-xs font-bold text-slate-500 text-center">FEOR</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-right">Alapbér</th>
+                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-right">Bruttó Bér</th>
+                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-right">Nettó</th>
                     <th className="px-3 py-2 text-xs font-bold text-slate-500 text-center">Státusz</th>
                     <th className="px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(row => (
-                    <tr key={row.id} className={cn(
-                      'border-b border-border/50 transition-colors',
-                      row.valid ? 'hover:bg-slate-50 dark:hover:bg-slate-800/50' : 'bg-red-50/50 dark:bg-red-500/5'
-                    )}>
-                      <td className="px-3 py-2.5 text-center text-xs text-slate-400">{row.id}</td>
-                      <td className="px-3 py-2.5 font-medium">{row.surname} {row.firstName}</td>
-                      <td className="px-3 py-2.5 text-xs font-mono">{row.birthDate || <span className="text-red-500">—</span>}</td>
-                      <td className="px-3 py-2.5 text-xs font-mono">{row.tajNumber}</td>
-                      <td className="px-3 py-2.5 text-xs font-mono">{row.taxId}</td>
+                  {parsedEmployees.map((row, idx) => (
+                    <tr
+                      key={idx}
+                      className={cn(
+                        'border-b border-border/50 transition-colors',
+                        row.valid ? 'hover:bg-slate-50 dark:hover:bg-slate-800/50' : 'bg-red-50/50 dark:bg-red-500/5'
+                      )}
+                    >
+                      <td className="px-3 py-2.5 text-center text-xs text-slate-400">{idx + 1}</td>
+                      <td className="px-3 py-2.5 font-medium">{row.lastName} {row.firstName}</td>
+                      <td className="px-3 py-2.5 text-xs font-mono">{row.birthDate || '–'}</td>
+                      <td className="px-3 py-2.5 text-xs font-mono">{row.tajNumber || '–'}</td>
+                      <td className="px-3 py-2.5 text-xs font-mono">{row.taxId || '–'}</td>
                       <td className="px-3 py-2.5 text-center">
                         <span className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs font-mono">{row.jobCode}</span>
                       </td>
                       <td className="px-3 py-2.5 text-xs">{row.startDate}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-mono">{row.feor}</td>
-                      <td className="px-3 py-2.5 text-right text-xs font-mono">{Number(row.baseSalary).toLocaleString('hu-HU')} Ft</td>
+                      <td className="px-3 py-2.5 text-center text-xs font-mono">{row.feorCode || '–'}</td>
+                      <td className="px-3 py-2.5 text-right text-xs font-mono font-semibold">
+                        {(row.baseSalary || row.grossSalary).toLocaleString('hu-HU')} Ft
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-xs font-mono text-emerald-600 dark:text-emerald-400">
+                        {row.netSalary.toLocaleString('hu-HU')} Ft
+                      </td>
                       <td className="px-3 py-2.5 text-center">
                         {row.valid ? (
                           <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" />
                         ) : (
-                          <div className="group relative">
-                            <AlertTriangle className="w-4 h-4 text-red-500 mx-auto cursor-help" />
+                          <div className="group relative inline-block">
+                            <AlertTriangle className="w-4 h-4 text-red-500 cursor-help" />
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-red-900 text-white text-[10px] px-2 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                               {row.errors.join(' | ')}
                             </div>
@@ -488,7 +671,12 @@ export default function EmployeeImportPage() {
                         )}
                       </td>
                       <td className="px-3 py-2.5">
-                        <Button variant="ghost" size="sm" onClick={() => removeRow(row.id)} className="h-7 w-7 p-0 text-red-400 hover:text-red-600">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeRow(idx)}
+                          className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
+                        >
                           <Trash2 className="w-3 h-3" />
                         </Button>
                       </td>
@@ -499,7 +687,7 @@ export default function EmployeeImportPage() {
             </div>
           </div>
 
-          {/* Import button */}
+          {/* Action Button */}
           <div className="flex justify-between items-center">
             {errorCount > 0 && (
               <div className="text-sm text-red-600 flex items-center gap-1.5">
@@ -508,39 +696,69 @@ export default function EmployeeImportPage() {
               </div>
             )}
             <div className="flex gap-3 ml-auto">
-              <Button variant="outline" onClick={() => { setPhase('upload'); setRows([]); }}>Mégse</Button>
-              <Button onClick={handleImport} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700" disabled={validCount === 0}>
-                <Upload className="w-4 h-4" /> {validCount} foglalkoztatott importálása
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPhase('upload');
+                  setParsedEmployees([]);
+                  setParsed08Doc(null);
+                }}
+              >
+                Mégse
+              </Button>
+              <Button
+                onClick={handleExecuteImport}
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20"
+                disabled={validCount === 0 || isProcessing}
+              >
+                <Upload className="w-4 h-4" />
+                {parsed08Doc && createCycleOption
+                  ? `${validCount} dolgozó & ${parsed08Doc.year}/${parsed08Doc.month}. számfejtés rekonstruálása`
+                  : `${validCount} dolgozó és jogviszony importálása`}
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Importing phase */}
+      {/* Importing Phase */}
       {phase === 'importing' && (
-        <div className="bg-card rounded-xl border border-border p-16 text-center">
-          <Loader2 className="w-12 h-12 mx-auto mb-4 text-emerald-500 animate-spin" />
-          <p className="text-lg font-bold text-slate-700 dark:text-slate-300">Importálás folyamatban...</p>
-          <p className="text-sm text-slate-400 mt-2">{validCount} foglalkoztatott hozzáadása a rendszerhez</p>
+        <div className="bg-card rounded-2xl border border-border p-16 text-center space-y-4">
+          <Loader2 className="w-12 h-12 mx-auto text-emerald-500 animate-spin" />
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">Importálás és Rekonstrukció folyamatban...</h2>
+          <p className="text-sm text-slate-400 max-w-md mx-auto">
+            {progress.message || `${validCount} dolgozó és kapcsolódó adatok rögzítése a rendszerben...`}
+          </p>
         </div>
       )}
 
-      {/* Done phase */}
+      {/* Done Phase */}
       {phase === 'done' && (
-        <div className="bg-card rounded-xl border border-border p-16 text-center space-y-4">
+        <div className="bg-card rounded-2xl border border-border p-16 text-center space-y-5">
           <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 rounded-full inline-block">
             <CheckCircle className="w-12 h-12 text-emerald-600" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Import sikeres!</h2>
-          <p className="text-sm text-slate-500">{validCount} foglalkoztatott sikeresen hozzáadva a rendszerhez.</p>
-          {errorCount > 0 && (
-            <p className="text-sm text-yellow-600">{errorCount} sor kihagyva hibák miatt.</p>
-          )}
-          <div className="flex gap-3 justify-center mt-4">
-            <Button variant="outline" onClick={() => { setPhase('upload'); setRows([]); }}>Új importálás</Button>
-            <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-              <Link to={`/eaisybooks/payroll/${id}/employees`}>Vissza a listához</Link>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Sikeres Betöltés!</h2>
+          <p className="text-sm text-slate-500 max-w-md mx-auto">
+            A dolgozói törzsadatok és az aktív jogviszonyok (alapbér, jogviszonykód, FEOR) sikeresen elmentve.
+            {parsed08Doc && createCycleOption && ' A havi bérszámfejtési ciklus és a kalkulációs adatok is felépültek.'}
+          </p>
+
+          <div className="flex gap-3 justify-center pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPhase('upload');
+                setParsedEmployees([]);
+                setParsed08Doc(null);
+              }}
+            >
+              Új importálás
+            </Button>
+            <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5">
+              <Link to={`/eaisybooks/payroll/${id}/employees`}>
+                Tovább a dolgozókhoz <ArrowRight className="w-4 h-4" />
+              </Link>
             </Button>
           </div>
         </div>
