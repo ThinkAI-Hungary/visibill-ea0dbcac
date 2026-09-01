@@ -10,12 +10,15 @@ import type { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { AccountyMissingItem, AccountyCompanySummary, fetchAllMissingItems, fetchAllMissingItemsFull, invalidateAccountyCache } from './useAccountyHelpers';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // ── Missing Items (per company, paginated) ──
 
 export function useAccountyMissingItems(companyId: string, page = 0, pageSize = 100) {
   return useQuery({
     queryKey: [...queryKeys.accountyMissingItems(companyId), page, pageSize],
     queryFn: async (): Promise<{ items: AccountyMissingItem[]; totalCount: number }> => {
+      if (!companyId || !UUID_REGEX.test(companyId)) return { items: [], totalCount: 0 };
       // 1. Get total count (server-side, no row transfer)
       const { count, error: countErr } = await supabase
         .from('accounty_missing_items')
@@ -66,7 +69,7 @@ export function useAccountyMissingItems(companyId: string, page = 0, pageSize = 
 
       return { items, totalCount: count || 0 };
     },
-    enabled: !!companyId,
+    enabled: !!companyId && UUID_REGEX.test(companyId),
     staleTime: 30_000,
     placeholderData: keepPreviousData,
   });
@@ -78,6 +81,7 @@ export function useAccountyMissingCounts(companyId: string) {
   return useQuery({
     queryKey: queryKeys.accountyMissingCounts(companyId),
     queryFn: async () => {
+      if (!companyId || !UUID_REGEX.test(companyId)) return { total: 0, urgent: 0, nav: 0, totalAmount: 0 };
       // All counts in parallel
       const [totalRes, urgentRes, navRes, amountRes] = await Promise.all([
         supabase
@@ -116,7 +120,7 @@ export function useAccountyMissingCounts(companyId: string) {
         totalAmount,
       };
     },
-    enabled: !!companyId,
+    enabled: !!companyId && UUID_REGEX.test(companyId),
     staleTime: 30_000,
   });
 }

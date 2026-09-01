@@ -140,7 +140,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
         .from('acc_journal_headers')
         .select('*, lines:acc_journal_lines(*)')
         .eq('id', entryId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -247,7 +247,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
       const linesData = lines.map((line, index) => ({
         header_id: headerIdResult!,
         sequence_number: index + 1,
-        gl_account_id: line.gl_account_id || null,
+        gl_account_id: (line.gl_account_id && line.gl_account_id !== '00000000-0000-0000-0000-000000000000') ? line.gl_account_id : null,
         dc_type: line.dc_type,
         amount: line.amount,
         project_id: line.project_id || null,
@@ -283,7 +283,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
       toast({ title: "Figyelmeztetés", description: "A megnevezés kitöltése kötelező!", variant: "destructive" });
       return;
     }
-    if (lines.some(l => !l.gl_account_id)) {
+    if (lines.some(l => !l.gl_account_id || l.gl_account_id === '00000000-0000-0000-0000-000000000000')) {
       toast({ title: "Figyelmeztetés", description: "Minden sorban kötelező főkönyvi számot választani!", variant: "destructive" });
       return;
     }

@@ -236,12 +236,15 @@ export function useAccountyKpis(dateFrom?: string, dateTo?: string) {
   });
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // ── Tax Profile ──
 
 export function useAccountyTaxProfile(companyId: string) {
   return useQuery({
     queryKey: queryKeys.accountyTaxProfile(companyId),
     queryFn: async (): Promise<AccountyTaxProfile | null> => {
+      if (!companyId || !UUID_REGEX.test(companyId)) return null;
       const { data, error } = await supabase
         .from('accounty_tax_profiles')
         .select('*')
@@ -262,7 +265,7 @@ export function useAccountyTaxProfile(companyId: string) {
         navSynced: (data).nav_synced || false,
       };
     },
-    enabled: !!companyId,
+    enabled: !!companyId && UUID_REGEX.test(companyId),
     staleTime: 60_000,
   });
 }
@@ -304,6 +307,7 @@ export function useAccountyPortalTokens(companyId: string) {
   return useQuery({
     queryKey: queryKeys.accountyPortalTokens(companyId),
     queryFn: async () => {
+      if (!companyId || !UUID_REGEX.test(companyId)) return [];
       const { data, error } = await supabase
         .from('accounty_portal_tokens')
         .select('*')
@@ -322,7 +326,7 @@ export function useAccountyPortalTokens(companyId: string) {
         createdAt: t.created_at,
       }));
     },
-    enabled: !!companyId,
+    enabled: !!companyId && UUID_REGEX.test(companyId),
   });
 }
 
@@ -369,6 +373,7 @@ export function useAccountyCommunicationPrefs(companyId: string) {
   return useQuery({
     queryKey: queryKeys.accountyCommunicationPrefs(companyId),
     queryFn: async () => {
+      if (!companyId || !UUID_REGEX.test(companyId)) return null;
       const { data, error } = await supabase
         .from('accounty_communication_preferences')
         .select('*')
@@ -395,7 +400,7 @@ export function useAccountyCommunicationPrefs(companyId: string) {
         gdprOptedInAt: data.gdpr_opted_in_at || null,
       };
     },
-    enabled: !!companyId,
+    enabled: !!companyId && UUID_REGEX.test(companyId),
     staleTime: 60_000,
   });
 }
@@ -638,6 +643,7 @@ export function useCompanyInvoices(companyId: string) {
   return useQuery({
     queryKey: queryKeys.accountyCompanyInvoices(companyId),
     queryFn: async (): Promise<CompanyInvoice[]> => {
+      if (!companyId || !UUID_REGEX.test(companyId)) return [];
       // 1. Uploaded invoices
       const { data: uploaded, error: err1 } = await supabase
         .from('invoices')
@@ -756,6 +762,6 @@ export function useCompanyInvoices(companyId: string) {
       results.sort((a, b) => (b.rawDate || '').localeCompare(a.rawDate || ''));
       return results;
     },
-    enabled: !!companyId,
+    enabled: !!companyId && UUID_REGEX.test(companyId),
   });
 }
