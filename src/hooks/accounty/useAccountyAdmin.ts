@@ -198,10 +198,13 @@ export function useUpsertOfficeSettings() {
 
 // ── Cégkapu Settings ──
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function useCegkapuSettings(companyId: string) {
   return useQuery({
     queryKey: queryKeys.accountyCegkapuSettings(companyId),
     queryFn: async (): Promise<CegkapuSettings | null> => {
+      if (!companyId || !UUID_REGEX.test(companyId)) return null;
       const { data, error } = await supabase
         .from('accounty_cegkapu_settings')
         .select('*')
@@ -227,7 +230,7 @@ export function useCegkapuSettings(companyId: string) {
         lastSync: data.last_sync,
       };
     },
-    enabled: !!companyId,
+    enabled: !!companyId && UUID_REGEX.test(companyId),
   });
 }
 
@@ -268,6 +271,7 @@ export function useNavRepresentations(companyId: string) {
   return useQuery({
     queryKey: queryKeys.accountyNavRepresentations(companyId),
     queryFn: async (): Promise<NavRepresentation[]> => {
+      if (!companyId || !UUID_REGEX.test(companyId)) return [];
       const { data, error } = await supabase
         .from('accounty_nav_representations')
         .select('*')
@@ -288,7 +292,7 @@ export function useNavRepresentations(companyId: string) {
         registrationNumber: r.registration_number,
       }));
     },
-    enabled: !!companyId,
+    enabled: !!companyId && UUID_REGEX.test(companyId),
   });
 }
 

@@ -458,18 +458,45 @@ export function useCreateCycle() {
 
   return useMutation({
     mutationFn: async (cycle: { company_id: string; year: number; month: number }) => {
+      // Check if cycle already exists
+      const { data: existing } = await supabase
+        .from('accounty_payroll_cycles')
+        .select('*')
+        .eq('company_id', cycle.company_id)
+        .eq('year', cycle.year)
+        .eq('month', cycle.month)
+        .maybeSingle();
+
+      if (existing) {
+        return existing as PayrollCycle;
+      }
+
       const { data, error } = await supabase
         .from('accounty_payroll_cycles')
         .insert(cycle)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Fallback for race condition: fetch existing
+        const { data: retryExisting } = await supabase
+          .from('accounty_payroll_cycles')
+          .select('*')
+          .eq('company_id', cycle.company_id)
+          .eq('year', cycle.year)
+          .eq('month', cycle.month)
+          .maybeSingle();
+
+        if (retryExisting) {
+          return retryExisting as PayrollCycle;
+        }
+        throw error;
+      }
       return data as PayrollCycle;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: payrollQueryKeys.cycles(data.company_id) });
-      toast({ title: 'Siker', description: `${data.year}/${String(data.month).padStart(2, '0')} havi ciklus létrehozva.` });
+      toast({ title: 'Siker', description: `${data.year}/${String(data.month).padStart(2, '0')} havi ciklus betöltve.` });
     },
     onError: (err: Error) => {
       const msg = err.message?.includes('duplicate key') || err.message?.includes('unique')

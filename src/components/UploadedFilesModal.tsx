@@ -139,9 +139,13 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
     queryFn: async () => {
       if (!companyId) return [];
 
+      const selectFields = config.table === 'invoice_uploads' 
+        ? 'id, file_name, file_size, file_url, processing_status, created_at, document_category' 
+        : 'id, file_name, file_size, file_url, processing_status, created_at';
+
       let query = (supabase as any)
         .from(config.table)
-        .select('id, file_name, file_size, file_url, processing_status, created_at, document_category')
+        .select(selectFields)
         .eq('company_id', companyId)
         .order('created_at', { ascending: false })
         .limit(500);

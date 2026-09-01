@@ -2,13 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CompanyLocation } from '@/types/fixed-assets';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function useCompanyLocations(companyId: string | undefined) {
   const queryClient = useQueryClient();
 
   const { data: locations = [], isLoading } = useQuery({
     queryKey: ['companyLocations', companyId],
     queryFn: async () => {
-      if (!companyId) return [];
+      if (!companyId || !UUID_REGEX.test(companyId)) return [];
       const { data, error } = await supabase
         .from('company_locations')
         .select('*')
@@ -18,7 +20,7 @@ export function useCompanyLocations(companyId: string | undefined) {
       if (error) throw error;
       return (data || []) as CompanyLocation[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && UUID_REGEX.test(companyId),
   });
 
   const addLocation = useMutation({
