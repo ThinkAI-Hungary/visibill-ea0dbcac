@@ -455,6 +455,7 @@ serve(async (req) => {
     let sender: string | null = null;
     let subject: string | null = null;
     let bodyPlain: string | null = null;
+    let bodyHtml: string | null = null;
     let timestamp: string | null = null;
     let token: string | null = null;
     let signature: string | null = null;
@@ -484,6 +485,7 @@ serve(async (req) => {
       sender = formData.get('sender') as string;
       subject = formData.get('subject') as string;
       bodyPlain = formData.get('body-plain') as string;
+      bodyHtml = formData.get('body-html') as string;
       timestamp = formData.get('timestamp') as string;
       token = formData.get('token') as string;
       signature = formData.get('signature') as string;
@@ -1539,7 +1541,7 @@ serve(async (req) => {
       alias,
       subject,
       bodyPlain,
-      formData ? (formData.get('body-html') as string) : null,
+      bodyHtml,
       sender,
       messageId
     );
