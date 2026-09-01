@@ -43,10 +43,22 @@ export function extractStoragePath(publicUrl: string, bucket: string): string | 
   }
 }
 
-/** Fix Hungarian character encoding bugs where accents are replaced by ? due to database migration encoding issues. */
+/** Fix Hungarian character encoding bugs where accents are corrupted (e.g. õ/û instead of ő/ű, or ? instead of ó/é/ö). */
 export function fixCharacterEncoding(str: string | null | undefined): string {
   if (!str) return '';
   return str
+    // Fix Windows-1250 / ISO-8859-1 mis-decoding (õ/û -> ő/ű)
+    .replace(/õ/g, 'ő')
+    .replace(/Õ/g, 'Ő')
+    .replace(/û/g, 'ű')
+    .replace(/Û/g, 'Ű')
+    // Fix common ? replacements in system strings
+    .replace(/Banki tranzakci\?/gi, 'Banki tranzakció')
+    .replace(/tranzakci\?/gi, 'tranzakció')
+    .replace(/Bej\?v\?/gi, 'Bejövő')
+    .replace(/Kimen\?/gi, 'Kimenő')
+    .replace(/K\?lts\?g/gi, 'Költség')
+    .replace(/Bev\?tel/gi, 'Bevétel')
     .replace(/Besorolatlan t\?telek/gi, (m) => m.toUpperCase() === m ? 'BESOROLATLAN TÉTELEK' : 'Besorolatlan tételek')
     .replace(/elt\?r\? sablonb\?l/gi, (m) => m.toUpperCase() === m ? 'ELTÉRŐ SABLONBÓL' : 'Eltérő sablonból')
     .replace(/sablonb\?l/gi, (m) => m.toUpperCase() === m ? 'SABLONBÓL' : 'sablonból');

@@ -361,7 +361,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             if (parentDbItem) {
               const parentCid = cleanId(parentDbItem.gl_number);
               if (descendantsCids.has(parentCid)) {
-                if (dbItem.is_temporary) {
+                const isTemp = (!dbItem.gl_account_id || dbItem.gl_account_id === '00000000-0000-0000-0000-000000000000');
+                if (isTemp) {
                   tempBalance += Number(dbItem.amount) || 0;
                 } else {
                   finalBalance += Number(dbItem.amount) || 0;
@@ -412,6 +413,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
            if (item.partner && item.description && item.partner !== item.description) {
              displayDesc = `${item.partner} - ${item.description}`;
            }
+           displayDesc = fixCharacterEncoding(displayDesc);
 
            if (!itemsByGL.has(parentCid)) {
                itemsByGL.set(parentCid, []);
@@ -424,8 +426,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
              hasChildren: false,
              cid: pseudoCid,
              isItem: true,
-             itemType: item.item_type,
-             partner: item.partner,
+             itemType: fixCharacterEncoding(item.item_type),
+             partner: fixCharacterEncoding(item.partner),
              date: item.item_date,
              sourceTable: item.source_table,
              originalGlId: item.gl_account_id,
@@ -433,7 +435,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
              originalAmount: Number(item.original_amount) || 0,
              // @ts-ignore
              originalCurrency: item.original_currency,
-             isTemporary: !!item.is_temporary
+             isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000')
            });
         });
 
