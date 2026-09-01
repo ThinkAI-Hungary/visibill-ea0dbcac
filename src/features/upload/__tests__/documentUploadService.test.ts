@@ -27,16 +27,16 @@ describe('DocumentUploadService & ChannelConfigs', () => {
       expect(validateFileType(zipFile, CHANNEL_CONFIGS.invoices)).toBe(false);
     });
 
-    it('validates bank statement files (PDF, CSV, XLS, XLSX)', () => {
+    it('validates transaction files (PDF, CSV, XLS, XLSX)', () => {
+      const pdfFile = new File(['dummy'], 'kivonat.pdf', { type: 'application/pdf' });
       const csvFile = new File(['dummy'], 'kivonat.csv', { type: 'text/csv' });
       const xlsxFile = new File(['dummy'], 'kivonat.xlsx', {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
-      const pdfFile = new File(['dummy'], 'kivonat.pdf', { type: 'application/pdf' });
 
-      expect(validateFileType(csvFile, CHANNEL_CONFIGS.bank)).toBe(true);
-      expect(validateFileType(xlsxFile, CHANNEL_CONFIGS.bank)).toBe(true);
-      expect(validateFileType(pdfFile, CHANNEL_CONFIGS.bank)).toBe(true);
+      expect(validateFileType(pdfFile, CHANNEL_CONFIGS.transactions)).toBe(true);
+      expect(validateFileType(csvFile, CHANNEL_CONFIGS.transactions)).toBe(true);
+      expect(validateFileType(xlsxFile, CHANNEL_CONFIGS.transactions)).toBe(true);
     });
 
     it('validates courier reports (XLS, XLSX, CSV, PDF, DOC, DOCX)', () => {
@@ -53,14 +53,13 @@ describe('DocumentUploadService & ChannelConfigs', () => {
   });
 
   describe('CHANNEL_CONFIGS Integrity', () => {
-    it('defines all 6 expected upload channels', () => {
+    it('defines all 5 expected upload channels', () => {
       const channelKeys = Object.keys(CHANNEL_CONFIGS);
       expect(channelKeys).toEqual([
         'invoices',
         'vouchers',
-        'bank',
-        'salaries',
         'transactions',
+        'salaries',
         'reports',
       ]);
     });
@@ -76,17 +75,14 @@ describe('DocumentUploadService & ChannelConfigs', () => {
         document_type: 'cash_voucher',
       });
 
-      expect(CHANNEL_CONFIGS.bank.targetTable).toBe('bank_statement_uploads');
-      expect(CHANNEL_CONFIGS.bank.storageBucket).toBe('bank-statements');
+      expect(CHANNEL_CONFIGS.transactions.targetTable).toBe('transaction_uploads');
+      expect(CHANNEL_CONFIGS.transactions.storageBucket).toBe('transactions');
 
       expect(CHANNEL_CONFIGS.salaries.targetTable).toBe('invoice_uploads');
       expect(CHANNEL_CONFIGS.salaries.defaultMetadata).toEqual({
         source: 'manual_salary_upload',
         document_type: 'payroll_report',
       });
-
-      expect(CHANNEL_CONFIGS.transactions.targetTable).toBe('transaction_uploads');
-      expect(CHANNEL_CONFIGS.transactions.storageBucket).toBe('transactions');
 
       expect(CHANNEL_CONFIGS.reports.targetTable).toBe('report_uploads');
       expect(CHANNEL_CONFIGS.reports.storageBucket).toBe('report-uploads');

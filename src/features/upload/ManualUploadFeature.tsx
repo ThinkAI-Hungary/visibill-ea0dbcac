@@ -14,9 +14,8 @@ import type { UploadChannelId } from './types';
 const UPLOAD_TAB_SLUGS = [
   'invoices',
   'vouchers',
-  'bank',
-  'salaries',
   'transactions',
+  'salaries',
   'reports',
 ] as const;
 
@@ -36,17 +35,15 @@ export function ManualUploadFeature() {
   // Independent state per channel to preserve staged files across tab switches
   const invoiceUpload = useDocumentUpload('invoices');
   const voucherUpload = useDocumentUpload('vouchers');
-  const bankUpload = useDocumentUpload('bank');
-  const salaryUpload = useDocumentUpload('salaries');
   const transactionUpload = useDocumentUpload('transactions');
+  const salaryUpload = useDocumentUpload('salaries');
   const reportUpload = useDocumentUpload('reports');
 
   const channelStates: Record<UploadChannelId, ReturnType<typeof useDocumentUpload>> = {
     invoices: invoiceUpload,
     vouchers: voucherUpload,
-    bank: bankUpload,
-    salaries: salaryUpload,
     transactions: transactionUpload,
+    salaries: salaryUpload,
     reports: reportUpload,
   };
 
@@ -64,7 +61,7 @@ export function ManualUploadFeature() {
         onValueChange={(val) => setActiveTab(val as UploadChannelId)}
         className="space-y-6"
       >
-        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1 bg-muted/60">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 h-auto p-1 bg-muted/60">
           {(Object.keys(CHANNEL_CONFIGS) as UploadChannelId[]).map((channelId) => {
             const cfg = CHANNEL_CONFIGS[channelId];
             const state = channelStates[channelId];
@@ -97,16 +94,12 @@ export function ManualUploadFeature() {
           <UploadChannelTab uploadState={voucherUpload} writable={writable} />
         </TabsContent>
 
-        <TabsContent value="bank" className="mt-0 focus-visible:outline-none">
-          <UploadChannelTab uploadState={bankUpload} writable={writable} />
+        <TabsContent value="transactions" className="mt-0 focus-visible:outline-none">
+          <UploadChannelTab uploadState={transactionUpload} writable={writable} />
         </TabsContent>
 
         <TabsContent value="salaries" className="mt-0 focus-visible:outline-none">
           <UploadChannelTab uploadState={salaryUpload} writable={writable} />
-        </TabsContent>
-
-        <TabsContent value="transactions" className="mt-0 focus-visible:outline-none">
-          <UploadChannelTab uploadState={transactionUpload} writable={writable} />
         </TabsContent>
 
         <TabsContent value="reports" className="mt-0 focus-visible:outline-none">

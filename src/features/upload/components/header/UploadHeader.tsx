@@ -15,7 +15,7 @@ export function UploadHeader({ onOpenFilesModal }: UploadHeaderProps) {
           Dokumentumok feltöltése
         </h1>
         <p className="text-muted-foreground mt-1">
-          Tölts fel számlákat, pénztárbizonylatokat, bankkivonatokat, béradatokat, tranzakciókat vagy futár riportokat automatikus feldolgozásra.
+          Tölts fel számlákat, pénztárbizonylatokat, béradatokat, tranzakciókat vagy futár riportokat automatikus feldolgozásra.
         </p>
       </div>
 

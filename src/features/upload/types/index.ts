@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 
-export type UploadChannelId = 'invoices' | 'vouchers' | 'bank' | 'salaries' | 'transactions' | 'reports';
+export type UploadChannelId = 'invoices' | 'vouchers' | 'transactions' | 'salaries' | 'reports';
 
 export type UploadTargetTable = 'invoice_uploads' | 'transaction_uploads' | 'bank_statement_uploads' | 'report_uploads';
 
