@@ -1295,8 +1295,8 @@
     "semantic_hash": ""
   },
   "src/main.tsx": {
-    "mtime": 1781445742.8215942,
-    "ast_hash": "ddd5c290166f1b0e450bca53434f49ba",
+    "mtime": 1788296732.6366615,
+    "ast_hash": "4ce1b2c80a629e701402d47be12308d2",
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountyApp.tsx": {
@@ -3590,8 +3590,8 @@
     "semantic_hash": ""
   },
   "src/lib/errorReporter.ts": {
-    "mtime": 1788212014.2235997,
-    "ast_hash": "6608a7f7c4c18e68aa471ce384aa8525",
+    "mtime": 1788296727.2957678,
+    "ast_hash": "5cebcdb06e76ced53884d8b54e69362d",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/error-logger.ts": {
@@ -4570,8 +4570,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/dashboard/DashboardShared.tsx": {
-    "mtime": 1787753315.8253694,
-    "ast_hash": "294ec25ec8dd69385a77d49d8773f324",
+    "mtime": 1788296722.3073046,
+    "ast_hash": "8069cb6ac01f747f9a1b0e3aa47d17b5",
     "semantic_hash": ""
   },
   "src/components/accounty/layout/AccountyCommandPalette.tsx": {
@@ -8085,8 +8085,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-069-frontend-error-reporting-and-context-inspection.md": {
-    "mtime": 1788176943.4818504,
-    "ast_hash": "2a6f747d6440216eda2d2965cd964b68",
+    "mtime": 1788296937.5674276,
+    "ast_hash": "ebf0144b710568c56fe4174e594d2456",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-070-multi-channel-upload-storage-bucket-alignment.md": {

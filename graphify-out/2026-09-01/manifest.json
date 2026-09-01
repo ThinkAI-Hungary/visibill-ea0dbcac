@@ -1295,8 +1295,8 @@
     "semantic_hash": ""
   },
   "src/main.tsx": {
-    "mtime": 1781445742.8215942,
-    "ast_hash": "ddd5c290166f1b0e450bca53434f49ba",
+    "mtime": 1788296732.6366615,
+    "ast_hash": "4ce1b2c80a629e701402d47be12308d2",
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountyApp.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788282434.5941174,
-    "ast_hash": "4f81bc3f0d224a402abee022f0581878",
+    "mtime": 1788296240.7108998,
+    "ast_hash": "febc208657a5c752f0918c569e6759f5",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3325,8 +3325,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1788137949.4555244,
-    "ast_hash": "e99879ac7dc14a05671326b222b173ca",
+    "mtime": 1788296268.7944825,
+    "ast_hash": "69005eab187c3c38eb5ee4887667a381",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3570,13 +3570,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788223440.8677766,
-    "ast_hash": "06abe2cc7052b9d5970f605fda20618f",
+    "mtime": 1788296252.917228,
+    "ast_hash": "737e201b9f9034458c08b53506e4fd26",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1788144204.9476106,
-    "ast_hash": "0758c772aeea3292cce6cad0d1ca5234",
+    "mtime": 1788296276.9612584,
+    "ast_hash": "56197afd142fa3a7e9f98baea0f4ed50",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -3590,8 +3590,8 @@
     "semantic_hash": ""
   },
   "src/lib/errorReporter.ts": {
-    "mtime": 1788212014.2235997,
-    "ast_hash": "6608a7f7c4c18e68aa471ce384aa8525",
+    "mtime": 1788296727.2957678,
+    "ast_hash": "5cebcdb06e76ced53884d8b54e69362d",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/error-logger.ts": {
@@ -4570,8 +4570,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/dashboard/DashboardShared.tsx": {
-    "mtime": 1787753315.8253694,
-    "ast_hash": "294ec25ec8dd69385a77d49d8773f324",
+    "mtime": 1788296722.3073046,
+    "ast_hash": "8069cb6ac01f747f9a1b0e3aa47d17b5",
     "semantic_hash": ""
   },
   "src/components/accounty/layout/AccountyCommandPalette.tsx": {
@@ -8627,6 +8627,21 @@
   "src/lib/glData.ts": {
     "mtime": 1788290696.8242857,
     "ast_hash": "8006d6b1bf63e632ed3adff458c7d5d9",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md": {
+    "mtime": 1788296213.7430618,
+    "ast_hash": "099fb9aaf1d9f47a9dcb63409cc73b56",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/047-company-prompt-rules-ai-classification.md": {
+    "mtime": 1788296228.3372085,
+    "ast_hash": "007842d96c2051e4a91082068a39629c",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-062-company-prompt-rules-library-and-error-boundary-ux.md": {
+    "mtime": 1788296220.6229074,
+    "ast_hash": "85b5c4bc2c40af0566b371a46f53b813",
     "semantic_hash": ""
   }
 }

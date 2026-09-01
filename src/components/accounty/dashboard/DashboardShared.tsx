@@ -27,19 +27,22 @@ export const CLIENT_COLORS = [
 ];
 
 export function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
-  const [display, setDisplay] = useState(0);
+  const [display, setDisplay] = useState(typeof value === 'number' && !isNaN(value) ? value : 0);
   useEffect(() => {
-    if (value === 0) { setDisplay(0); return; }
+    const num = typeof value === 'number' && !isNaN(value) ? value : 0;
+    if (num === 0) { setDisplay(0); return; }
     let startTime: number | null = null;
     let rafId: number;
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
-      setDisplay(Math.round(progress * value));
+      setDisplay(Math.round(progress * num));
       if (progress < 1) rafId = requestAnimationFrame(animate);
     };
     rafId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [value, duration]);
   return <>{display.toLocaleString('hu-HU')}</>;
 }

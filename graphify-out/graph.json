@@ -6900,7 +6900,7 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "components_uploadhistory_getstatus",
-      "community": 529,
+      "community": 644,
       "norm_label": "getstatus()"
     },
     {
@@ -7757,7 +7757,7 @@
       "label": "KpiCard()",
       "file_type": "code",
       "source_file": "src/components/accounty/dashboard/DashboardShared.tsx",
-      "source_location": "L47",
+      "source_location": "L50",
       "_origin": "ast",
       "id": "dashboard_dashboardshared_kpicard",
       "community": 51,
@@ -7767,7 +7767,7 @@
       "label": "StatusBadge()",
       "file_type": "code",
       "source_file": "src/components/accounty/dashboard/DashboardShared.tsx",
-      "source_location": "L105",
+      "source_location": "L108",
       "_origin": "ast",
       "id": "dashboard_dashboardshared_statusbadge",
       "community": 51,
@@ -7777,7 +7777,7 @@
       "label": "OwnerDropdown()",
       "file_type": "code",
       "source_file": "src/components/accounty/dashboard/DashboardShared.tsx",
-      "source_location": "L118",
+      "source_location": "L121",
       "_origin": "ast",
       "id": "dashboard_dashboardshared_ownerdropdown",
       "community": 51,
@@ -7787,7 +7787,7 @@
       "label": "MissingItemsTooltip()",
       "file_type": "code",
       "source_file": "src/components/accounty/dashboard/DashboardShared.tsx",
-      "source_location": "L192",
+      "source_location": "L195",
       "_origin": "ast",
       "id": "dashboard_dashboardshared_missingitemstooltip",
       "community": 51,
@@ -7797,7 +7797,7 @@
       "label": "ClientCard()",
       "file_type": "code",
       "source_file": "src/components/accounty/dashboard/DashboardShared.tsx",
-      "source_location": "L238",
+      "source_location": "L241",
       "_origin": "ast",
       "id": "dashboard_dashboardshared_clientcard",
       "community": 51,
@@ -7807,7 +7807,7 @@
       "label": "WidgetWrapper()",
       "file_type": "code",
       "source_file": "src/components/accounty/dashboard/DashboardShared.tsx",
-      "source_location": "L359",
+      "source_location": "L362",
       "_origin": "ast",
       "id": "dashboard_dashboardshared_widgetwrapper",
       "community": 51,
@@ -8260,7 +8260,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "payroll_sickleaveformdialog_sickleaveformdialogprops",
-      "community": 17,
+      "community": 352,
       "norm_label": "sickleaveformdialogprops"
     },
     {
@@ -22250,7 +22250,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "accounty_useaccountyhelpers_accountyclient",
-      "community": 34,
+      "community": 652,
       "norm_label": "accountyclient"
     },
     {
@@ -24090,7 +24090,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "hooks_useevdata_evclientsettings",
-      "community": 529,
+      "community": 644,
       "norm_label": "evclientsettings"
     },
     {
@@ -25390,7 +25390,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usepayrolldata",
-      "community": 17,
+      "community": 352,
       "norm_label": "usepayrolldata.ts"
     },
     {
@@ -25430,7 +25430,7 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollitem",
-      "community": 17,
+      "community": 352,
       "norm_label": "payrollitem"
     },
     {
@@ -25470,7 +25470,7 @@
       "source_location": "L180",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrolljobcode",
-      "community": 17,
+      "community": 352,
       "norm_label": "payrolljobcode"
     },
     {
@@ -25480,7 +25480,7 @@
       "source_location": "L190",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollleave",
-      "community": 17,
+      "community": 352,
       "norm_label": "payrollleave"
     },
     {
@@ -25490,7 +25490,7 @@
       "source_location": "L204",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollcafeteriaitem",
-      "community": 17,
+      "community": 352,
       "norm_label": "payrollcafeteriaitem"
     },
     {
@@ -25500,7 +25500,7 @@
       "source_location": "L219",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollgarnishment",
-      "community": 17,
+      "community": 352,
       "norm_label": "payrollgarnishment"
     },
     {
@@ -25510,7 +25510,7 @@
       "source_location": "L240",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollquerykeys",
-      "community": 17,
+      "community": 352,
       "norm_label": "payrollquerykeys"
     },
     {
@@ -25570,7 +25570,7 @@
       "source_location": "L367",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usecreateemployment",
-      "community": 352,
+      "community": 17,
       "norm_label": "usecreateemployment()"
     },
     {
@@ -25650,7 +25650,7 @@
       "source_location": "L580",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_salaryhistoryentry",
-      "community": 17,
+      "community": 352,
       "norm_label": "salaryhistoryentry"
     },
     {
@@ -25680,7 +25680,7 @@
       "source_location": "L661",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_useadddeclaration",
-      "community": 17,
+      "community": 352,
       "norm_label": "useadddeclaration()"
     },
     {
@@ -25710,7 +25710,7 @@
       "source_location": "L759",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usepayrolldependents",
-      "community": 17,
+      "community": 352,
       "norm_label": "usepayrolldependents()"
     },
     {
@@ -25720,7 +25720,7 @@
       "source_location": "L776",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usecreatedependent",
-      "community": 352,
+      "community": 17,
       "norm_label": "usecreatedependent()"
     },
     {
@@ -25730,7 +25730,7 @@
       "source_location": "L800",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_useupdatedependent",
-      "community": 17,
+      "community": 352,
       "norm_label": "useupdatedependent()"
     },
     {
@@ -25740,7 +25740,7 @@
       "source_location": "L825",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usedeletedependent",
-      "community": 17,
+      "community": 352,
       "norm_label": "usedeletedependent()"
     },
     {
@@ -25790,7 +25790,7 @@
       "source_location": "L932",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usejobcodes",
-      "community": 352,
+      "community": 17,
       "norm_label": "usejobcodes()"
     },
     {
@@ -25810,7 +25810,7 @@
       "source_location": "L973",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usepayrollcafeteria",
-      "community": 17,
+      "community": 352,
       "norm_label": "usepayrollcafeteria()"
     },
     {
@@ -25820,7 +25820,7 @@
       "source_location": "L995",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usecreatecafeteriaitem",
-      "community": 17,
+      "community": 352,
       "norm_label": "usecreatecafeteriaitem()"
     },
     {
@@ -25830,7 +25830,7 @@
       "source_location": "L1015",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usedeletecafeteriaitem",
-      "community": 17,
+      "community": 352,
       "norm_label": "usedeletecafeteriaitem()"
     },
     {
@@ -25850,7 +25850,7 @@
       "source_location": "L1062",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_batchpayrollinput",
-      "community": 17,
+      "community": 352,
       "norm_label": "batchpayrollinput"
     },
     {
@@ -25860,7 +25860,7 @@
       "source_location": "L1069",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_batchpayrollresult",
-      "community": 17,
+      "community": 352,
       "norm_label": "batchpayrollresult"
     },
     {
@@ -27540,7 +27540,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_contrib2658xml",
-      "community": 529,
+      "community": 644,
       "norm_label": "contrib2658xml.ts"
     },
     {
@@ -27550,7 +27550,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "lib_contrib2658xml_contrib2658data",
-      "community": 529,
+      "community": 644,
       "norm_label": "contrib2658data"
     },
     {
@@ -27560,7 +27560,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "lib_contrib2658xml_escapexml",
-      "community": 529,
+      "community": 644,
       "norm_label": "escapexml()"
     },
     {
@@ -27570,7 +27570,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "lib_contrib2658xml_buildcontrib2658xml",
-      "community": 529,
+      "community": 644,
       "norm_label": "buildcontrib2658xml()"
     },
     {
@@ -27580,7 +27580,7 @@
       "source_location": "L129",
       "_origin": "ast",
       "id": "lib_contrib2658xml_generatecontrib2658xml",
-      "community": 529,
+      "community": 644,
       "norm_label": "generatecontrib2658xml()"
     },
     {
@@ -28767,7 +28767,7 @@
       "label": "reportAuthError()",
       "file_type": "code",
       "source_file": "src/lib/errorReporter.ts",
-      "source_location": "L215",
+      "source_location": "L217",
       "_origin": "ast",
       "id": "lib_errorreporter_reportautherror",
       "community": 585,
@@ -28777,7 +28777,7 @@
       "label": "reportDbError()",
       "file_type": "code",
       "source_file": "src/lib/errorReporter.ts",
-      "source_location": "L220",
+      "source_location": "L222",
       "_origin": "ast",
       "id": "lib_errorreporter_reportdberror",
       "community": 585,
@@ -28787,7 +28787,7 @@
       "label": "reportApiError()",
       "file_type": "code",
       "source_file": "src/lib/errorReporter.ts",
-      "source_location": "L225",
+      "source_location": "L227",
       "_origin": "ast",
       "id": "lib_errorreporter_reportapierror",
       "community": 585,
@@ -28797,7 +28797,7 @@
       "label": "reportUploadError()",
       "file_type": "code",
       "source_file": "src/lib/errorReporter.ts",
-      "source_location": "L230",
+      "source_location": "L232",
       "_origin": "ast",
       "id": "lib_errorreporter_reportuploaderror",
       "community": 585,
@@ -28807,7 +28807,7 @@
       "label": "reportValidationError()",
       "file_type": "code",
       "source_file": "src/lib/errorReporter.ts",
-      "source_location": "L235",
+      "source_location": "L237",
       "_origin": "ast",
       "id": "lib_errorreporter_reportvalidationerror",
       "community": 585,
@@ -30800,7 +30800,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_filinggenerator_test",
-      "community": 1,
+      "community": 529,
       "norm_label": "filinggenerator.test.ts"
     },
     {
@@ -30810,7 +30810,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "tests_filinggenerator_test_baseemployee",
-      "community": 1,
+      "community": 529,
       "norm_label": "baseemployee"
     },
     {
@@ -30820,7 +30820,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "tests_filinggenerator_test_basedata",
-      "community": 1,
+      "community": 529,
       "norm_label": "basedata"
     },
     {
@@ -30890,7 +30890,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_validators_test",
-      "community": 352,
+      "community": 17,
       "norm_label": "validators.test.ts"
     },
     {
@@ -31240,7 +31240,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "payroll_filinggenerator",
-      "community": 1,
+      "community": 529,
       "norm_label": "filinggenerator.ts"
     },
     {
@@ -31250,7 +31250,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "payroll_filinggenerator_filing08data",
-      "community": 1,
+      "community": 529,
       "norm_label": "filing08data"
     },
     {
@@ -31260,7 +31260,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "payroll_filinggenerator_filing08employeeline",
-      "community": 1,
+      "community": 529,
       "norm_label": "filing08employeeline"
     },
     {
@@ -31270,7 +31270,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "payroll_filinggenerator_generatefiling08xml",
-      "community": 1,
+      "community": 529,
       "norm_label": "generatefiling08xml()"
     },
     {
@@ -31280,7 +31280,7 @@
       "source_location": "L150",
       "_origin": "ast",
       "id": "payroll_filinggenerator_generatem30xml",
-      "community": 1,
+      "community": 529,
       "norm_label": "generatem30xml()"
     },
     {
@@ -31290,7 +31290,7 @@
       "source_location": "L196",
       "_origin": "ast",
       "id": "payroll_filinggenerator_escapexml",
-      "community": 1,
+      "community": 529,
       "norm_label": "escapexml()"
     },
     {
@@ -31300,7 +31300,7 @@
       "source_location": "L205",
       "_origin": "ast",
       "id": "payroll_filinggenerator_formattaj",
-      "community": 1,
+      "community": 529,
       "norm_label": "formattaj()"
     },
     {
@@ -31310,7 +31310,7 @@
       "source_location": "L210",
       "_origin": "ast",
       "id": "payroll_filinggenerator_parsetaxnumber",
-      "community": 1,
+      "community": 529,
       "norm_label": "parsetaxnumber()"
     },
     {
@@ -31320,7 +31320,7 @@
       "source_location": "L222",
       "_origin": "ast",
       "id": "payroll_filinggenerator_downloadxml",
-      "community": 1,
+      "community": 529,
       "norm_label": "downloadxml()"
     },
     {
@@ -31980,7 +31980,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "payroll_validators",
-      "community": 352,
+      "community": 17,
       "norm_label": "validators.ts"
     },
     {
@@ -31990,7 +31990,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "payroll_validators_validatetajnumber",
-      "community": 352,
+      "community": 17,
       "norm_label": "validatetajnumber()"
     },
     {
@@ -32000,7 +32000,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "payroll_validators_formattajnumber",
-      "community": 352,
+      "community": 17,
       "norm_label": "formattajnumber()"
     },
     {
@@ -32010,7 +32010,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "payroll_validators_formattajnumberontype",
-      "community": 352,
+      "community": 17,
       "norm_label": "formattajnumberontype()"
     },
     {
@@ -32020,7 +32020,7 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "payroll_validators_formatbankaccountontype",
-      "community": 352,
+      "community": 17,
       "norm_label": "formatbankaccountontype()"
     },
     {
@@ -32030,7 +32030,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "payroll_validators_validatetaxid",
-      "community": 352,
+      "community": 17,
       "norm_label": "validatetaxid()"
     },
     {
@@ -32040,7 +32040,7 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "payroll_validators_validatebankaccount",
-      "community": 352,
+      "community": 17,
       "norm_label": "validatebankaccount()"
     },
     {
@@ -32050,7 +32050,7 @@
       "source_location": "L181",
       "_origin": "ast",
       "id": "payroll_validators_formatbankaccount",
-      "community": 352,
+      "community": 17,
       "norm_label": "formatbankaccount()"
     },
     {
@@ -32060,7 +32060,7 @@
       "source_location": "L196",
       "_origin": "ast",
       "id": "payroll_validators_converttoiban",
-      "community": 352,
+      "community": 17,
       "norm_label": "converttoiban()"
     },
     {
@@ -32070,7 +32070,7 @@
       "source_location": "L211",
       "_origin": "ast",
       "id": "payroll_validators_bigmod97",
-      "community": 352,
+      "community": 17,
       "norm_label": "bigmod97()"
     },
     {
@@ -32080,7 +32080,7 @@
       "source_location": "L224",
       "_origin": "ast",
       "id": "payroll_validators_validatefeorcode",
-      "community": 352,
+      "community": 17,
       "norm_label": "validatefeorcode()"
     },
     {
@@ -32090,7 +32090,7 @@
       "source_location": "L249",
       "_origin": "ast",
       "id": "payroll_validators_isskilled",
-      "community": 352,
+      "community": 17,
       "norm_label": "isskilled()"
     },
     {
@@ -32100,7 +32100,7 @@
       "source_location": "L256",
       "_origin": "ast",
       "id": "payroll_validators_minwagevalidation",
-      "community": 352,
+      "community": 17,
       "norm_label": "minwagevalidation"
     },
     {
@@ -32110,7 +32110,7 @@
       "source_location": "L268",
       "_origin": "ast",
       "id": "payroll_validators_validateminimumwage",
-      "community": 352,
+      "community": 17,
       "norm_label": "validateminimumwage()"
     },
     {
@@ -32130,7 +32130,7 @@
       "source_location": "L306",
       "_origin": "ast",
       "id": "payroll_validators_validatecompanytaxnumber",
-      "community": 352,
+      "community": 17,
       "norm_label": "validatecompanytaxnumber()"
     },
     {
@@ -33970,7 +33970,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_employeewizardpage",
-      "community": 352,
+      "community": 17,
       "norm_label": "employeewizardpage.tsx"
     },
     {
@@ -33980,7 +33980,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_steps",
-      "community": 352,
+      "community": 17,
       "norm_label": "steps"
     },
     {
@@ -33990,7 +33990,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_employment_types",
-      "community": 352,
+      "community": 17,
       "norm_label": "employment_types"
     },
     {
@@ -34000,7 +34000,7 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_dependentdata",
-      "community": 352,
+      "community": 17,
       "norm_label": "dependentdata"
     },
     {
@@ -34010,7 +34010,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_formdata",
-      "community": 352,
+      "community": 17,
       "norm_label": "formdata"
     },
     {
@@ -34020,7 +34020,7 @@
       "source_location": "L133",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_initial_form",
-      "community": 352,
+      "community": 17,
       "norm_label": "initial_form"
     },
     {
@@ -34030,7 +34030,7 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_employeewizardpage",
-      "community": 352,
+      "community": 17,
       "norm_label": "employeewizardpage()"
     },
     {
@@ -34040,7 +34040,7 @@
       "source_location": "L1031",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_formfield",
-      "community": 352,
+      "community": 17,
       "norm_label": "formfield()"
     },
     {
@@ -34050,7 +34050,7 @@
       "source_location": "L1055",
       "_origin": "ast",
       "id": "accounty_employeewizardpage_reviewrow",
-      "community": 352,
+      "community": 17,
       "norm_label": "reviewrow()"
     },
     {
@@ -35620,7 +35620,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evszjareturnpage",
-      "community": 529,
+      "community": 644,
       "norm_label": "evszjareturnpage.tsx"
     },
     {
@@ -35630,7 +35630,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "ev_evszjareturnpage_status_config",
-      "community": 529,
+      "community": 644,
       "norm_label": "status_config"
     },
     {
@@ -35640,7 +35640,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_evszjareturnpage_return_type_labels",
-      "community": 529,
+      "community": 644,
       "norm_label": "return_type_labels"
     },
     {
@@ -35650,7 +35650,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ev_evszjareturnpage_generateexpectedreturns",
-      "community": 529,
+      "community": 644,
       "norm_label": "generateexpectedreturns()"
     },
     {
@@ -35660,7 +35660,7 @@
       "source_location": "L149",
       "_origin": "ast",
       "id": "ev_evszjareturnpage_generatedraftreturnxml",
-      "community": 529,
+      "community": 644,
       "norm_label": "generatedraftreturnxml()"
     },
     {
@@ -36220,7 +36220,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_filingspage",
-      "community": 1,
+      "community": 529,
       "norm_label": "filingspage.tsx"
     },
     {
@@ -36230,7 +36230,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "accounty_filingspage_filing_types",
-      "community": 1,
+      "community": 529,
       "norm_label": "filing_types"
     },
     {
@@ -36240,7 +36240,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "accounty_filingspage_status_map",
-      "community": 1,
+      "community": 529,
       "norm_label": "status_map"
     },
     {
@@ -36250,7 +36250,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "accounty_filingspage_months",
-      "community": 1,
+      "community": 529,
       "norm_label": "months"
     },
     {
@@ -37860,7 +37860,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tao_taoportfoliopage",
-      "community": 374,
+      "community": 652,
       "norm_label": "taoportfoliopage.tsx"
     },
     {
@@ -37870,7 +37870,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "tao_taoportfoliopage_taofilingstatus",
-      "community": 374,
+      "community": 652,
       "norm_label": "taofilingstatus"
     },
     {
@@ -37880,7 +37880,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "tao_taoportfoliopage_enrichedtaoclient",
-      "community": 34,
+      "community": 652,
       "norm_label": "enrichedtaoclient"
     },
     {
@@ -37890,7 +37890,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "tao_taoportfoliopage_filing_status",
-      "community": 374,
+      "community": 652,
       "norm_label": "filing_status"
     },
     {
@@ -37900,7 +37900,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "tao_taoportfoliopage_tp_status",
-      "community": 374,
+      "community": 652,
       "norm_label": "tp_status"
     },
     {
@@ -37910,7 +37910,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "tao_taoportfoliopage_enrichwithtaodata",
-      "community": 374,
+      "community": 652,
       "norm_label": "enrichwithtaodata()"
     },
     {
@@ -37920,7 +37920,7 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "tao_taoportfoliopage_filtermode",
-      "community": 374,
+      "community": 652,
       "norm_label": "filtermode"
     },
     {
@@ -37930,7 +37930,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "tao_taoportfoliopage_taoportfoliopage",
-      "community": 374,
+      "community": 652,
       "norm_label": "taoportfoliopage()"
     },
     {
@@ -38670,7 +38670,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "declarations_familydeclarationpage",
-      "community": 17,
+      "community": 352,
       "norm_label": "familydeclarationpage.tsx"
     },
     {
@@ -38680,7 +38680,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "declarations_familydeclarationpage_child",
-      "community": 17,
+      "community": 352,
       "norm_label": "child"
     },
     {
@@ -38690,7 +38690,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "declarations_familydeclarationpage_tax_params_2026",
-      "community": 17,
+      "community": 352,
       "norm_label": "tax_params_2026"
     },
     {
@@ -38700,7 +38700,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "declarations_familydeclarationpage_familydeclarationpage",
-      "community": 17,
+      "community": 352,
       "norm_label": "familydeclarationpage()"
     },
     {
@@ -38710,7 +38710,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "declarations_genericdeclarationpage",
-      "community": 17,
+      "community": 352,
       "norm_label": "genericdeclarationpage.tsx"
     },
     {
@@ -38720,7 +38720,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "declarations_genericdeclarationpage_decltype",
-      "community": 17,
+      "community": 352,
       "norm_label": "decltype"
     },
     {
@@ -38730,7 +38730,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "declarations_genericdeclarationpage_configs",
-      "community": 17,
+      "community": 352,
       "norm_label": "configs"
     },
     {
@@ -38740,7 +38740,7 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "declarations_genericdeclarationpage_genericdeclarationpage",
-      "community": 17,
+      "community": 352,
       "norm_label": "genericdeclarationpage()"
     },
     {
@@ -38990,7 +38990,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "employee_details_employeecafeteriatab",
-      "community": 17,
+      "community": 352,
       "norm_label": "employeecafeteriatab.tsx"
     },
     {
@@ -39000,7 +39000,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "employee_details_employeecafeteriatab_employeecafeteriatabprops",
-      "community": 17,
+      "community": 352,
       "norm_label": "employeecafeteriatabprops"
     },
     {
@@ -39010,7 +39010,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "employee_details_employeecafeteriatab_employeecafeteriatab",
-      "community": 17,
+      "community": 352,
       "norm_label": "employeecafeteriatab()"
     },
     {
@@ -39200,7 +39200,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "employee_details_employeetabsections_employeeoverviewtab",
-      "community": 352,
+      "community": 17,
       "norm_label": "employeeoverviewtab()"
     },
     {
@@ -39420,7 +39420,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "filings_genericfilingpage",
-      "community": 435,
+      "community": 151,
       "norm_label": "genericfilingpage.tsx"
     },
     {
@@ -39430,7 +39430,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "filings_genericfilingpage_filingtype",
-      "community": 435,
+      "community": 151,
       "norm_label": "filingtype"
     },
     {
@@ -39440,7 +39440,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "filings_genericfilingpage_filingconfig",
-      "community": 435,
+      "community": 151,
       "norm_label": "filingconfig"
     },
     {
@@ -39450,7 +39450,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "filings_genericfilingpage_configs",
-      "community": 435,
+      "community": 151,
       "norm_label": "configs"
     },
     {
@@ -39460,7 +39460,7 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "filings_genericfilingpage_genericfilingpage",
-      "community": 435,
+      "community": 151,
       "norm_label": "genericfilingpage()"
     },
     {
@@ -65967,7 +65967,7 @@
       "label": "3. Consequences",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-069-frontend-error-reporting-and-context-inspection.md",
-      "source_location": "L32",
+      "source_location": "L34",
       "_origin": "ast",
       "id": "decisions_a_069_frontend_error_reporting_and_context_inspection_3_consequences",
       "community": 621,
@@ -65977,7 +65977,7 @@
       "label": "Pozit\u00edv:",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-069-frontend-error-reporting-and-context-inspection.md",
-      "source_location": "L34",
+      "source_location": "L36",
       "_origin": "ast",
       "id": "decisions_a_069_frontend_error_reporting_and_context_inspection_pozit\u00edv",
       "community": 621,
@@ -283686,9 +283686,9 @@
       "source_file": "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping",
-      "target": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_a_079_accounty_errorboundary_route_scoped_reset_\u00e9s_client_scoped_prompt_szab\u00e1lyok",
-      "confidence_score": 1.0
+      "target": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_a_079_accounty_errorboundary_route_scoped_reset_\u00e9s_client_scoped_prompt_szab\u00e1lyok"
     },
     {
       "relation": "contains",
@@ -283696,9 +283696,9 @@
       "source_file": "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md",
       "source_location": "L38",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_a_079_accounty_errorboundary_route_scoped_reset_\u00e9s_client_scoped_prompt_szab\u00e1lyok",
-      "target": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_consequences",
-      "confidence_score": 1.0
+      "target": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_consequences"
     },
     {
       "relation": "contains",
@@ -283706,9 +283706,9 @@
       "source_file": "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_a_079_accounty_errorboundary_route_scoped_reset_\u00e9s_client_scoped_prompt_szab\u00e1lyok",
-      "target": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_context",
-      "confidence_score": 1.0
+      "target": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_context"
     },
     {
       "relation": "contains",
@@ -283716,9 +283716,9 @@
       "source_file": "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_a_079_accounty_errorboundary_route_scoped_reset_\u00e9s_client_scoped_prompt_szab\u00e1lyok",
-      "target": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_decision",
-      "confidence_score": 1.0
+      "target": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_decision"
     },
     {
       "relation": "contains",
@@ -283726,9 +283726,9 @@
       "source_file": "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md",
       "source_location": "L50",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_a_079_accounty_errorboundary_route_scoped_reset_\u00e9s_client_scoped_prompt_szab\u00e1lyok",
-      "target": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_kapcsol\u00f3d\u00f3",
-      "confidence_score": 1.0
+      "target": "decisions_a_079_accounty_errorboundary_route_reset_and_prompt_rules_scoping_kapcsol\u00f3d\u00f3"
     },
     {
       "relation": "contains",
@@ -287196,9 +287196,9 @@
       "source_file": "docs/business/decisions/047-company-prompt-rules-ai-classification.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_047_company_prompt_rules_ai_classification",
-      "target": "decisions_047_company_prompt_rules_ai_classification_decision_047_egyedi_c\u00e9ges_k\u00f6nyvel\u00e9si_szab\u00e1lyok_\u00e9s_ai_kont\u00edroz\u00e1si_h\u00e1zirend",
-      "confidence_score": 1.0
+      "target": "decisions_047_company_prompt_rules_ai_classification_decision_047_egyedi_c\u00e9ges_k\u00f6nyvel\u00e9si_szab\u00e1lyok_\u00e9s_ai_kont\u00edroz\u00e1si_h\u00e1zirend"
     },
     {
       "relation": "contains",
@@ -287206,9 +287206,9 @@
       "source_file": "docs/business/decisions/047-company-prompt-rules-ai-classification.md",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_047_company_prompt_rules_ai_classification_decision_047_egyedi_c\u00e9ges_k\u00f6nyvel\u00e9si_szab\u00e1lyok_\u00e9s_ai_kont\u00edroz\u00e1si_h\u00e1zirend",
-      "target": "decisions_047_company_prompt_rules_ai_classification_kapcsol\u00f3d\u00f3",
-      "confidence_score": 1.0
+      "target": "decisions_047_company_prompt_rules_ai_classification_kapcsol\u00f3d\u00f3"
     },
     {
       "relation": "contains",
@@ -296806,9 +296806,9 @@
       "source_file": "docs/product/decisions/P-062-company-prompt-rules-library-and-error-boundary-ux.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_p_062_company_prompt_rules_library_and_error_boundary_ux",
-      "target": "decisions_p_062_company_prompt_rules_library_and_error_boundary_ux_p_062_k\u00f6nyvel\u00e9si_szab\u00e1lyok_prompt_library_fel\u00fclet_\u00e9s_hibahat\u00e1r_ux",
-      "confidence_score": 1.0
+      "target": "decisions_p_062_company_prompt_rules_library_and_error_boundary_ux_p_062_k\u00f6nyvel\u00e9si_szab\u00e1lyok_prompt_library_fel\u00fclet_\u00e9s_hibahat\u00e1r_ux"
     },
     {
       "relation": "contains",
@@ -296816,9 +296816,9 @@
       "source_file": "docs/product/decisions/P-062-company-prompt-rules-library-and-error-boundary-ux.md",
       "source_location": "L24",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_p_062_company_prompt_rules_library_and_error_boundary_ux_p_062_k\u00f6nyvel\u00e9si_szab\u00e1lyok_prompt_library_fel\u00fclet_\u00e9s_hibahat\u00e1r_ux",
-      "target": "decisions_p_062_company_prompt_rules_library_and_error_boundary_ux_kapcsol\u00f3d\u00f3",
-      "confidence_score": 1.0
+      "target": "decisions_p_062_company_prompt_rules_library_and_error_boundary_ux_kapcsol\u00f3d\u00f3"
     },
     {
       "relation": "contains",
@@ -299362,5 +299362,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "ca52be7fac39d4438f2743112bd8bf8364059ad3"
+  "built_at_commit": "0feafdb226a6106a4ec867b108080ecafaed10c4"
 }

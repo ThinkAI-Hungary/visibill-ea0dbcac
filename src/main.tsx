@@ -5,21 +5,29 @@ import { reportError } from "./lib/errorReporter.ts";
 
 // ── Global error catchers → app_error_logs ──
 window.addEventListener('unhandledrejection', (event) => {
+  const msg = event.reason?.message || String(event.reason || '');
+  if (msg.toLowerCase().includes('reportallchanges') || (msg.toLowerCase().includes('starttime') && msg.toLowerCase().includes('undefined'))) {
+    return;
+  }
   reportError({
     type: 'unhandled',
     component: 'global',
     action: 'unhandled_rejection',
-    message: event.reason?.message || String(event.reason),
+    message: msg,
     error: event.reason,
   });
 });
 
 window.addEventListener('error', (event) => {
+  const msg = event.message || '';
+  if (msg.toLowerCase().includes('reportallchanges') || (msg.toLowerCase().includes('starttime') && msg.toLowerCase().includes('undefined'))) {
+    return;
+  }
   reportError({
     type: 'unhandled',
     component: 'global',
     action: 'uncaught_error',
-    message: event.message || 'Unknown error',
+    message: msg || 'Unknown error',
     error: event.error,
   });
 });

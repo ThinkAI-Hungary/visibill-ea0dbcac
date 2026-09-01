@@ -26,6 +26,8 @@ A frontend hibakezelési rétegében (`reportError`) és a Management Dashboard 
    - A kontextus mezők objektumait formázott, szintaxis-kiemelt, görgethető JSON blokként jeleníti meg.
    - Külön másolható `Stack Trace` kódblokkot kapott minden hiba.
    - A fejléc gyorsáttekintője (5 mezős grid) mutatja a Forrás táblát, Rekord ID-t, Felhasználót, Érintett céget és az Időpontot.
+3. **Böngésző- és bővítmény-szintű VM zajszűrés (`src/main.tsx`, `src/lib/errorReporter.ts`):**
+   - A globális eseményfigyelők (`unhandledrejection`, `error`) és az `errorReporter` automatikusan kiszűrik a dinamikus chunk betöltési hibákat és a böngésző belső VM / bővítmény eredetű (pl. Web Vitals / Soft Navigation `reportAllChanges` és `startTime`) kivételeit, megelőzve az `app_error_logs` tábla teleszemetelését.
 
 ---
 

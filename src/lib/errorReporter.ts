@@ -129,7 +129,9 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     errMsg.includes('loading chunk') ||
     errMsg.includes('nincs aktív jogviszony') ||
     errMsg.includes('nincs számfejtési ciklus') ||
-    errMsg.includes('nincsenek számfejtési adatok');
+    errMsg.includes('nincsenek számfejtési adatok') ||
+    errMsg.includes('reportallchanges') ||
+    (errMsg.includes('starttime') && errMsg.includes('undefined'));
 
   if (isExcluded) return;
 
