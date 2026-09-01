@@ -123,6 +123,8 @@ export function runXmlValidation(
   // Check 1: Structure check
   const hasNyomtatvany =
     xmlContent.includes('<nyomtatvany>') ||
+    xmlContent.includes('<nyomtatvanyok') ||
+    xmlContent.includes('<mezo') ||
     xmlContent.includes('<form>') ||
     xmlContent.includes('<declaration>');
 

@@ -1,6 +1,6 @@
 /**
- * ÁFA Bevallás (2665) — ÁNYK XML Export (Facade & Generator).
- * Uses shared DocumentEngine XML sanitizer and download helper.
+ * ÁFA Bevallás (2665 / 2565 / 2465) — ÁNYK XML Export (Facade & Generator).
+ * Generates official NAV ÁNYK-compatible XML files for VAT returns and M-sheets.
  */
 
 import { escapeXml } from './documents/encoding/xmlSanitizer';
@@ -18,9 +18,9 @@ export interface XmlExportData {
 }
 
 /**
- * Builds the full 2665 ÁNYK-compatible XML document.
+ * Builds the full NAV ÁNYK-compatible XML document for the 65 VAT return.
  */
-function buildVatReturnXml(data: XmlExportData): string {
+export function buildVatReturnXml(data: XmlExportData): string {
   const lineMap = new Map(data.lines.map(l => [l.row_number, l]));
 
   const getBase = (row: string): number => lineMap.get(row)?.base_amount_rounded ?? 0;
@@ -49,109 +49,85 @@ function buildVatReturnXml(data: XmlExportData): string {
     periodTo = `${data.periodYear}-12-31`;
   }
 
-  const mLapEntries = data.mLines.map((m, idx) => `
-      <partner sorszam="${idx + 1}">
-        <partner_adoszam>${escapeXml(m.partner_tax_number)}</partner_adoszam>
-        <partner_nev>${escapeXml(m.partner_name)}</partner_nev>
-        <szamlak_szama>${m.invoice_count}</szamlak_szama>
-        <adoalap_osszesen>${m.base_amount_rounded}</adoalap_osszesen>
-        <afa_osszesen>${m.tax_amount_rounded}</afa_osszesen>
-        <afa_5>${m.tax_5_amount}</afa_5>
-        <afa_18>${m.tax_18_amount}</afa_18>
-        <afa_27>${m.tax_27_amount}</afa_27>
-      </partner>`).join('\n');
+  const formId = `${data.periodYear % 100}65`;
+  const currentDate = new Date().toISOString().substring(0, 10);
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<nyomtatvany xmlns="http://schema.nav.gov.hu/anyk/1.0">
-  <fejlec>
-    <nyomtatvany_azonosito>2665</nyomtatvany_azonosito>
-    <verzio>1.0</verzio>
-    <program>Visibill / eaisyBooks</program>
-    <idoszak>
-      <tol>${periodFrom}</tol>
-      <ig>${periodTo}</ig>
-      <gyakorisag>${data.frequency}</gyakorisag>
-    </idoszak>
-    <adozo>
-      <adoszam>${escapeXml(taxNum8)}</adoszam>
-      <afa_kod>${escapeXml(taxNumVat)}</afa_kod>
-      <megye_kod>${escapeXml(taxNumCounty)}</megye_kod>
-      <nev>${escapeXml(data.companyName)}</nev>
-      <cim>${escapeXml(data.companyAddress)}</cim>
-    </adozo>
-  </fejlec>
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<!-- Nemzeti Adó- és Vámhivatal ÁNYK XML Export -->\n`;
+  xml += `<nyomtatvanyok xmlns="http://www.nav.gov.hu/nyomtatvanyok" verzio="1.0">\n`;
+  xml += `  <nyomtatvany>\n`;
+  xml += `    <nyomtatvanyinformacio>\n`;
+  xml += `      <nyomtatvanyazonosito>${formId}</nyomtatvanyazonosito>\n`;
+  xml += `      <verzio>1.0</verzio>\n`;
+  xml += `      <programnev>Visibill / eaisyBooks</programnev>\n`;
+  xml += `    </nyomtatvanyinformacio>\n`;
+  xml += `    <mezok>\n`;
 
-  <fobevallas>
-    <fizetendo_ado>
-      <sor_01_alap>${getBase('01')}</sor_01_alap>
-      <sor_01_ado>${getTax('01')}</sor_01_ado>
-      <sor_02_alap>${getBase('02')}</sor_02_alap>
-      <sor_02_ado>${getTax('02')}</sor_02_ado>
-      <sor_03_alap>${getBase('03')}</sor_03_alap>
-      <sor_03_ado>${getTax('03')}</sor_03_ado>
-      <sor_04_alap>${getBase('04')}</sor_04_alap>
-      <sor_04_ado>${getTax('04')}</sor_04_ado>
-      <sor_05_alap>${getBase('05')}</sor_05_alap>
-      <sor_05_ado>${getTax('05')}</sor_05_ado>
-      <sor_06_alap>${getBase('06')}</sor_06_alap>
-      <sor_06_ado>${getTax('06')}</sor_06_ado>
-      <sor_07_alap>${getBase('07')}</sor_07_alap>
-      <sor_07_ado>${getTax('07')}</sor_07_ado>
-      <sor_08_alap>${getBase('08')}</sor_08_alap>
-      <sor_08_ado>${getTax('08')}</sor_08_ado>
-      <sor_09_alap>${getBase('09')}</sor_09_alap>
-      <sor_09_ado>${getTax('09')}</sor_09_ado>
-      <sor_10_alap>${getBase('10')}</sor_10_alap>
-      <sor_10_ado>${getTax('10')}</sor_10_ado>
-      <sor_20_ado>${getTax('20')}</sor_20_ado>
-    </fizetendo_ado>
+  xml += `      <!-- ========================================== -->\n`;
+  xml += `      <!-- A) FŐLAP - ADÓZÓ ÉS IDŐSZAK ADATOK -->\n`;
+  xml += `      <!-- ========================================== -->\n`;
+  xml += `      <mezo eazon="01_0001_adoszam_torzs">${taxNum8}</mezo>\n`;
+  xml += `      <mezo eazon="01_0002_adoszam_afa">${taxNumVat}</mezo>\n`;
+  xml += `      <mezo eazon="01_0003_adoszam_megye">${taxNumCounty}</mezo>\n`;
+  xml += `      <mezo eazon="01_0004_adoszam_teljes">${escapeXml(data.companyTaxNumber)}</mezo>\n`;
+  xml += `      <mezo eazon="01_0006_adozo_nev">${escapeXml(data.companyName)}</mezo>\n`;
+  xml += `      <mezo eazon="01_0007_szekhely_cim">${escapeXml(data.companyAddress)}</mezo>\n`;
+  xml += `      <mezo eazon="01_0010_adoev">${data.periodYear}</mezo>\n`;
+  xml += `      <mezo eazon="01_0011_idoszak_tol">${periodFrom}</mezo>\n`;
+  xml += `      <mezo eazon="01_0012_idoszak_ig">${periodTo}</mezo>\n`;
+  xml += `      <mezo eazon="01_0013_gyakorisag">${escapeXml(data.frequency)}</mezo>\n`;
 
-    <levonhato_ado>
-      <sor_64_alap>${getBase('64')}</sor_64_alap>
-      <sor_64_ado>${getTax('64')}</sor_64_ado>
-      <sor_65_alap>${getBase('65')}</sor_65_alap>
-      <sor_65_ado>${getTax('65')}</sor_65_ado>
-      <sor_66_alap>${getBase('66')}</sor_66_alap>
-      <sor_66_ado>${getTax('66')}</sor_66_ado>
-      <sor_67_alap>${getBase('67')}</sor_67_alap>
-      <sor_67_ado>${getTax('67')}</sor_67_ado>
-      <sor_68_alap>${getBase('68')}</sor_68_alap>
-      <sor_68_ado>${getTax('68')}</sor_68_ado>
-      <sor_69_alap>${getBase('69')}</sor_69_alap>
-      <sor_69_ado>${getTax('69')}</sor_69_ado>
-      <sor_70_alap>${getBase('70')}</sor_70_alap>
-      <sor_70_ado>${getTax('70')}</sor_70_ado>
-      <sor_71_alap>${getBase('71')}</sor_71_alap>
-      <sor_71_ado>${getTax('71')}</sor_71_ado>
-      <sor_72_alap>${getBase('72')}</sor_72_alap>
-      <sor_72_ado>${getTax('72')}</sor_72_ado>
-      <sor_73_alap>${getBase('73')}</sor_73_alap>
-      <sor_73_ado>${getTax('73')}</sor_73_ado>
-      <sor_80_ado>${getTax('80')}</sor_80_ado>
-    </levonhato_ado>
+  xml += `\n      <!-- ========================================== -->\n`;
+  xml += `      <!-- B) FIZETENDŐ ÉS LEVONHATÓ ÁFA SOROK (E FT) -->\n`;
+  xml += `      <!-- ========================================== -->\n`;
 
-    <elszamolas>
-      <sor_85_ado>${getTax('85')}</sor_85_ado>
-    </elszamolas>
-  </fobevallas>
+  // Standard Rows 01..85
+  data.lines.forEach(line => {
+    if (line.base_amount_rounded != null) {
+      xml += `      <mezo eazon="sor_${line.row_number}_alap">${line.base_amount_rounded}</mezo>\n`;
+    }
+    if (line.tax_amount_rounded != null) {
+      xml += `      <mezo eazon="sor_${line.row_number}_ado">${line.tax_amount_rounded}</mezo>\n`;
+    }
+  });
 
-  <m_lap>
-    <partner_szam>${data.mLines.length}</partner_szam>
-    <reszletezo>
-${mLapEntries}
-    </reszletezo>
-  </m_lap>
+  if (data.mLines && data.mLines.length > 0) {
+    xml += `\n      <!-- ========================================== -->\n`;
+    xml += `      <!-- C) M-LAPOK (BELFÖLDI ÖSSZESÍTŐ JELENTÉS) -->\n`;
+    xml += `      <!-- ========================================== -->\n`;
+    xml += `      <mezo eazon="M_partner_osszesen">${data.mLines.length}</mezo>\n`;
+    data.mLines.forEach((m, idx) => {
+      const pIdx = idx + 1;
+      xml += `      <mezo eazon="M_${pIdx}_0001_adoszam">${escapeXml(m.partner_tax_number)}</mezo>\n`;
+      xml += `      <mezo eazon="M_${pIdx}_0002_nev">${escapeXml(m.partner_name)}</mezo>\n`;
+      xml += `      <mezo eazon="M_${pIdx}_0003_szamlak_szama">${m.invoice_count}</mezo>\n`;
+      xml += `      <mezo eazon="M_${pIdx}_0004_alap">${m.base_amount_rounded}</mezo>\n`;
+      xml += `      <mezo eazon="M_${pIdx}_0005_afa">${m.tax_amount_rounded}</mezo>\n`;
+      xml += `      <mezo eazon="M_${pIdx}_0006_afa_5">${m.tax_5_amount || 0}</mezo>\n`;
+      xml += `      <mezo eazon="M_${pIdx}_0007_afa_18">${m.tax_18_amount || 0}</mezo>\n`;
+      xml += `      <mezo eazon="M_${pIdx}_0008_afa_27">${m.tax_27_amount || 0}</mezo>\n`;
+    });
+  }
 
-  <nyilatkozat>
-    <kelt>${new Date().toISOString().substring(0, 10)}</kelt>
-    <adat_igaz>true</adat_igaz>
-  </nyilatkozat>
-</nyomtatvany>`;
+  xml += `\n      <!-- ========================================== -->\n`;
+  xml += `      <!-- D) NYILATKOZAT ÉS KELTEZÉS -->\n`;
+  xml += `      <!-- ========================================== -->\n`;
+  xml += `      <mezo eazon="03_0001_nyilatkozat_adat_valos">1</mezo>\n`;
+  xml += `      <mezo eazon="03_0002_kelt_hely">Budapest</mezo>\n`;
+  xml += `      <mezo eazon="03_0003_kelt_datum">${currentDate}</mezo>\n`;
+  xml += `    </mezok>\n`;
+  xml += `  </nyomtatvany>\n`;
+  xml += `</nyomtatvanyok>`;
+
+  return xml;
 }
 
 export const generateVatReturnXml = (data: XmlExportData) => {
   const xml = buildVatReturnXml(data);
-  const filename = `AFA_2665_${data.periodYear}_${String(data.periodMonth).padStart(2, '0')}.xml`;
+  const formId = `${data.periodYear % 100}65`;
+  const monthStr = String(data.periodMonth).padStart(2, '0');
+  const safeName = (data.companyName || 'Ceg').replace(/\s+/g, '_');
+  const filename = `NAV_${formId}_${data.periodYear}_${monthStr}_${safeName}.xml`;
   downloadString(xml, filename, 'application/xml;charset=utf-8');
 };
 
