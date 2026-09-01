@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1788010558.6234446,
-    "ast_hash": "1a10c49cbf7883ad6fe06dbfaf5a236e",
+    "mtime": 1788269432.147341,
+    "ast_hash": "bc4196c3099b18953ac0f3b55ce5551e",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -1490,8 +1490,8 @@
     "semantic_hash": ""
   },
   "src/pages/Integrations.tsx": {
-    "mtime": 1788010558.4234123,
-    "ast_hash": "c4577332380ce70415cd10b62e258a4e",
+    "mtime": 1788269432.1483397,
+    "ast_hash": "8489ee0eac0df47cec0dc22233dd9ee2",
     "semantic_hash": ""
   },
   "src/pages/InvoicesPage.tsx": {
@@ -1745,8 +1745,8 @@
     "semantic_hash": "2ed9bed8400139c714d50da0c2ae1269"
   },
   "supabase/functions/process-mailgun-webhook/index.ts": {
-    "mtime": 1787753315.8465507,
-    "ast_hash": "d0218710f3db29c19ba25ab3c59c498b",
+    "mtime": 1788269432.149341,
+    "ast_hash": "a890431dcd3370dfadc9b92265b0e05a",
     "semantic_hash": ""
   },
   "supabase/functions/query-nav-invoices/index.ts": {
@@ -3705,8 +3705,8 @@
     "semantic_hash": ""
   },
   "src/components/UploadedFilesModal.tsx": {
-    "mtime": 1788176764.6472223,
-    "ast_hash": "8c19e8ee799d91a38ee9ce4f04ea2af9",
+    "mtime": 1788269458.634766,
+    "ast_hash": "56fe99fd7c6e9379766ed54701aa4257",
     "semantic_hash": ""
   },
   "src/components/accounty/AccountyWelcomeWizard.tsx": {
@@ -6974,11 +6974,6 @@
     "ast_hash": "6d7bce26b29aa962160c58e610219b34",
     "semantic_hash": ""
   },
-  "supabase/migrations/20260827150000_create_company_email_accounts.sql": {
-    "mtime": 1787837154.1528177,
-    "ast_hash": "ffcf04d3d855dad4c2d9e52311f92be6",
-    "semantic_hash": ""
-  },
   "docs/architecture/decisions/A-050-server-side-aggregation-and-n-plus-1-optimization.md": {
     "mtime": 1787570381.6568496,
     "ast_hash": "3a50f92478277334c7651cfa7e782b9b",
@@ -7940,8 +7935,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-064-multi-channel-upload-engine-modularization.md": {
-    "mtime": 1788140794.0998209,
-    "ast_hash": "4a3b4f878b45568ded7c699166e25439",
+    "mtime": 1788263696.418037,
+    "ast_hash": "3a2b62bbc371514126f3fa395aa9a6ae",
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/expandedRowSections.test.tsx": {
@@ -8170,8 +8165,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PromptsPage.tsx": {
-    "mtime": 1788212014.2261126,
-    "ast_hash": "f2e048a541d6c288bbb18b7500ba0975",
+    "mtime": 1788269432.1483397,
+    "ast_hash": "695af95c2fe1dd0608d8bd88e7a1d417",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/crypto.ts": {
@@ -8215,8 +8210,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260831000000_eaisybill_modulator.sql": {
-    "mtime": 1788212014.2291157,
-    "ast_hash": "5f53acdd5a9852095e2eb634f5bf2eef",
+    "mtime": 1788269432.15034,
+    "ast_hash": "345fe87c17925562e0ee956bf488a373",
     "semantic_hash": ""
   },
   "supabase/migrations/20260901000000_opening_entries_module.sql": {
@@ -8390,8 +8385,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/errorsHandler.ts": {
-    "mtime": 1788222171.8510327,
-    "ast_hash": "02822d210e911743a7836334bfa82f01",
+    "mtime": 1788269432.1483397,
+    "ast_hash": "47fa69b0b52d9e802215015292c74fa9",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/filesHandler.ts": {
@@ -8452,6 +8447,146 @@
   "docs/product/decisions/P-061-management-worker-telemetry-and-monthly-llm-ux.md": {
     "mtime": 1788223428.4888303,
     "ast_hash": "16c934685de24649169e5edf4b1d496f",
+    "semantic_hash": ""
+  },
+  "scratch/check_1429_error.py": {
+    "mtime": 1788269432.1413364,
+    "ast_hash": "0c8ec0eaa741644855cabd905feb150e",
+    "semantic_hash": ""
+  },
+  "scratch/check_1456_mailgun_details.py": {
+    "mtime": 1788269432.1413364,
+    "ast_hash": "790729c0f778d93985a211dcaab96082",
+    "semantic_hash": ""
+  },
+  "scratch/check_all_recent_uploads_and_errors.py": {
+    "mtime": 1788269432.1423361,
+    "ast_hash": "c9265cdfc47bd0c1535211b0e71d7752",
+    "semantic_hash": ""
+  },
+  "scratch/check_billingo_email_status.py": {
+    "mtime": 1788269432.1423361,
+    "ast_hash": "49a66d5377472086215e031e3c225b9e",
+    "semantic_hash": ""
+  },
+  "scratch/check_final_invoice.py": {
+    "mtime": 1788269432.1423361,
+    "ast_hash": "cad4f26cc8d2d072673a797357e44983",
+    "semantic_hash": ""
+  },
+  "scratch/check_ignored_details.py": {
+    "mtime": 1788269432.1423361,
+    "ast_hash": "0cae052b5e220adb1ed8dc2164093e3f",
+    "semantic_hash": ""
+  },
+  "scratch/check_mailgun_status_detailed.py": {
+    "mtime": 1788269432.1423361,
+    "ast_hash": "6f07189c081e11110a12baae0eb4246e",
+    "semantic_hash": ""
+  },
+  "scratch/check_recent_mailgun_logs.py": {
+    "mtime": 1788269432.143339,
+    "ast_hash": "e5b8cab934ebfbc0f8936394411c052a",
+    "semantic_hash": ""
+  },
+  "scratch/check_taxology_invoice.py": {
+    "mtime": 1788269432.143339,
+    "ast_hash": "a9724dee906625597305df0cf7d7f091",
+    "semantic_hash": ""
+  },
+  "scratch/check_thinkai_alias.py": {
+    "mtime": 1788269432.143339,
+    "ast_hash": "243eda49c075f42a7db528158facd488",
+    "semantic_hash": ""
+  },
+  "scratch/check_trendart_email_processing.py": {
+    "mtime": 1788269432.143339,
+    "ast_hash": "c6e9f1383fb570ffab5c26c16cf8fa1c",
+    "semantic_hash": ""
+  },
+  "scratch/check_uploads_after_1500.py": {
+    "mtime": 1788269432.1443398,
+    "ast_hash": "582b93637bd4521f3d1b3644391e3f76",
+    "semantic_hash": ""
+  },
+  "scratch/inspect_1456_email_body.py": {
+    "mtime": 1788269432.1443398,
+    "ast_hash": "6a8c65b6642c6545596d91a60621505a",
+    "semantic_hash": ""
+  },
+  "scratch/inspect_billingo_email_html.py": {
+    "mtime": 1788269432.1443398,
+    "ast_hash": "83f265c8bdab1e52bc561052fc0007da",
+    "semantic_hash": ""
+  },
+  "scratch/poll_recent_activity.py": {
+    "mtime": 1788269432.1443398,
+    "ast_hash": "de30b68c8ebb4ac5481e1af8c05fe327",
+    "semantic_hash": ""
+  },
+  "scratch/test_billingo_download_link.py": {
+    "mtime": 1788269432.1443398,
+    "ast_hash": "1d0a9b4b2e7c82841ee182b96d3e00a8",
+    "semantic_hash": ""
+  },
+  "scratch/test_exact_trendart_forward.py": {
+    "mtime": 1788269432.1453397,
+    "ast_hash": "0d697b3e99f041e30e7b0a86d8f0217d",
+    "semantic_hash": ""
+  },
+  "scratch/test_management_stats_errors.py": {
+    "mtime": 1788269432.1453397,
+    "ast_hash": "416b4185df56835c13dfe0a7d8c2b98e",
+    "semantic_hash": ""
+  },
+  "scratch/test_refresh_alias.py": {
+    "mtime": 1788269432.1453397,
+    "ast_hash": "de7ee2162e4612602cb7343c913cd1ef",
+    "semantic_hash": ""
+  },
+  "scratch/test_szamlazz_agent_api.py": {
+    "mtime": 1788269432.1453397,
+    "ast_hash": "c7a5eb51cfcde118b3173f122ec42913",
+    "semantic_hash": ""
+  },
+  "scratch/test_trendart_email.py": {
+    "mtime": 1788269432.1453397,
+    "ast_hash": "8e725f46ae125d348eb5a6d44f155c21",
+    "semantic_hash": ""
+  },
+  "scratch/test_trigger_webhook_szamlazz.py": {
+    "mtime": 1788269432.1463394,
+    "ast_hash": "6a9cba98d467e1852943767751ad9374",
+    "semantic_hash": ""
+  },
+  "scratch/test_user_alias_recreate.py": {
+    "mtime": 1788269432.1463394,
+    "ast_hash": "d7e1cf9705af28a239aa87599201efe9",
+    "semantic_hash": ""
+  },
+  "scratch/trigger_recreate_alias.py": {
+    "mtime": 1788269432.1463394,
+    "ast_hash": "59f6211d59f7b44bb228e22e827e7018",
+    "semantic_hash": ""
+  },
+  "src/components/integrations/BillingoIntegrationCard.tsx": {
+    "mtime": 1788269432.147341,
+    "ast_hash": "edcdb6aff0efd259400eeedf5281547f",
+    "semantic_hash": ""
+  },
+  "src/components/integrations/SzamlazzAgentForm.tsx": {
+    "mtime": 1788269432.147341,
+    "ast_hash": "b2d82eb803f36b43a27c77fcd15f8d92",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260827150001_create_company_email_accounts.sql": {
+    "mtime": 1788269432.15034,
+    "ast_hash": "09bb19ab7f6f2c1ff8c991070e85fccd",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260901140000_add_szamlazz_agent_key_migration.sql": {
+    "mtime": 1788269432.15034,
+    "ast_hash": "5b3b17f48800ac936156b2029565db6e",
     "semantic_hash": ""
   }
 }

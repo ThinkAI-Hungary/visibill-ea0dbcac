@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-08-31  
-**Utoljára frissítve:** 2026-08-31  
+**Utoljára frissítve:** 2026-09-01  
 
 ## Context
 A korábbi `src/pages/ManualUpload.tsx` fájl 2155 soros monolitikummá nőtt. 6 független fájlfeltöltési csatorna (számlák, pénztárbizonylatok, bankkivonatok, béradatok, tranzakciók, futár riportok) másolta le szinte 100%-ban ugyanazt a fájlvalidációs, drag-and-drop, duplikátum-keresési, multi-click mutex szinkronizációs, Supabase Storage feltöltési, PGMQ sorbaállítási és React Query cache frissítési logikát.
@@ -30,6 +30,9 @@ A kódduplikáció miatt az [A-023](./A-023-upload-dedup-protection.md) és [A-0
    - **P0 Szinkron Mutex (`uploadMutexRef = useRef(false)`):** A `useDocumentUpload` hookban azonnal és szinkron blokkolja a rapid multi-click eseményeket.
    - **P1 DB Duplikátum Lekérdezés:** Minden releváns státusz (`processed`, `pending`, `processing`, `ignored`, `completed`, `webhook_sent`) ellenőrzése fut le indítás előtt.
    - **P2 Trigger Bypass:** Duplikáció megerősítésekor `metadata: { source: 'manual_reupload' }` kerül beírásra, így a DB trigger dedup guard szándékos újrafeltöltésként kezeli.
+
+4. **Többtáblás Fájlkezelő Modal Sémailleszkedés (`src/components/UploadedFilesModal.tsx`):**
+   - Az `UploadedFilesModal` komponens dinamikus mezőkiválasztással (`selectFields`) alkalmazkodik a lekérdezett táblához: a `document_category` oszlopot kizárólag az `invoice_uploads` tábla lekérdezésekor kéri le, míg a dedikált táblák (`transaction_uploads`, `bank_statement_uploads`, `report_uploads`) esetén nem hivatkozik nem létező oszlopra, megelőzve a Postgres `42703` hibákat.
 
 ## Consequences
 **Pozitív:**

@@ -2,18 +2,19 @@
 
 **Status:** Decided  
 **Category:** Számla Kezelés  
-**Utoljára frissítve:** 2026-07-04
+**Utoljára frissítve:** 2026-09-01
 
 **Question:** Hogyan működik a dokumentum feltöltés és az utólagos fájlkezelés?
 
 **Decision:** Multi-file batch upload drag & drop-pal; feltöltés utáni fájlkezelés dedikált modalban, kétlépéses törlési workflow-val (A/B). Értesítések 3 rétegű, skálázható architektúrával globálisan, bármely oldalon.
 
 **Current Implementation:**
-- `ManualUpload.tsx` — drag & drop + fájlválasztó, 4 tab: Számlák / Tranzakciók / Bérek / Riportok
-- `document_category` választás: invoice / payroll (invoice_uploads táblában)
-- Támogatott formátumok: PDF, JPG, PNG, WebP (számlák); PDF, CSV, XLS/XLSX (tranzakciók, riportok)
-- `UploadHistory` komponens: korábbi feltöltések státusza; **3 másodperces polling** (aktív amíg van folyamatban lévő feltöltés, vagy az utolsó feltöltés 90 másodpercnél frissebb)
-- `UploadedFilesModal` — feltöltött fájlok kezelése a tab-ra szűrve
+- `src/features/upload` (ManualUploadFeature) — drag & drop + fájlválasztó, 5 tab: Számlák (`invoices`), Pénztárbizonylat (`vouchers`), Tranzakciók (`transactions`), Bérek & Járulékok (`salaries`), Riportok (`reports`)
+- `document_category` perzisztencia az `invoice_uploads` táblában: `'invoice'` (számlák), `'penztarbizonylat'` (pénztárbizonylatok), `'payroll'` (bérek és járulékok)
+- Specifikus szelektorok: `bank_hint` (11 banki formátum a tranzakciókhoz) és `courier` (GLS, MPL, Mixpack a riportokhoz)
+- Támogatott formátumok: PDF, JPG, PNG, WebP (számlák, pénztárbizonylatok); PDF, CSV, XLS/XLSX (tranzakciók, bérek); XLS, XLSX, CSV, PDF, DOC, DOCX (riportok)
+- `UploadHistory` komponens: korábbi feltöltések státusza, dátumszűrés, előnézet és újrafuttatás
+- `UploadedFilesModal` — feltöltött fájlok kezelése a tab-ra szűrve, dinamikus tábla-illeszkedéssel (`selectFields`) és batch törléssel (A/B)
 
 **Fájl előnézet (File Preview) — 2026-07-11:**
 - Az előzmények táblázatban az előnézet ikonra kattintva megnyitható a fájl részletes előnézete egy felugró modalban.

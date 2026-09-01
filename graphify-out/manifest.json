@@ -910,9 +910,9 @@
     "semantic_hash": ""
   },
   "src/hooks/useCompanyLocations.ts": {
-    "mtime": 1780305936.3062148,
-    "ast_hash": "1d396004eb31b88642a397da362e08b4",
-    "semantic_hash": "1d396004eb31b88642a397da362e08b4"
+    "mtime": 1788269684.5823317,
+    "ast_hash": "1237152efc13137a5a7048e90ca71719",
+    "semantic_hash": ""
   },
   "src/hooks/useCompanySettings.ts": {
     "mtime": 1775702953.509588,
@@ -1005,8 +1005,8 @@
     "semantic_hash": "ec57152c309e9d33b65709bb6ed22a2a"
   },
   "src/hooks/usePayrollData.ts": {
-    "mtime": 1788212014.2235997,
-    "ast_hash": "a7db29d3a68ed58785622f069c27a09b",
+    "mtime": 1788269684.583331,
+    "ast_hash": "ad86544b1ec6a2bdaca2d952927fb07f",
     "semantic_hash": ""
   },
   "src/hooks/useProjectLaborCosts.ts": {
@@ -3450,8 +3450,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-013-upload-ux.md": {
-    "mtime": 1784159397.9184182,
-    "ast_hash": "16a4915764afb4e4fb94c1ecf939eb13",
+    "mtime": 1788270503.254594,
+    "ast_hash": "07bac6acf5ebe6729457471b96f6af15",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-015-bulk-actions.md": {
@@ -3705,7 +3705,7 @@
     "semantic_hash": ""
   },
   "src/components/UploadedFilesModal.tsx": {
-    "mtime": 1788269458.634766,
+    "mtime": 1788269690.939043,
     "ast_hash": "56fe99fd7c6e9379766ed54701aa4257",
     "semantic_hash": ""
   },
@@ -4640,8 +4640,8 @@
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyAdmin.ts": {
-    "mtime": 1782462027.9968362,
-    "ast_hash": "74995ea73ffab8994a6ec87df585c315",
+    "mtime": 1788269684.5823317,
+    "ast_hash": "efc4f202b37ba963d186cfe4fa272770",
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyCRUD.ts": {
@@ -7935,8 +7935,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-064-multi-channel-upload-engine-modularization.md": {
-    "mtime": 1788263696.418037,
-    "ast_hash": "3a2b62bbc371514126f3fa395aa9a6ae",
+    "mtime": 1788270493.551354,
+    "ast_hash": "7cb4326f9f83332eb9b86f32d1e0dfda",
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/expandedRowSections.test.tsx": {
@@ -8520,8 +8520,8 @@
     "semantic_hash": ""
   },
   "scratch/poll_recent_activity.py": {
-    "mtime": 1788269432.1443398,
-    "ast_hash": "de30b68c8ebb4ac5481e1af8c05fe327",
+    "mtime": 1788269684.581332,
+    "ast_hash": "1b977571b7d42b963922129c429856cb",
     "semantic_hash": ""
   },
   "scratch/test_billingo_download_link.py": {
@@ -8587,6 +8587,11 @@
   "supabase/migrations/20260901140000_add_szamlazz_agent_key_migration.sql": {
     "mtime": 1788269432.15034,
     "ast_hash": "5b3b17f48800ac936156b2029565db6e",
+    "semantic_hash": ""
+  },
+  "scratch/simulate_both_emails.py": {
+    "mtime": 1788269684.581332,
+    "ast_hash": "f2deec681d2d4977bd9466de6a852f81",
     "semantic_hash": ""
   }
 }
