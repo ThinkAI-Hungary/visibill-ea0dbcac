@@ -116,6 +116,7 @@ export interface PayrollCalculationInput {
   otherCompanyName?: string;
   otherCompanyTaxNumber?: string;
   eurRate?: number;
+  isKiva?: boolean;
 }
 
 export interface TaxCreditDetail {
@@ -458,36 +459,41 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
     const tbGross = Math.round(tbBase * params.tb_rate);
     tbAmount = Math.max(0, tbGross - totalTbSaving);
 
-    // SZOCHO (13%)
-    let szochoDiscount = 0;
-    if (input.isSzochoDiscount && input.szochoDiscountType) {
-      const discountBase = Math.min(grossSalary, params.minimum_wage);
-      if (input.szochoDiscountType === 'agriculture') {
-        // Mezőgazdasági munkakör (FEOR 9): 50% kedvezmény
-        szochoDiscount = Math.round(discountBase * 0.5 * params.szocho_rate);
-      } else if (input.szochoDiscountType === 'market_entry') {
-        // Munkaerő-piacra lépő: Y1-Y2: 100%, Y3: 50%
-        const elapsed = input.szochoDiscountMonthsElapsed || 0;
-        if (elapsed <= 24) {
-          szochoDiscount = Math.round(discountBase * params.szocho_rate);
-        } else if (elapsed <= 36) {
+    // SZOCHO (13%) — KIVA adózó esetén a munkáltatói SZOCHO 0 Ft (a KIVA kiváltja)
+    if (input.isKiva) {
+      szochoAmount = 0;
+      szochoBase = 0;
+    } else {
+      let szochoDiscount = 0;
+      if (input.isSzochoDiscount && input.szochoDiscountType) {
+        const discountBase = Math.min(grossSalary, params.minimum_wage);
+        if (input.szochoDiscountType === 'agriculture') {
+          // Mezőgazdasági munkakör (FEOR 9): 50% kedvezmény
+          szochoDiscount = Math.round(discountBase * 0.5 * params.szocho_rate);
+        } else if (input.szochoDiscountType === 'market_entry') {
+          // Munkaerő-piacra lépő: Y1-Y2: 100%, Y3: 50%
+          const elapsed = input.szochoDiscountMonthsElapsed || 0;
+          if (elapsed <= 24) {
+            szochoDiscount = Math.round(discountBase * params.szocho_rate);
+          } else if (elapsed <= 36) {
+            szochoDiscount = Math.round(discountBase * 0.5 * params.szocho_rate);
+          }
+        } else if (input.szochoDiscountType === 'mother_market_entry') {
+          // 3+ gyermekes anya piacra lépő: Y1-Y3: 100%, Y4-Y5: 50%
+          const elapsed = input.szochoDiscountMonthsElapsed || 0;
+          if (elapsed <= 36) {
+            szochoDiscount = Math.round(discountBase * params.szocho_rate);
+          } else if (elapsed <= 60) {
+            szochoDiscount = Math.round(discountBase * 0.5 * params.szocho_rate);
+          }
+        } else if (input.szochoDiscountType === 'phd_researcher') {
+          // PhD kutató: 50% kedvezmény
           szochoDiscount = Math.round(discountBase * 0.5 * params.szocho_rate);
         }
-      } else if (input.szochoDiscountType === 'mother_market_entry') {
-        // 3+ gyermekes anya piacra lépő: Y1-Y3: 100%, Y4-Y5: 50%
-        const elapsed = input.szochoDiscountMonthsElapsed || 0;
-        if (elapsed <= 36) {
-          szochoDiscount = Math.round(discountBase * params.szocho_rate);
-        } else if (elapsed <= 60) {
-          szochoDiscount = Math.round(discountBase * 0.5 * params.szocho_rate);
-        }
-      } else if (input.szochoDiscountType === 'phd_researcher') {
-        // PhD kutató: 50% kedvezmény
-        szochoDiscount = Math.round(discountBase * 0.5 * params.szocho_rate);
       }
+      const szochoGross = Math.round(szochoBase * params.szocho_rate);
+      szochoAmount = Math.max(0, szochoGross - szochoDiscount);
     }
-    const szochoGross = Math.round(szochoBase * params.szocho_rate);
-    szochoAmount = Math.max(0, szochoGross - szochoDiscount);
   }
 
   // 3. Cafeteria munkáltatói adók számítása (brief limit szabályok)

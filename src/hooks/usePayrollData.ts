@@ -1093,6 +1093,15 @@ export function useRunBatchPayroll() {
         throw new Error('Nincs aktív jogviszony ehhez a céghez.');
       }
 
+      // Fetch company tax profile to check if company is KIVA taxpayer
+      const { data: taxProfileData } = await supabase
+        .from('accounty_tax_profiles')
+        .select('is_kiva')
+        .eq('company_id', input.companyId)
+        .maybeSingle();
+
+      const isKivaCompany = !!taxProfileData?.is_kiva;
+
       // 2. Fetch tax parameters
       const { data: paramRows, error: paramErr } = await supabase
         .from('accounty_tax_parameters')
@@ -1295,6 +1304,7 @@ export function useRunBatchPayroll() {
           isMinBasePaidElsewhere: !!employment.is_min_base_paid_elsewhere,
           otherCompanyName: employment.other_company_name || undefined,
           otherCompanyTaxNumber: employment.other_company_tax_number || undefined,
+          isKiva: isKivaCompany,
         };
 
         const result = calculatePayroll(calcInput);

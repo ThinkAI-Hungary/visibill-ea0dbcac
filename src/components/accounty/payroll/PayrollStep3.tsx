@@ -6,6 +6,7 @@ interface PayrollStep3Props {
   activeEmployees: any[];
   attendanceData: Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number }>;
   getAttendance: (empId: string) => { workDays: number; overtime: number; sickDays: number; leaveDays: number };
+  onAttendanceChange?: (empId: string, field: 'workDays' | 'overtime' | 'sickDays' | 'leaveDays', value: number) => void;
   handleCsvUpload: (file: File) => void;
   csvValidation: any;
   setCsvValidation: (val: any) => void;
@@ -15,6 +16,7 @@ export default function PayrollStep3({
   activeEmployees,
   attendanceData,
   getAttendance,
+  onAttendanceChange,
   handleCsvUpload,
   csvValidation,
   setCsvValidation,
@@ -131,10 +133,46 @@ export default function PayrollStep3({
                     {emp.last_name} {emp.first_name}
                     {fromCsv && <CheckCircle2 className="w-3 h-3 inline ml-1.5 text-green-500" />}
                   </td>
-                  <td className="px-4 py-2.5 text-center text-sm font-mono text-slate-700 dark:text-slate-300">{att.workDays}</td>
-                  <td className="px-4 py-2.5 text-center text-sm font-mono text-slate-700 dark:text-slate-300">{att.overtime}</td>
-                  <td className="px-4 py-2.5 text-center text-sm font-mono text-slate-700 dark:text-slate-300">{att.sickDays}</td>
-                  <td className="px-4 py-2.5 text-center text-sm font-mono text-slate-700 dark:text-slate-300">{att.leaveDays}</td>
+                  <td className="px-4 py-2 text-center">
+                    <input
+                      type="number"
+                      min={0}
+                      max={31}
+                      value={att.workDays}
+                      onChange={(e) => onAttendanceChange?.(emp.id, 'workDays', parseInt(e.target.value) || 0)}
+                      className="w-16 text-center rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none"
+                    />
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <input
+                      type="number"
+                      min={0}
+                      max={200}
+                      value={att.overtime}
+                      onChange={(e) => onAttendanceChange?.(emp.id, 'overtime', parseFloat(e.target.value) || 0)}
+                      className="w-16 text-center rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none"
+                    />
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <input
+                      type="number"
+                      min={0}
+                      max={31}
+                      value={att.sickDays}
+                      onChange={(e) => onAttendanceChange?.(emp.id, 'sickDays', parseInt(e.target.value) || 0)}
+                      className="w-16 text-center rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none"
+                    />
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <input
+                      type="number"
+                      min={0}
+                      max={31}
+                      value={att.leaveDays}
+                      onChange={(e) => onAttendanceChange?.(emp.id, 'leaveDays', parseInt(e.target.value) || 0)}
+                      className="w-16 text-center rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none"
+                    />
+                  </td>
                 </tr>
               );
             })}

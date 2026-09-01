@@ -16,6 +16,7 @@ export default function PayrollStep4({
 }: PayrollStep4Props) {
   const [cafeteriaItems, setCafeteriaItems] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [localHoInputs, setLocalHoInputs] = React.useState<Record<string, string>>({});
 
   React.useEffect(() => {
     const fetchCafeteria = async () => {
@@ -179,6 +180,160 @@ export default function PayrollStep4({
             </div>
             <p className="text-[10px] text-slate-400">35 év alattiaknál havi 150.000 Ft-ig adómentes.</p>
           </div>
+
+          {/* Home Office Költségtérítés (Adómentes átalány) */}
+          <div className="p-5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                <Home className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Home Office átalány (Adómentes)
+              </h4>
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded">
+                Adómentes
+              </span>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                {cafeteriaItems
+                  .filter(i => i.benefit_type === 'home_office' || i.sub_type === 'home_office')
+                  .reduce((s, i) => s + Number(i.amount), 0)
+                  .toLocaleString('hu-HU')}
+              </span>
+              <span className="text-xs text-slate-500">Ft / hó</span>
+            </div>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              SZJA tv. 3. sz. melléklet: Havi minimálbér max. 10%-áig (max. <strong>32 280 Ft/hó</strong>) igazolás nélkül adómentes otthoni munkavégzésre.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Home Office Reimbursement Management per Employee */}
+      <div className="p-5 rounded-xl border border-emerald-500/30 bg-card shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Home className="w-5 h-5 text-emerald-500" /> Home Office költségtérítés megadása dolgozónként
+            </h4>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Itt adhatod meg az igazolás nélküli adómentes otthoni munkavégzési átalányt dolgozónként (max. 32 280 Ft/hó).
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border bg-slate-50 dark:bg-slate-900/30">
+                <th className="px-4 py-2 text-left font-medium text-slate-500 uppercase">Dolgozó neve</th>
+                <th className="px-4 py-2 text-center font-medium text-slate-500 uppercase">Havi adómentes átalány (Ft/hó)</th>
+                <th className="px-4 py-2 text-right font-medium text-slate-500 uppercase">Gyorsbeállítás</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/50">
+              {activeEmployees.map((emp) => {
+                const empEmployment = allEmployments.find(e => e.employee_id === emp.id);
+                const hoItem = cafeteriaItems.find(
+                  i => i.employment_id === empEmployment?.id && (i.benefit_type === 'home_office' || i.sub_type === 'home_office')
+                );
+                const currentHoAmount = hoItem ? Number(hoItem.amount) : 0;
+
+                const updateHoAmount = async (amount: number) => {
+                  if (!empEmployment?.id) return;
+                  try {
+                    if (amount > 0) {
+                      if (hoItem) {
+                        const { data } = await supabase
+                          .from('accounty_cafeteria')
+                          .update({ amount })
+                          .eq('id', hoItem.id)
+                          .select('*')
+                          .single();
+                        if (data) {
+                          setCafeteriaItems(prev => prev.map(i => i.id === hoItem.id ? data : i));
+                        }
+                      } else {
+                        const { data } = await supabase
+                          .from('accounty_cafeteria')
+                          .insert({
+                            employment_id: empEmployment.id,
+                            benefit_type: 'other',
+                            sub_type: 'home_office',
+                            amount: amount,
+                          })
+                          .select('*')
+                          .single();
+                        if (data) {
+                          setCafeteriaItems(prev => [...prev, data]);
+                        }
+                      }
+                    } else if (hoItem) {
+                      await supabase.from('accounty_cafeteria').delete().eq('id', hoItem.id);
+                      setCafeteriaItems(prev => prev.filter(i => i.id !== hoItem.id));
+                    }
+                  } catch (err) {
+                    console.error('Error updating Home Office item:', err);
+                  }
+                };
+
+                const inputValue = localHoInputs[emp.id] !== undefined
+                  ? localHoInputs[emp.id]
+                  : (currentHoAmount ? String(currentHoAmount) : '');
+
+                return (
+                  <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="px-4 py-2.5 font-semibold text-slate-900 dark:text-slate-100">
+                      {emp.last_name} {emp.first_name}
+                    </td>
+                    <td className="px-4 py-2 text-center">
+                      <div className="inline-flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          max={32280}
+                          placeholder="0"
+                          value={inputValue}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setLocalHoInputs(prev => ({ ...prev, [emp.id]: val }));
+                          }}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value) || 0;
+                            updateHoAmount(val);
+                          }}
+                          className="w-32 text-right rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 font-mono font-bold text-emerald-600 dark:text-emerald-400 focus:border-primary focus:outline-none"
+                        />
+                        <span className="text-slate-400 font-mono">Ft</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 text-right space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLocalHoInputs(prev => ({ ...prev, [emp.id]: '32280' }));
+                          updateHoAmount(32280);
+                        }}
+                        className="px-2.5 py-1 text-[11px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 rounded border border-emerald-500/30 transition-colors"
+                      >
+                        Max. adómentes (32 280 Ft)
+                      </button>
+                      {(currentHoAmount > 0 || Number(inputValue) > 0) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLocalHoInputs(prev => ({ ...prev, [emp.id]: '0' }));
+                            updateHoAmount(0);
+                          }}
+                          className="px-2 py-1 text-[11px] text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                        >
+                          Törlés
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -233,6 +388,7 @@ export default function PayrollStep4({
                     <span className="text-slate-400 block text-[10px] mt-0.5 capitalize">
                       {item.benefit_type === 'szep_recreation' ? `SZÉP Kártya (${item.sub_type})` :
                        item.benefit_type === 'housing' ? 'Lakhatási támogatás' :
+                       item.benefit_type === 'home_office' ? 'Home Office átalány' :
                        item.benefit_type === 'szep_active' ? 'Rekreációs keret' : item.benefit_type}
                       {item.provider ? ` - ${item.provider}` : ''}
                     </span>

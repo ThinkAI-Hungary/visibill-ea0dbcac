@@ -16,7 +16,8 @@ import {
 } from '@/hooks/usePayrollData';
 import { useAccountyClients } from '@/hooks/accounty';
 import { generatePayrollRequestEmail } from '@/lib/payroll/emailTemplates';
-import { printPayslip, type PayslipData } from '@/lib/payroll/payslipGenerator';
+import { printPayslip, printAllPayslips, type PayslipData } from '@/lib/payroll/payslipGenerator';
+
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -88,6 +89,7 @@ export default function PayrollCyclePage() {
   const isNewCycle = !cycleId || cycleId === 'new';
   const { data: cycle, isLoading: cycleLoading, isError: cycleError, refetch: refetchCycle } = usePayrollCycle(isNewCycle ? '' : cycleId || '');
   const { data: employees = [] } = usePayrollEmployees(companyId || '');
+  const activeEmployees = employees.filter(e => e.status === 'active');
   const { data: items = [] } = usePayrollItems(cycle?.id || '');
   const { data: calculations = [] } = usePayrollCalculations(cycle?.id || '');
   const updateStep = useUpdateCycleStep();
@@ -170,6 +172,19 @@ export default function PayrollCyclePage() {
   const [csvValidation, setCsvValidation] = useState<CsvValidationResult | null>(null);
 
   const getAttendance = (empId: string) => attendanceData[empId] || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
+
+  const handleAttendanceChange = (empId: string, field: 'workDays' | 'overtime' | 'sickDays' | 'leaveDays', value: number) => {
+    setAttendanceData(prev => {
+      const current = prev[empId] || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
+      return {
+        ...prev,
+        [empId]: {
+          ...current,
+          [field]: Math.max(0, value)
+        }
+      };
+    });
+  };
 
   // CSV parser with validation
   const handleCsvUpload = (file: File) => {
@@ -345,7 +360,25 @@ export default function PayrollCyclePage() {
     }
   };
 
-  const handlePrintPayslip = (calc: any) => {
+  const [cafeteriaItems, setCafeteriaItems] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const activeEmploymentIds = allEmployments
+      .filter(e => activeEmployees.some(emp => emp.id === e.employee_id))
+      .map(e => e.id);
+
+    if (activeEmploymentIds.length === 0) return;
+
+    supabase
+      .from('accounty_cafeteria')
+      .select('*')
+      .in('employment_id', activeEmploymentIds)
+      .then(({ data }) => {
+        if (data) setCafeteriaItems(data);
+      });
+  }, [activeEmployees, allEmployments]);
+
+  const buildPayslipData = (calc: any): PayslipData => {
     const meta = calc.metadata as any;
     const emp = activeEmployees.find(e => e.id === meta?.employee_id);
     const employment = allEmployments.find(e => e.employee_id === emp?.id);
@@ -415,11 +448,19 @@ export default function PayrollCyclePage() {
     const baseSalary = empItems.find(i => i.item_type === 'base_salary')?.amount 
       || calculatedBase;
 
+    const bonusAmount = Number(empItems.find(i => i.item_type === 'bonus')?.amount || 0);
+
     const otherPremiums = empItems
-      .filter(i => !['base_salary', 'overtime', 'sick_leave'].includes(i.item_type))
+      .filter(i => !['base_salary', 'overtime', 'sick_leave', 'bonus'].includes(i.item_type))
       .reduce((s, i) => s + (i.amount || 0), 0);
 
-    const payslipData: PayslipData = {
+    // Fetch Home Office reimbursement for this employment
+    const hoItem = cafeteriaItems.find(
+      i => i.employment_id === employment?.id && (i.sub_type === 'home_office' || i.benefit_type === 'home_office')
+    );
+    const hoAmount = hoItem ? Number(hoItem.amount) : 0;
+
+    return {
       companyName: companyDetails?.name || company?.name || '–',
       companyTaxNumber: companyDetails?.tax_number || company?.taxNumber || '–',
       companyAddress: companyDetails?.address || '–',
@@ -438,8 +479,9 @@ export default function PayrollCyclePage() {
       leaveDays: att.leaveDays || 0,
       baseSalary: baseSalary,
       supplements: finalOvertime + finalSickLeave,
-      bonuses: otherPremiums,
-      otherIncome: calculatedLeaveAmount, // leave paid amount
+      bonuses: bonusAmount + otherPremiums,
+      homeOffice: hoAmount,
+      otherIncome: calculatedLeaveAmount,
       grossTotal: calc.gross_salary || 0,
       szjaBase: calc.szja_base || calc.gross_salary || 0,
       szjaAmount: calc.szja_amount || 0,
@@ -453,16 +495,24 @@ export default function PayrollCyclePage() {
       garnishments: garnishmentAmount,
       advances: advanceAmount,
       otherDeductions: otherDeductionsAmount,
-      netSalary: calc.net_salary || 0,
+      netSalary: (calc.net_salary || 0) + hoAmount,
     };
-    printPayslip(payslipData);
+  };
+
+  const handlePrintPayslip = (calc: any) => {
+    const data = buildPayslipData(calc);
+    printPayslip(data);
+  };
+
+  const handlePrintAllPayslips = () => {
+    const dataList = calculations.map(calc => buildPayslipData(calc));
+    printAllPayslips(dataList);
   };
 
   const [newYear, setNewYear] = useState(new Date().getFullYear());
   const [newMonth, setNewMonth] = useState(new Date().getMonth() + 1);
 
   const currentStep = cycle?.current_step || 1;
-  const activeEmployees = employees.filter(e => e.status === 'active');
 
   const handleCreateCycle = async () => {
     if (!companyId) return;
@@ -705,6 +755,7 @@ export default function PayrollCyclePage() {
               activeEmployees={activeEmployees}
               attendanceData={attendanceData}
               getAttendance={getAttendance}
+              onAttendanceChange={handleAttendanceChange}
               handleCsvUpload={handleCsvUpload}
               csvValidation={csvValidation}
               setCsvValidation={setCsvValidation}
@@ -722,6 +773,7 @@ export default function PayrollCyclePage() {
               activeEmployees={activeEmployees}
               allEmployments={allEmployments}
               items={items}
+              cycleId={cycle?.id}
             />
           )}
           {currentStep === 6 && (
@@ -743,11 +795,14 @@ export default function PayrollCyclePage() {
             <PayrollStep8
               calculations={calculations}
               activeEmployees={activeEmployees}
+              allEmployments={allEmployments}
+              items={items}
               cycle={cycle}
               companyId={companyId || ''}
               runBatch={runBatch}
               getCalcName={getCalcName}
               handlePrintPayslip={handlePrintPayslip}
+              handlePrintAllPayslips={handlePrintAllPayslips}
             />
           )}
         </div>

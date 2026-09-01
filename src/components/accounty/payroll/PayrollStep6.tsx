@@ -1,5 +1,6 @@
 import React from 'react';
 import { SzochoAdvisor } from './SzochoAdvisor';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PayrollStep6Props {
   calculations: any[];
@@ -12,12 +13,43 @@ export default function PayrollStep6({
   getCalcName,
   companyId,
 }: PayrollStep6Props) {
+  const [isKiva, setIsKiva] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!companyId) return;
+    supabase
+      .from('accounty_tax_profiles')
+      .select('is_kiva')
+      .eq('company_id', companyId)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (data?.is_kiva) setIsKiva(true);
+      });
+  }, [companyId]);
+
+  const getSzocho = (calc: any) => {
+    if (isKiva) return 0;
+    if (calc.szocho_amount !== undefined && calc.szocho_amount !== null && calc.szocho_amount > 0) {
+      return calc.szocho_amount;
+    }
+    return Math.round((calc.gross_salary || 0) * 0.13);
+  };
+
   return (
     <div className="space-y-6">
       {companyId && <SzochoAdvisor companyId={companyId} />}
       
+      {isKiva && (
+        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-sm">🟢 KIVA adózási profil aktív</span>
+            <span className="text-xs opacity-90">— A KIVA kiváltja a munkáltatói SZOCHO-t (Munkáltatói SZOCHO: 0 Ft)</span>
+          </div>
+        </div>
+      )}
+
       <p className="text-sm text-slate-600 dark:text-slate-300">
-        SZJA (15%), TB Járulék (18.5%), SZOCHO (13%) kalkuláció az adómotor segítségével.
+        SZJA (15%), TB Járulék (18.5%), SZOCHO (13% / KIVA esetén 0 Ft) kalkuláció az adómotor segítségével.
       </p>
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 text-center border border-red-200 dark:border-red-800">
@@ -30,7 +62,7 @@ export default function PayrollStep6({
         </div>
         <div className="bg-violet-50 dark:bg-violet-900/20 rounded-lg p-3 text-center border border-violet-200 dark:border-violet-800">
           <p className="text-[10px] font-bold text-violet-600 uppercase">SZOCHO</p>
-          <p className="text-lg font-bold text-violet-700 dark:text-violet-400">13%</p>
+          <p className="text-lg font-bold text-violet-700 dark:text-violet-400">{isKiva ? '0% (KIVA)' : '13%'}</p>
         </div>
       </div>
       {calculations.length > 0 ? (
@@ -59,7 +91,7 @@ export default function PayrollStep6({
                       {(calc.tb_amount || 0).toLocaleString('hu-HU')} Ft
                     </td>
                     <td className="px-4 py-2.5 text-right text-sm font-mono text-violet-600">
-                      {(calc.szocho_amount || 0).toLocaleString('hu-HU')} Ft
+                      {getSzocho(calc).toLocaleString('hu-HU')} Ft
                     </td>
                     <td className="px-4 py-2.5 text-right text-sm font-bold font-mono text-green-600">
                       {(calc.net_salary || 0).toLocaleString('hu-HU')} Ft
