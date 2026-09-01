@@ -674,10 +674,20 @@ serve(async (req) => {
       });
     }
 
+    // Clean and normalize recipient email
+    // e.g. "Think AI <thinkaikft2@in.visibill.hu>" or "<thinkaikft2@in.visibill.hu>" or uppercase "THINKAIKFT2@IN.VISIBILL.HU"
+    const extractEmail = (str: string | null): string | null => {
+      if (!str) return null;
+      const match = str.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      return match ? match[1].trim().toLowerCase() : str.trim().toLowerCase();
+    };
+
+    const targetAliasEmail = extractEmail(recipient) || recipient.trim().toLowerCase();
+
     // Explicitly ignore legacy test company address to silence logs
-    if (recipient === 'think-ai@in.visibill.hu') {
-      console.log(`[skip] Legacy test recipient: ${recipient}. Skipping silently.`);
-      return new Response(JSON.stringify({ skipped: true, reason: 'legacy_test_company', recipient }), {
+    if (targetAliasEmail === 'think-ai@in.visibill.hu') {
+      console.log(`[skip] Legacy test recipient: ${targetAliasEmail}. Skipping silently.`);
+      return new Response(JSON.stringify({ skipped: true, reason: 'legacy_test_company', recipient: targetAliasEmail }), {
         headers: { 'Content-Type': 'application/json' },
         status: 200,
       });
@@ -689,20 +699,43 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('Looking up alias for recipient:', recipient);
+    console.log('Looking up alias for recipient:', targetAliasEmail, '(raw:', recipient, ')');
 
-    const { data: alias, error: aliasError } = await supabase
+    let { data: alias, error: aliasError } = await supabase
       .from('email_aliases')
       .select('user_id, company_name, company_id, mailgun_route_id')
-      .eq('alias_email', recipient)
+      .eq('alias_email', targetAliasEmail)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
-    if (aliasError || !alias) {
-      // Alias not found — this is expected for deactivated/deleted companies.
-      // Return 200 so Mailgun does NOT retry. Only log to console (not app_error_logs).
-      console.warn(`[lookup_alias] Alias not found for: ${recipient} (sender: ${sender}). Skipping.`);
-      return new Response(JSON.stringify({ skipped: true, reason: 'alias_not_found', recipient }), {
+    if (!alias && targetAliasEmail.includes('@')) {
+      // Fallback: try matching prefix if domain is in.visibill.hu
+      const prefix = targetAliasEmail.split('@')[0];
+      const { data: fallbackAlias } = await supabase
+        .from('email_aliases')
+        .select('user_id, company_name, company_id, mailgun_route_id')
+        .ilike('alias_email', `${prefix}%`)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      if (fallbackAlias) {
+        alias = fallbackAlias;
+      }
+    }
+
+    if (!alias) {
+      console.warn(`[lookup_alias] Alias not found for: ${targetAliasEmail} (raw: ${recipient}, sender: ${sender}). Logging error.`);
+      await logError(supabase, {
+        error_type: 'email_alias',
+        severity: 'warning',
+        component: 'process-mailgun-webhook',
+        action: 'alias_not_found',
+        message: `Ismeretlen alias címre érkezett e-mail: ${targetAliasEmail} (Küldő: ${sender || 'Ismeretlen'})`,
+        context: { rawRecipient: recipient, sender, subject },
+      });
+
+      return new Response(JSON.stringify({ skipped: true, reason: 'alias_not_found', recipient: targetAliasEmail }), {
         headers: { 'Content-Type': 'application/json' },
         status: 200,
       });
