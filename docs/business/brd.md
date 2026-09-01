@@ -105,6 +105,7 @@ Az eaisyBooks támogatja a **DB-szintű jogosultság-felülírást**: az `iroda_
 ### REQ-4.4: A két rendszer közötti hozzáférés
 - **eaisyBill hozzáférés:** `company_members` tábla alapján, VAGY `accounty_assignments` tábla alapján (könyvelők automatikusan látják ügyfeleik eaisyBill oldalát is).
 - **eaisyBooks hozzáférés:** `accounty_assignments` tábla alapján (csak regisztrált könyvelő irodai tagok).
+- **Automatikus Szinkronizáció (ADR A-073):** Ha egy könyvelő új céget hoz létre az eaisybill fejlécéből vagy bármely felületről, a rendszer automatikusan hozzárendeli a céget az irodájához az `accounty_assignments` táblában.
 - A `useHasEaisybillAccess` és `useHasAccountyAccess` hook-ok döntik el, ki mihez fér hozzá, és ez szabályozza az `AppModeSwitcher` megjelenését is.
 
 ### REQ-4.5: Platform-szintű szerepek

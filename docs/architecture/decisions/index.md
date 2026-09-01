@@ -61,6 +61,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-026 | Support Admin Ideiglenes Hozzáférés (Impersonation & Full RLS Access) | ✅ Decided | [A-026](./A-026-support-impersonation-access.md) |
 | A-049 | Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete) | ✅ Decided | [A-049](./A-049-user-deletion-soft-delete-strategy.md) |
 | A-072 | Robust Accounting Firm Assignment RLS & Direct Client Creation | ✅ Decided | [A-072](./A-072-accounting-assignments-insert-rls.md) |
+| A-073 | eaisybill ↔ eaisyBooks Cégfelviteli Automatikus Szinkronizáció | ✅ Decided | [A-073](./A-073-eaisybill-eaisybooks-company-auto-sync.md) |
 
 ## 📧 Email & Integráció
 

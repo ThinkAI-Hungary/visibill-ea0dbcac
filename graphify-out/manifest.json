@@ -95,8 +95,8 @@
     "semantic_hash": "1bc7d2e453c47d29d57a3974eb122458"
   },
   "src/components/CompanySelector.tsx": {
-    "mtime": 1783080121.4735236,
-    "ast_hash": "a9fd9b53d9b30cf21eeac1714637fa7c",
+    "mtime": 1788279594.4257321,
+    "ast_hash": "e64b815272d8c76458ebd031c69852e2",
     "semantic_hash": ""
   },
   "src/components/CourierReportTab.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788222489.0108192,
-    "ast_hash": "e480cd603fcab24b1888e5439304eb48",
+    "mtime": 1788279636.7796378,
+    "ast_hash": "4594a9d6a85fd02c33cdc9ffd7d3ddd2",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3125,8 +3125,8 @@
     "semantic_hash": ""
   },
   "docs/business/brd.md": {
-    "mtime": 1788130390.3145971,
-    "ast_hash": "4ff4cfcd9991c7e7a230c6c59f4fedbb",
+    "mtime": 1788279897.411656,
+    "ast_hash": "a011a94093d89eda2eeadea7717315bb",
     "semantic_hash": ""
   },
   "docs/business/decisions/001-primary-audience.md": {
@@ -3450,8 +3450,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-013-upload-ux.md": {
-    "mtime": 1788270503.254594,
-    "ast_hash": "07bac6acf5ebe6729457471b96f6af15",
+    "mtime": 1788270733.6850133,
+    "ast_hash": "f7407285a23f008cc65cf855a8469f57",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-015-bulk-actions.md": {
@@ -4650,8 +4650,8 @@
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyClients.ts": {
-    "mtime": 1787569947.5857456,
-    "ast_hash": "0849b56a04ce5d7e15f07972c274747b",
+    "mtime": 1788270733.5553756,
+    "ast_hash": "ee77bd57c3ede755446895baed3a9b08",
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyDeadlines.ts": {
@@ -4665,8 +4665,8 @@
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyMissing.ts": {
-    "mtime": 1787570175.8485963,
-    "ast_hash": "e32f21d896cd305b8a5c9458364488f3",
+    "mtime": 1788270733.5553756,
+    "ast_hash": "ea03a01abb2a93e5a1c88fbb16a67967",
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyPayroll.ts": {
@@ -5085,8 +5085,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/13-eaisybooks-core.md": {
-    "mtime": 1787571734.903863,
-    "ast_hash": "d005b89d80e53f898d4d25be8404d39a",
+    "mtime": 1788279889.1549747,
+    "ast_hash": "8d7b287a70d0273a693ee541ee1e17f7",
     "semantic_hash": ""
   },
   "docs/architecture/database/14-eaisybooks-payroll.md": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788213040.69127,
+    "mtime": 1788279564.041656,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -7055,8 +7055,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/AddManualJournalEntryModal.tsx": {
-    "mtime": 1788212014.2204888,
-    "ast_hash": "408e1973fa89c8ef077e7ac9aae64d89",
+    "mtime": 1788270733.5543761,
+    "ast_hash": "a3c1d2eafac77b504d13a95ff542a11c",
     "semantic_hash": ""
   },
   "src/components/journals/AuditTrailDialog.tsx": {
@@ -7935,8 +7935,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-064-multi-channel-upload-engine-modularization.md": {
-    "mtime": 1788270493.551354,
-    "ast_hash": "7cb4326f9f83332eb9b86f32d1e0dfda",
+    "mtime": 1788270733.6850133,
+    "ast_hash": "629d3748305f563849d2f599e1b54e2d",
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/expandedRowSections.test.tsx": {
@@ -8592,6 +8592,16 @@
   "scratch/simulate_both_emails.py": {
     "mtime": 1788269684.581332,
     "ast_hash": "f2deec681d2d4977bd9466de6a852f81",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260901_auto_sync_company_to_eaisybooks.sql": {
+    "mtime": 1788279563.414101,
+    "ast_hash": "43fabafbdc4084ef012e25e353dfd0cc",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-073-eaisybill-eaisybooks-company-auto-sync.md": {
+    "mtime": 1788279629.5938914,
+    "ast_hash": "3a97426e9a4e2d9dda541f8a70564e6d",
     "semantic_hash": ""
   }
 }

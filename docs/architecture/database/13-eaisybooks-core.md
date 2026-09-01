@@ -8,7 +8,8 @@
 
 ### `accounty_assignments`
 
-> Könyvelő-felhasználó ↔ ügyfélcég hozzárendelés. Senior = teljes rálátás, Junior = csak saját ügyfelek.
+> Könyvelő-felhasználó ↔ ügyfélcég hozzárendelés. Senior = teljes rálátás, Junior = csak saját ügyfelek.  
+> **Auto-sync trigger (A-073):** Amikor egy könyvelő új céget hoz létre a rendszerben (bármely felületről), az `on_company_created()` trigger automatikusan létrehozza a hozzárendelést (`source: 'sync'`), az adózási profilt és a kommunikációs preferenciákat.
 
 **RLS:** ✅ | **Sorok:** ~61
 

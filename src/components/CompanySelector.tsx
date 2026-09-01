@@ -5,6 +5,8 @@ import { Building2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateAccountyCache } from '@/hooks/accounty/useAccountyHelpers';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +19,7 @@ import { extractPageSegment, generateScopedPath } from '@/lib/navigation';
 import { reportError } from '@/lib/errorReporter';
 
 const CompanySelector = () => {
+  const queryClient = useQueryClient();
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const { user } = useAuth();
@@ -88,6 +91,10 @@ const CompanySelector = () => {
       if (error) throw error;
 
       await refreshCompanies();
+      invalidateAccountyCache(queryClient, ['clients', 'missing', 'deadlines']);
+      queryClient.invalidateQueries({ queryKey: ['accounty-my-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+
       setNewCompanyName('');
       setNewCompanyTaxNumber('');
       setNewCompanyAddress('');
