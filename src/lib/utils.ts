@@ -56,6 +56,7 @@ export function fixCharacterEncoding(str: string | null | undefined): string {
 
   s = s
     // Single character PDF font corruptions
+    .replace(/©/g, 'é')
     .replace(/@/g, 'é')
     .replace(/>/g, 'í')
     .replace(/</g, 'í')
@@ -71,6 +72,7 @@ export function fixCharacterEncoding(str: string | null | undefined): string {
     .replace(/ẽ/g, 'á')
     // Common multi-character corruptions from PDF bank statements
     .replace(/Kézlem/g, 'Közlem')
+    .replace(/Elíjegyzettd>j/g, 'Előjegyzett díj')
     .replace(/Elíjegyzet/g, 'Előjegyzett')
     .replace(/Elõjegyzett/g, 'Előjegyzett')
     .replace(/Előjegyzettdíj/g, 'Előjegyzett díj')
