@@ -382,7 +382,7 @@ function AccountyLayoutInner() {
               );
             })()}
 
-            <AccountyErrorBoundary>
+            <AccountyErrorBoundary key={location.pathname}>
               <Outlet />
             </AccountyErrorBoundary>
 

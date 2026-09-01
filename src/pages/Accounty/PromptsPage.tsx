@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useAccountyClient } from '@/hooks/accounty';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -52,10 +54,15 @@ const RULE_TEMPLATES = [
 ];
 
 export default function PromptsPage() {
+  const { companyId } = useParams<{ companyId: string }>();
   const { selectedCompany } = useCompany();
+  const { data: client } = useAccountyClient(companyId);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const effectiveCompanyId = companyId || selectedCompany?.id;
+  const effectiveCompanyName = client?.name || selectedCompany?.name || 'Kiválasztott cég';
 
   const [isOpen, setIsOpen] = useState(false);
   const [newRuleName, setNewRuleName] = useState('');
@@ -63,28 +70,28 @@ export default function PromptsPage() {
 
   // Fetch rules
   const { data: rules = [], isLoading } = useQuery<PromptRule[]>({
-    queryKey: ['company-prompt-rules', selectedCompany?.id],
+    queryKey: ['company-prompt-rules', effectiveCompanyId],
     queryFn: async () => {
-      if (!selectedCompany?.id) return [];
+      if (!effectiveCompanyId) return [];
       const { data, error } = await supabase
         .from('company_prompt_rules')
         .select('*')
-        .eq('company_id', selectedCompany.id)
+        .eq('company_id', effectiveCompanyId)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as PromptRule[];
     },
-    enabled: !!selectedCompany?.id,
+    enabled: !!effectiveCompanyId,
   });
 
   // Add rule mutation
   const addRuleMutation = useMutation({
     mutationFn: async ({ name, prompt }: { name: string; prompt: string }) => {
-      if (!selectedCompany?.id || !user?.id) throw new Error('Cég vagy felhasználó hiányzik');
+      if (!effectiveCompanyId || !user?.id) throw new Error('Cég vagy felhasználó hiányzik');
       const { error } = await supabase
         .from('company_prompt_rules')
         .insert({
-          company_id: selectedCompany.id,
+          company_id: effectiveCompanyId,
           rule_name: name.trim(),
           rule_prompt: prompt.trim(),
           is_active: true,
@@ -93,7 +100,7 @@ export default function PromptsPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['company-prompt-rules', selectedCompany?.id] });
+      queryClient.invalidateQueries({ queryKey: ['company-prompt-rules', effectiveCompanyId] });
       toast({ title: 'Szabály létrehozva', description: 'Az egyedi szabály sikeresen hozzáadva a szabálytárhoz.' });
       setNewRuleName('');
       setNewRulePrompt('');
@@ -114,7 +121,7 @@ export default function PromptsPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['company-prompt-rules', selectedCompany?.id] });
+      queryClient.invalidateQueries({ queryKey: ['company-prompt-rules', effectiveCompanyId] });
     },
     onError: (err: any) => {
       toast({ variant: 'destructive', title: 'Módosítás sikertelen', description: err.message });
@@ -131,7 +138,7 @@ export default function PromptsPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['company-prompt-rules', selectedCompany?.id] });
+      queryClient.invalidateQueries({ queryKey: ['company-prompt-rules', effectiveCompanyId] });
       toast({ title: 'Szabály törölve', description: 'A szabály eltávolítva a könyvtárból.' });
     },
     onError: (err: any) => {
@@ -151,12 +158,12 @@ export default function PromptsPage() {
     setIsOpen(true);
   };
 
-  if (!selectedCompany) {
+  if (!effectiveCompanyId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-6">
         <Building2 className="h-16 w-16 text-muted-foreground/40 mb-4 animate-pulse" />
         <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">Nincs kiválasztott cég</h2>
-        <p className="text-sm text-muted-foreground mt-2 max-w-sm">Kérjük, válassz ki egy céget a felső navigációs sávban a szabályok kezeléséhez.</p>
+        <p className="text-sm text-muted-foreground mt-2 max-w-sm">Kérjük, válassz ki egy céget a navigációs sávban a szabályok kezeléséhez.</p>
       </div>
     );
   }
@@ -171,7 +178,7 @@ export default function PromptsPage() {
             Könyvelési Szabályok (Prompt Library)
           </h1>
           <p className="text-sm text-muted-foreground mt-1.5 max-w-[800px]">
-            Határozz meg egyedi AI prompt szabályokat a(z) <strong>{selectedCompany.name}</strong> cégre szabva. Az itt bekapcsolt instrukciók a legmagasabb prioritással futnak le az AI főkönyvi osztályozásakor.
+            Határozz meg egyedi AI prompt szabályokat a(z) <strong>{effectiveCompanyName}</strong> cégre szabva. Az itt bekapcsolt instrukciók a legmagasabb prioritással futnak le az AI főkönyvi osztályozásakor.
           </p>
         </div>
 

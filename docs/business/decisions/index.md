@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-08-31  
-> **Összesen:** 46 döntés | ✅ Decided: 30 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
+> **Utoljára frissítve:** 2026-09-01  
+> **Összesen:** 47 döntés | ✅ Decided: 31 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
 
 ---
 
@@ -107,6 +107,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 033 | ÁFA bevallás modul | ✅ Decided | [033-vat-return-module.md](./033-vat-return-module.md) |
 | 034 | Worker pipeline (háttérfeldolgozás) | ✅ Decided | [034-worker-pipeline.md](./034-worker-pipeline.md) |
 | 035 | eaisyBooks ügyfélportál | ✅ Decided | [035-accounty-client-portal.md](./035-accounty-client-portal.md) |
+| 047 | Egyedi Céges Könyvelési Szabályok és AI Kontírozási Házirend | ✅ Decided | [047-company-prompt-rules-ai-classification.md](./047-company-prompt-rules-ai-classification.md) |
 
 ## 🎫 Ügyfélszolgálat & Support
 

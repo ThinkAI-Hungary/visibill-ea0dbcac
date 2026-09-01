@@ -103,6 +103,7 @@ Visibill
 │   ├── /client/:id/accounting     Könyvelési modul választó (átirányít az EV vagy TAO felületre)
 │   ├── /client/:id/reports        Ügyfél riportjai
 │   ├── /client/:id/reports/missing-invoices  Hiányzó számlák riport
+│   ├── /client/:id/prompts        Könyvelési szabályok (Prompt Library — AI kontírozási szabályok)
 │   ├── /missing-invoices          Összes hiányzó számla (globális nézet)
 │   ├── /tax-calendar              Adó naptár
 │   ├── /reports                   Iroda szintű riportok

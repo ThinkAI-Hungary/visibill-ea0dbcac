@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-01  
-> **Összesen:** 78 döntés | ✅ Decided: 76 | ⛔ Superseded: 2
+> **Összesen:** 79 döntés | ✅ Decided: 77 | ⛔ Superseded: 2
 
 ---
 
@@ -117,6 +117,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-070 | Multi-Channel Upload Storage Bucket Alignment & Synchronized History Mapping | ✅ Decided | [A-070](./A-070-multi-channel-upload-storage-bucket-alignment.md) |
 | A-073 | Defensive Prop Normalization & Settings Component Resilience | ✅ Decided | [A-073](./A-073-defensive-prop-normalization-and-settings-resilience.md) |
 | A-076 | Statutory Reporting & VAT Return Monolith Deepening, Pure Computation Engines & Feature Slices | ✅ Decided | [A-076](./A-076-statutory-reporting-and-vat-return-monolith-modularization.md) |
+| A-079 | Accounty ErrorBoundary Route-Scoped Reset és Client-Scoped Prompt Szabályok | ✅ Decided | [A-079](./A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md) |
 
 ## 💳 Fizetés
 

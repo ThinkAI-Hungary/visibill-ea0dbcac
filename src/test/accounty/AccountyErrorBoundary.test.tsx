@@ -127,4 +127,22 @@ describe('AccountyErrorBoundary', () => {
     expect(backSpy).toHaveBeenCalledTimes(1);
     backSpy.mockRestore();
   });
+
+  it('resets error state when key (e.g. location.pathname) changes', () => {
+    function RouteContainer({ currentPath, explode }: { currentPath: string; explode: boolean }) {
+      return (
+        <AccountyErrorBoundary key={currentPath}>
+          <Bomb shouldExplode={explode} />
+        </AccountyErrorBoundary>
+      );
+    }
+
+    const { rerender } = render(<RouteContainer currentPath="/eaisybooks/c1/range/prompts" explode={true} />);
+    expect(screen.getByText('Hiba történt az oldal megjelenítésekor')).toBeInTheDocument();
+
+    // Navigate to another path where children do not throw
+    rerender(<RouteContainer currentPath="/eaisybooks/c1/range/overview" explode={false} />);
+    expect(screen.getByText('Tartalom rendben')).toBeInTheDocument();
+    expect(screen.queryByText('Hiba történt az oldal megjelenítésekor')).not.toBeInTheDocument();
+  });
 });
