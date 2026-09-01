@@ -154,28 +154,29 @@ export function InvoiceTableContainer() {
       if (target.closest('button, input, select, [role="checkbox"], [role="combobox"], [data-radix-collection-item]')) {
         return;
       }
+      let isExpanding = false;
       setExpandedRowIds(prev => {
         const next = new Set(prev);
-        const isExpanding = !next.has(invoiceId);
+        isExpanding = !next.has(invoiceId);
         if (isExpanding) next.add(invoiceId);
         else next.delete(invoiceId);
-
-        setSearchParams(
-          sp => {
-            const p = new URLSearchParams(sp);
-            if (isExpanding) {
-              p.set('invoice', invoiceId);
-              p.delete('action');
-            } else {
-              p.delete('invoice');
-              p.delete('action');
-            }
-            return p;
-          },
-          { replace: true }
-        );
         return next;
       });
+
+      setSearchParams(
+        sp => {
+          const p = new URLSearchParams(sp);
+          if (isExpanding) {
+            p.set('invoice', invoiceId);
+            p.delete('action');
+          } else {
+            p.delete('invoice');
+            p.delete('action');
+          }
+          return p;
+        },
+        { replace: true }
+      );
     },
     [setExpandedRowIds, setSearchParams]
   );

@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1788269432.147341,
-    "ast_hash": "bc4196c3099b18953ac0f3b55ce5551e",
+    "mtime": 1788283422.0485904,
+    "ast_hash": "1e640e167f50fad0355a344183da905b",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": "776b6ed65c3cb4d27beb42298fa888ce"
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1788011215.4441593,
-    "ast_hash": "7e9392a7435bc31c8a7284af36280211",
+    "mtime": 1788281341.295111,
+    "ast_hash": "e1690a9b8f245304484e6e926d3a5073",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788279636.7796378,
-    "ast_hash": "4594a9d6a85fd02c33cdc9ffd7d3ddd2",
+    "mtime": 1788282434.5941174,
+    "ast_hash": "4f81bc3f0d224a402abee022f0581878",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3540,8 +3540,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-032-vat-return-workflow.md": {
-    "mtime": 1787755514.9466896,
-    "ast_hash": "ca3af33ac36dfe5aae5c2bf9a95b1c1e",
+    "mtime": 1788282466.1022985,
+    "ast_hash": "d7572274379cba75108e9397a8ae0044",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-033-payroll-cycle.md": {
@@ -3810,8 +3810,8 @@
     "semantic_hash": ""
   },
   "src/components/vat/VatRowDrillDown.tsx": {
-    "mtime": 1787753315.8283663,
-    "ast_hash": "33b19f3d910fd82a458bc5d941cb0ec0",
+    "mtime": 1788281461.176438,
+    "ast_hash": "e8f02c993e1228a0ba19c1ddc6ce7e7c",
     "semantic_hash": ""
   },
   "src/components/vat/VatTrendChart.tsx": {
@@ -5040,13 +5040,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/04-invoices.md": {
-    "mtime": 1788130241.9918618,
-    "ast_hash": "08a17a4aa97e5ec11e9aa934f19406cc",
+    "mtime": 1788282443.1365557,
+    "ast_hash": "3383206fd84189981a8b2271cf93fa10",
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {
-    "mtime": 1788130253.0162718,
-    "ast_hash": "1a1da9fcb213df594d290a4eb22cf8b2",
+    "mtime": 1788282455.7825215,
+    "ast_hash": "a3e9dfee4155a377a99c16c4c321e2e0",
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
@@ -7630,8 +7630,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/dialogs/InvoiceDialogManager.tsx": {
-    "mtime": 1788137011.0614996,
-    "ast_hash": "dd1b09f2695c6bb444282559971da372",
+    "mtime": 1788281901.3284779,
+    "ast_hash": "a802f91bbd4eb4478c07551b7e6cb789",
     "semantic_hash": ""
   },
   "src/features/invoices/components/filters/InvoiceFilterBar.tsx": {
@@ -7660,8 +7660,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/InvoiceTableContainer.tsx": {
-    "mtime": 1788136952.379703,
-    "ast_hash": "cff78dff51fa0f2040d120d1a57938d6",
+    "mtime": 1788282757.1856813,
+    "ast_hash": "a05868b79e601ee98ba8e0d709660344",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceRow.tsx": {
@@ -7685,8 +7685,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceContext.tsx": {
-    "mtime": 1788142380.450179,
-    "ast_hash": "589deee9bf32405253422e4944f1e78b",
+    "mtime": 1788282773.3998468,
+    "ast_hash": "c728aced12336be876f26dcf4a8c48fe",
     "semantic_hash": ""
   },
   "src/features/invoices/context/useInvoiceContext.ts": {
@@ -8602,6 +8602,16 @@
   "docs/architecture/decisions/A-073-eaisybill-eaisybooks-company-auto-sync.md": {
     "mtime": 1788279629.5938914,
     "ast_hash": "3a97426e9a4e2d9dda541f8a70564e6d",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260901000000_add_invoice_items_deductible_percentage.sql": {
+    "mtime": 1788281274.3316724,
+    "ast_hash": "1016e4cda8979c3399bb44ebdb9c7b58",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-078-telecom-vat-deductibility-rules.md": {
+    "mtime": 1788282364.1690793,
+    "ast_hash": "dc105d51057950cefab2d22e6299bbde",
     "semantic_hash": ""
   }
 }

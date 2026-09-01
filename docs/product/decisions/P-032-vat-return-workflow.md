@@ -21,9 +21,14 @@
   - VIES közösségi adószám formátum- és érvényesség-ellenőrzés
 - **Áthozat és elszámolás (82-86. sorok):**
   - 82. sor (előző időszaki áthozat) közvetlen szerkesztése és automatikus egyenlegkalkuláció (83. sor különbözet, 84. sor fizetendő, 85-86. sor visszaigényelhető/átvihető)
+- **Részleges ÁFA levonhatóság & 70/30 Telefonszámla szabály (ADR A-078):**
+  - Tételszintű `deductible_percentage` aránykezelés (`InvoiceItemsDialog`)
+  - Távközlési számlák (Telekom, Yettel, Vodafone/One, Digi) automatikus észlelése és egykattintásos 70/30 beállítása a 27%-os telefon tételekre (az 5%-os internet tételek 100%-os levonhatóságának megőrzésével)
+  - `calculate_vat_return` motorban a levonható arányos adóalap és adó összegzése a 66. sorba és az M-lapokra
+  - Transzparens megjelenítés a `VatRowDrillDown` fúrási nézetben
 - **ÁNYK XML & PDF Export:**
   - 2665 nyomtatványnak megfelelő hivatalos XML generálás és XML struktúra validáció
   - PDF nyomtatási lehetőség a hivatalos formátum szerint
 
-**Rationale:** A tab-alapú és replika megközelítés lehetővé teszi a könyvelőnek a NAV 65-ös nyomtatvány szerinti közvetlen áttekintést. Az A60-as keresztellenőrzés és az interaktív típusválasztó garantálja, hogy a közösségi ügyletek adatai pontosan egyezzenek a bevallás soraival.
+**Rationale:** A tab-alapú és replika megközelítés lehetővé teszi a könyvelőnek a NAV 65-ös nyomtatvány szerinti közvetlen áttekintést. Az A60-as keresztellenőrzés és a tételszintű 70/30-as levonhatósági motor garantálja, hogy a távközlési és közösségi számlák adatai pontosan és automatikusan egyezzenek a bevallás soraival.
 

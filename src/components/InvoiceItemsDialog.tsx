@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -56,6 +56,7 @@ interface InvoiceLineItem {
   exclude_from_accounting?: boolean;
   project_id?: string | null;
   notes?: string | null;
+  deductible_percentage?: number | null;
 }
 
 interface InvoiceItemsDialogProps {
@@ -72,6 +73,8 @@ interface InvoiceItemsDialogProps {
   supplierName?: string;
   /** Project id of the invoice (for asset activation) */
   projectId?: string | null;
+  /** Direction of the invoice: 'INBOUND' (purchase) or 'OUTBOUND' (sales) */
+  invoiceDirection?: string;
 }
 
 export function InvoiceItemsDialog({
@@ -84,6 +87,7 @@ export function InvoiceItemsDialog({
   invoiceDate,
   supplierName,
   projectId,
+  invoiceDirection,
 }: InvoiceItemsDialogProps) {
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
@@ -268,7 +272,7 @@ export function InvoiceItemsDialog({
   const { data: items = [], isLoading: loading } = useQuery({
     queryKey: ['invoiceItems', source, invoiceId],
     queryFn: async () => {
-      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes';
+      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes, deductible_percentage';
       const fullCols = baseCols + ', exclude_from_accounting';
       const fkCol = source === 'submitted' ? 'invoice_id' : 'nav_invoice_id';
       const fromTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
@@ -299,47 +303,14 @@ export function InvoiceItemsDialog({
     placeholderData: keepPreviousData,
   });
 
-  // Fetch GL accounts for the picker combobox
-  const { data: glAccounts = [] } = useQuery({
-    queryKey: ['glAccounts', activePresetId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('gl_accounts')
-        .select('id, gl_number, short_name')
-        .eq('preset_id', activePresetId!)
-        .order('gl_number');
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!activePresetId && glEditOpen,
-  });
+  const isOutbound = invoiceDirection === 'OUTBOUND';
 
-  const cleanGlNum = (num: any) => num ? String(num).replace(/\./g, '') : '';
-
-  // Open GL edit dialog for a specific item
-  const openGlEdit = useCallback((item: InvoiceLineItem) => {
-    const classification = (activePresetId && item.gl_classifications?.[activePresetId])
-      ? item.gl_classifications[activePresetId]
-      : null;
-    setGlEditItem(item);
-    setIsBulkGlEdit(false);
-    setSelectedNewGL(classification?.gl_account_id || '');
-    setGlSearchQuery('');
-    setGlEditOpen(true);
-  }, [activePresetId]);
-
-  // Open GL edit dialog in bulk mode for all selected items
-  const openBulkGlEdit = useCallback(() => {
-    if (selectedIds.size === 0) return;
-    setGlEditItem(null);
-    setIsBulkGlEdit(true);
-    setSelectedNewGL('');
-    setGlSearchQuery('');
-    setGlEditOpen(true);
-  }, [selectedIds]);
+  // State & Handlers for Deductible Percentage
+  const [updatingDeductibleId, setUpdatingDeductibleId] = useState<string | null>(null);
+  const [isApplying7030, setIsApplying7030] = useState(false);
 
   // Find the "twin" line item in the opposite table (nav ↔ submitted)
-  // so that GL changes on one side are automatically mirrored to the other.
+  // so that GL / metadata changes on one side are automatically mirrored to the other.
   const findTwinItems = useCallback(async (item: InvoiceLineItem): Promise<{ id: string; sourceTable: string; originalGlAccountId: string | null }[]> => {
     if (!selectedCompany?.id) return [];
 
@@ -421,6 +392,188 @@ export function InvoiceItemsDialog({
       return [];
     }
   }, [source, invoiceId, selectedCompany?.id, activePresetId]);
+
+  // Telecom invoice smart detection
+  const isTelecomInvoice = useMemo(() => {
+    const name = (supplierName || '').toLowerCase().trim();
+    const hasTelecomName = 
+      name.includes('telekom') || 
+      name.includes('yettel') || 
+      name.includes('vodafone') || 
+      name.includes('one magyar') || 
+      name.includes('one zrt') || 
+      name.includes('one kft') || 
+      name.includes('one telecom') || 
+      name.startsWith('one ') || 
+      name === 'one' || 
+      name.includes('digi') || 
+      name.includes('opennetworks') || 
+      name.includes('invitel') || 
+      name.includes('cetin') || 
+      name.includes('upc') || 
+      name.includes('t-mobile') || 
+      name.includes('t-systems');
+    const hasPhoneItems = items.some(it => {
+      const desc = (it.line_description || '').toLowerCase();
+      return desc.includes('mobil') || desc.includes('telefon') || desc.includes('hanghívás') || desc.includes('sms') || desc.includes('havidíj') || desc.includes('hívásdíj') || desc.includes('adatforgalom') || desc.includes('készülékrészlet');
+    });
+    return hasTelecomName || hasPhoneItems;
+  }, [supplierName, items]);
+
+  // Update a single item's deductible percentage
+  const handleUpdateItemDeductible = useCallback(async (item: InvoiceLineItem, percentage: number) => {
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    setUpdatingDeductibleId(item.id);
+    try {
+      const { error } = await supabase
+        .from(table as any)
+        .update({ deductible_percentage: percentage })
+        .eq('id', item.id);
+
+      if (error) {
+        toast({
+          title: 'Hiba a levonhatóság mentésekor',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      try {
+        const twins = await findTwinItems(item);
+        for (const twin of twins) {
+          await supabase
+            .from(twin.sourceTable as any)
+            .update({ deductible_percentage: percentage })
+            .eq('id', twin.id);
+        }
+      } catch (e) {
+        console.error('Failed to update twin item deductible:', e);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
+      queryClient.invalidateQueries({ queryKey: ['nav_invoice_items_drill'] });
+      toast({
+        title: 'Levonhatóság beállítva',
+        description: `A tétel levonhatósága ${percentage}%-ra módosult.`,
+      });
+    } finally {
+      setUpdatingDeductibleId(null);
+    }
+  }, [source, invoiceId, queryClient, toast, findTwinItems]);
+
+  // Apply 70/30 telephone rule to 27% items
+  const handleApply7030TelephoneRule = useCallback(async () => {
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const targetItems = items.filter(it => it.vat_rate === '0.27' || it.vat_rate === '27' || it.vat_rate === '27.0' || it.vat_rate === '27.00');
+    if (targetItems.length === 0) {
+      toast({
+        title: 'Nincs 27%-os tétel',
+        description: 'A számlán nem található 27%-os ÁFA kulcsú tétel a 70/30 szabály alkalmazásához.',
+      });
+      return;
+    }
+
+    setIsApplying7030(true);
+    try {
+      const ids = targetItems.map(it => it.id);
+      const { error } = await supabase
+        .from(table as any)
+        .update({ deductible_percentage: 70.00 })
+        .in('id', ids);
+
+      if (error) {
+        toast({
+          title: 'Hiba a 70/30 szabály alkalmazásakor',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
+      queryClient.invalidateQueries({ queryKey: ['nav_invoice_items_drill'] });
+      toast({
+        title: '70/30 Szabály sikeresen alkalmazva',
+        description: `${ids.length} db 27%-os tétel levonhatósága 70%-ra állítva. (Az 5%-os internet tételek 100%-on maradtak).`,
+      });
+    } finally {
+      setIsApplying7030(false);
+    }
+  }, [items, source, invoiceId, queryClient, toast]);
+
+  // Bulk update deductible percentage
+  const handleBulkUpdateDeductible = useCallback(async (percentage: number) => {
+    if (selectedIds.size === 0) return;
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase
+      .from(table as any)
+      .update({ deductible_percentage: percentage })
+      .in('id', ids);
+
+    if (error) {
+      toast({
+        title: 'Hiba a tömeges levonhatóság mentésekor',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSelectedIds(new Set());
+    queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+    queryClient.invalidateQueries({ queryKey: ['vat_return'] });
+    queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
+    queryClient.invalidateQueries({ queryKey: ['nav_invoice_items_drill'] });
+    toast({
+      title: 'Levonhatóság frissítve',
+      description: `${ids.length} tétel levonhatósága ${percentage}%-ra lett állítva.`,
+    });
+  }, [selectedIds, source, invoiceId, queryClient, toast]);
+
+  // Fetch GL accounts for the picker combobox
+  const { data: glAccounts = [] } = useQuery({
+    queryKey: ['glAccounts', activePresetId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gl_accounts')
+        .select('id, gl_number, short_name')
+        .eq('preset_id', activePresetId!)
+        .order('gl_number');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activePresetId && glEditOpen,
+  });
+
+  const cleanGlNum = (num: any) => num ? String(num).replace(/\./g, '') : '';
+
+  // Open GL edit dialog for a specific item
+  const openGlEdit = useCallback((item: InvoiceLineItem) => {
+    const classification = (activePresetId && item.gl_classifications?.[activePresetId])
+      ? item.gl_classifications[activePresetId]
+      : null;
+    setGlEditItem(item);
+    setIsBulkGlEdit(false);
+    setSelectedNewGL(classification?.gl_account_id || '');
+    setGlSearchQuery('');
+    setGlEditOpen(true);
+  }, [activePresetId]);
+
+  // Open GL edit dialog in bulk mode for all selected items
+  const openBulkGlEdit = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    setGlEditItem(null);
+    setIsBulkGlEdit(true);
+    setSelectedNewGL('');
+    setGlSearchQuery('');
+    setGlEditOpen(true);
+  }, [selectedIds]);
 
   // Save GL override (+ sync twin item in the linked table)
   const handleSaveGlOverride = useCallback(async () => {
@@ -526,6 +679,11 @@ export function InvoiceItemsDialog({
       if (sortField === 'gross_amount') {
         aVal = getGrossAmount(a);
         bVal = getGrossAmount(b);
+      }
+
+      if (sortField === 'deductible_percentage') {
+        aVal = a.deductible_percentage ?? 100;
+        bVal = b.deductible_percentage ?? 100;
       }
 
       if (sortField === 'gl_classifications') {
@@ -846,62 +1004,85 @@ export function InvoiceItemsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-7xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader className="pb-4 border-b border-border/50">
-            <DialogTitle className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Package className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <span className="text-muted-foreground text-sm font-normal">Számlatételek</span>
-                <p className="font-mono text-xl font-bold tracking-tight">{invoiceNumber}</p>
-              </div>
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-auto mt-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <LoadingSpinner />
-              </div>
-            ) : items.length === 0 && open ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
-                  <Package className="h-8 w-8 opacity-50" />
+        <TooltipProvider delayDuration={150}>
+          <DialogContent className="max-w-7xl max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader className="pb-4 border-b border-border/50">
+              <DialogTitle className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Package className="h-5 w-5 text-primary" />
                 </div>
-                <p className="font-medium">Nincsenek elérhető tételek</p>
-                <p className="text-sm mt-1 opacity-75">
-                  A tételek automatikusan lekérésre kerülnek a következő szinkronizáláskor.
-                </p>
-              </div>
-            ) : items.length === 0 ? null : (
-              <div className="rounded-lg border border-border/50 overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/30 hover:bg-muted/30">
-                      <TableHead className="w-10">
-                        <Checkbox
-                          checked={allSelected}
-                          onCheckedChange={toggleAll}
-                          disabled={selectableItems.length === 0}
-                          aria-label="Összes kijelölése"
-                        />
-                      </TableHead>
-                      {renderSortableHeader('line_number', '#', 'left', 'w-16')}
-                      {renderSortableHeader('line_description', 'Megnevezés', 'left')}
-                      {renderSortableHeader('quantity', 'Mennyiség', 'right', 'text-right')}
-                      {renderSortableHeader('unit_price', 'Egységár', 'right', 'text-right')}
-                      {renderSortableHeader('net_amount', 'Nettó', 'right', 'text-right')}
-                      {renderSortableHeader('vat_rate', 'ÁFA', 'center', 'text-center w-[90px]')}
-                      {renderSortableHeader('vat_amount', 'ÁFA összeg', 'right', 'text-right')}
-                      {renderSortableHeader('gross_amount', 'Bruttó', 'right', 'text-right')}
-                      {renderSortableHeader('gl_classifications', 'Főkönyv', 'center', 'text-center')}
-                      <TableHead className="font-semibold w-[200px]">Projekt</TableHead>
-                      <TableHead className="font-semibold text-center w-12">Jegyzet</TableHead>
-                      <TableHead className="text-center font-semibold w-[75px]">
-                        <div className="flex items-center justify-center gap-1">
-                          Könyv.
-                          <TooltipProvider delayDuration={0}>
+                <div>
+                  <span className="text-muted-foreground text-sm font-normal">Számlatételek</span>
+                  <p className="font-mono text-xl font-bold tracking-tight">{invoiceNumber}</p>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-auto mt-4">
+              {!isOutbound && isTelecomInvoice && items.length > 0 && (
+                <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/25 rounded-lg px-4 py-2.5 mb-3 text-xs">
+                  <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                    <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
+                    <span>
+                      <strong>Távközlési számla észlelve:</strong> Az Áfa tv. 124. § (2) bek. b) alapján a 27%-os telefon tételek 70%-ban levonhatók, míg az 5%-os internet tételek 100%-ban levonhatók.
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleApply7030TelephoneRule}
+                    disabled={isApplying7030}
+                    className="h-7 text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 border-amber-500/40 shrink-0 ml-3 font-medium cursor-pointer"
+                  >
+                    {isApplying7030 ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Sparkles className="w-3.5 h-3.5 text-amber-500 mr-1.5" />}
+                    70/30 szabály alkalmazása (27%-os tételekre)
+                  </Button>
+                </div>
+              )}
+
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <LoadingSpinner />
+                </div>
+              ) : items.length === 0 && open ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+                    <Package className="h-8 w-8 opacity-50" />
+                  </div>
+                  <p className="font-medium">Nincsenek elérhető tételek</p>
+                  <p className="text-sm mt-1 opacity-75">
+                    A tételek automatikusan lekérésre kerülnek a következő szinkronizáláskor.
+                  </p>
+                </div>
+              ) : items.length === 0 ? null : (
+                <div className="rounded-lg border border-border/50 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/30 hover:bg-muted/30">
+                        <TableHead className="w-10">
+                          <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={toggleAll}
+                            disabled={selectableItems.length === 0}
+                            aria-label="Összes kijelölése"
+                          />
+                        </TableHead>
+                        {renderSortableHeader('line_number', '#', 'left', 'w-16')}
+                        {renderSortableHeader('line_description', 'Megnevezés', 'left')}
+                        {renderSortableHeader('quantity', 'Mennyiség', 'right', 'text-right')}
+                        {renderSortableHeader('unit_price', 'Egységár', 'right', 'text-right')}
+                        {renderSortableHeader('net_amount', 'Nettó', 'right', 'text-right')}
+                        {renderSortableHeader('vat_rate', 'ÁFA', 'center', 'text-center w-[90px]')}
+                        {renderSortableHeader('vat_amount', 'ÁFA összeg', 'right', 'text-right')}
+                        {!isOutbound && renderSortableHeader('deductible_percentage', 'Levonhatóság', 'center', 'text-center w-[130px]')}
+                        {renderSortableHeader('gross_amount', 'Bruttó', 'right', 'text-right')}
+                        {renderSortableHeader('gl_classifications', 'Főkönyv', 'center', 'text-center')}
+                        <TableHead className="font-semibold w-[200px]">Projekt</TableHead>
+                        <TableHead className="font-semibold text-center w-12">Jegyzet</TableHead>
+                        <TableHead className="text-center font-semibold w-[75px]">
+                          <div className="flex items-center justify-center gap-1">
+                            Könyv.
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
@@ -910,11 +1091,10 @@ export function InvoiceItemsDialog({
                                 <p className="text-xs font-normal normal-case tracking-normal leading-relaxed">Ha be van jelölve, a tétel bekerül a könyvelésbe. Kattints a jelölőnégyzetre a módosításhoz.</p>
                               </TooltipContent>
                             </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
+                          </div>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {sortedItems.map((item, index) => {
                       const alreadyActivated = isItemAlreadyActivated(item);
@@ -988,6 +1168,63 @@ export function InvoiceItemsDialog({
                         <TableCell className="text-right font-mono">
                           {formatAmount(item.vat_amount)}
                         </TableCell>
+                        {!isOutbound && (
+                          <TableCell className="text-center">
+                            <Tooltip>
+                              <DropdownMenu>
+                                <TooltipTrigger asChild>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      disabled={updatingDeductibleId === item.id}
+                                      className={cn(
+                                        "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border shadow-sm",
+                                        (item.deductible_percentage === 70)
+                                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/25"
+                                          : (item.deductible_percentage === 0)
+                                          ? "bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/25"
+                                          : (item.deductible_percentage != null && item.deductible_percentage < 100)
+                                          ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/25"
+                                          : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80"
+                                      )}
+                                    >
+                                      {updatingDeductibleId === item.id ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <>
+                                          <span>{item.deductible_percentage != null ? `${item.deductible_percentage}%` : '100%'}</span>
+                                          {item.deductible_percentage === 70 && <span className="text-[10px] opacity-75 font-normal">(70/30)</span>}
+                                          <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
+                                        </>
+                                      )}
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs z-[120]">
+                                  ÁFA levonhatósági arány módosítása
+                                </TooltipContent>
+                                <DropdownMenuContent align="center" className="w-56 z-[110]">
+                                  <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 100)} className="cursor-pointer">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mr-2" />
+                                    <span className="font-medium">100% — Teljes levonhatóság</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 70)} className="cursor-pointer">
+                                    <Sparkles className="h-3.5 w-3.5 text-amber-500 mr-2" />
+                                    <span className="font-medium text-amber-600 dark:text-amber-400">70% — Telefon (70/30)</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 50)} className="cursor-pointer">
+                                    <Info className="h-3.5 w-3.5 text-blue-500 mr-2" />
+                                    <span>50% — Részleges levonhatóság</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 0)} className="cursor-pointer">
+                                    <X className="h-3.5 w-3.5 text-red-500 mr-2" />
+                                    <span className="text-destructive font-medium">0% — Nem levonható</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </Tooltip>
+                          </TableCell>
+                        )}
                         <TableCell className="text-right font-mono font-medium">
                           {formatAmount(getGrossAmount(item))}
                         </TableCell>
@@ -1000,26 +1237,27 @@ export function InvoiceItemsDialog({
                                   ? Object.values(item.gl_classifications)[0] 
                                   : null);
                             
-                            return classification?.gl_number ? (
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); openGlEdit(item); }}
-                                className="group/gl inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
-                                title="Kattints a módosításhoz"
-                              >
-                                {classification.gl_number}
-                                <Pencil className="h-3 w-3 opacity-0 group-hover/gl:opacity-70 transition-opacity" />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); openGlEdit(item); }}
-                                className="group/gl inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors cursor-pointer"
-                                title="Kattints a besoroláshoz"
-                              >
-                                -
-                                <Pencil className="h-3 w-3 opacity-0 group-hover/gl:opacity-70 transition-opacity" />
-                              </button>
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); openGlEdit(item); }}
+                                    className={cn(
+                                      "group/gl inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors cursor-pointer",
+                                      classification?.gl_number
+                                        ? "bg-primary/10 text-primary hover:bg-primary/20"
+                                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                    )}
+                                  >
+                                    {classification?.gl_number || '-'}
+                                    <Pencil className="h-3 w-3 opacity-0 group-hover/gl:opacity-70 transition-opacity" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs z-[120]">
+                                  {classification?.gl_number ? "Kattints a módosításhoz" : "Kattints a besoroláshoz"}
+                                </TooltipContent>
+                              </Tooltip>
                             );
                           })()}
                         </TableCell>
@@ -1060,104 +1298,20 @@ export function InvoiceItemsDialog({
                               const projName = projectList.find(p => p.id === item.project_id)?.name || 'Projekt';
 
                               return (
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10 rounded-md shrink-0"
-                                      title="Automata szabály beállítása"
-                                    >
-                                      <Sparkles className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-80 p-4 z-[110]" align="end">
-                                    <div className="space-y-3">
-                                      <div className="flex items-center gap-2">
-                                        <Sparkles className="h-4 w-4 text-primary" />
-                                        <h4 className="font-semibold text-sm">Automatikus szabály beállítása</h4>
-                                      </div>
-                                      <p className="text-xs text-muted-foreground leading-relaxed">
-                                        Szeretné beállítani, hogy a jövőben minden <strong>"{item.line_description}"</strong> megnevezésű és <strong>"{classification.gl_number}"</strong> kontírszámú tétel automatikusan a(z) <strong>"{projName}"</strong> projekthez sorolódjon?
-                                      </p>
-                                      <p className="text-[10px] text-primary/80 italic leading-snug bg-primary/5 p-2 rounded border border-primary/10">
-                                        Ez a szabály visszamenőleg is érvényesül a még projekt nélküli azonos tételekre!
-                                      </p>
-                                      <div className="flex justify-end gap-2 pt-2">
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="h-8 text-xs"
-                                          onClick={() => {
-                                            document.body.click();
-                                          }}
-                                        >
-                                          Mégse
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          className="h-8 text-xs gap-1.5"
-                                          onClick={async () => {
-                                            document.body.click();
-                                            await handleSaveProjectRule(
-                                              item.line_description || '',
-                                              classification.gl_number,
-                                              item.project_id!,
-                                              projName
-                                            );
-                                          }}
-                                        >
-                                          Szabály mentése
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
+                                <ItemProjectRuleButton
+                                  item={item}
+                                  classificationGlNumber={classification.gl_number}
+                                  projectName={projName}
+                                  onSaveRule={handleSaveProjectRule}
+                                />
                               );
                             })()}
                           </div>
                         </TableCell>
-                        <TableCell className="text-center w-12">
-                          <TooltipProvider delayDuration={300}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div>
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className={cn(
-                                          "h-8 w-8 rounded-md hover:bg-muted/50 transition-colors shrink-0",
-                                          item.notes ? "text-emerald-500 hover:text-emerald-600" : "text-muted-foreground/45 hover:text-muted-foreground/80"
-                                        )}
-                                      >
-                                        <MessageSquare className="h-4 w-4" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80 p-4 z-[110]" align="end">
-                                      <ItemNoteEditor 
-                                        item={item} 
-                                        onSave={async (newNotes) => {
-                                          await handleUpdateItemNotes(item, newNotes);
-                                        }} 
-                                      />
-                                    </PopoverContent>
-                                  </Popover>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-[240px] z-[120]">
-                                <p className="text-xs leading-normal">
-                                  {item.notes ? (
-                                    <span className="font-medium">{item.notes}</span>
-                                  ) : (
-                                    <span>Jegyzet hozzáadása</span>
-                                  )}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
+                        <ItemNoteCell
+                          item={item}
+                          onSaveNotes={handleUpdateItemNotes}
+                        />
                         <TableCell className="text-center">
                           {item.exclude_from_accounting !== undefined ? (
                             <Checkbox
@@ -1199,6 +1353,36 @@ export function InvoiceItemsDialog({
                     <Pencil className="h-4 w-4 text-primary" />
                     Főkönyv módosítása ({selectedIds.size || 0} tétel)
                   </Button>
+                  {!isOutbound && (
+                    <div className={cn(!someSelected && "invisible pointer-events-none")}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="gap-2">
+                            <Sparkles className="h-4 w-4 text-amber-500" />
+                            Levonhatóság ({selectedIds.size || 0} tétel)
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-56">
+                          <DropdownMenuItem onClick={() => handleBulkUpdateDeductible(100)} className="cursor-pointer">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500 mr-2" />
+                            100% — Teljes levonhatóság
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleBulkUpdateDeductible(70)} className="cursor-pointer">
+                            <Sparkles className="h-4 w-4 text-amber-500 mr-2" />
+                            70% — Telefon (70/30 szabály)
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleBulkUpdateDeductible(50)} className="cursor-pointer">
+                            <Info className="h-4 w-4 text-blue-500 mr-2" />
+                            50% — Részleges levonhatóság
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleBulkUpdateDeductible(0)} className="cursor-pointer">
+                            <X className="h-4 w-4 text-red-500 mr-2" />
+                            0% — Nem levonható
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
                   <div className={cn(!someSelected && "invisible pointer-events-none")}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -1244,7 +1428,8 @@ export function InvoiceItemsDialog({
               </div>
             </div>
           )}
-        </DialogContent>
+          </DialogContent>
+        </TooltipProvider>
       </Dialog>
 
       {/* GL Edit Dialog */}
@@ -1434,53 +1619,230 @@ export function InvoiceItemsDialog({
   );
 }
 
-// Lightweight component to edit line item note inside popover
-interface ItemNoteEditorProps {
+// ── Item Project Rule Button Component ──
+interface ItemProjectRuleButtonProps {
   item: InvoiceLineItem;
-  onSave: (notes: string) => Promise<void>;
+  classificationGlNumber: string;
+  projectName: string;
+  onSaveRule: (lineDescription: string, glNumber: string, projectId: string, projectName: string) => Promise<void>;
 }
 
-function ItemNoteEditor({ item, onSave }: ItemNoteEditorProps) {
-  const [text, setText] = useState(item.notes || '');
+function ItemProjectRuleButton({
+  item,
+  classificationGlNumber,
+  projectName,
+  onSaveRule,
+}: ItemProjectRuleButtonProps) {
+  const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <MessageSquare className="h-4 w-4 text-emerald-500" />
-        <h4 className="font-semibold text-sm">Tétel jegyzet</h4>
-      </div>
-      <textarea
-        className="w-full min-h-[80px] p-2 text-xs bg-background border border-border/80 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-y text-foreground"
-        placeholder="Jegyzet írása..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-      <div className="flex justify-end gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 text-xs"
-          onClick={() => {
-            document.body.click();
-          }}
+    <Popover open={open} onOpenChange={setOpen}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10 rounded-md shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(prev => !prev);
+              }}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        {!open && (
+          <TooltipContent side="top" className="text-xs z-[120]">
+            Automata szabály beállítása
+          </TooltipContent>
+        )}
+      </Tooltip>
+      <PopoverContent className="w-80 p-4 z-[110]" align="end" onClick={(e) => e.stopPropagation()}>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h4 className="font-semibold text-sm">Automatikus szabály beállítása</h4>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Szeretné beállítani, hogy a jövőben minden <strong>"{item.line_description}"</strong> megnevezésű és <strong>"{classificationGlNumber}"</strong> kontírszámú tétel automatikusan a(z) <strong>"{projectName}"</strong> projekthez sorolódjon?
+          </p>
+          <p className="text-[10px] text-primary/80 italic leading-snug bg-primary/5 p-2 rounded border border-primary/10">
+            Ez a szabály visszamenőleg is érvényesül a még projekt nélküli azonos tételekre!
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
+              onClick={() => setOpen(false)}
+              disabled={saving}
+            >
+              Mégse
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 text-xs gap-1.5"
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  await onSaveRule(
+                    item.line_description || '',
+                    classificationGlNumber,
+                    item.project_id!,
+                    projectName
+                  );
+                  setOpen(false);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              {saving ? 'Mentés...' : 'Szabály mentése'}
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ── Line Item Note Cell Component ──
+interface ItemNoteCellProps {
+  item: InvoiceLineItem;
+  onSaveNotes: (item: InvoiceLineItem, notes: string) => Promise<void>;
+}
+
+function ItemNoteCell({ item, onSaveNotes }: ItemNoteCellProps) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState(item.notes || '');
+  const [saving, setSaving] = useState(false);
+
+  // Sync text whenever item.notes changes (e.g. after refetch)
+  useEffect(() => {
+    setText(item.notes || '');
+  }, [item.notes]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSaveNotes(item, text);
+      setOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setText(item.notes || '');
+    setOpen(false);
+  };
+
+  const hasNote = Boolean(item.notes && item.notes.trim().length > 0);
+
+  return (
+    <TableCell className="text-center w-12" onClick={(e) => e.stopPropagation()}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(prev => !prev);
+                }}
+                className={cn(
+                  "h-8 w-8 rounded-md transition-all relative shrink-0",
+                  hasNote
+                    ? "text-emerald-400 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 shadow-sm"
+                    : "text-muted-foreground/45 hover:text-muted-foreground hover:bg-muted/50"
+                )}
+              >
+                <MessageSquare className={cn("h-4 w-4", hasNote && "fill-emerald-500/30 text-emerald-400")} />
+                {hasNote && (
+                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          {!open && (
+            <TooltipContent side="top" className="max-w-[280px] z-[120] bg-popover border border-border shadow-md">
+              {hasNote ? (
+                <div className="space-y-1">
+                  <p className="font-semibold text-emerald-400 text-xs flex items-center gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5" /> Tétel jegyzet:
+                  </p>
+                  <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed font-normal">
+                    {item.notes}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs leading-normal">Jegyzet hozzáadása</p>
+              )}
+            </TooltipContent>
+          )}
+        </Tooltip>
+
+        <PopoverContent
+          className="w-80 p-4 z-[110] shadow-xl border-border bg-popover"
+          align="end"
+          onClick={(e) => e.stopPropagation()}
         >
-          Mégse
-        </Button>
-        <Button
-          size="sm"
-          className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
-          onClick={async () => {
-            setSaving(true);
-            await onSave(text);
-            setSaving(false);
-            document.body.click();
-          }}
-          disabled={saving}
-        >
-          Mentés
-        </Button>
-      </div>
-    </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-emerald-500" />
+                <h4 className="font-semibold text-sm">Tétel jegyzet</h4>
+              </div>
+              {hasNote && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-medium">
+                  Rögzítve
+                </span>
+              )}
+            </div>
+            <textarea
+              className="w-full min-h-[90px] p-2.5 text-xs bg-background border border-border/80 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-y text-foreground placeholder:text-muted-foreground/60 leading-relaxed"
+              placeholder="Írj jegyzetet ehhez a tételhez..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs"
+                onClick={handleCancel}
+                disabled={saving}
+              >
+                Mégse
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? 'Mentés...' : 'Mentés'}
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </TableCell>
   );
 }

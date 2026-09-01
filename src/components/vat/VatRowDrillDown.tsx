@@ -41,7 +41,7 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
       if (!(inv as any)?.id) return [];
       const { data: items } = await supabase
         .from('nav_invoice_items')
-        .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate')
+        .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage')
         .eq('nav_invoice_id', (inv as any).id)
         .order('line_number');
       return (items || []) as any[];
@@ -70,15 +70,42 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
         <div className="col-span-2 text-right">Nettó</div>
         <div className="col-span-2 text-right">ÁFA</div>
       </div>
-      {items.map((item: any, j: number) => (
-        <div key={j} className="grid grid-cols-12 gap-2 px-3 py-1 text-[11px] text-muted-foreground hover:bg-muted/20 transition-colors">
-          <div className="col-span-4 truncate" title={item.line_description}>{item.line_description || '—'}</div>
-          <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? Number(item.quantity).toLocaleString('hu-HU') : '—'}</div>
-          <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? Number(item.unit_price).toLocaleString('hu-HU') : '—'}</div>
-          <div className="col-span-2 text-right tabular-nums">{Number(item.net_amount || 0).toLocaleString('hu-HU')} Ft</div>
-          <div className="col-span-2 text-right tabular-nums">{Number(item.vat_amount || 0).toLocaleString('hu-HU')} Ft</div>
-        </div>
-      ))}
+      {items.map((item: any, j: number) => {
+        const deductible = Number(item.deductible_percentage ?? 100);
+        const isPartial = deductible < 100;
+        const effectiveNet = Math.round((Number(item.net_amount || 0) * (deductible / 100.0)));
+        const effectiveVat = Math.round((Number(item.vat_amount || 0) * (deductible / 100.0)));
+        return (
+          <div key={j} className="grid grid-cols-12 gap-2 px-3 py-1 text-[11px] text-muted-foreground hover:bg-muted/20 transition-colors items-center">
+            <div className="col-span-4 flex items-center gap-1.5 truncate" title={item.line_description}>
+              <span className="truncate">{item.line_description || '—'}</span>
+              {isPartial && (
+                <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                  {deductible}% lev.
+                </span>
+              )}
+            </div>
+            <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? Number(item.quantity).toLocaleString('hu-HU') : '—'}</div>
+            <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? Number(item.unit_price).toLocaleString('hu-HU') : '—'}</div>
+            <div className="col-span-2 text-right tabular-nums">
+              <div>{effectiveNet.toLocaleString('hu-HU')} Ft</div>
+              {isPartial && (
+                <div className="text-[9px] text-muted-foreground/50 line-through">
+                  {Number(item.net_amount || 0).toLocaleString('hu-HU')} Ft
+                </div>
+              )}
+            </div>
+            <div className="col-span-2 text-right tabular-nums font-medium">
+              <div>{effectiveVat.toLocaleString('hu-HU')} Ft</div>
+              {isPartial && (
+                <div className="text-[9px] text-muted-foreground/50 line-through font-normal">
+                  {Number(item.vat_amount || 0).toLocaleString('hu-HU')} Ft
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -170,7 +197,7 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
         .select(`
           id, invoice_number, supplier_name, customer_name, invoice_direction,
           invoice_delivery_date, currency,
-          nav_invoice_items!inner(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price)
+          nav_invoice_items!inner(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage)
         `)
         .eq('company_id', companyId)
         .gte('invoice_delivery_date', dateFrom)
@@ -209,7 +236,11 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
     const currency = inv.currency || 'HUF';
     const rate = getRate(currency);
     const items = inv.nav_invoice_items || [];
-    const netSum = items.reduce((is: number, i: any) => is + (Number(i.net_amount) || 0), 0);
+    const isInbound = inv.invoice_direction === 'INBOUND';
+    const netSum = items.reduce((is: number, i: any) => {
+      const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
+      return is + ((Number(i.net_amount) || 0) * ratio);
+    }, 0);
     return s + (netSum * rate);
   }, 0);
 
@@ -217,7 +248,11 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
     const currency = inv.currency || 'HUF';
     const rate = getRate(currency);
     const items = inv.nav_invoice_items || [];
-    const vatSum = items.reduce((is: number, i: any) => is + (Number(i.vat_amount) || 0), 0);
+    const isInbound = inv.invoice_direction === 'INBOUND';
+    const vatSum = items.reduce((is: number, i: any) => {
+      const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
+      return is + ((Number(i.vat_amount) || 0) * ratio);
+    }, 0);
     return s + (vatSum * rate);
   }, 0);
 
@@ -240,8 +275,14 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
         const rate = getRate(currency);
         const isForeign = currency.toUpperCase() !== 'HUF';
 
-        const origNet = items.reduce((s: number, i: any) => s + (Number(i.net_amount) || 0), 0);
-        const origVat = items.reduce((s: number, i: any) => s + (Number(i.vat_amount) || 0), 0);
+        const origNet = items.reduce((s: number, i: any) => {
+          const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
+          return s + ((Number(i.net_amount) || 0) * ratio);
+        }, 0);
+        const origVat = items.reduce((s: number, i: any) => {
+          const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
+          return s + ((Number(i.vat_amount) || 0) * ratio);
+        }, 0);
 
         const totalNet = Math.round(origNet * rate);
         const totalVat = Math.round(origVat * rate);

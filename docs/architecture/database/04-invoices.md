@@ -99,6 +99,7 @@
 | notes | text | ✓ | NULL |
 | created_at | timestamp with time zone | ✓ | `now()` |
 | exclude_from_accounting | boolean | — | `false` |
+| deductible_percentage | numeric(5,2) | — | `100.00` |
 
 **FK:** `invoice_id` → `invoices.id`, `project_id` → `projects.id`
 

@@ -184,15 +184,22 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
       if (invoiceId) {
+        if (next.get('invoice') === invoiceId && next.get('action') === action) {
+          return prev;
+        }
         next.set('invoice', invoiceId);
         next.set('action', action);
       } else {
         const currentInvoiceId = next.get('invoice');
         const rowIsExpanded = currentInvoiceId ? expandedRowIds.has(currentInvoiceId) : false;
+        const hadAction = next.has('action');
         next.delete('action');
         if (!rowIsExpanded) next.delete('invoice');
+        if (!hadAction && (!currentInvoiceId || rowIsExpanded)) {
+          return prev;
+        }
       }
-      return next;
+      return next.toString() === prev.toString() ? prev : next;
     }, { replace: true });
   }, [setSearchParams, expandedRowIds]);
 
@@ -311,6 +318,10 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
 
         const currentPageSize = isSubmittedTab ? submittedPageSize : navPageSize;
         if (currentPageSize !== 50) next.set('ps', String(currentPageSize));
+
+        if (next.toString() === prev.toString()) {
+          return prev;
+        }
 
         return next;
       },

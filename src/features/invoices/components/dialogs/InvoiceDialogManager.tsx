@@ -157,6 +157,7 @@ export function InvoiceDialogManager() {
           invoiceDate={selectedNavInvoice?.invoice_issue_date || undefined}
           supplierName={selectedNavInvoice?.supplier_name || undefined}
           projectId={selectedNavInvoice?.project_id || undefined}
+          invoiceDirection={selectedNavInvoice?.invoice_direction || undefined}
         />
       )}
 

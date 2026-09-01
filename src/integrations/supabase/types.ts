@@ -6768,6 +6768,7 @@ export type Database = {
       invoice_items: {
         Row: {
           created_at: string | null
+          deductible_percentage: number
           exclude_from_accounting: boolean
           gl_classifications: Json | null
           gross_amount: number | null
@@ -6787,6 +6788,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          deductible_percentage?: number
           exclude_from_accounting?: boolean
           gl_classifications?: Json | null
           gross_amount?: number | null
@@ -6806,6 +6808,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          deductible_percentage?: number
           exclude_from_accounting?: boolean
           gl_classifications?: Json | null
           gross_amount?: number | null
@@ -7370,6 +7373,7 @@ export type Database = {
       nav_invoice_items: {
         Row: {
           created_at: string | null
+          deductible_percentage: number
           exclude_from_accounting: boolean
           gl_classifications: Json | null
           gross_amount: number | null
@@ -7391,6 +7395,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          deductible_percentage?: number
           exclude_from_accounting?: boolean
           gl_classifications?: Json | null
           gross_amount?: number | null
@@ -7412,6 +7417,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          deductible_percentage?: number
           exclude_from_accounting?: boolean
           gl_classifications?: Json | null
           gross_amount?: number | null

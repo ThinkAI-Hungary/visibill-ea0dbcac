@@ -94,6 +94,7 @@ Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-a
 | created_at | timestamp with time zone | ✓ | `now()` |
 | gl_classifications | jsonb | ✓ | `'{}'::jsonb` |
 | exclude_from_accounting | boolean | — | `false` |
+| deductible_percentage | numeric(5,2) | — | `100.00` |
 
 **FK:** `nav_invoice_id` → `nav_invoices.id`, `project_id` → `projects.id`
 
