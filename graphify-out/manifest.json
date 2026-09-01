@@ -7850,13 +7850,13 @@
     "semantic_hash": ""
   },
   "src/features/upload/ManualUploadFeature.tsx": {
-    "mtime": 1788176776.209635,
-    "ast_hash": "88258c39b9230a6ea985f4b4cdf9821c",
+    "mtime": 1788261973.6390748,
+    "ast_hash": "6af13199c392a4def896a106efbae000",
     "semantic_hash": ""
   },
   "src/features/upload/__tests__/documentUploadService.test.ts": {
-    "mtime": 1788176585.8817418,
-    "ast_hash": "f59d0cc78f50b58caaa110ca4b089cb4",
+    "mtime": 1788263108.5686405,
+    "ast_hash": "0446a114950773abdb4f445bc99e6c62",
     "semantic_hash": ""
   },
   "src/features/upload/components/channel/BankHintSelector.tsx": {
@@ -7905,18 +7905,18 @@
     "semantic_hash": ""
   },
   "src/features/upload/components/header/UploadHeader.tsx": {
-    "mtime": 1788140420.3008478,
-    "ast_hash": "acbc027395b3a69a1b5147e68707b632",
+    "mtime": 1788261973.6395977,
+    "ast_hash": "25dd7c5cfc1675cb18d148084c9785a6",
     "semantic_hash": ""
   },
   "src/features/upload/config/channelConfigs.ts": {
-    "mtime": 1788176578.1336584,
-    "ast_hash": "1b3f38368eaedad9cd931524eb41a9ed",
+    "mtime": 1788263092.468602,
+    "ast_hash": "a8608d082a6a0b0362f054ae5267796e",
     "semantic_hash": ""
   },
   "src/features/upload/core/documentUploadService.ts": {
-    "mtime": 1788140406.147058,
-    "ast_hash": "c3ace273be91e037163bd1cac5084738",
+    "mtime": 1788263100.7973995,
+    "ast_hash": "abeb76db722c6f638b90d0350044c6b7",
     "semantic_hash": ""
   },
   "src/features/upload/core/uploadCacheSync.ts": {
@@ -7935,8 +7935,8 @@
     "semantic_hash": ""
   },
   "src/features/upload/types/index.ts": {
-    "mtime": 1788140384.4958096,
-    "ast_hash": "97cfe5f3162b13f6c9646bc77e4e6aa8",
+    "mtime": 1788263082.69518,
+    "ast_hash": "76ba6c2aedc301a7a9cd648cb9b7ab9d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-064-multi-channel-upload-engine-modularization.md": {

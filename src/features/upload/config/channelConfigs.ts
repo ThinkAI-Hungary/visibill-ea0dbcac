@@ -23,6 +23,7 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     fileTypeDescription: 'PDF vagy kép fájlokat (JPG, PNG, WebP)',
     dragPrompt: 'Húzd ide a számlafájlokat, vagy kattints a tallózáshoz',
     actionButtonLabel: (count: number) => `${count} számlafájl feltöltése`,
+    documentCategory: 'invoice',
   },
   vouchers: {
     id: 'vouchers',
@@ -45,6 +46,7 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     fileTypeDescription: 'PDF vagy kép fájlokat (JPG, PNG, WebP)',
     dragPrompt: 'Húzd ide a pénztárbizonylat fájlokat, vagy kattints a tallózáshoz',
     actionButtonLabel: (count: number) => `${count} pénztárbizonylat feltöltése`,
+    documentCategory: 'penztarbizonylat',
     defaultMetadata: {
       source: 'manual_voucher_upload',
       document_type: 'cash_voucher',
@@ -92,6 +94,7 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     fileTypeDescription: 'PDF, CSV vagy Excel fájlokat',
     dragPrompt: 'Húzd ide a bér- vagy járulékfájlokat, vagy kattints a tallózáshoz',
     actionButtonLabel: (count: number) => `${count} bérfájl feltöltése`,
+    documentCategory: 'payroll',
     defaultMetadata: {
       source: 'manual_salary_upload',
       document_type: 'payroll_report',

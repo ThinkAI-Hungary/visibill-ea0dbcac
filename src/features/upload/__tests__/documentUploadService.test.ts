@@ -67,9 +67,11 @@ describe('DocumentUploadService & ChannelConfigs', () => {
     it('maps channels to correct target database tables and storage buckets', () => {
       expect(CHANNEL_CONFIGS.invoices.targetTable).toBe('invoice_uploads');
       expect(CHANNEL_CONFIGS.invoices.storageBucket).toBe('invoice-uploads');
+      expect(CHANNEL_CONFIGS.invoices.documentCategory).toBe('invoice');
 
       expect(CHANNEL_CONFIGS.vouchers.targetTable).toBe('invoice_uploads');
       expect(CHANNEL_CONFIGS.vouchers.storageBucket).toBe('invoice-uploads');
+      expect(CHANNEL_CONFIGS.vouchers.documentCategory).toBe('penztarbizonylat');
       expect(CHANNEL_CONFIGS.vouchers.defaultMetadata).toEqual({
         source: 'manual_voucher_upload',
         document_type: 'cash_voucher',
@@ -77,8 +79,11 @@ describe('DocumentUploadService & ChannelConfigs', () => {
 
       expect(CHANNEL_CONFIGS.transactions.targetTable).toBe('transaction_uploads');
       expect(CHANNEL_CONFIGS.transactions.storageBucket).toBe('transactions');
+      expect(CHANNEL_CONFIGS.transactions.documentCategory).toBeUndefined();
 
       expect(CHANNEL_CONFIGS.salaries.targetTable).toBe('invoice_uploads');
+      expect(CHANNEL_CONFIGS.salaries.storageBucket).toBe('invoice-uploads');
+      expect(CHANNEL_CONFIGS.salaries.documentCategory).toBe('payroll');
       expect(CHANNEL_CONFIGS.salaries.defaultMetadata).toEqual({
         source: 'manual_salary_upload',
         document_type: 'payroll_report',
@@ -86,6 +91,7 @@ describe('DocumentUploadService & ChannelConfigs', () => {
 
       expect(CHANNEL_CONFIGS.reports.targetTable).toBe('report_uploads');
       expect(CHANNEL_CONFIGS.reports.storageBucket).toBe('report-uploads');
+      expect(CHANNEL_CONFIGS.reports.documentCategory).toBeUndefined();
     });
 
     it('provides options for bank hints and couriers', () => {
