@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-01  
-> **Összesen:** 80 döntés | ✅ Decided: 78 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-02  
+> **Összesen:** 81 döntés | ✅ Decided: 79 | ⛔ Superseded: 2
 
 ---
 
@@ -119,6 +119,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-076 | Statutory Reporting & VAT Return Monolith Deepening, Pure Computation Engines & Feature Slices | ✅ Decided | [A-076](./A-076-statutory-reporting-and-vat-return-monolith-modularization.md) |
 | A-079 | Accounty ErrorBoundary Route-Scoped Reset és Client-Scoped Prompt Szabályok | ✅ Decided | [A-079](./A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md) |
 | A-080 | NAV ÁNYK 2665 ÁFA-Bevallás és 65M Összesítő Jelentés Szabványos XML Export | ✅ Decided | [A-080](./A-080-nav-anyk-vat-return-xml-standardization.md) |
+| A-081 | NAV 08 (2608/2508/2408) XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor | ✅ Decided | [A-081](./A-081-nav-08-payroll-reconstruction-and-bulk-import.md) |
 
 ## 💳 Fizetés
 

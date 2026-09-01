@@ -241,6 +241,7 @@ export const payrollQueryKeys = {
   employees: (companyId: string) => ['payroll', 'employees', companyId] as const,
   employee: (empId: string) => ['payroll', 'employee', empId] as const,
   employments: (empId: string) => ['payroll', 'employments', empId] as const,
+  companyEmployments: (companyId: string) => ['payroll', 'company_employments', companyId] as const,
   cycles: (companyId: string) => ['payroll', 'cycles', companyId] as const,
   cycle: (cycleId: string) => ['payroll', 'cycle', cycleId] as const,
   items: (cycleId: string) => ['payroll', 'items', cycleId] as const,
@@ -361,6 +362,23 @@ export function usePayrollEmployments(employeeId: string) {
       return (data || []) as PayrollEmployment[];
     },
     enabled: !!employeeId && employeeId !== 'undefined' && employeeId !== 'null',
+  });
+}
+
+export function useCompanyEmployments(companyId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.companyEmployments(companyId),
+    queryFn: async (): Promise<PayrollEmployment[]> => {
+      const { data, error } = await supabase
+        .from('accounty_employments')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('start_date', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as PayrollEmployment[];
+    },
+    enabled: !!companyId && companyId !== 'undefined' && companyId !== 'null',
   });
 }
 

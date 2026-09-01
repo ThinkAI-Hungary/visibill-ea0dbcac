@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788306046.5977645,
-    "ast_hash": "07c4389a86fe85e83688c946d2618c26",
+    "mtime": 1788298935.7138302,
+    "ast_hash": "67efaa2a17e717988e22f827a13f01b5",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3125,8 +3125,8 @@
     "semantic_hash": ""
   },
   "docs/business/brd.md": {
-    "mtime": 1788306075.3043268,
-    "ast_hash": "10033318f7e79ff488e443bf370aaeb2",
+    "mtime": 1788279897.411656,
+    "ast_hash": "a011a94093d89eda2eeadea7717315bb",
     "semantic_hash": ""
   },
   "docs/business/decisions/001-primary-audience.md": {
@@ -3570,13 +3570,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788306060.3545153,
-    "ast_hash": "fc9720ae97a8a9851e019db08227e982",
+    "mtime": 1788296252.917228,
+    "ast_hash": "737e201b9f9034458c08b53506e4fd26",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1788306067.0158696,
-    "ast_hash": "ce4cac0f681e12925b91aee1689de37a",
+    "mtime": 1788296276.9612584,
+    "ast_hash": "56197afd142fa3a7e9f98baea0f4ed50",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -8682,16 +8682,6 @@
   ".agents/skills/visibill-ticket-support/SKILL.md": {
     "mtime": 1788304050.833899,
     "ast_hash": "973d8a68a8112f67c40862cfc5a15fb3",
-    "semantic_hash": ""
-  },
-  "docs/architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md": {
-    "mtime": 1788306019.6823952,
-    "ast_hash": "14f36ef56494173fdfbd7300f169a9c3",
-    "semantic_hash": ""
-  },
-  "docs/product/decisions/P-063-payroll-bulk-import-and-reconstruction-ux.md": {
-    "mtime": 1788306029.7171447,
-    "ast_hash": "fb69405a55ac308b94a6ff0ce249e277",
     "semantic_hash": ""
   }
 }

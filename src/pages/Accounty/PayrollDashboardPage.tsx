@@ -4,7 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Users, Calculator, FileText, Calendar, Clock, TrendingUp,
   Plus, Search, ArrowUpRight, Banknote, UserPlus, ChevronRight,
-  AlertTriangle, CheckCircle2, Loader2, Building2, Settings, ChevronLeft
+  AlertTriangle, CheckCircle2, Loader2, Building2, Settings, ChevronLeft,
+  Upload, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ import { formatAmount } from '@/lib/payroll/validators';
 import { Breadcrumb } from '@/components/accounty/SharedComponents';
 import { useAccountyClients } from '@/hooks/accounty';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { PayrollReconstructionDialog } from '@/components/accounty/payroll/PayrollReconstructionDialog';
 
 // ── Animated number component ──
 function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
@@ -116,6 +118,7 @@ export default function PayrollDashboardPage() {
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [reconstructionOpen, setReconstructionOpen] = useState(false);
 
   const { data: employees = [], isLoading: empLoading, isError: empError } = usePayrollEmployees(companyId || '');
   const { data: cycles = [], isLoading: cyclesLoading, isError: cyclesError } = usePayrollCycles(companyId || '');
@@ -207,7 +210,23 @@ export default function PayrollDashboardPage() {
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Foglalkoztatottak, havi ciklusok és bevallások kezelése</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <Button
+            onClick={() => setReconstructionOpen(true)}
+            variant="outline"
+            className="flex items-center gap-2 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 shadow-xs"
+          >
+            <Sparkles className="w-4 h-4 text-blue-500" />
+            Számfejtés Rekonstrukció
+          </Button>
+          <Button
+            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/import`)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            Importálás
+          </Button>
           <Button
             onClick={() => navigate(`/eaisybooks/payroll/${companyId}/settings`)}
             variant="outline"
@@ -222,7 +241,7 @@ export default function PayrollDashboardPage() {
             className="flex items-center gap-2"
           >
             <UserPlus className="w-4 h-4" />
-            Új foglalkoztatott
+            Új dolgozó
           </Button>
           <Button
             onClick={() => navigate(`/eaisybooks/payroll/${companyId}/cycle/new`)}
@@ -233,6 +252,42 @@ export default function PayrollDashboardPage() {
           </Button>
         </div>
       </div>
+
+      {/* Onboarding / Fast-Track Banner if 0 cycles */}
+      {cycles.length === 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800/50 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-md shadow-blue-500/20 shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                Új cég bérszámfejtésének beüzemelése & korábbi számfejtések feltöltése
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Töltsd fel a korábban a NAV-nak beadott 08-as (2608 / 2508 / 2408) ÁNYK XML fájlokat, és a rendszer 1 kattintással felépíti az összes dolgozót, jogviszonyt és a lezárt havi bérszámfejtési ciklusokat!
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/import`)}
+              variant="outline"
+              className="text-xs"
+            >
+              Excel Sablon
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setReconstructionOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 shadow-sm shadow-blue-600/20"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> NAV 08 XML Rekonstrukció
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -530,6 +585,14 @@ export default function PayrollDashboardPage() {
           );
         })}
       </div>
+
+      {/* 2026 Fast-Track Payroll Reconstruction Dialog */}
+      <PayrollReconstructionDialog
+        companyId={companyId || ''}
+        companyName={currentClientName}
+        open={reconstructionOpen}
+        onOpenChange={setReconstructionOpen}
+      />
     </div>
   );
 }
