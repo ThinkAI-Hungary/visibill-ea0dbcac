@@ -25,6 +25,7 @@ export interface ChannelConfig {
   actionButtonLabel: (count: number) => string;
   hasBankHintSelector?: boolean;
   hasCourierSelector?: boolean;
+  documentCategory?: string;
   defaultMetadata?: Record<string, any>;
 }
 

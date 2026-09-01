@@ -11,9 +11,9 @@ A kódduplikáció miatt az [A-023](./A-023-upload-dedup-protection.md) és [A-0
 
 ## Decision
 1. **Domain Feature Slice Könyvtárstruktúra (`src/features/upload/`):**
-   - `types/index.ts`: Közös típusok (`UploadChannelId`, `ChannelConfig`, `SelectedFileItem`, `UploadBatchOptions`, `UploadHistoryRecord`).
-   - `config/channelConfigs.ts`: Deklaratív konfigurációs mátrix mind a 6 csatornához (MIME típusok, táblák, bucketek, ikonok, metadata, specifikus opciók: bank hint / futár típus).
-   - `core/documentUploadService.ts`: Tiszta, headless TypeScript szolgáltatás fájlvalidációhoz, adatbázis duplikátum-kereséshez, Supabase Storage batch feltöltéshez és hibák esetén atomi rollback-hez.
+   - `types/index.ts`: Közös típusok (`UploadChannelId`, `ChannelConfig`, `SelectedFileItem`, `UploadBatchOptions`, `UploadHistoryRecord`). A `ChannelConfig` tartalmazza a `documentCategory?: string` mezőt (`'invoice'`, `'penztarbizonylat'`, `'payroll'`).
+   - `config/channelConfigs.ts`: Deklaratív konfigurációs mátrix az 5 csatornához (MIME típusok, táblák, bucketek, `documentCategory`, ikonok, metadata, specifikus opciók: bank hint / futár típus).
+   - `core/documentUploadService.ts`: Tiszta, headless TypeScript szolgáltatás fájlvalidációhoz, adatbázis duplikátum-kereséshez, Supabase Storage batch feltöltéshez, `document_category` oszlop beállításhoz és hibák esetén atomi rollback-hez.
    - `core/uploadCacheSync.ts`: React Query `['uploadHistory']` optimista gyorsítótár frissítés és késleltetett invalidáció.
    - `hooks/useDocumentUpload.ts`: Mutex-védett React hook az állapotkezeléshez és duplikátum dialógus feloldásokhoz.
    - `components/dropzone/UploadDropzone.tsx`: Újrahasznosítható, billentyűzet- és akadálymentesített drag-and-drop zóna.

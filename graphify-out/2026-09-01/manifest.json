@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788220521.0910163,
-    "ast_hash": "4033ebccdceac892a15f6b53a7ae19cf",
+    "mtime": 1788223440.8677766,
+    "ast_hash": "06abe2cc7052b9d5970f605fda20618f",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -8445,8 +8445,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-077-management-stats-edge-function-and-telemetry-decomposition.md": {
-    "mtime": 1788222474.0962496,
-    "ast_hash": "59efc378fbf603938d42b6c53a9361c0",
+    "mtime": 1788223448.5055294,
+    "ast_hash": "e4d8b92ae9f474c40c5e25c914ac83a6",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-061-management-worker-telemetry-and-monthly-llm-ux.md": {
+    "mtime": 1788223428.4888303,
+    "ast_hash": "16c934685de24649169e5edf4b1d496f",
     "semantic_hash": ""
   }
 }

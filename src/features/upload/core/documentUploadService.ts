@@ -144,6 +144,10 @@ export async function executeBatchUpload(
         row.metadata = metadata;
       }
 
+      if (config.documentCategory) {
+        row.document_category = config.documentCategory;
+      }
+
       if (config.hasBankHintSelector && bankHint && bankHint !== 'auto') {
         row.bank_hint = bankHint;
       }
