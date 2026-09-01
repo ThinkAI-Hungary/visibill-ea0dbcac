@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS public.company_prompt_rules (
 ALTER TABLE public.company_prompt_rules ENABLE ROW LEVEL SECURITY;
 
 -- Create Policies
+DROP POLICY IF EXISTS "Enable read access for company prompt rules" ON public.company_prompt_rules;
+DROP POLICY IF EXISTS "Enable insert for company prompt rules" ON public.company_prompt_rules;
+DROP POLICY IF EXISTS "Enable update for company prompt rules" ON public.company_prompt_rules;
+DROP POLICY IF EXISTS "Enable delete for company prompt rules" ON public.company_prompt_rules;
+
 -- Read Policy
 CREATE POLICY "Enable read access for company prompt rules" ON public.company_prompt_rules
     FOR SELECT

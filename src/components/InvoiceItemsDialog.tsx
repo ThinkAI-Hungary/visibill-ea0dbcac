@@ -97,6 +97,7 @@ export function InvoiceItemsDialog({
 
   // GL editing state
   const [glEditItem, setGlEditItem] = useState<InvoiceLineItem | null>(null);
+  const [isBulkGlEdit, setIsBulkGlEdit] = useState(false);
   const [glEditOpen, setGlEditOpen] = useState(false);
   const [glSearchQuery, setGlSearchQuery] = useState('');
   const [selectedNewGL, setSelectedNewGL] = useState<string>('');
@@ -263,6 +264,41 @@ export function InvoiceItemsDialog({
     });
   };
 
+  // Fetch invoice items from DB
+  const { data: items = [], isLoading: loading } = useQuery({
+    queryKey: ['invoiceItems', source, invoiceId],
+    queryFn: async () => {
+      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes';
+      const fullCols = baseCols + ', exclude_from_accounting';
+      const fkCol = source === 'submitted' ? 'invoice_id' : 'nav_invoice_id';
+      const fromTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+
+      // Try with exclude_from_accounting first; fallback to without if column doesn't exist
+      const { data, error } = await supabase
+        .from(fromTable as any)
+        .select(fullCols)
+        .eq(fkCol, invoiceId)
+        .order('line_number', { ascending: true });
+
+      if (error) {
+        // Column doesn't exist yet (42703) — retry without it
+        if (error.code === '42703' || error.message?.includes('does not exist')) {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from(fromTable as any)
+            .select(baseCols)
+            .eq(fkCol, invoiceId)
+            .order('line_number', { ascending: true });
+          if (fallbackError) throw fallbackError;
+          return (fallbackData || []) as unknown as InvoiceLineItem[];
+        }
+        throw error;
+      }
+      return (data || []) as unknown as InvoiceLineItem[];
+    },
+    enabled: open && !!invoiceId,
+    placeholderData: keepPreviousData,
+  });
+
   // Fetch GL accounts for the picker combobox
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['glAccounts', activePresetId],
@@ -286,10 +322,21 @@ export function InvoiceItemsDialog({
       ? item.gl_classifications[activePresetId]
       : null;
     setGlEditItem(item);
+    setIsBulkGlEdit(false);
     setSelectedNewGL(classification?.gl_account_id || '');
     setGlSearchQuery('');
     setGlEditOpen(true);
   }, [activePresetId]);
+
+  // Open GL edit dialog in bulk mode for all selected items
+  const openBulkGlEdit = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    setGlEditItem(null);
+    setIsBulkGlEdit(true);
+    setSelectedNewGL('');
+    setGlSearchQuery('');
+    setGlEditOpen(true);
+  }, [selectedIds]);
 
   // Find the "twin" line item in the opposite table (nav ↔ submitted)
   // so that GL changes on one side are automatically mirrored to the other.
@@ -377,32 +424,64 @@ export function InvoiceItemsDialog({
 
   // Save GL override (+ sync twin item in the linked table)
   const handleSaveGlOverride = useCallback(async () => {
-    if (!glEditItem || !selectedNewGL || !selectedCompany?.id || !session?.user.id || !activePresetId) return;
+    if (!selectedNewGL || !selectedCompany?.id || !session?.user.id || !activePresetId) return;
+    if (!isBulkGlEdit && !glEditItem) return;
 
     setIsGlSubmitting(true);
 
     const sourceTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
-    const classification = glEditItem.gl_classifications?.[activePresetId];
-    const originalGlAccountId = classification?.gl_account_id || null;
-
     const newGlItem = selectedNewGL === 'UNCLASSIFIED' ? null : glAccounts.find(gl => gl.id === selectedNewGL);
     const newGlNumber = newGlItem?.gl_number || '';
 
-    // Build payload: primary item + any twin items from the linked table
-    const payloadItems: { item_id: string; source_table: string; original_gl_account_id: string | null }[] = [{
-      item_id: glEditItem.id,
-      source_table: sourceTable,
-      original_gl_account_id: originalGlAccountId,
-    }];
+    // Build payload: target item(s) + any twin items from the linked table
+    const payloadItems: { item_id: string; source_table: string; original_gl_account_id: string | null }[] = [];
 
-    // Find twin items (opposite table, same line_number)
-    const twins = await findTwinItems(glEditItem);
-    for (const twin of twins) {
+    if (isBulkGlEdit) {
+      // Bulk mode: process all checked line items
+      const selectedLineItems = items.filter(i => selectedIds.has(i.id));
+      for (const item of selectedLineItems) {
+        const classification = item.gl_classifications?.[activePresetId];
+        const originalGlAccountId = classification?.gl_account_id || null;
+
+        payloadItems.push({
+          item_id: item.id,
+          source_table: sourceTable,
+          original_gl_account_id: originalGlAccountId,
+        });
+
+        const twins = await findTwinItems(item);
+        for (const twin of twins) {
+          payloadItems.push({
+            item_id: twin.id,
+            source_table: twin.sourceTable,
+            original_gl_account_id: twin.originalGlAccountId,
+          });
+        }
+      }
+    } else if (glEditItem) {
+      // Single item mode
+      const classification = glEditItem.gl_classifications?.[activePresetId];
+      const originalGlAccountId = classification?.gl_account_id || null;
+
       payloadItems.push({
-        item_id: twin.id,
-        source_table: twin.sourceTable,
-        original_gl_account_id: twin.originalGlAccountId,
+        item_id: glEditItem.id,
+        source_table: sourceTable,
+        original_gl_account_id: originalGlAccountId,
       });
+
+      const twins = await findTwinItems(glEditItem);
+      for (const twin of twins) {
+        payloadItems.push({
+          item_id: twin.id,
+          source_table: twin.sourceTable,
+          original_gl_account_id: twin.originalGlAccountId,
+        });
+      }
+    }
+
+    if (payloadItems.length === 0) {
+      setIsGlSubmitting(false);
+      return;
     }
 
     const { data, error } = await supabase.rpc('override_gl_classifications_batch', {
@@ -419,10 +498,14 @@ export function InvoiceItemsDialog({
     if (error || data === false) {
       toast({ title: 'Hiba a mentés során', description: error?.message || 'Ismeretlen hiba', variant: 'destructive' });
     } else {
-      const twinMsg = twins.length > 0 ? ' (párosított számla is frissítve)' : '';
-      toast({ title: 'Sikeres módosítás', description: `Főkönyvi besorolás frissítve.${twinMsg}` });
+      const count = isBulkGlEdit ? selectedIds.size : 1;
+      toast({ title: 'Sikeres módosítás', description: `${count} tétel főkönyvi besorolása frissítve.` });
       setGlEditOpen(false);
       setGlEditItem(null);
+      setIsBulkGlEdit(false);
+      if (isBulkGlEdit) {
+        setSelectedIds(new Set());
+      }
       // Invalidate all relevant caches so every view refreshes
       queryClient.invalidateQueries({ queryKey: ['invoiceItems'] });
       queryClient.invalidateQueries({ queryKey: ['glBalances'] });
@@ -430,41 +513,7 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices'] });
       queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
     }
-  }, [glEditItem, selectedNewGL, selectedCompany?.id, session?.user.id, activePresetId, source, invoiceId, glAccounts, queryClient, toast, findTwinItems]);
-
-  const { data: items = [], isLoading: loading } = useQuery({
-    queryKey: ['invoiceItems', source, invoiceId],
-    queryFn: async () => {
-      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes';
-      const fullCols = baseCols + ', exclude_from_accounting';
-      const fkCol = source === 'submitted' ? 'invoice_id' : 'nav_invoice_id';
-      const fromTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
-
-      // Try with exclude_from_accounting first; fallback to without if column doesn't exist
-      const { data, error } = await supabase
-        .from(fromTable as any)
-        .select(fullCols)
-        .eq(fkCol, invoiceId)
-        .order('line_number', { ascending: true });
-
-      if (error) {
-        // Column doesn't exist yet (42703) — retry without it
-        if (error.code === '42703' || error.message?.includes('does not exist')) {
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from(fromTable as any)
-            .select(baseCols)
-            .eq(fkCol, invoiceId)
-            .order('line_number', { ascending: true });
-          if (fallbackError) throw fallbackError;
-          return (fallbackData || []) as unknown as InvoiceLineItem[];
-        }
-        throw error;
-      }
-      return (data || []) as unknown as InvoiceLineItem[];
-    },
-    enabled: open && !!invoiceId,
-    placeholderData: keepPreviousData,
-  });
+  }, [glEditItem, isBulkGlEdit, selectedIds, items, selectedNewGL, selectedCompany?.id, session?.user.id, activePresetId, source, glAccounts, queryClient, toast, findTwinItems]);
 
   // Sort items client-side if a sort field is active
   const sortedItems = useMemo(() => {
@@ -1133,7 +1182,7 @@ export function InvoiceItemsDialog({
           {items.length > 0 && (
             <div className="border-t border-border/50 pt-5 mt-4">
               <div className="flex justify-between items-end">
-                {/* Activation button — always rendered to prevent layout shift */}
+                {/* Activation & Bulk actions button — always rendered to prevent layout shift */}
                 <div className="flex items-center gap-2">
                   <Button
                     className={cn("gap-2", !someSelected && "invisible pointer-events-none")}
@@ -1141,6 +1190,14 @@ export function InvoiceItemsDialog({
                   >
                     <Package2 className="h-4 w-4" />
                     Aktiválás ({selectedIds.size || 0} tétel)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className={cn("gap-2", !someSelected && "invisible pointer-events-none")}
+                    onClick={openBulkGlEdit}
+                  >
+                    <Pencil className="h-4 w-4 text-primary" />
+                    Főkönyv módosítása ({selectedIds.size || 0} tétel)
                   </Button>
                   <div className={cn(!someSelected && "invisible pointer-events-none")}>
                     <DropdownMenu>
@@ -1191,12 +1248,17 @@ export function InvoiceItemsDialog({
       </Dialog>
 
       {/* GL Edit Dialog */}
-      <Dialog open={glEditOpen} onOpenChange={(open) => { setGlEditOpen(open); if (!open) { setGlEditItem(null); setGlSearchQuery(''); } }}>
+      <Dialog open={glEditOpen} onOpenChange={(open) => { setGlEditOpen(open); if (!open) { setGlEditItem(null); setIsBulkGlEdit(false); setGlSearchQuery(''); } }}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Kategória módosítása</DialogTitle>
+            <DialogTitle>
+              {isBulkGlEdit ? `Főkönyvi besorolás tömeges módosítása (${selectedIds.size} tétel)` : 'Kategória módosítása'}
+            </DialogTitle>
             <DialogDescription>
-              {glEditItem?.line_description || 'Számlatétel'} — főkönyvi besorolás módosítása
+              {isBulkGlEdit
+                ? `${selectedIds.size} db kijelölt számlatétel főkönyvi számának tömeges módosítása`
+                : `${glEditItem?.line_description || 'Számlatétel'} — főkönyvi besorolás módosítása`
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="py-2 flex flex-col gap-4 w-full overflow-hidden">
@@ -1273,7 +1335,7 @@ export function InvoiceItemsDialog({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setGlEditOpen(false)} disabled={isGlSubmitting}>Mégse</Button>
-            <Button onClick={handleSaveGlOverride} disabled={!selectedNewGL || isGlSubmitting || (glEditItem && selectedNewGL === (glEditItem.gl_classifications?.[activePresetId || '']?.gl_account_id || 'UNCLASSIFIED'))}>
+            <Button onClick={handleSaveGlOverride} disabled={!selectedNewGL || isGlSubmitting || (!isBulkGlEdit && glEditItem && selectedNewGL === (glEditItem.gl_classifications?.[activePresetId || '']?.gl_account_id || 'UNCLASSIFIED'))}>
               {isGlSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Mentés
             </Button>

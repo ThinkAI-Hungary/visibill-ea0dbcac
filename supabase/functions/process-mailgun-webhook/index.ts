@@ -257,6 +257,190 @@ function getMimeType(filename: string): string {
   return map[ext] ?? 'application/octet-stream';
 }
 
+// ── Billingo & Számlázz.hu Link & API PDF Fetcher ──────────────────────────────
+async function processBillingoAndSzamlazzLinks(
+  supabase: any,
+  alias: { user_id: string; company_id: string; company_name: string },
+  subject: string | null,
+  bodyPlain: string | null,
+  bodyHtml: string | null,
+  sender: string | null,
+  messageId: string | null,
+): Promise<number> {
+  let downloadedCount = 0;
+  const combinedText = `${subject || ''}\n${bodyPlain || ''}\n${bodyHtml || ''}`;
+
+  // 1. ── Billingo Link Extraction ──
+  const billingoRegex = /https?:\/\/app\.billingo\.hu\/document-access\/(?:default|download)\/([a-zA-Z0-9_-]+)/gi;
+  const billingoMatches = Array.from(combinedText.matchAll(billingoRegex));
+  const processedTokens = new Set<string>();
+
+  for (const match of billingoMatches) {
+    const token = match[1];
+    if (processedTokens.has(token)) continue;
+    processedTokens.add(token);
+
+    console.log(`[LINK-INGEST] Billingo token detected: ${token}`);
+    const downloadUrl = `https://app.billingo.hu/document-access/download/${token}`;
+
+    try {
+      const res = await fetch(downloadUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Visibill-Invoice-Fetcher/1.0' },
+      });
+
+      if (!res.ok) {
+        console.warn(`[LINK-INGEST] Billingo download failed with status ${res.status} for token ${token}`);
+        continue;
+      }
+
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      if (bytes.length < 500) {
+        console.warn(`[LINK-INGEST] Billingo downloaded file too small (${bytes.length} bytes), skipping`);
+        continue;
+      }
+
+      const fileName = `billingo_${token}.pdf`;
+      const storagePath = `${alias.user_id}/${Date.now()}-${sanitizeFileName(fileName)}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from('invoice-uploads')
+        .upload(storagePath, bytes, { contentType: 'application/pdf', upsert: false });
+
+      if (uploadErr) {
+        console.error('[LINK-INGEST] Storage upload failed for Billingo PDF:', uploadErr);
+        continue;
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from('invoice-uploads').getPublicUrl(storagePath);
+
+      const emailMetadata = {
+        source: 'email_alias_billingo_link',
+        billingo_token: token,
+        company_name: alias.company_name,
+        sender,
+        subject,
+        received_at: new Date().toISOString(),
+        ...(messageId ? { mailgun_message_id: messageId } : {}),
+      };
+
+      const { error: dbErr } = await supabase.from('invoice_uploads').insert({
+        user_id: alias.user_id,
+        company_id: alias.company_id,
+        file_name: fileName,
+        file_type: 'application/pdf',
+        file_size: bytes.length,
+        file_url: publicUrl,
+        upload_status: 'uploaded',
+        processing_status: 'pending',
+        metadata: emailMetadata,
+        notes: [{ timestamp: new Date().toISOString(), event: 'downloaded_from_billingo_link', detail: downloadUrl }],
+      });
+
+      if (!dbErr) {
+        downloadedCount++;
+        console.log(`[LINK-INGEST] Billingo PDF successfully downloaded and ingested for token ${token}`);
+      }
+    } catch (err) {
+      console.error('[LINK-INGEST] Error fetching Billingo PDF link:', err);
+    }
+  }
+
+  // 2. ── Számlázz.hu Agent API PDF Fetcher ──
+  const szamlazzLinkDetected = /szamlazz\.hu/i.test(combinedText);
+  const invNumberRegex = /\b([a-zA-Z0-9]{2,10}-\d{4}-\d+)\b/g;
+  const invMatches = Array.from(combinedText.matchAll(invNumberRegex));
+  const invoiceNumbers = Array.from(new Set(invMatches.map(m => m[1])));
+
+  if (szamlazzLinkDetected || invoiceNumbers.length > 0) {
+    console.log(`[LINK-INGEST] Számlázz.hu signal detected. Candidate invoice numbers: ${invoiceNumbers.join(', ')}`);
+
+    const { data: keyData } = await supabase.rpc('get_szamlazz_agent_key', { p_company_id: alias.company_id });
+    const agentKey = (keyData as string)?.trim() || alias.mailgun_route_id?.trim();
+
+    if (agentKey && agentKey.length >= 30) {
+      for (const invNum of invoiceNumbers) {
+        console.log(`[LINK-INGEST] Calling Számlázz.hu Agent pdfDownload API for invoice ${invNum}...`);
+
+        const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
+<xmlszamlapdf xmlns="http://www.szamlazz.hu/xmlszamlapdf">
+  <beallitasok>
+    <szamlaAgentKulcs>${agentKey}</szamlaAgentKulcs>
+    <pdfValasz>true</pdfValasz>
+  </beallitasok>
+  <fejlec>
+    <szamlaszam>${invNum}</szamlaszam>
+  </fejlec>
+</xmlszamlapdf>`;
+
+        try {
+          const form = new FormData();
+          form.append('action-xmlszamlapdf', xmlBody);
+
+          const apiRes = await fetch('https://www.szamlazz.hu/szamla/', {
+            method: 'POST',
+            body: form,
+          });
+
+          if (apiRes.ok) {
+            const bytes = new Uint8Array(await apiRes.arrayBuffer());
+            const headerStr = new TextDecoder().decode(bytes.slice(0, 10));
+
+            if (headerStr.includes('%PDF')) {
+              const fileName = `szamlazz_${invNum.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+              const storagePath = `${alias.user_id}/${Date.now()}-${sanitizeFileName(fileName)}`;
+
+              const { error: uploadErr } = await supabase.storage
+                .from('invoice-uploads')
+                .upload(storagePath, bytes, { contentType: 'application/pdf', upsert: false });
+
+              if (!uploadErr) {
+                const { data: { publicUrl } } = supabase.storage.from('invoice-uploads').getPublicUrl(storagePath);
+
+                const emailMetadata = {
+                  source: 'email_alias_szamlazz_agent',
+                  szamlazz_invoice_number: invNum,
+                  company_name: alias.company_name,
+                  sender,
+                  subject,
+                  received_at: new Date().toISOString(),
+                  ...(messageId ? { mailgun_message_id: messageId } : {}),
+                };
+
+                const { error: dbErr } = await supabase.from('invoice_uploads').insert({
+                  user_id: alias.user_id,
+                  company_id: alias.company_id,
+                  file_name: fileName,
+                  file_type: 'application/pdf',
+                  file_size: bytes.length,
+                  file_url: publicUrl,
+                  upload_status: 'uploaded',
+                  processing_status: 'pending',
+                  metadata: emailMetadata,
+                  notes: [{ timestamp: new Date().toISOString(), event: 'downloaded_via_szamlazz_agent_api', detail: invNum }],
+                });
+
+                if (!dbErr) {
+                  downloadedCount++;
+                  console.log(`[LINK-INGEST] Számlázz.hu PDF downloaded via Agent API and ingested for invoice ${invNum}`);
+                }
+              }
+            } else {
+              console.warn(`[LINK-INGEST] Számlázz Agent API response for ${invNum} was not a PDF: ${headerStr.substring(0, 100)}`);
+            }
+          } else {
+            console.warn(`[LINK-INGEST] Számlázz Agent API HTTP status ${apiRes.status} for invoice ${invNum}`);
+          }
+        } catch (err) {
+          console.error(`[LINK-INGEST] Error calling Számlázz Agent API for ${invNum}:`, err);
+        }
+      }
+    } else {
+      console.log(`[LINK-INGEST] Számlázz.hu signal present but no Számla Agent Key configured for company ${alias.company_id}`);
+    }
+  }
+
+  return downloadedCount;
+}
 
 serve(async (req) => {
   try {
@@ -475,7 +659,7 @@ serve(async (req) => {
 
     const { data: alias, error: aliasError } = await supabase
       .from('email_aliases')
-      .select('user_id, company_name, company_id')
+      .select('user_id, company_name, company_id, mailgun_route_id')
       .eq('alias_email', recipient)
       .eq('status', 'active')
       .single();
@@ -1347,6 +1531,20 @@ serve(async (req) => {
       } else {
         console.log('[ACCOUNTY-NLP] No resolve intent detected in reply text.');
       }
+    }
+
+    // ── Billingo & Számlázz.hu link & API PDF extraction ──
+    const linkInvoicesCount = await processBillingoAndSzamlazzLinks(
+      supabase,
+      alias,
+      subject,
+      bodyPlain,
+      formData ? (formData.get('body-html') as string) : null,
+      sender,
+      messageId
+    );
+    if (linkInvoicesCount > 0) {
+      console.log(`[LINK-INGEST] Successfully processed ${linkInvoicesCount} invoice(s) from Billingo/Számlázz links or API.`);
     }
 
     console.log('=== Webhook processing completed successfully ===');

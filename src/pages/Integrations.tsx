@@ -8,6 +8,7 @@ import { Mail, Zap, Shield, AtSign, Info, Activity, CheckCircle, XCircle, Clock,
 import EmailAliasManager from '@/components/EmailAliasManager';
 import EmailSettingsForm from '@/components/integrations/EmailSettingsForm';
 import NavCredentialsForm from '@/components/nav/NavCredentialsForm';
+import SzamlazzAgentForm from '@/components/integrations/SzamlazzAgentForm';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -47,8 +48,8 @@ const Integrations = () => {
     const normalize = (name: string) => {
       return name
         .toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
-        .replace(/[^a-z0-9]/g, '') // strip everything except alphanumeric
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '')
         .replace(/\s+/g, '')
         .replace(/\b(kft|bt|zrt|nyrt|kkt|ev|egyeni\s*vallalkozo)\b/gi, '');
     };
@@ -275,271 +276,272 @@ const Integrations = () => {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="container mx-auto px-6 pt-6 pb-2 space-y-6 page-animate">
+      <div className="container mx-auto px-6 pt-6 pb-12 space-y-8 page-animate">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Integrációk</h1>
-            <p className="text-muted-foreground">
-              Csatlakoztasd szolgáltatásaidat a számla automatizáláshoz
+            <p className="text-muted-foreground text-sm mt-1">
+              Csatlakoztasd szolgáltatásaidat és felületeidet a számlák automatikus szinkronizálásához
             </p>
           </div>
-          <Badge variant="secondary" className="flex items-center gap-2 bg-primary/10 text-primary border-primary/20">
+          <Badge variant="secondary" className="flex items-center gap-2 bg-primary/10 text-primary border-primary/20 px-3 py-1 text-xs">
             <Zap className="h-4 w-4" />
             Automatizáció
           </Badge>
         </div>
 
-        {/* Two Column Grid */}
-        <div className="grid lg:grid-cols-2 gap-6 items-start">
+        {/* ── ROW 1: E-mail & Számlázz.hu Agent (2 Oszlopos kiegyenlített rács) ── */}
+        <div className="grid lg:grid-cols-2 gap-6 items-stretch">
           {/* Email Services Section */}
-          <Card className="border-primary/10 hover:border-primary/20 transition-colors">
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
-                  <AtSign className="w-6 h-6 text-primary" />
-                </div>
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg">E-mail Integráció</CardTitle>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Fogadj számlákat a Visibill által generált e-mail aliasszal, vagy kapcsold össze saját levelező szerveredet (IMAP/SMTP) a bejövő és kimenő levelek automatizálásához.</p>
-                      </TooltipContent>
-                    </Tooltip>
+          <Card className="border-primary/10 hover:border-primary/20 transition-colors h-full flex flex-col justify-between">
+            <div>
+              <CardHeader>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
+                    <AtSign className="w-6 h-6 text-primary" />
                   </div>
-                  <CardDescription className="text-sm">
-                    Automatikus számlafogadás és kézbesítés
-                  </CardDescription>
-                  {/* Feature Pills */}
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium">
-                      <Mail className="h-3 w-3" />
-                      Dedikált címek
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">E-mail Integráció</CardTitle>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help ml-auto" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Fogadj számlákat a Visibill által generált e-mail aliasszal, vagy kapcsold össze saját levelező szerveredet (IMAP/SMTP).</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-medium">
-                      <Zap className="h-3 w-3" />
-                      Azonnali feldolgozás
-                    </div>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium">
-                      <Shield className="h-3 w-3" />
-                      Saját SMTP/IMAP
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <Tabs defaultValue="alias" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="alias">Generált Alias</TabsTrigger>
-                  <TabsTrigger value="custom-mail">Saját Levelező</TabsTrigger>
-                </TabsList>
-                <TabsContent value="alias" className="mt-0">
-                  <EmailAliasManager />
-                </TabsContent>
-                <TabsContent value="custom-mail" className="mt-0">
-                  <EmailSettingsForm />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-
-          {/* NAV Integration Section */}
-          <Card className="border-primary/10 hover:border-primary/20 transition-colors">
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
-                  <Shield className="w-6 h-6 text-primary" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg">NAV Online Számla</CardTitle>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Csatlakoztasd a NAV Online Számla rendszert a kimenő számlák automatikus szinkronizálásához.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <CardDescription className="text-sm">
-                    Magyar NAV integráció
-                  </CardDescription>
-                  {/* Feature Pills */}
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                      <Shield className="h-3 w-3" />
-                      Biztonságos
-                    </div>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                      <Zap className="h-3 w-3" />
-                      Automatikus sync
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <Tabs value={activeNavTab} onValueChange={setActiveNavTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="credentials">Hitelesítés</TabsTrigger>
-                  <TabsTrigger value="logs">Logok</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="credentials" className="mt-0">
-                  <NavCredentialsForm 
-                    companyId={selectedCompany?.id}
-                    isOwner={isOwner}
-                    onCredentialsSaved={() => {
-                      toast({
-                        title: 'Hitelesítő adatok frissítve',
-                        description: 'A NAV API hitelesítő adatok sikeresen frissítve',
-                      });
-                    }} 
-                  />
-                </TabsContent>
-                
-                <TabsContent value="logs" className="mt-0">
-                  <div className="rounded-lg border bg-card">
-                    <div className="p-4 border-b">
-                      <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-primary" />
-                        <span className="font-medium text-sm">Szinkronizálási Logok</span>
-                        {logsLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+                    <CardDescription className="text-sm">
+                      Automatikus számlafogadás és kézbesítés
+                    </CardDescription>
+                    {/* Feature Pills */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium">
+                        <Mail className="h-3 w-3" />
+                        Dedikált címek
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-medium">
+                        <Zap className="h-3 w-3" />
+                        Azonnali feldolgozás
                       </div>
                     </div>
-                    
-                    <div className="p-4 max-h-[600px] overflow-y-auto">
-                      {logsLoading ? (
-                        <LogsSkeleton />
-                      ) : syncLogs.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground text-sm">
-                          Még nincsenek szinkronizálási logok.
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {syncLogs.map((log) => (
-                            <div key={log.id} className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={log.invoice_direction === 'OUTBOUND' ? 'default' : 'secondary'} className="text-xs">
-                                    {log.invoice_direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'}
-                                  </Badge>
-                                  {getStatusBadge(log.status)}
-                                </div>
-                                <span className="text-xs text-muted-foreground">
-                                  {log.invoices_fetched} számla
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span>{formatDate(log.started_at)}</span>
-                                <span>{log.duration_ms ? `${Math.round(log.duration_ms / 1000)}s` : '-'}</span>
-                              </div>
-                              {log.error_message && (
-                                <div className="mt-2 p-2 rounded bg-destructive/10 border border-destructive/20">
-                                  <div className="flex items-start gap-2">
-                                    <AlertTriangle className="w-3.5 h-3.5 text-destructive mt-0.5 flex-shrink-0" />
-                                    <p className="text-xs text-destructive/90 break-all">{log.error_message}</p>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                   </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <Tabs defaultValue="alias" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="alias">Generált Alias</TabsTrigger>
+                    <TabsTrigger value="custom-mail">Saját Levelező</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="alias" className="mt-0">
+                    <EmailAliasManager />
+                  </TabsContent>
+                  <TabsContent value="custom-mail" className="mt-0">
+                    <EmailSettingsForm />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </div>
           </Card>
 
-          {/* Relax Integration Section */}
-          <Card className="border-primary/10 hover:border-primary/20 transition-colors lg:col-span-2">
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
-                  <Database className="w-6 h-6 text-primary" />
-                </div>
-                <div className="space-y-1">
-                  <CardTitle className="text-lg">Relax adatok importálása</CardTitle>
-                  <CardDescription className="text-sm">
-                    Tölts fel Relax XML exportot és opcionális DMP dumpot történelmi adatok betöltéséhez
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
-                {/* XML Input */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Relax XML Fájl (.xml) *</label>
-                  <div className="relative flex items-center justify-center border-2 border-dashed rounded-lg p-6 hover:bg-muted/30 transition-all cursor-pointer">
-                    <input
-                      type="file"
-                      accept=".xml"
-                      onChange={handleXmlChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <div className="flex flex-col items-center gap-1.5 text-center">
-                      <FileText className={cn("w-6 h-6", xmlFile ? "text-emerald-500" : "text-muted-foreground/60")} />
-                      <span className="text-xs font-medium truncate max-w-[200px]">
-                        {xmlFile ? xmlFile.name : "Kattints a tallózáshoz..."}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* DMP Input */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Relax DMP Fájl (.dmp) (opcionális)</label>
-                  <div className="relative flex items-center justify-center border-2 border-dashed rounded-lg p-6 hover:bg-muted/30 transition-all cursor-pointer">
-                    <input
-                      type="file"
-                      accept=".dmp"
-                      onChange={handleDmpChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <div className="flex flex-col items-center gap-1.5 text-center">
-                      <Database className={cn("w-6 h-6", dmpFile ? "text-emerald-500" : "text-muted-foreground/60")} />
-                      <span className="text-xs font-medium truncate max-w-[200px]">
-                        {dmpFile ? dmpFile.name : "Kattints a tallózáshoz..."}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between border-t pt-4">
-                <div className="text-xs text-muted-foreground">
-                  * Kötelező fájlok. A feltöltés előtt biztonsági ellenőrzés fut le a cégnevekre vonatkozóan.
-                </div>
-                <Button
-                  onClick={handleRelaxUpload}
-                  disabled={!xmlFile || relaxUploading}
-                  className="gap-2"
-                >
-                  {relaxUploading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Feltöltés...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      Importálás indítása
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Számlázz.hu Agent Integration */}
+          <SzamlazzAgentForm />
         </div>
+
+        {/* ── ROW 2: NAV Online Számla (Teljes szélességű tágas kártya) ── */}
+        <Card className="border-primary/10 hover:border-primary/20 transition-colors">
+          <CardHeader>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">NAV Online Számla</CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help ml-auto" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Csatlakoztasd a NAV Online Számla rendszert a kimenő és bejövő számlák automatikus szinkronizálásához.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <CardDescription className="text-sm">
+                  Hivatalos magyar NAV API integráció
+                </CardDescription>
+                {/* Feature Pills */}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    <Shield className="h-3 w-3" />
+                    Biztonságos
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    <Zap className="h-3 w-3" />
+                    Automatikus sync
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <Tabs value={activeNavTab} onValueChange={setActiveNavTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4 max-w-md">
+                <TabsTrigger value="credentials">Hitelesítés</TabsTrigger>
+                <TabsTrigger value="logs">Szinkronizálási Logok</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="credentials" className="mt-0">
+                <NavCredentialsForm 
+                  companyId={selectedCompany?.id}
+                  isOwner={isOwner}
+                  onCredentialsSaved={() => {
+                    toast({
+                      title: 'Hitelesítő adatok frissítve',
+                      description: 'A NAV API hitelesítő adatok sikeresen frissítve',
+                    });
+                  }} 
+                />
+              </TabsContent>
+              
+              <TabsContent value="logs" className="mt-0">
+                <div className="rounded-lg border bg-card">
+                  <div className="p-4 border-b">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-primary" />
+                      <span className="font-medium text-sm">Szinkronizálási Logok</span>
+                      {logsLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 max-h-[600px] overflow-y-auto">
+                    {logsLoading ? (
+                      <LogsSkeleton />
+                    ) : syncLogs.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground text-sm">
+                        Még nincsenek szinkronizálási logok.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {syncLogs.map((log) => (
+                          <div key={log.id} className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge variant={log.invoice_direction === 'OUTBOUND' ? 'default' : 'secondary'} className="text-xs">
+                                  {log.invoice_direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'}
+                                </Badge>
+                                {getStatusBadge(log.status)}
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {log.invoices_fetched} számla
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span>{formatDate(log.started_at)}</span>
+                              <span>{log.duration_ms ? `${Math.round(log.duration_ms / 1000)}s` : '-'}</span>
+                            </div>
+                            {log.error_message && (
+                              <div className="mt-2 p-2 rounded bg-destructive/10 border border-destructive/20">
+                                <div className="flex items-start gap-2">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-destructive mt-0.5 flex-shrink-0" />
+                                  <p className="text-xs text-destructive/90 break-all">{log.error_message}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* ── ROW 3: Relax Adatimport (Teljes szélességű kártya) ── */}
+        <Card className="border-primary/10 hover:border-primary/20 transition-colors">
+          <CardHeader>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
+                <Database className="w-6 h-6 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <CardTitle className="text-lg">Relax adatok importálása</CardTitle>
+                <CardDescription className="text-sm">
+                  Tölts fel Relax XML exportot és opcionális DMP dumpot történelmi adatok betöltéséhez
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* XML Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground">Relax XML Fájl (.xml) *</label>
+                <div className="relative flex items-center justify-center border-2 border-dashed rounded-lg p-6 hover:bg-muted/30 transition-all cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".xml"
+                    onChange={handleXmlChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <div className="flex flex-col items-center gap-1.5 text-center">
+                    <FileText className={cn("w-6 h-6", xmlFile ? "text-emerald-500" : "text-muted-foreground/60")} />
+                    <span className="text-xs font-medium truncate max-w-[200px]">
+                      {xmlFile ? xmlFile.name : "Kattints a tallózáshoz..."}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* DMP Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground">Relax DMP Fájl (.dmp) (opcionális)</label>
+                <div className="relative flex items-center justify-center border-2 border-dashed rounded-lg p-6 hover:bg-muted/30 transition-all cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".dmp"
+                    onChange={handleDmpChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <div className="flex flex-col items-center gap-1.5 text-center">
+                    <Database className={cn("w-6 h-6", dmpFile ? "text-emerald-500" : "text-muted-foreground/60")} />
+                    <span className="text-xs font-medium truncate max-w-[200px]">
+                      {dmpFile ? dmpFile.name : "Kattints a tallózáshoz..."}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t pt-4">
+              <div className="text-xs text-muted-foreground">
+                * Kötelező fájlok. A feltöltés előtt biztonsági ellenőrzés fut le a cégnevekre vonatkozóan.
+              </div>
+              <Button
+                onClick={handleRelaxUpload}
+                disabled={!xmlFile || relaxUploading}
+                className="gap-2"
+              >
+                {relaxUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Feltöltés...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Importálás indítása
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </TooltipProvider>
   );
