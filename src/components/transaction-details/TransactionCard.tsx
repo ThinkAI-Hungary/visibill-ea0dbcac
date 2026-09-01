@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, AlertTriangle, HelpCircle, Ban, UploadCloud, Undo2 } from 'lucide-react';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, cn, fixCharacterEncoding } from '@/lib/utils';
 import { format } from 'date-fns';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { TransactionItem } from '@/lib/matching/types';
@@ -80,7 +80,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
             </div>
             <div className="col-span-2">
               <span className="text-muted-foreground">Leírás:</span>
-              <span className="ml-1">{transaction.description || '-'}</span>
+              <span className="ml-1">{fixCharacterEncoding(transaction.description) || '-'}</span>
             </div>
             {transaction.reason && (
               <div className="col-span-2">

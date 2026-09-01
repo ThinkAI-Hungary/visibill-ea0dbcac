@@ -46,20 +46,34 @@ export function extractStoragePath(publicUrl: string, bucket: string): string | 
 /** Fix Hungarian character encoding bugs where accents are corrupted due to PDF font or DB encoding issues. */
 export function fixCharacterEncoding(str: string | null | undefined): string {
   if (!str) return '';
-  return str
-    // Fix PDF font encoding corruption (£, ¶, Ø, ½, ë, õ, û, ẽ, >, @)
+  
+  // Protect valid email addresses
+  const emails: string[] = [];
+  let s = str.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, (m) => {
+    emails.push(m);
+    return `___EMAIL_${emails.length - 1}___`;
+  });
+
+  s = s
+    // Single character PDF font corruptions
+    .replace(/@/g, 'é')
+    .replace(/>/g, 'í')
+    .replace(/</g, 'í')
     .replace(/£/g, 'á')
     .replace(/¶/g, 'Á')
     .replace(/Ø/g, 'Ó')
-    .replace(/½/g, 'É')
+    .replace(/½/g, ' É')
     .replace(/ë/g, 'ó')
     .replace(/õ/g, 'ő')
     .replace(/Õ/g, 'Ő')
     .replace(/û/g, 'ű')
     .replace(/Û/g, 'Ű')
     .replace(/ẽ/g, 'á')
-    .replace(/([a-zA-ZáéíóöőútüűÁÉÍÓÖŐÚTÜŰ])>([a-zA-ZáéíóöőútüűÁÉÍÓÖŐÚTÜŰ])/g, '$1í$2')
-    .replace(/([a-zA-ZáéíóöőútüűÁÉÍÓÖŐÚTÜŰ])@([a-zA-ZáéíóöőútüűÁÉÍÓÖŐÚTÜŰ])/g, '$1é$2')
+    // Common multi-character corruptions from PDF bank statements
+    .replace(/Kézlem/g, 'Közlem')
+    .replace(/Elíjegyzet/g, 'Előjegyzett')
+    .replace(/Elõjegyzett/g, 'Előjegyzett')
+    .replace(/Előjegyzettdíj/g, 'Előjegyzett díj')
     // Fix common ? replacements in system strings
     .replace(/Banki tranzakci\?/gi, 'Banki tranzakció')
     .replace(/tranzakci\?/gi, 'tranzakció')
@@ -70,4 +84,11 @@ export function fixCharacterEncoding(str: string | null | undefined): string {
     .replace(/Besorolatlan t\?telek/gi, (m) => m.toUpperCase() === m ? 'BESOROLATLAN TÉTELEK' : 'Besorolatlan tételek')
     .replace(/elt\?r\? sablonb\?l/gi, (m) => m.toUpperCase() === m ? 'ELTÉRŐ SABLONBÓL' : 'Eltérő sablonból')
     .replace(/sablonb\?l/gi, (m) => m.toUpperCase() === m ? 'SABLONBÓL' : 'sablonból');
+
+  // Restore emails
+  emails.forEach((em, idx) => {
+    s = s.replace(`___EMAIL_${idx}___`, em);
+  });
+
+  return s;
 }
