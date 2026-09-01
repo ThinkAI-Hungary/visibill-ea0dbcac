@@ -58,6 +58,7 @@ const BANK_CONFIG: Record<string, { label: string }> = {
   binx:       { label: 'Binx' },
   mbh:        { label: 'MBH' },
   mkb:        { label: 'MKB' },
+  oberbank:   { label: 'Oberbank' },
 };
 
 export function TransactionFilesDialog({ open: externalOpen, onOpenChange: externalOnOpenChange }: TransactionFilesDialogProps = {}) {

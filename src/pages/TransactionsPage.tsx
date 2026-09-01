@@ -49,6 +49,7 @@ const BANK_CONFIG: Record<string, { label: string; fullName: string; color: stri
   binx:       { label: 'Binx',       fullName: 'Binx Zrt.',                   color: 'bg-orange-500',  bgClass: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20' },
   mbh:        { label: 'MBH',        fullName: 'MBH Bank Nyrt.',              color: 'bg-indigo-500',  bgClass: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20' },
   mkb:        { label: 'MKB',        fullName: 'MKB Bank Nyrt.',              color: 'bg-teal-600',    bgClass: 'bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/20' },
+  oberbank:   { label: 'Oberbank',   fullName: 'Oberbank AG Magyarországi Fióktelep', color: 'bg-cyan-600',    bgClass: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20' },
 };
 
 const FIXED_TABS = ['general', 'gls', 'mpl', 'mixpack'] as const;
