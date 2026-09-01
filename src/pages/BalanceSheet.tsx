@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { exportBsExcel } from '@/lib/bsExport';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
+import { fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -202,8 +203,7 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
     queryKey: ['gl_accounts_bs', presetId],
     queryFn: async () => {
       if (!presetId) return [];
-      const { data, error } = await supabase.from('gl_accounts').select('*').eq('preset_id', presetId).order('gl_number');
-      if (error) throw error;
+      const data = await fetchAllGlAccountsByPreset(presetId);
       // Filter to 1-4 account classes only
       return (data || []).filter(a => /^[1-4]/.test(a.gl_number));
     },
@@ -643,20 +643,22 @@ function BsViewTab({
   });
 
 
-  // 2nd-level drill-down: transaction items per GL account
+  // 2nd-level drill-down: transaction items per GL account (paginated)
   const { data: dbItems } = useQuery({
     queryKey: ['glItems_bs', selectedCompany?.id, presetId, exchangeRates],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
-      const { data, error } = await supabase.rpc('get_gl_categorized_items', {
-        p_company_id: selectedCompany.id,
-        p_preset_id: presetId,
-        p_date_from: null,
-        p_date_to: null,
-        p_exchange_rates: exchangeRates || {}
-      });
-      if (error) return [];
-      return data;
+      try {
+        return await fetchAllGlCategorizedItems({
+          companyId: selectedCompany.id,
+          presetId,
+          dateFrom: null,
+          dateTo: null,
+          exchangeRates: exchangeRates || {},
+        });
+      } catch (error) {
+        return [];
+      }
     },
     enabled: !!selectedCompany?.id && !!presetId
   });
@@ -1213,13 +1215,12 @@ export default function BalanceSheet() {
     return reconStatus?.some(r => Math.abs(Number(r.difference)) > 0.01) || false;
   }, [reconStatus]);
 
-  // GL accounts query for unassigned count
+  // GL accounts query for unassigned count (paginated)
   const { data: glAccounts } = useQuery({
     queryKey: ['gl_accounts_bs', activePresetId],
     queryFn: async () => {
       if (!activePresetId) return [];
-      const { data, error } = await supabase.from('gl_accounts').select('*').eq('preset_id', activePresetId).order('gl_number');
-      if (error) throw error;
+      const data = await fetchAllGlAccountsByPreset(activePresetId);
       return (data || []).filter(a => /^[1-4]/.test(a.gl_number));
     },
     enabled: !!activePresetId

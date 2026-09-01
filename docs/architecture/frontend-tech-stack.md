@@ -11,7 +11,7 @@
 | **Framework** | React | 18.3 | Funkcionális komponensek, hooks |
 | **Build Tool** | Vite | 5.4 | SWC plugin React-hez |
 | **Nyelv** | TypeScript | 5.8 | Strict mode |
-| **CSS** | TailwindCSS | 3.4 | `tailwindcss-animate` plugin |
+| **CSS** | TailwindCSS | 3.4 | `tailwindcss-animate`, `@tailwindcss/typography` plugin-ek |
 | **UI Library** | shadcn/ui | default style | Radix UI primitívek |
 | **State** | React Query (TanStack) | 5.x | Server-state cache |
 | **Routing** | React Router DOM | 6.30 | Scoped route patternek |
@@ -34,7 +34,8 @@
 | `jspdf` + `jspdf-autotable` | PDF generálás |
 | `papaparse` | CSV import/export |
 | `react-joyride` | Product tour (onboarding walkthrough) |
-| `tiptap` | Rich text editor |
+| `@tiptap/react` + `starter-kit` | Rich text szerkesztő (`RichTextEditor`, `RichTextContent`) |
+| `@tailwindcss/typography` | Tipográfiai `prose` osztályok a rich text tartalmakhoz |
 | `cmdk` | Command palette (⌘K) |
 | `vaul` | Drawer komponens |
 | `react-qr-code` | QR kód generálás |

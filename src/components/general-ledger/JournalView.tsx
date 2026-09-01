@@ -12,6 +12,7 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { exportToFile } from '@/lib/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { fetchAllGlBalances, fetchAllGlCategorizedItems } from '@/lib/glData';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  F7: JOURNAL VIEW (Naplófőkönyv)
@@ -60,15 +61,18 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
     queryKey: ['glJournalItems', selectedCompany?.id, presetId, dateFrom, dateTo],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
-      const { data, error } = await supabase.rpc('get_gl_categorized_items', {
-        p_company_id: selectedCompany.id,
-        p_preset_id: presetId,
-        p_date_from: dateFrom || null,
-        p_date_to: dateTo || null,
-        p_exchange_rates: exchangeRates || {},
-      });
-      if (error) return [];
-      return (data || []) as JournalEntry[];
+      try {
+        const data = await fetchAllGlCategorizedItems({
+          companyId: selectedCompany.id,
+          presetId,
+          dateFrom,
+          dateTo,
+          exchangeRates: exchangeRates || {},
+        });
+        return (data || []) as unknown as JournalEntry[];
+      } catch (error) {
+        return [];
+      }
     },
     enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
     staleTime: 30_000,
@@ -79,15 +83,18 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
     queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
-      const { data, error } = await supabase.rpc('get_gl_balances', {
-        p_company_id: selectedCompany.id,
-        p_preset_id: presetId,
-        p_date_from: dateFrom || null,
-        p_date_to: dateTo || null,
-        p_exchange_rates: exchangeRates || {},
-      });
-      if (error) return [];
-      return data || [];
+      try {
+        const data = await fetchAllGlBalances({
+          companyId: selectedCompany.id,
+          presetId,
+          dateFrom,
+          dateTo,
+          exchangeRates: exchangeRates || {},
+        });
+        return data || [];
+      } catch (error) {
+        return [];
+      }
     },
     enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
     staleTime: 30_000,

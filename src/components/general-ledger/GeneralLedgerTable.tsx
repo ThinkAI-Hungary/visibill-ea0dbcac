@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
+import { fetchAllGlBalances, fetchAllGlCategorizedItems } from '@/lib/glData';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
@@ -181,50 +182,47 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   const { data: exchangeRates } = useExchangeRates();
 
-  // Fetch real data for the preset and company using the new RPC
+  // Fetch real data for the preset and company using the new RPC (paginated)
   const { data: dbData, isLoading, isFetching, refetch: refetchBalances } = useQuery({
     queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo],
     queryFn: async () => {
       if (!presetId || !selectedCompany?.id) return [];
       
-      // Hit the RPC we created
-      const { data, error } = await supabase.rpc('get_gl_balances', {
-        p_company_id: selectedCompany.id,
-        p_preset_id: presetId,
-        p_date_from: dateFrom || null,
-        p_date_to: dateTo || null,
-        p_exchange_rates: exchangeRates || {}
-      });
-      
-      if (error) {
-        reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching GL balances:', error: error });
+      try {
+        return await fetchAllGlBalances({
+          companyId: selectedCompany.id,
+          presetId,
+          dateFrom,
+          dateTo,
+          exchangeRates: exchangeRates || {},
+        });
+      } catch (error: any) {
+        reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching GL balances:', error });
         return [];
       }
-      
-      return data || [];
     },
     enabled: !!presetId && !!selectedCompany?.id && !!exchangeRates,
     refetchInterval: isPolling ? 3000 : false, // P4: conditional polling
     placeholderData: (prev: any) => prev,
   });
 
-  // Fetch detailed items categorized to this company
+  // Fetch detailed items categorized to this company (paginated)
   const { data: dbItems, isLoading: isLoadingItems, refetch: refetchItems } = useQuery({
     queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo],
     queryFn: async () => {
-      if (!selectedCompany?.id) return [];
-      const { data, error } = await supabase.rpc('get_gl_categorized_items', {
-        p_company_id: selectedCompany.id,
-        p_preset_id: presetId,
-        p_date_from: dateFrom || null,
-        p_date_to: dateTo || null,
-        p_exchange_rates: exchangeRates || {}
-      });
-      if (error) {
-        reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching GL items:', error: error });
+      if (!selectedCompany?.id || !presetId) return [];
+      try {
+        return await fetchAllGlCategorizedItems({
+          companyId: selectedCompany.id,
+          presetId,
+          dateFrom,
+          dateTo,
+          exchangeRates: exchangeRates || {},
+        });
+      } catch (error: any) {
+        reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching GL items:', error });
         return [];
       }
-      return data || [];
     },
     enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
     refetchInterval: isPolling ? 3000 : false, // P4: conditional polling

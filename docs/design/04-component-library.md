@@ -615,3 +615,36 @@ Ráadásul a `Check` ikon `h-4 w-4` (16px) volt egy `h-4 w-4` (16px) Root-ban, a
 ```
 
 > Az `absolute inset-0` Indicator-ral a Checkbox önállóan stabil — nincs szükség extra wrapper-re.
+
+---
+
+## Rich Text Komponensek
+
+### RichTextEditor
+**Fájl:** `ui/rich-text-editor.tsx`
+
+TipTap StarterKit alapú, formázott szövegbevitelre szolgáló szerkesztő komponens beépített Radix Tooltip eszköztárral és `@tailwindcss/typography` stílusozással.
+
+```tsx
+<RichTextEditor
+  initialContent={ticket.description}
+  onChange={(html) => setDescription(html)}
+  placeholder="Írd le a hibajegyet..."
+  minHeight="120px"
+  onSubmit={handleSubmit}
+/>
+```
+
+**Jellemzők:**
+- Félkövér, dőlt, áthúzott, címsorok (H2, H3), bekezdés, felsorolás (`ul`), számozott lista (`ol`), idézet (`blockquote`), kód (`code`), visszavonás és újra
+- `Ctrl+Enter` / `Cmd+Enter` gyorsbillentyű közvetlen beküldéshez (`onSubmit`)
+- Sablon változók (`variables`) beszúrásának támogatása
+
+### RichTextContent
+**Fájl:** `ui/rich-text-content.tsx`
+
+Biztonságos, XSS-védett HTML és szöveg renderelő `prose prose-sm dark:prose-invert` stílusozással és 100%-os visszamenőleges plain text kompatibilitással.
+
+```tsx
+<RichTextContent content={comment.message} />
+```

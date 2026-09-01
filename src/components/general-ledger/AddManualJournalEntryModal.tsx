@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invalidateGlQueries } from '@/lib/cache';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -60,18 +61,12 @@ export function AddManualJournalEntryModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch GL accounts
+  // Fetch GL accounts (paginated)
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['glAccounts_manual_form', presetId],
     queryFn: async () => {
       if (!presetId) return [];
-      const { data, error } = await supabase
-        .from('gl_accounts')
-        .select('id, gl_number, short_name')
-        .eq('preset_id', presetId)
-        .order('gl_number');
-      if (error) throw error;
-      return data || [];
+      return await fetchAllGlAccountsByPreset(presetId);
     },
     enabled: !!presetId && open,
   });

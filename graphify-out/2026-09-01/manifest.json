@@ -125,8 +125,8 @@
     "semantic_hash": ""
   },
   "src/components/FeedbackDialog.tsx": {
-    "mtime": 1788288920.1378374,
-    "ast_hash": "c150dc6659498df9de968d82648193a3",
+    "mtime": 1788289513.4315064,
+    "ast_hash": "5bedff2c4ee3551baa3db32c68eb498f",
     "semantic_hash": ""
   },
   "src/components/FeedbackFab.tsx": {
@@ -470,13 +470,13 @@
     "semantic_hash": "bec98f335c92de599cacf6c3862c12b5"
   },
   "src/components/tickets/ImageGalleryModal.tsx": {
-    "mtime": 1782621607.017747,
-    "ast_hash": "473f5ad6edc64f6844421bcaaa2da0e8",
+    "mtime": 1788289542.8381627,
+    "ast_hash": "3eeaa754776c18f1f90ec36e41bc9b3a",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketDetailView.tsx": {
-    "mtime": 1788288896.047858,
-    "ast_hash": "b97a2a4b8178aa5bbdf04342a3cb93d0",
+    "mtime": 1788289561.5274897,
+    "ast_hash": "2d89769e302caf9d913e826ad9e00451",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
@@ -695,8 +695,8 @@
     "semantic_hash": "ed49053e380e461e2ca75f7a3fe67236"
   },
   "src/components/ui/rich-text-editor.tsx": {
-    "mtime": 1788288458.4081492,
-    "ast_hash": "d5ff714a3c85e098098f918dd7097998",
+    "mtime": 1788289368.0405774,
+    "ast_hash": "742fd0f92caba46fd9a0820b94119be3",
     "semantic_hash": ""
   },
   "src/components/ui/scroll-area.tsx": {
@@ -3080,8 +3080,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-018-ticket-system.md": {
-    "mtime": 1788289222.7005289,
-    "ast_hash": "8f299600424be22833f8a9ec2d2aa666",
+    "mtime": 1788289897.2753508,
+    "ast_hash": "a7697443477a55a9c82659b3e411e54d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
@@ -3305,8 +3305,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/036-ticket-system.md": {
-    "mtime": 1788289243.1814287,
-    "ast_hash": "3ca79e01b8aaf12e79cbfd39fdcb171f",
+    "mtime": 1788289902.0532956,
+    "ast_hash": "e87bb36ad68cd25f6cfde75303976864",
     "semantic_hash": ""
   },
   "docs/business/decisions/037-management-dashboard.md": {
@@ -3555,8 +3555,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1788289233.5194552,
-    "ast_hash": "9d4cd59d963e39e08dbd9c29e63a9521",
+    "mtime": 1788289890.8631687,
+    "ast_hash": "0b5c32df23df9ef74fb26ff452eb8680",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {

@@ -28,6 +28,7 @@ import { useScopedNavigate } from '@/lib/navigation';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
+import { fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset } from '@/lib/glData';
 import PnlChart from '@/components/pnl/PnlChart'; // F9
 import { PnlSankeyChart } from '@/components/pnl/PnlSankeyChart';
 import { PnlAiAssistant } from '@/components/pnl/PnlAiAssistant';
@@ -609,15 +610,13 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRatesKey],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
-      const { data, error } = await supabase.rpc('get_gl_categorized_items', {
-        p_company_id: selectedCompany.id,
-        p_preset_id: presetId,
-        p_date_from: dateFrom || null,
-        p_date_to: dateTo || null,
-        p_exchange_rates: exchangeRates || {}
+      return await fetchAllGlCategorizedItems({
+        companyId: selectedCompany.id,
+        presetId,
+        dateFrom: dateFrom || null,
+        dateTo: dateTo || null,
+        exchangeRates: exchangeRates || {},
       });
-      if (error) throw error;
-      return data;
     },
     enabled: !!selectedCompany?.id && !!presetId
   });
@@ -1384,14 +1383,12 @@ export default function ProfitAndLoss() {
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
   const { dateFrom, dateTo, setDateFrom, setDateTo } = useDateRange();
 
-  // P5: Single GL accounts query — shared between main component and PnlMappingTab
+  // P5: Single GL accounts query — shared between main component and PnlMappingTab (paginated)
   const { data: glAccounts, isLoading: isLoadingGlAccounts } = useQuery({
     queryKey: ['gl_accounts', activePresetId],
     queryFn: async () => {
       if (!activePresetId) return [];
-      const { data, error } = await supabase.from('gl_accounts').select('*').eq('preset_id', activePresetId).order('gl_number');
-      if (error) throw error;
-      return data;
+      return await fetchAllGlAccountsByPreset(activePresetId);
     },
     enabled: !!activePresetId
   });

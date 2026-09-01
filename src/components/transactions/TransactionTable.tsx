@@ -23,6 +23,7 @@ import { reportError } from '@/lib/errorReporter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { Separator } from '@/components/ui/separator';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { hu } from 'date-fns/locale';
@@ -118,13 +119,8 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['glAccounts', activePresetId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('gl_accounts')
-        .select('id, gl_number, short_name')
-        .eq('preset_id', activePresetId!)
-        .order('gl_number');
-      if (error) throw error;
-      return data || [];
+      if (!activePresetId) return [];
+      return await fetchAllGlAccountsByPreset(activePresetId);
     },
     enabled: !!activePresetId,
   });

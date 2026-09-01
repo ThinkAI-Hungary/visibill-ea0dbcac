@@ -296,7 +296,8 @@ function MenuBar({
 
 function toHtml(text?: string): string {
   if (!text) return '<p></p>';
-  if (text.startsWith('<')) return text;
+  const trimmed = text.trim();
+  if (trimmed.startsWith('<')) return text;
   return `<p>${text.replace(/\n/g, '</p><p>')}</p>`;
 }
 
@@ -327,6 +328,31 @@ export function RichTextEditor({
         heading: {
           levels: [2, 3],
         },
+        bulletList: {
+          HTMLAttributes: {
+            class: 'list-disc pl-5 my-1.5 space-y-1',
+          },
+        },
+        orderedList: {
+          HTMLAttributes: {
+            class: 'list-decimal pl-5 my-1.5 space-y-1',
+          },
+        },
+        listItem: {
+          HTMLAttributes: {
+            class: 'my-0.5 leading-relaxed',
+          },
+        },
+        blockquote: {
+          HTMLAttributes: {
+            class: 'border-l-2 border-primary/70 bg-muted/20 pl-3 py-1 my-2 rounded-r italic text-muted-foreground',
+          },
+        },
+        code: {
+          HTMLAttributes: {
+            class: 'bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-primary font-medium',
+          },
+        },
       }),
       Placeholder.configure({
         placeholder: placeholder || 'Kezdj el gépelni...',
@@ -341,7 +367,12 @@ export function RichTextEditor({
       attributes: {
         class: cn(
           'prose prose-sm dark:prose-invert max-w-none focus:outline-none px-3 py-2.5 text-sm leading-relaxed',
-          '[&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_blockquote]:border-l-primary/60 [&_blockquote]:bg-muted/20 [&_blockquote]:py-0.5 [&_blockquote]:px-2.5',
+          '[&_p]:my-1',
+          '[&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1.5',
+          '[&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-1.5',
+          '[&_li]:my-0.5',
+          '[&_blockquote]:border-l-2 [&_blockquote]:border-primary/70 [&_blockquote]:bg-muted/20 [&_blockquote]:pl-3 [&_blockquote]:py-1 [&_blockquote]:my-2 [&_blockquote]:rounded-r [&_blockquote]:italic [&_blockquote]:text-muted-foreground',
+          '[&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_code]:text-primary',
           editorClassName
         ),
         style: `min-height: ${minHeight};`,

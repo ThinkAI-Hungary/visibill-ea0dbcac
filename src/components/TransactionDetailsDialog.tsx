@@ -3,6 +3,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useActivePreset } from '@/hooks/useActivePreset';
+import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useScopedNavigate } from '@/lib/navigation';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
@@ -51,17 +52,12 @@ export const TransactionDetailsDialog = ({
     onClose: () => onOpenChange(false),
   });
 
-  // GL accounts query for direct ledger booking
+  // GL accounts query for direct ledger booking (paginated)
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['glAccounts', activePresetId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('gl_accounts')
-        .select('id, gl_number, short_name')
-        .eq('preset_id', activePresetId!)
-        .order('gl_number');
-      if (error) throw error;
-      return data || [];
+      if (!activePresetId) return [];
+      return await fetchAllGlAccountsByPreset(activePresetId);
     },
     enabled: !!activePresetId && open,
   });

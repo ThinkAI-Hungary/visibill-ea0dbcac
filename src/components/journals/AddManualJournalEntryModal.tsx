@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { useActivePreset } from '@/hooks/useActivePreset';
@@ -90,13 +91,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     queryKey: ['gl-accounts-lookup', activePresetId],
     queryFn: async () => {
       if (!activePresetId) return [];
-      const { data, error } = await supabase
-        .from('gl_accounts')
-        .select('id, gl_number, short_name')
-        .eq('preset_id', activePresetId)
-        .order('gl_number');
-      if (error) throw error;
-      return data;
+      return await fetchAllGlAccountsByPreset(activePresetId);
     },
     enabled: !!activePresetId,
   });

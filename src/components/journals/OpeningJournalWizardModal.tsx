@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { useActivePreset } from '@/hooks/useActivePreset';
@@ -87,17 +88,12 @@ export default function OpeningJournalWizardModal({
     enabled: !!selectedCompany?.id,
   });
 
-  // Fetch GL Accounts (Filtered to 1-4 Balance sheet accounts for Opening)
+  // Fetch GL Accounts (Filtered to 1-4 Balance sheet accounts for Opening, paginated)
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['gl-accounts-balance-sheet', activePresetId],
     queryFn: async () => {
       if (!activePresetId) return [];
-      const { data, error } = await supabase
-        .from('gl_accounts')
-        .select('id, gl_number, short_name')
-        .eq('preset_id', activePresetId)
-        .order('gl_number');
-      if (error) throw error;
+      const data = await fetchAllGlAccountsByPreset(activePresetId);
       
       // Filter to Balance sheet accounts (1-4)
       return (data || []).filter(g => {
@@ -113,12 +109,12 @@ export default function OpeningJournalWizardModal({
     queryKey: ['subledger-reconciliation', selectedCompany?.id, accountingYear],
     queryFn: async () => {
       if (!selectedCompany?.id) return null;
-      const { data, error } = await supabase.rpc('acc_check_opening_subledger_reconciliation', {
+      const { data, error } = await supabase.rpc('acc_check_opening_subledger_reconciliation' as any, {
         p_company_id: selectedCompany.id,
         p_year: accountingYear
       });
       if (error) return null;
-      return data;
+      return data as { open_ar_subledger: number; gl_311_opening: number; ar_diff: number; open_ap_subledger: number; gl_454_opening: number; ap_diff: number } | null;
     },
     enabled: !!selectedCompany?.id && open && step >= 3,
   });
@@ -227,16 +223,17 @@ export default function OpeningJournalWizardModal({
       if (linesErr) throw linesErr;
 
       // 3. Call acc_validate_and_post_opening_entry RPC
-      const { data: postResult, error: postErr } = await supabase.rpc('acc_validate_and_post_opening_entry', {
+      const { data: postResult, error: postErr } = await supabase.rpc('acc_validate_and_post_opening_entry' as any, {
         p_header_id: header.id,
         p_user_id: user.id
       });
 
       if (postErr) throw postErr;
-      if (!postResult.success) {
+      const res = postResult as any;
+      if (!res?.success) {
         // Rollback header if validation failed
         await supabase.from('acc_journal_headers').delete().eq('id', header.id);
-        throw new Error(postResult.error);
+        throw new Error(res?.error || 'Validation failed');
       }
 
       return header.id;
@@ -258,16 +255,16 @@ export default function OpeningJournalWizardModal({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Bejelentkezés szükséges.');
 
-      const { data, error } = await supabase.rpc('acc_generate_post_opening_reconciliations', {
+      const { data, error } = await supabase.rpc('acc_generate_post_opening_reconciliations' as any, {
         p_company_id: selectedCompany.id,
         p_user_id: user.id,
         p_year: accountingYear
       });
 
       if (error) throw error;
-      return data;
+      return data as any;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setReconcileResult(data);
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
       toast({ title: 'Rendező tételek lefuttatva', description: data?.message });

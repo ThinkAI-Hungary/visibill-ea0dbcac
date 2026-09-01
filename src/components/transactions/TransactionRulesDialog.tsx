@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -77,22 +78,17 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
         .eq('company_id', companyId!)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as TransactionRule[];
+      return (data || []) as unknown as TransactionRule[];
     },
     enabled: !!companyId && isOpen,
   });
 
-  // Fetch GL accounts
+  // Fetch GL accounts (paginated)
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['glAccounts_rules', activePresetId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('gl_accounts')
-        .select('id, gl_number, short_name')
-        .eq('preset_id', activePresetId!)
-        .order('gl_number');
-      if (error) throw error;
-      return data || [];
+      if (!activePresetId) return [];
+      return await fetchAllGlAccountsByPreset(activePresetId);
     },
     enabled: !!activePresetId && isOpen,
   });

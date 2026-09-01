@@ -5,6 +5,7 @@ import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { Loader2, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Skeleton } from '@/components/ui/skeleton';
+import { fetchAllGlBalances } from '@/lib/glData';
 
 interface GeneralLedgerComparisonTableProps {
   presetId?: string;
@@ -20,6 +21,8 @@ export function GeneralLedgerComparisonTable({
   dateTo,
 }: GeneralLedgerComparisonTableProps) {
   const { data: exchangeRates } = useExchangeRates();
+  const [search, setSearch] = useState('');
+  const [filterMode, setFilterMode] = useState<'all' | 'changed' | 'increased' | 'decreased'>('all');
 
   // Compute previous year dates
   const prevDateFrom = useMemo(() => {
@@ -43,15 +46,13 @@ export function GeneralLedgerComparisonTable({
     queryKey: ['glBalancesCurr', presetId, companyId, dateFrom, dateTo],
     queryFn: async () => {
       if (!presetId || !companyId) return [];
-      const { data, error } = await supabase.rpc('get_gl_balances', {
-        p_company_id: companyId,
-        p_preset_id: presetId,
-        p_date_from: dateFrom || null,
-        p_date_to: dateTo || null,
-        p_exchange_rates: exchangeRates || {}
+      return await fetchAllGlBalances({
+        companyId,
+        presetId,
+        dateFrom: dateFrom || null,
+        dateTo: dateTo || null,
+        exchangeRates: exchangeRates || {},
       });
-      if (error) throw error;
-      return data || [];
     },
     enabled: !!presetId && !!companyId && !!exchangeRates,
   });
@@ -61,15 +62,13 @@ export function GeneralLedgerComparisonTable({
     queryKey: ['glBalancesPrev', presetId, companyId, prevDateFrom, prevDateTo],
     queryFn: async () => {
       if (!presetId || !companyId || !prevDateFrom || !prevDateTo) return [];
-      const { data, error } = await supabase.rpc('get_gl_balances', {
-        p_company_id: companyId,
-        p_preset_id: presetId,
-        p_date_from: prevDateFrom,
-        p_date_to: prevDateTo,
-        p_exchange_rates: exchangeRates || {}
+      return await fetchAllGlBalances({
+        companyId,
+        presetId,
+        dateFrom: prevDateFrom,
+        dateTo: prevDateTo,
+        exchangeRates: exchangeRates || {},
       });
-      if (error) throw error;
-      return data || [];
     },
     enabled: !!presetId && !!companyId && !!prevDateFrom && !!prevDateTo && !!exchangeRates,
   });

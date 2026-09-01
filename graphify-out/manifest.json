@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1788283422.0485904,
-    "ast_hash": "1e640e167f50fad0355a344183da905b",
+    "mtime": 1788290595.8819091,
+    "ast_hash": "2057fc6b5d9c341229b38c9e939665d1",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/components/TransactionDetailsDialog.tsx": {
-    "mtime": 1788132349.2633018,
-    "ast_hash": "e73b232fc595ba7d6adb329f42339c2f",
+    "mtime": 1788290577.3547878,
+    "ast_hash": "efcd7899e37627844bb8e6df809ed6bc",
     "semantic_hash": ""
   },
   "src/components/TransactionReasonCell.tsx": {
@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1787753315.8273683,
-    "ast_hash": "5d857c0032761fb419e25fcf8a0c7bea",
+    "mtime": 1788290445.0333767,
+    "ast_hash": "b5aa5cba5b02757259d66deb83df9cf4",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -500,8 +500,8 @@
     "semantic_hash": "e3f71ef4bebe4e867b4366a84041c6e3"
   },
   "src/components/transactions/TransactionTable.tsx": {
-    "mtime": 1787753315.8283663,
-    "ast_hash": "2406584fa3fbc99fda6f7199268dea60",
+    "mtime": 1788290569.5804212,
+    "ast_hash": "082ce9f986e9058d03092c6304f5a9dc",
     "semantic_hash": ""
   },
   "src/components/ui/accordion.tsx": {
@@ -695,8 +695,8 @@
     "semantic_hash": "ed49053e380e461e2ca75f7a3fe67236"
   },
   "src/components/ui/rich-text-editor.tsx": {
-    "mtime": 1788289368.0405774,
-    "ast_hash": "742fd0f92caba46fd9a0820b94119be3",
+    "mtime": 1788291071.8037384,
+    "ast_hash": "5d64fa0ccd4a5fa051630b1baef9d004",
     "semantic_hash": ""
   },
   "src/components/ui/scroll-area.tsx": {
@@ -1460,8 +1460,8 @@
     "semantic_hash": ""
   },
   "src/pages/BalanceSheet.tsx": {
-    "mtime": 1787568622.90385,
-    "ast_hash": "2d74398962b152e8af6d1f358c9bd67b",
+    "mtime": 1788290535.2348034,
+    "ast_hash": "b4e05c2ad53c5170e3afe79e060121a3",
     "semantic_hash": ""
   },
   "src/pages/EmployeeRegister.tsx": {
@@ -1535,8 +1535,8 @@
     "semantic_hash": ""
   },
   "src/pages/ProfitAndLoss.tsx": {
-    "mtime": 1787753315.8435,
-    "ast_hash": "7f123f786b70249539d15fc24ecad6d2",
+    "mtime": 1788290513.39217,
+    "ast_hash": "5b4c454d4964ed4fdaff1c6783b4e903",
     "semantic_hash": ""
   },
   "src/pages/Projects.tsx": {
@@ -2645,8 +2645,8 @@
     "semantic_hash": ""
   },
   "tailwind.config.ts": {
-    "mtime": 1787753315.8476293,
-    "ast_hash": "f8ee511906fa03fd864b2e53af41620f",
+    "mtime": 1788291043.300148,
+    "ast_hash": "d41d20ea145ced4a23c9464c0bd05062",
     "semantic_hash": ""
   },
   "temp_rpc.sql": {
@@ -3115,8 +3115,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/frontend-tech-stack.md": {
-    "mtime": 1788137957.7651696,
-    "ast_hash": "80330a64abaeb236446f73a23ca3958e",
+    "mtime": 1788291233.9935064,
+    "ast_hash": "f17c1cb93bb276868172a760bad9d3eb",
     "semantic_hash": ""
   },
   "docs/architecture/overview.md": {
@@ -3355,8 +3355,8 @@
     "semantic_hash": ""
   },
   "docs/design/04-component-library.md": {
-    "mtime": 1788130878.4831522,
-    "ast_hash": "75ac893ab51e6d74c6ee92cd3c8ab8e0",
+    "mtime": 1788291244.9754066,
+    "ast_hash": "03730d395561a12e6f90abdb37b36b2c",
     "semantic_hash": ""
   },
   "docs/design/05-layout-navigation.md": {
@@ -3745,8 +3745,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/JournalView.tsx": {
-    "mtime": 1787753315.8273683,
-    "ast_hash": "4a076a9c841d35ba4308bbf0dd47018a",
+    "mtime": 1788290701.6206388,
+    "ast_hash": "ee8aa38bcc64dc5505d7498b725e313d",
     "semantic_hash": ""
   },
   "src/components/general-ledger/UploadAuditXmlModal.tsx": {
@@ -5820,8 +5820,8 @@
     "semantic_hash": ""
   },
   "src/components/transactions/TransactionRulesDialog.tsx": {
-    "mtime": 1787568622.8613367,
-    "ast_hash": "6969455116f535a67a9d932c26972ad4",
+    "mtime": 1788290711.1213174,
+    "ast_hash": "ba04bb64320c9c82ed90c1f23ff4a69b",
     "semantic_hash": ""
   },
   "src/lib/annualReportXml.ts": {
@@ -6880,13 +6880,13 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/AddManualJournalEntryModal.tsx": {
-    "mtime": 1788133606.19674,
-    "ast_hash": "0f262eae3689587c583b1b6f45bc96f0",
+    "mtime": 1788290607.7547343,
+    "ast_hash": "4d3ed86b6217c5a0b6a12698459fab76",
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerComparisonTable.tsx": {
-    "mtime": 1787753315.8263693,
-    "ast_hash": "e67db1567ca297d8fbf66f054e162fd0",
+    "mtime": 1788290491.1369455,
+    "ast_hash": "29462e292ed225c681f5690091c344e6",
     "semantic_hash": ""
   },
   "src/components/integrations/EmailAccountCard.tsx": {
@@ -7055,8 +7055,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/AddManualJournalEntryModal.tsx": {
-    "mtime": 1788270733.5543761,
-    "ast_hash": "a3c1d2eafac77b504d13a95ff542a11c",
+    "mtime": 1788290618.231068,
+    "ast_hash": "e8cd1686b6e85ec2896b471a21bbcb9e",
     "semantic_hash": ""
   },
   "src/components/journals/AuditTrailDialog.tsx": {
@@ -8155,8 +8155,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/OpeningJournalWizardModal.tsx": {
-    "mtime": 1788212014.2215285,
-    "ast_hash": "b4c21958e6e3f495f47a332b38e7185f",
+    "mtime": 1788290723.069342,
+    "ast_hash": "e9e7787dafe1420ce8065090dbc19ee3",
     "semantic_hash": ""
   },
   "src/lib/nav/__tests__/navProtocol.test.ts": {
@@ -8615,8 +8615,18 @@
     "semantic_hash": ""
   },
   "src/components/ui/rich-text-content.tsx": {
-    "mtime": 1788288446.0670745,
-    "ast_hash": "1d88af2c0dbe6e496dff8b0a980dc497",
+    "mtime": 1788291081.3722713,
+    "ast_hash": "2705c0eecc794e18ee24d0e554ee7ef5",
+    "semantic_hash": ""
+  },
+  "src/lib/glData.test.ts": {
+    "mtime": 1788290418.753132,
+    "ast_hash": "ba8144fd52b2d0a8145a46cb55f08389",
+    "semantic_hash": ""
+  },
+  "src/lib/glData.ts": {
+    "mtime": 1788290696.8242857,
+    "ast_hash": "8006d6b1bf63e632ed3adff458c7d5d9",
     "semantic_hash": ""
   }
 }
