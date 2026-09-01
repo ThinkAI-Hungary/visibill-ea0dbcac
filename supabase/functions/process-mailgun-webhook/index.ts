@@ -368,7 +368,11 @@ async function processBillingoAndSzamlazzLinks(
     }
   }
 
-  const invoiceNumbers = Array.from(foundCandidates);
+  const invoiceNumbers = Array.from(foundCandidates).filter(inv => {
+    // Exclude copyright year ranges like 2005-2026 or 2020-2026
+    if (/^\d{4}[-/]\d{4}$/.test(inv)) return false;
+    return true;
+  });
 
   if (szamlazzLinkDetected || invoiceNumbers.length > 0) {
     console.log(`[LINK-INGEST] Számlázz.hu signal detected. Candidate invoice numbers: [${invoiceNumbers.join(', ')}]`);
@@ -468,6 +472,76 @@ async function processBillingoAndSzamlazzLinks(
       }
     } else {
       console.log(`[LINK-INGEST] Számlázz.hu signal present but no Számla Agent Key configured for company ${alias.company_id}`);
+    }
+  }
+
+  // 3. ── Számlázz.hu Direct Link PDF Fetcher (for supplier emails with "LETÖLTÖM A SZÁMLÁT" link) ──
+  const szamlazzUrlRegex = /https?:\/\/(?:www\.)?szamlazz\.hu\/[^\s"'<>]+/gi;
+  const szamlazzUrls = Array.from(new Set(combinedText.match(szamlazzUrlRegex) || []));
+
+  if (szamlazzUrls.length > 0) {
+    console.log(`[LINK-INGEST] Detected ${szamlazzUrls.length} Számlázz.hu link(s) in email HTML/text.`);
+    for (const linkUrl of szamlazzUrls) {
+      const cleanUrl = linkUrl.replace(/[.,;)]+$/, '');
+      try {
+        console.log(`[LINK-INGEST] Trying direct fetch from Számlázz.hu link: ${cleanUrl}...`);
+        const res = await fetch(cleanUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Visibill-Invoice-Fetcher/1.0',
+            'Accept': 'application/pdf,application/xhtml+xml,text/html;q=0.9,*/*;q=0.8',
+          },
+        });
+
+        if (res.ok) {
+          const bytes = new Uint8Array(await res.arrayBuffer());
+          const headerStr = new TextDecoder().decode(bytes.slice(0, 10));
+
+          if (headerStr.includes('%PDF')) {
+            const fileName = `szamlazz_link_${Date.now()}.pdf`;
+            const storagePath = `${alias.user_id}/${Date.now()}-${sanitizeFileName(fileName)}`;
+
+            const { error: uploadErr } = await supabase.storage
+              .from('invoice-uploads')
+              .upload(storagePath, bytes, { contentType: 'application/pdf', upsert: false });
+
+            if (!uploadErr) {
+              const { data: { publicUrl } } = supabase.storage.from('invoice-uploads').getPublicUrl(storagePath);
+
+              const emailMetadata = {
+                source: 'email_alias_szamlazz_link',
+                szamlazz_url: cleanUrl,
+                company_name: alias.company_name,
+                sender,
+                subject,
+                received_at: new Date().toISOString(),
+                ...(messageId ? { mailgun_message_id: messageId } : {}),
+              };
+
+              const { error: dbErr } = await supabase.from('invoice_uploads').insert({
+                user_id: alias.user_id,
+                company_id: alias.company_id,
+                file_name: fileName,
+                file_type: 'application/pdf',
+                file_size: bytes.length,
+                file_url: publicUrl,
+                upload_status: 'uploaded',
+                processing_status: 'pending',
+                metadata: emailMetadata,
+                notes: [{ timestamp: new Date().toISOString(), event: 'downloaded_from_szamlazz_link', detail: cleanUrl }],
+              });
+
+              if (!dbErr) {
+                downloadedCount++;
+                console.log(`[LINK-INGEST] Számlázz.hu PDF successfully downloaded from link: ${cleanUrl}`);
+              }
+            }
+          } else {
+            console.log(`[LINK-INGEST] Response from ${cleanUrl} was not a PDF file directly.`);
+          }
+        }
+      } catch (err: any) {
+        console.error(`[LINK-INGEST] Error fetching Számlázz.hu link ${cleanUrl}:`, err);
+      }
     }
   }
 
