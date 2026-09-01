@@ -23,6 +23,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { reportError } from '@/lib/errorReporter';
 import {
   Bug,
@@ -39,6 +46,8 @@ import {
   MonitorSmartphone,
   HelpCircle,
   Plus,
+  Eye,
+  Trash2,
 } from "lucide-react";
 
 const MAX_ATTACHMENTS = 5;
@@ -64,6 +73,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [editorKey, setEditorKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Explicit form reset function
@@ -77,6 +87,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
     setSubmitted(false);
     setSubmitting(false);
     setIsDragOver(false);
+    setEditorKey(k => k + 1);
   }, [selectedCompany?.id]);
 
   // Reset form whenever the dialog opens
@@ -166,7 +177,8 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   }, [validateAndAddFiles]);
 
   const selectedCompanyObj = companies.find((c) => c.id === companyId);
-  const hasContent = message.trim().length > 0 || attachments.length > 0;
+  const isTextNotEmpty = Boolean(message && message.replace(/<[^>]*>/g, '').trim().length > 0);
+  const hasContent = isTextNotEmpty || attachments.length > 0;
   const canSubmit = Boolean(companyId && service && type && hasContent);
 
   const handleSubmit = async () => {
@@ -367,20 +379,21 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
             {/* Message */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="feedback-message" className="text-sm font-medium">
-                  Üzenet
+                <Label className="text-sm font-medium">
+                  Üzenet / Részletes leírás
                 </Label>
               </div>
-              <Textarea
-                id="feedback-message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
+              <RichTextEditor
+                key={editorKey}
+                initialContent=""
+                onChange={(html) => setMessage(html)}
                 placeholder={
                   type === "bug"
-                    ? "Írja le a hibát minél részletesebben..."
+                    ? "Írja le a hibát minél részletesebben (pl. hol tapasztalta, mi történt)..."
                     : "Ossza meg véleményét vagy javaslatát..."
                 }
-                className="min-h-[120px] resize-y"
+                minHeight="120px"
+                toolbarVariant="ticket"
               />
             </div>
 
@@ -441,29 +454,106 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
 
               {/* Attachment previews */}
               {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {attachments.map((file, index) => (
-                    <div key={`${file.name}-${index}`} className="relative group">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={file.name}
-                        className="h-16 w-16 rounded-md object-cover border border-border/60"
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeAttachment(index);
-                        }}
-                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                <div className="flex flex-wrap gap-3 pt-1">
+                  {attachments.map((file, index) => {
+                    const isImage = file.type.startsWith("image/");
+                    const fileUrl = URL.createObjectURL(file);
+                    return (
+                      <div
+                        key={`${file.name}-${index}`}
+                        className="group relative flex flex-col gap-1.5 w-32 sm:w-36 p-2 rounded-xl border border-border/80 bg-card/90 shadow-sm hover:border-primary/40 hover:shadow-md transition-all"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                      <p className="text-[10px] text-muted-foreground text-center mt-0.5 max-w-16 truncate">
-                        {file.name}
-                      </p>
-                    </div>
-                  ))}
+                        {isImage ? (
+                          <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted/40 border border-border/30">
+                            <img
+                              src={fileUrl}
+                              alt={file.name}
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            {/* Floating Action Toolbar */}
+                            <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-neutral-900/85 backdrop-blur-sm border border-neutral-700/60 rounded-md p-0.5 shadow-md opacity-90 group-hover:opacity-100 transition-opacity z-10">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      window.open(fileUrl, '_blank');
+                                    }}
+                                    className="h-6 w-6 rounded flex items-center justify-center text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors"
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs">
+                                  Megtekintés új lapon
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeAttachment(index);
+                                    }}
+                                    className="h-6 w-6 rounded flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs">
+                                  Törlés
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative w-full aspect-square rounded-lg bg-muted/60 border border-border/30 flex flex-col items-center justify-center gap-1 p-2">
+                            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                              <Paperclip className="h-5 w-5" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 rounded bg-background border border-border/60">
+                              {file.name.split('.').pop()?.toUpperCase()}
+                            </span>
+                            {/* Floating Action Toolbar */}
+                            <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-neutral-900/85 backdrop-blur-sm border border-neutral-700/60 rounded-md p-0.5 shadow-md z-10">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeAttachment(index);
+                                    }}
+                                    className="h-6 w-6 rounded flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs">
+                                  Törlés
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </div>
+                        )}
+                        {/* Filename caption */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p
+                              className="text-[11px] font-mono text-muted-foreground truncate px-0.5 cursor-default"
+                            >
+                              {file.name}
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            {file.name}
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

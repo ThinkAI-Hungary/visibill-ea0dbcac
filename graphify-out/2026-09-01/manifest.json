@@ -125,8 +125,8 @@
     "semantic_hash": ""
   },
   "src/components/FeedbackDialog.tsx": {
-    "mtime": 1787932467.1629796,
-    "ast_hash": "a00e874449295534ac918b0b880ec0e3",
+    "mtime": 1788288920.1378374,
+    "ast_hash": "c150dc6659498df9de968d82648193a3",
     "semantic_hash": ""
   },
   "src/components/FeedbackFab.tsx": {
@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1788283084.0770495,
-    "ast_hash": "76b8a1a3c1f789341eef5db68d0801da",
+    "mtime": 1788283422.0485904,
+    "ast_hash": "1e640e167f50fad0355a344183da905b",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketDetailView.tsx": {
-    "mtime": 1787568622.8613367,
-    "ast_hash": "8550ca63b8edc41e4f146cc26d9586bd",
+    "mtime": 1788288896.047858,
+    "ast_hash": "b97a2a4b8178aa5bbdf04342a3cb93d0",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
@@ -695,8 +695,8 @@
     "semantic_hash": "ed49053e380e461e2ca75f7a3fe67236"
   },
   "src/components/ui/rich-text-editor.tsx": {
-    "mtime": 1782319399.9182882,
-    "ast_hash": "5c3b7e72beecb097bc470977980258cd",
+    "mtime": 1788288458.4081492,
+    "ast_hash": "d5ff714a3c85e098098f918dd7097998",
     "semantic_hash": ""
   },
   "src/components/ui/scroll-area.tsx": {
@@ -1030,8 +1030,8 @@
     "semantic_hash": "64181f0f0c553cc19a7165ffe6353303"
   },
   "src/hooks/useTickets.ts": {
-    "mtime": 1787568622.8653362,
-    "ast_hash": "060f32a39ca2ef0ef1092eacbfc0925d",
+    "mtime": 1788288466.904368,
+    "ast_hash": "0fe705676ede41c51fa5d572449ce8f9",
     "semantic_hash": ""
   },
   "src/hooks/useTimeEntries.ts": {
@@ -3080,8 +3080,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-018-ticket-system.md": {
-    "mtime": 1787568622.84246,
-    "ast_hash": "31d0c684fc316fe6c22651dc7cf9a14e",
+    "mtime": 1788289222.7005289,
+    "ast_hash": "8f299600424be22833f8a9ec2d2aa666",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
@@ -3305,8 +3305,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/036-ticket-system.md": {
-    "mtime": 1782621606.9450326,
-    "ast_hash": "93162c4ce44b987f103539ac11d8e97a",
+    "mtime": 1788289243.1814287,
+    "ast_hash": "3ca79e01b8aaf12e79cbfd39fdcb171f",
     "semantic_hash": ""
   },
   "docs/business/decisions/037-management-dashboard.md": {
@@ -3555,8 +3555,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1787932619.0187578,
-    "ast_hash": "c36df8a28beb4b4a7bfc1ea16035d584",
+    "mtime": 1788289233.5194552,
+    "ast_hash": "9d4cd59d963e39e08dbd9c29e63a9521",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
@@ -8612,6 +8612,11 @@
   "docs/architecture/decisions/A-078-telecom-vat-deductibility-rules.md": {
     "mtime": 1788282364.1690793,
     "ast_hash": "dc105d51057950cefab2d22e6299bbde",
+    "semantic_hash": ""
+  },
+  "src/components/ui/rich-text-content.tsx": {
+    "mtime": 1788288446.0670745,
+    "ast_hash": "1d88af2c0dbe6e496dff8b0a980dc497",
     "semantic_hash": ""
   }
 }

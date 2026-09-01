@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import { TicketTimeline } from "./TicketTimeline";
 import { ImageGalleryModal } from "./ImageGalleryModal";
@@ -35,10 +41,14 @@ import {
   HelpCircle,
   Trash2,
   ShieldAlert,
+  Paperclip,
+  Eye,
 } from "lucide-react";
 import { uploadTicketImage } from "@/lib/upload-ticket-image";
 import { TicketStatusBadge } from "./TicketStatusBadge";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextContent } from "@/components/ui/rich-text-content";
 import {
   useTicketDetail,
   useAddComment,
@@ -53,6 +63,7 @@ import {
   useUpdateTicketAssignee,
   useSupportAgents,
   useDeleteTicket,
+  useUpdateTicketAttachments,
 } from "@/hooks/useTickets";
 import {
   AlertDialog,
@@ -92,6 +103,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const { mutate: updatePriority } = useUpdateTicketPriority();
   const { mutate: updateAssignee } = useUpdateTicketAssignee();
   const { data: supportAgents = [] } = useSupportAgents();
+  const { mutateAsync: updateTicketAttachments, isPending: isUpdatingAttachments } = useUpdateTicketAttachments();
   const [comment, setComment] = useState("");
   const [isInternal, setIsInternal] = useState(false);
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
@@ -100,8 +112,26 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isUploadingTicketAttachment, setIsUploadingTicketAttachment] = useState(false);
+  const [editorKey, setEditorKey] = useState(0);
   const { data: isManagement } = useIsManagementRole();
   const { mutateAsync: deleteTicket, isPending: isDeleting } = useDeleteTicket();
+
+  const isImageUrl = (url: string) => {
+    if (!url) return false;
+    return /\.(jpe?g|png|gif|webp)$/i.test(url) || url.includes('/image/');
+  };
+
+  const getFileName = (url: string) => {
+    try {
+      const decoded = decodeURIComponent(url);
+      const parts = decoded.split('/');
+      const lastPart = parts[parts.length - 1] || 'fájl';
+      return lastPart.split('?')[0];
+    } catch {
+      return 'fájl';
+    }
+  };
 
   const openGallery = (images: string[], index: number) => {
     setGalleryImages(images);
@@ -115,6 +145,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   };
 
   const commentFileInputRef = useRef<HTMLInputElement>(null);
+  const ticketAttachmentInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Detect if we're in Accounty context
@@ -138,7 +169,8 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   }, [data?.comments?.length]);
 
   const handleSubmit = async () => {
-    if (!comment.trim() || !feedbackId || !user) return;
+    const isTextEmpty = !comment || comment.replace(/<[^>]*>/g, '').trim() === '';
+    if ((isTextEmpty && commentFiles.length === 0) || !feedbackId || !user) return;
 
     try {
       // Upload comment attachments to {ticketId}/{userId}/ path
@@ -155,6 +187,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
             setComment("");
             setCommentFiles([]);
             setIsInternal(false);
+            setEditorKey(k => k + 1);
             markRead(feedbackId);
             shouldScrollRef.current = true;
           },
@@ -164,33 +197,53 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
       toast({ variant: "destructive", title: "Kép feltöltési hiba", description: err?.message || "Ismeretlen hiba" });
     }
   };
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!ticket?.assigned_to) return;
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handleSubmit();
+
+  const handleAddTicketAttachments = async (files: FileList | File[]) => {
+    if (!ticket || !user) return;
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
+
+    setIsUploadingTicketAttachment(true);
+    try {
+      const uploadPromises = fileArray.map(file => uploadTicketImage(file, user.id, ticket.id));
+      const newUrls = await Promise.all(uploadPromises);
+      const existing = ticket.attachments || [];
+      await updateTicketAttachments({
+        feedbackId: ticket.id,
+        attachments: [...existing, ...newUrls],
+      });
+      toast({
+        title: "Csatolmány hozzáadva",
+        description: `${newUrls.length} fájl sikeresen csatolva a hibajegyhez.`,
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Feltöltési hiba",
+        description: err?.message || "Nem sikerült feltölteni a csatolmányt.",
+      });
+    } finally {
+      setIsUploadingTicketAttachment(false);
     }
   };
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    if (!ticket?.assigned_to) return;
-    const items = e.clipboardData?.items;
-    if (!items) return;
-
-    const files: File[] = [];
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf("image") !== -1) {
-        const file = items[i].getAsFile();
-        if (file) {
-          const namedFile = new File([file], `clipboard-image-${Date.now()}-${i}.png`, { type: file.type });
-          files.push(namedFile);
-        }
-      }
-    }
-
-    if (files.length > 0) {
-      e.preventDefault();
-      addCommentFiles(files);
+  const handleRemoveTicketAttachment = async (indexToRemove: number) => {
+    if (!ticket) return;
+    const updated = (ticket.attachments || []).filter((_, i) => i !== indexToRemove);
+    try {
+      await updateTicketAttachments({
+        feedbackId: ticket.id,
+        attachments: updated,
+      });
+      toast({
+        title: "Csatolmány eltávolítva",
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Hiba az eltávolításkor",
+        description: err?.message,
+      });
     }
   };
 
@@ -473,574 +526,759 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   };
 
   return (
-    <div className="space-y-6 p-2 sm:p-0 page-animate">
-      {/* Back + ticket header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={goBack} className="shrink-0 h-9 w-9">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
-          {ticket.type === "bug" ? (
-            <Bug className="h-5 w-5 text-red-500 shrink-0" />
-          ) : (
-            <Lightbulb className="h-5 w-5 text-amber-500 shrink-0" />
-          )}
-          <h1 className="text-xl font-bold tracking-tight">{ticket.ticket_number || "—"}</h1>
-          <TicketPriorityBadge priority={ticket.priority} />
-          <TicketStatusBadge status={ticket.status} />
-        </div>
-        {/* Delete button — management only */}
-        {isAdmin && isManagement && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="ml-auto shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={isDeleting}
-          >
-            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
-            Jegy törlése
+    <TooltipProvider delayDuration={200}>
+      <div className="space-y-6 p-2 sm:p-0 page-animate">
+        {/* Back + ticket header */}
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={goBack} className="shrink-0 h-9 w-9">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-        )}
-      </div>
-
-      {/* Delete confirmation dialog */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hibajegy végleges törlése</AlertDialogTitle>
-            <AlertDialogDescription>
-              Biztosan törölni szeretnéd a <strong>{ticket.ticket_number}</strong> hibajegyet?
-              Ez a művelet nem visszavonható — az összes hozzászólás, csatolmány és előzmény is törlődik.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Mégse</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+            {ticket.type === "bug" ? (
+              <Bug className="h-5 w-5 text-red-500 shrink-0" />
+            ) : (
+              <Lightbulb className="h-5 w-5 text-amber-500 shrink-0" />
+            )}
+            <h1 className="text-xl font-bold tracking-tight">{ticket.ticket_number || "—"}</h1>
+            <TicketPriorityBadge priority={ticket.priority} />
+            <TicketStatusBadge status={ticket.status} />
+          </div>
+          {/* Delete button — management only */}
+          {isAdmin && isManagement && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={isDeleting}
-              onClick={async (e) => {
-                e.preventDefault();
-                try {
-                  await deleteTicket(feedbackId);
-                  toast({
-                    title: "Hibajegy törölve",
-                    description: `${ticket.ticket_number} sikeresen törölve.`,
-                  });
-                  setShowDeleteConfirm(false);
-                  if (onDeleted) {
-                    onDeleted();
-                  } else {
-                    goBack();
-                  }
-                } catch (err: any) {
-                  toast({
-                    variant: "destructive",
-                    title: "Törlési hiba",
-                    description: err?.message || "Nem sikerült törölni a hibajegyet.",
-                  });
-                }
-              }}
             >
               {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
-              Véglegesen törlöm
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column: message + comments */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Original message */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
-                  {(ticket.user_name || ticket.user_email || "?")[0]?.toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{ticket.user_name || ticket.user_email}</p>
-                  <p className="text-xs text-muted-foreground">{formatDate(ticket.created_at)}</p>
-                </div>
-              </div>
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                {ticket.message}
-              </p>
-              {/* Ticket attachments */}
-              {ticket.attachments && ticket.attachments.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {ticket.attachments.map((url: string, i: number) => (
-                    <button
-                      key={i}
-                      onClick={() => openGalleryForUrl(url)}
-                      className="relative group rounded-md overflow-hidden border border-border hover:border-primary/40 transition-colors cursor-zoom-in"
-                    >
-                      <img
-                        src={url}
-                        alt={`Csatolmány ${i + 1}`}
-                        className="max-w-[300px] max-h-[200px] object-cover group-hover:opacity-80 transition-opacity"
-                      />
-                      {ticket.attachments!.length > 1 && (
-                        <span className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">
-                          {i + 1}/{ticket.attachments!.length}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <ImageGalleryModal
-                images={galleryImages}
-                initialIndex={galleryIndex}
-                open={galleryOpen}
-                onClose={() => setGalleryOpen(false)}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Comments */}
-          {comments.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
-                <MessageSquare className="h-3.5 w-3.5" />
-                <span>{comments.length} hozzászólás</span>
-                <Separator className="flex-1" />
-              </div>
-
-              {comments.map((c) => (
-                <Card
-                  key={c.id}
-                  className={
-                    c.is_internal
-                      ? "border-amber-500/30 bg-amber-500/[0.03]"
-                      : c.is_admin
-                      ? "border-primary/20 bg-primary/[0.02]"
-                      : ""
-                  }
-                >
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div
-                        className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                          c.is_internal
-                            ? "bg-amber-500/15 text-amber-500"
-                            : c.is_admin
-                            ? "bg-primary/15 text-primary"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {(c.user_name || c.user_email || "?")[0]?.toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium truncate">
-                            {c.user_name || c.user_email}
-                          </p>
-                          {c.is_internal ? (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-medium">
-                              Belső feljegyzés (kliens elől rejtve)
-                            </span>
-                          ) : c.is_admin ? (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                              Support
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(c.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                      {c.message}
-                    </p>
-                    {/* Comment attachments */}
-                    {c.attachments && c.attachments.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2 pl-11">
-                        {c.attachments.map((url: string, i: number) => (
-                          <button
-                            key={i}
-                            onClick={() => openGalleryForUrl(url)}
-                            className="relative group rounded-md overflow-hidden border border-border hover:border-primary/40 transition-colors cursor-zoom-in"
-                          >
-                            <img
-                              src={url}
-                              alt={`Csatolmány ${i + 1}`}
-                              className="max-w-[250px] max-h-[160px] object-cover group-hover:opacity-80 transition-opacity"
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+              Jegy törlése
+            </Button>
           )}
+        </div>
 
-          {/* Scroll anchor */}
-          <div ref={bottomRef} />
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hibajegy végleges törlése</AlertDialogTitle>
+              <AlertDialogDescription>
+                Biztosan törölni szeretnéd a <strong>{ticket.ticket_number}</strong> hibajegyet?
+                Ez a művelet nem visszavonható — az összes hozzászólás, csatolmány és előzmény is törlődik.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Mégse</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={isDeleting}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  try {
+                    await deleteTicket(feedbackId);
+                    toast({
+                      title: "Hibajegy törölve",
+                      description: `${ticket.ticket_number} sikeresen törölve.`,
+                    });
+                    setShowDeleteConfirm(false);
+                    if (onDeleted) {
+                      onDeleted();
+                    } else {
+                      goBack();
+                    }
+                  } catch (err: any) {
+                    toast({
+                      variant: "destructive",
+                      title: "Törlési hiba",
+                      description: err?.message || "Nem sikerült törölni a hibajegyet.",
+                    });
+                  }
+                }}
+              >
+                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+                Véglegesen törlöm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-          {/* Comment input */}
-          {ticket.status === "resolved" ? (
-            <Card className="border-dashed opacity-70">
-              <CardContent className="py-5">
-                <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
-                  <MessageSquare className="h-5 w-5" />
-                  <p className="text-sm text-center">
-                    Sajnos a már lezárt hibajegyhez további hozzászólás nem lehetséges.
-                  </p>
-                  {isAdmin && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      disabled={isUpdating}
-                      onClick={() =>
-                        updateStatus({
-                          feedbackId: ticket.id,
-                          status: "in_progress" as TicketStatus,
-                        })
-                      }
-                    >
-                      {isUpdating ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                      ) : (
-                        <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
-                      )}
-                      Hibajegy újra megnyitása
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left column: message + comments */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Original message */}
             <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="space-y-3">
-                  {ticket && !ticket.assigned_to && (
-                    <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-md text-xs font-medium leading-relaxed">
-                      <ShieldAlert className="h-4.5 w-4.5 shrink-0 mt-0.5" />
-                      <div>
-                        A hozzászóláshoz a hibajegynek rendelkeznie kell felelőssel.
-                        {isAdmin ? " Kérjük, jelöljön ki egy felelőst a jobb oldali panelen." : " Kérjük, várja meg, amíg egy support munkatárs elvállalja a hibajegyet."}
-                      </div>
-                    </div>
-                  )}
-                  <div
-                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (ticket?.assigned_to && e.dataTransfer.files.length) addCommentFiles(e.dataTransfer.files); }}
-                  >
-                    <Textarea
-                      placeholder={ticket?.assigned_to ? "Hozzászólás... (Ctrl+Enter)" : "A hozzászólás zárolva van, amíg nincs felelőse a jegynek."}
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      onPaste={handlePaste}
-                      className="min-h-[80px] max-h-[200px] resize-none"
-                      rows={3}
-                      disabled={!ticket?.assigned_to}
-                    />
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
+                    {(ticket.user_name || ticket.user_email || "?")[0]?.toUpperCase()}
                   </div>
-                  {/* Comment attachment previews */}
-                  {commentFiles.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {commentFiles.map((file, i) => {
-                        const isImage = file.type.startsWith("image/");
-                        return (
+                  <div>
+                    <p className="text-sm font-medium">{ticket.user_name || ticket.user_email}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(ticket.created_at)}</p>
+                  </div>
+                </div>
+                <RichTextContent content={ticket.message} />
+
+                {/* Ticket attachments */}
+                <div className="mt-4 pt-3 border-t border-border/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                      <Paperclip className="h-3.5 w-3.5" />
+                      Csatolmányok ({ticket.attachments?.length || 0})
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        ref={ticketAttachmentInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            handleAddTicketAttachments(e.target.files);
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 hover:bg-muted"
+                        onClick={() => ticketAttachmentInputRef.current?.click()}
+                        disabled={isUploadingTicketAttachment || isUpdatingAttachments}
+                      >
+                        {isUploadingTicketAttachment || isUpdatingAttachments ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Plus className="h-3 w-3" />
+                        )}
+                        Csatolmány hozzáadása
+                      </Button>
+                    </div>
+                  </div>
+
+                  {ticket.attachments && ticket.attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {ticket.attachments.map((url: string, i: number) => {
+                        const isImg = isImageUrl(url);
+                        const fileName = getFileName(url);
+                        return isImg ? (
                           <div key={i} className="relative group">
-                            {isImage ? (
-                              <button
-                                type="button"
-                                onClick={() => openPreviewGallery(i)}
-                                className="h-16 w-16 rounded-md overflow-hidden border border-border hover:border-primary/40 transition-colors cursor-zoom-in"
-                                title="Kép megtekintése"
-                              >
-                                <img
-                                  src={URL.createObjectURL(file)}
-                                  alt={file.name}
-                                  className="h-full w-full object-cover group-hover:opacity-85 transition-opacity"
-                                />
-                              </button>
-                            ) : (
-                              <div className="h-16 w-16 rounded-md border border-border bg-muted flex flex-col items-center justify-center gap-0.5 px-1">
-                                <FileText className="h-5 w-5 text-muted-foreground" />
-                                <span className="text-[9px] text-muted-foreground truncate w-full text-center">
-                                  {file.name.split('.').pop()?.toUpperCase()}
-                                </span>
-                              </div>
-                            )}
                             <button
-                              onClick={() => removeCommentFile(i)}
-                              className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              type="button"
+                              onClick={() => openGalleryForUrl(url)}
+                              className="relative block rounded-md overflow-hidden border border-border hover:border-primary/40 transition-colors cursor-zoom-in"
                             >
-                              <X className="h-3 w-3" />
+                              <img
+                                src={url}
+                                alt={`Csatolmány ${i + 1}`}
+                                className="max-w-[260px] max-h-[160px] object-cover group-hover:opacity-80 transition-opacity"
+                              />
+                              {ticket.attachments!.length > 1 && (
+                                <span className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">
+                                  {i + 1}/{ticket.attachments!.length}
+                                </span>
+                              )}
                             </button>
+                            {(isAdmin || user?.id === ticket.user_id) && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveTicketAttachment(i)}
+                                    className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs">
+                                  Csatolmány törlése
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        ) : (
+                          <div key={i} className="relative group flex items-center gap-2 p-2 rounded-md border border-border bg-muted/40 hover:bg-muted/70 transition-colors">
+                            <FileText className="h-5 w-5 text-primary shrink-0" />
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-medium text-foreground hover:text-primary truncate max-w-[200px]"
+                            >
+                              {fileName}
+                            </a>
+                            {(isAdmin || user?.id === ticket.user_id) && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveTicketAttachment(i)}
+                                    className="h-5 w-5 text-muted-foreground hover:text-destructive transition-colors ml-1"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs">
+                                  Csatolmány törlése
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                           </div>
                         );
                       })}
                     </div>
                   )}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <input
-                        ref={commentFileInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => { if (e.target.files) addCommentFiles(e.target.files); e.target.value = ''; }}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => commentFileInputRef.current?.click()}
-                        disabled={!ticket?.assigned_to || commentFiles.length >= 5}
-                        title="Fájl csatolása (kép, PDF, CSV)"
-                      >
-                        <Plus className="h-5 w-5" />
-                      </Button>
-                      {commentFiles.length > 0 && (
-                        <span className="text-[11px] text-muted-foreground">{commentFiles.length}/5</span>
-                      )}
-                      {isAdmin && (
-                        <label className={`flex items-center gap-1.5 ml-2 text-xs text-amber-500 font-medium select-none ${ticket?.assigned_to ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}>
-                          <input
-                            type="checkbox"
-                            checked={isInternal}
-                            onChange={(e) => setIsInternal(e.target.checked)}
-                            className="rounded border-amber-500/30 accent-amber-500"
-                            disabled={!ticket?.assigned_to}
-                          />
-                          Belső feljegyzés
-                        </label>
-                      )}
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={handleSubmit}
-                      disabled={!ticket?.assigned_to || !comment.trim() || isCommenting}
-                      className="gap-1.5"
-                    >
-                      {isCommenting ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Send className="h-3.5 w-3.5" />
-                      )}
-                      Küldés
-                    </Button>
-                  </div>
                 </div>
+                <ImageGalleryModal
+                  images={galleryImages}
+                  initialIndex={galleryIndex}
+                  open={galleryOpen}
+                  onClose={() => setGalleryOpen(false)}
+                />
               </CardContent>
             </Card>
-          )}
-        </div>
 
-        {/* Right column: ticket info sidebar */}
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <h3 className="text-sm font-semibold">Részletek</h3>
+            {/* Comments */}
+            {comments.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span>{comments.length} hozzászólás</span>
+                  <Separator className="flex-1" />
+                </div>
 
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <User className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{ticket.user_email || ticket.user_name || "—"}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Building2 className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{ticket.company_name || "—"}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4 shrink-0" />
-                  <span>{formatDate(ticket.created_at)}</span>
-                </div>
-                {ticket.page_url && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Globe className="h-4 w-4 shrink-0" />
-                    <a
-                      href={ticket.page_url}
-                      onClick={(e) => { e.preventDefault(); navigate(ticket.page_url!); }}
-                      className="truncate text-xs text-primary hover:underline cursor-pointer"
-                      title={ticket.page_url}
-                    >
-                      {ticket.page_url}
-                    </a>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Link2 className="h-4 w-4 shrink-0" />
-                  <button
-                    onClick={() => {
-                      const url = `${window.location.origin}/tickets/${ticket.id}`;
-                      navigator.clipboard.writeText(url);
-                      toast({ title: "Link másolva!", description: "A hibajegy közvetlen linkje a vágólapra került." });
-                    }}
-                    className="truncate text-xs text-primary hover:underline cursor-pointer text-left"
-                    title="Kattints a link másolásához"
+                {comments.map((c) => (
+                  <Card
+                    key={c.id}
+                    className={
+                      c.is_internal
+                        ? "border-amber-500/30 bg-amber-500/[0.03]"
+                        : c.is_admin
+                        ? "border-primary/20 bg-primary/[0.02]"
+                        : ""
+                    }
                   >
-                    /tickets/{ticket.id.slice(0, 8)}…
-                  </button>
-                </div>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div
+                          className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                            c.is_internal
+                              ? "bg-amber-500/15 text-amber-500"
+                              : c.is_admin
+                              ? "bg-primary/15 text-primary"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {(c.user_name || c.user_email || "?")[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium truncate">
+                              {c.user_name || c.user_email}
+                            </p>
+                            {c.is_internal ? (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-medium">
+                                Belső feljegyzés (kliens elől rejtve)
+                              </span>
+                            ) : c.is_admin ? (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                                Support
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(c.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <RichTextContent content={c.message} />
+                      {/* Comment attachments */}
+                      {c.attachments && c.attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2 pl-11">
+                          {c.attachments.map((url: string, i: number) => {
+                            const isImg = isImageUrl(url);
+                            const fileName = getFileName(url);
+                            return isImg ? (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => openGalleryForUrl(url)}
+                                className="relative group rounded-md overflow-hidden border border-border hover:border-primary/40 transition-colors cursor-zoom-in"
+                              >
+                                <img
+                                  src={url}
+                                  alt={`Csatolmány ${i + 1}`}
+                                  className="max-w-[250px] max-h-[160px] object-cover group-hover:opacity-80 transition-opacity"
+                                />
+                              </button>
+                            ) : (
+                              <div key={i} className="flex items-center gap-2 p-2 rounded-md border border-border bg-muted/40 hover:bg-muted/70 transition-colors">
+                                <FileText className="h-4 w-4 text-primary shrink-0" />
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs font-medium text-foreground hover:text-primary truncate max-w-[180px]"
+                                    >
+                                      {fileName}
+                                    </a>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs">
+                                    {fileName}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
+            )}
 
-              <Separator />
+            {/* Scroll anchor */}
+            <div ref={bottomRef} />
+
+            {/* Comment input */}
+            {ticket.status === "resolved" ? (
+              <Card className="border-dashed opacity-70">
+                <CardContent className="py-5">
+                  <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
+                    <MessageSquare className="h-5 w-5" />
+                    <p className="text-sm text-center">
+                      Sajnos a már lezárt hibajegyhez további hozzászólás nem lehetséges.
+                    </p>
+                    {isAdmin && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        disabled={isUpdating}
+                        onClick={() =>
+                          updateStatus({
+                            feedbackId: ticket.id,
+                            status: "in_progress" as TicketStatus,
+                          })
+                        }
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                        ) : (
+                          <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                        )}
+                        Hibajegy újra megnyitása
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="pt-4 pb-4">
+                  <div className="space-y-3">
+                    {ticket && !ticket.assigned_to && (
+                      <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-md text-xs font-medium leading-relaxed">
+                        <ShieldAlert className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                        <div>
+                          A hozzászóláshoz a hibajegynek rendelkeznie kell felelőssel.
+                          {isAdmin ? " Kérjük, jelöljön ki egy felelőst a jobb oldali panelen." : " Kérjük, várja meg, amíg egy support munkatárs elvállalja a hibajegyet."}
+                        </div>
+                      </div>
+                    )}
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (ticket?.assigned_to && e.dataTransfer.files.length) addCommentFiles(e.dataTransfer.files); }}
+                    >
+                      <RichTextEditor
+                        key={editorKey}
+                        placeholder={ticket?.assigned_to ? "Hozzászólás... (Ctrl+Enter a küldéshez)" : "A hozzászólás zárolva van, amíg nincs felelőse a jegynek."}
+                        initialContent=""
+                        onChange={(html) => setComment(html)}
+                        onSubmit={handleSubmit}
+                        disabled={!ticket?.assigned_to}
+                        minHeight="80px"
+                        toolbarVariant="ticket"
+                      />
+                    </div>
+                    {/* Comment attachment previews */}
+                    {commentFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-3 pt-1">
+                        {commentFiles.map((file, i) => {
+                          const isImage = file.type.startsWith("image/");
+                          return (
+                            <div
+                              key={i}
+                              className="group relative flex flex-col gap-1.5 w-32 sm:w-36 p-2 rounded-xl border border-border/80 bg-card/90 shadow-sm hover:border-primary/40 hover:shadow-md transition-all"
+                            >
+                              {isImage ? (
+                                <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted/40 border border-border/30">
+                                  <img
+                                    src={URL.createObjectURL(file)}
+                                    alt={file.name}
+                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  />
+                                  {/* Floating Action Toolbar */}
+                                  <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-neutral-900/85 backdrop-blur-sm border border-neutral-700/60 rounded-md p-0.5 shadow-md opacity-90 group-hover:opacity-100 transition-opacity z-10">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button
+                                          type="button"
+                                          onClick={() => openPreviewGallery(i)}
+                                          className="h-6 w-6 rounded flex items-center justify-center text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors"
+                                        >
+                                          <Eye className="h-3.5 w-3.5" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="text-xs">
+                                        Megtekintés
+                                      </TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button
+                                          type="button"
+                                          onClick={() => removeCommentFile(i)}
+                                          className="h-6 w-6 rounded flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="text-xs">
+                                        Törlés
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="relative w-full aspect-square rounded-lg bg-muted/60 border border-border/30 flex flex-col items-center justify-center gap-1 p-2">
+                                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <FileText className="h-5 w-5" />
+                                  </div>
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 rounded bg-background border border-border/60">
+                                    {file.name.split('.').pop()?.toUpperCase()}
+                                  </span>
+                                  {/* Floating Action Toolbar */}
+                                  <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-neutral-900/85 backdrop-blur-sm border border-neutral-700/60 rounded-md p-0.5 shadow-md z-10">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button
+                                          type="button"
+                                          onClick={() => removeCommentFile(i)}
+                                          className="h-6 w-6 rounded flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="text-xs">
+                                        Törlés
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                </div>
+                              )}
+                              {/* Filename caption */}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <p
+                                    className="text-[11px] font-mono text-muted-foreground truncate px-0.5 cursor-default"
+                                  >
+                                    {file.name}
+                                  </p>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs">
+                                  {file.name}
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <input
+                          ref={commentFileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => { if (e.target.files) addCommentFiles(e.target.files); e.target.value = ''; }}
+                        />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              onClick={() => commentFileInputRef.current?.click()}
+                              disabled={!ticket?.assigned_to || commentFiles.length >= 5}
+                            >
+                              <Plus className="h-5 w-5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            Fájl csatolása (kép, PDF, CSV, Excel)
+                          </TooltipContent>
+                        </Tooltip>
+                        {commentFiles.length > 0 && (
+                          <span className="text-[11px] text-muted-foreground">{commentFiles.length}/5</span>
+                        )}
+                        {isAdmin && (
+                          <label className={`flex items-center gap-1.5 ml-2 text-xs text-amber-500 font-medium select-none ${ticket?.assigned_to ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}>
+                            <input
+                              type="checkbox"
+                              checked={isInternal}
+                              onChange={(e) => setIsInternal(e.target.checked)}
+                              className="rounded border-amber-500/30 accent-amber-500"
+                              disabled={!ticket?.assigned_to}
+                            />
+                            Belső feljegyzés
+                          </label>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={handleSubmit}
+                        disabled={!ticket?.assigned_to || ((!comment || comment.replace(/<[^>]*>/g, '').trim() === '') && commentFiles.length === 0) || isCommenting}
+                        className="gap-1.5"
+                      >
+                        {isCommenting ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="h-3.5 w-3.5" />
+                        )}
+                        Küldés
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Right column: ticket info sidebar */}
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <h3 className="text-sm font-semibold">Részletek</h3>
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <User className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{ticket.user_email || ticket.user_name || "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Building2 className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{ticket.company_name || "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4 shrink-0" />
+                    <span>{formatDate(ticket.created_at)}</span>
+                  </div>
+                  {ticket.page_url && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Globe className="h-4 w-4 shrink-0" />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a
+                            href={ticket.page_url}
+                            onClick={(e) => { e.preventDefault(); navigate(ticket.page_url!); }}
+                            className="truncate text-xs text-primary hover:underline cursor-pointer"
+                          >
+                            {ticket.page_url}
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          {ticket.page_url}
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Link2 className="h-4 w-4 shrink-0" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => {
+                            const url = `${window.location.origin}/tickets/${ticket.id}`;
+                            navigator.clipboard.writeText(url);
+                            toast({ title: "Link másolva!", description: "A hibajegy közvetlen linkje a vágólapra került." });
+                          }}
+                          className="truncate text-xs text-primary hover:underline cursor-pointer text-left"
+                        >
+                          /tickets/{ticket.id.slice(0, 8)}…
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Kattints a link másolásához
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                <Separator />
 
                 <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium">Típus</p>
-                <div className="flex items-center gap-2">
-                  {ticket.type === "bug" ? (
-                    <>
-                      <Bug className="h-4 w-4 text-red-500" />
-                      <span className="text-sm">Hibajelentés</span>
-                    </>
-                  ) : ticket.type === "question" ? (
-                    <>
-                      <HelpCircle className="h-4 w-4 text-sky-500" />
-                      <span className="text-sm">Kérdés</span>
-                    </>
+                  <p className="text-xs text-muted-foreground font-medium">Típus</p>
+                  <div className="flex items-center gap-2">
+                    {ticket.type === "bug" ? (
+                      <>
+                        <Bug className="h-4 w-4 text-red-500" />
+                        <span className="text-sm">Hibajelentés</span>
+                      </>
+                    ) : ticket.type === "question" ? (
+                      <>
+                        <HelpCircle className="h-4 w-4 text-sky-500" />
+                        <span className="text-sm">Kérdés</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lightbulb className="h-4 w-4 text-amber-500" />
+                        <span className="text-sm">Visszajelzés</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Assigned support agent */}
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-medium">Felelős</p>
+                  {isAdmin ? (
+                    <Select
+                      value={(ticket as any).assigned_to || "unassigned"}
+                      onValueChange={(val) => {
+                        const newAssignee = val === "unassigned" ? null : val;
+                        updateAssignee(
+                          {
+                            feedbackId: ticket.id,
+                            assignedTo: newAssignee,
+                            force: !newAssignee, // allow unassign without lock check
+                          },
+                          {
+                            onError: (err: any) => {
+                              if (err?.message === "ALREADY_ASSIGNED") {
+                                toast({
+                                  title: "Jegy már kiosztva",
+                                  description: "Ezt a hibajegyet egy másik support munkatárs már magához rendelte.",
+                                  variant: "destructive",
+                                });
+                              }
+                            },
+                          }
+                        );
+                      }}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Nincs hozzárendelve" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Nincs hozzárendelve</SelectItem>
+                        {supportAgents.map((agent: any) => (
+                          <SelectItem key={agent.user_id} value={agent.user_id}>
+                            {agent.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   ) : (
-                    <>
-                      <Lightbulb className="h-4 w-4 text-amber-500" />
-                      <span className="text-sm">Visszajelzés</span>
-                    </>
+                    ticket.assigned_to_name ? (
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Headset className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{ticket.assigned_to_name}</p>
+                          <p className="text-[11px] text-muted-foreground">ThinkAI Support</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
+                          <Headset className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Nincs hozzárendelve</p>
+                          <p className="text-[11px] text-muted-foreground">ThinkAI Support</p>
+                        </div>
+                      </div>
+                    )
                   )}
                 </div>
-              </div>
 
-              <Separator />
-
-              {/* Assigned support agent */}
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium">Felelős</p>
-                {isAdmin ? (
-                  <Select
-                    value={(ticket as any).assigned_to || "unassigned"}
-                    onValueChange={(val) => {
-                      const newAssignee = val === "unassigned" ? null : val;
-                      updateAssignee(
-                        {
-                          feedbackId: ticket.id,
-                          assignedTo: newAssignee,
-                          force: !newAssignee, // allow unassign without lock check
-                        },
-                        {
-                          onError: (err: any) => {
-                            if (err?.message === "ALREADY_ASSIGNED") {
-                              toast({
-                                title: "Jegy már kiosztva",
-                                description: "Ezt a hibajegyet egy másik support munkatárs már magához rendelte.",
-                                variant: "destructive",
-                              });
-                            }
-                          },
+                {isAdmin && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground font-medium">Prioritás módosítása</p>
+                      <Select
+                        value={ticket.priority || "medium"}
+                        onValueChange={(val) =>
+                          updatePriority({
+                            feedbackId: ticket.id,
+                            priority: val as TicketPriority,
+                          })
                         }
-                      );
-                    }}
-                  >
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Nincs hozzárendelve" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">Nincs hozzárendelve</SelectItem>
-                      {supportAgents.map((agent: any) => (
-                        <SelectItem key={agent.user_id} value={agent.user_id}>
-                          {agent.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  ticket.assigned_to_name ? (
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Headset className="h-3.5 w-3.5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{ticket.assigned_to_name}</p>
-                        <p className="text-[11px] text-muted-foreground">ThinkAI Support</p>
-                      </div>
+                      >
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Alacsony</SelectItem>
+                          <SelectItem value="medium">Közepes</SelectItem>
+                          <SelectItem value="high">Magas</SelectItem>
+                          <SelectItem value="critical">Kritikus</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
-                        <Headset className="h-3.5 w-3.5 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Nincs hozzárendelve</p>
-                        <p className="text-[11px] text-muted-foreground">ThinkAI Support</p>
-                      </div>
-                    </div>
-                  )
+                  </>
                 )}
-              </div>
 
-              {isAdmin && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground font-medium">Prioritás módosítása</p>
-                    <Select
-                      value={ticket.priority || "medium"}
-                      onValueChange={(val) =>
-                        updatePriority({
-                          feedbackId: ticket.id,
-                          priority: val as TicketPriority,
-                        })
-                      }
-                    >
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Alacsony</SelectItem>
-                        <SelectItem value="medium">Közepes</SelectItem>
-                        <SelectItem value="high">Magas</SelectItem>
-                        <SelectItem value="critical">Kritikus</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
+                {/* Admin status changer */}
+                {isAdmin && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground font-medium">Státusz módosítása</p>
+                      <Select
+                        value={ticket.status}
+                        onValueChange={(val) =>
+                          updateStatus({
+                            feedbackId: ticket.id,
+                            status: val as TicketStatus,
+                          })
+                        }
+                        disabled={isUpdating}
+                      >
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="created">Új</SelectItem>
+                          <SelectItem value="in_progress">Folyamatban</SelectItem>
+                          <SelectItem value="resolved">Megoldva</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
 
-              {/* Admin status changer */}
-              {isAdmin && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground font-medium">Státusz módosítása</p>
-                    <Select
-                      value={ticket.status}
-                      onValueChange={(val) =>
-                        updateStatus({
-                          feedbackId: ticket.id,
-                          status: val as TicketStatus,
-                        })
-                      }
-                      disabled={isUpdating}
-                    >
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="created">Új</SelectItem>
-                        <SelectItem value="in_progress">Folyamatban</SelectItem>
-                        <SelectItem value="resolved">Megoldva</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Timeline */}
-          <TicketTimeline feedbackId={feedbackId} />
+            {/* Timeline */}
+            <TicketTimeline feedbackId={feedbackId} />
+          </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

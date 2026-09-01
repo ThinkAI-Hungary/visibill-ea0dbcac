@@ -1,7 +1,7 @@
 # Decision 036: [Accounty] Hibajegy és Visszajelzés Rendszer
 
 **Status:** Decided  
-**Utolsó frissítés:** 2026-06
+**Utolsó frissítés:** 2026-09-01
 
 **Category:** Ügyfélszolgálat & Support
 
@@ -15,6 +15,10 @@
   - Standalone: `/tickets/:ticketId?`
 - Ticket típusok: Hibajelentés (bug), Visszajelzés (feedback), Kérdés (question)
 - Prioritás: felhasználó választhatja beküldéskor (alacsony/közepes/magas/kritikus)
+- Formázott szövegbevitel (Rich Text): félkövér, dőlt, áthúzott, címsorok, felsorolás, számozott lista, kód, idézet támogatás a hibajegyek leírásában és a hozzászólásokban
+- Bővített csatolmánykezelés: képek (JPEG, PNG, GIF, WebP) és dokumentumok (PDF, CSV, XLS, XLSX) csatolása, közvetlen jegyhez csatolási lehetőség nyitott hibajegy esetén is
+- Csatolmány előnézet: modern lebegő eszköztáras kártyák (`Eye` megtekintés és `Trash2` törlés funkcióval)
+- Egységes app tooltip-ek a hibajegy modul minden interaktív elemén
 - Screenshot csatolás lehetősége + clipboard paste (Ctrl+V)
 - Kép előnézet küldés előtt → fullscreen gallery modal
 - Olvasatlan ticketek száma badge-ként a sidebarban (`useUnreadTicketCount` hook)

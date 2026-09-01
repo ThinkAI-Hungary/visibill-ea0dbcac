@@ -1,7 +1,7 @@
 # A-018: Hibajegy Rendszer Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12 (utolsó frissítés: 2026-06)
+**Date:** 2025-12 (utolsó frissítés: 2026-09-01)
 
 ## Context
 
@@ -184,3 +184,12 @@ idx_ticket_reads_feedback_user  ON ticket_reads(feedback_id, user_id)
 - **Clipboard paste:** Ctrl+V a hozzászólás mezőben képet csatol vágólapról
 - **Kép előnézet:** Csatolt képek kattinthatók küldés előtt → fullscreen preview
 - **Fullscreen galéria:** Portal-alapú overlay (z-index: 9999), teljes képernyős képnézegető
+
+## Frontend & Architektúra funkciók (2026-09 frissítés)
+
+- **Szabványos Rich Text Szerkesztő (`RichTextEditor`):** TipTap StarterKit alapú szerkesztő félkövér, dőlt, áthúzott, címsor (H2, H3), felsorolás, számozott lista, idézet, inline kód és visszavonás/újra funkciókkal. `Ctrl+Enter` / `Cmd+Enter` gyorsbillentyű támogatással az azonnali beküldéshez (`onSubmit`).
+- **Biztonságos és Tipográfiailag Stílusozott Megjelenítő (`RichTextContent`):** Biztonságos HTML és szöveges renderelés `prose prose-sm dark:prose-invert` osztályokkal. 100%-os visszafelé kompatibilitás a korábbi sima szöveges hibajegyekkel és hozzászólásokkal.
+- **Közvetlen Csatolmánykezelés Nyitott Hibajegyhez:** A `feedback.attachments` tömb közvetlen módosítása a `useUpdateTicketAttachments` mutációval és a jegy fejlécében elhelyezett `+ Csatolmány hozzáadása` gombbal.
+- **Lebegő Eszköztáras Előnézeti Kártyák:** Új, egységes kártyás preview dizájn a feltöltött csatolmányokhoz (képeknél négyzetes előnézet, jobb felső lebegő kapszulában `Eye` előnézet és `Trash2` törlés gombok; dokumentumoknál dedikált típusjelvény és letöltési/törlési funkció).
+- **Egységes Radix Tooltip Architektúra:** A hibajegy komponensekben (`TicketDetailView`, `FeedbackDialog`, `ImageGalleryModal`, `rich-text-editor`) a natív `title` attribútumok ki lettek váltva `<TooltipProvider delayDuration={200}>` és `<Tooltip>` komponensekkel, biztosítva a finom időzítést és az app dizájnrendszeréhez illeszkedő sötét/világos buborékokat.
+

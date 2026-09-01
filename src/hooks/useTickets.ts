@@ -545,3 +545,30 @@ export function useDeleteTicket() {
     },
   });
 }
+
+// ── Mutation: Update ticket attachments ───────────────────────
+export function useUpdateTicketAttachments() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      feedbackId,
+      attachments,
+    }: {
+      feedbackId: string;
+      attachments: string[];
+    }) => {
+      const { error } = await supabase
+        .from("feedback")
+        .update({ attachments })
+        .eq("id", feedbackId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, { feedbackId }) => {
+      queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+  });
+}
+
