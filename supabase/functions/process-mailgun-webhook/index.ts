@@ -347,17 +347,40 @@ async function processBillingoAndSzamlazzLinks(
 
   // 2. ── Számlázz.hu Agent API PDF Fetcher ──
   const szamlazzLinkDetected = /szamlazz\.hu/i.test(combinedText);
-  const invNumberRegex = /\b([a-zA-Z0-9]{2,10}-\d{4}-\d+)\b/g;
-  const invMatches = Array.from(combinedText.matchAll(invNumberRegex));
-  const invoiceNumbers = Array.from(new Set(invMatches.map(m => m[1])));
+
+  // Extract candidate invoice numbers using multiple regex patterns
+  const foundCandidates = new Set<string>();
+
+  // Pattern A: standard Hungarian invoice format (e.g. E-SZAMLA-2026-102, ABC/2026/123)
+  const patternA = /\b([a-zA-Z0-9]{1,12}[-/]\d{4}[-/]\d+)\b/g;
+  for (const m of combinedText.matchAll(patternA)) foundCandidates.add(m[1]);
+
+  // Pattern B: prefixed invoice format (e.g. E-SZAMLA-102, SZAMLA-12345, INV-2026)
+  const patternB = /\b([a-zA-Z0-9]{2,12}[-/]\d+)\b/g;
+  for (const m of combinedText.matchAll(patternB)) foundCandidates.add(m[1]);
+
+  // Pattern C: labeled format (e.g. "számlaszám: E-SZ-2026-1", "sorszám: 12345")
+  const patternC = /(?:számla(?:\s*száma|\s*sorszáma)?|számlaszám|sorszám|invoice\s*no\.?)\s*[:=]?\s*([a-zA-Z0-9/_-]{3,30})/gi;
+  for (const m of combinedText.matchAll(patternC)) {
+    const candidate = m[1].trim();
+    if (candidate.length >= 3 && !candidate.toLowerCase().includes('http')) {
+      foundCandidates.add(candidate);
+    }
+  }
+
+  const invoiceNumbers = Array.from(foundCandidates);
 
   if (szamlazzLinkDetected || invoiceNumbers.length > 0) {
-    console.log(`[LINK-INGEST] Számlázz.hu signal detected. Candidate invoice numbers: ${invoiceNumbers.join(', ')}`);
+    console.log(`[LINK-INGEST] Számlázz.hu signal detected. Candidate invoice numbers: [${invoiceNumbers.join(', ')}]`);
 
     const { data: keyData } = await supabase.rpc('get_szamlazz_agent_key', { p_company_id: alias.company_id });
     const agentKey = (keyData as string)?.trim() || alias.mailgun_route_id?.trim();
 
     if (agentKey && agentKey.length >= 30) {
+      if (invoiceNumbers.length === 0) {
+        console.warn(`[LINK-INGEST] Számlázz.hu signal detected, but no candidate invoice numbers could be parsed from email text.`);
+      }
+
       for (const invNum of invoiceNumbers) {
         console.log(`[LINK-INGEST] Calling Számlázz.hu Agent pdfDownload API for invoice ${invNum}...`);
 
@@ -383,9 +406,9 @@ async function processBillingoAndSzamlazzLinks(
 
           if (apiRes.ok) {
             const bytes = new Uint8Array(await apiRes.arrayBuffer());
-            const headerStr = new TextDecoder().decode(bytes.slice(0, 10));
+            const textResponse = new TextDecoder().decode(bytes.slice(0, 1000));
 
-            if (headerStr.includes('%PDF')) {
+            if (textResponse.includes('%PDF')) {
               const fileName = `szamlazz_${invNum.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
               const storagePath = `${alias.user_id}/${Date.now()}-${sanitizeFileName(fileName)}`;
 
@@ -425,12 +448,21 @@ async function processBillingoAndSzamlazzLinks(
                 }
               }
             } else {
-              console.warn(`[LINK-INGEST] Számlázz Agent API response for ${invNum} was not a PDF: ${headerStr.substring(0, 100)}`);
+              const errMatch = textResponse.match(/<hibauzenet>(.*?)<\/hibauzenet>/i);
+              const errMsg = errMatch ? errMatch[1] : textResponse.substring(0, 200);
+              console.warn(`[LINK-INGEST] Számlázz.hu API returned non-PDF response for invoice ${invNum}: ${errMsg}`);
+              await logError(supabase, {
+                error_type: 'szamlazz_agent_api',
+                severity: 'warning',
+                component: 'process-mailgun-webhook',
+                action: 'szamlazz_pdf_fetch_failed',
+                message: `Számlázz.hu API hiba a ${invNum} számlánál: ${errMsg}`,
+                user_id: alias.user_id,
+                company_id: alias.company_id,
+              });
             }
-          } else {
-            console.warn(`[LINK-INGEST] Számlázz Agent API HTTP status ${apiRes.status} for invoice ${invNum}`);
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error(`[LINK-INGEST] Error calling Számlázz Agent API for ${invNum}:`, err);
         }
       }
