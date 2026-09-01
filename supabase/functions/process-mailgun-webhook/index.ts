@@ -359,8 +359,8 @@ async function processBillingoAndSzamlazzLinks(
   const patternB = /\b([a-zA-Z0-9]{2,12}[-/]\d+)\b/g;
   for (const m of combinedText.matchAll(patternB)) foundCandidates.add(m[1]);
 
-  // Pattern C: labeled format (e.g. "számlaszám: E-SZ-2026-1", "sorszám: 12345")
-  const patternC = /(?:számla(?:\s*száma|\s*sorszáma)?|számlaszám|sorszám|invoice\s*no\.?)\s*[:=]?\s*([a-zA-Z0-9/_-]{3,30})/gi;
+  // Pattern C: labeled format requiring colon/equals/hash delimiter (e.g. "számlaszám: E-SZ-2026-1", "sorszám #12345", "Invoice No: INV-101")
+  const patternC = /(?:számla\s*sorszáma|számlaszám|sorszám|invoice\s*no\.?)\s*[:=#]\s*([a-zA-Z0-9/_-]{3,30})/gi;
   for (const m of combinedText.matchAll(patternC)) {
     const candidate = m[1].trim();
     if (candidate.length >= 3 && !candidate.toLowerCase().includes('http')) {

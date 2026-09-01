@@ -110,8 +110,8 @@ export async function buildErrors(admin: ReturnType<typeof createClient>, url: U
       .select("id, created_at, updated_at, error_message, file_name, file_url, company_id, user_id, metadata")
       .eq("processing_status", "error"),
     admin.from("app_error_logs")
-      .select("id, created_at, message, error_type, component, action, company_id, user_id, context, stack_trace, url")
-      .eq("severity", "error")
+      .select("id, created_at, message, error_type, component, action, company_id, user_id, context, stack_trace, url, severity")
+      .in("severity", ["error", "warning"])
       .order("created_at", { ascending: false })
       .limit(500),
   ]);
@@ -135,6 +135,20 @@ export async function buildErrors(admin: ReturnType<typeof createClient>, url: U
     const source = sourceNames[i];
     for (const row of res.data || []) {
       const isAppLog = source === "app_error_logs";
+
+      // Filter warning severity: only include Számlázz.hu related warnings to avoid table flooding
+      if (isAppLog && row.severity === 'warning') {
+        const isSzamlazzError =
+          row.error_type === 'szamlazz_agent_api' ||
+          row.action?.toLowerCase().includes('szamlazz') ||
+          row.message?.toLowerCase().includes('számlázz') ||
+          row.message?.toLowerCase().includes('szamlazz');
+
+        if (!isSzamlazzError) {
+          continue;
+        }
+      }
+
       const isMailgunComponent = isAppLog && row.component === 'process-mailgun-webhook';
       const cat = isMailgunComponent
         ? 'Mailgun'

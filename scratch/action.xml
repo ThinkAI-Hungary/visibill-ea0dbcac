@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlszamlapdf xmlns="http://www.szamlazz.hu/xmlszamlapdf">
+  <beallitasok>
+    <szamlaAgentKulcs>nzkuf8wrwgz27zkuf8w9g8u99zkuf8wbeccygzkuf8</szamlaAgentKulcs>
+    <pdfValasz>true</pdfValasz>
+  </beallitasok>
+  <fejlec>
+    <szamlaszam>E-SZAMLA-2026-102</szamlaszam>
+  </fejlec>
+</xmlszamlapdf>
