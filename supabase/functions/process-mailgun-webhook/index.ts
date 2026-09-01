@@ -572,108 +572,112 @@ serve(async (req) => {
     let parsedHeaders: [string, string][] = [];
     let bodyMime: string | null = null;  // Raw RFC822 MIME body for fallback parsing
 
-    // Parse based on content type
-    if (contentType.includes('multipart/form-data')) {
-      console.log('Parsing as multipart/form-data');
-      const formData = await req.formData();
-      
-      // Log all form fields for debugging
-      console.log('Form fields received:');
-      for (const [key, value] of formData.entries()) {
-        if (value instanceof File) {
-          console.log(`  ${key}: [File] ${value.name} (${value.type}, ${value.size} bytes)`);
-        } else {
-          console.log(`  ${key}: ${String(value).substring(0, 100)}${String(value).length > 100 ? '...' : ''}`);
-        }
-      }
-      
-      recipient = formData.get('recipient') as string;
-      sender = formData.get('sender') as string;
-      subject = formData.get('subject') as string;
-      bodyPlain = formData.get('body-plain') as string;
-      bodyHtml = formData.get('body-html') as string;
-      timestamp = formData.get('timestamp') as string;
-      token = formData.get('token') as string;
-      signature = formData.get('signature') as string;
-      attachmentCount = parseInt(formData.get('attachment-count') as string || '0');
-      bodyMime = formData.get('body-mime') as string;
+    // Robust, fail-safe Content-Type and body parsing
+    const lowerContentType = (contentType || '').toLowerCase();
 
-      // ── Extract original sender (From header, not the forwarder) ──
-      originalFrom = formData.get('from') as string;
+    if (lowerContentType.includes('multipart') || lowerContentType.includes('form-data')) {
+      try {
+        console.log('Parsing as multipart/form-data');
+        const formData = await req.formData();
+        
+        recipient = formData.get('recipient') as string;
+        sender = formData.get('sender') as string;
+        subject = formData.get('subject') as string;
+        bodyPlain = formData.get('body-plain') as string;
+        bodyHtml = formData.get('body-html') as string;
+        timestamp = formData.get('timestamp') as string;
+        token = formData.get('token') as string;
+        signature = formData.get('signature') as string;
+        attachmentCount = parseInt(formData.get('attachment-count') as string || '0');
+        bodyMime = formData.get('body-mime') as string;
+        originalFrom = formData.get('from') as string;
 
-      // Extract message-headers for Message-Id, Return-Path, DKIM, etc.
-      // Mailgun sends message-headers as a JSON string: [["Header-Name", "value"], ...]
-      const messageHeadersRaw = formData.get('message-headers') as string;
-      if (messageHeadersRaw) {
-        try {
-          parsedHeaders = JSON.parse(messageHeadersRaw);
-          const msgIdHeader = parsedHeaders.find(([name]) =>
-            name.toLowerCase() === 'message-id'
-          );
-          if (msgIdHeader) {
-            messageId = msgIdHeader[1];
+        const messageHeadersRaw = formData.get('message-headers') as string;
+        if (messageHeadersRaw) {
+          try {
+            parsedHeaders = JSON.parse(messageHeadersRaw);
+            const msgIdHeader = parsedHeaders.find(([name]) =>
+              name.toLowerCase() === 'message-id'
+            );
+            if (msgIdHeader) {
+              messageId = msgIdHeader[1];
+            }
+          } catch (e) {
+            console.warn('Failed to parse message-headers:', e);
           }
-        } catch (e) {
-          console.warn('Failed to parse message-headers:', e);
         }
-      }
-      console.log('Message-Id:', messageId);
-      console.log('Original From:', originalFrom);
-      
-      // Collect attachments
-      for (let i = 1; i <= attachmentCount; i++) {
-        const attachment = formData.get(`attachment-${i}`);
-        if (attachment instanceof File) {
-          attachments.push(attachment);
+        
+        for (let i = 1; i <= attachmentCount; i++) {
+          const attachment = formData.get(`attachment-${i}`);
+          if (attachment instanceof File) {
+            attachments.push(attachment);
+          }
         }
+      } catch (err) {
+        console.warn('Failed to parse formData directly, will attempt body text fallback:', err);
       }
-      
-    } else if (contentType.includes('application/x-www-form-urlencoded')) {
-      console.log('Parsing as application/x-www-form-urlencoded');
-      const text = await req.text();
-      console.log('Raw body (first 500 chars):', text.substring(0, 500));
-      
-      const params = new URLSearchParams(text);
-      
-      recipient = params.get('recipient');
-      sender = params.get('sender');
-      subject = params.get('subject');
-      bodyPlain = params.get('body-plain');
-      timestamp = params.get('timestamp');
-      token = params.get('token');
-      signature = params.get('signature');
-      attachmentCount = parseInt(params.get('attachment-count') || '0');
-      bodyMime = params.get('body-mime');
-      
-      console.log('Parsed URL-encoded data - recipient:', recipient, 'sender:', sender);
-      
-    } else if (contentType.includes('application/json')) {
-      console.log('Parsing as application/json');
-      const json = await req.json();
-      console.log('JSON body:', JSON.stringify(json).substring(0, 500));
-      
-      // Mailgun JSON format can vary - handle both flat and nested structures
-      recipient = json.recipient || json['event-data']?.message?.headers?.to;
-      sender = json.sender || json['event-data']?.message?.headers?.from;
-      subject = json.subject || json['event-data']?.message?.headers?.subject;
-      bodyPlain = json['body-plain'] || json.bodyPlain;
-      timestamp = json.timestamp?.toString();
-      token = json.token;
-      signature = json.signature;
-      attachmentCount = json['attachment-count'] || json.attachmentCount || 0;
-      
-      console.log('Parsed JSON data - recipient:', recipient, 'sender:', sender);
-      
-    } else {
-      // Unknown content type - log and attempt to read as text for debugging
-      console.log('Unknown content type, attempting to read body for debugging');
+    } else if (lowerContentType.includes('application/x-www-form-urlencoded')) {
+      try {
+        console.log('Parsing as application/x-www-form-urlencoded');
+        const text = await req.text();
+        const params = new URLSearchParams(text);
+        
+        recipient = params.get('recipient');
+        sender = params.get('sender');
+        subject = params.get('subject');
+        bodyPlain = params.get('body-plain');
+        bodyHtml = params.get('body-html');
+        timestamp = params.get('timestamp');
+        token = params.get('token');
+        signature = params.get('signature');
+        attachmentCount = parseInt(params.get('attachment-count') || '0');
+        bodyMime = params.get('body-mime');
+      } catch (err) {
+        console.warn('Failed to parse urlencoded body:', err);
+      }
+    } else if (lowerContentType.includes('json')) {
+      try {
+        console.log('Parsing as application/json');
+        const json = await req.json();
+        recipient = json.recipient || json['event-data']?.message?.headers?.to;
+        sender = json.sender || json['event-data']?.message?.headers?.from;
+        subject = json.subject || json['event-data']?.message?.headers?.subject;
+        bodyPlain = json['body-plain'] || json.bodyPlain;
+        bodyHtml = json['body-html'] || json.bodyHtml;
+        timestamp = json.timestamp?.toString();
+        token = json.token;
+        signature = json.signature;
+        attachmentCount = json['attachment-count'] || json.attachmentCount || 0;
+      } catch (err) {
+        console.warn('Failed to parse JSON body:', err);
+      }
+    }
+
+    // Universal fallback if recipient was not populated by previous steps
+    if (!recipient) {
+      console.log('Recipient empty after primary parsing, running universal body fallback...');
       try {
         const text = await req.text();
-        console.log('Raw body (first 1000 chars):', text.substring(0, 1000));
-      } catch (e) {
-        console.log('Could not read body as text');
+        if (text) {
+          if (text.trim().startsWith('{')) {
+            const json = JSON.parse(text);
+            recipient = json.recipient || json['event-data']?.message?.headers?.to;
+            sender = json.sender || json['event-data']?.message?.headers?.from;
+            subject = json.subject || json['event-data']?.message?.headers?.subject;
+            bodyPlain = json['body-plain'] || json.bodyPlain;
+            bodyHtml = json['body-html'] || json.bodyHtml;
+          } else {
+            const params = new URLSearchParams(text);
+            recipient = params.get('recipient');
+            sender = params.get('sender');
+            subject = params.get('subject');
+            bodyPlain = params.get('body-plain');
+            bodyHtml = params.get('body-html');
+          }
+        }
+      } catch (fallbackErr) {
+        console.warn('Universal body fallback parsing failed:', fallbackErr);
       }
-      throw new Error(`Unsupported content type: ${contentType}`);
     }
 
     if (recipient) {
