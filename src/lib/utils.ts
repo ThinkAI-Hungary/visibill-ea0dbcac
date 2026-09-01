@@ -43,15 +43,23 @@ export function extractStoragePath(publicUrl: string, bucket: string): string | 
   }
 }
 
-/** Fix Hungarian character encoding bugs where accents are corrupted (e.g. õ/û instead of ő/ű, or ? instead of ó/é/ö). */
+/** Fix Hungarian character encoding bugs where accents are corrupted due to PDF font or DB encoding issues. */
 export function fixCharacterEncoding(str: string | null | undefined): string {
   if (!str) return '';
   return str
-    // Fix Windows-1250 / ISO-8859-1 mis-decoding (õ/û -> ő/ű)
+    // Fix PDF font encoding corruption (£, ¶, Ø, ½, ë, õ, û, ẽ, >, @)
+    .replace(/£/g, 'á')
+    .replace(/¶/g, 'Á')
+    .replace(/Ø/g, 'Ó')
+    .replace(/½/g, 'É')
+    .replace(/ë/g, 'ó')
     .replace(/õ/g, 'ő')
     .replace(/Õ/g, 'Ő')
     .replace(/û/g, 'ű')
     .replace(/Û/g, 'Ű')
+    .replace(/ẽ/g, 'á')
+    .replace(/([a-zA-ZáéíóöőútüűÁÉÍÓÖŐÚTÜŰ])>([a-zA-ZáéíóöőútüűÁÉÍÓÖŐÚTÜŰ])/g, '$1í$2')
+    .replace(/([a-zA-ZáéíóöőútüűÁÉÍÓÖŐÚTÜŰ])@([a-zA-ZáéíóöőútüűÁÉÍÓÖŐÚTÜŰ])/g, '$1é$2')
     // Fix common ? replacements in system strings
     .replace(/Banki tranzakci\?/gi, 'Banki tranzakció')
     .replace(/tranzakci\?/gi, 'tranzakció')

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency, fixCharacterEncoding } from '@/lib/utils';
 import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Settings, Ban, UploadCloud, ChevronDown, Link2, Link2Off, Copy, Download, FileText, X, Trash2, Lock, Users, Loader2, Plus, ClipboardCheck, Pencil, Check, Undo2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
@@ -900,11 +900,11 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="block truncate text-xs cursor-default flex-1 min-w-0">
-                  {transaction.description || '-'}
+                  {fixCharacterEncoding(transaction.description) || '-'}
                 </span>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[500px]">
-                <p className="whitespace-pre-wrap text-sm">{transaction.description}</p>
+                <p className="whitespace-pre-wrap text-sm">{fixCharacterEncoding(transaction.description)}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
