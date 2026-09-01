@@ -1700,8 +1700,8 @@
     "semantic_hash": "ff7983437ae5d07804815e4662ebd916"
   },
   "supabase/functions/management-stats/index.ts": {
-    "mtime": 1788176356.5850692,
-    "ast_hash": "a8f702849b068a48969afed801058304",
+    "mtime": 1788222242.078193,
+    "ast_hash": "579ef7ff332cf681b5adabca815252fb",
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
@@ -3015,8 +3015,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1788215290.0788076,
-    "ast_hash": "790e3244a83db003e572987d50d1b3d5",
+    "mtime": 1788222503.0505302,
+    "ast_hash": "4540d20c4a2bf0671332d46299a599bd",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788220496.8903086,
-    "ast_hash": "482dc7ba3a7d5ce4f83abca5b6b36993",
+    "mtime": 1788222489.0108192,
+    "ast_hash": "e480cd603fcab24b1888e5439304eb48",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788220521.0910163,
-    "ast_hash": "4033ebccdceac892a15f6b53a7ae19cf",
+    "mtime": 1788223440.8677766,
+    "ast_hash": "06abe2cc7052b9d5970f605fda20618f",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -7530,8 +7530,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/overview/ManagementOverview.tsx": {
-    "mtime": 1788175305.6354296,
-    "ast_hash": "a5990095ebd2f76337108a565b8f0769",
+    "mtime": 1788222737.4179902,
+    "ast_hash": "506b59276904a6dc3d6e2943308ff9b9",
     "semantic_hash": ""
   },
   "src/features/management/components/permissions/ModuleMatrix.tsx": {
@@ -7570,8 +7570,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/worker/WorkerPanel.tsx": {
-    "mtime": 1788135849.3911724,
-    "ast_hash": "2cf33f5e98276d06f00c1f248cb13e9c",
+    "mtime": 1788222317.9130106,
+    "ast_hash": "2224a8f1a3d9fc82a139bbe1268c5ea8",
     "semantic_hash": ""
   },
   "src/routes/__tests__/routes.test.tsx": {
@@ -8065,8 +8065,8 @@
     "semantic_hash": ""
   },
   "src/features/management/__tests__/managementOverview.test.tsx": {
-    "mtime": 1788175330.4474413,
-    "ast_hash": "e375d1cffe49c0d607d05350f21cb4a9",
+    "mtime": 1788222744.158607,
+    "ast_hash": "5d74fa66d2a9a9af8d3a7a7d90e38ceb",
     "semantic_hash": ""
   },
   "supabase/migrations/20260831140000_update_get_monthly_llm_by_company_with_all_time_totals.sql": {
@@ -8357,6 +8357,101 @@
   "docs/product/decisions/P-060-statutory-reporting-and-vat-return-modular-ux.md": {
     "mtime": 1788220505.7210383,
     "ast_hash": "d4a05fc9beee85e6f29cee8f610c0e0e",
+    "semantic_hash": ""
+  },
+  "src/features/management/__tests__/workerTelemetry.test.tsx": {
+    "mtime": 1788222413.1761856,
+    "ast_hash": "95a88d42af4cd5d5d4cb88eaa00a1a63",
+    "semantic_hash": ""
+  },
+  "src/features/management/components/worker/ContainerMetricsCard.tsx": {
+    "mtime": 1788222273.723119,
+    "ast_hash": "5111890f041e62295631dfc09c41e186",
+    "semantic_hash": ""
+  },
+  "src/features/management/components/worker/PipelineStatusList.tsx": {
+    "mtime": 1788222287.105944,
+    "ast_hash": "ccea9047dabefcf9393d25b6692b096b",
+    "semantic_hash": ""
+  },
+  "src/features/management/components/worker/QueueMonitorGrid.tsx": {
+    "mtime": 1788222282.1999307,
+    "ast_hash": "5ca56b48a10fdc6aab92cb5a9c5f3b94",
+    "semantic_hash": ""
+  },
+  "src/features/management/components/worker/TaskErrorRetryTable.tsx": {
+    "mtime": 1788222305.8700204,
+    "ast_hash": "887d231bba4c5e34e0649256810659ef",
+    "semantic_hash": ""
+  },
+  "src/features/management/hooks/useWorkerTelemetry.ts": {
+    "mtime": 1788222267.6294253,
+    "ast_hash": "6681642fd53b64181f8264d43640f431",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/handlers/errorsHandler.ts": {
+    "mtime": 1788222171.8510327,
+    "ast_hash": "02822d210e911743a7836334bfa82f01",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/handlers/filesHandler.ts": {
+    "mtime": 1788222198.7744179,
+    "ast_hash": "df038e99ce73c671c3a1dfaff8790bfb",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/handlers/llmCostsHandler.ts": {
+    "mtime": 1788222149.2016585,
+    "ast_hash": "5e6517df87dd3810ce4665838495a34a",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/handlers/overviewHandler.ts": {
+    "mtime": 1788222140.567541,
+    "ast_hash": "73a0ed2fe1feb47a7dd6bcb65c90683e",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/handlers/permissionsHandler.ts": {
+    "mtime": 1788222186.5165431,
+    "ast_hash": "5168a0f4f0afe3ef035eb28b9e55e33c",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/handlers/superadminHandler.ts": {
+    "mtime": 1788222232.2726865,
+    "ast_hash": "137379ce4d76d76fbd357a5497053933",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/handlers/workerHandler.ts": {
+    "mtime": 1788222219.210032,
+    "ast_hash": "8782f8064c058a3b5f68d2c863fc2dba",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/middleware/auth.ts": {
+    "mtime": 1788222112.3981874,
+    "ast_hash": "622d9ae28a2c1da5bf684b942823b2e0",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/types.ts": {
+    "mtime": 1788222096.6506727,
+    "ast_hash": "37dbd723e7c6c97851226c6d6a9f88a5",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/utils/common.ts": {
+    "mtime": 1788222116.350395,
+    "ast_hash": "393ed653da4d6489d839f883c5bde91f",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/utils/multiProject.ts": {
+    "mtime": 1788222122.039581,
+    "ast_hash": "63b0d0c206b70dada9368de7b273334d",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-077-management-stats-edge-function-and-telemetry-decomposition.md": {
+    "mtime": 1788223448.5055294,
+    "ast_hash": "e4d8b92ae9f474c40c5e25c914ac83a6",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-061-management-worker-telemetry-and-monthly-llm-ux.md": {
+    "mtime": 1788223428.4888303,
+    "ast_hash": "16c934685de24649169e5edf4b1d496f",
     "semantic_hash": ""
   }
 }

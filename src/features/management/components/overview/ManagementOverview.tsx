@@ -233,6 +233,9 @@ export function ManagementOverview({
     return uniqueFiles.slice(0, 4);
   }, [recentFilesData]);
 
+  const currentMonthName = new Date().toLocaleDateString('hu-HU', { month: 'long' });
+  const capitalizedMonth = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
+
   // Only show the full-page OverviewSkeleton when overview itself is missing during initial cold load
   if (overviewLoading && !overview) {
     return <OverviewSkeleton />;
@@ -246,7 +249,7 @@ export function ManagementOverview({
           value={overview?.usersCount ?? 0} loading={overviewLoading} />
         <StatCard icon={Building2} label="Regisztrált cégek"
           value={overview?.companiesCount ?? 0} loading={overviewLoading} />
-        <StatCard icon={Coins} label="Havi összköltség"
+        <StatCard icon={Coins} label={`Havi összköltség (${capitalizedMonth})`}
           value={overview ? `$${overview.llmOverview.totalMonthlyCostUsd.toFixed(4)}` : '$0'}
           loading={overviewLoading}
           sub={overview ? `In: ${(overview.llmOverview.totalMonthlyInputTokens / 1000).toFixed(1)}k · Out: ${(overview.llmOverview.totalMonthlyOutputTokens / 1000).toFixed(1)}k token` : undefined} />
@@ -275,7 +278,7 @@ export function ManagementOverview({
                 <p className="text-sm font-bold text-foreground truncate">{overview.llmOverview.mostExpensiveCompany.name}</p>
                 <p className="text-xs text-muted-foreground">Legdrágább cég (összesen)</p>
                 <p className="text-[11px] text-muted-foreground/60 mt-0.5 tabular-nums">
-                  Össz: ${overview.llmOverview.mostExpensiveCompany.totalCostUsd.toFixed(4)} · Havi: ${overview.llmOverview.mostExpensiveCompany.monthlyCostUsd.toFixed(4)}
+                  Össz: ${overview.llmOverview.mostExpensiveCompany.totalCostUsd.toFixed(4)} · {capitalizedMonth}: ${overview.llmOverview.mostExpensiveCompany.monthlyCostUsd.toFixed(4)}
                 </p>
               </div>
             </CardContent>
@@ -326,7 +329,10 @@ export function ManagementOverview({
                   </div>
                   <div className="space-y-4 mt-2">
                     <div>
-                      <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Havi összköltség</h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Havi összköltség ({capitalizedMonth})</h3>
+                        <span className="text-[9px] px-1.5 py-0.5 font-semibold uppercase bg-teal-500/10 text-teal-600 dark:text-teal-400 rounded">Tárgyhó</span>
+                      </div>
                       <span className="text-3xl font-extrabold text-foreground block mt-0.5 tracking-tight">
                         {overview ? `$${overview.llmOverview.totalMonthlyCostUsd.toFixed(4)}` : '$0.0000'}
                       </span>

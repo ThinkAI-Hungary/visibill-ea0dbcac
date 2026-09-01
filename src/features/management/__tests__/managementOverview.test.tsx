@@ -132,7 +132,7 @@ describe('ManagementOverview Progressive Rendering', () => {
     renderComponent({ overview: mockOverview, overviewLoading: false, onOpenCompany });
 
     expect(screen.getByText('Legdrágább cég (összesen)')).toBeInTheDocument();
-    expect(screen.getByText(/Össz: \$45\.6700 · Havi: \$12\.3400/)).toBeInTheDocument();
+    expect(screen.getByText(/Össz: \$45\.6700 · .+: \$12\.3400/)).toBeInTheDocument();
 
     const expensiveCard = screen.getAllByText('Test Corp')[0];
     fireEvent.click(expensiveCard);

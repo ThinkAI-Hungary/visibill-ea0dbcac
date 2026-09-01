@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-01  
-> **Összesen:** 76 döntés | ✅ Decided: 74 | ⛔ Superseded: 2
+> **Összesen:** 77 döntés | ✅ Decided: 75 | ⛔ Superseded: 2
 
 ---
 
@@ -143,6 +143,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-061 | Decomposing the Monolithic Super-Admin & Management Dashboard | ✅ Decided | [A-061](./A-061-decompose-management-dashboard.md) |
 | A-069 | Centralized Frontend Error Ingestion, Stack Trace & Context Deserialization | ✅ Decided | [A-069](./A-069-frontend-error-reporting-and-context-inspection.md) |
 | A-075 | Management Overview Null-Safety in SQL JSON Aggregations | ✅ Decided | [A-075](./A-075-management-overview-null-safety-in-rpc-aggregations.md) |
+| A-077 | Management Stats Edge Function & Telemetry Decomposition | ✅ Decided | [A-077](./A-077-management-stats-edge-function-and-telemetry-decomposition.md) |
 
 
 

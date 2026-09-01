@@ -111,7 +111,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
-| `management-stats` | ❌ | Management dashboard — 14 action (áttekintés, cég/user adatok, jogosultságok, hibakezelés, worker állapot). |
+| `management-stats` | ❌ | Management dashboard — 14 action (áttekintés, cég/user adatok, jogosultságok, hibakezelés, worker állapot). Moduláris domén handler architektúra (`handlers/`, `middleware/`, `utils/`, lásd [A-077](./A-077-management-stats-edge-function-and-telemetry-decomposition.md)). |
 | `impersonate-company` | ✅ | Support Admin impersonation flow (start/stop) az ideiglenes hozzáféréshez. |
 | `export-user-data` | ✅ | GDPR adatexport — felhasználó összes adata ZIP-ben |
 | `get-invoice-image-url` | ❌ | Számla kép signed URL generálása (Storage) |
