@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, Sparkles, Brain, Lightbulb, CheckCircle2, ChevronRight, ToggleLeft, Activity, Info, Loader2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Plus, Trash2, Sparkles, Brain, Lightbulb, CheckCircle2, ChevronRight, ToggleLeft, Activity, Info, Loader2, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
