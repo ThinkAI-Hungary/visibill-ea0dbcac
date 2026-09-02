@@ -153,7 +153,6 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-069 | Centralized Frontend Error Ingestion, Stack Trace & Context Deserialization | ✅ Decided | [A-069](./A-069-frontend-error-reporting-and-context-inspection.md) |
 | A-075 | Management Overview Null-Safety in SQL JSON Aggregations | ✅ Decided | [A-075](./A-075-management-overview-null-safety-in-rpc-aggregations.md) |
 | A-077 | Management Stats Edge Function & Telemetry Decomposition | ✅ Decided | [A-077](./A-077-management-stats-edge-function-and-telemetry-decomposition.md) |
-| A-083 | Rules of Hooks Invariáns Garantálása és Teszt-Telemetria Kiszivárgás Megelőzése | ✅ Decided | [A-083](./A-083-rules-of-hooks-invariance-and-test-telemetry-guard.md) |
 
 
 
