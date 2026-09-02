@@ -75,12 +75,141 @@ export default function JournalsPage() {
   const generateDraftsMutation = useMutation({
     mutationFn: async () => {
       if (!selectedCompany?.id || !activePresetId) return 0;
-      const { data, error } = await supabase.rpc('acc_generate_drafts_from_ledger', {
-        p_company_id: selectedCompany.id,
-        p_preset_id: activePresetId
-      });
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase.rpc('acc_generate_drafts_from_ledger', {
+          p_company_id: selectedCompany.id,
+          p_preset_id: activePresetId
+        });
+        if (error) throw error;
+        return data;
+      } catch (err: any) {
+        console.warn('RPC acc_generate_drafts_from_ledger failed, executing robust fallback generator:', err);
+
+        // 1. Delete existing system suggestions
+        await supabase
+          .from('acc_journal_headers')
+          .delete()
+          .eq('company_id', selectedCompany.id)
+          .eq('status', 'GEPI_JAVASLAT');
+
+        // 2. Ensure default journals exist
+        await supabase.rpc('acc_seed_default_journals', { p_company_id: selectedCompany.id });
+
+        // 3. Fetch categorized items
+        const { data: items, error: itemsErr } = await supabase.rpc('get_gl_categorized_items', {
+          p_company_id: selectedCompany.id,
+          p_preset_id: activePresetId
+        });
+        if (itemsErr) throw itemsErr;
+        if (!items || items.length === 0) return 0;
+
+        // 4. Fetch GL Accounts & Journals
+        const { data: glAccounts } = await supabase
+          .from('gl_accounts')
+          .select('id, gl_number')
+          .eq('company_id', selectedCompany.id);
+
+        const { data: journals } = await supabase
+          .from('acc_journals')
+          .select('id, code, type, currency')
+          .eq('company_id', selectedCompany.id);
+
+        const glCustId = glAccounts?.find(g => g.gl_number.startsWith('311'))?.id || glAccounts?.[0]?.id;
+        const glSuppId = glAccounts?.find(g => g.gl_number.startsWith('454'))?.id || glCustId;
+
+        if (!glCustId || !glSuppId) return 0;
+
+        const validGlIds = new Set((glAccounts || []).map(g => g.id));
+
+        // Filter valid mapped items (MUST have a valid gl_account_id in gl_accounts, NOT nil UUID)
+        const validItems = items.filter(
+          (item: any) =>
+            item.gl_account_id &&
+            item.gl_account_id !== '00000000-0000-0000-0000-000000000000' &&
+            validGlIds.has(item.gl_account_id) &&
+            item.amount &&
+            Math.abs(item.amount) > 0
+        );
+
+        let createdCount = 0;
+
+        for (const item of validItems) {
+          const itemDate = item.item_date ? item.item_date.substring(0, 10) : new Date().toISOString().substring(0, 10);
+          const year = Number(itemDate.substring(0, 4)) || new Date().getFullYear();
+          const currency = item.original_currency || 'HUF';
+          const amount = Math.round(Math.abs(item.amount) * 100) / 100;
+          const foreignAmount = item.original_amount ? Math.round(Math.abs(item.original_amount) * 100) / 100 : null;
+          const exchangeRate = (currency !== 'HUF' && foreignAmount) ? Math.round((amount / foreignAmount) * 1000000) / 1000000 : 1;
+
+          let journalId = journals?.find(j => j.code === 'VE')?.id || journals?.[0]?.id;
+          let source = 'AUTO_RENDSZER';
+          let docId = `MISC-${item.item_id.substring(0, 8).toUpperCase()}`;
+
+          if (item.source_table === 'transactions') {
+            source = 'AUTO_BANK';
+            docId = `TR-${item.item_id.substring(0, 8).toUpperCase()}`;
+            journalId = journals?.find(j => j.type === 'BANK' && j.currency === currency)?.id || journals?.find(j => j.code === 'B1')?.id || journalId;
+          } else if (['invoice_items', 'nav_invoice_items'].includes(item.source_table)) {
+            source = 'AUTO_SZAMLA';
+            docId = `INV-${item.item_id.substring(0, 8).toUpperCase()}`;
+            if (item.amount >= 0) {
+              journalId = journals?.find(j => j.code === 'V')?.id || journalId;
+            } else {
+              journalId = journals?.find(j => j.code === 'SZ')?.id || journalId;
+            }
+          }
+
+          const { data: header, error: hErr } = await supabase
+            .from('acc_journal_headers')
+            .insert({
+              company_id: selectedCompany.id,
+              journal_id: journalId,
+              accounting_year: year,
+              status: 'GEPI_JAVASLAT',
+              entry_type: 'NORMAL',
+              source: source,
+              posting_date: itemDate,
+              document_date: itemDate,
+              document_id: docId,
+              description: item.description || 'Automatikus bizonylat javaslat',
+              currency: currency,
+              exchange_rate: exchangeRate,
+              exchange_rate_date: itemDate,
+              import_key: item.item_id.toString()
+            })
+            .select('id')
+            .single();
+
+          if (hErr) continue;
+
+          let line1: any;
+          let line2: any;
+
+          if (item.source_table === 'transactions') {
+            const glBankId = glAccounts?.find(g => g.gl_number.startsWith('384'))?.id || glAccounts?.[0]?.id;
+            if (item.amount >= 0) {
+              line1 = { header_id: header.id, sequence_number: 1, gl_account_id: glBankId, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
+              line2 = { header_id: header.id, sequence_number: 2, gl_account_id: item.gl_account_id, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
+            } else {
+              line1 = { header_id: header.id, sequence_number: 1, gl_account_id: item.gl_account_id, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
+              line2 = { header_id: header.id, sequence_number: 2, gl_account_id: glBankId, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
+            }
+          } else {
+            if (item.amount >= 0) {
+              line1 = { header_id: header.id, sequence_number: 1, gl_account_id: glCustId, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
+              line2 = { header_id: header.id, sequence_number: 2, gl_account_id: item.gl_account_id, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
+            } else {
+              line1 = { header_id: header.id, sequence_number: 1, gl_account_id: item.gl_account_id, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
+              line2 = { header_id: header.id, sequence_number: 2, gl_account_id: glSuppId, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
+            }
+          }
+
+          await supabase.from('acc_journal_lines').insert([line1, line2]);
+          createdCount++;
+        }
+
+        return createdCount;
+      }
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
