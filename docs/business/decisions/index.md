@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
 > **Utoljára frissítve:** 2026-09-03  
-> **Összesen:** 48 döntés | ✅ Decided: 32 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
+> **Összesen:** 49 döntés | ✅ Decided: 33 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
 
 ---
 
@@ -133,3 +133,4 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 045 | Számla Feature Szelet Üzleti Követelményei és Integritása | ✅ Decided | [045-invoices-feature-slice.md](./045-invoices-feature-slice.md) |
 | 046 | Egységes Dokumentum és Export Motor Szabályai | ✅ Decided | [046-unified-document-engine.md](./046-unified-document-engine.md) |
 | 048 | NAV Online Számla Megfelelőség és Könyvelői Zárlat Üzleti Szabálya | ✅ Decided | [048-nav-crosscheck-approval-gate.md](./048-nav-crosscheck-approval-gate.md) |
+| 049 | Főkönyvi Dátum Alap (Teljesítés vs. Kibocsátás Kelte) Üzleti Szabály | ✅ Decided | [049-gl-date-basis-fulfillment-vs-issue.md](./049-gl-date-basis-fulfillment-vs-issue.md) |

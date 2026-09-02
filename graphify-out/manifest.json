@@ -115,8 +115,8 @@
     "semantic_hash": ""
   },
   "src/components/ErrorBoundary.tsx": {
-    "mtime": 1781445891.2593951,
-    "ast_hash": "39230209f1b5bc179ac6453a158cfe08",
+    "mtime": 1788391012.0425422,
+    "ast_hash": "b711f27a399227394e37c1a7c657f1a3",
     "semantic_hash": ""
   },
   "src/components/ExpandedInvoiceRow.tsx": {
@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1788304693.393559,
-    "ast_hash": "51923eb6571d73c66fdd41a833ff77ed",
+    "mtime": 1788392228.487186,
+    "ast_hash": "f66af91a9d90ab6f4357d2d69b0c35ba",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -445,8 +445,8 @@
     "semantic_hash": "690594953770aff80b0787de83a31fc2"
   },
   "src/components/settings/BusinessSection.tsx": {
-    "mtime": 1788212014.2220492,
-    "ast_hash": "8b322d06927dea3e6219296cbb24bc28",
+    "mtime": 1788390802.1977282,
+    "ast_hash": "24ba4d39e06cd574817fc9597071e44c",
     "semantic_hash": ""
   },
   "src/components/settings/InviteUserDialog.tsx": {
@@ -915,9 +915,9 @@
     "semantic_hash": ""
   },
   "src/hooks/useCompanySettings.ts": {
-    "mtime": 1775702953.509588,
-    "ast_hash": "fe72250ec6b560b2b7b773646dadf024",
-    "semantic_hash": "fe72250ec6b560b2b7b773646dadf024"
+    "mtime": 1788390587.5463276,
+    "ast_hash": "2f76573ade3840e291b717b43cefe0e0",
+    "semantic_hash": ""
   },
   "src/hooks/useComputedStatus.ts": {
     "mtime": 1788307487.0657344,
@@ -1060,8 +1060,8 @@
     "semantic_hash": "776b6ed65c3cb4d27beb42298fa888ce"
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1788307476.878186,
-    "ast_hash": "dd07c8ed3165a54dde715680cece6896",
+    "mtime": 1788390533.3259187,
+    "ast_hash": "6ff0364fcc30405bbc7b38ae6d346035",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1105,8 +1105,8 @@
     "semantic_hash": "6747508d5cec296e87b5bb5c4a52dca9"
   },
   "src/lib/glExport.ts": {
-    "mtime": 1782462028.0013468,
-    "ast_hash": "c5d32e8e13d523010718b8ab95d4d507",
+    "mtime": 1788392221.8330321,
+    "ast_hash": "528fb5e2cf0ed924fe1513426d8cbfea",
     "semantic_hash": ""
   },
   "src/lib/helpers.ts": {
@@ -1140,8 +1140,8 @@
     "semantic_hash": "fa8877b6da8134706af01c33fb1c8a56"
   },
   "src/lib/payrollUtils.ts": {
-    "mtime": 1787931793.4599228,
-    "ast_hash": "6cfb0b9228091f0eda4c8fbbb217d6a2",
+    "mtime": 1788390576.5862534,
+    "ast_hash": "7593abba8c896324aed0cfc7db8b6751",
     "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/cafeteriaCalculator.test.ts": {
@@ -1410,8 +1410,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/SettingsPage.tsx": {
-    "mtime": 1782621606.7941246,
-    "ast_hash": "a1609310c11284894739a4615829f986",
+    "mtime": 1788390776.8479743,
+    "ast_hash": "ebacc7f9d60994f5fe0d1a92b75ce914",
     "semantic_hash": ""
   },
   "src/pages/Accounty/TaxCalendarPage.tsx": {
@@ -1480,8 +1480,8 @@
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
-    "mtime": 1787568622.90385,
-    "ast_hash": "5e17bfab8827860f6210a6a25f91adf8",
+    "mtime": 1788392623.9774873,
+    "ast_hash": "909011c90348c8650bfd9235d0d99e35",
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788387854.5261698,
-    "ast_hash": "f3b1c267fd2f6ffc822c083c491a6e6b",
+    "mtime": 1788392634.6761713,
+    "ast_hash": "615e8b399821cc692c10c11920b8fbec",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3325,8 +3325,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1788387876.7662287,
-    "ast_hash": "b5d506a0b0eb3bab32e903d977b15352",
+    "mtime": 1788392556.6332526,
+    "ast_hash": "4dc71db201e175af7f72e0ce0f9258b2",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788387898.1648767,
-    "ast_hash": "4f3cabd6f5601cc95c4a54dd8a659cae",
+    "mtime": 1788392572.6485868,
+    "ast_hash": "1a3203863eec82b9bbbbe4a469a5cb50",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -3590,8 +3590,8 @@
     "semantic_hash": ""
   },
   "src/lib/errorReporter.ts": {
-    "mtime": 1788370100.7950115,
-    "ast_hash": "2acb04db0ffcb4bb5700395b47bbb31e",
+    "mtime": 1788391060.1485426,
+    "ast_hash": "76f73706b7f526008bec20851e3f6c67",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/error-logger.ts": {
@@ -3745,8 +3745,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/JournalView.tsx": {
-    "mtime": 1788290701.6206388,
-    "ast_hash": "ee8aa38bcc64dc5505d7498b725e313d",
+    "mtime": 1788392241.345798,
+    "ast_hash": "01ba8e7e9e5cb0b89911900afc06a6f6",
     "semantic_hash": ""
   },
   "src/components/general-ledger/UploadAuditXmlModal.tsx": {
@@ -4515,8 +4515,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/AccountyErrorBoundary.tsx": {
-    "mtime": 1782462027.9868977,
-    "ast_hash": "f723cddb15ebba19b844fbbc44f1c70b",
+    "mtime": 1788391068.5103114,
+    "ast_hash": "5ff98fc42ea9ca10d9516667bfde0392",
     "semantic_hash": ""
   },
   "src/components/accounty/AccountyErrorState.tsx": {
@@ -4940,8 +4940,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/settings/GeneralSettingsTab.tsx": {
-    "mtime": 1782599622.7856307,
-    "ast_hash": "9f5916036e11d6174d3b5a6f3ecee2e2",
+    "mtime": 1788390752.2250607,
+    "ast_hash": "8675887f8099bfadd718ffab39cbe1f3",
     "semantic_hash": ""
   },
   "src/pages/Accounty/settings/NavChannelTab.tsx": {
@@ -5030,8 +5030,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/02-companies.md": {
-    "mtime": 1788130237.5494525,
-    "ast_hash": "cba5f6deef5196354b5a993ac0f16f64",
+    "mtime": 1788392647.5574572,
+    "ast_hash": "ab5c518dc8966ff210e115f1449acfd2",
     "semantic_hash": ""
   },
   "docs/architecture/database/03-permissions.md": {
@@ -6885,8 +6885,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerComparisonTable.tsx": {
-    "mtime": 1788290491.1369455,
-    "ast_hash": "29462e292ed225c681f5690091c344e6",
+    "mtime": 1788391282.7415183,
+    "ast_hash": "89a483014f4c5008c73f6f53474a2f73",
     "semantic_hash": ""
   },
   "src/components/integrations/EmailAccountCard.tsx": {
@@ -6940,8 +6940,8 @@
     "semantic_hash": ""
   },
   "src/test/accounty/newGeneralLedgerFeatures.test.ts": {
-    "mtime": 1787568622.9108496,
-    "ast_hash": "08370bb9f191a133c69457e436b743f3",
+    "mtime": 1788391338.2378595,
+    "ast_hash": "4fa3f3cb422461625f654992c8fc8a97",
     "semantic_hash": ""
   },
   "src/test/accounty/useInvoiceFilters.test.tsx": {
@@ -8620,13 +8620,13 @@
     "semantic_hash": ""
   },
   "src/lib/glData.test.ts": {
-    "mtime": 1788290418.753132,
-    "ast_hash": "ba8144fd52b2d0a8145a46cb55f08389",
+    "mtime": 1788390905.001492,
+    "ast_hash": "4f033686eb179a9f37f1c0344d5e31f8",
     "semantic_hash": ""
   },
   "src/lib/glData.ts": {
-    "mtime": 1788290696.8242857,
-    "ast_hash": "8006d6b1bf63e632ed3adff458c7d5d9",
+    "mtime": 1788390543.818477,
+    "ast_hash": "7fecb60530e0704434f6d0ad03b82e72",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md": {
@@ -8777,6 +8777,21 @@
   "docs/product/decisions/P-065-nav-crosscheck-approval-gate-ux.md": {
     "mtime": 1788389614.5419853,
     "ast_hash": "bc4297752eb52663a82da91589412696",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-085-gl-date-basis-rpc-and-chunk-error-recovery.md": {
+    "mtime": 1788392583.1896372,
+    "ast_hash": "bbfa281873fb18c65bc483d8893b2388",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/049-gl-date-basis-fulfillment-vs-issue.md": {
+    "mtime": 1788392540.7607615,
+    "ast_hash": "08c26157677ebb028bbe33b4ad55e47c",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-066-gl-date-basis-toggle-and-settings-ux.md": {
+    "mtime": 1788392564.2040114,
+    "ast_hash": "a6866b9f87751492328aec5f407e3b17",
     "semantic_hash": ""
   }
 }

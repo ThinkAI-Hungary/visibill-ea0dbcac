@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS: Omit<CompanyWorkSettings, 'id' | 'company_id' | 'created
   work_end_time: '17:00',
   admin_deadline: '20:00',
   monthly_working_hours: 168,
+  gl_date_basis: 'kibocsatas',
 };
 
 export function useCompanySettings() {
@@ -42,23 +43,27 @@ export function useCompanySettings() {
 
   const saveMutation = useMutation({
     mutationFn: async (form: {
-      work_start_time: string;
-      work_end_time: string;
-      admin_deadline: string;
-      monthly_working_hours: number;
+      work_start_time?: string;
+      work_end_time?: string;
+      admin_deadline?: string;
+      monthly_working_hours?: number;
+      gl_date_basis?: 'kibocsatas' | 'teljesites';
     }) => {
       if (!user || !selectedCompany) throw new Error('No user/company');
+
+      const payload = {
+        ...(form.work_start_time !== undefined && { work_start_time: form.work_start_time }),
+        ...(form.work_end_time !== undefined && { work_end_time: form.work_end_time }),
+        ...(form.admin_deadline !== undefined && { admin_deadline: form.admin_deadline }),
+        ...(form.monthly_working_hours !== undefined && { monthly_working_hours: form.monthly_working_hours }),
+        ...(form.gl_date_basis !== undefined && { gl_date_basis: form.gl_date_basis }),
+        updated_at: new Date().toISOString(),
+      };
 
       if (settings) {
         const { error } = await supabase
           .from('company_settings')
-          .update({
-            work_start_time: form.work_start_time,
-            work_end_time: form.work_end_time,
-            admin_deadline: form.admin_deadline,
-            monthly_working_hours: form.monthly_working_hours,
-            updated_at: new Date().toISOString(),
-          })
+          .update(payload)
           .eq('id', settings.id);
 
         if (error) throw error;
@@ -67,17 +72,18 @@ export function useCompanySettings() {
           .from('company_settings')
           .insert({
             company_id: selectedCompany.id,
-            work_start_time: form.work_start_time,
-            work_end_time: form.work_end_time,
-            admin_deadline: form.admin_deadline,
-            monthly_working_hours: form.monthly_working_hours,
+            work_start_time: form.work_start_time ?? DEFAULT_SETTINGS.work_start_time,
+            work_end_time: form.work_end_time ?? DEFAULT_SETTINGS.work_end_time,
+            admin_deadline: form.admin_deadline ?? DEFAULT_SETTINGS.admin_deadline,
+            monthly_working_hours: form.monthly_working_hours ?? DEFAULT_SETTINGS.monthly_working_hours,
+            gl_date_basis: form.gl_date_basis ?? DEFAULT_SETTINGS.gl_date_basis,
           });
 
         if (error) throw error;
       }
     },
     onSuccess: () => {
-      toast({ title: 'Siker', description: 'Munkaidő beállítások mentve.' });
+      toast({ title: 'Siker', description: 'Beállítások mentve.' });
       invalidate();
     },
     onError: (err: Error) => {
@@ -95,6 +101,7 @@ export function useCompanySettings() {
     work_end_time: settings?.work_end_time ?? DEFAULT_SETTINGS.work_end_time,
     admin_deadline: settings?.admin_deadline ?? DEFAULT_SETTINGS.admin_deadline,
     monthly_working_hours: settings?.monthly_working_hours ?? DEFAULT_SETTINGS.monthly_working_hours,
+    gl_date_basis: (settings?.gl_date_basis as 'kibocsatas' | 'teljesites') ?? DEFAULT_SETTINGS.gl_date_basis,
   };
 
   return {

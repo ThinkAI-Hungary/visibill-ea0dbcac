@@ -67,6 +67,67 @@ describe('glData pagination utilities', () => {
       expect(mockRange).toHaveBeenNthCalledWith(2, 1000, 1999);
       expect(result[1110].gl_number).toBe('1110');
     });
+
+    it('passes dateBasis to RPC when provided', async () => {
+      const mockRange = vi.fn().mockResolvedValue({ data: [], error: null });
+      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+
+      await fetchAllGlBalances({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        dateBasis: 'teljesites',
+      });
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_balances', {
+        p_company_id: 'company-1',
+        p_preset_id: 'preset-1',
+        p_date_from: null,
+        p_date_to: null,
+        p_exchange_rates: {},
+        p_date_basis: 'teljesites',
+      });
+    });
+
+    it('defaults dateBasis to kibocsatas when omitted', async () => {
+      const mockRange = vi.fn().mockResolvedValue({ data: [], error: null });
+      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+
+      await fetchAllGlBalances({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+      });
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_balances', {
+        p_company_id: 'company-1',
+        p_preset_id: 'preset-1',
+        p_date_from: null,
+        p_date_to: null,
+        p_exchange_rates: {},
+        p_date_basis: 'kibocsatas',
+      });
+    });
+  });
+
+  describe('fetchAllGlCategorizedItems', () => {
+    it('passes dateBasis to RPC when provided', async () => {
+      const mockRange = vi.fn().mockResolvedValue({ data: [], error: null });
+      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+
+      await fetchAllGlCategorizedItems({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        dateBasis: 'teljesites',
+      });
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', {
+        p_company_id: 'company-1',
+        p_preset_id: 'preset-1',
+        p_date_from: null,
+        p_date_to: null,
+        p_exchange_rates: {},
+        p_date_basis: 'teljesites',
+      });
+    });
   });
 
   describe('fetchAllGlAccountsByPreset', () => {

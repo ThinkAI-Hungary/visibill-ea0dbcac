@@ -58,6 +58,7 @@
 | work_end_time | time without time zone | — | `'17:00:00'::time without time zone` |
 | admin_deadline | time without time zone | — | `'20:00:00'::time without time zone` |
 | monthly_working_hours | numeric | — | `168` |
+| gl_date_basis | text | — | `'kibocsatas'` (CHECK in `'kibocsatas'`, `'teljesites'`) |
 | created_at | timestamp with time zone | — | `now()` |
 | updated_at | timestamp with time zone | — | `now()` |
 

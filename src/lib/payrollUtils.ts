@@ -46,6 +46,7 @@ export interface CompanyWorkSettings {
   work_end_time: string;
   admin_deadline: string;
   monthly_working_hours: number;
+  gl_date_basis?: 'kibocsatas' | 'teljesites' | null;
   created_at: string;
   updated_at: string;
 }

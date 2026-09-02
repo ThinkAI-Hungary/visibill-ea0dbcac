@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-03  
-> **Összesen:** 84 döntés | ✅ Decided: 82 | ⛔ Superseded: 2
+> **Összesen:** 85 döntés | ✅ Decided: 83 | ⛔ Superseded: 2
 
 ---
 
@@ -124,6 +124,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-082 | Részben Fizetett Számlák Státusz és Maradék Összeg Kezelése | ✅ Decided | [A-082](./A-082-partially-paid-invoices-status.md) |
 | A-083 | Rules of Hooks Invariáns Garantálása és Teszt-Telemetria Kiszivárgás Megelőzése | ✅ Decided | [A-083](./A-083-rules-of-hooks-invariance-and-test-telemetry-guard.md) |
 | A-084 | NAV Online Számla Cross-Check & Könyvelői Jóváhagyási Kapu (Approval Gate) | ✅ Decided | [A-084](./A-084-nav-crosscheck-approval-gate.md) |
+| A-085 | Főkönyvi Dátum Alap RPC Pushdown és Dinamikus Chunk Reload Recovery | ✅ Decided | [A-085](./A-085-gl-date-basis-rpc-and-chunk-error-recovery.md) |
 
 ## 💳 Fizetés
 

@@ -12,7 +12,7 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { exportToFile } from '@/lib/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchAllGlBalances, fetchAllGlCategorizedItems } from '@/lib/glData';
+import { fetchAllGlBalances, fetchAllGlCategorizedItems, GlDateBasis } from '@/lib/glData';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  F7: JOURNAL VIEW (Naplófőkönyv)
@@ -22,6 +22,7 @@ interface JournalViewProps {
   presetId?: string;
   dateFrom?: string;
   dateTo?: string;
+  dateBasis?: GlDateBasis;
 }
 
 interface JournalEntry {
@@ -48,7 +49,7 @@ const TYPE_LABELS: Record<string, string> = {
   journal_entry: 'Naplótétel',
 };
 
-export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewProps) {
+export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'kibocsatas' }: JournalViewProps) {
   const { selectedCompany } = useCompany();
   const { data: exchangeRates } = useExchangeRates();
   const [search, setSearch] = useState('');
@@ -58,7 +59,7 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
   const pageSize = 50;
 
   const { data: rawItems = [], isLoading } = useQuery({
-    queryKey: ['glJournalItems', selectedCompany?.id, presetId, dateFrom, dateTo],
+    queryKey: ['glJournalItems', selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       try {
@@ -67,6 +68,7 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
           presetId,
           dateFrom,
           dateTo,
+          dateBasis,
           exchangeRates: exchangeRates || {},
         });
         return (data || []) as unknown as JournalEntry[];
@@ -80,7 +82,7 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
 
   // Also fetch GL account mapping for display
   const { data: glAccounts = [] } = useQuery({
-    queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo],
+    queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       try {
@@ -89,6 +91,7 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
           presetId,
           dateFrom,
           dateTo,
+          dateBasis,
           exchangeRates: exchangeRates || {},
         });
         return data || [];
@@ -166,7 +169,8 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
   }, [filtered]);
 
   const handleExport = async () => {
-    const headers = ['Dátum', 'Partner', 'Leírás', 'Főkönyvi szám', 'Főkönyvi megnevezés', 'Típus', 'Tartozik', 'Követel'];
+    const basisLabel = dateBasis === 'teljesites' ? 'Teljesítés' : 'Kibocsátás';
+    const headers = [`Dátum (${basisLabel})`, 'Partner', 'Leírás', 'Főkönyvi szám', 'Főkönyvi megnevezés', 'Típus', 'Tartozik', 'Követel'];
     const rows = filtered.map((item: any) => [
       item.item_date ? item.item_date.substring(0, 10) : '',
       item.partner || '',
@@ -177,7 +181,9 @@ export default function JournalView({ presetId, dateFrom, dateTo }: JournalViewP
       item.amount > 0 ? item.amount.toString() : '',
       item.amount < 0 ? Math.abs(item.amount).toString() : '',
     ]);
-    await exportToFile(headers, rows, 'xlsx', 'naplofokonyv');
+    const rangePart = (dateFrom && dateTo) ? `_${dateFrom}_${dateTo}` : '';
+    const fileSuffix = dateBasis === 'teljesites' ? `naplofokonyv${rangePart}_teljesites_alapjan` : `naplofokonyv${rangePart}_kibocsatas_alapjan`;
+    await exportToFile(headers, rows, 'xlsx', fileSuffix);
     toast({ title: 'Naplófőkönyv exportálva' });
   };
 

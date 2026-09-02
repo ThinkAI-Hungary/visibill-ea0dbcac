@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 
 // Tab components
 import GeneralSettingsTab from './settings/GeneralSettingsTab';
@@ -26,6 +27,7 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const { role: currentUserRole, isAdmin, isSenior } = useAccountyRole();
   const { toast } = useToast();
+  const { effectiveSettings, saveMutation: saveCompanySettings } = useCompanySettings();
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -36,6 +38,13 @@ export default function SettingsPage() {
   const [officePhone, setOfficePhone] = useState('');
   const [officeAddress, setOfficeAddress] = useState('');
   const [sessionTimeout, setSessionTimeout] = useState(15);
+  const [glDateBasis, setGlDateBasis] = useState<'kibocsatas' | 'teljesites'>('kibocsatas');
+
+  useEffect(() => {
+    if (effectiveSettings?.gl_date_basis) {
+      setGlDateBasis(effectiveSettings.gl_date_basis as 'kibocsatas' | 'teljesites');
+    }
+  }, [effectiveSettings?.gl_date_basis]);
 
   // Notification defaults
   const [defaultChannels, setDefaultChannels] = useState({
@@ -193,6 +202,12 @@ export default function SettingsPage() {
       });
     }
 
+    try {
+      await saveCompanySettings.mutateAsync({ gl_date_basis: glDateBasis });
+    } catch (e) {
+      console.warn('Failed to save company settings gl_date_basis:', e);
+    }
+
     setSaving(false);
     setSaved(true);
     toast({ title: ' Beállítások mentve', description: 'A módosítások sikeresen elmentve.' });
@@ -245,6 +260,8 @@ export default function SettingsPage() {
               officePhone={officePhone} setOfficePhone={setOfficePhone}
               officeAddress={officeAddress} setOfficeAddress={setOfficeAddress}
               firmData={firmData}
+              glDateBasis={glDateBasis}
+              setGlDateBasis={setGlDateBasis}
             />
           )}
 

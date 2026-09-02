@@ -6,6 +6,7 @@ export type GlCategorizedItem = Database['public']['Functions']['get_gl_categori
   is_excluded?: boolean;
 };
 export type GlAccountRow = Database['public']['Tables']['gl_accounts']['Row'];
+export type GlDateBasis = 'kibocsatas' | 'teljesites';
 
 const PAGE_SIZE = 1000;
 
@@ -18,6 +19,7 @@ export async function fetchAllGlBalances(params: {
   presetId: string;
   dateFrom?: string | null;
   dateTo?: string | null;
+  dateBasis?: GlDateBasis;
   exchangeRates?: Record<string, any> | Json;
 }): Promise<GlBalanceItem[]> {
   let allBalances: GlBalanceItem[] = [];
@@ -35,6 +37,7 @@ export async function fetchAllGlBalances(params: {
         p_date_from: params.dateFrom || null,
         p_date_to: params.dateTo || null,
         p_exchange_rates: (params.exchangeRates as Json) || {},
+        p_date_basis: params.dateBasis || 'kibocsatas',
       })
       .range(from, to);
 
@@ -60,6 +63,7 @@ export async function fetchAllGlCategorizedItems(params: {
   presetId: string;
   dateFrom?: string | null;
   dateTo?: string | null;
+  dateBasis?: GlDateBasis;
   exchangeRates?: Record<string, any> | Json;
 }): Promise<GlCategorizedItem[]> {
   let allItems: GlCategorizedItem[] = [];
@@ -77,6 +81,7 @@ export async function fetchAllGlCategorizedItems(params: {
         p_date_from: params.dateFrom || null,
         p_date_to: params.dateTo || null,
         p_exchange_rates: (params.exchangeRates as Json) || {},
+        p_date_basis: params.dateBasis || 'kibocsatas',
       })
       .range(from, to);
 

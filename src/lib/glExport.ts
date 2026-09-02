@@ -15,13 +15,17 @@ interface GLRow {
 export const exportGlExcel = async (
   processedRows: GLRow[],
   companyName: string = 'Vállalkozás',
-  footerTotal: number = 0
+  footerTotal: number = 0,
+  dateBasis?: 'kibocsatas' | 'teljesites',
+  dateFrom?: string,
+  dateTo?: string
 ) => {
   const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'eaisybill';
   workbook.created = new Date();
 
+  const basisLabel = dateBasis === 'teljesites' ? 'Teljesítés dátuma' : 'Kibocsátás kelte';
   const worksheet = workbook.addWorksheet('Főkönyvi Kivonat', {
     views: [{ showGridLines: false }],
     properties: {
@@ -34,7 +38,7 @@ export const exportGlExcel = async (
 
   // Set Columns
   worksheet.columns = [
-    { header: 'Főkönyvi szám', key: 'gl_number', width: 18 },
+    { header: `Főkönyvi szám / Dátum (${basisLabel})`, key: 'gl_number', width: 26 },
     { header: 'Megnevezés', key: 'name', width: 60 },
     { header: 'Összesített Egyenleg', key: 'balance', width: 22 },
   ];
@@ -66,67 +70,87 @@ export const exportGlExcel = async (
         balance: row.balance,
       });
 
-      txRow.font = { size: 10, color: { argb: 'FF6B7280' } };
+      txRow.font = { italic: true, color: { argb: 'FF6B7280' }, size: 9 };
+      txRow.outlineLevel = 2;
       txRow.getCell('balance').numFmt = numberFormat;
-      txRow.outlineLevel = Math.min((row.depth || 0), 7) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-      txRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFF9FAFB' },
-      };
+      txRow.getCell('gl_number').alignment = { indent: 1 };
     } else {
-      // GL account row
-      const indent = '   '.repeat(row.depth || 0);
+      // GL Account row
+      const isHeader = row.hasChildren;
+      const isLevel0 = row.depth === 0;
 
-      const glRow = worksheet.addRow({
+      const excelRow = worksheet.addRow({
         gl_number: row.id,
-        name: `${indent}${row.name}`,
+        name: row.name,
         balance: row.balance,
       });
 
-      glRow.getCell('balance').numFmt = numberFormat;
-      glRow.getCell('gl_number').alignment = { horizontal: 'center' };
+      excelRow.getCell('balance').numFmt = numberFormat;
 
-      const level = Math.min((row.depth || 0), 7) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-      if (level > 0) {
-        glRow.outlineLevel = level;
+      if (row.depth !== undefined) {
+        excelRow.outlineLevel = row.depth;
       }
 
-      if (row.isRoot) {
-        glRow.font = { bold: true, size: 11 };
-        glRow.fill = {
+      if (isLevel0) {
+        excelRow.font = { bold: true, size: 12, color: { argb: 'FF111827' } };
+        excelRow.fill = {
           type: 'pattern',
           pattern: 'solid',
           fgColor: { argb: 'FFF3F4F6' },
         };
-        glRow.eachCell((cell) => {
-          cell.border = { top: { style: 'thin', color: { argb: 'FFD1D5DB' } } };
-        });
-      } else if (row.hasChildren) {
-        glRow.font = { bold: true };
+      } else if (isHeader) {
+        excelRow.font = { bold: true, size: 10, color: { argb: 'FF374151' } };
+      } else {
+        excelRow.font = { size: 10, color: { argb: 'FF4B5563' } };
       }
     }
   }
 
-  // Footer total row
-  const totalRow = worksheet.addRow({
+  // Auto-fit columns slightly
+  worksheet.columns.forEach((column) => {
+    let maxLen = 15;
+    column.eachCell?.({ includeEmpty: true }, (cell) => {
+      const val = cell.value ? cell.value.toString() : '';
+      if (val.length > maxLen) {
+        maxLen = Math.min(val.length + 2, 60);
+      }
+    });
+    column.width = maxLen;
+  });
+
+  // Footer Total Row
+  const footerRow = worksheet.addRow({
     gl_number: '',
     name: 'ÖSSZESEN',
     balance: footerTotal,
   });
-  totalRow.font = { bold: true, size: 12 };
-  totalRow.getCell('balance').numFmt = numberFormat;
-  totalRow.fill = {
+
+  footerRow.font = { bold: true, size: 11 };
+  footerRow.getCell('balance').numFmt = numberFormat;
+  footerRow.fill = {
     type: 'pattern',
     pattern: 'solid',
-    fgColor: { argb: 'FFE8F5E9' },
+    fgColor: { argb: 'FFE5E7EB' },
   };
-  totalRow.eachCell((cell) => {
-    cell.border = {
-      top: { style: 'medium', color: { argb: 'FF2E7D32' } },
-      bottom: { style: 'medium', color: { argb: 'FF2E7D32' } },
-    };
+
+  // Add borders to the table
+  worksheet.eachRow((row, rowNumber) => {
+    row.eachCell((cell) => {
+      if (rowNumber === 1) {
+        cell.border = {
+          bottom: { style: 'medium', color: { argb: 'FF111827' } },
+        };
+      } else if (rowNumber === worksheet.rowCount) {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+          bottom: { style: 'double', color: { argb: 'FF111827' } },
+        };
+      } else {
+        cell.border = {
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+        };
+      }
+    });
   });
 
   // Freeze the top row
@@ -140,7 +164,9 @@ export const exportGlExcel = async (
   const url = URL.createObjectURL(blob);
 
   const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-  const filename = `Fokonyvikivonat_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.xlsx`;
+  const basisSuffix = dateBasis === 'teljesites' ? '_teljesites_alapjan' : '_kibocsatas_alapjan';
+  const rangePart = (dateFrom && dateTo) ? `_${dateFrom}_${dateTo}` : (dateFrom ? `_${dateFrom}` : '');
+  const filename = `Fokonyvikivonat_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}${rangePart}${basisSuffix}_${timestamp}.xlsx`;
 
   const link = document.createElement('a');
   link.href = url;
@@ -156,13 +182,17 @@ export const exportGlExcel = async (
 export const exportGlAnalyticalExcel = async (
   processedRows: GLRow[],
   companyName: string = 'Vállalkozás',
-  footerTotal: number = 0
+  footerTotal: number = 0,
+  dateBasis?: 'kibocsatas' | 'teljesites',
+  dateFrom?: string,
+  dateTo?: string
 ) => {
   const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'eaisybill';
   workbook.created = new Date();
 
+  const basisLabel = dateBasis === 'teljesites' ? 'Teljesítés' : 'Kibocsátás';
   const ws = workbook.addWorksheet('Analitikus Kivonat', {
     views: [{ showGridLines: false }],
   });
@@ -171,7 +201,7 @@ export const exportGlAnalyticalExcel = async (
     { header: 'Főkönyvi szám', key: 'gl_number', width: 16 },
     { header: 'Megnevezés', key: 'name', width: 50 },
     { header: 'Partner', key: 'partner', width: 28 },
-    { header: 'Dátum', key: 'date', width: 14 },
+    { header: `Dátum (${basisLabel})`, key: 'date', width: 18 },
     { header: 'Tartozik', key: 'debit', width: 18 },
     { header: 'Követel', key: 'credit', width: 18 },
     { header: 'Egyenleg', key: 'balance', width: 18 },
@@ -267,7 +297,9 @@ export const exportGlAnalyticalExcel = async (
   const url = URL.createObjectURL(blob);
 
   const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-  const filename = `Analitikus_Kivonat_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.xlsx`;
+  const basisSuffix = dateBasis === 'teljesites' ? '_teljesites_alapjan' : '_kibocsatas_alapjan';
+  const rangePart = (dateFrom && dateTo) ? `_${dateFrom}_${dateTo}` : (dateFrom ? `_${dateFrom}` : '');
+  const filename = `Analitikus_Kivonat_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}${rangePart}${basisSuffix}_${timestamp}.xlsx`;
 
   const link = document.createElement('a');
   link.href = url;

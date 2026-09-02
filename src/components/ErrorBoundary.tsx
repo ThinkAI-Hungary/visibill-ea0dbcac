@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { AlertTriangle, RefreshCw, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -30,6 +30,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       error.name === 'ChunkLoadError' ||
       /ChunkLoadError/i.test(error.message) ||
       /Failed to fetch dynamically imported module/i.test(errorMessage) ||
+      /error loading dynamically imported module/i.test(errorMessage) ||
       /loading chunk/i.test(errorMessage);
 
     return {
@@ -40,7 +41,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    reportError({ type: 'db_query', component: 'ErrorBoundary', action: 'error', message: 'ErrorBoundary caught an error:', error: error, errorInfo });
+    reportError({ 
+      type: 'frontend', 
+      component: 'ErrorBoundary', 
+      action: 'error', 
+      message: 'ErrorBoundary caught an error:', 
+      error: error, 
+      context: { componentStack: errorInfo.componentStack } 
+    });
 
     // Remove the HTML initial-loader so the error UI is visible
     try {

@@ -5707,6 +5707,7 @@ export type Database = {
           admin_deadline: string
           company_id: string
           created_at: string
+          gl_date_basis: string | null
           id: string
           monthly_working_hours: number
           updated_at: string
@@ -5717,6 +5718,7 @@ export type Database = {
           admin_deadline?: string
           company_id: string
           created_at?: string
+          gl_date_basis?: string | null
           id?: string
           monthly_working_hours?: number
           updated_at?: string
@@ -5727,6 +5729,7 @@ export type Database = {
           admin_deadline?: string
           company_id?: string
           created_at?: string
+          gl_date_basis?: string | null
           id?: string
           monthly_working_hours?: number
           updated_at?: string
@@ -11085,6 +11088,7 @@ export type Database = {
       get_gl_balances: {
         Args: {
           p_company_id: string
+          p_date_basis?: string
           p_date_from?: string
           p_date_to?: string
           p_exchange_rates?: Json
@@ -11100,6 +11104,7 @@ export type Database = {
       get_gl_categorized_items: {
         Args: {
           p_company_id: string
+          p_date_basis?: string
           p_date_from?: string
           p_date_to?: string
           p_exchange_rates?: Json

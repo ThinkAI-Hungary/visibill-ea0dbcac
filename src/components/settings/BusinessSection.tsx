@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles } from 'lucide-react';
+import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles, BookOpen, Calendar, CalendarCheck } from 'lucide-react';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { cn } from '@/lib/utils';
 
 interface Company {
   id: string;
@@ -52,6 +54,23 @@ export function BusinessSection({
   const isOwner = selectedCompany?.owner_id === userId;
   const { toast } = useToast();
   const { locations, isLoading: locationsLoading, addLocation, deleteLocation } = useCompanyLocations(selectedCompany?.id);
+  const { effectiveSettings: compEffectiveSettings, saveMutation: compSaveMutation } = useCompanySettings();
+  const [glBasis, setGlBasis] = useState<'kibocsatas' | 'teljesites'>('kibocsatas');
+
+  useEffect(() => {
+    if (compEffectiveSettings?.gl_date_basis) {
+      setGlBasis(compEffectiveSettings.gl_date_basis as 'kibocsatas' | 'teljesites');
+    }
+  }, [compEffectiveSettings?.gl_date_basis]);
+
+  const handleGlBasisChange = async (newBasis: 'kibocsatas' | 'teljesites') => {
+    setGlBasis(newBasis);
+    try {
+      await compSaveMutation.mutateAsync({ gl_date_basis: newBasis });
+    } catch {
+      // toast is automatically displayed by mutation
+    }
+  };
 
   // New location form state
   const [showNewLocation, setShowNewLocation] = useState(false);
@@ -289,6 +308,90 @@ export function BusinessSection({
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Főkönyvi és Könyvelési beállítások */}
+      {selectedCompany && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              Főkönyvi és Könyvelési beállítások
+            </CardTitle>
+            <CardDescription>
+              A cég főkönyvi kimutatásaiban és egyenlegkivonataiban alkalmazott alapértelmezett beállítások
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Adatgyűjtés alapértelmezett dátum alapja</Label>
+              <p className="text-xs text-muted-foreground">
+                Válaszd ki, hogy a főkönyv megnyitásakor a bizonylatok kiállítási kelte vagy a gazdasági teljesítés dátuma alapján gyűjtse az adatokat.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <label
+                  onClick={() => isOwner && handleGlBasisChange('kibocsatas')}
+                  className={cn(
+                    "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
+                    isOwner ? "cursor-pointer" : "cursor-default opacity-80",
+                    glBasis === 'kibocsatas'
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
+                      : "border-border bg-card hover:bg-muted/50"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="main_gl_date_basis"
+                    value="kibocsatas"
+                    checked={glBasis === 'kibocsatas'}
+                    onChange={() => isOwner && handleGlBasisChange('kibocsatas')}
+                    disabled={!isOwner}
+                    className="mt-1 accent-primary"
+                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
+                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                      Kibocsátás kelte (Alapértelmezett)
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      A számlák és bizonylatok hivatalos kiállítási dátuma alapján veszi figyelembe a tételeket.
+                    </p>
+                  </div>
+                </label>
+
+                <label
+                  onClick={() => isOwner && handleGlBasisChange('teljesites')}
+                  className={cn(
+                    "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
+                    isOwner ? "cursor-pointer" : "cursor-default opacity-80",
+                    glBasis === 'teljesites'
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
+                      : "border-border bg-card hover:bg-muted/50"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="main_gl_date_basis"
+                    value="teljesites"
+                    checked={glBasis === 'teljesites'}
+                    onChange={() => isOwner && handleGlBasisChange('teljesites')}
+                    disabled={!isOwner}
+                    className="mt-1 accent-primary"
+                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
+                      <CalendarCheck className="w-3.5 h-3.5 text-primary" />
+                      Teljesítés dátuma
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      A gazdasági esemény vagy szolgáltatás tényleges teljesítésének napja alapján gyűjti az adatokat.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

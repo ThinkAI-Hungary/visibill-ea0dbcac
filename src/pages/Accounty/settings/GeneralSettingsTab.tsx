@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, Key, Lock } from 'lucide-react';
+import { Globe, Key, Lock, BookOpen, Calendar, CalendarCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,8 @@ interface GeneralSettingsTabProps {
   officeAddress: string;
   setOfficeAddress: (v: string) => void;
   firmData: { name: string; taxNumber: string; address: string; firmId: string } | null | undefined;
+  glDateBasis?: 'kibocsatas' | 'teljesites';
+  setGlDateBasis?: (v: 'kibocsatas' | 'teljesites') => void;
 }
 
 export default function GeneralSettingsTab({
@@ -21,6 +23,8 @@ export default function GeneralSettingsTab({
   officePhone, setOfficePhone,
   officeAddress, setOfficeAddress,
   firmData,
+  glDateBasis = 'kibocsatas',
+  setGlDateBasis,
 }: GeneralSettingsTabProps) {
   return (
     <div key="general" className="p-6 space-y-6 tab-content-enter">
@@ -104,6 +108,76 @@ export default function GeneralSettingsTab({
             </div>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">Konfigurálandó</span>
           </div>
+        </div>
+      </div>
+
+      <div className="border-t border-border pt-6 space-y-4">
+        <div>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            Főkönyvi & Könyvelési beállítások
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Határozd meg, hogy a főkönyvi kimutatások és egyenlegek alapértelmezetten melyik dátum alapján gyűjtsék az adatokat.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <label 
+            onClick={() => setGlDateBasis?.('kibocsatas')}
+            className={cn(
+              "flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer",
+              glDateBasis === 'kibocsatas'
+                ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
+                : "border-border bg-card hover:bg-muted/50"
+            )}
+          >
+            <input 
+              type="radio" 
+              name="gl_date_basis" 
+              value="kibocsatas" 
+              checked={glDateBasis === 'kibocsatas'} 
+              onChange={() => setGlDateBasis?.('kibocsatas')}
+              className="mt-1 accent-primary" 
+            />
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
+                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                Kibocsátás kelte (Alapértelmezett)
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                A számlák és bizonylatok hivatalos kiállítási dátuma alapján veszi figyelembe a tételeket.
+              </p>
+            </div>
+          </label>
+
+          <label 
+            onClick={() => setGlDateBasis?.('teljesites')}
+            className={cn(
+              "flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer",
+              glDateBasis === 'teljesites'
+                ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
+                : "border-border bg-card hover:bg-muted/50"
+            )}
+          >
+            <input 
+              type="radio" 
+              name="gl_date_basis" 
+              value="teljesites" 
+              checked={glDateBasis === 'teljesites'} 
+              onChange={() => setGlDateBasis?.('teljesites')}
+              className="mt-1 accent-primary" 
+            />
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
+                <CalendarCheck className="w-3.5 h-3.5 text-primary" />
+                Teljesítés dátuma
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                A gazdasági esemény vagy szolgáltatás tényleges teljesítésének napja alapján gyűjti az adatokat.
+              </p>
+            </div>
+          </label>
         </div>
       </div>
     </div>

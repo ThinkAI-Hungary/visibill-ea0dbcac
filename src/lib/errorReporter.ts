@@ -14,7 +14,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ───────────────────────────────────────────────────
-export type ErrorType = 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'realtime' | 'unhandled' | 'edge_function' | 'frontend';
+export type ErrorType = 'auth' | 'db_query' | 'api_call' | 'upload' | 'validation' | 'navigation' | 'realtime' | 'unhandled' | 'edge_function' | 'frontend' | 'render';
 export type Severity = 'error' | 'warning' | 'info';
 
 export interface ReportErrorOptions {

@@ -62,4 +62,28 @@ describe('General Ledger Features', () => {
       expect(pct).toBe(100);
     });
   });
+
+  describe('Date Basis Resolution', () => {
+    function resolveDateBasis(urlParam: string | null, companySetting?: string | null): 'kibocsatas' | 'teljesites' {
+      if (urlParam === 'kibocsatas' || urlParam === 'teljesites') return urlParam;
+      if (companySetting === 'kibocsatas' || companySetting === 'teljesites') return companySetting;
+      return 'kibocsatas';
+    }
+
+    it('prioritizes explicit valid URL query parameter over company settings', () => {
+      expect(resolveDateBasis('teljesites', 'kibocsatas')).toBe('teljesites');
+      expect(resolveDateBasis('kibocsatas', 'teljesites')).toBe('kibocsatas');
+    });
+
+    it('falls back to company setting when URL parameter is missing or invalid', () => {
+      expect(resolveDateBasis(null, 'teljesites')).toBe('teljesites');
+      expect(resolveDateBasis('invalid_mode', 'teljesites')).toBe('teljesites');
+    });
+
+    it('defaults to kibocsatas when both URL parameter and company setting are absent', () => {
+      expect(resolveDateBasis(null, null)).toBe('kibocsatas');
+      expect(resolveDateBasis(null, undefined)).toBe('kibocsatas');
+    });
+  });
 });
+

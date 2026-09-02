@@ -19,16 +19,25 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  isChunkError: boolean;
 }
 
 export class AccountyErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, isChunkError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    const errorMessage = error?.message || '';
+    const isChunkError =
+      error?.name === 'ChunkLoadError' ||
+      /ChunkLoadError/i.test(errorMessage) ||
+      /Failed to fetch dynamically imported module/i.test(errorMessage) ||
+      /error loading dynamically imported module/i.test(errorMessage) ||
+      /loading chunk/i.test(errorMessage);
+
+    return { hasError: true, error, isChunkError };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
@@ -38,12 +47,42 @@ export class AccountyErrorBoundary extends React.Component<Props, State> {
       action: 'component_crash',
       message: error.message,
       error,
-      errorInfo,
+      context: { componentStack: errorInfo.componentStack },
     });
+
+    if (this.state.isChunkError) {
+      this.handleChunkLoadError();
+    }
   }
 
+  handleChunkLoadError = () => {
+    try {
+      const now = Date.now();
+      const lastReload = sessionStorage.getItem('visibill_chunk_reload_ts');
+
+      // If we haven't reloaded due to a chunk error in the last 10 seconds, reload now
+      if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+        sessionStorage.setItem('visibill_chunk_reload_ts', now.toString());
+        console.warn('[AccountyErrorBoundary] Chunk load error detected. Attempting automatic page reload...');
+        window.location.reload();
+      }
+    } catch (e) {
+      reportError({
+        type: 'render',
+        component: 'AccountyErrorBoundary',
+        action: 'auto_reload_failure',
+        message: 'Failed to auto-reload on chunk error',
+        error: e,
+      });
+    }
+  };
+
   handleRetry = () => {
-    this.setState({ hasError: false, error: null });
+    if (this.state.isChunkError) {
+      window.location.reload();
+      return;
+    }
+    this.setState({ hasError: false, error: null, isChunkError: false });
   };
 
   handleGoBack = () => {

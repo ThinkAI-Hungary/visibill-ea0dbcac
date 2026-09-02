@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
-import { fetchAllGlBalances, fetchAllGlCategorizedItems } from '@/lib/glData';
+import { fetchAllGlBalances, fetchAllGlCategorizedItems, GlDateBasis } from '@/lib/glData';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
@@ -100,6 +100,7 @@ interface GeneralLedgerTableProps {
   presetId?: string;
   dateFrom?: string;
   dateTo?: string;
+  dateBasis?: GlDateBasis;
   globalSearch?: string;
   isPolling?: boolean; // P4: only poll when AI/import is running
   onStatsChange?: (stats: { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number }) => void;
@@ -107,7 +108,7 @@ interface GeneralLedgerTableProps {
 }
 
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
-  const { presetId, dateFrom, dateTo, globalSearch, isPolling, onStatsChange, printLayoutMode = 'analytical' } = props;
+  const { presetId, dateFrom, dateTo, dateBasis = 'kibocsatas', globalSearch, isPolling, onStatsChange, printLayoutMode = 'analytical' } = props;
   const deferredSearch = useDeferredValue(globalSearch);
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
@@ -184,7 +185,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // Fetch real data for the preset and company using the new RPC (paginated)
   const { data: dbData, isLoading, isFetching, refetch: refetchBalances } = useQuery({
-    queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo],
+    queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis],
     queryFn: async () => {
       if (!presetId || !selectedCompany?.id) return [];
       
@@ -194,6 +195,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           presetId,
           dateFrom,
           dateTo,
+          dateBasis,
           exchangeRates: exchangeRates || {},
         });
       } catch (error: any) {
@@ -208,7 +210,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // Fetch detailed items categorized to this company (paginated)
   const { data: dbItems, isLoading: isLoadingItems, refetch: refetchItems } = useQuery({
-    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo],
+    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       try {
@@ -217,6 +219,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           presetId,
           dateFrom,
           dateTo,
+          dateBasis,
           exchangeRates: exchangeRates || {},
         });
       } catch (error: any) {
@@ -581,10 +584,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       }, 300);
     },
     exportExcel: async (companyName?: string) => {
-      await exportGlExcel(processedRows, companyName, footerTotals);
+      await exportGlExcel(processedRows, companyName, footerTotals, dateBasis, dateFrom, dateTo);
     },
     exportAnalyticalExcel: async (companyName?: string) => {
-      await exportGlAnalyticalExcel(processedRows, companyName, footerTotals);
+      await exportGlAnalyticalExcel(processedRows, companyName, footerTotals, dateBasis, dateFrom, dateTo);
     },
     getStats: () => {
       const glAccountsOnly = tableData.filter(d => !d.isItem);
