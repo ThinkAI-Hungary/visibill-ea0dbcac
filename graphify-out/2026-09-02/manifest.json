@@ -5140,8 +5140,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/040-invoice-relations-matching.md": {
-    "mtime": 1784871484.7779791,
-    "ast_hash": "6364d59ed2a5c171bcf69496be393b5d",
+    "mtime": 1788309174.245978,
+    "ast_hash": "400f2aa78da2f91d27476d7a94aed4a7",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-040-partners-invoice-panel.md": {
