@@ -172,18 +172,31 @@ export function InvoiceFilterBar() {
         </Select>
       )}
 
-      {/* Submitted Status Select (INBOUND NAV only) */}
-      {activeTab === 'INBOUND' && (
-        <Select value={filters.submitted} onValueChange={(value) => setFilters(prev => ({ ...prev, submitted: value }))}>
-          <SelectTrigger className="h-9 w-[140px]">
+      {/* Számlakép (Submitted Invoice Image) Status Select (NAV invoices: OUTBOUND and INBOUND) */}
+      {!isSubmittedTab && (
+        <Select
+          value={filters.submitted}
+          onValueChange={(value) => setFilters(prev => ({ ...prev, submitted: value }))}
+        >
+          <SelectTrigger
+            className={cn(
+              'h-9 w-[180px]',
+              filters.submitted !== 'all' &&
+                'bg-primary/10 border-primary/50 text-primary dark:bg-primary/10 dark:border-primary dark:text-primary'
+            )}
+          >
             <span className="truncate">
-              {filters.submitted === 'all' ? 'Beküldve' : filters.submitted === 'yes' ? 'Igen' : 'Nem'}
+              {filters.submitted === 'all'
+                ? 'Számlakép: Mind'
+                : filters.submitted === 'yes'
+                  ? 'Számlakép: Van'
+                  : 'Számlakép: Hiányzik'}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Beküldve (mind)</SelectItem>
-            <SelectItem value="yes">Igen</SelectItem>
-            <SelectItem value="no">Nem</SelectItem>
+            <SelectItem value="all">Számlakép: Mind</SelectItem>
+            <SelectItem value="yes">Számlakép: Van</SelectItem>
+            <SelectItem value="no">Számlakép: Hiányzik</SelectItem>
           </SelectContent>
         </Select>
       )}

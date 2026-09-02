@@ -53,6 +53,10 @@ Elvárás volt a tiszta felület: a rendben lévő számlák ne kapjanak feltűn
   * *NAV megerősítve*,
   * *NAV hiányzik*,
   * *Nem alkalmazandó (külföldi)*.
+- A NAV számlák nézetben (Kimenő és Bejövő fülön egyaránt) elérhető a Számlakép szűrő:
+  * *Számlakép: Mind* (összes számla),
+  * *Számlakép: Van* (rendelkezik feltöltött/párosított beküldött számlaképpel),
+  * *Számlakép: Hiányzik* (nincs hozzá csatolt számlakép).
 
 ## Rationale
 A koncepció tökéletes egyensúlyt teremt a zavaró vizuális elemek minimalizálása és az azonnali, érthető hibajelzés között. A könyvelőnek nem kell keresgélnie a problémás számlákat: mindkét felületen egyetlen kattintással elérheti és feloldhatja őket.

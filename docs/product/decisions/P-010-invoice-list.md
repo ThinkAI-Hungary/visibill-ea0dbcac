@@ -10,7 +10,7 @@
 
 **Current Implementation:**
 - InvoicesPage.tsx — táblázatos nézet, szerver-oldali lapozással (`paginatedNavInvoices`, `paginatedSubmittedInvoices`)
-- Szűrők: státusz, típus, dátum, partner, összeg, deviza, kategória, projekt, fizetési mód, foly. szolg.
+- Szűrők: státusz, típus, dátum, partner, összeg, deviza, számlakép (mind / van / hiányzik – kimenő és bejövő NAV számláknál), kategória, projekt, fizetési mód, foly. szolg., NAV státusz (beküldött számláknál)
 - KPI kártya státusz szűrés: `Összes`, `Párosított`, `Javasolt`, `Nincs párosítás` kattintható kártyák
 - useInvoiceFilters hook: szerver-oldali RPC szűrők és lapozás állapotkezelése
 - useFilterPersistence: szűrő beállítások persistencia és URL szinkronizáció

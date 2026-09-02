@@ -175,8 +175,8 @@
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
-    "mtime": 1785267960.2296238,
-    "ast_hash": "020a798f0c6bcaaa430c7fef3f1429ea",
+    "mtime": 1788387654.4781876,
+    "ast_hash": "04e6f45d9a92076c411da6d5db23465e",
     "semantic_hash": ""
   },
   "src/components/NylasEmailConnect.tsx": {
@@ -1325,8 +1325,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientInvoicesPage.tsx": {
-    "mtime": 1788387029.2346904,
-    "ast_hash": "a07a9226549bb1edfc81627436fa887e",
+    "mtime": 1788387238.4292598,
+    "ast_hash": "fd44c4981ef73b2c35891ae68f9a5eae",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientMissingInvoicesPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788384758.6141279,
-    "ast_hash": "d1453314ca452a5d55e6f49070778fc0",
+    "mtime": 1788387854.5261698,
+    "ast_hash": "f3b1c267fd2f6ffc822c083c491a6e6b",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3325,8 +3325,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1788296268.7944825,
-    "ast_hash": "69005eab187c3c38eb5ee4887667a381",
+    "mtime": 1788387876.7662287,
+    "ast_hash": "b5d506a0b0eb3bab32e903d977b15352",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788308267.4443707,
-    "ast_hash": "4f45d26636b944a415067216bec79cca",
+    "mtime": 1788387898.1648767,
+    "ast_hash": "4f3cabd6f5601cc95c4a54dd8a659cae",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -3830,8 +3830,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useAccountyRealtime.ts": {
-    "mtime": 1782236357.338543,
-    "ast_hash": "df948f8d4bd73c7b18a3bb0eb11fc3af",
+    "mtime": 1788387663.459112,
+    "ast_hash": "d5699f4104b70a76690140b096ca2bd5",
     "semantic_hash": ""
   },
   "src/hooks/useAdminData.ts": {
@@ -5040,8 +5040,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/04-invoices.md": {
-    "mtime": 1788282443.1365557,
-    "ast_hash": "3383206fd84189981a8b2271cf93fa10",
+    "mtime": 1788387907.0310247,
+    "ast_hash": "801d216d0cc7011fa84d887f6acfb272",
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {
@@ -7395,8 +7395,8 @@
     "semantic_hash": ""
   },
   "src/lib/cache/invalidations.ts": {
-    "mtime": 1788133488.05785,
-    "ast_hash": "6278b43cbb696060a709d3a8fb67ab49",
+    "mtime": 1788387639.879892,
+    "ast_hash": "4800869e49da0f27426e74628c131727",
     "semantic_hash": ""
   },
   "src/lib/cache/keys/accounty.keys.ts": {
@@ -8755,18 +8755,28 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/dialogs/InvoiceApprovalDialog.tsx": {
-    "mtime": 1788384608.1735363,
-    "ast_hash": "69ef6e20eb8be83f727f2705f344ac9e",
+    "mtime": 1788387646.8661265,
+    "ast_hash": "6eac3c7c3ba3c55a3bdee7ffef184f38",
     "semantic_hash": ""
   },
   "supabase/migrations/20260903_nav_crosscheck_approval_gate.sql": {
-    "mtime": 1788384346.9296968,
-    "ast_hash": "1b5fd968bb647a6f8aa02597d20db019",
+    "mtime": 1788387289.432999,
+    "ast_hash": "71750a64671e9d9123dce0f4bce82e6d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-084-nav-crosscheck-approval-gate.md": {
-    "mtime": 1788384751.3001947,
-    "ast_hash": "5eabba31363440b8c82fa16716863444",
+    "mtime": 1788387846.8473349,
+    "ast_hash": "2bf53f1e4404131843fd9b16b9815ba5",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/048-nav-crosscheck-approval-gate.md": {
+    "mtime": 1788387864.7168746,
+    "ast_hash": "7c7bd31cacf9303279b202eaa0f4d30f",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-065-nav-crosscheck-approval-gate-ux.md": {
+    "mtime": 1788387886.9586132,
+    "ast_hash": "7b15bfacc127f5d3ea66dfd0f6d5b59f",
     "semantic_hash": ""
   }
 }
