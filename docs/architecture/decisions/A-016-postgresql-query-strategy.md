@@ -91,6 +91,10 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `acc_post_journal_entry(p_header_id, p_user_id)` | DEFINER | JournalsPage.tsx | Könyvelési tétel egyensúly-ellenőrzött véglegesítése |
 | `acc_storno_journal_entry(p_header_id, p_user_id, p_reason, p_create_correction)` | DEFINER | JournalsPage.tsx | Könyvelési tétel ellenirányú sztornózása és javító piszkozat |
 | `acc_seed_default_journals(p_company_id)` | DEFINER | CompanyContext.tsx | 9 alapértelmezett kettős könyvviteli napló létrehozása |
+| `acc_generate_drafts_from_ledger(p_company_id, p_preset_id)` | DEFINER | JournalsPage.tsx | Könyvelési tétel javaslatok generálása kategorizált főkönyvi adatokból (preset & company GL feloldással, FK 23503 védelemmel) |
+| `acc_validate_and_post_opening_entry(p_header_id, p_user_id)` | DEFINER | OpeningJournalWizardModal.tsx | Nyitó napló tétel validálása (491 technikai számla egyensúly, 1-4 számlaosztály) és véglegesítése |
+| `acc_generate_post_opening_reconciliations(p_company_id, p_year, p_user_id)` | DEFINER | OpeningJournalWizardModal.tsx | Nyitás utáni automatikus rendező tételek (419 átvezetés, ÁFA összevezetés) generálása |
+| `acc_check_opening_subledger_reconciliation(p_company_id, p_year)` | DEFINER | OpeningJournalWizardModal.tsx | Vevő/szállító analitika és 311/454 főkönyvi nyitó egyeztetés lekérdezése |
 
 #### 🔑 2.3 Auth & Credential RPC-k
 

@@ -140,3 +140,29 @@
 | `process_name` | varchar(64) | ✓ | NULL | Folyamat neve |
 | `timestamp` | timestamptz | — | `now()` | Esemény időpontja |
 | `transaction_id` | uuid | ✓ | NULL | Kapcsolódó tranzakció ID |
+
+---
+
+## ⚙️ Kapcsolódó RPC Függvények és Folyamatok
+
+### 1. Javaslatok generálása (`acc_generate_drafts_from_ledger`)
+- **Funkció:** `public.acc_generate_drafts_from_ledger(p_company_id uuid, p_preset_id uuid)`
+- **Biztonság:** `SECURITY DEFINER SET search_path TO 'public'`
+- **Leírás:** A `get_gl_categorized_items` alapján legenerálja a `GEPI_JAVASLAT` státuszú könyvelési tételeket.
+- **GL Számla Feloldási Szabály:** A vezérlő számlák (311 vevők, 454 szállítók, 384/386 pénzforgalmi számlák) feloldása elsődlegesen a céghez tartozó `preset_id` (`WHERE preset_id = p_preset_id`), másodlagosan az egyedi `company_id` szerint történik.
+- **Foreign Key Védelem:** A nil UUID-val rendelkező vagy a `gl_accounts` táblából hiányzó tételek kiszűrésre kerülnek, így megelőzve az `acc_journal_lines_gl_account_id_fkey` megsértését (23503).
+
+### 2. Könyvelés és Sorszámozás (`acc_post_journal_entry`)
+- **Funkció:** `public.acc_post_journal_entry(p_header_id uuid, p_user_id uuid)`
+- **Validációk:** Zárt könyvelési időszak tiltása, kettős könyvviteli egyensúly kötelező ($\sum T = \sum K$), legalább 1 sor megléte.
+- **Sorszámozás:** `acc_get_next_journal_number` hívásával szigorúan ugrásmentes folyósorszámot kap.
+
+### 3. Sztornózás és Helyesbítés (`acc_storno_journal_entry`)
+- **Funkció:** `public.acc_storno_journal_entry(p_header_id uuid, p_user_id uuid, p_reason text, p_create_correction boolean)`
+- **Működés:** Az eredeti tételt `SZTORNOZOTT` állapotba helyezi, ellentétes előjelű stornó tételt könyvel le, és opcionálisan létrehoz egy módosítható `KEZI_PISZKOZAT` javító tételt.
+
+### 4. Nyitó Varázsló Műveletek
+- `acc_validate_and_post_opening_entry`: Sztv. 491. Technikai Nyitómérleg egyensúly és 1-4 számlaosztály ellenőrzése.
+- `acc_generate_post_opening_reconciliations`: Nyitás utáni 419 átvezetés és előző évi ÁFA rendezés.
+- `acc_check_opening_subledger_reconciliation`: Analitika és 311/454 nyitó egyeztetés.
+

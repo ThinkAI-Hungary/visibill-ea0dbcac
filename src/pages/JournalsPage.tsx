@@ -107,7 +107,7 @@ export default function JournalsPage() {
         const { data: glAccounts } = await supabase
           .from('gl_accounts')
           .select('id, gl_number')
-          .eq('company_id', selectedCompany.id);
+          .or(`preset_id.eq.${activePresetId},company_id.eq.${selectedCompany.id}`);
 
         const { data: journals } = await supabase
           .from('acc_journals')
@@ -159,6 +159,37 @@ export default function JournalsPage() {
             }
           }
 
+          let line1: any;
+          let line2: any;
+
+          if (item.source_table === 'transactions') {
+            const glBankId = glAccounts?.find(g => g.gl_number.startsWith('384'))?.id || glAccounts?.[0]?.id;
+            if (!glBankId || !validGlIds.has(glBankId) || !validGlIds.has(item.gl_account_id)) {
+              continue;
+            }
+            if (item.amount >= 0) {
+              line1 = { sequence_number: 1, gl_account_id: glBankId, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
+              line2 = { sequence_number: 2, gl_account_id: item.gl_account_id, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
+            } else {
+              line1 = { sequence_number: 1, gl_account_id: item.gl_account_id, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
+              line2 = { sequence_number: 2, gl_account_id: glBankId, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
+            }
+          } else {
+            if (item.amount >= 0) {
+              if (!glCustId || !validGlIds.has(glCustId) || !validGlIds.has(item.gl_account_id)) {
+                continue;
+              }
+              line1 = { sequence_number: 1, gl_account_id: glCustId, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
+              line2 = { sequence_number: 2, gl_account_id: item.gl_account_id, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
+            } else {
+              if (!glSuppId || !validGlIds.has(glSuppId) || !validGlIds.has(item.gl_account_id)) {
+                continue;
+              }
+              line1 = { sequence_number: 1, gl_account_id: item.gl_account_id, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
+              line2 = { sequence_number: 2, gl_account_id: glSuppId, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
+            }
+          }
+
           const { data: header, error: hErr } = await supabase
             .from('acc_journal_headers')
             .insert({
@@ -182,27 +213,8 @@ export default function JournalsPage() {
 
           if (hErr) continue;
 
-          let line1: any;
-          let line2: any;
-
-          if (item.source_table === 'transactions') {
-            const glBankId = glAccounts?.find(g => g.gl_number.startsWith('384'))?.id || glAccounts?.[0]?.id;
-            if (item.amount >= 0) {
-              line1 = { header_id: header.id, sequence_number: 1, gl_account_id: glBankId, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
-              line2 = { header_id: header.id, sequence_number: 2, gl_account_id: item.gl_account_id, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
-            } else {
-              line1 = { header_id: header.id, sequence_number: 1, gl_account_id: item.gl_account_id, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
-              line2 = { header_id: header.id, sequence_number: 2, gl_account_id: glBankId, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
-            }
-          } else {
-            if (item.amount >= 0) {
-              line1 = { header_id: header.id, sequence_number: 1, gl_account_id: glCustId, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
-              line2 = { header_id: header.id, sequence_number: 2, gl_account_id: item.gl_account_id, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
-            } else {
-              line1 = { header_id: header.id, sequence_number: 1, gl_account_id: item.gl_account_id, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
-              line2 = { header_id: header.id, sequence_number: 2, gl_account_id: glSuppId, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
-            }
-          }
+          line1.header_id = header.id;
+          line2.header_id = header.id;
 
           await supabase.from('acc_journal_lines').insert([line1, line2]);
           createdCount++;
@@ -816,7 +828,7 @@ export default function JournalsPage() {
                                 )}
                                 {(e.status === 'KEZI_PISZKOZAT' || e.status === 'JOVAHAGYASRA_VAR' || e.status === 'GEPI_JAVASLAT') && (
                                   <>
-                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-emerald-600 hover:bg-emerald-5" title="Könyvelés" onClick={() => postMutation.mutate(e.id)} disabled={postMutation.isPending}>
+                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-emerald-600 hover:bg-emerald-500/10 dark:hover:bg-emerald-950/30" title="Könyvelés" onClick={() => postMutation.mutate(e.id)} disabled={postMutation.isPending}>
                                       <ShieldCheck className="w-3.5 h-3.5" />
                                     </Button>
                                     <Button size="icon" variant="ghost" className="w-6 h-6 text-primary" title="Szerkesztés" onClick={() => { setEditingEntryId(e.id); setManualEntryOpen(true); }}>

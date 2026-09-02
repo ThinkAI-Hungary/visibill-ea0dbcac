@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788130347.3907735,
-    "ast_hash": "ec7834f1148b1dccb4164ae98db090cd",
+    "mtime": 1788366993.7238963,
+    "ast_hash": "1fe723fa343d1cb00b8f053382c0aefc",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788279564.041656,
+    "mtime": 1788366438.8177454,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1788212014.2271125,
-    "ast_hash": "8c036b9ff375b2f7253dd7d6971e790c",
+    "mtime": 1788366843.4744515,
+    "ast_hash": "1ff02ac6954adb4dc58f19c16351a3c7",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -7265,8 +7265,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/22-accounting-journals.md": {
-    "mtime": 1788130181.1648228,
-    "ast_hash": "7e2f092b788f3426d1a36938e572a4cb",
+    "mtime": 1788367007.176551,
+    "ast_hash": "32292af257188de6e5969aa4fb0de7c4",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-057-accounting-journals-architecture.md": {
@@ -8732,6 +8732,11 @@
   "docs/product/decisions/P-064-partially-paid-invoice-status-ux.md": {
     "mtime": 1788308252.925364,
     "ast_hash": "6fc0cf1defc8ed7a70c164e8fb3890b8",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260902140000_fix_acc_generate_drafts_gl_account_fkey.sql": {
+    "mtime": 1788366317.345443,
+    "ast_hash": "af97cf019fcffd5013d3fa4ba0950d0f",
     "semantic_hash": ""
   }
 }

@@ -35,15 +35,42 @@ BEGIN
   -- Ensure default journals are seeded
   PERFORM public.acc_seed_default_journals(p_company_id);
 
-  -- Fetch default control accounts
-  SELECT id INTO v_gl_cust_id FROM public.gl_accounts WHERE company_id = p_company_id AND gl_number LIKE '311%' LIMIT 1;
-  SELECT id INTO v_gl_supp_id FROM public.gl_accounts WHERE company_id = p_company_id AND gl_number LIKE '454%' LIMIT 1;
+  -- Fetch default control accounts from active preset first, then fallback to company-specific
+  SELECT id INTO v_gl_cust_id 
+    FROM public.gl_accounts 
+   WHERE preset_id = p_preset_id AND gl_number LIKE '311%' 
+   ORDER BY gl_number LIMIT 1;
+   
+  IF v_gl_cust_id IS NULL THEN
+    SELECT id INTO v_gl_cust_id 
+      FROM public.gl_accounts 
+     WHERE company_id = p_company_id AND gl_number LIKE '311%' 
+     ORDER BY gl_number LIMIT 1;
+  END IF;
+
+  SELECT id INTO v_gl_supp_id 
+    FROM public.gl_accounts 
+   WHERE preset_id = p_preset_id AND gl_number LIKE '454%' 
+   ORDER BY gl_number LIMIT 1;
+
+  IF v_gl_supp_id IS NULL THEN
+    SELECT id INTO v_gl_supp_id 
+      FROM public.gl_accounts 
+     WHERE company_id = p_company_id AND gl_number LIKE '454%' 
+     ORDER BY gl_number LIMIT 1;
+  END IF;
 
   -- Default fallback if not found
   IF v_gl_cust_id IS NULL THEN
-    SELECT id INTO v_gl_cust_id FROM public.gl_accounts WHERE company_id = p_company_id ORDER BY gl_number LIMIT 1;
+    SELECT id INTO v_gl_cust_id 
+      FROM public.gl_accounts 
+     WHERE preset_id = p_preset_id OR company_id = p_company_id 
+     ORDER BY gl_number LIMIT 1;
   END IF;
-  IF v_gl_supp_id IS NULL THEN v_gl_supp_id := v_gl_cust_id; END IF;
+  
+  IF v_gl_supp_id IS NULL THEN 
+    v_gl_supp_id := v_gl_cust_id; 
+  END IF;
 
   FOR v_row IN 
     SELECT * FROM public.get_gl_categorized_items(p_company_id, p_preset_id)
@@ -128,13 +155,27 @@ BEGIN
 
       -- Resolve G/L account for Bank (HUF 3841, or Deviza 386)
       IF v_currency = 'HUF' THEN
-        SELECT id INTO v_gl_bank_id FROM public.gl_accounts WHERE company_id = p_company_id AND gl_number LIKE '384%' LIMIT 1;
+        SELECT id INTO v_gl_bank_id 
+          FROM public.gl_accounts 
+         WHERE (preset_id = p_preset_id OR company_id = p_company_id) AND gl_number LIKE '384%' 
+         ORDER BY gl_number LIMIT 1;
       ELSE
-        SELECT id INTO v_gl_bank_id FROM public.gl_accounts WHERE company_id = p_company_id AND gl_number LIKE '386%' LIMIT 1;
+        SELECT id INTO v_gl_bank_id 
+          FROM public.gl_accounts 
+         WHERE (preset_id = p_preset_id OR company_id = p_company_id) AND gl_number LIKE '386%' 
+         ORDER BY gl_number LIMIT 1;
       END IF;
       
       IF v_gl_bank_id IS NULL THEN
-        SELECT id INTO v_gl_bank_id FROM public.gl_accounts WHERE company_id = p_company_id ORDER BY gl_number LIMIT 1;
+        SELECT id INTO v_gl_bank_id 
+          FROM public.gl_accounts 
+         WHERE preset_id = p_preset_id OR company_id = p_company_id 
+         ORDER BY gl_number LIMIT 1;
+      END IF;
+
+      -- Ensure both sides exist before inserting
+      IF v_gl_bank_id IS NULL OR v_row.gl_account_id IS NULL THEN
+        CONTINUE;
       END IF;
       
       -- Cleaner doc ID for bank transactions (TR- + first 8 characters of UUID)
@@ -241,6 +282,10 @@ BEGIN
       -- Invoice Direction / Journal mapping
       IF v_row.amount >= 0 THEN
         -- Outbound sales: Customer (311) Debit, Revenue Credit
+        IF v_gl_cust_id IS NULL OR v_row.gl_account_id IS NULL THEN
+          CONTINUE;
+        END IF;
+
         SELECT id INTO v_journal_id FROM public.acc_journals WHERE company_id = p_company_id AND code = 'V' LIMIT 1;
         IF v_journal_id IS NULL THEN SELECT id INTO v_journal_id FROM public.acc_journals WHERE company_id = p_company_id LIMIT 1; END IF;
         
@@ -262,6 +307,10 @@ BEGIN
           (v_header_id, 2, v_row.gl_account_id, 'K', v_amount, v_amount_foreign, COALESCE(v_row.description, ''));
       ELSE
         -- Inbound purchase: Expense Debit, Supplier (454) Credit
+        IF v_gl_supp_id IS NULL OR v_row.gl_account_id IS NULL THEN
+          CONTINUE;
+        END IF;
+
         SELECT id INTO v_journal_id FROM public.acc_journals WHERE company_id = p_company_id AND code = 'SZ' LIMIT 1;
         IF v_journal_id IS NULL THEN SELECT id INTO v_journal_id FROM public.acc_journals WHERE company_id = p_company_id LIMIT 1; END IF;
         
@@ -285,6 +334,10 @@ BEGIN
 
     ELSE
       -- Generic Vegyes
+      IF v_gl_supp_id IS NULL OR v_row.gl_account_id IS NULL THEN
+        CONTINUE;
+      END IF;
+
       SELECT id INTO v_journal_id FROM public.acc_journals WHERE company_id = p_company_id AND code = 'VE' LIMIT 1;
       IF v_journal_id IS NULL THEN SELECT id INTO v_journal_id FROM public.acc_journals WHERE company_id = p_company_id LIMIT 1; END IF;
 
@@ -311,4 +364,4 @@ BEGIN
 
   RETURN v_count;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public';
