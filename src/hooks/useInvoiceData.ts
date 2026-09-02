@@ -91,6 +91,10 @@ export interface SubmittedInvoice {
   match_status?: string;
   paid_amount?: number | null;
   remaining_amount?: number | null;
+  statusz?: string;
+  nav_status?: 'verified' | 'missing_nav' | 'not_applicable';
+  approval_note?: string | null;
+  approved_at?: string | null;
 }
 
 export interface Partner {
@@ -139,7 +143,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_vat_id, vevo_nev, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number, fizetesi_mod, invoice_type, exclude_from_accounting, elolegszamla_hivatkozas')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_vat_id, vevo_nev, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number, fizetesi_mod, invoice_type, exclude_from_accounting, elolegszamla_hivatkozas, statusz, nav_status, approval_note, approved_at')
         .eq('company_id', companyId)
         .or(`and(teljesites_datuma.gte.${dateFromFormatted},teljesites_datuma.lte.${dateToFormatted}),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFromFormatted},kibocsatas_datuma.lte.${dateToFormatted})`)
         .order('kibocsatas_datuma', { ascending: false })

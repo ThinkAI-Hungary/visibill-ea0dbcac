@@ -27,6 +27,7 @@ export async function invalidateInvoiceQueries(
     queryClient.invalidateQueries({ queryKey: ['due-transfer-invoices', companyId] }),
     queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] }),
     queryClient.invalidateQueries({ queryKey: ['recentInvoices', companyId] }),
+    queryClient.invalidateQueries({ queryKey: ['company-invoices', companyId] }),
     queryClient.invalidateQueries({ queryKey: ['dashboardData', companyId] }),
     queryClient.invalidateQueries({ queryKey: ['dashboardAnalytics', companyId] }),
   ];

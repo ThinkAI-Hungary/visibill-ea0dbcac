@@ -8,6 +8,7 @@ import { PdfExportBanner } from '@/components/invoices/PdfExportBanner';
 import { PdfExportDialog } from '@/components/invoices/PdfExportDialog';
 import { InvoiceDataExportDialog } from '@/components/invoices/InvoiceDataExportDialog';
 import { BulkDeleteDialog } from './BulkDeleteDialog';
+import { InvoiceApprovalDialog } from './InvoiceApprovalDialog';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 
 export function InvoiceDialogManager() {
@@ -44,6 +45,10 @@ export function InvoiceDialogManager() {
     setInvoiceParam,
     handleDataExportConfirm,
     invalidateInvoiceData,
+    approvalDialogOpen,
+    setApprovalDialogOpen,
+    selectedInvoiceForApproval,
+    setSelectedInvoiceForApproval,
   } = useInvoiceContext();
 
   const [, setSearchParams] = useSearchParams();
@@ -188,6 +193,21 @@ export function InvoiceDialogManager() {
 
       {/* Bulk Delete Dialog */}
       <BulkDeleteDialog />
+
+      {/* Accountant NAV Approval Gate Dialog */}
+      <InvoiceApprovalDialog
+        open={approvalDialogOpen}
+        onOpenChange={(open) => {
+          setApprovalDialogOpen(open);
+          if (!open) {
+            setSelectedInvoiceForApproval(null);
+          }
+        }}
+        invoice={selectedInvoiceForApproval}
+        onSuccess={() => {
+          invalidateInvoiceData();
+        }}
+      />
     </>
   );
 }

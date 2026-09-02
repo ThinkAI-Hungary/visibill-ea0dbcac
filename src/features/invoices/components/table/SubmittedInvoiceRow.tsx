@@ -7,7 +7,7 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/h
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
-import { ChevronDown, FileText, Package, Pencil } from 'lucide-react';
+import { ChevronDown, FileText, Package, Pencil, AlertTriangle, Check } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
 import { normalizeInvoiceNumber } from '@/lib/invoiceMatchingUtils';
@@ -48,6 +48,8 @@ export function SubmittedInvoiceRow({
     setInvoiceParam,
     linkedInvoicesLoading,
     invalidateInvoiceData,
+    setApprovalDialogOpen,
+    setSelectedInvoiceForApproval,
   } = useInvoiceContext();
 
   const isExpanded = expandedRowIds.has(invoice.id);
@@ -144,10 +146,58 @@ export function SubmittedInvoiceRow({
         </TableCell>
 
         <TableCell className="font-medium font-mono">
-          <CopyableCell
-            value={invoice.bizonylatsorszam || '-'}
-            ariaLabel={`${invoice.bizonylatsorszam} bizonylatsorszám másolása`}
-          />
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <CopyableCell
+              value={invoice.bizonylatsorszam || '-'}
+              ariaLabel={`${invoice.bizonylatsorszam} bizonylatsorszám másolása`}
+            />
+
+            {/* NAV missing warning icon right after bizonylatsorszám */}
+            {(invoice.nav_status === 'missing_nav' || invoice.statusz === 'jovahagyasra_var') && (
+              invoice.approved_at ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center justify-center p-0.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" aria-label="Könyvelő által jóváhagyva">
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs font-sans">
+                      <p className="font-semibold text-blue-600 dark:text-blue-400">Könyvelő által jóváhagyva</p>
+                      <p className="text-muted-foreground mt-0.5">{invoice.approval_note || 'NAV adatszolgáltatás nélkül engedélyezve'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center p-1 rounded-full text-amber-600 hover:text-amber-700 bg-amber-500/15 hover:bg-amber-500/25 dark:text-amber-400 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 transition-colors cursor-pointer shrink-0 border border-amber-300/60 dark:border-amber-700/60"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedInvoiceForApproval(invoice);
+                          setApprovalDialogOpen(true);
+                        }}
+                        aria-label="Nincs NAV online számla adatszolgáltatás! Kattintson a könyvelői jóváhagyáshoz."
+                      >
+                        <AlertTriangle className="h-3 w-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs font-sans">
+                      <p className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                        <AlertTriangle className="h-3.5 w-3.5" /> NAV adatszolgáltatás hiányzik!
+                      </p>
+                      <p className="text-muted-foreground mt-0.5">
+                        A számlához nem tartozik online számla adatszolgáltatás. Kattintson ide a könyvelői jóváhagyáshoz!
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )
+            )}
+          </div>
         </TableCell>
 
         <TableCell
@@ -301,6 +351,14 @@ export function SubmittedInvoiceRow({
           transactionId={(invoice as any).transaction_id || undefined}
           invoiceNumber={invoice.bizonylatsorszam || undefined}
           invoiceSource="submitted"
+          navStatus={invoice.nav_status}
+          statusz={invoice.statusz}
+          approvedAt={invoice.approved_at}
+          approvalNote={invoice.approval_note}
+          onOpenApprovalDialog={() => {
+            setSelectedInvoiceForApproval(invoice);
+            setApprovalDialogOpen(true);
+          }}
           onMatchUpdate={invalidateInvoiceData}
           categories={categories}
           projects={projects}

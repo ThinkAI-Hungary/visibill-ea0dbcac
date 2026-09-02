@@ -188,6 +188,32 @@ export function InvoiceFilterBar() {
         </Select>
       )}
 
+      {/* NAV Online Számla Status Select (Submitted Invoices only) */}
+      {isSubmittedTab && (
+        <Select
+          value={filters.navStatus || 'all'}
+          onValueChange={(value) => setFilters(prev => ({ ...prev, navStatus: value }))}
+        >
+          <SelectTrigger className="h-9 w-[180px]">
+            <span className="truncate">
+              {filters.navStatus === 'all'
+                ? 'NAV státusz'
+                : filters.navStatus === 'verified'
+                  ? 'NAV megerősítve'
+                  : filters.navStatus === 'missing_nav'
+                    ? 'NAV hiányzik'
+                    : 'Nem alkalmazandó'}
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">NAV státusz: Mind</SelectItem>
+            <SelectItem value="verified">NAV megerősítve</SelectItem>
+            <SelectItem value="missing_nav">NAV hiányzik</SelectItem>
+            <SelectItem value="not_applicable">Nem alkalmazandó (külföldi)</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+
       {/* Category Select (INBOUND NAV only) */}
       {activeTab === 'INBOUND' && (
         <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({ ...prev, category: value }))}>

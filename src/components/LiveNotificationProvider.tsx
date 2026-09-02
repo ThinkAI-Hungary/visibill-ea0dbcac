@@ -241,6 +241,7 @@ export function LiveNotificationProvider() {
               'analyticsRaw', 'analyticsVat',
               'dashboardPettyCash', 'pettyCashEntries',
               'payment-transfers-history', 'due-transfer-invoices',
+              'company-invoices',
             );
             if (payload.eventType === 'INSERT') {
               const row = payload.new as any;

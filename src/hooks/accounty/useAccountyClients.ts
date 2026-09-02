@@ -626,6 +626,10 @@ export interface CompanyInvoice {
   glName?: string | null;
   submitted?: boolean | null;
   isNav: boolean;
+  navStatus?: 'verified' | 'missing_nav' | 'not_applicable';
+  statusz?: string;
+  approvedAt?: string | null;
+  approvalNote?: string | null;
 }
 
 const mapDbStatus = (s: string | null): InvoiceStatus => {
@@ -666,6 +670,9 @@ export function useCompanyInvoices(companyId: string) {
           image_url, 
           melleklet_url,
           gl_account_id,
+          nav_status,
+          approved_at,
+          approval_note,
           gl_account:gl_accounts(id, gl_number, short_name)
         `)
         .eq('company_id', companyId)
@@ -728,6 +735,10 @@ export function useCompanyInvoices(companyId: string) {
           glName: glAcc?.short_name || null,
           submitted: true, // Physical invoices uploaded directly are always submitted
           isNav: false,
+          navStatus: (inv as any).nav_status || 'missing_nav',
+          statusz: inv.statusz || undefined,
+          approvedAt: (inv as any).approved_at || null,
+          approvalNote: (inv as any).approval_note || null,
         });
       }
 

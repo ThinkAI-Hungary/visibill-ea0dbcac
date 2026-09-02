@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link2, Plus, CreditCard, RotateCcw, XCircle } from 'lucide-react';
+import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -64,6 +64,11 @@ export function ExpandedInvoiceRow({
   invoiceOperation,
   isManualPayment,
   invoiceNumber,
+  navStatus,
+  statusz,
+  approvedAt,
+  approvalNote,
+  onOpenApprovalDialog,
 }: ExpandedInvoiceRowProps) {
   const queryClient = useQueryClient();
   const [showManualPayment, setShowManualPayment] = useState(false);
@@ -293,6 +298,48 @@ export function ExpandedInvoiceRow({
                   tiOverride={tiOverride}
                   tiCalculationMethod={tiCalculationMethod}
                 />
+
+                {/* NAV Online Számla Cross-Check Banner */}
+                {(navStatus === 'missing_nav' || statusz === 'jovahagyasra_var') && (
+                  approvedAt ? (
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-blue-200/70 bg-blue-50/50 dark:bg-blue-950/20 text-xs text-blue-800 dark:text-blue-300">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span>
+                          <strong>Könyvelői jóváhagyással engedélyezve:</strong> {approvalNote || 'Könyvelői jóváhagyás (NAV adatszolgáltatás nélkül)'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-amber-300/70 bg-amber-500/10 dark:bg-amber-950/30 text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <div>
+                          <span className="font-semibold text-amber-800 dark:text-amber-300">
+                            NAV Online Számla adatszolgáltatás hiányzik!
+                          </span>
+                          <p className="text-muted-foreground mt-0.5">
+                            Ehhez a bizonylathoz nem található online számla adatszolgáltatás. A rendszer zárolta az automatikus könyvelést.
+                          </p>
+                        </div>
+                      </div>
+                      {onOpenApprovalDialog && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-amber-600 hover:bg-amber-700 text-white h-7 text-xs gap-1.5 shrink-0 cursor-pointer shadow-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenApprovalDialog();
+                          }}
+                        >
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                          Jóváhagyás könyvelésre
+                        </Button>
+                      )}
+                    </div>
+                  )
+                )}
 
                 <div className="space-y-6 pt-2">
                   {/* Section: Related Items */}

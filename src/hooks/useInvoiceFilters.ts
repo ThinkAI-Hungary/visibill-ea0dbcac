@@ -29,6 +29,7 @@ export interface InvoiceFilters {
   category: string;
   paymentMethod: string;
   continuous: string; // 'all' | 'yes' | 'no'
+  navStatus: string;  // 'all' | 'verified' | 'missing_nav' | 'not_applicable'
 }
 
 export const defaultFilters: InvoiceFilters = {
@@ -44,6 +45,7 @@ export const defaultFilters: InvoiceFilters = {
   category: 'all',
   paymentMethod: 'all',
   continuous: 'all',
+  navStatus: 'all',
 };
 
 // URL query param keys for each filter (short keys for clean URLs)
@@ -60,6 +62,7 @@ export const FILTER_URL_KEYS: Record<keyof InvoiceFilters, string> = {
   category: 'cat',
   paymentMethod: 'pm',
   continuous: 'cont',
+  navStatus: 'navs',
 };
 
 export function useInvoiceFilters(
@@ -276,7 +279,7 @@ export function useInvoiceFilters(
       'filteredSubmittedInvoices', companyId, dateFromFormatted, dateToFormatted,
       submittedDirection, deferredSearch, filters.currency,
       filters.category, filters.project, filters.paymentMethod,
-      filters.amountMin, filters.amountMax,
+      filters.amountMin, filters.amountMax, filters.navStatus,
       sortField, sortDirection, submittedCurrentPage, submittedPageSize,
       issueDateFrom, issueDateTo, kpiFilter
     ],
@@ -300,6 +303,7 @@ export function useInvoiceFilters(
         p_issue_date_from: issueDateFrom || undefined,
         p_issue_date_to: issueDateTo || undefined,
         p_kpi_filter: kpiFilter,
+        p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
       });
       if (error) throw error;
       return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];

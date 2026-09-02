@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2, FileText, Coins, Percent, ArrowLeftRight, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2, FileText, Coins, Percent, ArrowLeftRight, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCompanyInvoices, type CompanyInvoice } from '@/hooks/accounty';
 import { useAccountyClients } from '@/hooks/accounty';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import { InvoiceApprovalDialog } from '@/features/invoices/components/dialogs/InvoiceApprovalDialog';
 import { exportToRLB60, exportToKulcsSoft, exportToNovitax } from '@/lib/bookkeepingExports';
 import { TAccountLedger } from '@/components/accounty/invoices/TAccountLedger';
 import { createPortal } from 'react-dom';
@@ -59,6 +61,9 @@ export default function ClientInvoicesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [fadFilter, setFadFilter] = useState(false);
   const [missingImageFilter, setMissingImageFilter] = useState(false);
+  const [missingNavFilter, setMissingNavFilter] = useState(false);
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [selectedInvoiceForApproval, setSelectedInvoiceForApproval] = useState<any>(null);
   
   const [isNavSyncOpen, setIsNavSyncOpen] = useState(false);
   const [isSyncSettingsOpen, setIsSyncSettingsOpen] = useState(false);
@@ -153,6 +158,11 @@ export default function ClientInvoicesPage() {
 
   const { data: invoicesData, isLoading: invoicesLoading } = useCompanyInvoices(id || '');
 
+  const missingNavCount = useMemo(() => {
+    if (!invoicesData) return 0;
+    return invoicesData.filter(inv => !inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt).length;
+  }, [invoicesData]);
+
   const filteredInvoices = useMemo(() => {
     if (!invoicesData) return [];
     return invoicesData.filter((inv) => {
@@ -162,9 +172,10 @@ export default function ClientInvoicesPage() {
       const matchType = typeFilter === 'all' || inv.type === typeFilter;
       const matchFad = !fadFilter || inv.isReverseCharge === true;
       const matchMissingImage = !missingImageFilter || (inv.isNav && inv.submitted !== true);
-      return matchSearch && matchStatus && matchType && matchFad && matchMissingImage;
+      const matchMissingNav = !missingNavFilter || (!inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt);
+      return matchSearch && matchStatus && matchType && matchFad && matchMissingImage && matchMissingNav;
     });
-  }, [invoicesData, searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter]);
+  }, [invoicesData, searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter, missingNavFilter]);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -209,7 +220,7 @@ export default function ClientInvoicesPage() {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedInvoiceIds(new Set());
-  }, [searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter]);
+  }, [searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter, missingNavFilter]);
 
   const handleBulkStatusChange = async (newStatus: string) => {
     const selectedUploadedIds = filteredInvoices
@@ -677,6 +688,25 @@ export default function ClientInvoicesPage() {
                 </span>
               ) : null}
             </button>
+
+            <button
+              onClick={() => setMissingNavFilter(!missingNavFilter)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 h-10 rounded-md border text-xs font-semibold transition-colors',
+                missingNavFilter
+                  ? 'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300'
+                  : 'bg-card border-border text-muted-foreground hover:bg-accent'
+              )}
+              title="Csak a NAV adatszolgáltatás nélküli (jóváhagyásra váró) belföldi számlák mutatása"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              NAV hiányzik
+              {missingNavCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] font-bold">
+                  {missingNavCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -795,7 +825,65 @@ export default function ClientInvoicesPage() {
                         onChange={(e) => handleRowSelect(inv.id, e.target.checked)}
                       />
                     </td>
-                    <td className="px-6 py-4 font-medium text-foreground">{inv.invoiceNumber}</td>
+                    <td className="px-6 py-4 font-medium font-mono text-foreground">
+                      <div className="flex items-center gap-1.5 whitespace-nowrap">
+                        <span>{inv.invoiceNumber}</span>
+                        {!inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && (
+                          inv.approvedAt ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center justify-center p-0.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" aria-label="Könyvelő által jóváhagyva">
+                                    <Check className="h-3.5 w-3.5" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs text-xs font-sans">
+                                  <p className="font-semibold text-blue-600 dark:text-blue-400">Könyvelő által jóváhagyva</p>
+                                  <p className="text-muted-foreground mt-0.5">{inv.approvalNote || 'NAV adatszolgáltatás nélkül engedélyezve'}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center justify-center p-1 rounded-full text-amber-600 hover:text-amber-700 bg-amber-500/15 hover:bg-amber-500/25 dark:text-amber-400 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 transition-colors cursor-pointer shrink-0 border border-amber-300/60 dark:border-amber-700/60"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedInvoiceForApproval({
+                                        id: inv.id,
+                                        bizonylatsorszam: inv.invoiceNumber,
+                                        elado_nev: inv.type === 'bejovo' ? inv.partnerName : '',
+                                        vevo_nev: inv.type === 'kimeno' ? inv.partnerName : '',
+                                        kibocsatas_datuma: inv.rawDate,
+                                        brutto_vegosszeg: inv.grossAmount,
+                                        penznem: inv.currency,
+                                        invoice_direction: inv.type === 'bejovo' ? 'INBOUND' : 'OUTBOUND',
+                                        company_id: id,
+                                      });
+                                      setApprovalDialogOpen(true);
+                                    }}
+                                    aria-label="Nincs NAV online számla adatszolgáltatás! Kattintson a jóváhagyáshoz."
+                                  >
+                                    <AlertTriangle className="h-3 w-3" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs text-xs font-sans">
+                                  <p className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                    <AlertTriangle className="h-3.5 w-3.5" /> NAV adatszolgáltatás hiányzik!
+                                  </p>
+                                  <p className="text-muted-foreground mt-0.5">
+                                    A számlához nem tartozik online számla adatszolgáltatás. Kattintson ide a könyvelői jóváhagyáshoz!
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-muted-foreground">{inv.partnerName}</td>
                     <td className="px-6 py-4 text-muted-foreground">{inv.date}</td>
                     <td className="px-6 py-4 text-foreground font-semibold text-right">{formatCurrency(inv.grossAmount, inv.currency)}</td>
@@ -811,6 +899,11 @@ export default function ClientInvoicesPage() {
                         {inv.isNav && inv.submitted !== true && (
                           <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 text-[10px] font-bold border border-rose-200 dark:border-rose-800 whitespace-nowrap flex items-center gap-1" title="A fizikai bizonylatkép hiányzik a NAV adathoz képest">
                             ⚠️ Hiányzó kép
+                          </span>
+                        )}
+                        {!inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt && (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] font-bold border border-amber-300 dark:border-amber-700 whitespace-nowrap flex items-center gap-1" title="Nincs NAV Online Számla adatszolgáltatás!">
+                            <AlertTriangle className="w-2.5 h-2.5" /> NAV hiányzik
                           </span>
                         )}
                       </div>
@@ -854,6 +947,28 @@ export default function ClientInvoicesPage() {
                             <ArrowLeftRight className="w-3.5 h-3.5 text-muted-foreground" />
                             Főkönyvi napló (T-számlák)
                           </DropdownMenuItem>
+                          {!inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt && (
+                            <DropdownMenuItem 
+                              className="cursor-pointer gap-2 text-amber-700 dark:text-amber-400 focus:text-amber-800"
+                              onClick={() => {
+                                setSelectedInvoiceForApproval({
+                                  id: inv.id,
+                                  bizonylatsorszam: inv.invoiceNumber,
+                                  elado_nev: inv.type === 'bejovo' ? inv.partnerName : '',
+                                  vevo_nev: inv.type === 'kimeno' ? inv.partnerName : '',
+                                  kibocsatas_datuma: inv.rawDate,
+                                  brutto_vegosszeg: inv.grossAmount,
+                                  penznem: inv.currency,
+                                  invoice_direction: inv.type === 'bejovo' ? 'INBOUND' : 'OUTBOUND',
+                                  company_id: id,
+                                });
+                                setApprovalDialogOpen(true);
+                              }}
+                            >
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              Jóváhagyás könyvelésre (NAV kapu)
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem 
                             className="cursor-pointer"
                             onClick={async () => {
@@ -1087,6 +1202,23 @@ export default function ClientInvoicesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* NAV Online Számla Cross-Check Approval Dialog */}
+      {selectedInvoiceForApproval && (
+        <InvoiceApprovalDialog
+          open={approvalDialogOpen}
+          onOpenChange={(open) => {
+            setApprovalDialogOpen(open);
+            if (!open) {
+              setSelectedInvoiceForApproval(null);
+            }
+          }}
+          invoice={selectedInvoiceForApproval}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.accountyCompanyInvoices(id || '') });
+          }}
+        />
+      )}
     </div>
   );
 }

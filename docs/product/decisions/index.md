@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-02  
-> **Összesen:** 64 döntés | ✅ Decided: 60 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-03  
+> **Összesen:** 65 döntés | ✅ Decided: 61 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -158,3 +158,4 @@
 |---|--------|---------|------|
 | P-055 | Könyvelési Napló (Accounting Journals) UX | ✅ Decided | [P-055](./P-055-accounting-journals-ux.md) |
 | P-056 | Banki Utalások és Csomagkészítés (Bank Transfers) UX | ✅ Decided | [P-056](./P-056-bank-transfers-export-ux.md) |
+| P-065 | NAV Online Számla Ellenőrzés, Vizuális Figyelmeztetések és Könyvelői Jóváhagyási Kapu UX | ✅ Decided | [P-065](./P-065-nav-crosscheck-approval-gate-ux.md) |

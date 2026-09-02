@@ -130,4 +130,10 @@ export interface ExpandedInvoiceRowProps {
   isManualPayment?: boolean | null;
   /** invoice_number (sztornó dialog szövegéhez) */
   invoiceNumber?: string;
+  // ── NAV Online Számla Cross-Check & Approval Gate ──
+  navStatus?: string;
+  statusz?: string;
+  approvedAt?: string | null;
+  approvalNote?: string | null;
+  onOpenApprovalDialog?: () => void;
 }

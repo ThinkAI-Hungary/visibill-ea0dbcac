@@ -102,6 +102,8 @@ export interface InvoiceContextValue
   setSyncDialogOpen: (open: boolean) => void;
   bulkDeleteDialogOpen: boolean;
   setBulkDeleteDialogOpen: (open: boolean) => void;
+  approvalDialogOpen: boolean;
+  setApprovalDialogOpen: (open: boolean) => void;
 
   selectedInvoice: SubmittedInvoice | null;
   setSelectedInvoice: (inv: SubmittedInvoice | null) => void;
@@ -109,6 +111,8 @@ export interface InvoiceContextValue
   setSelectedNavInvoice: (inv: NavInvoice | null) => void;
   selectedSubmittedForItems: SubmittedInvoice | null;
   setSelectedSubmittedForItems: (inv: SubmittedInvoice | null) => void;
+  selectedInvoiceForApproval: SubmittedInvoice | null;
+  setSelectedInvoiceForApproval: (inv: SubmittedInvoice | null) => void;
   setInvoiceParam: (invoiceId: string | null, action?: InvoiceAction) => void;
 
   // Export
@@ -170,6 +174,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   const [filesDialogOpen, setFilesDialogOpen] = useState(false);
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [selectedInvoiceForApproval, setSelectedInvoiceForApproval] = useState<SubmittedInvoice | null>(null);
 
   // Row selection state
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
@@ -870,6 +876,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       setSyncDialogOpen,
       bulkDeleteDialogOpen,
       setBulkDeleteDialogOpen,
+      approvalDialogOpen,
+      setApprovalDialogOpen,
 
       selectedInvoice,
       setSelectedInvoice,
@@ -877,6 +885,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       setSelectedNavInvoice,
       selectedSubmittedForItems,
       setSelectedSubmittedForItems,
+      selectedInvoiceForApproval,
+      setSelectedInvoiceForApproval,
       setInvoiceParam,
 
       pdfExport,
@@ -948,12 +958,16 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       setSyncDialogOpen,
       bulkDeleteDialogOpen,
       setBulkDeleteDialogOpen,
+      approvalDialogOpen,
+      setApprovalDialogOpen,
       selectedInvoice,
       setSelectedInvoice,
       selectedNavInvoice,
       setSelectedNavInvoice,
       selectedSubmittedForItems,
       setSelectedSubmittedForItems,
+      selectedInvoiceForApproval,
+      setSelectedInvoiceForApproval,
       setInvoiceParam,
       pdfExport,
       dataExportDialogOpen,

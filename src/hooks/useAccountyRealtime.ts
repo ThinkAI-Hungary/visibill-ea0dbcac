@@ -51,6 +51,17 @@ export function useAccountyRealtime() {
           queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'invoices',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['company-invoices'] });
+        }
+      )
       .subscribe();
 
     return () => {

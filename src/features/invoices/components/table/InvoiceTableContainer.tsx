@@ -25,15 +25,49 @@ export function InvoiceTableContainer() {
 
   const [, setSearchParams] = useSearchParams();
 
-  // 1. Build lookup maps
+  // 1. Fetch matching NAV invoices for the submitted invoices displayed on the current page
+  const pageSubmittedNumbers = useMemo(() => {
+    if (!isSubmittedTab) return [];
+    return Array.from(
+      new Set(
+        paginatedSubmittedInvoices
+          .map(s => s.bizonylatsorszam)
+          .filter(Boolean) as string[]
+      )
+    );
+  }, [isSubmittedTab, paginatedSubmittedInvoices]);
+
+  const pageSubmittedNumbersKey = useMemo(
+    () => pageSubmittedNumbers.slice().sort().join(','),
+    [pageSubmittedNumbers]
+  );
+
+  const { data: pageMatchedNavInvoices = [] } = useQuery({
+    queryKey: ['page-matched-nav-invoices', companyId, pageSubmittedNumbersKey],
+    queryFn: async () => {
+      if (!companyId || pageSubmittedNumbers.length === 0) return [];
+      const { data, error } = await supabase
+        .from('nav_invoices')
+        .select('*')
+        .eq('company_id', companyId)
+        .in('invoice_number', pageSubmittedNumbers);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isSubmittedTab && pageSubmittedNumbers.length > 0,
+  });
+
+  const effectiveNavInvoices = isSubmittedTab ? pageMatchedNavInvoices : paginatedNavInvoices;
+
+  // 2. Build lookup maps
   const navToSubmittedMap = useMemo(
     () => buildNavToSubmittedMap(submittedInvoices, paginatedNavInvoices),
     [submittedInvoices, paginatedNavInvoices]
   );
 
   const submittedToNavMap = useMemo(
-    () => buildSubmittedToNavMap(submittedInvoices, paginatedNavInvoices),
-    [submittedInvoices, paginatedNavInvoices]
+    () => buildSubmittedToNavMap(submittedInvoices, effectiveNavInvoices),
+    [submittedInvoices, effectiveNavInvoices]
   );
 
   // 2. Collect all invoice IDs displayed on the current page
