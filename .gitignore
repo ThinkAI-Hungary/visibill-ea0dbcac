@@ -40,3 +40,6 @@ test_*.sh
 docs/architecture/ARCHITECT_LEARNING_ROADMAP.md
 docs/learning/
 
+# Scratch scripts
+scratch/
+
