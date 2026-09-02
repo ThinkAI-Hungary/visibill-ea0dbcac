@@ -42,11 +42,13 @@ export const RichTextContent = React.memo(function RichTextContent({
   className,
   fallbackText = '—',
 }: RichTextContentProps) {
-  if (!content || !content.trim()) {
+  const trimmed = content?.trim() || '';
+  const hasHtml = useMemo(() => isHtml(trimmed), [trimmed]);
+  const cleanHtml = useMemo(() => (hasHtml ? sanitizeHtml(trimmed) : ''), [hasHtml, trimmed]);
+
+  if (!trimmed) {
     return <span className="text-muted-foreground italic text-xs">{fallbackText}</span>;
   }
-
-  const hasHtml = useMemo(() => isHtml(content), [content]);
 
   if (!hasHtml) {
     return (
@@ -55,8 +57,6 @@ export const RichTextContent = React.memo(function RichTextContent({
       </div>
     );
   }
-
-  const cleanHtml = useMemo(() => sanitizeHtml(content), [content]);
 
   return (
     <div

@@ -1,7 +1,7 @@
 # Visibill — Error Logging & Dashboard Rendszer
 
-> **Verzió:** 1.1 | **Dátum:** 2026-07-08 (severity diszciplína + realtime zaj szűrés)  
-> **Kapcsolódó:** [A-019 Management Dashboard](./decisions/A-019-management-dashboard.md) · [09-error-handling-feedback](../design/09-error-handling-feedback.md) · [management-stats EF](../../supabase/functions/management-stats/index.ts)
+> **Verzió:** 1.2 | **Dátum:** 2026-09-02 (severity diszciplína + realtime zaj szűrés + tesztkörnyezeti guard)  
+> **Kapcsolódó:** [A-019 Management Dashboard](./decisions/A-019-management-dashboard.md) · [A-083 Rules of Hooks & Telemetry Guard](./decisions/A-083-rules-of-hooks-invariance-and-test-telemetry-guard.md) · [09-error-handling-feedback](../design/09-error-handling-feedback.md) · [management-stats EF](../../supabase/functions/management-stats/index.ts)
 
 ---
 
@@ -164,6 +164,19 @@ if (!isTransient) {
 ```
 
 > **Előzmény:** 2026-07-08-ig a `CHANNEL_ERROR` (és régebben a `TIMED_OUT` is) `reportError`-rel `severity='error'`-ként (default) került a DB-be, ami elárasztotta a Hibák panelt. A 41 történelni realtime log visszaamenőleg `severity='warning'`-ra lett reklasszifikálva.
+
+### Tesztkörnyezeti szűrés — NEM logolva DB-be (Test Environment Guard)
+
+A Vitest / Jest helyi egységtesztek vagy CI/CD pipeline-ok futásakor szándékosan kiváltott hibák (pl. `AccountyErrorBoundary.test.tsx` `Bomb` komponensének `💣 Teszt hiba!` kivétele) **nem kerülhetnek be a Supabase adatbázisba**, mert az beszennyezné a Management Dashboard `app_error_logs` nézetét.
+
+Ezért az `errorReporter.ts` kötelező guard feltételt tartalmaz az adatbázis-művelet előtt:
+```typescript
+// 1.2 Never write test-generated errors to Supabase DB
+if (import.meta.env.MODE === 'test' || (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test')) {
+  return;
+}
+```
+Lásd részletesen: [A-083: Rules of Hooks Invariáns Garantálása és Teszt-Telemetria Kiszivárgás Megelőzése](./decisions/A-083-rules-of-hooks-invariance-and-test-telemetry-guard.md).
 
 ### 2.2 Worker — `error_reporter.py`
 

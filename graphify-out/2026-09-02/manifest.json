@@ -1330,8 +1330,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientMissingInvoicesPage.tsx": {
-    "mtime": 1787568622.872336,
-    "ast_hash": "ad52ad9d0fddac9af645ca7361e97e8c",
+    "mtime": 1788369143.555757,
+    "ast_hash": "48960b3ab0615df20040a638e5f6dc84",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientMissingInvoicesReportPage.tsx": {
@@ -1415,8 +1415,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/TaxCalendarPage.tsx": {
-    "mtime": 1786277283.0876172,
-    "ast_hash": "332ee160799292e3ffb909ab1d1f25df",
+    "mtime": 1788369348.00945,
+    "ast_hash": "f3d7e0f2bfdf44c68dadfd88216e7501",
     "semantic_hash": ""
   },
   "src/pages/Accounty/TaxParametersPage.tsx": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788130347.3907735,
-    "ast_hash": "ec7834f1148b1dccb4164ae98db090cd",
+    "mtime": 1788366993.7238963,
+    "ast_hash": "1fe723fa343d1cb00b8f053382c0aefc",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -3590,8 +3590,8 @@
     "semantic_hash": ""
   },
   "src/lib/errorReporter.ts": {
-    "mtime": 1788296727.2957678,
-    "ast_hash": "5cebcdb06e76ced53884d8b54e69362d",
+    "mtime": 1788370100.7950115,
+    "ast_hash": "2acb04db0ffcb4bb5700395b47bbb31e",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/error-logger.ts": {
@@ -4025,8 +4025,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollPortfolioPage.tsx": {
-    "mtime": 1787568622.8913417,
-    "ast_hash": "c005a3a3fa69a0a96ebd9b8d0ff0384c",
+    "mtime": 1788369206.4940965,
+    "ast_hash": "86706726116ecd3189be5681c928651b",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PermissionMatrixPage.tsx": {
@@ -4155,8 +4155,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/declarations/GenericDeclarationPage.tsx": {
-    "mtime": 1787568622.8978498,
-    "ast_hash": "29b8b3218b14b71a0ce111dac931f857",
+    "mtime": 1788369160.6469493,
+    "ast_hash": "c29502406ad430b27a49dddf5853000a",
     "semantic_hash": ""
   },
   "src/pages/Accounty/documents/DocumentCenterPage.tsx": {
@@ -4820,8 +4820,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvRecordDetailPage.tsx": {
-    "mtime": 1787568622.8843422,
-    "ast_hash": "8c248a4818317346a710115604ddd6fd",
+    "mtime": 1788369192.0322895,
+    "ast_hash": "7e9005141bdf673cf6537daf7038885c",
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvRecordsOverviewPage.tsx": {
@@ -4965,8 +4965,8 @@
     "semantic_hash": ""
   },
   "src/test/accounty/AccountyErrorBoundary.test.tsx": {
-    "mtime": 1788295933.8859246,
-    "ast_hash": "2c9079be40d71fe5c0774b039702f33d",
+    "mtime": 1788370068.2970185,
+    "ast_hash": "5cd8de9b7883a85093b913c2b0e9e8eb",
     "semantic_hash": ""
   },
   "src/test/accounty/AccountyErrorState.test.tsx": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788279564.041656,
+    "mtime": 1788366438.8177454,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1788212014.2271125,
-    "ast_hash": "8c036b9ff375b2f7253dd7d6971e790c",
+    "mtime": 1788369330.0865152,
+    "ast_hash": "74c78ccb89bc4fdbc0e3fe962303d8a1",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -7265,8 +7265,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/22-accounting-journals.md": {
-    "mtime": 1788130181.1648228,
-    "ast_hash": "7e2f092b788f3426d1a36938e572a4cb",
+    "mtime": 1788367007.176551,
+    "ast_hash": "32292af257188de6e5969aa4fb0de7c4",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-057-accounting-journals-architecture.md": {
@@ -8615,8 +8615,8 @@
     "semantic_hash": ""
   },
   "src/components/ui/rich-text-content.tsx": {
-    "mtime": 1788291081.3722713,
-    "ast_hash": "2705c0eecc794e18ee24d0e554ee7ef5",
+    "mtime": 1788369074.5650668,
+    "ast_hash": "f8033255cc9bcbbd876b15a99845889a",
     "semantic_hash": ""
   },
   "src/lib/glData.test.ts": {
@@ -8732,6 +8732,21 @@
   "docs/product/decisions/P-064-partially-paid-invoice-status-ux.md": {
     "mtime": 1788308252.925364,
     "ast_hash": "6fc0cf1defc8ed7a70c164e8fb3890b8",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260902140000_fix_acc_generate_drafts_gl_account_fkey.sql": {
+    "mtime": 1788366317.345443,
+    "ast_hash": "af97cf019fcffd5013d3fa4ba0950d0f",
+    "semantic_hash": ""
+  },
+  "src/components/ui/__tests__/richTextContent.test.tsx": {
+    "mtime": 1788369110.6201806,
+    "ast_hash": "722b8d22874b223096243a9642315784",
+    "semantic_hash": ""
+  },
+  "src/test/accounty/__tests__/rulesOfHooksRegression.test.tsx": {
+    "mtime": 1788369716.038906,
+    "ast_hash": "65569a573fa140c8c59aa7feb7077915",
     "semantic_hash": ""
   }
 }

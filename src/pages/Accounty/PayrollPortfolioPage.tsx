@@ -166,10 +166,6 @@ export default function PayrollPortfolioPage() {
     setCurrentPage(1);
   }, [searchQuery, filterMode]);
 
-  if (isError) {
-    return <AccountyErrorState message="Nem sikerült betölteni a bérszámfejtési portfólió adatait." onRetry={() => refetch()} />;
-  }
-
   const filtered = useMemo(() => {
     let list = rows;
     if (searchQuery) {
@@ -189,6 +185,10 @@ export default function PayrollPortfolioPage() {
     const start = (currentPage - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
   }, [filtered, currentPage, pageSize]);
+
+  if (isError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a bérszámfejtési portfólió adatait." onRetry={() => refetch()} />;
+  }
 
   const totalEmployees = rows.reduce((s, c) => s + c.employeeCount, 0);
   const closedCount = rows.filter(c => c.cycleStatus === 'closed').length;

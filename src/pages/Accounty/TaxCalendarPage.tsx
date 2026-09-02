@@ -95,10 +95,6 @@ export default function TaxCalendarPage() {
   const { data: kpisData } = useAccountyKpis();
   const completeDeadlineMutation = useCompleteDeadline();
 
-  if (deadlinesError) {
-    return <AccountyErrorState message="Nem sikerült betölteni az adónaptár adatait." onRetry={() => refetchDeadlines()} />;
-  }
-
   // ── Handler: send deadline notification to approval queue ──
   const handleNotify = async (client: ClientDeadline) => {
     try {
@@ -477,6 +473,10 @@ ThinkAI`;
     }
   };
 
+  if (deadlinesError) {
+    return <AccountyErrorState message="Nem sikerült betölteni az adónaptár adatait." onRetry={() => refetchDeadlines()} />;
+  }
+
   if (activeTab === 'deadlines') {
     return (
       <div className="w-full space-y-8 animate-in fade-in duration-500 pb-20">
@@ -491,24 +491,14 @@ ThinkAI`;
           <div className="flex border-b border-border">
             <button
               onClick={() => setActiveTab('calendar')}
-              className={cn(
-                "px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px]",
-                activeTab === 'calendar'
-                  ? "border-primary text-slate-900 dark:text-slate-100 font-bold"
-                  : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              )}
+              className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
             >
               Adónaptár
             </button>
             {isAuthorizedForNavDeadlines && (
               <button
                 onClick={() => setActiveTab('deadlines')}
-                className={cn(
-                  "px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px]",
-                  activeTab === 'deadlines'
-                    ? "border-primary text-slate-900 dark:text-slate-100 font-bold"
-                    : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                )}
+                className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-primary text-slate-900 dark:text-slate-100 font-bold"
               >
                 Hivatalos NAV határidők
               </button>
@@ -535,24 +525,14 @@ ThinkAI`;
         <div className="flex border-b border-border">
           <button
             onClick={() => setActiveTab('calendar')}
-            className={cn(
-              "px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px]",
-              activeTab === 'calendar'
-                ? "border-primary text-slate-900 dark:text-slate-100 font-bold"
-                : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-            )}
+            className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-primary text-slate-900 dark:text-slate-100 font-bold"
           >
             Adónaptár
           </button>
           {isAuthorizedForNavDeadlines && (
             <button
               onClick={() => setActiveTab('deadlines')}
-              className={cn(
-                "px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px]",
-                activeTab === 'deadlines'
-                  ? "border-primary text-slate-900 dark:text-slate-100 font-bold"
-                  : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              )}
+              className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
             >
               Hivatalos NAV határidők
             </button>

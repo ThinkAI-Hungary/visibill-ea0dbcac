@@ -58,19 +58,6 @@ export default function ClientMissingInvoicesPage() {
   // Fetch missing items from Supabase (paginated)
   const { data: paginatedData, isLoading, isError, refetch } = useAccountyMissingItems(companyId || '', currentPage, PAGE_SIZE);
 
-
-  if (isError) {
-    return (
-      <div className="w-full p-6">
-        <AccountyErrorState
-          message="Nem sikerült betölteni a hiányzó számlák adatait. Ellenőrizd a hálózati kapcsolatot."
-          onRetry={() => refetch()}
-        />
-      </div>
-    );
-  }
-
-
   const supabaseMissing = paginatedData?.items;
   const totalCount = paginatedData?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -353,6 +340,16 @@ export default function ClientMissingInvoicesPage() {
     setTimeout(() => document.getElementById('accounty-main-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }), 50);
   };
 
+  if (isError) {
+    return (
+      <div className="w-full p-6">
+        <AccountyErrorState
+          message="Nem sikerült betölteni a hiányzó számlák adatait. Ellenőrizd a hálózati kapcsolatot."
+          onRetry={() => refetch()}
+        />
+      </div>
+    );
+  }
 
   if (showHistoryView) {
     return (

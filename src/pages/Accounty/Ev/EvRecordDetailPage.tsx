@@ -692,23 +692,21 @@ export default function EvRecordDetailPage() {
 
   const config = recordType ? CONFIGS[recordType] : null;
 
-  if (!config) return <Navigate to={`/eaisybooks/${id}/${dateRange}/ev/records`} replace />;
-
   const [searchParams] = useSearchParams();
   const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const taxYear = dateFrom.getFullYear();
 
   // Hooks
-  const { data: dbRecords = [], isLoading } = useEvRecords(id, recordType || '', taxYear);
+  const { data: dbRecords = [], isLoading } = useEvRecords(id, config && recordType ? recordType : '', taxYear);
   const createRecord = useCreateEvRecord();
   const updateRecord = useUpdateEvRecord();
   const deleteRecord = useDeleteEvRecord();
 
-  const Icon = config.icon;
-  const isReadOnly = config.dbFields.length === 0; // e.g. audit log
+  const Icon = config?.icon;
+  const isReadOnly = config ? config.dbFields.length === 0 : true; // e.g. audit log
 
   // Find primary date column for filtering
-  const dateCol = config.displayColumns.find(c => c.type === 'date')?.key;
+  const dateCol = config?.displayColumns.find(c => c.type === 'date')?.key;
 
   // Filter & sort
   const filteredData = useMemo(() => {
@@ -805,6 +803,10 @@ export default function EvRecordDetailPage() {
       toast({ variant: 'destructive', title: 'Hiba', description: err.message || 'Nem sikerült törölni.' });
     }
   }, [deletingId, recordType, deleteRecord]);
+
+  if (!config) {
+    return <Navigate to={`/eaisybooks/${id}/${dateRange}/ev/records`} replace />;
+  }
 
   const handleExport = () => {
     if (filteredData.length === 0) {

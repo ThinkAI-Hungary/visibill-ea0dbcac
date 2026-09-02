@@ -1173,15 +1173,6 @@ export default function JournalsPage() {
         open={periodClosingOpen}
         onOpenChange={setPeriodClosingOpen}
       />
-
-      {auditEntryId && (
-        <AuditTrailDialog
-          open={!!auditEntryId}
-          onOpenChange={(o) => !o && setAuditEntryId(null)}
-          entityId={auditEntryId}
-          entityType="acc_journal_headers"
-        />
-      )}
       </div>
     </TooltipProvider>
   );

@@ -120,6 +120,11 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
       : console.error(tag, opts.message);
   }
 
+  // 1.2 Never write test-generated errors to Supabase DB
+  if (import.meta.env.MODE === 'test' || (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test')) {
+    return;
+  }
+
   // 1.5 Filter out expected client-side validation errors and chunk loading errors from DB logs
   const errDetails = extractErrorDetails(opts.error);
   const errMsg = ((opts.message || '') + ' ' + (errDetails.message || '')).toLowerCase();

@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AccountyErrorBoundary } from '@/components/accounty/AccountyErrorBoundary';
+import { reportError } from '@/lib/errorReporter';
+
+vi.mock('@/lib/errorReporter', () => ({
+  reportError: vi.fn(),
+}));
 
 /**
  * Tests for AccountyErrorBoundary — section-level error boundary.
@@ -16,6 +21,7 @@ import { AccountyErrorBoundary } from '@/components/accounty/AccountyErrorBounda
 // Suppress console.error for expected Error Boundary logs
 beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.clearAllMocks();
 });
 
 // Component that throws on demand
@@ -41,6 +47,22 @@ describe('AccountyErrorBoundary', () => {
       </AccountyErrorBoundary>
     );
     expect(screen.getByText('Hiba történt az oldal megjelenítésekor')).toBeInTheDocument();
+  });
+
+  it('reports error to reportError on component crash', () => {
+    render(
+      <AccountyErrorBoundary>
+        <Bomb shouldExplode={true} />
+      </AccountyErrorBoundary>
+    );
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'render',
+        component: 'AccountyErrorBoundary',
+        action: 'component_crash',
+        message: '💣 Teszt hiba!',
+      })
+    );
   });
 
   it('shows retry and back buttons in error state', () => {

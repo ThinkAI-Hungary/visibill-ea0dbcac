@@ -119,6 +119,21 @@ export default function GenericDeclarationPage() {
   const empId = searchParams.get('empId');
   const addDeclaration = useAddDeclaration();
 
+  // Calculate end date for first marriage (must be before any early return for Rules of Hooks)
+  const endDate = useMemo(() => {
+    if (declType === 'first-marriage' && formData.marriageDate) {
+      const d = new Date(formData.marriageDate);
+      d.setMonth(d.getMonth() + 24);
+      return d.toISOString().split('T')[0];
+    }
+    if ((declType === 'young' || declType === 'mothers') && formData.birthDate) {
+      const d = new Date(formData.birthDate);
+      d.setFullYear(d.getFullYear() + (declType === 'young' ? 25 : 30));
+      return d.toISOString().split('T')[0];
+    }
+    return null;
+  }, [declType, formData.marriageDate, formData.birthDate]);
+
   if (!config) {
     return (
       <div className="text-center py-20">
@@ -145,21 +160,6 @@ export default function GenericDeclarationPage() {
   };
 
   const isComplete = config.fields.filter(f => f.required).every(f => formData[f.key]?.trim());
-
-  // Calculate end date for first marriage
-  const endDate = useMemo(() => {
-    if (declType === 'first-marriage' && formData.marriageDate) {
-      const d = new Date(formData.marriageDate);
-      d.setMonth(d.getMonth() + 24);
-      return d.toISOString().split('T')[0];
-    }
-    if ((declType === 'young' || declType === 'mothers') && formData.birthDate) {
-      const d = new Date(formData.birthDate);
-      d.setFullYear(d.getFullYear() + (declType === 'young' ? 25 : 30));
-      return d.toISOString().split('T')[0];
-    }
-    return null;
-  }, [declType, formData.marriageDate, formData.birthDate]);
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
