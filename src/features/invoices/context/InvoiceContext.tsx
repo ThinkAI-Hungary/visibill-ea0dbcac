@@ -458,6 +458,9 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         gross_amount: inv.brutto_vegosszeg || 0,
         vat_amount: inv.afa_osszeg_osszesen || 0,
         currency: inv.penznem || 'HUF',
+        match_status: inv.match_status,
+        paid_amount: inv.paid_amount,
+        remaining_amount: inv.remaining_amount,
         category_name: getCategoryName(inv.category_id),
         project_name: getProjectName(inv.project_id),
         image_url: inv.image_url,
@@ -482,6 +485,9 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         vat_amount: inv.invoice_vat_amount || 0,
         currency: inv.currency || 'HUF',
         paid: inv.paid,
+        match_status: inv.match_status,
+        paid_amount: inv.paid_amount,
+        remaining_amount: inv.remaining_amount,
         submitted: inv.submitted,
         project_name: getProjectName(inv.project_id),
         image_url: (inv as any).image_url || pairedSub?.image_url,
@@ -607,7 +613,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
               inv.currency,
               inv.category_name || '',
               inv.project_name || '',
-              inv.paid ? 'Igen' : 'Nem',
+              inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
               inv.submitted ? 'Igen' : 'Nem',
             ]);
           } else {
@@ -640,7 +646,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
                 inv.currency,
                 inv.category_name || '',
                 inv.project_name || '',
-                inv.paid ? 'Igen' : 'Nem',
+                inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
                 inv.submitted ? 'Igen' : 'Nem',
               ]);
             });
@@ -684,7 +690,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         inv.currency,
         inv.category_name || '',
         inv.project_name || '',
-        inv.paid ? 'Igen' : 'Nem',
+        inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
         inv.submitted ? 'Igen' : 'Nem',
         inv.source === 'nav' ? 'NAV Online' : 'Feltöltött bizonylat',
       ]);

@@ -5,7 +5,8 @@ import { Separator } from '@/components/ui/separator';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
+import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import { format } from 'date-fns';
 import { FileText, ExternalLink, Lock, Users, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -236,7 +237,15 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
               <Badge variant={invoice.statusz === 'feldolgozott' ? 'success' : 'secondary'}>
                 {statusLabels[invoice.statusz || ''] || invoice.statusz || 'Ismeretlen'}
               </Badge>
-              {!!invoice.transaction_id && <Badge variant="success">Fizetve</Badge>}
+              {(() => {
+                if (!invoice.transaction_id && !(invoice as any).match_status) return null;
+                const badge = getPaymentStatusBadge(invoice.transaction_id, (invoice as any).match_status);
+                return (
+                  <Badge variant="outline" className={cn(badge.className)}>
+                    {badge.label}
+                  </Badge>
+                );
+              })()}
               {invoice.forditott_adozas && <Badge variant="outline">Fordított adózás</Badge>}
               {invoice.onszamlazas && <Badge variant="outline">Önszámlázás</Badge>}
               {invoice.penzforgalmi_elszamolas && <Badge variant="outline">Pénzforgalmi</Badge>}

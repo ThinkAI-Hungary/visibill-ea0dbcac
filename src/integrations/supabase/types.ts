@@ -10972,9 +10972,11 @@ export type Database = {
           manual_payment_type: string
           match_status: string
           paid: boolean
+          paid_amount: number
           payment_date: string
           payment_method: string
           project_id: string
+          remaining_amount: number
           service_period_end: string
           service_period_start: string
           submitted: boolean
@@ -11024,9 +11026,11 @@ export type Database = {
           kibocsatas_datuma: string
           match_status: string
           melleklet_url: string
+          paid_amount: number
           penznem: string
           project_id: string
           reference_number: string
+          remaining_amount: number
           teljesites_datuma: string
           total_count: number
           vevo_nev: string

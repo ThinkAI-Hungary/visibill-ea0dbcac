@@ -152,14 +152,21 @@ export function InvoiceFilterBar() {
       {/* Paid Status Select (NAV only) */}
       {!isSubmittedTab && (
         <Select value={filters.paid} onValueChange={(value) => setFilters(prev => ({ ...prev, paid: value }))}>
-          <SelectTrigger className="h-9 w-[140px]">
+          <SelectTrigger className="h-9 w-[150px]">
             <span className="truncate">
-              {filters.paid === 'all' ? 'Állapot' : filters.paid === 'yes' ? 'Kifizetve' : 'Nyitott'}
+              {filters.paid === 'all'
+                ? 'Állapot'
+                : filters.paid === 'yes'
+                  ? 'Kifizetve'
+                  : filters.paid === 'partial'
+                    ? 'Részben fizetve'
+                    : 'Nyitott'}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Mindkettő</SelectItem>
+            <SelectItem value="all">Összes állapot</SelectItem>
             <SelectItem value="yes">Kifizetve</SelectItem>
+            <SelectItem value="partial">Részben fizetve</SelectItem>
             <SelectItem value="no">Nyitott</SelectItem>
           </SelectContent>
         </Select>

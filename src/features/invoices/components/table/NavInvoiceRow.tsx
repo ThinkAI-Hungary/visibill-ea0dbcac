@@ -60,6 +60,7 @@ export function NavInvoiceRow({
   const partnerName = getInvoicePartnerName(invoice);
   const matchStatus = (invoice as any).match_status || (invoice.paid ? 'matched' : 'unmatched');
   const isPaid = matchStatus === 'matched';
+  const isPartiallyPaid = matchStatus === 'partially_paid';
   const isSuggested = matchStatus === 'suggested';
   const isNettingCandidate = nettingInvoiceIds.has(invoice.id);
   const isExpanded = expandedRowIds.has(invoice.id);
@@ -94,9 +95,10 @@ export function NavInvoiceRow({
           'group cursor-pointer transition-colors',
           isSelected && 'bg-primary/10',
           !isSelected && isPaid && 'bg-[var(--row-matched-bg)]',
+          !isSelected && isPartiallyPaid && 'bg-blue-500/[0.06]',
           !isSelected && isSuggested && 'bg-[var(--row-suggested-bg)]',
-          !isSelected && !isPaid && !isSuggested && !isNettingCandidate && 'bg-[var(--row-unmatched-bg)]',
-          !isSelected && isNettingCandidate && !isPaid && !isSuggested && 'bg-orange-500/[0.06]',
+          !isSelected && !isPaid && !isPartiallyPaid && !isSuggested && !isNettingCandidate && 'bg-[var(--row-unmatched-bg)]',
+          !isSelected && isNettingCandidate && !isPaid && !isPartiallyPaid && !isSuggested && 'bg-orange-500/[0.06]',
           isExpanded && 'border-b-0'
         )}
         onClick={(e) => onRowClick(invoice.id, e)}
@@ -193,14 +195,40 @@ export function NavInvoiceRow({
 
         <TableCell className="text-center">
           <div className="flex items-center justify-center gap-1.5">
-            <span
-              className={cn(
-                'inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-black/10 dark:border-white/10',
-                isPaid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-              )}
-            >
-              {isPaid ? 'Kifizetve' : 'Nyitott'}
-            </span>
+            {isPaid ? (
+              <span className="inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-black/10 dark:border-white/10 bg-success/10 text-success">
+                Kifizetve
+              </span>
+            ) : isPartiallyPaid ? (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-blue-500/30 bg-blue-500/15 text-blue-600 dark:text-blue-400 cursor-help">
+                      Részben fizetve
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs space-y-1">
+                    <p className="font-semibold text-blue-400">Részben kifizetve</p>
+                    <p>
+                      Kifizetve:{' '}
+                      <span className="font-mono font-medium text-emerald-400">
+                        {formatCurrency(invoice.paid_amount || 0, invoice.currency || 'HUF')}
+                      </span>
+                    </p>
+                    <p>
+                      Fennmaradó:{' '}
+                      <span className="font-mono font-medium text-destructive">
+                        {formatCurrency(invoice.remaining_amount || 0, invoice.currency || 'HUF')}
+                      </span>
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <span className="inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-black/10 dark:border-white/10 bg-destructive/10 text-destructive">
+                Nyitott
+              </span>
+            )}
 
             {isNettingCandidate && (
               <TooltipProvider delayDuration={200}>

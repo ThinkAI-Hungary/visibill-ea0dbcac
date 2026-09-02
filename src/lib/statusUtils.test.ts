@@ -19,4 +19,11 @@ describe("computePaymentStatus", () => {
   it("'Nyitott' ha transactionId üres string", () => {
     expect(computePaymentStatus("")).toBe("Nyitott");
   });
+
+  it("'Részben fizetve' ha matchStatus === 'partially_paid'", () => {
+    expect(computePaymentStatus("a1b2c3d4-e5f6-7890-abcd-ef1234567890", "partially_paid")).toBe(
+      "Részben fizetve"
+    );
+    expect(computePaymentStatus(null, "partially_paid")).toBe("Részben fizetve");
+  });
 });

@@ -10,6 +10,12 @@ export interface MatchedInvoice {
   brutto_vegosszeg: number;
   penznem: string | null;
   invoice_type: string;
+  invoice_direction?: string | null;
+  transaction_id?: string | null;
+  fizetve?: boolean | null;
+  match_status?: string | null;
+  paid_amount?: number | null;
+  remaining_amount?: number | null;
 }
 
 export interface MatchedNavInvoice {
@@ -23,6 +29,9 @@ export interface MatchedNavInvoice {
   invoice_direction: string | null;
   transaction_id: string | null;
   submitted: boolean | null;
+  match_status?: string | null;
+  paid_amount?: number | null;
+  remaining_amount?: number | null;
 }
 
 export interface MatchedSalary {

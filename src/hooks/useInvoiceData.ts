@@ -60,6 +60,8 @@ export interface NavInvoice {
   is_manual_payment?: boolean | null;
   manual_payment_type?: string | null;
   match_status?: string;
+  paid_amount?: number | null;
+  remaining_amount?: number | null;
 }
 
 export interface SubmittedInvoice {
@@ -87,6 +89,8 @@ export interface SubmittedInvoice {
   elolegszamla_hivatkozas?: string | null;
   nav_invoice_id?: string | null;
   match_status?: string;
+  paid_amount?: number | null;
+  remaining_amount?: number | null;
 }
 
 export interface Partner {

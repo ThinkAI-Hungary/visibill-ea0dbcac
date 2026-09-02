@@ -44,7 +44,8 @@ A bankkivonatok (bank statements) tételeinek és a számláknak az összevezet�
   * **Magyar végződés-illesztés (`+hu` szabály):** A banki kivonatokon gyakran előforduló egybeírt, országhivatkozásos partnernevek támogatására (pl. `WOLFHU` a `Wolf` céghez) a rendszer explicit módon engedélyezi a `partner_szó + "hu"` formájú egyezéseket.
   * **Biztonságos prefix-illesztés:** A rövidebb szavak véletlen egyezéseinek elkerülése érdekében szótöredékes/prefix-alapú illesztés csak a legalább 6 karakter hosszúságú név-kulcsszavak esetén engedélyezett (pl. `SimplePay` -> `SIMPLEP`).
 * **AI Fallback:** Ha a heurisztikus keresés bizonytalan, az LLM a `tranzakcio_parositas.md` prompt alapján kiszámítja a `confidence_score`-t, meghatározza a `match_type`-ot (`exact`, `partial`, `ai_suggested`), és elmenti a `gl_reasoning` indoklást a `transactions` táblába.
-* **Multi-match:** A kapcsolatokat a `transaction_invoice_matches` összekötő tábla tárolja (egy tranzakcióhoz több számla is tartozhat — pl. részfizetés vagy gyűjtőutalás).
+* **Multi-match és Részfizetés:** A kapcsolatokat a `transaction_invoice_matches` összekötő tábla tárolja (egy tranzakcióhoz több számla, vagy egy számlához több részletfizetési tranzakció is tartozhat).
+  * **Részfizetés (Partially Paid) Szabály:** A számla csak akkor minősül teljesítettnek (`paid = true` és `'matched'`), ha a kapcsolt tranzakciók összege eléri a számla bruttó összegét (`paid_amount >= gross_amount - 0.5 HUF`). Részösszeg esetén a számla státusza `'partially_paid'` (kék badge, hátralévő összeg kijelzése).
 
 ### B. Manuális Felülbírálás (Frontend)
 * **Felület:** A felhasználó a `TransactionDetailsDialog.tsx` ablakban kézzel kereshet és rendelhet hozzá számlát a tranzakcióhoz. Ekkor beállítódik a `is_verified = true` flag.
@@ -95,7 +96,9 @@ A rendszerben a számlák két külön táblában élnek: a feltöltött `invoic
 ## Kapcsolódó Dokumentáció
 - **ADR:** [A-006: Python Worker Architektúra](../../architecture/decisions/A-006-python-worker.md)
 - **ADR:** [A-022: Categories and Projects Sync](../../architecture/decisions/A-022-categories-projects-sync.md)
-- **PRD:** [P-018: Manuális Párosítás Felülírás](../decisions/P-018-manual-matching.md)
-- **PRD:** [P-043: GL Twin Sync](../decisions/P-043-gl-twin-sync.md)
+- **ADR:** [A-082: Partially Paid Invoices Status & Server-Side Aggregation](../../architecture/decisions/A-082-partially-paid-invoices-status.md)
+- **PRD:** [P-018: Manuális Párosítás Felülírás](../../product/decisions/P-018-manual-matching.md)
+- **PRD:** [P-043: GL Twin Sync](../../product/decisions/P-043-gl-twin-sync.md)
+- **PRD:** [P-064: Partially Paid Invoice Status UX](../../product/decisions/P-064-partially-paid-invoice-status-ux.md)
 - **Architecture:** [Shipment Matching frontend specifikáció](../../architecture/shipment-matching.md)
 - **Worker docs:** [Worker prompts specifikáció](../../../worker/docs/PROMPTS.md)

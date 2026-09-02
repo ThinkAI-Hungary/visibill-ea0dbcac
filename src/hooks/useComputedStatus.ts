@@ -7,18 +7,31 @@
 
 // ── Salary / Invoices ────────────────────────────────────────────────
 
-export type PaymentStatus = 'paid' | 'pending';
+export type PaymentStatus = 'paid' | 'partially_paid' | 'pending';
 
-export function computePaymentStatus(transactionId: string | null | undefined): PaymentStatus {
+export function computePaymentStatus(
+  transactionId: string | null | undefined,
+  matchStatus?: string | null
+): PaymentStatus {
+  if (matchStatus === 'partially_paid') return 'partially_paid';
   return transactionId ? 'paid' : 'pending';
 }
 
-export function getPaymentStatusBadge(transactionId: string | null | undefined) {
-  const status = computePaymentStatus(transactionId);
+export function getPaymentStatusBadge(
+  transactionId: string | null | undefined,
+  matchStatus?: string | null
+) {
+  const status = computePaymentStatus(transactionId, matchStatus);
   if (status === 'paid') {
     return {
-      label: 'Fizetve',
+      label: 'Kifizetve',
       className: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20',
+    };
+  }
+  if (status === 'partially_paid') {
+    return {
+      label: 'Részben fizetve',
+      className: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30',
     };
   }
   return {

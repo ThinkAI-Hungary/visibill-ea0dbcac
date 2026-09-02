@@ -134,6 +134,24 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
                   )}
                 </span>
               </div>
+              <div className="col-span-2 flex gap-1">
+                {matchedInvoice.invoice_direction && (
+                  <Badge variant="outline" className="text-[10px] h-5">
+                    {matchedInvoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
+                  </Badge>
+                )}
+                {(() => {
+                  const badge = getPaymentStatusBadge(
+                    matchedInvoice.transaction_id,
+                    (matchedInvoice as any).match_status
+                  );
+                  return (
+                    <Badge variant="outline" className={cn('text-[10px] h-5', badge.className)}>
+                      {badge.label}
+                    </Badge>
+                  );
+                })()}
+              </div>
             </div>
           ) : matchedNavInvoice ? (
             <div className="grid grid-cols-2 gap-2 text-xs">
@@ -178,11 +196,17 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
                     {matchedNavInvoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
                   </Badge>
                 )}
-                {!!matchedNavInvoice.transaction_id && (
-                  <Badge variant="success" className="text-[10px] h-5">
-                    Fizetve
-                  </Badge>
-                )}
+                {(() => {
+                  const badge = getPaymentStatusBadge(
+                    matchedNavInvoice.transaction_id,
+                    (matchedNavInvoice as any).match_status
+                  );
+                  return (
+                    <Badge variant="outline" className={cn('text-[10px] h-5', badge.className)}>
+                      {badge.label}
+                    </Badge>
+                  );
+                })()}
                 {matchedNavInvoice.submitted && (
                   <Badge variant="outline" className="text-[10px] h-5">
                     Beküldve

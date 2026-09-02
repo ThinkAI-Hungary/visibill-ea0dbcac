@@ -54,6 +54,7 @@ export function SubmittedInvoiceRow({
   const isSelected = selectedSubmittedIds.has(invoice.id);
   const matchStatus = (invoice as any).match_status || 'unmatched';
   const isMatched = matchStatus === 'matched';
+  const isPartiallyPaid = matchStatus === 'partially_paid';
   const isSuggested = matchStatus === 'suggested';
   const partnerName = activeTab === 'SUBMITTED_INBOUND' ? invoice.elado_nev || '-' : invoice.vevo_nev || '-';
 
@@ -86,8 +87,9 @@ export function SubmittedInvoiceRow({
           'group cursor-pointer',
           isSelected && 'bg-primary/5',
           !isSelected && isMatched && 'bg-[var(--row-matched-bg)]',
+          !isSelected && isPartiallyPaid && 'bg-blue-500/[0.06]',
           !isSelected && isSuggested && 'bg-[var(--row-suggested-bg)]',
-          !isSelected && !isMatched && !isSuggested && 'bg-[var(--row-unmatched-bg)]',
+          !isSelected && !isMatched && !isPartiallyPaid && !isSuggested && 'bg-[var(--row-unmatched-bg)]',
           isExpanded && 'border-b-0'
         )}
         onClick={(e) => onRowClick(invoice.id, e)}

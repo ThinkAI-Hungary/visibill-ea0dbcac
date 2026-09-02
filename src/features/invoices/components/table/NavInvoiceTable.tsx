@@ -64,11 +64,15 @@ export function NavInvoiceTable({
         className="mb-3"
       />
 
-      <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground">
+      <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground flex-wrap">
         <span className="font-medium">Jelmagyarázat:</span>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-[var(--row-matched-bg)] border-l-2 border-l-[var(--row-matched-border)]" />
           <span>Párosított / Kifizetve</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm bg-blue-500/15 border-l-2 border-l-blue-500" />
+          <span>Részben fizetve</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-[var(--row-suggested-bg)] border-l-2 border-l-[var(--row-suggested-border)]" />
@@ -81,10 +85,6 @@ export function NavInvoiceTable({
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-orange-500/10 border-l-2 border-l-orange-400" />
           <span>Kompenzálandó</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-background border border-border/50" />
-          <span>Nincs párosítás</span>
         </div>
       </div>
 

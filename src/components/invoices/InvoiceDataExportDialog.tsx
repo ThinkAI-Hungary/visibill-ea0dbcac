@@ -22,6 +22,9 @@ export interface ExportableInvoice {
   vat_amount: number;
   currency: string;
   paid?: boolean;
+  match_status?: string;
+  paid_amount?: number | null;
+  remaining_amount?: number | null;
   submitted?: boolean;
   category_name?: string;
   project_name?: string;

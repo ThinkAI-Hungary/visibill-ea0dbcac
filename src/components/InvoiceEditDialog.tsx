@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -70,7 +70,7 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
     }
   };
 
-  const paymentBadge = invoice ? getPaymentStatusBadge(invoice.transaction_id) : null;
+  const paymentBadge = invoice ? getPaymentStatusBadge(invoice.transaction_id, (invoice as any).match_status) : null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

@@ -4,7 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InlineTransactionList } from './InlineTransactionList';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
+import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import type { MatchedNavInvoice, MatchedTransaction } from './types';
@@ -62,11 +63,15 @@ export function MatchedNavInvoicesSection({
                   Párosított
                 </Badge>
                 <div className="flex gap-1">
-                  {!!inv.transaction_id && (
-                    <Badge variant="outline" className="text-[10px] h-5">
-                      Fizetve
-                    </Badge>
-                  )}
+                  {(() => {
+                    if (!inv.transaction_id && !(inv as any).match_status) return null;
+                    const badge = getPaymentStatusBadge(inv.transaction_id, (inv as any).match_status);
+                    return (
+                      <Badge variant="outline" className={cn('text-[10px] h-5', badge.className)}>
+                        {badge.label}
+                      </Badge>
+                    );
+                  })()}
                   {inv.submitted && (
                     <Badge variant="outline" className="text-[10px] h-5">
                       Beküldve
