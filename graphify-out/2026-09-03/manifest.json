@@ -165,8 +165,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceImagePreview.tsx": {
-    "mtime": 1788445833.973258,
-    "ast_hash": "9c39b60904ef09b228c82819d10e8778",
+    "mtime": 1788447964.7211967,
+    "ast_hash": "cfde3fc7741375ccfb208b9dfae0d975",
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
@@ -8765,8 +8765,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-084-nav-crosscheck-approval-gate.md": {
-    "mtime": 1788443964.5673032,
-    "ast_hash": "c65c38b72dacb0ea9834aff88d8aed65",
+    "mtime": 1788445991.0672808,
+    "ast_hash": "9888e8f9defdd3bb79e6e014a2612990",
     "semantic_hash": ""
   },
   "docs/business/decisions/048-nav-crosscheck-approval-gate.md": {
@@ -8775,8 +8775,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-065-nav-crosscheck-approval-gate-ux.md": {
-    "mtime": 1788443987.454,
-    "ast_hash": "aad4015ce33eafb57aee67ab19da1664",
+    "mtime": 1788445967.350894,
+    "ast_hash": "699480fc588be36c36139262e5185366",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-085-gl-date-basis-rpc-and-chunk-error-recovery.md": {
@@ -8840,8 +8840,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260903170000_link_and_verify_submitted_invoice.sql": {
-    "mtime": 1788442218.6057427,
-    "ast_hash": "8bb2049ef1578c219059505cc7137799",
+    "mtime": 1788447954.9758625,
+    "ast_hash": "5172161c61a21b78f4386014c4d74bfa",
     "semantic_hash": ""
   }
 }

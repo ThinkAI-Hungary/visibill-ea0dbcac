@@ -107,8 +107,29 @@ Email webhook upload:
 
 **Migration:** `20260707_fix_dedup_trigger_email_bypass.sql`
 
+### 2026-09-03: P3 Worker-oldali Fuzzy Duplikáció-Szűrő és Bankszámlaszám Védelem (B-commerce Incidens)
+
+**Incidens:** FAKOV Kft. (Tóth-Csepregi Judit) support ticket. A szlovák *B-commerce Group s.r.o.* (`SK2121115601`) bejövő számláját a felhasználó kétszer töltötte fel (előbb egy 23 számlás kötegelt szkenben, később egyedi PDF-ként).
+
+**Root cause:**
+1. A szlovák számlán a Citibank forintos bankszámlaszám felett magyar nyelvű feliratként `"Számlaszám"` állt (`10800007-80000000-15562005`), míg a tényleges számlasorszám az `"Adódokumentum / Egyedi azonosító: 2146000883"` mezőben szerepelt.
+2. A korábbi `sima_szamla.md`, `vegszamla.md` és `egyszerusitett_szamla.md` promptok JSON sémájában nem létezett `bankszamlaszam_iban` mező, így az AI a banki számlaszámot írta a `szamlaszam` mezőbe.
+3. A két feltöltés OCR szövege között karaktereltérés keletkezett (`10800007-...` 4 db nulla vs `108000007-...` 5 db nulla), ami miatt a worker `upsert_invoice()` Check 2 pontos kulcsos egyezése (`company_id, bizonylatsorszam`) elbukott, duplikátumot hozva létre a rendszerben.
+
+**Megoldás & Védelmi rétegek:**
+1. **Prompt Standardizáció:** `bankszamlaszam_iban` bevezetése a `sima_szamla`, `vegszamla`, `egyszerusitett_szamla` promptokba. Határozott tiltás magyar (`XXXXXXXX-XXXXXXXX(-XXXXXXXX)`) és IBAN formátumok `szamlaszam`-ba írására, explicit szabály külföldi webshop / szlovák számlák felirataihoz.
+2. **Pydantic Model Validáció (`worker/models.py`):**
+   - `clean_szamlaszam()` automatikusan detektálja és elutasítja a banki számlaszám formátumokat (`is_bank_account_number()`).
+   - A modellek `@model_validator(mode="before")` segítségével kimentik a felismert banki adatot a `bankszamlaszam_iban` mezőbe, és ha létezik valós bizonylatazonosító (`reference_number`), azt előléptetik számlasorszámmá.
+3. **Worker Check 3 Fuzzy Dedup (`worker/db.py`):**
+   - Lekérdezi a partner meglévő bizonylatait azonos cégre, bruttó összegre és devizára ±30 napos ablakban.
+   - **Case 3a (OCR typo / bank collision / similarity >= 0.85):** Automatikus rekordfrissítés / merge, felülírva a hibás banki sorszámot a valós számlaszámmal.
+   - **Case 3b (Gyanús egyezés - azonos partner és összeg 30 napon belül, de eltérő sorszám):** Beszúrás `statusz = 'jovahagyasra_var'` státusszal és magyarázó `approval_note` figyelmeztetéssel (ADR A-084 könyvelői kapu).
+4. **Pre-push Teszt Védelem:** `test_bcommerce_duplicate_prevention.py` (13 egységteszt integrálva a `run_tests.py` futtatóba).
+
 ## Kapcsolódó
 - [A-004: PGMQ Queue](./A-004-pgmq-queue.md) — a dedup guard a `pgmq.send()` előtt fut
 - [A-007: LLM Strategy](./A-007-llm-strategy.md) — a felesleges hívások költségvonzata
 - [A-011: Mailgun Email Processing](./A-011-email-processing.md) — Message-Id idempotency az email pipeline-ban
 - [A-016: PostgreSQL Query Strategy](./A-016-postgresql-query-strategy.md) — trigger típusok dokumentáció
+- [A-084: NAV Cross-check & Accountant Approval Gate](./A-084-nav-crosscheck-approval-gate.md) — könyvelői jóváhagyási kapu és approval_note kezelés

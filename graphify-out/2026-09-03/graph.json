@@ -81507,7 +81507,7 @@
       "label": "7. Bizonylatsz\u00e1m K\u00e9zi Szerkeszt\u00e9se & Automatikus Felold\u00e1sa UX",
       "file_type": "document",
       "source_file": "docs/product/decisions/P-065-nav-crosscheck-approval-gate-ux.md",
-      "source_location": "L81",
+      "source_location": "L83",
       "_origin": "ast",
       "id": "decisions_p_065_nav_crosscheck_approval_gate_ux_7_bizonylatsz\u00e1m_k\u00e9zi_szerkeszt\u00e9se_automatikus_felold\u00e1sa_ux",
       "community": 467,
@@ -81517,7 +81517,7 @@
       "label": "Rationale",
       "file_type": "document",
       "source_file": "docs/product/decisions/P-065-nav-crosscheck-approval-gate-ux.md",
-      "source_location": "L90",
+      "source_location": "L92",
       "_origin": "ast",
       "id": "decisions_p_065_nav_crosscheck_approval_gate_ux_rationale",
       "community": 467,
@@ -81527,7 +81527,7 @@
       "label": "Kapcsol\u00f3d\u00f3",
       "file_type": "document",
       "source_file": "docs/product/decisions/P-065-nav-crosscheck-approval-gate-ux.md",
-      "source_location": "L93",
+      "source_location": "L95",
       "_origin": "ast",
       "id": "decisions_p_065_nav_crosscheck_approval_gate_ux_kapcsol\u00f3d\u00f3",
       "community": 467,
@@ -96329,9 +96329,9 @@
       "source_file": "src/components/InvoiceImagePreview.tsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "components_invoiceimagepreview",
-      "target": "lib_utils",
-      "confidence_score": 1.0
+      "target": "lib_utils"
     },
     {
       "relation": "imports",
@@ -96340,9 +96340,9 @@
       "source_file": "src/components/InvoiceImagePreview.tsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "components_invoiceimagepreview",
-      "target": "lib_utils_cn",
-      "confidence_score": 1.0
+      "target": "lib_utils_cn"
     },
     {
       "relation": "imports_from",
