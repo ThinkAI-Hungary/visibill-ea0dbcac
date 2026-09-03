@@ -243,6 +243,9 @@ export function LiveNotificationProvider() {
               'payment-transfers-history', 'due-transfer-invoices',
               'company-invoices',
             );
+            queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
+            queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
+            queryClientRef.current.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
             if (payload.eventType === 'INSERT') {
               const row = payload.new as any;
               if (row.invoice_uploads_id) {
@@ -370,6 +373,19 @@ export function LiveNotificationProvider() {
           (payload) => {
             if (!isMyCompany(payload)) return;
             invalidate('payment-transfers-history', 'due-transfer-invoices');
+          }
+        )
+
+        // ━━ ACC_JOURNAL_HEADERS table (Napló és Főkönyv valós idejű szinkronizáció) ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'acc_journal_headers' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('acc-journal-entries', 'subledger-reconciliation');
+            queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
+            queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
+            queryClientRef.current.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
           }
         )
 

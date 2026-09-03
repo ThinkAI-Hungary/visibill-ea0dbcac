@@ -52,6 +52,22 @@ A Postgres szintű adatintegritásra épülő, trigger- és RPC-vezérelt modul�
 - **Lekérdezési korlát emelése:** A `useQuery` alapértelmezett 1 000 soros PostgREST limitje `.limit(10000)` direktívára növelve, biztosítva az összes naplótétel hiánytalan elérését.
 - **Kétlépcsős Deviza Árfolyam-feloldás:** A felület (`JournalsPage.tsx`) cache-elt `daily_exchange_rates` lekérdezést futtat; amennyiben a tétel fejadatában nincs eltárolt árfolyam vagy 1-es érték szerepel, a kliens azonnal az adott teljesítési nap hivatalos MNB árfolyamával kalkulálja és jeleníti meg a forintösszeget.
 
+### 6. Nyitóadatok és Főkönyvi Kivonat (GL) Integráció (2026-09-03 — Migráció `20260903120000`)
+- **Főkönyvi és Napló Szinkron:** A `get_gl_balances` és `get_gl_categorized_items` kibővült a lekönyvelt naplósorok (`acc_journal_lines`, ahol `h.status = 'KONYVELT'`) aggregációjával. Ezáltal a Nyitó naplóban (NY), a Vegyes naplóban (VE) és a többi naplóban lekönyvelt tételek közvetlenül és hiánytalanul megjelennek a Főkönyvi kivonatban, a kartonokon és a mérleg-kimutatásokban.
+- **Duplikáció-védelem:** Az operatív ágak (`invoice_items`, `nav_invoice_items`, `transactions`) `NOT EXISTS` szűréssel kizárják azokat az elemeket, amelyek import kulcsa (`import_key`) már szerepel egy lekönyvelt naplófejben (`acc_journal_headers.status = 'KONYVELT'`). Így amikor egy tétel lekönyvelésre kerül a naplóban, a forrás analitika helyett zökkenőmentesen és duplikációmentesen a hivatalos naplóág jeleníti meg az egyenleget.
+- **Indexelés és Skálázhatóság:** 4 db célzott B-tree index került létrehozásra (`idx_acc_journal_headers_company_status_date`, `idx_acc_journal_headers_import_key_konyvelt`, `idx_acc_journal_lines_header_gl`, `idx_acc_journal_lines_gl_account`), biztosítva a millimásodperces egyenlegkalkulációt tízezres tételszám mellett is.
+
+### 7. Körkörös Piszkozat-Védelem, Keményített Rekonciliáció és Realtime Szinkron (2026-09-03 — Migráció `20260903130000`)
+- **Körkörös Piszkozat-Generálás Kizárása (`acc_generate_drafts_from_ledger`):** Mivel a `get_gl_categorized_items` immár az `acc_journal_lines` sorokat is visszaadja a főkönyv számára, a naplójavaslat-generátor a fő ciklusában szigorú forrásszűrést alkalmaz (`AND source_table IN ('transactions', 'invoice_items', 'nav_invoice_items', 'journal_entry')`), és a vegyes napló ág (Case C) kizárólag a külső XML importokra (`source_table = 'journal_entry'`) fut le. Az `acc_journal_lines` tételek feldolgozása szigorúan kihagyásra kerül (`ELSE CONTINUE;`), megelőzve, hogy a már lekönyvelt nyitó/záró sorokból felesleges vagy hibás duplikált vegyes bizonylatok képződjenek.
+- **Stabilitás és Több Bizonylatos Rekonciliáció (`acc_check_opening_subledger_reconciliation`):**
+  - **Összesített bizonylatkezelés:** A korábbi `LIMIT 1` helyett a függvény a tárgyév valamennyi lekönyvelt `NY` bizonylatának 311-es és 454-es sorát összesíti (`WHERE h.company_id = p_company_id AND j.code = 'NY' AND h.accounting_year = p_year AND h.status = 'KONYVELT'`).
+  - **Későbbi kifizetések védelme:** Az analitika összegző nem csak a pillanatnyilag kifizetetlen számlákat veszi figyelembe, hanem azokat is, amelyek kifizetése a nyitó évben vagy később történt (`manual_payment_date >= MAKE_DATE(p_year, 1, 1)` vagy banki tranzakció `t.transaction_date >= MAKE_DATE(p_year, 1, 1)`). Ezáltal egy 2025-ös vevőkövetelés 2026. februári kifizetése nem rontja el a 2026. évi nyitó analitikai egyensúlyt.
+  - **Dátumszűrés:** `COALESCE(kibocsatas_datuma, teljesites_datuma) < MAKE_DATE(p_year, 1, 1)`.
+- **Lekönyvelt Tételek UX Védelme (`GeneralLedgerTable.tsx`):** A kettős könyvvitel (Sztv.) és a `trg_acc_enforce_line_immutability` trigger szellemében a lekönyvelt naplósoroknál és audit importoknál a felület elrejti a gyors átsorolás gombot (`Edit2`) és a tömeges kijelölés checkboxát, kizárva a véletlen vagy érvénytelen módosítási kísérleteket.
+- **Valós Idejű és Azonnali Cache Szinkronizáció:**
+  - `OpeningJournalWizardModal.tsx` és `JournalsPage.tsx`: Könyvelési művelet lefutásakor azonnal invalidálja a `glBalances`, `glItems` és `subledger-reconciliation` query kulcsokat.
+  - `LiveNotificationProvider.tsx`: Globális `postgres_changes` csatornán figyeljük az `acc_journal_headers` tábla változásait, így a Naplóban történő könyvelés azonnal és automatikusan frissíti az aktív Főkönyvi kivonatot minden megnyitott kliensen.
+
 ## Consequences
 
 **Pozitív:**
@@ -59,6 +75,8 @@ A Postgres szintű adatintegritásra épülő, trigger- és RPC-vezérelt modul�
 - Adatbázis szinten garantált egyensúly és változtathatatlanság (még közvetlen SQL injection vagy hiba esetén sem kerülhet be hibás tétel).
 - Részletes audit trail minden könyvelési eseményhez.
 - Nagy adathalmazok esetén is atomi, másodpercek alatt lefutó szerveroldali kontírozás timeout és rate limit kockázatok nélkül.
+- Tökéletes összhang a Naplók és a Főkönyvi kivonat (GL) között: a nyitó és lekönyvelt tételek azonnal láthatóak a mérlegszámlákon (pl. 311, 4531, 491 = 0 Ft).
+- Nincs körkörös javaslatképzés és az analitikai egyeztetés az évközi számlakifizetések után is 100%-ban stabil marad.
 
 **Negatív / Kötöttségek:**
 - A lekönyvelt tételeket a felhasználó közvetlenül nem írhatja felül; a javítás mindig 2-lépéses sztornó műveletet igényel.

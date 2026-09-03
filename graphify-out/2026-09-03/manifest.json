@@ -175,8 +175,8 @@
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
-    "mtime": 1788387654.4781876,
-    "ast_hash": "04e6f45d9a92076c411da6d5db23465e",
+    "mtime": 1788407661.7747297,
+    "ast_hash": "76812dcf42736899ee9682003569a5b5",
     "semantic_hash": ""
   },
   "src/components/NylasEmailConnect.tsx": {
@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1788392228.487186,
-    "ast_hash": "f66af91a9d90ab6f4357d2d69b0c35ba",
+    "mtime": 1788407628.6508372,
+    "ast_hash": "c2411da45d137a27133322ae3318e885",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -3050,8 +3050,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-012-nav-integration.md": {
-    "mtime": 1788217256.4875567,
-    "ast_hash": "691bee6615ded7a6aa996b59862b0151",
+    "mtime": 1788404925.4892495,
+    "ast_hash": "8aa45e3034a4ab2ec04bfa66f03c8355",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-013-scoped-routing.md": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788366993.7238963,
-    "ast_hash": "1fe723fa343d1cb00b8f053382c0aefc",
+    "mtime": 1788406939.278353,
+    "ast_hash": "a586bda89b2101165baf3ac5dc25c4a2",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1788400664.1134903,
-    "ast_hash": "8be71836b34080308be263797631f6d3",
+    "mtime": 1788407643.421605,
+    "ast_hash": "14e623c4baa2697c836ff74b10305907",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -7265,13 +7265,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/22-accounting-journals.md": {
-    "mtime": 1788400846.7720563,
-    "ast_hash": "0e331b39904c9307f2442aec6549fa1d",
+    "mtime": 1788406924.71698,
+    "ast_hash": "dd0b88a2b3bd4a1f8bda33a2f1bc938a",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-057-accounting-journals-architecture.md": {
-    "mtime": 1788400857.5746791,
-    "ast_hash": "a9a7126ea631c9adff73389a838223ab",
+    "mtime": 1788406913.9373302,
+    "ast_hash": "deffc419e10a664d4a11d43a027074b6",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-058-bank-transfers-architecture.md": {
@@ -8155,13 +8155,13 @@
     "semantic_hash": ""
   },
   "src/components/journals/OpeningJournalWizardModal.tsx": {
-    "mtime": 1788290723.069342,
-    "ast_hash": "e9e7787dafe1420ce8065090dbc19ee3",
+    "mtime": 1788407635.2893238,
+    "ast_hash": "b4c7d512b52075dd275c418a2a23653f",
     "semantic_hash": ""
   },
   "src/lib/nav/__tests__/navProtocol.test.ts": {
-    "mtime": 1788216828.9330392,
-    "ast_hash": "bda2a620c02db9b51d68ffd095899552",
+    "mtime": 1788404794.8768716,
+    "ast_hash": "c287bbaab56f167257f85ac4946418e9",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PromptsPage.tsx": {
@@ -8185,8 +8185,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/nav-ingestion-service.ts": {
-    "mtime": 1788214932.0706964,
-    "ast_hash": "8dfc85d36b3ec6dedc8375343833d2ba",
+    "mtime": 1788404786.4504807,
+    "ast_hash": "a7614d9c7d4e57d1b7009b0e8de2cf47",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/types.ts": {
@@ -8195,13 +8195,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/xml-builder.ts": {
-    "mtime": 1788212979.665368,
-    "ast_hash": "bcb394e3096434ccd141b1ffdefb4df1",
+    "mtime": 1788404766.5105958,
+    "ast_hash": "474f4e4464d16051e5ebcf21a10fd223",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/xml-parser.ts": {
-    "mtime": 1788216777.010874,
-    "ast_hash": "cc86a310ebf6b577446ce0aafe70d781",
+    "mtime": 1788404778.6928427,
+    "ast_hash": "6fd282281fea9f93aa6ca1243fc94e73",
     "semantic_hash": ""
   },
   "supabase/functions/generate-company-description/index.ts": {
@@ -8817,6 +8817,16 @@
   "supabase/migrations/20260903110000_accounting_journals_daily_exchange_rates.sql": {
     "mtime": 1788400536.2891543,
     "ast_hash": "1d1e201166dff0e56bd5739d14f098a2",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260903120000_acc_opening_and_gl_balances_integration.sql": {
+    "mtime": 1788406792.334256,
+    "ast_hash": "172acbf6e2e440142007092724c6e525",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260903130000_acc_drafts_circular_protection_and_reconciliation_hardening.sql": {
+    "mtime": 1788407520.957081,
+    "ast_hash": "1b68e629c95ba656f06bf067d7fe8ee3",
     "semantic_hash": ""
   }
 }

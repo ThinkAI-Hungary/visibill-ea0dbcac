@@ -316,6 +316,9 @@ export default function JournalsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
       toast({ title: "Tétel sikeresen lekönyvelve" });
     },
     onError: (err) => {
@@ -339,6 +342,9 @@ export default function JournalsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
       setSelectedEntryIds(new Set());
       toast({ title: "Kijelölt tételek sikeresen lekönyvelve" });
     },

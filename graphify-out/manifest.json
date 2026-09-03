@@ -175,8 +175,8 @@
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
-    "mtime": 1788387654.4781876,
-    "ast_hash": "04e6f45d9a92076c411da6d5db23465e",
+    "mtime": 1788407661.7747297,
+    "ast_hash": "76812dcf42736899ee9682003569a5b5",
     "semantic_hash": ""
   },
   "src/components/NylasEmailConnect.tsx": {
@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1788392228.487186,
-    "ast_hash": "f66af91a9d90ab6f4357d2d69b0c35ba",
+    "mtime": 1788407628.6508372,
+    "ast_hash": "c2411da45d137a27133322ae3318e885",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788366993.7238963,
-    "ast_hash": "1fe723fa343d1cb00b8f053382c0aefc",
+    "mtime": 1788407901.6226704,
+    "ast_hash": "dde640b3745584b51111e9b4fc355e52",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1788400664.1134903,
-    "ast_hash": "8be71836b34080308be263797631f6d3",
+    "mtime": 1788407643.421605,
+    "ast_hash": "14e623c4baa2697c836ff74b10305907",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -7265,13 +7265,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/22-accounting-journals.md": {
-    "mtime": 1788400846.7720563,
-    "ast_hash": "0e331b39904c9307f2442aec6549fa1d",
+    "mtime": 1788407878.036765,
+    "ast_hash": "59e4dd8af46a13313e7078ed22ff9d7b",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-057-accounting-journals-architecture.md": {
-    "mtime": 1788400857.5746791,
-    "ast_hash": "a9a7126ea631c9adff73389a838223ab",
+    "mtime": 1788407867.4301322,
+    "ast_hash": "167dcce3d65c2bd5a9232761b2cc3264",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-058-bank-transfers-architecture.md": {
@@ -8155,8 +8155,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/OpeningJournalWizardModal.tsx": {
-    "mtime": 1788290723.069342,
-    "ast_hash": "e9e7787dafe1420ce8065090dbc19ee3",
+    "mtime": 1788407635.2893238,
+    "ast_hash": "b4c7d512b52075dd275c418a2a23653f",
     "semantic_hash": ""
   },
   "src/lib/nav/__tests__/navProtocol.test.ts": {
@@ -8817,6 +8817,16 @@
   "supabase/migrations/20260903110000_accounting_journals_daily_exchange_rates.sql": {
     "mtime": 1788400536.2891543,
     "ast_hash": "1d1e201166dff0e56bd5739d14f098a2",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260903120000_acc_opening_and_gl_balances_integration.sql": {
+    "mtime": 1788406792.334256,
+    "ast_hash": "172acbf6e2e440142007092724c6e525",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260903130000_acc_drafts_circular_protection_and_reconciliation_hardening.sql": {
+    "mtime": 1788407520.957081,
+    "ast_hash": "1b68e629c95ba656f06bf067d7fe8ee3",
     "semantic_hash": ""
   }
 }

@@ -240,6 +240,9 @@ export default function OpeningJournalWizardModal({
     },
     onSuccess: (newHeaderId) => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
       toast({ title: 'Sikeres nyitás!', description: 'A Nyitó tételek lekönyvelése sikeresen megtörtént!' });
       setStep(4);
     },

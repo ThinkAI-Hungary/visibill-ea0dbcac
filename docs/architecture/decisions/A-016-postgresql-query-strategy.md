@@ -57,8 +57,8 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 |---|---|---|---|
 | `get_pnl_report(p_company_id, p_preset_id, p_date_from?, p_date_to?, p_exchange_rates?)` | DEFINER | ProfitAndLoss.tsx | Eredménykimutatás aggregáció |
 | `get_bs_report(p_company_id, p_preset_id, p_date_to?, p_fiscal_year?, p_exchange_rates?)` | DEFINER | BalanceSheet.tsx | Mérleg aggregáció |
-| `get_gl_balances(p_company_id, p_preset_id, p_date_from?, p_date_to?, p_exchange_rates?)` | DEFINER | GeneralLedgerTable.tsx | Főkönyvi egyenlegek |
-| `get_gl_categorized_items(p_company_id, p_preset_id, p_date_from?, p_date_to?, p_exchange_rates?)` | DEFINER | GeneralLedgerTable.tsx | GL drill-down tételek |
+| `get_gl_balances(p_company_id, p_preset_id, p_date_from?, p_date_to?, p_exchange_rates?, p_date_basis?)` | DEFINER | GeneralLedgerTable.tsx | Főkönyvi egyenlegek (operatív + XML + lekönyvelt acc_journal_lines aggregáció duplikáció-védelemmel) |
+| `get_gl_categorized_items(p_company_id, p_preset_id, p_date_from?, p_date_to?, p_exchange_rates?, p_date_basis?)` | DEFINER | GeneralLedgerTable.tsx | GL drill-down tételek (operatív tételek, XML tételek és lekönyvelt naplótételek) |
 | `get_invoice_aggregates(p_company_id, p_date_from, p_date_to)` | DEFINER | useDashboardData.ts | Dashboard számla összesítők |
 | `get_nav_invoice_aggregates(p_company_id, p_date_from, p_date_to)` | DEFINER | useDashboardData.ts | Dashboard NAV összesítők |
 | `get_invoice_kpis(p_company_id, p_date_from, p_date_to, p_direction, p_source, ...)` | DEFINER | useInvoiceFilters.ts | Számla menü KPI kártyák szerver-oldali aggregációja (total, matched, suggested, unmatched) |
@@ -91,10 +91,10 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `acc_post_journal_entry(p_header_id, p_user_id)` | DEFINER | JournalsPage.tsx | Könyvelési tétel egyensúly-ellenőrzött véglegesítése |
 | `acc_storno_journal_entry(p_header_id, p_user_id, p_reason, p_create_correction)` | DEFINER | JournalsPage.tsx | Könyvelési tétel ellenirányú sztornózása és javító piszkozat |
 | `acc_seed_default_journals(p_company_id)` | DEFINER | CompanyContext.tsx | 9 alapértelmezett kettős könyvviteli napló létrehozása |
-| `acc_generate_drafts_from_ledger(p_company_id, p_preset_id)` | DEFINER | JournalsPage.tsx | Könyvelési tétel javaslatok generálása kategorizált főkönyvi adatokból (preset & company GL feloldással, FK 23503 védelemmel) |
+| `acc_generate_drafts_from_ledger(p_company_id, p_preset_id)` | DEFINER | JournalsPage.tsx | Könyvelési tétel javaslatok generálása kategorizált főkönyvi adatokból (preset & company GL feloldással, FK 23503 védelemmel, belső naplósorok körkörösség-védelmével) |
 | `acc_validate_and_post_opening_entry(p_header_id, p_user_id)` | DEFINER | OpeningJournalWizardModal.tsx | Nyitó napló tétel validálása (491 technikai számla egyensúly, 1-4 számlaosztály) és véglegesítése |
 | `acc_generate_post_opening_reconciliations(p_company_id, p_year, p_user_id)` | DEFINER | OpeningJournalWizardModal.tsx | Nyitás utáni automatikus rendező tételek (419 átvezetés, ÁFA összevezetés) generálása |
-| `acc_check_opening_subledger_reconciliation(p_company_id, p_year)` | DEFINER | OpeningJournalWizardModal.tsx | Vevő/szállító analitika és 311/454 főkönyvi nyitó egyeztetés lekérdezése |
+| `acc_check_opening_subledger_reconciliation(p_company_id, p_year)` | DEFINER | OpeningJournalWizardModal.tsx | Vevő/szállító analitika és 311/454 főkönyvi nyitó egyeztetés (több NY bizonylat aggregálással és időtálló kifizetettségi állapotkezeléssel) |
 
 #### 🔑 2.3 Auth & Credential RPC-k
 

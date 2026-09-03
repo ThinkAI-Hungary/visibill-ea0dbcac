@@ -179,8 +179,26 @@
 - **Funkció:** `public.acc_storno_journal_entry(p_header_id uuid, p_user_id uuid, p_reason text, p_create_correction boolean)`
 - **Működés:** Az eredeti tételt `SZTORNOZOTT` állapotba helyezi, ellentétes előjelű stornó tételt könyvel le, és opcionálisan létrehoz egy módosítható `KEZI_PISZKOZAT` javító tételt.
 
-### 4. Nyitó Varázsló Műveletek
+### 4. Nyitó Varázsló Műveletek & Főkönyvi (GL) Integráció (Migrációk: `20260903120000`, `20260903130000`)
 - `acc_validate_and_post_opening_entry`: Sztv. 491. Technikai Nyitómérleg egyensúly és 1-4 számlaosztály ellenőrzése.
 - `acc_generate_post_opening_reconciliations`: Nyitás utáni 419 átvezetés és előző évi ÁFA rendezés.
-- `acc_check_opening_subledger_reconciliation`: Analitika és 311/454 nyitó egyeztetés.
+- `acc_check_opening_subledger_reconciliation(p_company_id, p_year)`:
+  - Analitika és 311/454 nyitó egyeztetés.
+  - A valós `invoices` mezőket (`brutto_vegosszeg`, `adoalap_osszesen + afa_osszeg_osszesen`, `fizetve`) használja.
+  - Kizárólag a tárgyév kezdete előtti bizonylatokat vizsgálja (`COALESCE(kibocsatas_datuma, teljesites_datuma) < MAKE_DATE(p_year, 1, 1)`).
+  - **Időtálló kifizetettségi szűrés:** A nyitáskori állapotot tükrözi, így a tárgyévben vagy később kifizetett számlák (`manual_payment_date >= MAKE_DATE(p_year, 1, 1)` vagy banki tranzakció `t.transaction_date >= MAKE_DATE(p_year, 1, 1)`) a kifizetésük után is a nyitó analitika részei maradnak.
+  - **Összesített bizonylatok:** A korábbi `LIMIT 1` helyett a tárgyév valamennyi lekönyvelt `NY` bizonylatát aggregálja.
+- `acc_generate_drafts_from_ledger`:
+  - A fő ciklusban szigorúan kizárja a belső lekönyvelt naplósorokat (`AND source_table IN ('transactions', 'invoice_items', 'nav_invoice_items', 'journal_entry')`).
+  - A Case C vegyes bizonylati ág kizárólag az XML importokra (`source_table = 'journal_entry'`) fut le, megelőzve a körkörös javaslatképzést.
+- `get_gl_balances` & `get_gl_categorized_items`:
+  - Beemeli az `acc_journal_lines` lekönyvelt (`status = 'KONYVELT'`) sorait.
+  - Az operatív ágak (`invoice_items`, `nav_invoice_items`, `transactions`) `NOT EXISTS` feltétellel kizárják a naplóban már lekönyvelt tételeket, kizárva a duplikációt.
+
+### 5. Célzott Indexek
+- `idx_acc_journal_headers_company_status_date`: `(company_id, status, posting_date)`
+- `idx_acc_journal_headers_import_key_konyvelt`: `(company_id, import_key) WHERE status = 'KONYVELT'`
+- `idx_acc_journal_lines_header_gl`: `(header_id, gl_account_id)`
+- `idx_acc_journal_lines_gl_account`: `(gl_account_id)`
+
 

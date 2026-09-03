@@ -871,10 +871,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                         {row.isItem ? (
                            <>
                              <div className="print:hidden h-full flex items-center" onClick={e => e.stopPropagation()}>
-                               <Checkbox 
-                                 checked={selectedItemIds.has(row.id)} 
-                                 onCheckedChange={() => toggleItemSelection(row.id)}
-                               />
+                               {row.sourceTable !== 'acc_journal_lines' && row.sourceTable !== 'journal_entry' ? (
+                                 <Checkbox 
+                                   checked={selectedItemIds.has(row.id)} 
+                                   onCheckedChange={() => toggleItemSelection(row.id)}
+                                 />
+                               ) : (
+                                 <div className="w-4" />
+                               )}
                              </div>
                              <span className="text-xs truncate">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : ''}</span>
                            </>
@@ -983,7 +987,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             </span>
                           )}
                         </div>
-                        {row.isItem ? (
+                        {row.isItem && row.sourceTable !== 'acc_journal_lines' && row.sourceTable !== 'journal_entry' ? (
                           <Button
                             variant="ghost" 
                             size="icon" 
@@ -996,6 +1000,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                               setSearchQuery('');
                               setIsEditOpen(true);
                             }}
+                            title="Főkönyvi szám módosítása"
                           >
                             <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
                           </Button>
