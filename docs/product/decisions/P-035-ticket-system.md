@@ -3,7 +3,7 @@
 **Status:** Decided  
 **Category:** Ügyfélszolgálat & Support  
 **BRD Reference:** Decision 036 (Hibajegy rendszer)  
-**Utolsó frissítés:** 2026-09-01
+**Utolsó frissítés:** 2026-09-03
 
 **Question:** Hogyan néz ki a hibajegy rendszer felülete?
 
@@ -22,6 +22,8 @@
 - Ticket típusok: Hibajelentés (bug), Visszajelzés (feedback), Kérdés (question)
 - Ticket prioritás: alacsony/közepes/magas/kritikus — user választhatja beküldéskor
 - Ticket lista: kereshető (jegyszám, üzenet, cég, email), szűrhető (multi-status, prioritás, platform)
+  - Keresés: a `stripHtml(t.message)` használatával a tiszta szövegben keres, kiszűrve a HTML tageket és stílusosztályokat a pontos találatokért
+  - Tárgy és előnézet formázás: `getTicketSummary(ticket.message)` intelligens szóhatár-tördelést (~55 karakter) és bekezdés-összevonást alkalmaz, megszüntetve a nyers HTML tagek (`<p>`, `</p>`, `<ol>`, `<li>`, entitások) megjelenését és a szavak félbevágását a táblázatban, Kezelőkonzol oldalsávban és a Terhelés & Elosztás nézetben
 - Pagináció: 15 jegy/oldal (sima user), 25 jegy/oldal (support admin)
 - Multi-status szűrő: egyszerre több státusz szűrhető (pl. Új + Folyamatban) — Popover + Checkbox UI
 - Ticket részletek (`TicketDetailView.tsx`):

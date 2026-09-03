@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788406939.278353,
-    "ast_hash": "a586bda89b2101165baf3ac5dc25c4a2",
+    "mtime": 1788407901.6226704,
+    "ast_hash": "dde640b3745584b51111e9b4fc355e52",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -7265,13 +7265,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/22-accounting-journals.md": {
-    "mtime": 1788406924.71698,
-    "ast_hash": "dd0b88a2b3bd4a1f8bda33a2f1bc938a",
+    "mtime": 1788407878.036765,
+    "ast_hash": "59e4dd8af46a13313e7078ed22ff9d7b",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-057-accounting-journals-architecture.md": {
-    "mtime": 1788406913.9373302,
-    "ast_hash": "deffc419e10a664d4a11d43a027074b6",
+    "mtime": 1788407867.4301322,
+    "ast_hash": "167dcce3d65c2bd5a9232761b2cc3264",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-058-bank-transfers-architecture.md": {

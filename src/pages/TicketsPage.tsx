@@ -62,6 +62,7 @@ import {
   type Ticket,
 } from "@/hooks/useTickets";
 import { useScopedBasePath } from "@/lib/navigation";
+import { stripHtml, getTicketSummary } from "@/lib/utils";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -128,7 +129,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
     return tickets.filter((t) => {
       const matchesSearch = !search || 
         t.ticket_number?.toLowerCase().includes(search.toLowerCase()) ||
-        t.message.toLowerCase().includes(search.toLowerCase()) ||
+        stripHtml(t.message).toLowerCase().includes(search.toLowerCase()) ||
         t.user_email?.toLowerCase().includes(search.toLowerCase()) ||
         t.company_name?.toLowerCase().includes(search.toLowerCase());
 
@@ -227,8 +228,10 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
     return format(new Date(date), "MMM d. HH:mm", { locale: hu });
   };
 
-  const truncate = (str: string, len: number) =>
-    str.length > len ? str.substring(0, len) + "…" : str;
+  const truncate = (str: string | null | undefined, len: number) => {
+    const s = str || "";
+    return s.length > len ? s.substring(0, len) + "…" : s;
+  };
 
   // Batch actions submit
   const handleBatchUpdate = async () => {
@@ -634,10 +637,17 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium text-foreground">{truncate(ticket.message, 50)}</span>
-                          <span className="text-xs text-muted-foreground">{truncate(ticket.message, 120).slice(50)}</span>
-                        </div>
+                        {(() => {
+                          const { title, preview } = getTicketSummary(ticket.message);
+                          return (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-sm font-medium text-foreground">{title || "—"}</span>
+                              {preview ? (
+                                <span className="text-xs text-muted-foreground">{preview}</span>
+                              ) : null}
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                       {isAdmin && (
                         <TableCell>
@@ -731,7 +741,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-foreground truncate max-w-[220px]">
-                    {truncate(t.message, 32)}
+                    {truncate(stripHtml(t.message), 32)}
                   </p>
                   <div className="flex items-center justify-between w-full">
                     <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
@@ -936,7 +946,7 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
                         #{t.ticket_number || t.id.slice(0, 8)}
                       </TableCell>
                       <TableCell className="text-xs font-medium">{t.company_name}</TableCell>
-                      <TableCell className="text-xs text-foreground/80">{truncate(t.message, 60)}</TableCell>
+                      <TableCell className="text-xs text-foreground/80">{truncate(stripHtml(t.message), 60)}</TableCell>
                       <TableCell className="text-xs font-medium text-foreground/70">
                         {t.assigned_to_name || <span className="text-muted-foreground/60 italic">Nincs hozzárendelve</span>}
                       </TableCell>

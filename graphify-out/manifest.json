@@ -1270,8 +1270,8 @@
     "semantic_hash": ""
   },
   "src/lib/utils.ts": {
-    "mtime": 1788307007.3907332,
-    "ast_hash": "a1f9be5e5fe62224f6ce2885ff07102f",
+    "mtime": 1788439612.3868172,
+    "ast_hash": "6b77772aee87b7af91dcf1bf3253bd2b",
     "semantic_hash": ""
   },
   "src/lib/validationUtils.test.ts": {
@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "src/pages/TicketsPage.tsx": {
-    "mtime": 1787753315.8445492,
-    "ast_hash": "07254ba8cd825a425dc0aefee87a1e6f",
+    "mtime": 1788439667.246806,
+    "ast_hash": "cff8e74ce51b40b0d48e7b82f69f3736",
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {
@@ -3555,8 +3555,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1788289890.8631687,
-    "ast_hash": "0b5c32df23df9ef74fb26ff452eb8680",
+    "mtime": 1788439841.5350094,
+    "ast_hash": "dfde9d3d1d561c41375c3721e746b57f",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788366438.8177454,
+    "mtime": 1788439133.4918182,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -8827,6 +8827,11 @@
   "supabase/migrations/20260903130000_acc_drafts_circular_protection_and_reconciliation_hardening.sql": {
     "mtime": 1788407520.957081,
     "ast_hash": "1b68e629c95ba656f06bf067d7fe8ee3",
+    "semantic_hash": ""
+  },
+  "src/lib/__tests__/stripHtml.test.ts": {
+    "mtime": 1788439629.2078016,
+    "ast_hash": "df075abd41f7f06dbbb7f3092d7b2f46",
     "semantic_hash": ""
   }
 }
