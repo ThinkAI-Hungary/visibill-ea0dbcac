@@ -112,6 +112,51 @@ export function parseInvoiceDigestXml(xmlResponse: string): NavInvoiceDigest[] {
 /**
  * QueryInvoiceData válasz XML feldolgozása részletes számla adatokká (beleértve a tételsorokat).
  */
+function extractAddress(infoChunk: string): string | undefined {
+  const detailedMatch = infoChunk.match(/<(?:\w+:)?detailedAddress>([\s\S]*?)<\/(?:\w+:)?detailedAddress>/);
+  if (detailedMatch) {
+    const d = detailedMatch[1];
+    const parts = [
+      extractTag(d, 'postalCode'),
+      extractTag(d, 'city'),
+      extractTag(d, 'streetName'),
+      extractTag(d, 'publicPlaceCategory'),
+      extractTag(d, 'number'),
+      extractTag(d, 'building'),
+      extractTag(d, 'staircase'),
+      extractTag(d, 'floor'),
+      extractTag(d, 'door')
+    ].filter(Boolean);
+    if (parts.length > 0) return parts.join(' ');
+  }
+
+  const simpleMatch = infoChunk.match(/<(?:\w+:)?simpleAddress>([\s\S]*?)<\/(?:\w+:)?simpleAddress>/);
+  if (simpleMatch) {
+    const s = simpleMatch[1];
+    const parts = [
+      extractTag(s, 'postalCode'),
+      extractTag(s, 'city'),
+      extractTag(s, 'additionalAddressDetail')
+    ].filter(Boolean);
+    if (parts.length > 0) return parts.join(' ');
+  }
+
+  const addrMatch = infoChunk.match(/<(?:\w+:)?postalAddress>([\s\S]*?)<\/(?:\w+:)?postalAddress>/);
+  if (addrMatch) {
+    const a = addrMatch[1];
+    const parts = [
+      extractTag(a, 'postalCode'),
+      extractTag(a, 'city'),
+      extractTag(a, 'streetName'),
+      extractTag(a, 'publicPlaceCategory'),
+      extractTag(a, 'number')
+    ].filter(Boolean);
+    if (parts.length > 0) return parts.join(' ');
+  }
+
+  return undefined;
+}
+
 export function parseInvoiceDataXml(xmlResponse: string): InvoiceDetails {
   if (xmlResponse.includes('<funcCode>ERROR</funcCode>') || xmlResponse.includes(':funcCode>ERROR<')) {
     const errorMsg = parseNavError(xmlResponse);
@@ -138,31 +183,13 @@ export function parseInvoiceDataXml(xmlResponse: string): InvoiceDetails {
   const supplierMatch = decodedXml.match(/<(?:\w+:)?supplierInfo>([\s\S]*?)<\/(?:\w+:)?supplierInfo>/);
   if (supplierMatch) {
     details.supplierName = extractTag(supplierMatch[1], 'supplierName');
-    const addr = supplierMatch[1].match(/<(?:\w+:)?postalAddress>([\s\S]*?)<\/(?:\w+:)?postalAddress>/);
-    if (addr) {
-      details.supplierAddress = [
-        extractTag(addr[1], 'postalCode'),
-        extractTag(addr[1], 'city'),
-        extractTag(addr[1], 'streetName'),
-        extractTag(addr[1], 'publicPlaceCategory'),
-        extractTag(addr[1], 'number')
-      ].filter(Boolean).join(' ');
-    }
+    details.supplierAddress = extractAddress(supplierMatch[1]);
   }
 
   const customerMatch = decodedXml.match(/<(?:\w+:)?customerInfo>([\s\S]*?)<\/(?:\w+:)?customerInfo>/);
   if (customerMatch) {
     details.customerName = extractTag(customerMatch[1], 'customerName');
-    const addr = customerMatch[1].match(/<(?:\w+:)?postalAddress>([\s\S]*?)<\/(?:\w+:)?postalAddress>/);
-    if (addr) {
-      details.customerAddress = [
-        extractTag(addr[1], 'postalCode'),
-        extractTag(addr[1], 'city'),
-        extractTag(addr[1], 'streetName'),
-        extractTag(addr[1], 'publicPlaceCategory'),
-        extractTag(addr[1], 'number')
-      ].filter(Boolean).join(' ');
-    }
+    details.customerAddress = extractAddress(customerMatch[1]);
   }
 
   details.paymentDate = extractTag(decodedXml, 'paymentDate') || undefined;

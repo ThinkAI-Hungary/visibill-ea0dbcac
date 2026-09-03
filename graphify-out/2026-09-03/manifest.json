@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788400928.0790863,
-    "ast_hash": "3b3eda9cb7c2854b378cb35d9a05cc0d",
+    "mtime": 1788403673.4667692,
+    "ast_hash": "412b84d126b61e4c136375451c9f5023",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3295,8 +3295,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/034-worker-pipeline.md": {
-    "mtime": 1782992499.5118191,
-    "ast_hash": "d376359a5b46c38db39a39f5b9d48726",
+    "mtime": 1788403667.1375277,
+    "ast_hash": "dacf119bc5ff196cfd127ec70125ad03",
     "semantic_hash": ""
   },
   "docs/business/decisions/035-accounty-client-portal.md": {

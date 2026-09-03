@@ -1,11 +1,11 @@
 # Graph Report - eaisybill-prod  (2026-09-03)
 
 ## Corpus Check
-- 1606 files · ~2,117,515 words
+- 1606 files · ~2,117,568 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 8384 nodes · 20419 edges · 641 communities (509 shown, 132 thin omitted)
+- 8384 nodes · 20419 edges · 640 communities (509 shown, 131 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 40 edges (avg confidence: 0.81)
 - Token cost: 0 input · 0 output
 
@@ -583,7 +583,6 @@
 - [[_COMMUNITY_Community 588|Community 588]]
 - [[_COMMUNITY_Community 589|Community 589]]
 - [[_COMMUNITY_Community 590|Community 590]]
-- [[_COMMUNITY_Community 591|Community 591]]
 - [[_COMMUNITY_Community 594|Community 594]]
 - [[_COMMUNITY_Community 595|Community 595]]
 - [[_COMMUNITY_Community 609|Community 609]]
@@ -659,15 +658,15 @@
 ## Import Cycles
 - 2-file cycle: `src/features/invoices/context/InvoiceContext.tsx -> src/features/invoices/context/useInvoiceContext.ts -> src/features/invoices/context/InvoiceContext.tsx`
 
-## Communities (641 total, 132 thin omitted)
+## Communities (640 total, 131 thin omitted)
 
 ### Community 0 - "Financial Operations & Banking"
 Cohesion: 0.11
 Nodes (19): AppModeSwitcher, Content Skeleton, Copyable Cell, Egyedi Komponensek (Nem shadcn/ui), FeedbackFab & FeedbackDialog, Financial Skeleton, GlobalDatePicker, iOS Toggle (+11 more)
 
 ### Community 1 - "Core Platform & Infrastructure"
-Cohesion: 0.25
-Nodes (12): InvoicePaginationContext, InvoicePaginationContextValue, InvoiceApprovalDialogProps, NavInvoice, SubmittedInvoice, TransactionRecord, UseInvoiceMutationsParams, SyncProgress (+4 more)
+Cohesion: 0.20
+Nodes (16): InvoicePaginationContextValue, InvoiceApprovalDialogProps, NavInvoice, SubmittedInvoice, TransactionRecord, UseInvoiceMutationsParams, SyncProgress, NavInvoiceRowProps (+8 more)
 
 ### Community 2 - "Invoice & Subscription Management"
 Cohesion: 0.05
@@ -798,8 +797,8 @@ Cohesion: 0.20
 Nodes (10): ControlCenterUser, ControlCenter(), ControlCenterProps, ControlCenterTab, ErrorControlPanel(), ErrorControlPanelProps, FilesPanelProps, PermissionsPanel() (+2 more)
 
 ### Community 34 - "Components Feedbackfab Feedbackfab"
-Cohesion: 0.04
-Nodes (72): ACTION_META, ClientDetailsPage(), DEFAULT_META, ClientInvoicesPage(), ClientMissingInvoicesPage(), BlockingCategory, blockingCategoryMeta, BlockingItem (+64 more)
+Cohesion: 0.03
+Nodes (76): ACTION_META, ClientDetailsPage(), DEFAULT_META, ClientInvoicesPage(), ClientMissingInvoicesPage(), ClientMissingInvoicesReportPage(), COLORS, defaultBarData (+68 more)
 
 ### Community 35 - "Components Livenotificationprovider Livenotificati"
 Cohesion: 0.07
@@ -807,7 +806,7 @@ Nodes (29): 1.0 Hypothesis — confidence check (Spec lookup ELŐTT), 1.0a Izol�
 
 ### Community 36 - "Components Producttour Producttour"
 Cohesion: 0.05
-Nodes (44): PrivacyConsent, PrivacyPolicyPage(), sections, AuthGuard(), AuthGuardProps, AuthContext, AuthContextType, AuthProvider() (+36 more)
+Nodes (48): PrivacyConsent, PrivacyPolicyPage(), sections, AuthGuard(), AuthGuardProps, AuthContext, AuthContextType, AuthProvider() (+40 more)
 
 ### Community 37 - "Components Scopedlayout Scopedlayout"
 Cohesion: 0.17
@@ -875,7 +874,7 @@ Nodes (5): A-067: Projects Oldal Lekérdezés Párhuzamosítás és Parciális I
 
 ### Community 53 - "Hooks Useaccountydata Accountyaccountant"
 Cohesion: 0.04
-Nodes (110): AccountyLayout(), ApprovalQueuePage(), NewClientPage(), OnboardingPage(), FirmMembersCard(), ProfileSettingsPage(), PromptsPage(), AnnualReportContainer() (+102 more)
+Nodes (112): AccountyLayout(), ApprovalQueuePage(), NewClientPage(), OnboardingPage(), FirmMembersCard(), ProfileSettingsPage(), PromptsPage(), AnnualReportContainer() (+104 more)
 
 ### Community 54 - "Hooks Useaccountydata Accountyclient"
 Cohesion: 0.15
@@ -1042,8 +1041,8 @@ Cohesion: 0.13
 Nodes (25): categories, Category, CategoryArticle, FaqItem, faqs, glossary, GlossaryItem, HelpTab (+17 more)
 
 ### Community 95 - "Hooks Useaccountydata Useupserttaxprofile"
-Cohesion: 0.04
-Nodes (54): AuditLogPage(), EVENT_COLORS, EVENT_LABELS, EVENT_TYPES, ClientMissingInvoicesReportPage(), COLORS, defaultBarData, defaultPieData (+46 more)
+Cohesion: 0.05
+Nodes (50): AuditLogPage(), EVENT_COLORS, EVENT_LABELS, EVENT_TYPES, ExportButton(), ExportButtonProps, COLORS, MissingInvoicesReportPage() (+42 more)
 
 ### Community 96 - "Hooks Useactivepreset Useactivepreset"
 Cohesion: 0.11
@@ -1642,8 +1641,8 @@ Cohesion: 0.33
 Nodes (5): A-082: Partially Paid Invoices Status, Server-Side Amount Aggregation & Trigger Alignment, Consequences, Context, Decision, Kapcsolódó
 
 ### Community 349 - "Community 349"
-Cohesion: 0.20
-Nodes (16): extractBaseTax(), GENERIC_WORDS, isGrossAmountMatch(), isNavAndSubmittedInvoiceMatch(), isPartnerNameMatch(), LEGAL_SUFFIXES, NavInvoiceMatchCandidate, normalizeInvoiceNumber() (+8 more)
+Cohesion: 0.31
+Nodes (11): extractBaseTax(), GENERIC_WORDS, isGrossAmountMatch(), isNavAndSubmittedInvoiceMatch(), isPartnerNameMatch(), LEGAL_SUFFIXES, NavInvoiceMatchCandidate, normalizeInvoiceNumber() (+3 more)
 
 ### Community 350 - "Community 350"
 Cohesion: 0.17
@@ -1854,8 +1853,8 @@ Cohesion: 0.15
 Nodes (12): 1. LÉPÉS: Kérés fogadása & Hipotézis, 2.1 Specifikációk beolvasása (`visibill-spec-lookup`), 2.2 Adatbázis lekérdezés (`execute_sql` via `supabase-visibill` — CSAK SELECT), 2.3 Kódbázis ellenőrzés, 2. LÉPÉS: Kontextus keresés & Read-Only Adatbázis ellenőrzés (KÖTELEZŐ), 3. LÉPÉS: Gyökérok Elemzés (Root Cause), 4. LÉPÉS: Kétkomponensű Jelentés & Módosítási Javaslat Generálása, 5. LÉPÉS: Végrehajtás & Validáció (KIZÁRÓLAG Jóváhagyás Után) (+4 more)
 
 ### Community 418 - "Community 418"
-Cohesion: 0.04
-Nodes (57): SettingsPage(), SettingsTab, DEFAULT_SETTINGS, useCompanySettings(), useCopyToClipboard(), UseCopyToClipboardReturn, CompanyEmailAccount, SaveEmailAccountForm (+49 more)
+Cohesion: 0.05
+Nodes (51): SettingsPage(), SettingsTab, DEFAULT_SETTINGS, useCompanySettings(), useCopyToClipboard(), UseCopyToClipboardReturn, CompanyEmailAccount, SaveEmailAccountForm (+43 more)
 
 ### Community 419 - "Community 419"
 Cohesion: 0.10
@@ -2399,7 +2398,7 @@ Nodes (3): Kapcsolódó, P-053: Szigorított Számlakép Előnézet és Párosí
 
 ### Community 576 - "Community 576"
 Cohesion: 0.04
-Nodes (82): ChatMessage, ClientPortalPage(), MONTHS, PortalRequest, EmployeeDetailsPage(), ExitDocumentsPage(), FILING_TYPES, FilingsPage() (+74 more)
+Nodes (83): ChatMessage, ClientPortalPage(), MONTHS, PortalRequest, EmployeeDetailsPage(), ExitDocumentsPage(), FILING_TYPES, FilingsPage() (+75 more)
 
 ### Community 578 - "Community 578"
 Cohesion: 0.24
@@ -2438,8 +2437,8 @@ Cohesion: 0.40
 Nodes (5): FILING_TYPE_LABELS, FilingWorkflowPage(), fmt(), Step, STEPS
 
 ### Community 590 - "Community 590"
-Cohesion: 0.33
-Nodes (5): InvoicePaginationProvider(), useInvoicePaginationContext(), InvoiceSelectionContext, InvoiceSelectionProvider(), useInvoiceSelectionContext()
+Cohesion: 0.28
+Nodes (6): InvoicePaginationContext, InvoicePaginationProvider(), useInvoicePaginationContext(), InvoiceSelectionContext, InvoiceSelectionProvider(), useInvoiceSelectionContext()
 
 ### Community 594 - "Community 594"
 Cohesion: 0.13
@@ -2600,7 +2599,7 @@ Nodes (23): InvoiceContextValue, InvoiceFilterContext, InvoiceFilterContextValue
 ## Knowledge Gaps
 - **4064 isolated node(s):** `entrypoint_path`, `name`, `files`, `verify_jwt`, `{ createClient }` (+4059 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **132 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **131 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_

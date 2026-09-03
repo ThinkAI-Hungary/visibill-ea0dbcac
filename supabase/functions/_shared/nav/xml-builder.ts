@@ -138,7 +138,6 @@ ${buildCommonBlocks(creds, requestId, timestamp, passwordHash, requestSignature)
   <invoiceNumberQuery>
     <invoiceNumber>${invoiceNumber}</invoiceNumber>
     <invoiceDirection>${invoiceDirection}</invoiceDirection>
-    <batchIndex>1</batchIndex>
   </invoiceNumberQuery>
 </QueryInvoiceDataRequest>`;
 }

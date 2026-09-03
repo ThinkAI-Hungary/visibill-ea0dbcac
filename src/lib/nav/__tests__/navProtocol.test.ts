@@ -308,5 +308,58 @@ describe('NAV Online Számla Protocol Engine', () => {
       expect(invoices[0].invoice_issue_date).toBe('2026-07-01');
       expect(invoices[0].payment_method).toBe('TRANSFER');
     });
+
+    it('generates QueryInvoiceDataRequest XML without batchIndex so NAV returns full invoice data', () => {
+      function buildQueryInvoiceDataXmlLocal(invoiceNumber: string, invoiceDirection: string): string {
+        return `<QueryInvoiceDataRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
+  <invoiceNumberQuery>
+    <invoiceNumber>${invoiceNumber}</invoiceNumber>
+    <invoiceDirection>${invoiceDirection}</invoiceDirection>
+  </invoiceNumberQuery>
+</QueryInvoiceDataRequest>`;
+      }
+
+      const xml = buildQueryInvoiceDataXmlLocal('VBV-2026-19', 'OUTBOUND');
+      expect(xml).toContain('<invoiceNumber>VBV-2026-19</invoiceNumber>');
+      expect(xml).toContain('<invoiceDirection>OUTBOUND</invoiceDirection>');
+      expect(xml).not.toContain('<batchIndex>');
+    });
+
+    it('correctly extracts detailedAddress and simpleAddress from NAV 3.0 invoice XML', () => {
+      function extractAddressLocal(infoChunk: string): string | undefined {
+        const detailedMatch = infoChunk.match(/<(?:\w+:)?detailedAddress>([\s\S]*?)<\/(?:\w+:)?detailedAddress>/);
+        if (detailedMatch) {
+          const d = detailedMatch[1];
+          const parts = [
+            extractTag(d, 'postalCode'),
+            extractTag(d, 'city'),
+            extractTag(d, 'streetName'),
+            extractTag(d, 'publicPlaceCategory'),
+            extractTag(d, 'number')
+          ].filter(Boolean);
+          if (parts.length > 0) return parts.join(' ');
+        }
+        return undefined;
+      }
+
+      const supplierXml = `
+        <supplierInfo>
+          <supplierName>VBV VISION KFT</supplierName>
+          <supplierAddress>
+            <detailedAddress>
+              <countryCode>HU</countryCode>
+              <postalCode>6400</postalCode>
+              <city>KISKUNHALAS</city>
+              <streetName>KŐRÖSI</streetName>
+              <publicPlaceCategory>ÚT</publicPlaceCategory>
+              <number>8</number>
+            </detailedAddress>
+          </supplierAddress>
+        </supplierInfo>
+      `;
+
+      const address = extractAddressLocal(supplierXml);
+      expect(address).toBe('6400 KISKUNHALAS KŐRÖSI ÚT 8');
+    });
   });
 });
