@@ -256,6 +256,49 @@ export function useVatReturnData() {
     enabled: !!selectedCompany?.id && !!vatReturn,
   });
 
+  // 6b. Period posting audit indicator (posted vs pending journal entries)
+  const { data: postingAudit } = useQuery({
+    queryKey: ['vat_period_posting_audit', selectedCompany?.id, year, month, frequency],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return { postedCount: 0, pendingCount: 0, totalCount: 0, isFullyPosted: true };
+
+      let dateFrom: string, dateTo: string;
+      if (frequency === 'H') {
+        dateFrom = `${year}-${String(month).padStart(2, '0')}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        dateTo = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+      } else if (frequency === 'N') {
+        const startMonth = (month - 1) * 3 + 1;
+        dateFrom = `${year}-${String(startMonth).padStart(2, '0')}-01`;
+        const endMonth = startMonth + 2;
+        const lastDay = new Date(year, endMonth, 0).getDate();
+        dateTo = `${year}-${String(endMonth).padStart(2, '0')}-${lastDay}`;
+      } else {
+        dateFrom = `${year}-01-01`;
+        dateTo = `${year}-12-31`;
+      }
+
+      const { data: headers, error } = await supabase
+        .from('acc_journal_headers')
+        .select('id, status')
+        .eq('company_id', selectedCompany.id)
+        .gte('posting_date', dateFrom)
+        .lte('posting_date', dateTo);
+
+      if (error || !headers || headers.length === 0) {
+        return { postedCount: 0, pendingCount: 0, totalCount: 0, isFullyPosted: false };
+      }
+
+      const postedCount = headers.filter(h => h.status === 'KONYVELT').length;
+      const pendingCount = headers.filter(h => ['GEPI_JAVASLAT', 'KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR'].includes(h.status)).length;
+      const totalCount = headers.length;
+      const isFullyPosted = pendingCount === 0 && postedCount > 0;
+
+      return { postedCount, pendingCount, totalCount, isFullyPosted };
+    },
+    enabled: !!selectedCompany?.id,
+  });
+
   // 7. EU Community invoices
   const { data: euInvoices = [], isLoading: isEuInvoicesLoading } = useQuery({
     queryKey: ['vat_eu_invoices', selectedCompany?.id, year, month, frequency],
@@ -748,6 +791,7 @@ export function useVatReturnData() {
     a60Calculations,
     partnerValidations,
     deadlineCountdown,
+    postingAudit,
     reverseChargeSuspiciousInvoices,
     calculate,
     validateReturn,

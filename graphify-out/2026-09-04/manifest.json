@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1788474333.9445145,
-    "ast_hash": "4d83763ccd9248157421d56e0c4edb47",
+    "mtime": 1788472758.429052,
+    "ast_hash": "153f30a031705f3021b6aea2b9f1d873",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {

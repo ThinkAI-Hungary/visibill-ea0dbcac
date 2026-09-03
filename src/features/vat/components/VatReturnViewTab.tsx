@@ -6,6 +6,8 @@ import {
   Loader2,
   ChevronDown,
   Clock,
+  ShieldCheck,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -50,6 +52,7 @@ export function VatReturnViewTab() {
     mLines,
     formRows,
     deadlineCountdown,
+    postingAudit,
     calculate,
     getVal,
   } = vatData;
@@ -305,6 +308,55 @@ export function VatReturnViewTab() {
             </div>
           );
         })()
+      )}
+
+      {/* Accounting Journal Posting Audit Indicator */}
+      {vatReturn && postingAudit && (
+        <div
+          className={cn(
+            'border p-3.5 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-200 print:hidden',
+            postingAudit.isFullyPosted
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+              : 'bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-300'
+          )}
+        >
+          <div className="flex items-center gap-2">
+            {postingAudit.isFullyPosted ? (
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            )}
+            <span>
+              {postingAudit.isFullyPosted ? (
+                <>
+                  <strong>Könyvelési állapot: Zárt & Ellenőrzött.</strong> Az időszak összes ({postingAudit.postedCount} db) bizonylata le van könyvelve a naplókban.
+                </>
+              ) : postingAudit.totalCount > 0 ? (
+                <>
+                  <strong>Könyvelési állapot: Folyamatban.</strong> Az időszakban <strong>{postingAudit.postedCount} / {postingAudit.totalCount}</strong> bizonylat van lekönyvelve ({postingAudit.pendingCount} db függő rendszerjavaslat van a naplókban).
+                </>
+              ) : (
+                <>
+                  <strong>Könyvelési állapot: Nincsenek naplótételek.</strong> Az időszakra még nem találhatók lekönyvelt tételek a naplókban.
+                </>
+              )}
+            </span>
+          </div>
+          <span
+            className={cn(
+              'font-bold px-2 py-0.5 rounded text-[10px] shrink-0 ml-2',
+              postingAudit.isFullyPosted
+                ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+            )}
+          >
+            {postingAudit.isFullyPosted
+              ? '100% Lekönyvelve'
+              : postingAudit.totalCount > 0
+              ? `${Math.round((postingAudit.postedCount / postingAudit.totalCount) * 100)}% Lekönyvelve`
+              : '0% Lekönyvelve'}
+          </span>
+        </div>
       )}
 
       {/* Sub-Tab View Toggle Selector */}

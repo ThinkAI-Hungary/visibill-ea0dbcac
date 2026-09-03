@@ -5,7 +5,7 @@ import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { Loader2, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchAllGlBalances, GlDateBasis } from '@/lib/glData';
+import { fetchAllGlBalances, GlDateBasis, GlPostingStatus } from '@/lib/glData';
 
 interface GeneralLedgerComparisonTableProps {
   presetId?: string;
@@ -13,6 +13,7 @@ interface GeneralLedgerComparisonTableProps {
   dateFrom?: string;
   dateTo?: string;
   dateBasis?: GlDateBasis;
+  postingStatus?: GlPostingStatus;
 }
 
 export function GeneralLedgerComparisonTable({
@@ -21,6 +22,7 @@ export function GeneralLedgerComparisonTable({
   dateFrom,
   dateTo,
   dateBasis = 'kibocsatas',
+  postingStatus = 'all',
 }: GeneralLedgerComparisonTableProps) {
   const { data: exchangeRates } = useExchangeRates();
   const [search, setSearch] = useState('');
@@ -45,7 +47,7 @@ export function GeneralLedgerComparisonTable({
 
   // Current year balances
   const { data: currData = [], isLoading: currLoading } = useQuery({
-    queryKey: ['glBalancesCurr', presetId, companyId, dateFrom, dateTo, dateBasis],
+    queryKey: ['glBalancesCurr', presetId, companyId, dateFrom, dateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!presetId || !companyId) return [];
       return await fetchAllGlBalances({
@@ -54,6 +56,7 @@ export function GeneralLedgerComparisonTable({
         dateFrom: dateFrom || null,
         dateTo: dateTo || null,
         dateBasis,
+        postingStatus,
         exchangeRates: exchangeRates || {},
       });
     },
@@ -62,7 +65,7 @@ export function GeneralLedgerComparisonTable({
 
   // Previous year balances
   const { data: prevData = [], isLoading: prevLoading } = useQuery({
-    queryKey: ['glBalancesPrev', presetId, companyId, prevDateFrom, prevDateTo, dateBasis],
+    queryKey: ['glBalancesPrev', presetId, companyId, prevDateFrom, prevDateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!presetId || !companyId || !prevDateFrom || !prevDateTo) return [];
       return await fetchAllGlBalances({
@@ -71,6 +74,7 @@ export function GeneralLedgerComparisonTable({
         dateFrom: prevDateFrom,
         dateTo: prevDateTo,
         dateBasis,
+        postingStatus,
         exchangeRates: exchangeRates || {},
       });
     },

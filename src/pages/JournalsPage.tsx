@@ -31,7 +31,8 @@ import {
   PenTool,
   PenLine,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Sparkles
 } from 'lucide-react';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
@@ -41,6 +42,16 @@ import { useActivePreset } from '@/hooks/useActivePreset';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { TableEmptyState } from '@/components/ui/table-empty-state';
@@ -177,6 +188,10 @@ export default function JournalsPage() {
   const [stornoTarget, setStornoTarget] = useState<{ headerId: string; correct: boolean } | null>(null);
   const [stornoReason, setStornoReason] = useState('');
 
+  // Delete confirmation dialogs state
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [singleDeleteTarget, setSingleDeleteTarget] = useState<{ id: string; description?: string } | null>(null);
+
   // Fetch existing NY journal entries count
   const { data: nyEntriesCount = 0 } = useQuery({
     queryKey: ['acc-ny-entries-count', selectedCompany?.id],
@@ -302,6 +317,19 @@ export default function JournalsPage() {
     enabled: !!selectedCompany?.id && !!selectedJournalId,
   });
 
+  // Canonical helper to invalidate all related caches across journals, GL, and VAT
+  const invalidateGlAndJournalQueries = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+    queryClient.invalidateQueries({ queryKey: ['acc-ny-entries-count'] });
+    queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+    queryClient.invalidateQueries({ queryKey: ['glItems'] });
+    queryClient.invalidateQueries({ queryKey: ['glJournalItems'] });
+    queryClient.invalidateQueries({ queryKey: ['glBalancesCurr'] });
+    queryClient.invalidateQueries({ queryKey: ['glBalancesPrev'] });
+    queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
+    queryClient.invalidateQueries({ queryKey: ['vat_period_posting_audit'] });
+  }, [queryClient]);
+
   // Post entry mutation
   const postMutation = useMutation({
     mutationFn: async (headerId: string) => {
@@ -315,10 +343,7 @@ export default function JournalsPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
-      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
-      queryClient.invalidateQueries({ queryKey: ['glItems'] });
-      queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
+      invalidateGlAndJournalQueries();
       toast({ title: "Tétel sikeresen lekönyvelve" });
     },
     onError: (err) => {
@@ -326,27 +351,52 @@ export default function JournalsPage() {
     }
   });
 
-  // Bulk post mutation
+  // Resilient Bulk post mutation
   const bulkPostMutation = useMutation({
     mutationFn: async (ids: string[]) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Bejelentkezés szükséges");
+
+      const successes: string[] = [];
+      const failures: { id: string; error: string }[] = [];
 
       for (const id of ids) {
         const { error } = await supabase.rpc('acc_post_journal_entry', {
           p_header_id: id,
           p_user_id: user.id
         });
-        if (error) throw error;
+        if (error) {
+          failures.push({ id, error: error.message });
+        } else {
+          successes.push(id);
+        }
       }
+
+      return { successes, failures, total: ids.length };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
-      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
-      queryClient.invalidateQueries({ queryKey: ['glItems'] });
-      queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
-      setSelectedEntryIds(new Set());
-      toast({ title: "Kijelölt tételek sikeresen lekönyvelve" });
+    onSettled: () => {
+      // Always invalidate queries so UI immediately updates succeeded items
+      invalidateGlAndJournalQueries();
+    },
+    onSuccess: ({ successes, failures, total }) => {
+      if (failures.length === 0) {
+        setSelectedEntryIds(new Set());
+        toast({ title: `${total} tétel sikeresen lekönyvelve` });
+      } else if (successes.length > 0) {
+        // Keep only failed IDs selected so user can easily retry or review
+        setSelectedEntryIds(new Set(failures.map(f => f.id)));
+        toast({
+          title: `Részleges könyvelés: ${successes.length} sikeres, ${failures.length} hibás`,
+          description: `A hibás tételek kijelölve maradtak. Első hiba: ${failures[0].error}`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Könyvelési hiba",
+          description: `Egyetlen tétel sem került lekönyvelésre. Hiba: ${failures[0].error}`,
+          variant: "destructive"
+        });
+      }
     },
     onError: (err) => {
       toast({ title: "Könyvelési hiba", description: err.message, variant: "destructive" });
@@ -363,7 +413,7 @@ export default function JournalsPage() {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      invalidateGlAndJournalQueries();
       setSelectedEntryIds(new Set());
       const label = STATUS_LABELS[variables.status]?.label || variables.status;
       toast({ title: `Kijelölt tételek állapota frissítve: ${label}` });
@@ -389,7 +439,7 @@ export default function JournalsPage() {
       return { id: data, correct };
     },
     onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      invalidateGlAndJournalQueries();
       toast({ title: res.correct ? "Sztornózva és javító másolat elkészítve" : "Tétel sztornózva" });
       if (res.correct && res.id) {
         setEditingEntryId(res.id);
@@ -411,8 +461,7 @@ export default function JournalsPage() {
       if (headerErr) throw headerErr;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
-      queryClient.invalidateQueries({ queryKey: ['acc-ny-entries-count'] });
+      invalidateGlAndJournalQueries();
       setSelectedEntry(null);
       toast({ title: "Piszkozat törölve" });
     },
@@ -431,8 +480,7 @@ export default function JournalsPage() {
       if (headerErr) throw headerErr;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
-      queryClient.invalidateQueries({ queryKey: ['acc-ny-entries-count'] });
+      invalidateGlAndJournalQueries();
       setSelectedEntryIds(new Set());
       toast({ title: "Kijelölt piszkozatok sikeresen törölve" });
     },
@@ -503,9 +551,19 @@ export default function JournalsPage() {
         description="A vállalkozás kettős könyvvitelének naplónemenkénti, idősoros és zárt nyilvántartása."
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPeriodClosingOpen(true)}>
-              <Lock className="w-4 h-4" /> Időszakzárás
-            </Button>
+            <Tooltip delayDuration={200}>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPeriodClosingOpen(true)}>
+                  <Lock className="w-4 h-4" /> Időszakzárás
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs text-xs">
+                <p className="font-semibold">Naptári időszakok zárolása (év / hónap)</p>
+                <p className="text-muted-foreground text-[11px] mt-0.5">
+                  A könyvelési hónapok végleges zárolása. Megakadályozza az új tételek rögzítését a zárt időszakba. Egyedi bizonylatok véglegesítéséhez használd a lekönyvelést.
+                </p>
+              </TooltipContent>
+            </Tooltip>
             <Button
               variant="outline"
               size="sm"
@@ -638,6 +696,47 @@ export default function JournalsPage() {
               />
             </div>
           </div>
+
+          {/* Guidance Banner for Pending Drafts & System Proposals */}
+          {filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length > 0 && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/20 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-2xs">
+              <div className="flex items-start gap-2.5">
+                <div className="p-1.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-md shrink-0 mt-0.5 sm:mt-0">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground flex items-center gap-2">
+                    <span>
+                      {filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length} db lekönyvelésre váró könyvelési javaslat
+                    </span>
+                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 py-0 font-medium">
+                      Jóváhagyásra vár
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-[11px] mt-0.5 leading-relaxed">
+                    A rendszerjavaslatok az ellenőrzést és lekönyvelést követően kapnak hivatalos naplósorszámot és válnak zárt, módosításvédett könyvelési tétellé.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs gap-1.5 border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15"
+                  onClick={() => {
+                    const draftIds = filteredEntries
+                      .filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status))
+                      .map((e: any) => e.id);
+                    setSelectedEntryIds(new Set(draftIds));
+                  }}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Összes javaslat kijelölése ({filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length})
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Top Pagination */}
           {totalItems > 0 && (
@@ -840,7 +939,7 @@ export default function JournalsPage() {
                                     <Button size="icon" variant="ghost" className="w-6 h-6 text-primary" title="Szerkesztés" onClick={() => { setEditingEntryId(e.id); setManualEntryOpen(true); }}>
                                       <FileSpreadsheet className="w-3.5 h-3.5" />
                                     </Button>
-                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-destructive" title="Piszkozat törlése" onClick={(ev) => { ev.stopPropagation(); if (confirm("Biztosan törli ezt a piszkozatot?")) deleteMutation.mutate(e.id); }}>
+                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-destructive hover:bg-destructive/10" title="Piszkozat törlése" onClick={(ev) => { ev.stopPropagation(); setSingleDeleteTarget({ id: e.id, description: e.description || e.document_id }); }}>
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </Button>
                                   </>
@@ -1135,9 +1234,7 @@ export default function JournalsPage() {
               className="h-8 text-xs gap-1.5 border-destructive/20 text-destructive hover:bg-destructive/10"
               onClick={(ev) => {
                 ev.stopPropagation();
-                if (confirm(`Biztosan törölni szeretné a kijelölt ${selectedEntryIds.size} db piszkozatot?`)) {
-                  bulkDeleteMutation.mutate(Array.from(selectedEntryIds));
-                }
+                setBulkDeleteDialogOpen(true);
               }}
               disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
             >
@@ -1177,6 +1274,105 @@ export default function JournalsPage() {
         open={periodClosingOpen}
         onOpenChange={setPeriodClosingOpen}
       />
+
+      {/* Tömeges piszkozat törlés megerősítő modál */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <AlertDialogTitle>Kijelölt piszkozatok törlése</AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Visszavonhatatlan művelet. A kiválasztott javaslatok véglegesen törlődnek a rendszerből.
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <div className="py-2 text-sm text-foreground">
+            Biztosan törölni szeretné a kijelölt <strong className="text-destructive font-semibold">{selectedEntryIds.size} db</strong> piszkozatot?
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              A rendszerjavaslatok és kézi piszkozatok fej- és soradatai törlésre kerülnek. A már hivatalosan lekönyvelt tételeket a rendszer védelme nem engedi törölni.
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleteMutation.isPending}>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5"
+              disabled={bulkDeleteMutation.isPending}
+              onClick={async (ev) => {
+                ev.preventDefault();
+                await bulkDeleteMutation.mutateAsync(Array.from(selectedEntryIds));
+                setBulkDeleteDialogOpen(false);
+              }}
+            >
+              {bulkDeleteMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Törlés folyamatban...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  Törlés ({selectedEntryIds.size} db)
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Egyedi piszkozat törlése megerősítő modál */}
+      <AlertDialog open={!!singleDeleteTarget} onOpenChange={(open) => { if (!open) setSingleDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <AlertDialogTitle>Piszkozat törlése</AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Biztosan törölni szeretné ezt a piszkozatot?
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          {singleDeleteTarget?.description && (
+            <div className="py-2 text-sm text-foreground/90 font-medium bg-muted/40 p-2.5 rounded-md border border-border">
+              {singleDeleteTarget.description}
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5"
+              disabled={deleteMutation.isPending}
+              onClick={async (ev) => {
+                ev.preventDefault();
+                if (singleDeleteTarget) {
+                  await deleteMutation.mutateAsync(singleDeleteTarget.id);
+                  setSingleDeleteTarget(null);
+                }
+              }}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Törlés...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  Törlés
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </div>
     </TooltipProvider>
   );

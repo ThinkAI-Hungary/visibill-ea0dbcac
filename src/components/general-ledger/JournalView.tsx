@@ -12,7 +12,7 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { exportToFile } from '@/lib/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchAllGlBalances, fetchAllGlCategorizedItems, GlDateBasis } from '@/lib/glData';
+import { fetchAllGlBalances, fetchAllGlCategorizedItems, GlDateBasis, GlPostingStatus } from '@/lib/glData';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  F7: JOURNAL VIEW (Naplófőkönyv)
@@ -23,6 +23,7 @@ interface JournalViewProps {
   dateFrom?: string;
   dateTo?: string;
   dateBasis?: GlDateBasis;
+  postingStatus?: GlPostingStatus;
 }
 
 interface JournalEntry {
@@ -49,7 +50,7 @@ const TYPE_LABELS: Record<string, string> = {
   journal_entry: 'Naplótétel',
 };
 
-export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'kibocsatas' }: JournalViewProps) {
+export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'kibocsatas', postingStatus = 'all' }: JournalViewProps) {
   const { selectedCompany } = useCompany();
   const { data: exchangeRates } = useExchangeRates();
   const [search, setSearch] = useState('');
@@ -59,7 +60,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
   const pageSize = 50;
 
   const { data: rawItems = [], isLoading } = useQuery({
-    queryKey: ['glJournalItems', selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis],
+    queryKey: ['glJournalItems', selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       try {
@@ -69,6 +70,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           dateFrom,
           dateTo,
           dateBasis,
+          postingStatus,
           exchangeRates: exchangeRates || {},
         });
         return (data || []) as unknown as JournalEntry[];
@@ -82,7 +84,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
 
   // Also fetch GL account mapping for display
   const { data: glAccounts = [] } = useQuery({
-    queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis],
+    queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       try {
@@ -92,6 +94,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           dateFrom,
           dateTo,
           dateBasis,
+          postingStatus,
           exchangeRates: exchangeRates || {},
         });
         return data || [];

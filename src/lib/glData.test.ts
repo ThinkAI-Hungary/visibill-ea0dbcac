@@ -85,10 +85,32 @@ describe('glData pagination utilities', () => {
         p_date_to: null,
         p_exchange_rates: {},
         p_date_basis: 'teljesites',
+        p_posting_status: 'ALL',
       });
     });
 
-    it('defaults dateBasis to kibocsatas when omitted', async () => {
+    it('passes postingStatus POSTED_ONLY to RPC when requested', async () => {
+      const mockRange = vi.fn().mockResolvedValue({ data: [], error: null });
+      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+
+      await fetchAllGlBalances({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        postingStatus: 'posted_only',
+      });
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_balances', {
+        p_company_id: 'company-1',
+        p_preset_id: 'preset-1',
+        p_date_from: null,
+        p_date_to: null,
+        p_exchange_rates: {},
+        p_date_basis: 'kibocsatas',
+        p_posting_status: 'POSTED_ONLY',
+      });
+    });
+
+    it('defaults dateBasis to kibocsatas and postingStatus to ALL when omitted', async () => {
       const mockRange = vi.fn().mockResolvedValue({ data: [], error: null });
       (supabase.rpc as any).mockReturnValue({ range: mockRange });
 
@@ -104,6 +126,7 @@ describe('glData pagination utilities', () => {
         p_date_to: null,
         p_exchange_rates: {},
         p_date_basis: 'kibocsatas',
+        p_posting_status: 'ALL',
       });
     });
   });
@@ -126,6 +149,28 @@ describe('glData pagination utilities', () => {
         p_date_to: null,
         p_exchange_rates: {},
         p_date_basis: 'teljesites',
+        p_posting_status: 'ALL',
+      });
+    });
+
+    it('passes postingStatus POSTED_ONLY to RPC when requested', async () => {
+      const mockRange = vi.fn().mockResolvedValue({ data: [], error: null });
+      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+
+      await fetchAllGlCategorizedItems({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        postingStatus: 'posted_only',
+      });
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', {
+        p_company_id: 'company-1',
+        p_preset_id: 'preset-1',
+        p_date_from: null,
+        p_date_to: null,
+        p_exchange_rates: {},
+        p_date_basis: 'kibocsatas',
+        p_posting_status: 'POSTED_ONLY',
       });
     });
   });

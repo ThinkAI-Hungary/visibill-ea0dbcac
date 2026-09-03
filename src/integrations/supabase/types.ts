@@ -11092,6 +11092,7 @@ export type Database = {
           p_date_from?: string
           p_date_to?: string
           p_exchange_rates?: Json
+          p_posting_status?: string
           p_preset_id: string
         }
         Returns: {
@@ -11108,6 +11109,7 @@ export type Database = {
           p_date_from?: string
           p_date_to?: string
           p_exchange_rates?: Json
+          p_posting_status?: string
           p_preset_id: string
         }
         Returns: {
