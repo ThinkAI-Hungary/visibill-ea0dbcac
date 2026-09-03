@@ -49,12 +49,13 @@
 
 A `table-layout: fixed` kényszeríti a táblát a konténer szélességébe, ami levágja a tartalmat. Az `auto` mód a tartalom szerint méretezi az oszlopokat.
 
-**Kivétel (Operator / Dashboard táblázatok):**
-Ha a táblázat paginált (pl. a Management Dashboard hibalistái vagy naplói), és meg kell akadályozni, hogy a különböző hosszúságú szövegek (pl. fájlnevek, cégnevek) miatt az oszlopok elugráljanak (column shifting) lapozás közben:
-- Használj `table-fixed` (Tailwind) elrendezést.
-- Határozz meg fix szélességet a `<th>` fejléceken (pl. `w-[100px]`, `w-[160px]`).
+**Kivétel (Operator / Dashboard és Könyvelési Napló táblázatok):**
+Ha a táblázat paginált (pl. a Management Dashboard hibalistái, vagy a `JournalsPage.tsx` könyvelési naplói), és meg kell akadályozni, hogy a különböző hosszúságú szövegek (pl. fájlnevek, partnerek, leírások) miatt az oszlopok elugráljanak (column shifting) lapozás közben:
+- Használj `compact-table w-full table-fixed min-w-[1150px]` elrendezést.
+- Határozz meg fix szélességet a `<th>` fejléceken (pl. `w-[44px]`, `w-[95px]`, `w-[110px]`, `w-[150px]`, `w-[180px]`).
 - **Szimmetrikus oszlopközök (Badge-ek és fix szövegek):** Amennyiben egymás mellett fix szélességű szövegek (pl. dátum) és fix szélességű komponensek (pl. `w-[75px]` méretű pipeline badge) helyezkednek el, adj meg azonos szélességet a fejléceken (pl. mindkettő `w-[110px]`), hogy a köztük lévő vizuális távolság (gap) tökéletesen kiegyensúlyozott és szimmetrikus legyen.
-- Hagyj egy rugalmas oszlopot (pl. Fájlnév) fix szélesség nélkül, hogy dinamikusan kitöltse a fennmaradó helyet, és a benne lévő elemeken alkalmazz `truncate` csonkolást.
+- Hagyj egy rugalmas oszlopot (pl. Megnevezés / Fájlnév) fix szélesség nélkül (`w-auto min-w-[200px]`), hogy dinamikusan kitöltse a fennmaradó helyet, és a benne lévő elemeken alkalmazz `truncate` csonkolást és Tooltip-et.
+- Alkalmazz `<TablePlaceholderRows currentCount={paginated.length} pageSize={pageSize} columns={TOTAL_COLS} />` helykitöltést a táblázat vertikális magasságának stabilizálására az utolsó oldalon vagy szűréskor.
 
 ### 1b. Expandable Rows Pattern (Lenyitható részlet-sorok)
 
@@ -105,6 +106,35 @@ A partner nevek 13 karakter felett `…`-tal levágódnak. A teljes név másol�
 | Kiáll. / Telj. (NAV) | `whitespace-nowrap` | Természetes szélesség, nem törik |
 | Biz.szám | `min-w-[200px]` + `whitespace-nowrap` | Fejléc + cella egyaránt |
 | Összeg oszlopok | `whitespace-nowrap` + `tabular-nums` | Számok nem törhetnek |
+
+### 4b. Többdevizás Összeg Megjelenítési Minta (Multi-currency Display Pattern)
+
+> **Döntés (2026-09-03):** Pénzügyi és könyvelési táblázatokban, amennyiben egy tétel devizaneme eltér az alapértelmezett forinttól (`currency !== 'HUF'`, pl. USD, EUR):
+> - Az összeg oszlop vertikálisan két soros elrendezést kap (`flex flex-col items-end`).
+> - A felső sorban az eredeti devizaösszeg és devizanem jelenik meg (`font-semibold tabular-nums`).
+> - Az alsó sorban diszkrét stílusban (`text-[10px] text-muted-foreground font-normal leading-tight`), zárójelben jelenik meg a tétel teljesítési napjára érvényes hivatalos MNB árfolyammal átszámított forintösszeg: `({formatCurrency(hufAmount, 'HUF')})`.
+> - A zárójeles HUF összeg `cursor-help` interaktív tooltipet kap, amely megjeleníti az adott nap pontos MNB devizaárfolyamát (`1 USD = 316,22 Ft`).
+
+```tsx
+<TableCell className="w-[150px] text-right font-semibold tabular-nums whitespace-nowrap">
+  <div className="flex flex-col items-end">
+    <span>{formatCurrency(totalAmount, currency)}</span>
+    {isForeign && (
+      <Tooltip delayDuration={150}>
+        <TooltipTrigger asChild>
+          <span className="text-[10px] text-muted-foreground font-normal leading-tight cursor-help hover:text-foreground transition-colors">
+            ({formatCurrency(hufAmount, 'HUF')})
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="text-xs">
+          <p className="font-medium">Napi MNB árfolyam ({postingDate}):</p>
+          <p className="text-muted-foreground font-mono">1 {currency} = {rate} Ft</p>
+        </TooltipContent>
+      </Tooltip>
+    )}
+  </div>
+</TableCell>
+```
 
 ### 5. NE legyen `overflow: hidden` a cellákon
 

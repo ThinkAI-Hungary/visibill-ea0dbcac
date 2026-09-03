@@ -147,10 +147,28 @@
 
 ### 1. Javaslatok generálása (`acc_generate_drafts_from_ledger`)
 - **Funkció:** `public.acc_generate_drafts_from_ledger(p_company_id uuid, p_preset_id uuid)`
-- **Biztonság:** `SECURITY DEFINER SET search_path TO 'public'`
+- **Biztonság & Jogosultság:** `SECURITY DEFINER SET search_path TO 'public'` | Explicit `GRANT EXECUTE` az `authenticated` és `service_role` szerepköröknek.
+- **Teljesítmény & Timeout Védelem (2026-09-03):** `SET statement_timeout = '60s'` direktívával konfigurálva. Meggátolja a nagyméretű (1000+ tétel) kontírozás idő előtti leállását, elkerülve a kliensoldali HTTP 504 hibákat és a rate limit kimerülését okozó REST fallback hurkot.
 - **Leírás:** A `get_gl_categorized_items` alapján legenerálja a `GEPI_JAVASLAT` státuszú könyvelési tételeket.
-- **GL Számla Feloldási Szabály:** A vezérlő számlák (311 vevők, 454 szállítók, 384/386 pénzforgalmi számlák) feloldása elsődlegesen a céghez tartozó `preset_id` (`WHERE preset_id = p_preset_id`), másodlagosan az egyedi `company_id` szerint történik.
+- **3-Lábú ÁFA Kontírozási Motor (Ticket EB-0045):**
+  - **Bejövő számlák (`SZ` napló):**
+    - 1. sor: **T Költség** (pl. `5131`, `521`, `527`...) nettó összeg, `vat_role = 'ALAP'`, `vat_code` kitöltve.
+    - 2. sor: **T Levonható ÁFA** (`466%`) ÁFA összeg, `vat_role = 'AFA'`, `vat_code` kitöltve, `parent_line_id` az 1. sorra mutat.
+    - 3. sor: **K Szállító** (`4541%` / `454%`) bruttó kötelezettség ($Nettó + ÁFA$), `vat_role = 'NONE'`.
+  - **Kimenő számlák (`V` napló):**
+    - 1. sor: **T Vevő** (`311%`) bruttó követelés ($Nettó + ÁFA$), `vat_role = 'NONE'`.
+    - 2. sor: **K Árbevétel** (pl. `91-92`) nettó összeg, `vat_role = 'ALAP'`, `vat_code` kitöltve.
+    - 3. sor: **K Fizetendő ÁFA** (`467%`) ÁFA összeg, `vat_role = 'AFA'`, `vat_code` kitöltve, `parent_line_id` a 2. sorra mutat.
+  - **0% / Mentes ÁFA (TAM, AAM, 0%):** Nem keletkezik 0 Ft-os ÁFA sor (adatbázis `amount > 0` megszorítás miatt); a tétel 2-lábú marad ($T = K = Nettó = Bruttó$).
+  - **Kerekítési garancia:** A bruttó összeg tételszinten $Bruttó = Nettó + ÁFA$ képlettel képződik, kizárva a filléres egyensúlytalanságot ($\Delta = 0$).
+- **GL Számla Feloldási Szabály:** A vezérlő számlák (311 vevők, 4541/454 szállítók, 466 levonható ÁFA, 467 fizetendő ÁFA, 384/386 pénzforgalmi számlák) feloldása elsődlegesen a céghez tartozó `preset_id` (`WHERE preset_id = p_preset_id`), másodlagosan az egyedi `company_id` szerint történik.
 - **Foreign Key Védelem:** A nil UUID-val rendelkező vagy a `gl_accounts` táblából hiányzó tételek kiszűrésre kerülnek, így megelőzve az `acc_journal_lines_gl_account_id_fkey` megsértését (23503).
+- **MNB Napi Árfolyam Integráció (2026-09-03 — Migráció: `20260903110000`):**
+  - **Deviza kezelés:** Nem forint (`v_currency <> 'HUF'`, pl. USD, EUR) tételeknél a korábbi 1:1 átváltás megszűnt. A függvény lekérdezi a `public.daily_exchange_rates` táblából a tétel teljesítési napjára vagy legközelebbi korábbi banki napra vonatkozó hivatalos MNB devizaárfolyamot (`WHERE currency = v_currency AND rate_date <= v_date ORDER BY rate_date DESC LIMIT 1`).
+  - **Fejadat rögzítés:** Az `acc_journal_headers` táblában rögzítésre kerül a valós `exchange_rate` (pl. 316.22 USD esetén) és a hozzá tartozó `exchange_rate_date`.
+  - **Sorok forintosítása:** Az `acc_journal_lines` tábla `amount` oszlopába a devizaérték és az MNB árfolyam szorzata kerül (`ROUND(v_amount_foreign * v_exchange_rate, 2)`), míg a `foreign_amount` oszlop tárolja az eredeti devizaösszeget.
+  - **Számlák 3-lábú devizás bontása:** Számla tételeknél a devizás nettó (`v_foreign_net`), a devizás áfa (`v_foreign_vat`) és a devizás bruttó (`v_foreign_gross`) összeg mellett a könyvelési forintösszegek (`v_huf_net`, `v_huf_vat`, `v_huf_gross`) szintén az MNB árfolyammal átszámítva kerülnek a sorokba, garantálva az egyensúlyt.
+  - **Visszamenőleges frissítés:** A migráció automatikusan frissítette a már meglévő nyitott (`status <> 'KONYVELT'`) devizás javaslatok fej- és sorszintű adatait.
 
 ### 2. Könyvelés és Sorszámozás (`acc_post_journal_entry`)
 - **Funkció:** `public.acc_post_journal_entry(p_header_id uuid, p_user_id uuid)`

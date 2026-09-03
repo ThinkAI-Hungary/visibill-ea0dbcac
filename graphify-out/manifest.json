@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788392634.6761713,
-    "ast_hash": "615e8b399821cc692c10c11920b8fbec",
+    "mtime": 1788403673.4667692,
+    "ast_hash": "412b84d126b61e4c136375451c9f5023",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3295,8 +3295,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/034-worker-pipeline.md": {
-    "mtime": 1782992499.5118191,
-    "ast_hash": "d376359a5b46c38db39a39f5b9d48726",
+    "mtime": 1788403667.1375277,
+    "ast_hash": "dacf119bc5ff196cfd127ec70125ad03",
     "semantic_hash": ""
   },
   "docs/business/decisions/035-accounty-client-portal.md": {
@@ -3385,8 +3385,8 @@
     "semantic_hash": ""
   },
   "docs/design/11-data-display-tables.md": {
-    "mtime": 1788131123.4628437,
-    "ast_hash": "e93cab95b0224fa72868f27067b32b77",
+    "mtime": 1788400878.0823271,
+    "ast_hash": "6282c3e439f2480bed865973e621f075",
     "semantic_hash": ""
   },
   "docs/design/12-dialogs-modals.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788392572.6485868,
-    "ast_hash": "1a3203863eec82b9bbbbe4a469a5cb50",
+    "mtime": 1788400910.362311,
+    "ast_hash": "45f04e68c25163456589d8841bd6b727",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5360,8 +5360,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-025-cross-company-routing.md": {
-    "mtime": 1783219785.5771847,
-    "ast_hash": "90b2f8eb077a28ab2fa1041d446036b5",
+    "mtime": 1788403096.3901987,
+    "ast_hash": "196dc9e943385c98187b9dea7de086f2",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-026-support-impersonation-access.md": {
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1788369330.0865152,
-    "ast_hash": "74c78ccb89bc4fdbc0e3fe962303d8a1",
+    "mtime": 1788400664.1134903,
+    "ast_hash": "8be71836b34080308be263797631f6d3",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -7265,13 +7265,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/22-accounting-journals.md": {
-    "mtime": 1788367007.176551,
-    "ast_hash": "32292af257188de6e5969aa4fb0de7c4",
+    "mtime": 1788400846.7720563,
+    "ast_hash": "0e331b39904c9307f2442aec6549fa1d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-057-accounting-journals-architecture.md": {
-    "mtime": 1788130172.2324352,
-    "ast_hash": "0957ada9a571b2e9ed327345bf4e1851",
+    "mtime": 1788400857.5746791,
+    "ast_hash": "a9a7126ea631c9adff73389a838223ab",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-058-bank-transfers-architecture.md": {
@@ -7290,8 +7290,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-055-accounting-journals-ux.md": {
-    "mtime": 1788130165.0721686,
-    "ast_hash": "d847d6ef389b820e4925950922b7be2c",
+    "mtime": 1788400868.4489193,
+    "ast_hash": "a0ac5816cdd644939943bd9fb97164ec",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-056-bank-transfers-export-ux.md": {
@@ -8797,6 +8797,26 @@
   "src/test/tickets/uploadTicketAttachment.test.ts": {
     "mtime": 1788393668.2619486,
     "ast_hash": "03ae8926d62c2a64c5d492a8d3febf37",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260903100000_accounting_journals_3leg_vat_drafts.sql": {
+    "mtime": 1788398618.4452834,
+    "ast_hash": "986efa9015a0975f9a46cceac25c236a",
+    "semantic_hash": ""
+  },
+  "src/features/journals/services/draftFallbackGenerator.ts": {
+    "mtime": 1788400598.502113,
+    "ast_hash": "2a32f65ea95980a17608698aa88e22b6",
+    "semantic_hash": ""
+  },
+  "src/features/journals/__tests__/draftFallbackGenerator.test.ts": {
+    "mtime": 1788401127.2798226,
+    "ast_hash": "78277db0fd06fbd26a0020ee8d8412df",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260903110000_accounting_journals_daily_exchange_rates.sql": {
+    "mtime": 1788400536.2891543,
+    "ast_hash": "1d1e201166dff0e56bd5739d14f098a2",
     "semantic_hash": ""
   }
 }

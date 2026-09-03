@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -26,6 +26,10 @@ import {
   ShieldCheck,
   Calendar,
   Bot,
+  Receipt,
+  Landmark,
+  PenTool,
+  PenLine,
   CheckCircle2,
   XCircle
 } from 'lucide-react';
@@ -37,6 +41,14 @@ import { useActivePreset } from '@/hooks/useActivePreset';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { TableEmptyState } from '@/components/ui/table-empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
+import { CopyableCell } from '@/components/ui/copyable-cell';
+import { Checkbox } from '@/components/ui/checkbox';
+
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   GEPI_JAVASLAT: { label: 'Rendszer javaslat', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' },
@@ -47,12 +59,59 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   ELVETVE: { label: 'Elvetve', color: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
 };
 
-const SOURCE_LABELS: Record<string, string> = {
-  AUTO_SZAMLA: '⚙️ Számla',
-  AUTO_BANK: '⚙️ Bank',
-  AUTO_RENDSZER: '⚙️ Rendszer',
-  KEZI: '✏️ Kézi',
-  KEZI_MODOSITAS: '✏️ Módosítás',
+export const SOURCE_LABELS: Record<string, string> = {
+  AUTO_SZAMLA: 'Számla',
+  AUTO_BANK: 'Bank',
+  AUTO_RENDSZER: 'Rendszer',
+  KEZI: 'Kézi',
+  KEZI_MODOSITAS: 'Módosítás',
+};
+
+const renderSourceBadge = (source: string) => {
+  switch (source) {
+    case 'AUTO_SZAMLA':
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20 whitespace-nowrap">
+          <Receipt className="w-3 h-3 text-sky-500 shrink-0" />
+          Számla
+        </span>
+      );
+    case 'AUTO_BANK':
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
+          <Landmark className="w-3 h-3 text-emerald-500 shrink-0" />
+          Bank
+        </span>
+      );
+    case 'AUTO_RENDSZER':
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 whitespace-nowrap">
+          <Bot className="w-3 h-3 text-indigo-500 shrink-0" />
+          Rendszer
+        </span>
+      );
+    case 'KEZI':
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 whitespace-nowrap">
+          <PenTool className="w-3 h-3 text-amber-500 shrink-0" />
+          Kézi
+        </span>
+      );
+    case 'KEZI_MODOSITAS':
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-orange-600 dark:text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 whitespace-nowrap">
+          <PenLine className="w-3 h-3 text-orange-500 shrink-0" />
+          Módosítás
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-mono bg-muted/40 px-1.5 py-0.5 rounded border border-border whitespace-nowrap">
+          <FileText className="w-3 h-3 shrink-0" />
+          {source || '—'}
+        </span>
+      );
+  }
 };
 
 const formatCurrency = (val: number, currency: string = 'HUF') => {
@@ -75,160 +134,19 @@ export default function JournalsPage() {
   const generateDraftsMutation = useMutation({
     mutationFn: async () => {
       if (!selectedCompany?.id || !activePresetId) return 0;
-      try {
-        const { data, error } = await supabase.rpc('acc_generate_drafts_from_ledger', {
-          p_company_id: selectedCompany.id,
-          p_preset_id: activePresetId
-        });
-        if (error) throw error;
-        return data;
-      } catch (err: any) {
-        console.warn('RPC acc_generate_drafts_from_ledger failed, executing robust fallback generator:', err);
-
-        // 1. Delete existing system suggestions
-        await supabase
-          .from('acc_journal_headers')
-          .delete()
-          .eq('company_id', selectedCompany.id)
-          .eq('status', 'GEPI_JAVASLAT');
-
-        // 2. Ensure default journals exist
-        await supabase.rpc('acc_seed_default_journals', { p_company_id: selectedCompany.id });
-
-        // 3. Fetch categorized items
-        const { data: items, error: itemsErr } = await supabase.rpc('get_gl_categorized_items', {
-          p_company_id: selectedCompany.id,
-          p_preset_id: activePresetId
-        });
-        if (itemsErr) throw itemsErr;
-        if (!items || items.length === 0) return 0;
-
-        // 4. Fetch GL Accounts & Journals
-        const { data: glAccounts } = await supabase
-          .from('gl_accounts')
-          .select('id, gl_number')
-          .or(`preset_id.eq.${activePresetId},company_id.eq.${selectedCompany.id}`);
-
-        const { data: journals } = await supabase
-          .from('acc_journals')
-          .select('id, code, type, currency')
-          .eq('company_id', selectedCompany.id);
-
-        const glCustId = glAccounts?.find(g => g.gl_number.startsWith('311'))?.id || glAccounts?.[0]?.id;
-        const glSuppId = glAccounts?.find(g => g.gl_number.startsWith('454'))?.id || glCustId;
-
-        if (!glCustId || !glSuppId) return 0;
-
-        const validGlIds = new Set((glAccounts || []).map(g => g.id));
-
-        // Filter valid mapped items (MUST have a valid gl_account_id in gl_accounts, NOT nil UUID)
-        const validItems = items.filter(
-          (item: any) =>
-            item.gl_account_id &&
-            item.gl_account_id !== '00000000-0000-0000-0000-000000000000' &&
-            validGlIds.has(item.gl_account_id) &&
-            item.amount &&
-            Math.abs(item.amount) > 0
-        );
-
-        let createdCount = 0;
-
-        for (const item of validItems) {
-          const itemDate = item.item_date ? item.item_date.substring(0, 10) : new Date().toISOString().substring(0, 10);
-          const year = Number(itemDate.substring(0, 4)) || new Date().getFullYear();
-          const currency = item.original_currency || 'HUF';
-          const amount = Math.round(Math.abs(item.amount) * 100) / 100;
-          const foreignAmount = item.original_amount ? Math.round(Math.abs(item.original_amount) * 100) / 100 : null;
-          const exchangeRate = (currency !== 'HUF' && foreignAmount) ? Math.round((amount / foreignAmount) * 1000000) / 1000000 : 1;
-
-          let journalId = journals?.find(j => j.code === 'VE')?.id || journals?.[0]?.id;
-          let source = 'AUTO_RENDSZER';
-          let docId = `MISC-${item.item_id.substring(0, 8).toUpperCase()}`;
-
-          if (item.source_table === 'transactions') {
-            source = 'AUTO_BANK';
-            docId = `TR-${item.item_id.substring(0, 8).toUpperCase()}`;
-            journalId = journals?.find(j => j.type === 'BANK' && j.currency === currency)?.id || journals?.find(j => j.code === 'B1')?.id || journalId;
-          } else if (['invoice_items', 'nav_invoice_items'].includes(item.source_table)) {
-            source = 'AUTO_SZAMLA';
-            docId = `INV-${item.item_id.substring(0, 8).toUpperCase()}`;
-            if (item.amount >= 0) {
-              journalId = journals?.find(j => j.code === 'V')?.id || journalId;
-            } else {
-              journalId = journals?.find(j => j.code === 'SZ')?.id || journalId;
-            }
-          }
-
-          let line1: any;
-          let line2: any;
-
-          if (item.source_table === 'transactions') {
-            const glBankId = glAccounts?.find(g => g.gl_number.startsWith('384'))?.id || glAccounts?.[0]?.id;
-            if (!glBankId || !validGlIds.has(glBankId) || !validGlIds.has(item.gl_account_id)) {
-              continue;
-            }
-            if (item.amount >= 0) {
-              line1 = { sequence_number: 1, gl_account_id: glBankId, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
-              line2 = { sequence_number: 2, gl_account_id: item.gl_account_id, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
-            } else {
-              line1 = { sequence_number: 1, gl_account_id: item.gl_account_id, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
-              line2 = { sequence_number: 2, gl_account_id: glBankId, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
-            }
-          } else {
-            if (item.amount >= 0) {
-              if (!glCustId || !validGlIds.has(glCustId) || !validGlIds.has(item.gl_account_id)) {
-                continue;
-              }
-              line1 = { sequence_number: 1, gl_account_id: glCustId, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
-              line2 = { sequence_number: 2, gl_account_id: item.gl_account_id, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
-            } else {
-              if (!glSuppId || !validGlIds.has(glSuppId) || !validGlIds.has(item.gl_account_id)) {
-                continue;
-              }
-              line1 = { sequence_number: 1, gl_account_id: item.gl_account_id, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
-              line2 = { sequence_number: 2, gl_account_id: glSuppId, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
-            }
-          }
-
-          const { data: header, error: hErr } = await supabase
-            .from('acc_journal_headers')
-            .insert({
-              company_id: selectedCompany.id,
-              journal_id: journalId,
-              accounting_year: year,
-              status: 'GEPI_JAVASLAT',
-              entry_type: 'NORMAL',
-              source: source,
-              posting_date: itemDate,
-              document_date: itemDate,
-              document_id: docId,
-              description: item.description || 'Automatikus bizonylat javaslat',
-              currency: currency,
-              exchange_rate: exchangeRate,
-              exchange_rate_date: itemDate,
-              import_key: item.item_id.toString()
-            })
-            .select('id')
-            .single();
-
-          if (hErr) continue;
-
-          line1.header_id = header.id;
-          line2.header_id = header.id;
-
-          await supabase.from('acc_journal_lines').insert([line1, line2]);
-          createdCount++;
-        }
-
-        return createdCount;
-      }
+      const { data, error } = await supabase.rpc('acc_generate_drafts_from_ledger', {
+        p_company_id: selectedCompany.id,
+        p_preset_id: activePresetId
+      });
+      if (error) throw error;
+      return data;
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
       toast({ title: "Javaslatok sikeresen legenerálva", description: `${count} db könyvelési tétel javaslat jött létre a meglévő adatokból.` });
     },
-    onError: (err) => {
-      toast({ title: "Hiba a javaslatok generálásakor", description: err.message, variant: "destructive" });
+    onError: (err: any) => {
+      toast({ title: "Hiba a javaslatok generálásakor", description: err?.message || "Ismeretlen hiba történt", variant: "destructive" });
     }
   });
 
@@ -326,6 +244,28 @@ export default function JournalsPage() {
     }
   }, [journals, loadingJournals, selectedCompany]);
 
+  // Fetch MNB daily exchange rates for currency conversion and tooltips
+  const { data: dailyExchangeRates = [] } = useQuery({
+    queryKey: ['daily-exchange-rates-journals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('daily_exchange_rates')
+        .select('currency, rate_date, rate')
+        .order('rate_date', { ascending: false });
+      if (error) return [];
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 30, // 30 minutes
+  });
+
+  const getDailyRate = useCallback((currency: string, date: string): number => {
+    if (!currency || currency === 'HUF') return 1;
+    const match = dailyExchangeRates.find(r => r.currency === currency && r.rate_date <= date);
+    if (match?.rate) return Number(match.rate);
+    const fallback = dailyExchangeRates.find(r => r.currency === currency);
+    return fallback?.rate ? Number(fallback.rate) : 1;
+  }, [dailyExchangeRates]);
+
   // Fetch entries
   const { data: entries = [], isLoading: loadingEntries } = useQuery({
     queryKey: ['acc-journal-entries', selectedCompany?.id, selectedJournalId, dateFrom, dateTo],
@@ -353,7 +293,9 @@ export default function JournalsPage() {
         if (dateTo) query = query.lte('posting_date', dateTo);
       }
 
-      const { data, error } = await query.order('posting_date', { ascending: false });
+      const { data, error } = await query
+        .order('posting_date', { ascending: false })
+        .limit(10000);
       if (error) throw error;
       return data || [];
     },
@@ -549,6 +491,8 @@ export default function JournalsPage() {
     <TooltipProvider>
       <div className="flex flex-col space-y-4 p-6 min-h-[calc(100vh-4rem)] bg-background">
       <PageHeader
+        companyName={selectedCompany?.name}
+        breadcrumb="Könyvelési Naplók"
         title="Könyvelési Naplók"
         description="A vállalkozás kettős könyvvitelének naplónemenkénti, idősoros és zárt nyilvántartása."
         actions={
@@ -559,7 +503,7 @@ export default function JournalsPage() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 dark:border-indigo-900/50 dark:text-indigo-400 dark:hover:bg-indigo-950/30"
+              className="gap-1.5 border-indigo-500/30 text-indigo-600 hover:bg-indigo-500/10 hover:text-indigo-700 dark:border-indigo-500/30 dark:text-indigo-400 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-300"
               onClick={() => generateDraftsMutation.mutate()}
               disabled={generateDraftsMutation.isPending || !activePresetId}
             >
@@ -570,7 +514,11 @@ export default function JournalsPage() {
               )}
               Javaslatok generálása
             </Button>
-            <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-500" onClick={() => { setEditingEntryId(null); setManualEntryOpen(true); }}>
+            <Button
+              size="sm"
+              className="gap-1.5 shadow-sm"
+              onClick={() => { setEditingEntryId(null); setManualEntryOpen(true); }}
+            >
               <Plus className="w-4 h-4" /> Új vegyes bizonylat
             </Button>
           </div>
@@ -629,9 +577,9 @@ export default function JournalsPage() {
                   </Badge>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-slate-900 border-slate-800 text-slate-100 p-2 text-xs shadow-md">
-                <p className="font-semibold text-white">{j.code} - {j.name}</p>
-                <p className="text-[10px] text-slate-400">Pénznem: {j.currency}</p>
+              <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
+                <p className="font-semibold text-popover-foreground">{j.code} - {j.name}</p>
+                <p className="text-[10px] text-muted-foreground">Pénznem: {j.currency}</p>
               </TooltipContent>
             </Tooltip>
           ))
@@ -672,90 +620,102 @@ export default function JournalsPage() {
           {/* Filters */}
           <div className="flex gap-3 items-center">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Keresés (partner, bizonylatszám, megnevezés...)"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="pl-9 bg-card border-border"
-              />
-            </div>
-            
-            {/* Items per page selector */}
-            <div className="flex items-center gap-2 shrink-0 bg-card border border-border rounded-lg px-3 h-10 text-xs">
-              <span className="text-muted-foreground font-medium">Sorok száma:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
+                onChange={e => {
+                  setSearch(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="bg-transparent border-none focus:outline-none cursor-pointer font-bold text-foreground"
-              >
-                <option value={50} className="bg-card">50</option>
-                <option value={100} className="bg-card">100</option>
-                <option value={200} className="bg-card">200</option>
-              </select>
+                className="pl-9 bg-card border-border shadow-none"
+              />
             </div>
           </div>
 
-          {/* List Table */}
-          <Card className="border border-border bg-card overflow-hidden">
+          {/* Top Pagination */}
+          {totalItems > 0 && (
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setItemsPerPage(newSize);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[50, 100, 200]}
+              className="py-1"
+            />
+          )}
 
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-muted/40 border-b border-border/40 text-muted-foreground select-none uppercase font-semibold text-[10px] tracking-wider">
-                      <th className="py-1.5 px-2 text-center w-10">
-                        <input
-                          type="checkbox"
+          {/* List Table Container */}
+          <div className="rounded-lg border border-border/50 bg-card overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <Table className="compact-table w-full table-fixed min-w-[1150px]">
+                <TableHeader>
+                  <TableRow className="bg-muted/40 border-b border-border/40 text-muted-foreground select-none uppercase font-semibold text-[10px] tracking-wider">
+                    <TableHead className="w-[44px] text-center p-0">
+                      <div className="flex items-center justify-center">
+                        <Checkbox
                           checked={
                             paginatedEntries.length > 0 &&
                             paginatedEntries
                               .filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status))
                               .every((e: any) => selectedEntryIds.has(e.id))
                           }
-                          onChange={(ev) => handleSelectAll(ev.target.checked, paginatedEntries)}
-                          className="rounded border-gray-300 text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
+                          onCheckedChange={(checked) => handleSelectAll(!!checked, paginatedEntries)}
+                          aria-label="Összes piszkozat kijelölése"
                         />
-                      </th>
-                      <th className="py-1.5 px-2">Dátum</th>
-                      <th className="py-1.5 px-2">Naplószám</th>
-                      <th className="py-1.5 px-2">Bizonylatszám</th>
-                      <th className="py-1.5 px-2">Partner</th>
-                      <th className="py-1.5 px-2">Megnevezés</th>
-                      <th className="py-1.5 px-2 text-right">Összeg</th>
-                      <th className="py-1.5 px-2 text-center">Típus</th>
-                      <th className="py-1.5 px-2 text-center">Státusz</th>
-                      <th className="py-1.5 px-2 text-right">Műveletek</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    {loadingEntries ? (
-                      <tr>
-                        <td colSpan={10} className="p-12 text-center text-muted-foreground">
-                          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                          Tételek betöltése...
-                        </td>
-                      </tr>
-                    ) : filteredEntries.length === 0 ? (
-                      <tr>
-                        <td colSpan={10} className="p-12 text-center text-muted-foreground">
-                          <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
-                          Nincsenek tételek ebben a nézetben.
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedEntries.map((e: any) => {
+                      </div>
+                    </TableHead>
+                    <TableHead className="w-[95px] whitespace-nowrap">Dátum</TableHead>
+                    <TableHead className="w-[110px] whitespace-nowrap">Naplószám</TableHead>
+                    <TableHead className="w-[150px] whitespace-nowrap">Bizonylatszám</TableHead>
+                    <TableHead className="w-[180px] whitespace-nowrap">Partner</TableHead>
+                    <TableHead className="w-auto min-w-[200px]">Megnevezés</TableHead>
+                    <TableHead className="w-[150px] text-right whitespace-nowrap">Összeg</TableHead>
+                    <TableHead className="w-[100px] text-center whitespace-nowrap">Típus</TableHead>
+                    <TableHead className="w-[130px] text-center whitespace-nowrap">Státusz</TableHead>
+                    <TableHead className="w-[120px] text-right whitespace-nowrap">Műveletek</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border/20">
+                  {loadingEntries ? (
+                    <TableSkeleton columns={10} rows={8} />
+                  ) : filteredEntries.length === 0 ? (
+                    <TableEmptyState
+                      colSpan={10}
+                      icon={search ? Search : FileText}
+                      title={search ? "Nincs találat a megadott keresési feltételekre" : "Nincsenek tételek ebben a nézetben"}
+                      description={search ? "Próbáld módosítani a keresési feltételt vagy törölni a szűrőt." : "Ehhez a naplóhoz még nem tartoznak könyvelési tételek a megadott időszakban."}
+                      onClearFilters={search ? () => setSearch('') : undefined}
+                      clearLabel="Keresés törlése"
+                    />
+                  ) : (
+                    <>
+                      {paginatedEntries.map((e: any) => {
                         const isForeign = e.currency && e.currency !== 'HUF';
                         const totalAmount = e.lines?.reduce((acc: number, l: any) => {
                           if (l.dc_type !== 'T') return acc;
                           const val = isForeign ? (l.foreign_amount || l.amount) : l.amount;
                           return acc + Number(val);
                         }, 0) || 0;
-                        const hufAmount = isForeign
+
+                        // Resolve daily exchange rate for the posting date
+                        const headerRate = Number(e.exchange_rate) || 0;
+                        const rate = headerRate > 1 ? headerRate : getDailyRate(e.currency, e.posting_date);
+
+                        // Calculate HUF amount:
+                        // 1. If line amounts in DB are already converted (differ from foreign amount), sum them
+                        const linesHufSum = isForeign
                           ? e.lines?.reduce((acc: number, l: any) => l.dc_type === 'T' ? acc + Number(l.amount) : acc, 0) || 0
+                          : 0;
+
+                        // 2. If lines were already converted, use linesHufSum. Otherwise calculate directly using that day's exchange rate
+                        const hufAmount = isForeign
+                          ? (linesHufSum > 0 && Math.abs(linesHufSum - totalAmount) > 0.01 ? linesHufSum : totalAmount * rate)
                           : 0;
 
                         const statusInfo = STATUS_LABELS[e.status] || { label: e.status, color: 'bg-slate-500/10' };
@@ -763,52 +723,92 @@ export default function JournalsPage() {
                         const isDraft = ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status);
                         
                         return (
-                          <tr key={e.id} className="hover:bg-muted/20 transition-colors">
-                            <td className="py-1 px-2 text-center w-10">
+                          <TableRow key={e.id} className="hover:bg-muted/20 transition-colors h-[45px]">
+                            <TableCell className="w-[44px] text-center p-0">
                               {isDraft ? (
-                                <input
-                                  type="checkbox"
-                                  checked={selectedEntryIds.has(e.id)}
-                                  onChange={() => toggleSelectEntry(e.id)}
-                                  className="rounded border-gray-300 text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
+                                <div className="flex items-center justify-center">
+                                  <Checkbox
+                                    checked={selectedEntryIds.has(e.id)}
+                                    onCheckedChange={() => toggleSelectEntry(e.id)}
+                                    aria-label={`Tétel kijelölése: ${e.document_id || e.id}`}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-4 h-4 mx-auto" />
+                              )}
+                            </TableCell>
+                            <TableCell className="w-[95px] font-mono text-muted-foreground whitespace-nowrap">
+                              {e.posting_date.replace(/-/g, '.')}
+                            </TableCell>
+                            <TableCell className="w-[110px] font-semibold text-foreground whitespace-nowrap truncate">
+                              {journalNum}
+                            </TableCell>
+                            <TableCell className="w-[150px] font-mono truncate">
+                              {e.document_id ? (
+                                <CopyableCell
+                                  value={e.document_id}
+                                  displayValue={e.document_id}
+                                  className="font-mono text-xs"
+                                  maxWidth="135px"
+                                  ariaLabel={`${e.document_id} másolása`}
                                 />
                               ) : (
-                                <div className="w-3.5 h-3.5 mx-auto" />
+                                <span className="text-muted-foreground">—</span>
                               )}
-                            </td>
-                            <td className="py-1 px-2 font-mono text-muted-foreground">{e.posting_date.replace(/-/g, '.')}</td>
-                            <td className="py-1 px-2 font-semibold text-foreground">{journalNum}</td>
-                            <td className="py-1 px-2 font-mono">{e.document_id}</td>
-                            <td className="py-1 px-2 font-medium text-foreground">{e.partner?.name || '—'}</td>
-                            <td className="py-1 px-2">
+                            </TableCell>
+                            <TableCell className="w-[180px] font-medium text-foreground truncate">
+                              {e.partner?.name ? (
+                                <CopyableCell
+                                  value={e.partner.name}
+                                  displayValue={e.partner.name.length > 18 ? e.partner.name.slice(0, 18) + '…' : e.partner.name}
+                                  truncate
+                                  maxWidth="165px"
+                                  className="font-medium text-xs text-foreground"
+                                  ariaLabel={`${e.partner.name} másolása`}
+                                />
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="w-auto min-w-[200px] truncate">
                               <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
-                                  <div className="truncate max-w-[200px] font-medium text-foreground cursor-default">
+                                  <div className="truncate font-medium text-foreground cursor-default">
                                     {e.description}
                                   </div>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-[400px] bg-slate-900 border-slate-800 text-slate-100 p-2 text-xs shadow-md">
-                                  <p className="whitespace-pre-wrap">{e.description}</p>
+                                <TooltipContent side="top" className="max-w-[400px] p-2 text-xs shadow-md">
+                                  <p className="whitespace-pre-wrap text-popover-foreground">{e.description}</p>
                                 </TooltipContent>
                               </Tooltip>
-                            </td>
-                            <td className="py-1 px-2 text-right font-semibold tabular-nums">
+                            </TableCell>
+                            <TableCell className="w-[150px] text-right font-semibold tabular-nums whitespace-nowrap">
                               <div className="flex flex-col items-end">
                                 <span>{formatCurrency(totalAmount, e.currency || 'HUF')}</span>
                                 {isForeign && (
-                                  <span className="text-[10px] text-muted-foreground font-normal leading-tight">
-                                    ({formatCurrency(hufAmount, 'HUF')})
-                                  </span>
+                                  <Tooltip delayDuration={150}>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-[10px] text-muted-foreground font-normal leading-tight cursor-help hover:text-foreground transition-colors">
+                                        ({formatCurrency(hufAmount, 'HUF')})
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="text-xs">
+                                      <p className="font-medium">Napi MNB árfolyam ({e.posting_date.replace(/-/g, '.')}):</p>
+                                      <p className="text-muted-foreground font-mono">1 {e.currency} = {rate.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} Ft</p>
+                                    </TooltipContent>
+                                  </Tooltip>
                                 )}
                               </div>
-                            </td>
-                            <td className="py-1 px-2 text-center text-[10px] text-muted-foreground font-mono">{SOURCE_LABELS[e.source] || e.source}</td>
-                            <td className="py-1 px-2 text-center">
+                            </TableCell>
+                            <TableCell className="w-[100px] text-center">
+                              {renderSourceBadge(e.source)}
+                            </TableCell>
+                            <TableCell className="w-[130px] text-center whitespace-nowrap">
                               <Badge className={cn("px-2 py-0.5 text-[10px] font-medium border uppercase", statusInfo.color)} variant="outline">
                                 {statusInfo.label}
                               </Badge>
-                            </td>
-                            <td className="py-1 px-2 text-right">
+                            </TableCell>
+                            <TableCell className="w-[120px] text-right">
                               <div className="flex justify-end gap-1">
                                 <Button size="icon" variant="ghost" className="w-6 h-6 text-muted-foreground hover:text-foreground" onClick={() => setSelectedEntry(e)}>
                                   <Eye className="w-3.5 h-3.5" />
@@ -821,7 +821,7 @@ export default function JournalsPage() {
                                     <Button size="icon" variant="ghost" className="w-6 h-6 text-destructive hover:bg-destructive/10" title="Sztornózás" onClick={() => handleStorno(e.id, false)}>
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </Button>
-                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-sky-600 hover:bg-sky-50" title="Javítás/Helyesbítés" onClick={() => handleStorno(e.id, true)}>
+                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/30" title="Javítás/Helyesbítés" onClick={() => handleStorno(e.id, true)}>
                                       <CornerDownRight className="w-3.5 h-3.5" />
                                     </Button>
                                   </>
@@ -840,56 +840,40 @@ export default function JournalsPage() {
                                   </>
                                 )}
                               </div>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                      })}
+                      <TablePlaceholderRows
+                        currentCount={paginatedEntries.length}
+                        pageSize={itemsPerPage}
+                        columns={10}
+                      />
+                    </>
+                  )}
+                </TableBody>
+              </Table>
               </div>
 
               {totalItems > 0 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/20 text-xs flex-wrap gap-3">
-                  <div className="text-muted-foreground">
-                    Összesen <span className="font-semibold text-foreground">{totalItems}</span> tételből{' '}
-                    <span className="font-semibold text-foreground">
-                      {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} -{' '}
-                      {Math.min(currentPage * itemsPerPage, totalItems)}
-                    </span>{' '}
-                    megjelenítve
-                  </div>
-                  {totalPages > 1 && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="h-8"
-                      >
-                        Előző
-                      </Button>
-                      <div className="flex items-center px-3 font-medium">
-                        {currentPage} / {totalPages}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="h-8"
-                      >
-                        Következő
-                      </Button>
-                    </div>
-                  )}
+                <div className="border-t border-border/40 p-2 bg-muted/10">
+                  <UnifiedPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalItems}
+                    pageSize={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onPageSizeChange={(newSize) => {
+                      setItemsPerPage(newSize);
+                      setCurrentPage(1);
+                    }}
+                    pageSizeOptions={[50, 100, 200]}
+                  />
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
-      </div>
 
       {/* Details Drawer */}
       <Sheet open={!!selectedEntry} onOpenChange={open => !open && setSelectedEntry(null)}>
@@ -924,6 +908,14 @@ export default function JournalsPage() {
                     <span className="text-muted-foreground block">Bizonylatszám</span>
                     <span className="font-mono font-medium text-foreground">{selectedEntry.document_id}</span>
                   </div>
+                  {selectedEntry.currency && selectedEntry.currency !== 'HUF' && (
+                    <div>
+                      <span className="text-muted-foreground block">Napi MNB árfolyam</span>
+                      <span className="font-mono font-medium text-foreground">
+                        1 {selectedEntry.currency} = {(Number(selectedEntry.exchange_rate) > 1 ? Number(selectedEntry.exchange_rate) : getDailyRate(selectedEntry.currency, selectedEntry.posting_date)).toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} Ft
+                      </span>
+                    </div>
+                  )}
                   {selectedEntry.justification && (
                     <div className="col-span-2 border-t pt-2 mt-2">
                       <span className="text-muted-foreground block">Indoklás / Megjegyzés</span>
@@ -966,7 +958,13 @@ export default function JournalsPage() {
                                 const formatted = formatCurrency(amtVal, selectedEntry.currency || 'HUF');
                                 
                                 if (isForeign) {
-                                  const formattedHuf = formatCurrency(line.amount, 'HUF');
+                                  const lineRate = Number(selectedEntry.exchange_rate) > 1 
+                                    ? Number(selectedEntry.exchange_rate) 
+                                    : getDailyRate(selectedEntry.currency, selectedEntry.posting_date);
+                                  const lineHuf = (Number(line.amount) > 0 && Math.abs(Number(line.amount) - amtVal) > 0.01)
+                                    ? Number(line.amount)
+                                    : amtVal * lineRate;
+                                  const formattedHuf = formatCurrency(lineHuf, 'HUF');
                                   return (
                                     <div className="flex flex-col items-end">
                                       <span>{formatted}</span>
@@ -1077,7 +1075,7 @@ export default function JournalsPage() {
       {selectedEntryIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl bg-card border border-primary/30 shadow-2xl rounded-2xl px-6 py-4 flex items-center justify-between z-[9999] animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="flex items-center gap-3 text-sm font-semibold text-primary">
-            <span className="bg-primary/10 px-3 py-1 rounded-full text-xs font-bold tabular-nums text-primary-foreground dark:text-primary">
+            <span className="bg-primary/10 px-3 py-1 rounded-full text-xs font-bold tabular-nums text-primary">
               {selectedEntryIds.size}
             </span>
             <span>tétel kijelölve a tömeges műveletekhez</span>
@@ -1086,7 +1084,7 @@ export default function JournalsPage() {
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-950 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+              className="h-8 text-xs gap-1.5 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
               onClick={() => bulkPostMutation.mutate(Array.from(selectedEntryIds))}
               disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
             >
@@ -1100,7 +1098,7 @@ export default function JournalsPage() {
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5 border-sky-200 text-sky-700 hover:bg-sky-50 dark:border-sky-950 dark:text-sky-400 dark:hover:bg-sky-950/30"
+              className="h-8 text-xs gap-1.5 border-sky-500/30 text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:border-sky-500/30 dark:text-sky-400 dark:hover:bg-sky-950/40 dark:hover:text-sky-300"
               onClick={() => bulkUpdateStatusMutation.mutate({ ids: Array.from(selectedEntryIds), status: 'JOVAHAGYASRA_VAR' })}
               disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
             >
@@ -1114,7 +1112,7 @@ export default function JournalsPage() {
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5 border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800/30"
+              className="h-8 text-xs gap-1.5 border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               onClick={() => bulkUpdateStatusMutation.mutate({ ids: Array.from(selectedEntryIds), status: 'ELVETVE' })}
               disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
             >

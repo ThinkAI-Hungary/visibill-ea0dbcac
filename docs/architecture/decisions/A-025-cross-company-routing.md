@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-07-02  
-**Utoljára frissítve:** 2026-07-05
+**Utoljára frissítve:** 2026-09-03
 
 ## Context
 
@@ -29,19 +29,24 @@ a Think AI Kft. alá tölti fel. A worker automatikusan szétszortírozza.
 1. User összes cégének lekérdezése (`company_members JOIN companies` — név, adószám, cím)
 2. Ha ≤1 cég → SKIP (single-company user)
 3. **Tier 1:** Extraktált adószámok (vevő/eladó) összehasonlítása a cégek adószámaival (8-digit prefix)
-4. **Tier 2 (2026-07-05):** Ha Tier 1 nem talált, normalizált cégnév matching (exact + containment)
+4. **Intra-group védelem (2026-09-03):** Ha az aktuális cég (`current_company_id`) megegyezik a számla vevőjével VAGY eladójával (Tier 1 adószám vagy Tier 2 cégnév alapján):
+   - **Tilos átirányítani (SKIP)** — a számla már a helyes cégnél van!
+   - Ha a kiállító cégbe töltötték fel: marad a kiállítónál mint `OUTBOUND` számla, biztosítva a kimenő NAV rekordok számlakép-csatolását.
+   - Ha a vevő cégbe töltötték fel: marad a vevőnél mint `INBOUND` számla.
+5. **Tier 2 (2026-07-05):** Ha Tier 1 nem talált, normalizált cégnév matching (exact + containment)
    - Opcionális cím megerősítés → `name_address` match type
    - Név normalizáció: lowercase, jogi suffixek eltávolítása, kötőjel/pont/idézőjel → szóköz
-5. Match alapján routing döntés:
+   - Tier 2 esetén is érvényesül az intra-group védelem: ha az aktuális cég a legjobb vevő vagy eladó név-egyezések között van, nincs átirányítás.
+6. Match alapján routing döntés (ha a számla nem az érintett cégek valamelyikében lett feltöltve, pl. 3. holding cégből):
    - **Vevő match** → INBOUND (a cég a vevő) — prioritás ha mindkettő match-el
    - **Eladó match** → OUTBOUND (a cég az eladó)
-6. Routing alkalmazása:
+7. Routing alkalmazása:
    - **Normál eset:** `invoices` UPDATE ELŐSZÖR → `invoice_uploads` UPDATE UTÁNA
    - **Duplikátum eset:** Ha a target cégnél már létezik azonos bizonylatsorszámú számla:
      - Meglévő invoice upsert-elődik friss adatokkal
      - Duplikátum invoice törlése az eredeti cégnél
      - Upload átmozgatása a target céghez
-7. Audit log INSERT az eredeti cég naplójába (`action = 'átirányítás'`, `match_type` a details-ben)
+8. Audit log INSERT az eredeti cég naplójába (`action = 'átirányítás'`, `match_type` a details-ben)
 
 **Email routing:** Ha egy email alias az A céghez tartozik, de a csatolt számla a B céghez kellene
 kerüljön (mindkettő a user tagságai) — a webhook az A cég `company_id`-jával dolgozik, a routing a
@@ -57,6 +62,7 @@ inkonzisztens állapotban.
 
 **Pozitív:**
 - Multi-company user-ek bármelyik cégük alá tölthetnek — a rendszer szétválogat
+- Intra-group védelem (2026-09-03): Megszűnik a cégcsoporton belüli számlák téves elmozdítása; az eladó által feltöltött kimenő számlaképek a helyükön maradnak és összekapcsolódnak a NAV számlákkal
 - Tier 2 név matching biztosítja a routing-ot adószám nélküli számlák esetén is (2026-07-05)
 - Email alias-ok is működnek cross-company: beérkezik az alias cégéhez, a worker korrigálja
 - Audit trail biztosított (`átirányítás` action type, `match_type` a details-ben)
