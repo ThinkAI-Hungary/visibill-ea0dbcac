@@ -122,12 +122,20 @@ export function buildVatReturnXml(data: XmlExportData): string {
   return xml;
 }
 
-export const generateVatReturnXml = (data: XmlExportData) => {
-  const xml = buildVatReturnXml(data);
+export function getVatReturnFilename(data: { periodYear: number; periodMonth: number; companyName?: string }): string {
   const formId = `${data.periodYear % 100}65`;
   const monthStr = String(data.periodMonth).padStart(2, '0');
-  const safeName = (data.companyName || 'Ceg').replace(/\s+/g, '_');
-  const filename = `NAV_${formId}_${data.periodYear}_${monthStr}_${safeName}.xml`;
+  const safeName = (data.companyName || 'Ceg')
+    .replace(/\s+/g, '_')
+    .replace(/[.,;:/\\?*|"<>!@#$%^&()+=~`{}[\]]/g, '')
+    .replace(/_+/g, '_')
+    .replace(/^[._]+|[._]+$/g, '');
+  return `NAV_${formId}_${data.periodYear}_${monthStr}_${safeName || 'Ceg'}.xml`;
+}
+
+export const generateVatReturnXml = (data: XmlExportData) => {
+  const xml = buildVatReturnXml(data);
+  const filename = getVatReturnFilename(data);
   downloadString(xml, filename, 'application/xml;charset=utf-8');
 };
 

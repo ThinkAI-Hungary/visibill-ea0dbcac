@@ -101,7 +101,11 @@ export function buildVatReturnDescriptor(data: VatReturnData): DocumentDescripto
   ]);
 
   const monthStr = String(data.periodMonth).padStart(2, '0');
-  const safeName = (data.companyName || 'Ceg').replace(/\s+/g, '_');
+  const safeName = (data.companyName || 'Ceg')
+    .replace(/\s+/g, '_')
+    .replace(/[.,;:/\\?*|"<>!@#$%^&()+=~`{}[\]]/g, '')
+    .replace(/_+/g, '_')
+    .replace(/^[._]+|[._]+$/g, '');
 
   return {
     type: 'vat_return',
@@ -112,7 +116,7 @@ export function buildVatReturnDescriptor(data: VatReturnData): DocumentDescripto
       companyTaxNumber: data.companyTaxNumber,
       companyAddress: data.companyAddress,
       period: periodLabel,
-      filename: `NAV_${formId}_${data.periodYear}_${monthStr}_${safeName}`,
+      filename: `NAV_${formId}_${data.periodYear}_${monthStr}_${safeName || 'Ceg'}`,
       themeColor: [15, 116, 103],
     },
     sections: [

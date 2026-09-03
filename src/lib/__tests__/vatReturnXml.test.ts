@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildVatReturnXml } from '../vatReturnXml';
+import { buildVatReturnXml, getVatReturnFilename } from '../vatReturnXml';
 
 describe('vatReturnXml (NAV ÁNYK 2665 Generator)', () => {
   it('generates valid ÁNYK XML envelope with correct header, fields and escaping', () => {
@@ -85,5 +85,17 @@ describe('vatReturnXml (NAV ÁNYK 2665 Generator)', () => {
     expect(xmlQ).toContain('<mezo eazon="01_0011_idoszak_tol">2025-04-01</mezo>');
     expect(xmlQ).toContain('<mezo eazon="01_0012_idoszak_ig">2025-06-30</mezo>');
     expect(xmlQ).toContain('<mezo eazon="01_0013_gyakorisag">N</mezo>');
+  });
+
+  it('generates clean filename without trailing dots or double dots for Kft./Bt. company names', () => {
+    // @ts-ignore
+    const filename = getVatReturnFilename({
+      companyName: 'TS Consult Kft.',
+      periodYear: 2026,
+      periodMonth: 7,
+    });
+
+    expect(filename).toBe('NAV_2665_2026_07_TS_Consult_Kft.xml');
+    expect(filename).not.toContain('..');
   });
 });

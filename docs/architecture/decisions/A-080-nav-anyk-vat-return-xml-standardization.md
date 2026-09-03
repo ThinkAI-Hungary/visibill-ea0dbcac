@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-01  
-**Utoljára frissítve:** 2026-09-01  
+**Utoljára frissítve:** 2026-09-03  
 
 ## Context
 A Visibill / eaisyBooks rendszer ÁFA moduljában a 65-ös ÁFA-bevallás XML letöltése korábban egyedi hierarchikus címkéket használt (`<nyomtatvany><fejlec><fobevallas>...`), továbbá az `XmlDocumentAdapter` a számmal kezdődő mezőnevekből érvénytelen XML elemcímkéket generált (pl. `<01_adoszam_torzs>`), ami sértette a W3C XML szabványt és az ÁNYK (Általános Nyomtatványkitöltő / AbevJava) beolvasáskor azonnali hibát (*„hibás a file”*) eredményezett.
@@ -21,9 +21,11 @@ Szükségessé vált az ÁFA-bevallási XML export teljes szabványosítása a N
    - **M-lapok (Belföldi Összesítő):** `M_partner_osszesen`, valamint partnerenként `M_${idx}_0001_adoszam`, `M_${idx}_0002_nev`, `M_${idx}_0003_szamlak_szama`, `M_${idx}_0004_alap`, `M_${idx}_0005_afa`, `M_${idx}_0006_afa_5`, `M_${idx}_0007_afa_18`, `M_${idx}_0008_afa_27`.
    - **Nyilatkozat:** `03_0001_nyilatkozat_adat_valos`, `03_0002_kelt_hely`, `03_0003_kelt_datum`.
 
-3. **DocumentEngine Integráció & Egységes Export:**
+3. **DocumentEngine Integráció, Fájlnév Sanitization & Egységes Export:**
    - Az `XmlDocumentAdapter` és a `vatReturnTemplate` szinkronizálva lett az ÁNYK mezőleképezéssel.
-   - A letöltési fájlnév szabványosítva lett: `NAV_${formId}_${year}_${monthStr}_${companyName}.xml`.
+   - A letöltési fájlnév szabványosítva lett a dedikált `getVatReturnFilename` függvénnyel:  
+     `NAV_${formId}_${year}_${monthStr}_${safeName}.xml` (pl. `NAV_2665_2026_07_TS_Consult_Kft.xml`).
+   - **Dupla pont (`..xml`) és útvonal védelem:** A cégnevek végén található pontok (`Kft.`, `Bt.`) és írásjelek automatikusan eltávolításra kerülnek, így megelőzi a Java / AbevJava `JFileChooser` szülőkönyvtár félreértelmezéseit és a Windows kettős kiterjesztésből eredő importálási hibáit.
    - Export indításakor a felület egyértelmű Toast visszajelzést ad és ellenőrzi az adószám meglétét.
 
 ## Consequences
