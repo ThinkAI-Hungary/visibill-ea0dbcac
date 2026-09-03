@@ -28,21 +28,25 @@ Két kiegészítő felhasználói felületet alakítottunk ki:
      - Drag & Drop feltöltő zóna.
      - Dinamikus oszlopillesztés: ékezet- és kis/nagybetű-függetlenül felismeri a magyar és angol oszlopneveket (Vezetéknév, Keresztnév, Születési dátum, TAJ-szám, Adóazonosító, Jogviszonykód, Belépés, FEOR, Heti óraszám, Alapbér).
   2. *NAV 08 (2608 / 2508 / 2408) ÁNYK XML:*
-     - Kinyeri az M-lapokból (08M) a dolgozók személyi adatait, jogviszonyait és a számfejtési alapokat.
+     - Kinyeri az M-lapokból (08M) a dolgozók személyi adatait, jogviszonyait és a számfejtési alapokat (valós ÁNYK `eazon` kódok támogatásával).
+     - **Többhavi XML kötegelt támogatás:** A fájlválasztó (`input type="file" multiple`) és a dropzone egyszerre több havi fájlt is fogad. Ha a felhasználó 2 vagy több XML fájlt húz be egyszerre, a rendszer az `initialFiles` állapoton keresztül automatikusan megnyitja a `PayrollReconstructionDialog` kötegelt modált a kiválasztott fájlokkal azonnal feltöltve, elkerülve az ismételt fájlbehúzást.
+     - **Közvetlen Rekonstrukciós Átjáró:** A NAV 08 fül fejlécében dedikált gomb ("Többhavi Rekonstrukció (Kötegelt)") biztosít azonnali átváltást a kötegelt időszaki feldolgozásra.
 - **Előnézeti Fázis (Preview):**
   - Státusz kártyák: Érvényes sorok, Hibás sorok, Ciklus opció.
   - Táblázatos előnézet zöld/piros érvényességi jelzéssel és hibaüzenetekkel (pl. hiányzó TAJ/Adóazonosító).
   - Ha 08-as XML-ből származik az adat, megjelenik a havi bérszámfejtési ciklus lezártként való azonnali létrehozásának opciója (`createCycleOption`).
 
 ### 3.2. Gyors Rekonstrukciós Modál (`PayrollReconstructionDialog.tsx`)
-- Elérhető a bérszámfejtés főoldalának (`/accounty/payroll/:companyId`) fejlécéből a **"Számfejtés Rekonstrukció"** gombbal, valamint az onboarding beüzemelési kártyáról (amikor még nincsenek ciklusok).
+- Elérhető a bérszámfejtés főoldalának (`/accounty/payroll/:companyId`) fejlécéből a **"Számfejtés Rekonstrukció"** gombbal, valamint az onboarding beüzemelési kártyáról (amikor még nincsenek ciklusok), illetve az import oldalról több fájl behúzásakor.
 - **Funkciók:**
-  - Több havi XML fájl egyidejű kiválasztása vagy drag-and-drop behúzása.
+  - Több havi XML fájl egyidejű kiválasztása vagy drag-and-drop behúzása (`initialFiles` azonnali előtöltéssel).
   - Automatikus kronológiai rendezés (év, hónap szerint).
   - Év/hónap duplikációvédelem (új fájl felülírja az azonos hónap korábbi előnézetét).
   - Összesített KPI sáv: beolvasott hónapok száma, összes érintett dolgozó, összesített bruttó bér, nettó bér, adók és járulékok.
   - Áttekintő lista hónaponkénti bontásban (dolgozók száma, bruttó összeg, törlés gomb).
-  - **"Rekonstrukció Végrehajtása"** gomb: automatikusan legenerálja az összes hiányzó dolgozót, az aktív jogviszonyokat, a lezárt havi ciklusokat és a kalkulációs tételeket.
+  - **"Rekonstrukció Végrehajtása"** gomb:
+    - Egyetlen menetben szinkronizálja az összes egyedi dolgozót (egyetlen letisztult toast üzenettel az értesítési árvíz helyett).
+    - Létrehozza az aktív jogviszonyokat és a lezárt havi ciklusokat a kalkulációs tételekkel.
 
 ---
 
@@ -54,5 +58,7 @@ Két kiegészítő felhasználói felületet alakítottunk ki:
 ---
 
 ## 5. Kapcsolódó
+- [BRD 032: Payroll Modul](../../business/decisions/032-payroll-module.md)
 - [P-033: Bérszámfejtési Ciklus Workflow](./P-033-payroll-cycle.md)
 - [A-081: NAV 08 XML Feldolgozás és Tömeges Rekonstrukciós Motor](../../architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md)
+

@@ -225,11 +225,21 @@ export function useBulkImportPayroll() {
       let cyclesUpdated = 0;
       let totalCalculationsCreated = 0;
 
-      // 1. Először biztosítjuk a dolgozók és jogviszonyok meglétét az összes dokumentumból
+      // 1. Összegyűjtjük az egyedi dolgozókat az összes havi XML-ből a duplikált import és toast-özön elkerülésére
+      const uniqueEmployeesMap = new Map<string, Parsed08Employee>();
       for (const doc of documents) {
+        for (const emp of doc.employees) {
+          const key = (emp.taxId || emp.tajNumber || `${emp.lastName}_${emp.firstName}`).trim();
+          if (key && !uniqueEmployeesMap.has(key)) {
+            uniqueEmployeesMap.set(key, emp);
+          }
+        }
+      }
+
+      if (uniqueEmployeesMap.size > 0) {
         await importEmployeesMutation.mutateAsync({
           companyId,
-          employees: doc.employees,
+          employees: Array.from(uniqueEmployeesMap.values()),
         });
       }
 
@@ -268,6 +278,16 @@ export function useBulkImportPayroll() {
             cycleId = matchCycle.id;
             cyclesUpdated++;
             if (overwriteExisting) {
+              await supabase
+                .from('accounty_payroll_cycles')
+                .update({
+                  status: 'closed',
+                  current_step: 8,
+                  notes: `Rekonstruálva NAV 08 (${doc.filingType}) XML-ből`,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', cycleId);
+
               // Töröljük a régi kalkulációkat, hogy tisztán újraírjuk
               await supabase.from('accounty_payroll_calculations').delete().eq('cycle_id', cycleId);
             }
@@ -307,6 +327,8 @@ export function useBulkImportPayroll() {
             if (!matchedEmp) continue;
 
             const matchedEmployment = (allEmployments || []).find(
+              empl => empl.employee_id === matchedEmp.id && (empl.status === 'active' || !empl.status)
+            ) || (allEmployments || []).find(
               empl => empl.employee_id === matchedEmp.id
             );
 

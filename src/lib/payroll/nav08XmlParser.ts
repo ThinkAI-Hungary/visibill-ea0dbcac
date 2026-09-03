@@ -97,6 +97,12 @@ export function normalizeDate(dateStr: string | null | undefined): string {
   if (/^\d{8}$/.test(clean)) {
     return `${clean.slice(0, 4)}-${clean.slice(4, 6)}-${clean.slice(6, 8)}`;
   }
+  // Ha YYMMDD formátum (pl. 240715 -> 2024-07-15, 980512 -> 1998-05-12)
+  if (/^\d{6}$/.test(clean)) {
+    const yy = parseInt(clean.slice(0, 2), 10);
+    const yyyy = yy > 50 ? 1900 + yy : 2000 + yy;
+    return `${yyyy}-${clean.slice(2, 4)}-${clean.slice(4, 6)}`;
+  }
   // Ha YYYY.MM.DD vagy DD.MM.YYYY vagy YYYY-MM-DD vagy DD/MM/YYYY
   const parts = clean.split(/[.\-/]/).map(p => p.trim());
   if (parts.length === 3) {
@@ -120,6 +126,58 @@ export function normalizeDate(dateStr: string | null | undefined): string {
     }
   }
   return clean;
+}
+
+/**
+ * Automatikus magyar karakterkódolás-javító (Mojibake detector & healer).
+ * Javítja az ISO-8859-2, Windows-1250 és UTF-8 közötti téves dekódolásokból
+ * fakadó hibás karaktereket a teljes 18-magánhangzós magyar ábécében.
+ */
+export function repairHungarianMojibake(str: string | null | undefined): string {
+  if (!str) return '';
+  return str
+    // á / Á
+    .replace(/ĂĄ/g, 'á').replace(/\u0102\u0104/g, 'á')
+    .replace(/Ă\u00A1/g, 'á').replace(/\u0102\u02C7/g, 'á').replace(/Ã¡/g, 'á')
+    .replace(/Ă\u0081/g, 'Á').replace(/Ã\u0081/g, 'Á')
+    // é / É
+    .replace(/ĂŠ/g, 'é').replace(/\u0102\u0160/g, 'é')
+    .replace(/Ă\u00A9/g, 'é').replace(/Ã©/g, 'é')
+    .replace(/Ă\u0089/g, 'É').replace(/Ă‰/g, 'É').replace(/\u0102\u2030/g, 'É').replace(/Ã\u0089/g, 'É')
+    // í / Í
+    .replace(/Ă­/g, 'í').replace(/\u0102\u00AD/g, 'í')
+    .replace(/Ă\u00AD/g, 'í').replace(/Ã­/g, 'í')
+    .replace(/Ă\u008D/g, 'Í').replace(/Ã\u008D/g, 'Í')
+    // ó / Ó
+    .replace(/Ăł/g, 'ó').replace(/\u0102\u0142/g, 'ó')
+    .replace(/Ă\u00B3/g, 'ó').replace(/Ã³/g, 'ó')
+    .replace(/Ă\u0093/g, 'Ó').replace(/\u0102\u201C/g, 'Ó').replace(/Ã\u0093/g, 'Ó')
+    // ö / Ö
+    .replace(/Ăś/g, 'ö').replace(/\u0102\u015B/g, 'ö')
+    .replace(/Ă¶/g, 'ö').replace(/Ă\u00B6/g, 'ö').replace(/Ã¶/g, 'ö')
+    .replace(/Ă\u0096/g, 'Ö').replace(/\u0102\u2013/g, 'Ö').replace(/Ã\u0096/g, 'Ö')
+    // ő / Ő
+    .replace(/Ĺ‘/g, 'ő').replace(/\u0139\u2018/g, 'ő').replace(/Ĺ\u0091/g, 'ő').replace(/\u0139\u0091/g, 'ő').replace(/Å\u0091/g, 'ő')
+    .replace(/Ĺ\u0090/g, 'Ő').replace(/\u0139\u0090/g, 'Ő').replace(/ĹŤ/g, 'Ő').replace(/\u0139\u0164/g, 'Ő').replace(/Å\u0090/g, 'Ő')
+    // ú / Ú
+    .replace(/Ăş/g, 'ú').replace(/\u0102\u015F/g, 'ú')
+    .replace(/Ă\u00BA/g, 'ú').replace(/Ãº/g, 'ú')
+    .replace(/Ă\u009A/g, 'Ú').replace(/\u0102\u0161/g, 'Ú').replace(/Ã\u009A/g, 'Ú')
+    // ü / Ü
+    .replace(/Ăź/g, 'ü').replace(/\u0102\u017A/g, 'ü')
+    .replace(/Ă\u00BC/g, 'ü').replace(/Ã¼/g, 'ü')
+    .replace(/Ă\u009C/g, 'Ü').replace(/\u0102\u0153/g, 'Ü').replace(/Ã\u009C/g, 'Ü')
+    // ű / Ű
+    .replace(/Ĺ±/g, 'ű').replace(/\u0139\u00B1/g, 'ű').replace(/Ĺ\u00B1/g, 'ű').replace(/Ĺą/g, 'ű').replace(/\u0139\u0105/g, 'ű').replace(/Å±/g, 'ű')
+    .replace(/Ĺ\u00B0/g, 'Ű').replace(/\u0139\u00B0/g, 'Ű').replace(/ĹĄ/g, 'Ű').replace(/\u0139\u0104/g, 'Ű').replace(/Å°/g, 'Ű');
+}
+
+/**
+ * Szöveg megtisztítása felesleges szóközöktől és ékezet-javítással
+ */
+export function cleanText(val: string | null | undefined): string {
+  if (!val) return '';
+  return repairHungarianMojibake(val.trim());
 }
 
 /**
@@ -164,18 +222,19 @@ function parseNumber(val: any): number {
  */
 function extractAnykFields(formElem: Element): Map<string, string> {
   const map = new Map<string, string>();
-  const mezok = formElem.querySelectorAll('mezo');
-  mezok.forEach(m => {
+  const mezok = formElem.getElementsByTagName('mezo');
+  for (let i = 0; i < mezok.length; i++) {
+    const m = mezok[i];
     const name = m.getAttribute('nev') ||
                  m.getAttribute('eazon') ||
                  m.getAttribute('azonosito') ||
                  m.getAttribute('id') ||
                  m.getAttribute('name') || '';
-    const val = m.textContent?.trim() || '';
+    const val = cleanText(m.textContent || '');
     if (name) {
       map.set(name.toUpperCase(), val);
     }
-  });
+  }
   return map;
 }
 
@@ -313,24 +372,52 @@ function parseSemanticXml(doc: Document): Parsed08Document | null {
 }
 
 /**
+ * Segédfüggvény: keresés adott tagek között egy elemen belül névtér-függetlenül
+ */
+function findTagText(parent: Element | Document | null | undefined, tagNames: string[]): string {
+  if (!parent) return '';
+  for (const tag of tagNames) {
+    // 1. getElementsByTagName (teljesen névtér-független)
+    const els = parent.getElementsByTagName(tag);
+    if (els && els.length > 0) {
+      const txt = els[0].textContent?.trim();
+      if (txt) return txt;
+    }
+    // 2. querySelector fallback
+    try {
+      const el = parent.querySelector(tag);
+      if (el && el.textContent?.trim()) return el.textContent.trim();
+    } catch {
+      // Selector szintaktikai hiba elnyelése
+    }
+  }
+  return '';
+}
+
+/**
  * NAV ÁNYK Nyomtatvány XML parse-olása (2608, 2508, 2408)
  */
 function parseAnykXml(doc: Document): Parsed08Document | null {
-  const nyomtatvanyok = doc.querySelectorAll('nyomtatvany');
+  // Névtér-függetlenül keressük a nyomtatvany tageket
+  let nyomtatvanyok = Array.from(doc.getElementsByTagName('nyomtatvany'));
+  if (nyomtatvanyok.length === 0) {
+    nyomtatvanyok = Array.from(doc.querySelectorAll('nyomtatvany'));
+  }
   if (nyomtatvanyok.length === 0) return null;
 
   let filingType = '2608';
   let companyName = '';
   let companyTaxNumber = '';
   let year = new Date().getFullYear();
-  let month = new Date().getMonth() + 1;
+  let month = 0; // 0 = még nem detektált
   const parseErrors: string[] = [];
 
   const employees: Parsed08Employee[] = [];
 
   nyomtatvanyok.forEach(nyom => {
-    const info = nyom.querySelector('nyomtatvanyinformacio');
-    const azonosito = info?.querySelector('nyomtatvanyazonosito')?.textContent?.trim().toUpperCase() || '';
+    const infoEls = nyom.getElementsByTagName('nyomtatvanyinformacio');
+    const info = infoEls.length > 0 ? infoEls[0] : nyom.querySelector('nyomtatvanyinformacio');
+    const azonosito = (findTagText(info, ['nyomtatvanyazonosito']) || '').toUpperCase();
     const fields = extractAnykFields(nyom);
 
     // Évszám meghatározása az azonosítóból (pl. 2608A -> 2026, 2508A -> 2025)
@@ -338,18 +425,46 @@ function parseAnykXml(doc: Document): Parsed08Document | null {
     else if (azonosito.startsWith('2508')) { filingType = '2508'; year = 2025; }
     else if (azonosito.startsWith('2408')) { filingType = '2408'; year = 2024; }
 
+    // Megjegyzésből időszak keresés (pl. "01. hó")
+    const megjegyzes = findTagText(info, ['megjegyzes']);
+    if (megjegyzes) {
+      const matchHo = megjegyzes.match(/(\d{1,2})\.\s*hó/i) || megjegyzes.match(/(\d{1,2})\s*hó/i);
+      if (matchHo) {
+        const parsedHo = parseInt(matchHo[1], 10);
+        if (!isNaN(parsedHo) && parsedHo >= 1 && parsedHo <= 12 && month === 0) {
+          month = parsedHo;
+        }
+      }
+    }
+
     // Főlap (08A): Cégadatok és Időszak
     if (azonosito.endsWith('A') || azonosito.includes('08A')) {
-      companyName = fields.get('0101B') || fields.get('CEGNEV') || fields.get('NEV') || companyName;
-      companyTaxNumber = fields.get('0101C') || fields.get('ADOSZAM') || companyTaxNumber;
+      const adozoEl = info ? (info.getElementsByTagName('adozo')[0] || info.querySelector('adozo')) : null;
+      const adozoNev = findTagText(adozoEl, ['nev', 'name']);
+      const adozoAdoszam = findTagText(adozoEl, ['adoszam', 'taxnumber']);
+
+      companyName = adozoNev ||
+                    fields.get('0A0001C013A') ||
+                    fields.get('0101B') ||
+                    fields.get('CEGNEV') ||
+                    fields.get('NEV') ||
+                    companyName;
+
+      companyTaxNumber = adozoAdoszam ||
+                         fields.get('0A0001C002A') ||
+                         fields.get('0101C') ||
+                         fields.get('ADOSZAM') ||
+                         companyTaxNumber;
       
-      const idoszakTol = fields.get('0101D') ||
+      const idoszakEl = info ? (info.getElementsByTagName('idoszak')[0] || info.querySelector('idoszak')) : null;
+      const idoszakTol = findTagText(idoszakEl, ['tol']) ||
+                         fields.get('0A0001C027A') ||
+                         fields.get('0101D') ||
                          fields.get('IDOSZAK_TOL') ||
                          fields.get('IDOSZAK_METTOL') ||
                          fields.get('BEVALLASI_IDOSZAK_METTOL') ||
-                         info?.querySelector('idoszak > tol')?.textContent?.trim() ||
-                         info?.querySelector('tol')?.textContent?.trim() ||
                          '';
+
       if (idoszakTol) {
         const norm = normalizeDate(idoszakTol);
         const parts = norm.split('-');
@@ -358,6 +473,7 @@ function parseAnykXml(doc: Document): Parsed08Document | null {
         if (!isNaN(y) && y >= 2000 && y <= 2100) year = y;
         if (!isNaN(m) && m >= 1 && m <= 12) month = m;
       }
+
       const hoField = fields.get('HONAP') || fields.get('HO') || fields.get('0101E');
       if (hoField) {
         const parsedHo = parseInt(hoField, 10);
@@ -367,36 +483,172 @@ function parseAnykXml(doc: Document): Parsed08Document | null {
 
     // M-lap (08M): Egyéni dolgozói lap
     if (azonosito.endsWith('M') || azonosito.includes('08M')) {
-      // Személyes adatok mezői az ÁNYK 08M-en
-      // 08M-01/02 mezők: Név, TAJ, Adóazonosító, Születési adatok
-      const fullName = fields.get('M001A') || fields.get('M001') || fields.get('NEV') || '';
-      const nameParts = fullName ? fullName.trim().split(/\s+/) : [];
-      const lastName = fields.get('VEZETEKNEV') || fields.get('M_VEZETEKNEV') || nameParts[0] || '';
-      const firstName = fields.get('KERESZTNEV') || fields.get('M_KERESZTNEV') || nameParts.slice(1).join(' ') || '';
-      const tajNumber = cleanTaj(fields.get('M002') || fields.get('TAJ') || fields.get('TAJ_SZAM') || '');
-      const taxId = cleanTaxId(fields.get('M003') || fields.get('ADOAZONOSITO') || fields.get('ADO_AZON') || '');
-      const birthDate = normalizeDate(fields.get('M004') || fields.get('SZUL_DATUM') || fields.get('SZULETESI_DATUM') || '');
-      const birthPlace = fields.get('M005') || fields.get('SZUL_HELY') || '';
-      const mothersName = fields.get('M006') || fields.get('ANYJA_NEVE') || '';
+      // 1. Munkavállaló tag a nyomtatvanyinformacio-ban (pl. <munkavallalo><nev>...</nev></munkavallalo>)
+      const munkavallaloEl = info ? (info.getElementsByTagName('munkavallalo')[0] || info.querySelector('munkavallalo')) : null;
+      const infoNev = findTagText(munkavallaloEl, ['nev', 'name']);
+      const infoAdoazonosito = findTagText(munkavallaloEl, ['adoazonosito', 'taxid']);
 
-      // Jogviszony adatok (08M-04 / 08M-07 / 08M-08)
-      const jobCode = fields.get('M0401') || fields.get('JOGVISZONYKOD') || fields.get('ALK_MIN') || '1101';
-      const feorCode = fields.get('M0402') || fields.get('FEOR') || '';
-      const weeklyHours = parseNumber(fields.get('M0403') || fields.get('HETI_ORA') || 40);
-      const startDate = normalizeDate(fields.get('M0404') || fields.get('BIZT_KEZDET') || `${year}-${String(month).padStart(2, '0')}-01`);
-      const endDate = normalizeDate(fields.get('M0405') || fields.get('BIZT_VEGE')) || undefined;
+      // 2. Személyes adatok mezői (ÁNYK 08M: 0A lap eazon kódok és szemantikus nevek)
+      let lastName = fields.get('0A0001C017A') || fields.get('VEZETEKNEV') || fields.get('M_VEZETEKNEV') || '';
+      let firstName = fields.get('0A0001C018A') || fields.get('KERESZTNEV') || fields.get('M_KERESZTNEV') || '';
+      
+      const fullName = fields.get('M001A') || fields.get('M001') || fields.get('NEV') || infoNev || '';
+      if ((!lastName || !firstName) && fullName) {
+        const parts = fullName.trim().split(/\s+/);
+        if (!lastName) lastName = parts[0] || '';
+        if (!firstName) firstName = parts.slice(1).join(' ') || '';
+      }
 
-      // Jövedelmek és közterhek
-      const grossSalary = parseNumber(fields.get('M0406') || fields.get('BRUTTO_BER') || fields.get('ALAPBER') || fields.get('M04_BER'));
-      const taxBase = parseNumber(fields.get('M0501') || fields.get('SZJA_ALAP') || grossSalary);
-      const szjaAmount = parseNumber(fields.get('M0502') || fields.get('LEVONT_SZJA') || fields.get('SZJA'));
-      const tbBase = parseNumber(fields.get('M0601') || fields.get('TB_ALAP') || grossSalary);
-      const tbAmount = parseNumber(fields.get('M0602') || fields.get('LEVONT_TB') || fields.get('TB'));
-      const szochoBase = parseNumber(fields.get('M0701') || fields.get('SZOCHO_ALAP') || grossSalary);
-      const szochoAmount = parseNumber(fields.get('M0702') || fields.get('SZOCHO_OSSZEG') || fields.get('SZOCHO'));
+      const birthLastName = fields.get('0A0001C022A') || '';
+      const birthFirstName = fields.get('0A0001C023A') || '';
+      const birthName = (birthLastName || birthFirstName) ? `${birthLastName} ${birthFirstName}`.trim() : undefined;
+
+      const motherLastName = fields.get('0A0001C024A') || '';
+      const motherFirstName = fields.get('0A0001C025A') || '';
+      const mothersName = fields.get('M006') ||
+                          fields.get('ANYJA_NEVE') ||
+                          ((motherLastName || motherFirstName) ? `${motherLastName} ${motherFirstName}`.trim() : undefined);
+
+      const birthPlace = fields.get('0A0001C026A') || fields.get('M005') || fields.get('SZUL_HELY') || '';
+      const birthDate = normalizeDate(
+        fields.get('0A0001C027A') ||
+        fields.get('M004') ||
+        fields.get('SZUL_DATUM') ||
+        fields.get('SZULETESI_DATUM') ||
+        ''
+      );
+
+      const tajNumber = cleanTaj(
+        fields.get('0A0001D001A') ||
+        fields.get('M002') ||
+        fields.get('TAJ') ||
+        fields.get('TAJ_SZAM') ||
+        ''
+      );
+
+      const taxId = cleanTaxId(
+        fields.get('0A0001C007A') ||
+        fields.get('M003') ||
+        fields.get('ADOAZONOSITO') ||
+        fields.get('ADO_AZON') ||
+        infoAdoazonosito ||
+        ''
+      );
+
+      // Időszak kinyerése az M-lapból, ha a főlapból nem volt elérhető
+      const mIdoszakEl = info ? (info.getElementsByTagName('idoszak')[0] || info.querySelector('idoszak')) : null;
+      const mIdoszakTol = findTagText(mIdoszakEl, ['tol']) ||
+                          fields.get('0A0001E001A') ||
+                          fields.get('0F0001C001A') ||
+                          fields.get('M0404') ||
+                          fields.get('BIZT_KEZDET') ||
+                          '';
+      if (mIdoszakTol && month === 0) {
+        const norm = normalizeDate(mIdoszakTol);
+        const parts = norm.split('-');
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        if (!isNaN(y) && y >= 2000 && y <= 2100) year = y;
+        if (!isNaN(m) && m >= 1 && m <= 12) month = m;
+      }
+
+      // 3. Jogviszony adatok (08M 0F lap az ÁNYK-ban)
+      const rawJobCode = fields.get('0F0001C004A') ||
+                         fields.get('M0401') ||
+                         fields.get('JOGVISZONYKOD') ||
+                         fields.get('ALK_MIN') ||
+                         '1101';
+      // ÁNYK 08 kód '20' = heti 36 órát elérő munkaviszony (T1041-ben 1101)
+      const jobCode = rawJobCode === '20' ? '1101' : rawJobCode;
+
+      const feorCode = fields.get('0F0001D0520AA') || fields.get('M0402') || fields.get('FEOR') || '';
+      const weeklyHours = parseNumber(fields.get('0F0001D0524AA') || fields.get('M0403') || fields.get('HETI_ORA') || 40);
+      const effectiveMonth = month > 0 ? month : (new Date().getMonth() + 1);
+      const startDate = normalizeDate(
+        fields.get('0F0001C005A') ||
+        fields.get('0F0001C001A') ||
+        fields.get('0A0001E001A') ||
+        fields.get('M0404') ||
+        fields.get('BIZT_KEZDET') ||
+        `${year}-${String(effectiveMonth).padStart(2, '0')}-01`
+      );
+      const endDate = normalizeDate(
+        fields.get('0F0001C002A') ||
+        fields.get('0A0001E002A') ||
+        fields.get('M0405') ||
+        fields.get('BIZT_VEGE')
+      ) || undefined;
+
+      // 4. Jövedelmek és közterhek
+      const grossSalary = parseNumber(
+        fields.get('0B0001D0270DA') ||
+        fields.get('0B0001D0288DA') ||
+        fields.get('0I0001D0626CA') ||
+        fields.get('M0406') ||
+        fields.get('BRUTTO_BER') ||
+        fields.get('ALAPBER') ||
+        fields.get('M04_BER')
+      );
+
+      const taxBase = parseNumber(
+        fields.get('0C0001C0324BA') ||
+        fields.get('0C0001C0325BA') ||
+        fields.get('M0501') ||
+        fields.get('SZJA_ALAP') ||
+        grossSalary
+      );
+
+      const szjaAmount = parseNumber(
+        fields.get('0C0001D0330BA') ||
+        fields.get('0C0001D0331BA') ||
+        fields.get('M0502') ||
+        fields.get('LEVONT_SZJA') ||
+        fields.get('SZJA')
+      );
+
+      const tbBase = parseNumber(
+        fields.get('0I0001D0626CA') ||
+        fields.get('0I0001D0634CA') ||
+        fields.get('M0601') ||
+        fields.get('TB_ALAP') ||
+        grossSalary
+      );
+
+      let tbAmount = parseNumber(
+        fields.get('0I0001D0629CA') ||
+        fields.get('0I0001D0633CA') ||
+        fields.get('M0602') ||
+        fields.get('LEVONT_TB') ||
+        fields.get('TB')
+      );
+      if (!tbAmount && grossSalary > 0) {
+        // Törvényes 18,5% TB járulék kalkuláció ha nincs külön kitöltve
+        tbAmount = Math.round(tbBase * 0.185);
+      }
+
+      const szochoBase = parseNumber(
+        fields.get('0I0001D0634CA') ||
+        fields.get('M0701') ||
+        fields.get('SZOCHO_ALAP') ||
+        grossSalary
+      );
+
+      let szochoAmount = parseNumber(
+        fields.get('M0702') ||
+        fields.get('SZOCHO_OSSZEG') ||
+        fields.get('SZOCHO')
+      );
+      if (!szochoAmount && szochoBase > 0) {
+        // 13% SZOCHO kalkuláció
+        szochoAmount = Math.round(szochoBase * 0.13);
+      }
 
       const familyCredit = parseNumber(fields.get('M0503') || fields.get('CSALADI_KEDV'));
-      const under25Credit = parseNumber(fields.get('M0504') || fields.get('25_EV_ALATTI_KEDV'));
+      const under25Credit = parseNumber(
+        fields.get('0C0001C0319BA') ||
+        fields.get('M0504') ||
+        fields.get('25_EV_ALATTI_KEDV')
+      );
 
       const totalDeductions = szjaAmount + tbAmount;
       const netSalary = Math.max(0, grossSalary - totalDeductions);
@@ -409,6 +661,7 @@ function parseAnykXml(doc: Document): Parsed08Document | null {
       employees.push({
         lastName,
         firstName,
+        birthName,
         birthDate,
         birthPlace,
         mothersName,
@@ -439,29 +692,20 @@ function parseAnykXml(doc: Document): Parsed08Document | null {
     }
   });
 
+  // Ha a hónap még mindig 0, állítsuk az aktuális hónapra
+  const finalMonth = month > 0 ? month : (new Date().getMonth() + 1);
+
   const totalGross = employees.reduce((s, e) => s + e.grossSalary, 0);
   const totalSzja = employees.reduce((s, e) => s + e.szjaAmount, 0);
   const totalTb = employees.reduce((s, e) => s + e.tbAmount, 0);
   const totalSzocho = employees.reduce((s, e) => s + e.szochoAmount, 0);
   const totalNet = employees.reduce((s, e) => s + e.netSalary, 0);
 
-  // Ha a főlapból (08A) nem sikerült az időszakot kinyerni, de az első dolgozónál megvan
-  if (employees.length > 0 && (!month || month === new Date().getMonth() + 1)) {
-    const firstStart = employees[0].startDate;
-    if (firstStart) {
-      const parts = firstStart.split('-');
-      const y = parseInt(parts[0]);
-      const m = parseInt(parts[1]);
-      if (!isNaN(m) && m >= 1 && m <= 12) month = m;
-      if (!isNaN(y) && y >= 2000) year = y;
-    }
-  }
-
   return {
     companyName,
     companyTaxNumber,
     year,
-    month,
+    month: finalMonth,
     filingType,
     totalGrossSalary: totalGross,
     totalSzja,

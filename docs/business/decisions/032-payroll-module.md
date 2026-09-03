@@ -18,5 +18,13 @@
 - Bevallások generálása: M30, T1041, 08-as bevallás sablon
 - Riportok: bérjegyzék lista, havi összesítő, éves összesítő
 - Alkalmazott felvétel wizard: lépéses adatbevitel (`/accounty/payroll/:id/employees/new`)
+- **NAV 08 (2608/2508/2408) XML import & Tömeges Rekonstrukció:**
+  - Hivatalos ÁNYK 08-as XML bevallásokból történő automatikus dolgozói törzsadat import és havi bérszámfejtési ciklusok tömeges rekonstrukciója lezárt (`closed`) státusszal.
+  - Támogatja az egyidejű több havi fájl feltöltést (drag-and-drop auto-populáció), a speciális magyar karakterkódolási sérülések (mojibake) automatikus javítását, valamint a deduplikált, kötegelt dolgozói mentést.
 
-**Rationale:** A bérszámfejtés a könyvelőirodák egyik fő szolgáltatása. A ciklus-alapú workflow biztosítja, hogy a bérszámfejtés audiálható és jóváhagyásos legyen. Az adóparaméterek cég-szinten konfigurálhatók, mert különböző ügyfeleknek eltérő kedvezmények lehetnek.
+**Rationale:** A bérszámfejtés a könyvelőirodák egyik fő szolgáltatása. A ciklus-alapú workflow biztosítja, hogy a bérszámfejtés audiálható és jóváhagyásos legyen. Az adóparaméterek cég-szinten konfigurálhatók, mert különböző ügyfeleknek eltérő kedvezmények lehetnek. A NAV 08 rekonstrukciós motor lehetővé teszi új ügyfelek vagy meglévő könyvelések gyors, múltbéli béradatokkal való feltöltését kézi adatrögzítés nélkül.
+
+## Kapcsolódó
+- ADR: [A-081: NAV 08 Payroll Reconstruction and Bulk Import](../../architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md)
+- PRD: [P-063: Payroll Bulk Import and Reconstruction UX](../../product/decisions/P-063-payroll-bulk-import-and-reconstruction-ux.md)
+

@@ -43,3 +43,9 @@ docs/learning/
 # Scratch scripts
 scratch/
 
+# Graphify AST cache
+graphify-out/cache/ast/
+
+# Client sample files
+docs/*.xml
+

@@ -20,6 +20,7 @@ interface PayrollReconstructionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  initialFiles?: File[] | FileList;
 }
 
 const MONTH_NAMES = [
@@ -33,6 +34,7 @@ export function PayrollReconstructionDialog({
   open,
   onOpenChange,
   onSuccess,
+  initialFiles,
 }: PayrollReconstructionDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [documents, setDocuments] = useState<Parsed08Document[]>([]);
@@ -56,7 +58,7 @@ export function PayrollReconstructionDialog({
     0
   );
 
-  const handleFiles = useCallback(async (files: FileList | null) => {
+  const handleFiles = useCallback(async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
 
     const newDocs: Parsed08Document[] = [];
@@ -91,6 +93,12 @@ export function PayrollReconstructionDialog({
       return combined;
     });
   }, []);
+
+  React.useEffect(() => {
+    if (open && initialFiles && initialFiles.length > 0) {
+      handleFiles(initialFiles);
+    }
+  }, [open, initialFiles, handleFiles]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {

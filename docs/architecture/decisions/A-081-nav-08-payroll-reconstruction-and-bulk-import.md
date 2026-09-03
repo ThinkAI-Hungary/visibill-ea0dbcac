@@ -28,10 +28,20 @@ Kliens-oldali, aszinkron és nagy sebességű parser és rekonstrukciós motort 
 
 1. **`nav08XmlParser.ts` (XML feldolgozó & Kódoláskezelő):**
    - **`readTextFileWithEncoding(file)`**: Kétlépcsős buffer dekódoló. Detektálja az XML fejléc `encoding` attribútumát (`ISO-8859-2`, `windows-1250`, `utf-8`), és a megfelelő `TextDecoder` segítségével veszteségmentesen nyeri ki az ékezetes karaktereket.
+   - **`repairHungarianMojibake(str)` & `cleanText(str)`**: Beépített automatikus karakterjavító. A teljes 18-magánhangzós magyar mátrixot javítja az összes lehetséges forráskódolás (ISO-8859-2, Windows-1250, Latin-1 és dupla UTF-8 dekódolás) esetén (`ĂĄ` -> `á`, `ĂŠ` -> `é`, `Ăł` -> `ó`, `Ăś` -> `ö`, `Ĺ‘` -> `ő`, `Ăş` -> `ú`, `Ăź` -> `ü`, `Ĺ±` -> `ű`, `Ĺą` -> `ű` stb.).
+   - **Névtér-független DOM bejárás (`findTagText`, `getElementsByTagName`)**: A hivatalos NAV XML-ek gyakran alapértelmezett névtérrel (`xmlns="http://www.apeh.hu/abev/nyomtatvanyok/2005/01"`) rendelkeznek. A szabványos `querySelector` ilyenkor nem találja meg a tageket; a parser a lokális tagnevekre illeszkedő segédfüggvénnyel garantálja az elemek megtalálását.
    - **`parseFiling08Xml(xmlText)`**: Képes mind a hivatalos ÁNYK 08-as nyomtatványok (`nyomtatvany`, `mezo`), mind az általános szemantikus bér-XML-ek értelmezésére. Kinyeri az M-lapokból a dolgozói adatokat és az adóalapokat (SZJA, TB, SZOCHO, kedvezmények, nettó bér).
-   - **ÁNYK attribútum-kompatibilitás (`extractAnykFields`)**: Támogatja a `mezo[nev]`, `mezo[eazon]`, `mezo[azonosito]`, `mezo[id]` és `mezo[name]` formátumokat a hivatalos AbevJava keretrendszer és a harmadik felektől származó bérprogramok (pl. Kulcs-Bér, RLB, Novitax) exportjainak maradéktalan feldolgozásához.
-   - **Robusztus időszak-detektálás**: A főlap (`08A`) és az egyéni lapok (`08M`) mezőiből (`0101D`, `IDOSZAK_TOL`, `IDOSZAK_METTOL`, `BEVALLASI_IDOSZAK_METTOL`, `HONAP`, `HO`) kinyeri az évet és a hónapot, megelőzve a több havi XML egyidejű feltöltésekor a csendes felülírást.
-   - **`normalizeDate(str)`**: ISO `YYYY-MM-DD` formátumra alakítja a `DD.MM.YYYY`, `YYYY.MM.DD`, `YYYYMMDD`, `DD/MM/YYYY` dátumokat.
+   - **Hivatalos ÁNYK `eazon` és szemantikus attribútum-kompatibilitás**: Támogatja mind a logikai neveket (`VEZETEKNEV`, `BRUTTO_BER`, `M001A`), mind a hivatalos ÁNYK elektronikus azonosítókat (`eazon` attribútumok):
+     - `0A0001C017A` (Vezetéknév), `0A0001C018A` (Keresztnév)
+     - `0A0001C007A` (Adóazonosító jel), `0A0001D001A` (TAJ szám), `0A0001C027A` (Születési dátum)
+     - `0B0001D0270DA` (Bruttó bér / jövedelem alap)
+     - `0C0001D0330BA` (Levont SZJA előleg), `0C0001C0319BA` (25 év alattiak kedvezményének alapja)
+     - `0I0001D0626CA` (TB járulék alapja), `0I0001D0629CA` (Levont TB járulék), `0I0001D0634CA` (SZOCHO alap)
+     - `0F0001D0520AA` (FEOR szám), `0F0001D0524AA` (Heti munkaórák száma)
+     - `0F0001C005A` (Eredeti belépés dátuma a céghez, 6 számjegyű `YYMMDD` formátumban)
+     - Főlap (08A): `0A0001C002A` (Adózó adószáma), `0A0001C013A` (Adózó neve), `0A0001C027A` (Időszak kezdete).
+   - **Robusztus időszak-detektálás**: A főlap (`08A`) és az egyéni lapok (`08M`) mezőiből (`0A0001C027A`, `0101D`, `idoszak > tol`, `IDOSZAK_TOL`, `BEVALLASI_IDOSZAK_METTOL`) prioritási sorrendben nyeri ki az évet és a hónapot. Megakadályozza az aktuális hónapra való hibás fallback-et, így a több havi XML egyidejű feltöltésekor a hónapok nem írják felül egymást.
+   - **`normalizeDate(str)`**: ISO `YYYY-MM-DD` formátumra alakítja a `DD.MM.YYYY`, `YYYY.MM.DD`, `YYYYMMDD`, `YYMMDD` (pl. `240715` -> `2024-07-15`), `DD/MM/YYYY` dátumokat.
 
 2. **`payrollReconstructionEngine.ts` (Rekonstrukciós és Kalkulációs Tervező):**
    - **`buildReconstructionPlan`**: Összeveti a beolvasott 08-as XML fájl adatait a meglévő céges dolgozókkal (`existingEmployees`), jogviszonyokkal (`existingEmployments`) és ciklusokkal (`existingCycles`).
@@ -41,12 +51,15 @@ Kliens-oldali, aszinkron és nagy sebességű parser és rekonstrukciós motort 
 3. **`useBulkImportPayroll.ts` (Tranzakcionális In-Memory Cache Hook):**
    - **`importEmployees`**: Kötegelt dolgozó- és jogviszony import. In-memory szinkronizációval (`localEmps`, `localEmployments`) elkerüli a fájlon belüli azonos TAJ/Adóazonosító duplikált létrehozását.
    - **Szellem-dolgozó védelem**: Automatikusan kihagyja és naplózza azokat a sorokat, amelyeknél sem név, sem TAJ, sem adóazonosító nem érhető el az XML-ből, megakadályozva üres fantom-dolgozók beszúrását az adatbázisba.
-   - **`reconstructCycles`**: Több havi 08-as XML kötegelt mentése ciklusokkal és egyéni bérszámfejtési kalkulációkkal.
-   - Automatikusan érvényteleníti a kapcsolódó React Query kulcsokat (`payrollQueryKeys.all`, `companyEmployments`, `employees`, `cycles`).
+   - **`reconstructCycles` (Egyetlen menetben optimalizált kötegelt import)**:
+     - Először kiszűri és deduplikálja az egyedi munkavállalókat az összes havi XML-ből (`uniqueEmployeesMap`), és egyetlen atomi menetben szinkronizálja őket, megszüntetve a redundáns N+1 lekérdezéseket és az értesítési toast-özönt.
+     - Ciklus felülírásakor (`overwriteExisting = true`) explicit frissíti a ciklus státuszát (`status: 'closed'`, `current_step: 8`) és lezárási jegyzeteit.
+     - Jogviszony illesztésnél prioritást élvez az aktív jogviszony (`status === 'active' || !status`).
+     - Automatikusan érvényteleníti a kapcsolódó React Query kulcsokat (`payrollQueryKeys.all`, `companyEmployments`, `employees`, `cycles`).
 
 4. **UI Integráció:**
-   - **`EmployeeImportPage.tsx`**: 2-füles felület (Excel/CSV sablon letöltéssel + NAV 08 ÁNYK XML feltöltéssel). Dinamikus, ékezetmentesített oszlopfelismeréssel (`findCol`).
-   - **`PayrollReconstructionDialog.tsx`**: Több havi XML fájl egyszerre történő bedobása, kronológiai rendezése, áttekintő statisztikák (összes dolgozó, bruttó, nettó, járulékok) és kötegelt visszamenőleges generálás.
+   - **`EmployeeImportPage.tsx`**: 2-füles felület (Excel/CSV sablon letöltéssel + NAV 08 ÁNYK XML feltöltéssel). Több fájl behúzása esetén a `pendingFiles` állapoton keresztül azonnal átadja az összes fájlt a rekonstrukciós ablaknak.
+   - **`PayrollReconstructionDialog.tsx`**: Támogatja az `initialFiles` prop-ot: az ablak megnyílásakor automatikusan beolvassa, kronológiailag rendezi, és összesíti az összes feltöltött hónap béradatait.
 
 ---
 
@@ -64,6 +77,8 @@ Kliens-oldali, aszinkron és nagy sebességű parser és rekonstrukciós motort 
 ---
 
 ## 4. Kapcsolódó Dokumentáció
+- [BRD 032: Payroll Modul](../../business/decisions/032-payroll-module.md)
 - [P-033: Bérszámfejtési Ciklus Workflow](../../product/decisions/P-033-payroll-cycle.md)
 - [P-063: Bérszámfejtés Gyors Rekonstrukció és Dolgozói Tömeges Import UX](../../product/decisions/P-063-payroll-bulk-import-and-reconstruction-ux.md)
 - [A-016: PostgreSQL Query Stratégia](./A-016-postgresql-query-strategy.md)
+

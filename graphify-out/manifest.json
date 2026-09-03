@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788474153.8417804,
-    "ast_hash": "e9b42b6f6b1101bd3cb0642c15cd5a69",
+    "mtime": 1788476639.1802616,
+    "ast_hash": "ac6bbd4da9a3cd39ec9ef7ded7b52988",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3285,8 +3285,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/032-payroll-module.md": {
-    "mtime": 1781082894.2040653,
-    "ast_hash": "4df0e7277336a7b8ff87fcb25822524b",
+    "mtime": 1788476737.5801125,
+    "ast_hash": "cd39ad9ff2fe3c75187e551599d356eb",
     "semantic_hash": ""
   },
   "docs/business/decisions/033-vat-return-module.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788474110.8470807,
-    "ast_hash": "e3876cd9c9d214743b1607133ad1e1bd",
+    "mtime": 1788476644.2804353,
+    "ast_hash": "1c915cb8c02a8e13aeeab5071a0f4785",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -3980,8 +3980,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeImportPage.tsx": {
-    "mtime": 1788305752.8103104,
-    "ast_hash": "c77516838cdafea59ba9a2414b53a44d",
+    "mtime": 1788476318.149676,
+    "ast_hash": "556a19dd3391c75694fc2e024d6700ea",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ExitDocumentsPage.tsx": {
@@ -8655,18 +8655,18 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollReconstructionDialog.tsx": {
-    "mtime": 1788305733.1301067,
-    "ast_hash": "d6f5fd4f2e757c01b8d05bfd403a274d",
+    "mtime": 1788476283.5955775,
+    "ast_hash": "4155bd8db411df4aeef752dee8af8153",
     "semantic_hash": ""
   },
   "src/hooks/useBulkImportPayroll.ts": {
-    "mtime": 1788393788.3622086,
-    "ast_hash": "8521e10400cbb40ded6a19d55cfeee6f",
+    "mtime": 1788476271.8310483,
+    "ast_hash": "3b9a1e6b73833cf48336ee228bec7589",
     "semantic_hash": ""
   },
   "src/lib/payroll/nav08XmlParser.ts": {
-    "mtime": 1788393769.9391153,
-    "ast_hash": "89ffb37e0158297c400db1b9ad531dbe",
+    "mtime": 1788476259.3905957,
+    "ast_hash": "6ba94a4c8da5377a64504fd8656e688c",
     "semantic_hash": ""
   },
   "src/lib/payroll/payrollReconstructionEngine.ts": {
@@ -8675,8 +8675,8 @@
     "semantic_hash": ""
   },
   "src/test/payroll/nav08XmlParser.test.ts": {
-    "mtime": 1788393742.6711097,
-    "ast_hash": "1d40e1a170415a2881e85cb0105c79e7",
+    "mtime": 1788476367.6180594,
+    "ast_hash": "160989ce441b7a1ce23a97c036c8944a",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-ticket-support/SKILL.md": {
@@ -8685,13 +8685,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md": {
-    "mtime": 1788393976.7955153,
-    "ast_hash": "5e3c4ae44a4b3c3f4c0ed944786fc43e",
+    "mtime": 1788476746.5165613,
+    "ast_hash": "280c6bb26a9e63d026362b3fc729716d",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-063-payroll-bulk-import-and-reconstruction-ux.md": {
-    "mtime": 1788306029.7171447,
-    "ast_hash": "fb69405a55ac308b94a6ff0ce249e277",
+    "mtime": 1788476754.3167102,
+    "ast_hash": "6ac3f835e155bc042418c6135695fea2",
     "semantic_hash": ""
   },
   "scratch/debug_raiffeisen_extraction.py": {
@@ -8865,8 +8865,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-067-gl-posting-status-filter-and-journal-governance-ux.md": {
-    "mtime": 1788474095.0911553,
-    "ast_hash": "8b8cfc4738f75181bd47b03a9fbf91ee",
+    "mtime": 1788474458.5041502,
+    "ast_hash": "c90a11177be045d489e225fbc721b028",
     "semantic_hash": ""
   }
 }

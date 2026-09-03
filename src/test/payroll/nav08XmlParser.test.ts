@@ -235,6 +235,83 @@ describe('nav08XmlParser', () => {
       expect(doc.parseErrors.length).toBeGreaterThan(0);
       expect(doc.employeeCount).toBe(0);
     });
+
+    it('successfully parses real NAV ÁNYK 2608 XML with electronic eazon attributes (docs/TESTXML.xml)', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const xmlPath = path.resolve(process.cwd(), 'docs/TESTXML.xml');
+      if (!fs.existsSync(xmlPath)) return;
+
+      const xmlContent = fs.readFileSync(xmlPath, 'utf-8');
+      const doc = parseFiling08Xml(xmlContent);
+
+      // Cégadatok és Időszak
+      expect(doc.companyName).toContain('VBV VISION');
+      expect(doc.companyTaxNumber).toBe('13739830203');
+      expect(doc.year).toBe(2026);
+      expect(doc.month).toBe(1);
+      expect(doc.filingType).toBe('2608');
+      expect(doc.employeeCount).toBe(13);
+      expect(doc.employees).toHaveLength(13);
+
+      // Minden dolgozó érvényes, nincs benne szellem-dolgozó
+      expect(doc.employees.every(e => e.valid)).toBe(true);
+      expect(doc.employees.every(e => e.lastName && e.firstName)).toBe(true);
+      expect(doc.employees.every(e => e.tajNumber && e.taxId)).toBe(true);
+
+      // 1. Dolgozó: Bozóki Klaudia Kitti (25 év alatti kedvezmény)
+      const bozoki = doc.employees.find(e => e.lastName === 'Bozóki');
+      expect(bozoki).toBeDefined();
+      expect(bozoki?.firstName).toBe('Klaudia Kitti');
+      expect(bozoki?.taxId).toBe('8501501301');
+      expect(bozoki?.tajNumber).toBe('121898298');
+      expect(bozoki?.birthDate).toBe('2004-04-22');
+      expect(bozoki?.birthPlace).toBe('Kiskunhalas');
+      expect(bozoki?.mothersName).toBe('Batiz Otília Kitti');
+      expect(bozoki?.startDate).toBe('2024-07-15'); // Valós belépési dátum 0F0001C005A-ból
+      expect(bozoki?.feorCode).toBe('4112');
+      expect(bozoki?.weeklyHours).toBe(40);
+      expect(bozoki?.grossSalary).toBe(373200);
+      expect(bozoki?.szjaAmount).toBe(0); // 25 év alatti kedvezmény miatt 0 Ft SZJA
+      expect(bozoki?.tbAmount).toBe(69042);
+      expect(bozoki?.netSalary).toBe(304158);
+
+      // 2. Dolgozó: Kiss-Százi Emese (normál adózás)
+      const emese = doc.employees.find(e => e.lastName === 'Kiss-Százi');
+      expect(emese).toBeDefined();
+      expect(emese?.firstName).toBe('Emese');
+      expect(emese?.taxId).toBe('8420333069');
+      expect(emese?.tajNumber).toBe('094481530');
+      expect(emese?.birthDate).toBe('1982-01-31');
+      expect(emese?.feorCode).toBe('4121');
+      expect(emese?.weeklyHours).toBe(40);
+      expect(emese?.grossSalary).toBe(1037594);
+      expect(emese?.szjaAmount).toBe(155639);
+      expect(emese?.tbAmount).toBe(191955);
+      expect(emese?.netSalary).toBe(690000);
+
+      // 3. Dolgozó: Kolozsváriné Darányi Dóra (összetett név és ékezetek)
+      const dora = doc.employees.find(e => e.taxId === '8458660628');
+      expect(dora).toBeDefined();
+      expect(dora?.lastName).toBe('Kolozsváriné Darányi');
+      expect(dora?.firstName).toBe('Dóra');
+      expect(dora?.birthPlace).toBe('Kiskunhalas');
+      expect(dora?.mothersName).toBe('Horváth Ilona');
+
+      // 4. Dolgozó: Szvatek-Német Tünde (ü betű mojibake gyógyítás)
+      const tunde = doc.employees.find(e => e.taxId === '8463220983');
+      expect(tunde).toBeDefined();
+      expect(tunde?.lastName).toBe('Szvatek-Német');
+      expect(tunde?.firstName).toBe('Tünde');
+      expect(tunde?.mothersName).toBe('Tóth Rozália');
+
+      // Összesített bérköltség és rekonstrukciós terv
+      const plan = buildReconstructionPlan(doc, [], [], []);
+      expect(plan.newEmployeesCount).toBe(13);
+      expect(plan.year).toBe(2026);
+      expect(plan.month).toBe(1);
+      expect(plan.totalGross).toBeGreaterThan(5000000);
+    });
   });
 
   describe('payrollReconstructionEngine', () => {

@@ -13,6 +13,7 @@ import { useBulkImportPayroll } from '@/hooks/useBulkImportPayroll';
 import { parseFiling08Xml, normalizeDate, readTextFileWithEncoding, type Parsed08Document, type Parsed08Employee } from '@/lib/payroll/nav08XmlParser';
 import { buildReconstructionPlan } from '@/lib/payroll/payrollReconstructionEngine';
 import { usePayrollEmployees, useCompanyEmployments, usePayrollCycles } from '@/hooks/usePayrollData';
+import { PayrollReconstructionDialog } from '@/components/accounty/payroll/PayrollReconstructionDialog';
 
 const TEMPLATE_HEADERS = ['Vezetéknév', 'Keresztnév', 'Születési dátum', 'TAJ-szám', 'Adóazonosító jel', 'Jogviszonykód', 'Belépés dátuma', 'FEOR', 'Heti óraszám', 'Alapbér (Ft)'];
 
@@ -39,6 +40,8 @@ export default function EmployeeImportPage() {
   const [phase, setPhase] = useState<'upload' | 'preview' | 'importing' | 'done'>('upload');
   const [dragging, setDragging] = useState(false);
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  const [reconstructionModalOpen, setReconstructionModalOpen] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   // Excel parsed rows converted to standard Parsed08Employee
   const [parsedEmployees, setParsedEmployees] = useState<Parsed08Employee[]>([]);
@@ -274,13 +277,18 @@ export default function EmployeeImportPage() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
 
     if (activeTab === 'nav08') {
-      processNav08File(file);
+      if (files.length > 1) {
+        setPendingFiles(Array.from(files));
+        setReconstructionModalOpen(true);
+        return;
+      }
+      processNav08File(files[0]);
     } else {
-      processExcelFile(file);
+      processExcelFile(files[0]);
     }
   }, [activeTab, processNav08File, processExcelFile]);
 
@@ -434,6 +442,17 @@ export default function EmployeeImportPage() {
             )}
           </div>
         )}
+
+        {activeTab === 'nav08' && (
+          <Button
+            onClick={() => setReconstructionModalOpen(true)}
+            variant="outline"
+            className="gap-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 text-blue-600 dark:text-blue-400 shadow-xs"
+          >
+            <Sparkles className="w-4 h-4 text-blue-500" />
+            Többhavi Rekonstrukció (Kötegelt)
+          </Button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -500,14 +519,25 @@ export default function EmployeeImportPage() {
               <p className="text-sm text-slate-400 mt-2">
                 Kinyeri az összes dolgozót (08M lapok), jogviszonyt és a lejelentett havi bérszámfejtési adatokat
               </p>
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-xs text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                <Sparkles className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                <span>Több havi XML fájl egyidejű feldolgozásához húzz be több fájlt egyszerre vagy kattints a fenti gombra</span>
+              </div>
               <input
                 ref={xmlFileRef}
                 type="file"
-                accept=".xml"
+                accept=".xml,.XML"
+                multiple
                 className="hidden"
                 onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) processNav08File(f);
+                  const files = e.target.files;
+                  if (!files || files.length === 0) return;
+                  if (files.length > 1) {
+                    setPendingFiles(Array.from(files));
+                    setReconstructionModalOpen(true);
+                  } else {
+                    processNav08File(files[0]);
+                  }
                   if (e.target) e.target.value = '';
                 }}
               />
@@ -763,6 +793,17 @@ export default function EmployeeImportPage() {
           </div>
         </div>
       )}
+
+      {/* Kötegelt többhavi bérszámfejtés rekonstrukciós modál */}
+      <PayrollReconstructionDialog
+        companyId={id}
+        open={reconstructionModalOpen}
+        onOpenChange={(isOpen) => {
+          setReconstructionModalOpen(isOpen);
+          if (!isOpen) setPendingFiles([]);
+        }}
+        initialFiles={pendingFiles}
+      />
     </div>
   );
 }
