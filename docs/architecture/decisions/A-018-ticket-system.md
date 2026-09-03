@@ -133,9 +133,10 @@ Minden új komment → automatikus invalidation → badge frissül.
 
 - **Bucket:** `ticket-attachments` (public bucket)
 - **Path:** `{ticketId}/{userId}/{filename}`
-- **Engedélyezett típusok:** JPEG, PNG, GIF, WebP, PDF, CSV, XLS, XLSX
+- **Engedélyezett típusok:** JPEG, PNG, GIF, WebP, PDF, CSV, XLS, XLSX, XML (`application/xml`, `text/xml`)
 - **Limit:** max 5 fájl / komment, max 10MB / fájl
 - **Policy:** Public read (link-el elérhető), authenticated insert
+- **Feltöltési védelem:** Kiterjesztés-alapú tartalék ellenőrzés (.xml) és explicit `contentType` továbbítás a Supabase Storage felé
 
 ### Slack Integráció
 

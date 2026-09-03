@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1788390995.7102153,
-    "ast_hash": "343eb3c76be472fa4db6cbc98796608d",
+    "mtime": 1788392228.487186,
+    "ast_hash": "f66af91a9d90ab6f4357d2d69b0c35ba",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -1105,8 +1105,8 @@
     "semantic_hash": "6747508d5cec296e87b5bb5c4a52dca9"
   },
   "src/lib/glExport.ts": {
-    "mtime": 1788390850.8042662,
-    "ast_hash": "237f8f64a7d44370466d6f1cd26e003f",
+    "mtime": 1788392221.8330321,
+    "ast_hash": "528fb5e2cf0ed924fe1513426d8cbfea",
     "semantic_hash": ""
   },
   "src/lib/helpers.ts": {
@@ -1480,8 +1480,8 @@
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
-    "mtime": 1788391314.2864618,
-    "ast_hash": "94dc0a967fd9bb0c18a999855427cf13",
+    "mtime": 1788392623.9774873,
+    "ast_hash": "909011c90348c8650bfd9235d0d99e35",
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788389888.5704648,
-    "ast_hash": "3243f809a69d9eb64aee51bba68bc088",
+    "mtime": 1788392634.6761713,
+    "ast_hash": "615e8b399821cc692c10c11920b8fbec",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3325,8 +3325,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1788387876.7662287,
-    "ast_hash": "b5d506a0b0eb3bab32e903d977b15352",
+    "mtime": 1788392556.6332526,
+    "ast_hash": "4dc71db201e175af7f72e0ce0f9258b2",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788387898.1648767,
-    "ast_hash": "4f3cabd6f5601cc95c4a54dd8a659cae",
+    "mtime": 1788392572.6485868,
+    "ast_hash": "1a3203863eec82b9bbbbe4a469a5cb50",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -3745,8 +3745,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/JournalView.tsx": {
-    "mtime": 1788391321.7580962,
-    "ast_hash": "812667a42444f72e90fdef389719f3c3",
+    "mtime": 1788392241.345798,
+    "ast_hash": "01ba8e7e9e5cb0b89911900afc06a6f6",
     "semantic_hash": ""
   },
   "src/components/general-ledger/UploadAuditXmlModal.tsx": {
@@ -5030,8 +5030,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/02-companies.md": {
-    "mtime": 1788130237.5494525,
-    "ast_hash": "cba5f6deef5196354b5a993ac0f16f64",
+    "mtime": 1788392647.5574572,
+    "ast_hash": "ab5c518dc8966ff210e115f1449acfd2",
     "semantic_hash": ""
   },
   "docs/architecture/database/03-permissions.md": {
@@ -8777,6 +8777,21 @@
   "docs/product/decisions/P-065-nav-crosscheck-approval-gate-ux.md": {
     "mtime": 1788389614.5419853,
     "ast_hash": "bc4297752eb52663a82da91589412696",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-085-gl-date-basis-rpc-and-chunk-error-recovery.md": {
+    "mtime": 1788392583.1896372,
+    "ast_hash": "bbfa281873fb18c65bc483d8893b2388",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/049-gl-date-basis-fulfillment-vs-issue.md": {
+    "mtime": 1788392540.7607615,
+    "ast_hash": "08c26157677ebb028bbe33b4ad55e47c",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-066-gl-date-basis-toggle-and-settings-ux.md": {
+    "mtime": 1788392564.2040114,
+    "ast_hash": "a6866b9f87751492328aec5f407e3b17",
     "semantic_hash": ""
   }
 }

@@ -125,8 +125,8 @@
     "semantic_hash": ""
   },
   "src/components/FeedbackDialog.tsx": {
-    "mtime": 1788289513.4315064,
-    "ast_hash": "5bedff2c4ee3551baa3db32c68eb498f",
+    "mtime": 1788393551.5929425,
+    "ast_hash": "71a9cfd0d85394905867f1c23172aa0a",
     "semantic_hash": ""
   },
   "src/components/FeedbackFab.tsx": {
@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketDetailView.tsx": {
-    "mtime": 1788289561.5274897,
-    "ast_hash": "2d89769e302caf9d913e826ad9e00451",
+    "mtime": 1788393536.0952222,
+    "ast_hash": "b03b7fb279fa371688f8a2c32e8782ff",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
@@ -1265,8 +1265,8 @@
     "semantic_hash": "09015c83ce8704d677e2a14d30bafc91"
   },
   "src/lib/upload-ticket-image.ts": {
-    "mtime": 1781447195.5858827,
-    "ast_hash": "a4e33563f0781fa9d458cd04fd82da07",
+    "mtime": 1788393659.3930106,
+    "ast_hash": "1e1a365cd84186df19a89391b970a297",
     "semantic_hash": ""
   },
   "src/lib/utils.ts": {
@@ -3080,8 +3080,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-018-ticket-system.md": {
-    "mtime": 1788289897.2753508,
-    "ast_hash": "a7697443477a55a9c82659b3e411e54d",
+    "mtime": 1788393964.3630526,
+    "ast_hash": "72a0cdadaee301b64c73c77bff222f1d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
@@ -8660,13 +8660,13 @@
     "semantic_hash": ""
   },
   "src/hooks/useBulkImportPayroll.ts": {
-    "mtime": 1788305129.5240388,
-    "ast_hash": "401d1ed08d708ca79bafd49040e358ba",
+    "mtime": 1788393788.3622086,
+    "ast_hash": "8521e10400cbb40ded6a19d55cfeee6f",
     "semantic_hash": ""
   },
   "src/lib/payroll/nav08XmlParser.ts": {
-    "mtime": 1788305717.2673328,
-    "ast_hash": "a0dfeb691cd1373c2af13b5daf212338",
+    "mtime": 1788393769.9391153,
+    "ast_hash": "89ffb37e0158297c400db1b9ad531dbe",
     "semantic_hash": ""
   },
   "src/lib/payroll/payrollReconstructionEngine.ts": {
@@ -8675,8 +8675,8 @@
     "semantic_hash": ""
   },
   "src/test/payroll/nav08XmlParser.test.ts": {
-    "mtime": 1788305760.9236293,
-    "ast_hash": "ba3233f2960090bcfe5d03181e3a061b",
+    "mtime": 1788393742.6711097,
+    "ast_hash": "1d40e1a170415a2881e85cb0105c79e7",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-ticket-support/SKILL.md": {
@@ -8685,8 +8685,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md": {
-    "mtime": 1788306019.6823952,
-    "ast_hash": "14f36ef56494173fdfbd7300f169a9c3",
+    "mtime": 1788393976.7955153,
+    "ast_hash": "5e3c4ae44a4b3c3f4c0ed944786fc43e",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-063-payroll-bulk-import-and-reconstruction-ux.md": {
@@ -8792,6 +8792,11 @@
   "docs/product/decisions/P-066-gl-date-basis-toggle-and-settings-ux.md": {
     "mtime": 1788392564.2040114,
     "ast_hash": "a6866b9f87751492328aec5f407e3b17",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/uploadTicketAttachment.test.ts": {
+    "mtime": 1788393668.2619486,
+    "ast_hash": "03ae8926d62c2a64c5d492a8d3febf37",
     "semantic_hash": ""
   }
 }

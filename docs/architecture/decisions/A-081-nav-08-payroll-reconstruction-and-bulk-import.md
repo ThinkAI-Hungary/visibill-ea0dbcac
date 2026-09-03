@@ -29,6 +29,8 @@ Kliens-oldali, aszinkron és nagy sebességű parser és rekonstrukciós motort 
 1. **`nav08XmlParser.ts` (XML feldolgozó & Kódoláskezelő):**
    - **`readTextFileWithEncoding(file)`**: Kétlépcsős buffer dekódoló. Detektálja az XML fejléc `encoding` attribútumát (`ISO-8859-2`, `windows-1250`, `utf-8`), és a megfelelő `TextDecoder` segítségével veszteségmentesen nyeri ki az ékezetes karaktereket.
    - **`parseFiling08Xml(xmlText)`**: Képes mind a hivatalos ÁNYK 08-as nyomtatványok (`nyomtatvany`, `mezo`), mind az általános szemantikus bér-XML-ek értelmezésére. Kinyeri az M-lapokból a dolgozói adatokat és az adóalapokat (SZJA, TB, SZOCHO, kedvezmények, nettó bér).
+   - **ÁNYK attribútum-kompatibilitás (`extractAnykFields`)**: Támogatja a `mezo[nev]`, `mezo[eazon]`, `mezo[azonosito]`, `mezo[id]` és `mezo[name]` formátumokat a hivatalos AbevJava keretrendszer és a harmadik felektől származó bérprogramok (pl. Kulcs-Bér, RLB, Novitax) exportjainak maradéktalan feldolgozásához.
+   - **Robusztus időszak-detektálás**: A főlap (`08A`) és az egyéni lapok (`08M`) mezőiből (`0101D`, `IDOSZAK_TOL`, `IDOSZAK_METTOL`, `BEVALLASI_IDOSZAK_METTOL`, `HONAP`, `HO`) kinyeri az évet és a hónapot, megelőzve a több havi XML egyidejű feltöltésekor a csendes felülírást.
    - **`normalizeDate(str)`**: ISO `YYYY-MM-DD` formátumra alakítja a `DD.MM.YYYY`, `YYYY.MM.DD`, `YYYYMMDD`, `DD/MM/YYYY` dátumokat.
 
 2. **`payrollReconstructionEngine.ts` (Rekonstrukciós és Kalkulációs Tervező):**
@@ -38,6 +40,7 @@ Kliens-oldali, aszinkron és nagy sebességű parser és rekonstrukciós motort 
 
 3. **`useBulkImportPayroll.ts` (Tranzakcionális In-Memory Cache Hook):**
    - **`importEmployees`**: Kötegelt dolgozó- és jogviszony import. In-memory szinkronizációval (`localEmps`, `localEmployments`) elkerüli a fájlon belüli azonos TAJ/Adóazonosító duplikált létrehozását.
+   - **Szellem-dolgozó védelem**: Automatikusan kihagyja és naplózza azokat a sorokat, amelyeknél sem név, sem TAJ, sem adóazonosító nem érhető el az XML-ből, megakadályozva üres fantom-dolgozók beszúrását az adatbázisba.
    - **`reconstructCycles`**: Több havi 08-as XML kötegelt mentése ciklusokkal és egyéni bérszámfejtési kalkulációkkal.
    - Automatikusan érvényteleníti a kapcsolódó React Query kulcsokat (`payrollQueryKeys.all`, `companyEmployments`, `employees`, `cycles`).
 

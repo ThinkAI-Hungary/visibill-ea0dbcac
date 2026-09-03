@@ -166,7 +166,11 @@ function extractAnykFields(formElem: Element): Map<string, string> {
   const map = new Map<string, string>();
   const mezok = formElem.querySelectorAll('mezo');
   mezok.forEach(m => {
-    const name = m.getAttribute('nev') || '';
+    const name = m.getAttribute('nev') ||
+                 m.getAttribute('eazon') ||
+                 m.getAttribute('azonosito') ||
+                 m.getAttribute('id') ||
+                 m.getAttribute('name') || '';
     const val = m.textContent?.trim() || '';
     if (name) {
       map.set(name.toUpperCase(), val);
@@ -339,11 +343,25 @@ function parseAnykXml(doc: Document): Parsed08Document | null {
       companyName = fields.get('0101B') || fields.get('CEGNEV') || fields.get('NEV') || companyName;
       companyTaxNumber = fields.get('0101C') || fields.get('ADOSZAM') || companyTaxNumber;
       
-      const idoszakTol = fields.get('0101D') || fields.get('IDOSZAK_TOL') || '';
+      const idoszakTol = fields.get('0101D') ||
+                         fields.get('IDOSZAK_TOL') ||
+                         fields.get('IDOSZAK_METTOL') ||
+                         fields.get('BEVALLASI_IDOSZAK_METTOL') ||
+                         info?.querySelector('idoszak > tol')?.textContent?.trim() ||
+                         info?.querySelector('tol')?.textContent?.trim() ||
+                         '';
       if (idoszakTol) {
         const norm = normalizeDate(idoszakTol);
-        const m = parseInt(norm.split('-')[1]);
-        if (!isNaN(m)) month = m;
+        const parts = norm.split('-');
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        if (!isNaN(y) && y >= 2000 && y <= 2100) year = y;
+        if (!isNaN(m) && m >= 1 && m <= 12) month = m;
+      }
+      const hoField = fields.get('HONAP') || fields.get('HO') || fields.get('0101E');
+      if (hoField) {
+        const parsedHo = parseInt(hoField, 10);
+        if (!isNaN(parsedHo) && parsedHo >= 1 && parsedHo <= 12) month = parsedHo;
       }
     }
 

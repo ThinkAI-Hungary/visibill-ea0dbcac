@@ -192,6 +192,44 @@ describe('nav08XmlParser', () => {
       expect(doc.employees[0].grossSalary).toBe(600000);
     });
 
+    it('successfully parses ÁNYK XML with eazon attributes', () => {
+      const eazonXml = `<?xml version="1.0" encoding="UTF-8"?>
+<nyomtatvanyok>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2608A</nyomtatvanyazonosito>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0101B">VBV Vision Kft.</mezo>
+      <mezo eazon="0101C">13739830-2-03</mezo>
+      <mezo eazon="0101D">2026.01.01</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2608M</nyomtatvanyazonosito>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="VEZETEKNEV">Kiss</mezo>
+      <mezo eazon="KERESZTNEV">János</mezo>
+      <mezo eazon="TAJ">123456789</mezo>
+      <mezo eazon="ADOAZONOSITO">8765432109</mezo>
+      <mezo eazon="BRUTTO_BER">400000</mezo>
+    </mezok>
+  </nyomtatvany>
+</nyomtatvanyok>`;
+
+      const doc = parseFiling08Xml(eazonXml);
+      expect(doc.companyName).toBe('VBV Vision Kft.');
+      expect(doc.companyTaxNumber).toBe('13739830-2-03');
+      expect(doc.year).toBe(2026);
+      expect(doc.month).toBe(1);
+      expect(doc.employees).toHaveLength(1);
+      expect(doc.employees[0].lastName).toBe('Kiss');
+      expect(doc.employees[0].firstName).toBe('János');
+      expect(doc.employees[0].grossSalary).toBe(400000);
+    });
+
     it('handles invalid XML gracefully', () => {
       const doc = parseFiling08Xml('<not-valid-xml');
       expect(doc.parseErrors.length).toBeGreaterThan(0);

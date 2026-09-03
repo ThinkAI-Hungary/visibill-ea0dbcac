@@ -44,7 +44,7 @@ import {
   Paperclip,
   Eye,
 } from "lucide-react";
-import { uploadTicketImage } from "@/lib/upload-ticket-image";
+import { uploadTicketImage, isAllowedTicketFile } from "@/lib/upload-ticket-image";
 import { TicketStatusBadge } from "./TicketStatusBadge";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -249,18 +249,8 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
 
   const addCommentFiles = (files: FileList | File[]) => {
     const MAX = 5;
-    const ALLOWED = [
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-      "application/pdf",
-      "text/csv",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ];
     const MAX_SIZE = 10 * 1024 * 1024;
-    const validFiles = Array.from(files).filter(f => ALLOWED.includes(f.type) && f.size <= MAX_SIZE);
+    const validFiles = Array.from(files).filter(f => isAllowedTicketFile(f) && f.size <= MAX_SIZE);
     setCommentFiles(prev => [...prev, ...validFiles].slice(0, MAX));
   };
 
@@ -631,7 +621,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       <input
                         ref={ticketAttachmentInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx"
+                        accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx,.xml,text/xml,application/xml"
                         multiple
                         className="hidden"
                         onChange={(e) => {
@@ -1006,7 +996,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                         <input
                           ref={commentFileInputRef}
                           type="file"
-                          accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx"
+                          accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx,.xml,text/xml,application/xml"
                           multiple
                           className="hidden"
                           onChange={(e) => { if (e.target.files) addCommentFiles(e.target.files); e.target.value = ''; }}
@@ -1025,7 +1015,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="text-xs">
-                            Fájl csatolása (kép, PDF, CSV, Excel)
+                            Fájl csatolása (kép, PDF, CSV, Excel, XML)
                           </TooltipContent>
                         </Tooltip>
                         {commentFiles.length > 0 && (

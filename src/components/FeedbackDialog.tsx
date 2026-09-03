@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadTicketImage } from "@/lib/upload-ticket-image";
+import { uploadTicketImage, isAllowedTicketFile, MAX_FILE_SIZE } from "@/lib/upload-ticket-image";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -51,8 +51,6 @@ import {
 } from "lucide-react";
 
 const MAX_ATTACHMENTS = 5;
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 interface FeedbackDialogProps {
   open: boolean;
@@ -112,11 +110,11 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   const validateAndAddFiles = useCallback((files: FileList | File[]) => {
     const newFiles: File[] = [];
     for (const file of Array.from(files)) {
-      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      if (!isAllowedTicketFile(file)) {
         toast({
           variant: "destructive",
           title: "Nem támogatott fájltípus",
-          description: `${file.name}: Csak JPEG, PNG, GIF és WebP képek engedélyezettek.`,
+          description: `${file.name}: Csak kép (JPEG, PNG, GIF, WebP), PDF, CSV, Excel és XML fájlok engedélyezettek.`,
         });
         continue;
       }
@@ -124,7 +122,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         toast({
           variant: "destructive",
           title: "Túl nagy fájl",
-          description: `${file.name}: Maximum 5 MB engedélyezett.`,
+          description: `${file.name}: Maximum 10 MB engedélyezett.`,
         });
         continue;
       }
@@ -416,7 +414,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
+                accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx,.xml,text/xml,application/xml"
                 multiple
                 onChange={handleFileInput}
                 className="hidden"
@@ -440,13 +438,13 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                   <ImagePlus className={`h-6 w-6 transition-colors ${isDragOver ? "text-primary" : "text-muted-foreground"}`} />
                   <div className="text-center">
                     <p className={`text-sm font-medium transition-colors ${isDragOver ? "text-primary" : "text-muted-foreground"}`}>
-                      {isDragOver ? "Engedd el a képet" : "Húzz ide képeket"}
+                      {isDragOver ? "Engedd el a fájlokat" : "Húzz ide képeket vagy dokumentumokat"}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       vagy <span className="text-primary underline underline-offset-2">kattints a tallózáshoz</span>
                     </p>
                     <p className="text-[11px] text-muted-foreground/60 mt-1">
-                      JPEG, PNG, GIF, WebP • max. 5 MB/kép
+                      Kép, PDF, CSV, Excel, XML • max. 10 MB/fájl
                     </p>
                   </div>
                 </div>

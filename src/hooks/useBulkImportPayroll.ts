@@ -82,10 +82,17 @@ export function useBulkImportPayroll() {
 
       for (let i = 0; i < employees.length; i++) {
         const emp = employees[i];
+
+        // Védelem szellem-dolgozók ellen: ha sem név, sem TAJ, sem adóazonosító nincs megadva, kihagyjuk
+        if (!emp.lastName && !emp.firstName && !emp.tajNumber && !emp.taxId) {
+          errors.push(`${i + 1}. sor kihagyva: hiányzó azonosító adatok (név és azonosító nélkül nem hozható létre dolgozó).`);
+          continue;
+        }
+
         setProgress({
           current: i + 1,
           total: employees.length,
-          message: `${emp.lastName} ${emp.firstName} mentése (${i + 1}/${employees.length})...`,
+          message: `${emp.lastName || ''} ${emp.firstName || ''} mentése (${i + 1}/${employees.length})...`,
         });
 
         try {
