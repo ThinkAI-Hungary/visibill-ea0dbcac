@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -79,6 +79,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
   const [activeTab, setActiveTab] = useState('details');
 
   const [formData, setFormData] = useState({
+    bizonylatsorszam: '',
     kibocsatas_datuma: undefined as Date | undefined,
     teljesites_datuma: undefined as Date | undefined,
     elado_nev: '',
@@ -114,6 +115,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
   useEffect(() => {
     if (invoice && open) {
       setFormData({
+        bizonylatsorszam: invoice.bizonylatsorszam || '',
         kibocsatas_datuma: invoice.kibocsatas_datuma ? parseISO(invoice.kibocsatas_datuma) : undefined,
         teljesites_datuma: invoice.teljesites_datuma ? parseISO(invoice.teljesites_datuma) : undefined,
         elado_nev: invoice.elado_nev || '',
@@ -202,17 +204,23 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
 
     setIsSaving(true);
     try {
-      // 1. Save invoice metadata (category + project)
+      // 1. Save invoice metadata (bizonylatsorszam + category + project)
       const { error: invoiceError } = await supabase
         .from('invoices')
         .update({
+          bizonylatsorszam: formData.bizonylatsorszam.trim() || null,
           category_id: formData.category_id === 'none' ? null : formData.category_id,
           project_id: formData.project_id === 'none' ? null : formData.project_id,
+          frissitve: new Date().toISOString(),
         })
-        .eq('id', invoice.id)
-        .eq('user_id', user.id);
+        .eq('id', invoice.id);
 
-      if (invoiceError) throw invoiceError;
+      if (invoiceError) {
+        if (invoiceError.code === '23505') {
+          throw new Error('Ezzel a bizonylatsorszámmal már létezik számla ennél a cégnél.');
+        }
+        throw invoiceError;
+      }
 
       // 2. Save line items
       const toDelete = editableItems.filter(i => i._isDeleted && !i._isNew);
@@ -272,6 +280,10 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
 
       // Invalidate caches
       queryClient.invalidateQueries({ queryKey: ['invoiceItems', 'submitted', invoice.id] });
+      queryClient.invalidateQueries({ queryKey: ['company-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['nav-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['recentInvoices'] });
 
       toast({ title: 'Számla sikeresen frissítve' });
       onSave();
@@ -337,8 +349,24 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
           {/* ── Tab 1: Invoice Details ── */}
           <TabsContent value="details" className="flex-1 overflow-auto mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
-              {/* Left column - Read-only fields */}
+              {/* Left column */}
               <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-bizonylatsorszam" className="text-foreground font-medium">
+                    Bizonylatsorszám
+                  </Label>
+                  <Input
+                    id="edit-bizonylatsorszam"
+                    value={formData.bizonylatsorszam}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bizonylatsorszam: e.target.value }))}
+                    placeholder="pl. SZJE-2026-1"
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    A sorszám módosítása automatikusan feloldja a NAV státuszt és összekapcsolja a számlát a NAV tétellel.
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">Kibocsátás dátuma</Label>
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30">

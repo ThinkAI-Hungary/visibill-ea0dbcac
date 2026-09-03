@@ -145,8 +145,8 @@
     "semantic_hash": "b8f51d9471278890881bf55b4ba7b23b"
   },
   "src/components/InvoiceDetailPopup.tsx": {
-    "mtime": 1788308700.7104468,
-    "ast_hash": "4dd5ed337d0c490f7aa7f9e6d9d19109",
+    "mtime": 1788441685.960935,
+    "ast_hash": "ec85522af9c869f43c402ac082a2bac0",
     "semantic_hash": ""
   },
   "src/components/InvoiceEditDialog.tsx": {
@@ -155,8 +155,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceFullEditDialog.tsx": {
-    "mtime": 1781445891.27224,
-    "ast_hash": "c35c4f50eb578fa0f3ae4bf1aab42066",
+    "mtime": 1788441749.8542948,
+    "ast_hash": "13d70787d10465e3fe53c136b1f17f8a",
     "semantic_hash": ""
   },
   "src/components/InvoiceImageDialog.tsx": {
@@ -165,8 +165,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceImagePreview.tsx": {
-    "mtime": 1781824092.2149365,
-    "ast_hash": "b9ea1d597a5d20aa5515f56116ee6a81",
+    "mtime": 1788445833.973258,
+    "ast_hash": "9c39b60904ef09b228c82819d10e8778",
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
@@ -1270,8 +1270,8 @@
     "semantic_hash": ""
   },
   "src/lib/utils.ts": {
-    "mtime": 1788307007.3907332,
-    "ast_hash": "a1f9be5e5fe62224f6ce2885ff07102f",
+    "mtime": 1788439612.3868172,
+    "ast_hash": "6b77772aee87b7af91dcf1bf3253bd2b",
     "semantic_hash": ""
   },
   "src/lib/validationUtils.test.ts": {
@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "src/pages/TicketsPage.tsx": {
-    "mtime": 1787753315.8445492,
-    "ast_hash": "07254ba8cd825a425dc0aefee87a1e6f",
+    "mtime": 1788439667.246806,
+    "ast_hash": "cff8e74ce51b40b0d48e7b82f69f3736",
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {
@@ -3555,8 +3555,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1788289890.8631687,
-    "ast_hash": "0b5c32df23df9ef74fb26ff452eb8680",
+    "mtime": 1788439841.5350094,
+    "ast_hash": "dfde9d3d1d561c41375c3721e746b57f",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788366438.8177454,
+    "mtime": 1788439133.4918182,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -7190,13 +7190,13 @@
     "semantic_hash": ""
   },
   "src/lib/invoiceMatchingUtils.test.ts": {
-    "mtime": 1787972953.2850401,
-    "ast_hash": "746773d37870301d6d0056e40fa1b3ee",
+    "mtime": 1788443459.1176782,
+    "ast_hash": "7ff5d6f195f994b884bc89bb9d151658",
     "semantic_hash": ""
   },
   "src/lib/invoiceMatchingUtils.ts": {
-    "mtime": 1787972939.7542224,
-    "ast_hash": "9c552f7fd3a2193c968c91ab607bbf4b",
+    "mtime": 1788443516.306892,
+    "ast_hash": "f2cba730a923c230cc98980ed12ade0c",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-054-strict-nav-submitted-pairing.md": {
@@ -7615,8 +7615,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/invoicesFeature.test.ts": {
-    "mtime": 1788137128.3514488,
-    "ast_hash": "d7f4b536abe0eab1b9d4305742492ec5",
+    "mtime": 1788441422.3721619,
+    "ast_hash": "3f42aa4b09b7257e9f7d016e294e5d13",
     "semantic_hash": ""
   },
   "src/features/invoices/components/actions/InvoiceBulkActionsBar.tsx": {
@@ -7630,8 +7630,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/dialogs/InvoiceDialogManager.tsx": {
-    "mtime": 1788384558.7829447,
-    "ast_hash": "b5316d652fbc758f8cb852d7024e404d",
+    "mtime": 1788445516.6993403,
+    "ast_hash": "d06d0c8ec976d738ea4aa2a2f3f1a0c4",
     "semantic_hash": ""
   },
   "src/features/invoices/components/filters/InvoiceFilterBar.tsx": {
@@ -7660,18 +7660,18 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/InvoiceTableContainer.tsx": {
-    "mtime": 1788385668.7471018,
-    "ast_hash": "330f65324421f44d3de57634c1fd611c",
+    "mtime": 1788441618.579245,
+    "ast_hash": "7fb587f8d25c1c83ab51f8ff495d9d5c",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceRow.tsx": {
-    "mtime": 1788307523.070939,
-    "ast_hash": "181fe6aeabdd072ade4bfa80a71b3a18",
+    "mtime": 1788445651.512565,
+    "ast_hash": "8b94f933475cd04b43e21313594f527f",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceTable.tsx": {
-    "mtime": 1788308110.5277808,
-    "ast_hash": "b3aef8adcb3d85862cb20a4f725f2806",
+    "mtime": 1788441574.4966545,
+    "ast_hash": "e96bc2080ce3683b5ed47e8bf639e02c",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceRow.tsx": {
@@ -7685,8 +7685,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceContext.tsx": {
-    "mtime": 1788384542.0589013,
-    "ast_hash": "14f3e8c9bba435eec55f0347ca786918",
+    "mtime": 1788445462.3525505,
+    "ast_hash": "d4287650b722d3c36337011446b96cd4",
     "semantic_hash": ""
   },
   "src/features/invoices/context/useInvoiceContext.ts": {
@@ -7705,8 +7705,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/utils/invoiceRelations.ts": {
-    "mtime": 1788136860.1456103,
-    "ast_hash": "49e0e820f8854ffb93d37c432eecac7a",
+    "mtime": 1788443042.143762,
+    "ast_hash": "856249cfb05825e906a665aa457fe4ee",
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/documentEngine.test.ts": {
@@ -8765,8 +8765,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-084-nav-crosscheck-approval-gate.md": {
-    "mtime": 1788387846.8473349,
-    "ast_hash": "2bf53f1e4404131843fd9b16b9815ba5",
+    "mtime": 1788443964.5673032,
+    "ast_hash": "c65c38b72dacb0ea9834aff88d8aed65",
     "semantic_hash": ""
   },
   "docs/business/decisions/048-nav-crosscheck-approval-gate.md": {
@@ -8775,8 +8775,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-065-nav-crosscheck-approval-gate-ux.md": {
-    "mtime": 1788389614.5419853,
-    "ast_hash": "bc4297752eb52663a82da91589412696",
+    "mtime": 1788443987.454,
+    "ast_hash": "aad4015ce33eafb57aee67ab19da1664",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-085-gl-date-basis-rpc-and-chunk-error-recovery.md": {
@@ -8827,6 +8827,21 @@
   "supabase/migrations/20260903130000_acc_drafts_circular_protection_and_reconciliation_hardening.sql": {
     "mtime": 1788407520.957081,
     "ast_hash": "1b68e629c95ba656f06bf067d7fe8ee3",
+    "semantic_hash": ""
+  },
+  "src/lib/__tests__/stripHtml.test.ts": {
+    "mtime": 1788439629.2078016,
+    "ast_hash": "df075abd41f7f06dbbb7f3092d7b2f46",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/components/dialogs/SuggestedInvoiceLinkDialog.tsx": {
+    "mtime": 1788445844.9606135,
+    "ast_hash": "afaebf6bf81b78cb1cca895898d2d6ce",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260903170000_link_and_verify_submitted_invoice.sql": {
+    "mtime": 1788442218.6057427,
+    "ast_hash": "8bb2049ef1578c219059505cc7137799",
     "semantic_hash": ""
   }
 }

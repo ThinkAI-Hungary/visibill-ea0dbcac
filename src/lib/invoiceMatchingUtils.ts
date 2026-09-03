@@ -32,6 +32,7 @@ export interface SubmittedInvoiceMatchCandidate {
   brutto_vegosszeg?: number | null;
   penznem?: string | null;
   nav_invoice_id?: string | null;
+  nav_status?: string | null;
 }
 
 /**
@@ -179,16 +180,57 @@ export function isGrossAmountMatch(
   const currA = (currencyA || 'HUF').toUpperCase();
   const currB = (currencyB || 'HUF').toUpperCase();
 
-  // Ha azonos a deviza (vagy mindkettő alapértelmezett HUF)
-  if (currA === currB) {
-    const diff = Math.abs(amountA - amountB);
-    // 5 Ft abszolút vagy 0.5% relatív tolerancia
-    const maxAllowedDiff = Math.max(5, Math.abs(amountA) * 0.005);
-    return diff <= maxAllowedDiff;
+  // Eltérő deviza esetén (pl. HUF vs EUR) az összeg NEM tekinthető egyezőnek!
+  if (currA !== currB) {
+    return false;
   }
 
-  // Ha eltér a deviza, összeg alapon nem tudunk determinisztikusan elutasítani (pl. EUR vs HUF)
-  return true;
+  const diff = Math.abs(amountA - amountB);
+  // 5 Ft abszolút vagy 0.5% relatív tolerancia
+  const maxAllowedDiff = Math.max(5, Math.abs(amountA) * 0.005);
+  return diff <= maxAllowedDiff;
+}
+
+/**
+ * Ellenőrzi, hogy egy feltöltött számla külföldi bizonylat-e.
+ * A külföldi számlák (pl. Mailgun, AWS, Google) nem szerepelnek a NAV Online Számlában,
+ * így velük szemben soha nem szabad NAV javasolt párosítást képezni.
+ */
+export function isForeignSubmittedInvoice(
+  sub: {
+    nav_status?: string | null;
+    invoice_direction?: string | null;
+    elado_vat_id?: string | null;
+    vevo_vat_id?: string | null;
+    penznem?: string | null;
+  }
+): boolean {
+  // 1. Worker által explicit beállított státusz (külföldi számla esetén 'not_applicable')
+  if (sub.nav_status === 'not_applicable') return true;
+
+  // 2. Kimenő számlák magyar cég esetén belföldi kibocsátásúak
+  if (sub.invoice_direction === 'OUTBOUND') return false;
+
+  // 3. Eladó adószáma (INBOUND számlánál a partner az eladó)
+  const eladoVat = (sub.elado_vat_id || '').trim().toUpperCase();
+  if (eladoVat) {
+    if (eladoVat.startsWith('HU')) return false;
+    const cleanDigits = eladoVat.replace(/\D/g, '');
+    if (cleanDigits.length === 8 || cleanDigits.length === 11) return false;
+    // Ha kétbetűs nem-HU országgal kezdődik (pl. US, DE, AT, NL, GB, FR, IE) -> Külföldi!
+    if (/^[A-Z]{2}/.test(eladoVat)) return true;
+  }
+
+  // 4. Pénznem: ha nem HUF és nincs magyar adószáma az eladónak -> Külföldi bizonylat!
+  const curr = (sub.penznem || 'HUF').trim().toUpperCase();
+  if (curr !== 'HUF') {
+    const cleanDigits = eladoVat.replace(/\D/g, '');
+    if (!eladoVat.startsWith('HU') && cleanDigits.length !== 8 && cleanDigits.length !== 11) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -274,3 +316,138 @@ export function isNavAndSubmittedInvoiceMatch(
   // Alapértelmezett: ha nem volt kizáró ok (pl. egyedi sorszám adószám/név nélkül), elfogadjuk
   return !hasConflictingTaxes;
 }
+
+export interface SuggestedMatchCandidateResult {
+  isMatch: boolean;
+  score: number;
+  reason: string;
+  isSuffixMatch: boolean;
+}
+
+export interface ExtendedNavInvoiceMatchCandidate extends NavInvoiceMatchCandidate {
+  invoice_issue_date?: string | null;
+  invoice_delivery_date?: string | null;
+}
+
+export interface ExtendedSubmittedInvoiceMatchCandidate extends SubmittedInvoiceMatchCandidate {
+  kibocsatas_datuma?: string | null;
+  teljesites_datuma?: string | null;
+}
+
+/**
+ * Heurisztikus javasolt (fuzzy) párosítási algoritmus:
+ * Olyan eseteket keres, ahol a számlaszám nem egyezik pontosan (pl. OCR prefix csonkolás),
+ * viszont az eladó adószáma/neve, a bruttó összeg és a dátum alapján nagy valószínűséggel
+ * ugyanarról a bizonylatról van szó.
+ */
+export function evaluateNavAndSubmittedSuggestedMatch(
+  navInvoice: ExtendedNavInvoiceMatchCandidate,
+  submittedInvoice: ExtendedSubmittedInvoiceMatchCandidate
+): SuggestedMatchCandidateResult {
+  const result: SuggestedMatchCandidateResult = {
+    isMatch: false,
+    score: 0,
+    reason: '',
+    isSuffixMatch: false,
+  };
+
+  // 1. Ha már van explicit összerendelés (nav_invoice_id)
+  if (submittedInvoice.nav_invoice_id && navInvoice.id && submittedInvoice.nav_invoice_id === navInvoice.id) {
+    result.isMatch = true;
+    result.score = 100;
+    result.reason = 'Explicit összerendelés';
+    return result;
+  }
+
+  // 2. Külföldi számlák kizárása: a külföldi számlák nincsenek a NAV-ban, tilos NAV javaslatot tenni rájuk!
+  if (isForeignSubmittedInvoice(submittedInvoice)) {
+    return result;
+  }
+
+  // 3. Irány (direction) szigorú ellenőrzése: kimenő és bejövő számla sosem egyezhet
+  if (
+    navInvoice.invoice_direction &&
+    submittedInvoice.invoice_direction &&
+    navInvoice.invoice_direction !== submittedInvoice.invoice_direction
+  ) {
+    return result;
+  }
+
+  const isOutbound = navInvoice.invoice_direction === 'OUTBOUND' || submittedInvoice.invoice_direction === 'OUTBOUND';
+
+  // 4. Deviza ellenőrzése: NAV és beküldött bizonylat devizájának egyeznie kell
+  const navCurr = (navInvoice.currency || 'HUF').toUpperCase();
+  const subCurr = (submittedInvoice.penznem || 'HUF').toUpperCase();
+  if (navCurr !== subCurr) {
+    return result;
+  }
+
+  // 5. Külső partner adószámainak kötelező egyezése (sosem a saját cég adószáma!)
+  // INBOUND: külső partner az eladó (supplier / elado)
+  // OUTBOUND: külső partner a vevő (customer / vevo)
+  const navPartnerTax = extractBaseTax(isOutbound ? navInvoice.customer_tax_number : navInvoice.supplier_tax_number);
+  const subPartnerTax = extractBaseTax(isOutbound ? submittedInvoice.vevo_vat_id : submittedInvoice.elado_vat_id);
+
+  if (!navPartnerTax || !subPartnerTax || navPartnerTax !== subPartnerTax) {
+    return result;
+  }
+
+  // 6. Partnernevek kötelező egyezése
+  const navPartnerName = isOutbound ? navInvoice.customer_name : navInvoice.supplier_name;
+  const subPartnerName = isOutbound ? submittedInvoice.vevo_nev : submittedInvoice.elado_nev;
+  const nameMatches = isPartnerNameMatch(navPartnerName, subPartnerName);
+
+  if (!nameMatches) {
+    return result;
+  }
+
+  // 7. Bruttó összeg kötelező egyezése
+  if (navInvoice.invoice_gross_amount == null || submittedInvoice.brutto_vegosszeg == null) {
+    return result;
+  }
+
+  const amountMatches = isGrossAmountMatch(
+    navInvoice.invoice_gross_amount,
+    submittedInvoice.brutto_vegosszeg,
+    navInvoice.currency,
+    submittedInvoice.penznem
+  );
+
+  if (!amountMatches) {
+    return result;
+  }
+
+  // 8. Kibocsátás dátumának napra pontos egyezése mindkét számlán (YYYY-MM-DD)
+  const navIssueDate = (navInvoice.invoice_issue_date || '').trim().slice(0, 10);
+  const subIssueDate = (submittedInvoice.kibocsatas_datuma || '').trim().slice(0, 10);
+
+  if (!navIssueDate || !subIssueDate || navIssueDate !== subIssueDate) {
+    return result;
+  }
+
+  // 9. Sorszám ellenőrzés: csak akkor téves/javasolt match, ha a sorszám nem egyezik pontosan
+  const navNum = normalizeInvoiceNumber(navInvoice.invoice_number);
+  const subNum = normalizeInvoiceNumber(submittedInvoice.bizonylatsorszam);
+
+  if (!navNum || !subNum || navNum === subNum) {
+    return result;
+  }
+
+  let suffixMatch = false;
+  if (Math.min(navNum.length, subNum.length) >= 3) {
+    if (navNum.endsWith(subNum) || subNum.endsWith(navNum)) {
+      suffixMatch = true;
+      result.isSuffixMatch = true;
+    }
+  }
+
+  // Minden szigorú feltétel teljesült: Partner adószám, Partner név, Bruttó összeg, Kibocsátási dátum!
+  result.isMatch = true;
+  result.score = suffixMatch ? 95 : 90;
+  result.reason = suffixMatch
+    ? 'Partner adószám, Partner név, Bruttó összeg és Kibocsátási dátum egyezés (Sorszám részleges/suffix egyezés)'
+    : 'Partner adószám, Partner név, Bruttó összeg és Kibocsátási dátum egyezés (Téves bizonylatsorszám)';
+
+  return result;
+}
+

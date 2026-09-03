@@ -68,8 +68,34 @@ Ez garantálja, hogy:
 - **Központi TanStack Query invalidáció:** Az `InvoiceApprovalDialog` és az `invalidateInvoiceQueries` érvényteleníti a `['company-invoices']` és `['submittedInvoices']` kulcsokat is, azonnali frissülést biztosítva bármely nézetben.
 - **Supabase Realtime:** A `LiveNotificationProvider` és a `useAccountyRealtime` feliratkozása az `invoices` tábla változásaira biztosítja, hogy ha egy felhasználó jóváhagy egy számlát az egyik felületen, egy másik gépen dolgozó könyvelőnél vagy kollégánál manuális oldalfrissítés nélkül, valós időben frissüljön a nézet.
 
+### 7. OCR Sorszám Prefix-Csonkolás Elleni Védelem & Javasolt Összerendelés (3 Pilléres Rendszer)
+Éles tapasztalat (2026-09-03, VBV Vision Kft. / Kiss-Százi Emese incidens):
+Amikor az OCR modell (pl. `deepseek/deepseek-v4-flash`) elhagyja a sorszám kezdő betűit (pl. `SZJE-2026-1` helyett `JE-2026-1`), a számla nem talált NAV párt, a jóváhagyási kapu zárolta (`missing_nav`), és a NAV számlasoron inaktív maradt a csatolmány ikon. A hiba rendszerszintű megelőzésére és kezelésére 3 pilléres architektúra épült ki:
+
+1. **1. Pillér — Worker Megelőzés & Automatikus Helyreállítás:**
+   - **Worker Prompts:** Szigorú prefix-megőrzési szabály beépítve minden számlatípus promptjába (`sima_szamla.md`, `vegszamla.md`, `egyszerusitett_szamla.md`, `dijbekero_proforma.md`): a sorszám minden kezdőbetűjét kötelező megőrizni, szigorúan tilos levágni.
+   - **Worker NAV Fallback (`worker/db.py`):** Ha az egzakt és a szóköz/kötőjel nélküli sorszámkeresés nem talál NAV számlát, a worker suffix-alapú keresést hajt végre (`nav_invoices.invoice_number.ilike("%" + clean_num)`). Ha az eladó adószáma és a bruttó összeg megegyezik, a worker automatikusan felülbírálja és helyreállítja a bizonylatszámot a hivatalos NAV sorszámra, így a számla rögtön `verified` státuszt kap.
+
+2. **2. Pillér — Frontend Javasolt Párosítás & Egykattintásos Összerendelés:**
+   - **Külföldi Számlák Teljes Kizárása (`isForeignSubmittedInvoice`):** A külföldi számlák (pl. Mailgun, AWS, külföldi adószám vagy `nav_status === 'not_applicable'`) nem szerepelnek a NAV Online Számlában, így velük szemben tilos NAV javasolt csatolmányt felajánlani.
+   - **Determinisztikus Matcher Szabály (`evaluateNavAndSubmittedSuggestedMatch`):** A borostyán javaslat gomb **KIZÁRÓLAG AKKOR** jelenik meg, ha:
+     1. A külső partner adószáma (8 jegyű törzsszám) mindkét számlán szerepel és egyezik.
+     2. A partner neve megegyezik.
+     3. A bruttó végösszeg és a deviza megegyezik (eltérő deviza, pl. HUF vs EUR esetén azonnali elutasítás).
+     4. A kibocsátás dátuma napra pontosan megegyezik mindkét számlán (`YYYY-MM-DD` === `YYYY-MM-DD`). Ezzel megelőzhető, hogy azonos összegű havi átalánydíjas számlák (pl. Trend-Art havi díjak) keresztbe ajánlódjanak.
+     5. A számlairány azonos (`INBOUND` vs `OUTBOUND` soha nem egyezhet).
+     6. Kizárólag a bizonylatsorszám tér el (pl. OCR prefix-csonkolás vagy elírás).
+   - **UI Megjelenítés (`NavInvoiceRow`):** A NAV számlák csatolmány oszlopában hiányzó pontos egyezés esetén borostyánsárga ikon (`Sparkles` + `FileText`) jelzi a javasolt számlaképet.
+   - **Összerendelési Modál (`SuggestedInvoiceLinkDialog`):** Egymás melletti kártyákon hasonlítja össze a NAV és a feltöltött számla adatait. A dialógus a központi `InvoiceDialogManager`-be és az `InvoiceContext`-be van bekötve (`modal={true}`), megelőzve a React Portals szintetikus eseményeinek kiszivárgását a táblázat soraihoz. A beágyazott számlakép előnézet (`InvoiceImagePreview`) `interactive={true}` módban fut (340px magasság, PDF esetén `pointer-events-auto` natív görgetéssel, képeknél belső görgetőkonténerrel).
+   - **Adatbázis RPC (`link_and_verify_submitted_invoice`):** `SECURITY DEFINER` függvény szigorú cég- és jogosultság-ellenőrzéssel, valamint duplikált sorszám elleni védelemmel. Egyetlen tranzakcióban a hivatalos NAV sorszámra javítja a feltöltött számla sorszámát, `verified` és `feldolgozott` státuszba állítja, audit naplót rögzít, és a NAV tételt `submitted = true`-ra jelöli.
+
+3. **3. Pillér — Bizonylatszám Kézi Javításának Támogatása & Trigger Szinkronizáció:**
+   - **Kézi Módosítás (`InvoiceDetailPopup` & `InvoiceFullEditDialog`):** A könyvelők és adminisztrátorok közvetlenül szerkeszthetik a bizonylatsorszámot mind az előugró részletes nézetben (inline ceruza ikon), mind a teljes szerkesztő dialógusban.
+   - **Automatikus Trigger Szinkronizáció (`sync_submitted_invoice_on_bizonylatsorszam_change`):** `BEFORE INSERT OR UPDATE` trigger, amely a bizonylatsorszám módosításakor azonnal ellenőrzi, hogy létezik-e azonos sorszámú NAV tétel a cégnél. Ha igen, automatikusan `verified`-re és `feldolgozott`-ra váltja a számla státuszát, feloldva a jóváhagyási zárlatot.
+   - **NAV submitted flag kétirányú szinkronja (`mark_nav_invoice_as_submitted`):** A trigger nemcsak az új NAV rekordnál állítja be a `submitted = true` értéket, hanem a bizonylatszám megváltozásakor a korábbi NAV tételen automatikusan visszaállítja a `submitted = false` állapotot, ha már nincs hozzá tartozó más feltöltött bizonylat.
+
 ## Következmények
-- **Pozitív:** Megszűnik a hibás vagy be nem jelentett számlák automatikus főkönyvi könyvelése; a könyvelő teljes kontrollt és auditált döntési naplót kap mind az eaisybill, mind az eaisybooks felületen.
+- **Pozitív:** Megszűnik a hibás vagy be nem jelentett számlák automatikus főkönyvi könyvelése; az OCR hibák (prefix-csonkolás) több szinten, automatikusan vagy egyetlen kattintással korrigálhatók; a könyvelő teljes auditált kontrollt kap mindkét felületen.
 - **Negatív/Teendő:** A könyvelőnek a NAV-ban nem szereplő belföldi számlákat egyszeri döntéssel el kell bírálnia, de erre ergonomikus egykattintásos modál és csoportos szűrő áll rendelkezésre.
 
 ## Kapcsolódó

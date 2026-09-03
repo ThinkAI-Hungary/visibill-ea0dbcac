@@ -1,8 +1,20 @@
-import { normalizeInvoiceNumber, isNavAndSubmittedInvoiceMatch } from '@/lib/invoiceMatchingUtils';
+import { 
+  normalizeInvoiceNumber, 
+  isNavAndSubmittedInvoiceMatch,
+  evaluateNavAndSubmittedSuggestedMatch,
+  isForeignSubmittedInvoice,
+  type SuggestedMatchCandidateResult,
+} from '@/lib/invoiceMatchingUtils';
 import type { NavInvoice, SubmittedInvoice } from '../types';
 
 export interface LinkedInvoiceWithRelation extends SubmittedInvoice {
   relationDirection: 'parent' | 'child';
+}
+
+export interface SuggestedSubmittedInvoiceWithScore extends SubmittedInvoice {
+  suggestedScore: number;
+  suggestedReason: string;
+  isSuffixMatch: boolean;
 }
 
 export function buildNavToSubmittedMap(
@@ -60,6 +72,92 @@ export function buildSubmittedToNavMap(
 
   return map;
 }
+
+export function buildNavToSuggestedSubmittedMap(
+  submittedInvoices: SubmittedInvoice[],
+  paginatedNavInvoices: NavInvoice[],
+  exactNavToSubmittedMap: Map<string, SubmittedInvoice[]>
+): Map<string, SuggestedSubmittedInvoiceWithScore[]> {
+  const map = new Map<string, SuggestedSubmittedInvoiceWithScore[]>();
+
+  // Collect all submitted invoice IDs that already have an exact match with any NAV invoice
+  const alreadyMatchedSubmittedIds = new Set<string>();
+  exactNavToSubmittedMap.forEach((subs) => {
+    subs.forEach((sub) => {
+      if (sub.id) alreadyMatchedSubmittedIds.add(sub.id);
+    });
+  });
+
+  // Candidate pool: only domestic submitted invoices not already strictly matched, not already verified, and not foreign
+  const pool = submittedInvoices.filter(
+    (sub) =>
+      sub.nav_status !== 'verified' &&
+      sub.nav_status !== 'not_applicable' &&
+      !isForeignSubmittedInvoice(sub) &&
+      !alreadyMatchedSubmittedIds.has(sub.id)
+  );
+  if (pool.length === 0) return map;
+
+  paginatedNavInvoices.forEach((nav) => {
+    const navKey = normalizeInvoiceNumber(nav.invoice_number);
+    // If exact match already exists for this NAV invoice, no suggestions needed
+    if ((exactNavToSubmittedMap.get(navKey)?.length ?? 0) > 0) {
+      return;
+    }
+
+    const suggestions: SuggestedSubmittedInvoiceWithScore[] = [];
+
+    for (const sub of pool) {
+      const evalResult = evaluateNavAndSubmittedSuggestedMatch(
+        {
+          id: nav.id,
+          invoice_number: nav.invoice_number,
+          invoice_direction: nav.invoice_direction,
+          supplier_name: nav.supplier_name,
+          supplier_tax_number: nav.supplier_tax_number,
+          customer_name: nav.customer_name,
+          customer_tax_number: nav.customer_tax_number,
+          invoice_gross_amount: nav.invoice_gross_amount,
+          currency: nav.currency,
+          invoice_issue_date: nav.invoice_issue_date,
+          invoice_delivery_date: nav.invoice_delivery_date,
+        },
+        {
+          id: sub.id,
+          bizonylatsorszam: sub.bizonylatsorszam,
+          invoice_direction: sub.invoice_direction,
+          elado_nev: sub.elado_nev,
+          elado_vat_id: sub.elado_vat_id,
+          vevo_nev: sub.vevo_nev,
+          vevo_vat_id: sub.vevo_vat_id,
+          brutto_vegosszeg: sub.brutto_vegosszeg,
+          penznem: sub.penznem,
+          nav_invoice_id: sub.nav_invoice_id,
+          kibocsatas_datuma: sub.kibocsatas_datuma,
+          teljesites_datuma: sub.teljesites_datuma,
+        }
+      );
+
+      if (evalResult.isMatch) {
+        suggestions.push({
+          ...sub,
+          suggestedScore: evalResult.score,
+          suggestedReason: evalResult.reason,
+          isSuffixMatch: evalResult.isSuffixMatch,
+        });
+      }
+    }
+
+    if (suggestions.length > 0) {
+      // Sort highest score first
+      suggestions.sort((a, b) => b.suggestedScore - a.suggestedScore);
+      map.set(navKey, suggestions);
+    }
+  });
+
+  return map;
+}
+
 
 export function buildLinkedInvoicesMap(
   submittedInvoices: SubmittedInvoice[],

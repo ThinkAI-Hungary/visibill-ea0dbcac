@@ -29,6 +29,7 @@ import type {
   InvoiceAction,
 } from '../types';
 import { TAB_SLUGS, SLUG_TO_TAB, TAB_TO_SLUG } from '../types';
+import type { SuggestedSubmittedInvoiceWithScore } from '../utils/invoiceRelations';
 
 import {
   InvoiceFilterContext,
@@ -104,6 +105,8 @@ export interface InvoiceContextValue
   setBulkDeleteDialogOpen: (open: boolean) => void;
   approvalDialogOpen: boolean;
   setApprovalDialogOpen: (open: boolean) => void;
+  suggestedLinkDialogOpen: boolean;
+  setSuggestedLinkDialogOpen: (open: boolean) => void;
 
   selectedInvoice: SubmittedInvoice | null;
   setSelectedInvoice: (inv: SubmittedInvoice | null) => void;
@@ -113,6 +116,14 @@ export interface InvoiceContextValue
   setSelectedSubmittedForItems: (inv: SubmittedInvoice | null) => void;
   selectedInvoiceForApproval: SubmittedInvoice | null;
   setSelectedInvoiceForApproval: (inv: SubmittedInvoice | null) => void;
+  selectedSuggestedLinkPair: {
+    navInvoice: NavInvoice;
+    suggestedInvoice: SuggestedSubmittedInvoiceWithScore;
+  } | null;
+  setSelectedSuggestedLinkPair: (pair: {
+    navInvoice: NavInvoice;
+    suggestedInvoice: SuggestedSubmittedInvoiceWithScore;
+  } | null) => void;
   setInvoiceParam: (invoiceId: string | null, action?: InvoiceAction) => void;
 
   // Export
@@ -176,6 +187,11 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [selectedInvoiceForApproval, setSelectedInvoiceForApproval] = useState<SubmittedInvoice | null>(null);
+  const [suggestedLinkDialogOpen, setSuggestedLinkDialogOpen] = useState(false);
+  const [selectedSuggestedLinkPair, setSelectedSuggestedLinkPair] = useState<{
+    navInvoice: NavInvoice;
+    suggestedInvoice: SuggestedSubmittedInvoiceWithScore;
+  } | null>(null);
 
   // Row selection state
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
@@ -878,6 +894,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       setBulkDeleteDialogOpen,
       approvalDialogOpen,
       setApprovalDialogOpen,
+      suggestedLinkDialogOpen,
+      setSuggestedLinkDialogOpen,
 
       selectedInvoice,
       setSelectedInvoice,
@@ -887,6 +905,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       setSelectedSubmittedForItems,
       selectedInvoiceForApproval,
       setSelectedInvoiceForApproval,
+      selectedSuggestedLinkPair,
+      setSelectedSuggestedLinkPair,
       setInvoiceParam,
 
       pdfExport,
@@ -960,6 +980,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       setBulkDeleteDialogOpen,
       approvalDialogOpen,
       setApprovalDialogOpen,
+      suggestedLinkDialogOpen,
+      setSuggestedLinkDialogOpen,
       selectedInvoice,
       setSelectedInvoice,
       selectedNavInvoice,
@@ -968,6 +990,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       setSelectedSubmittedForItems,
       selectedInvoiceForApproval,
       setSelectedInvoiceForApproval,
+      selectedSuggestedLinkPair,
+      setSelectedSuggestedLinkPair,
       setInvoiceParam,
       pdfExport,
       dataExportDialogOpen,

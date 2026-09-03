@@ -8,13 +8,14 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import { format } from 'date-fns';
-import { FileText, ExternalLink, Lock, Users, Plus, Loader2 } from 'lucide-react';
+import { FileText, ExternalLink, Lock, Users, Plus, Loader2, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { INVOICE_TYPE_LABELS } from '@/types/invoices';
 import { reportError } from '@/lib/errorReporter';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 interface InvoiceDetailPopupProps {
   open: boolean;
@@ -96,8 +97,14 @@ const DetailRow = ({ label, value, mono }: { label: string; value: React.ReactNo
 
 export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDetailPopupProps) => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [invoice, setInvoice] = useState<FullInvoice | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Bizonylatsorszám inline editing
+  const [editingBizonylat, setEditingBizonylat] = useState(false);
+  const [newBizonylatValue, setNewBizonylatValue] = useState('');
+  const [savingBizonylat, setSavingBizonylat] = useState(false);
 
   // Notes state
   const [notes, setNotes] = useState<any[]>([]);
@@ -105,6 +112,47 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
   const [newNoteText, setNewNoteText] = useState('');
   const [newNotePrivate, setNewNotePrivate] = useState(true);
   const [addingNote, setAddingNote] = useState(false);
+
+  const handleSaveBizonylatsorszam = async () => {
+    if (!invoiceId || !newBizonylatValue.trim() || !invoice) return;
+    setSavingBizonylat(true);
+    try {
+      const trimmed = newBizonylatValue.trim();
+      const { error } = await supabase
+        .from('invoices')
+        .update({
+          bizonylatsorszam: trimmed,
+          frissitve: new Date().toISOString(),
+        })
+        .eq('id', invoiceId);
+
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Ezzel a bizonylatsorszámmal már létezik számla ennél a cégnél.');
+        }
+        throw error;
+      }
+
+      setEditingBizonylat(false);
+      await fetchInvoice();
+      queryClient.invalidateQueries({ queryKey: ['company-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['nav-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['recentInvoices'] });
+      toast({
+        title: 'Bizonylatsorszám sikeresen frissítve',
+        description: `Új sorszám: ${trimmed}`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a bizonylatsorszám mentésekor',
+        description: err.message || 'Nem sikerült menteni a sorszámot.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingBizonylat(false);
+    }
+  };
 
   useEffect(() => {
     if (open && invoiceId) {
@@ -255,7 +303,61 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
             <div>
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Alapadatok</h4>
               <div className="bg-muted/30 rounded-md p-3 border border-border/30">
-                <DetailRow label="Bizonylatsorszám" value={invoice.bizonylatsorszam} mono />
+                <DetailRow
+                  label="Bizonylatsorszám"
+                  value={
+                    editingBizonylat ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          value={newBizonylatValue}
+                          onChange={(e) => setNewBizonylatValue(e.target.value)}
+                          className="h-6 w-36 text-xs font-mono py-0 px-1.5"
+                          autoFocus
+                          disabled={savingBizonylat}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveBizonylatsorszam();
+                            if (e.key === 'Escape') setEditingBizonylat(false);
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0 text-emerald-600 hover:text-emerald-700"
+                          disabled={savingBizonylat || !newBizonylatValue.trim()}
+                          onClick={handleSaveBizonylatsorszam}
+                        >
+                          {savingBizonylat ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                          disabled={savingBizonylat}
+                          onClick={() => setEditingBizonylat(false)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="font-mono">{invoice.bizonylatsorszam || '-'}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 opacity-60 hover:opacity-100 text-muted-foreground"
+                          title="Bizonylatsorszám módosítása"
+                          onClick={() => {
+                            setNewBizonylatValue(invoice.bizonylatsorszam || '');
+                            setEditingBizonylat(true);
+                          }}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )
+                  }
+                  mono
+                />
                 <DetailRow label="Dokumentum azonosító" value={invoice.dokumentum_azonosito} mono />
                 <DetailRow label="Kibocsátás dátuma" value={formatDate(invoice.kibocsatas_datuma)} />
                 <DetailRow label="Teljesítés dátuma" value={formatDate(invoice.teljesites_datuma)} />

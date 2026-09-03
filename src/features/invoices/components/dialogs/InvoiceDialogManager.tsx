@@ -9,6 +9,7 @@ import { PdfExportDialog } from '@/components/invoices/PdfExportDialog';
 import { InvoiceDataExportDialog } from '@/components/invoices/InvoiceDataExportDialog';
 import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { InvoiceApprovalDialog } from './InvoiceApprovalDialog';
+import { SuggestedInvoiceLinkDialog } from './SuggestedInvoiceLinkDialog';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 
 export function InvoiceDialogManager() {
@@ -49,6 +50,10 @@ export function InvoiceDialogManager() {
     setApprovalDialogOpen,
     selectedInvoiceForApproval,
     setSelectedInvoiceForApproval,
+    suggestedLinkDialogOpen,
+    setSuggestedLinkDialogOpen,
+    selectedSuggestedLinkPair,
+    setSelectedSuggestedLinkPair,
   } = useInvoiceContext();
 
   const [, setSearchParams] = useSearchParams();
@@ -207,6 +212,19 @@ export function InvoiceDialogManager() {
         onSuccess={() => {
           invalidateInvoiceData();
         }}
+      />
+
+      {/* Suggested Invoice Link & Approval Dialog */}
+      <SuggestedInvoiceLinkDialog
+        open={suggestedLinkDialogOpen}
+        onOpenChange={(open) => {
+          setSuggestedLinkDialogOpen(open);
+          if (!open) {
+            setSelectedSuggestedLinkPair(null);
+          }
+        }}
+        navInvoice={selectedSuggestedLinkPair?.navInvoice || null}
+        suggestedInvoice={selectedSuggestedLinkPair?.suggestedInvoice || null}
       />
     </>
   );

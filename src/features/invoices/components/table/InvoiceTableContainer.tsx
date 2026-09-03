@@ -7,7 +7,7 @@ import { normalizeInvoiceNumber } from '@/lib/invoiceMatchingUtils';
 import { NavInvoiceTable } from './NavInvoiceTable';
 import { SubmittedInvoiceTable } from './SubmittedInvoiceTable';
 import { InvoiceFilterBar } from '../filters/InvoiceFilterBar';
-import { buildNavToSubmittedMap, buildSubmittedToNavMap } from '../../utils/invoiceRelations';
+import { buildNavToSubmittedMap, buildSubmittedToNavMap, buildNavToSuggestedSubmittedMap } from '../../utils/invoiceRelations';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { TransactionRecord } from '../../types';
 
@@ -68,6 +68,11 @@ export function InvoiceTableContainer() {
   const submittedToNavMap = useMemo(
     () => buildSubmittedToNavMap(submittedInvoices, effectiveNavInvoices),
     [submittedInvoices, effectiveNavInvoices]
+  );
+
+  const navToSuggestedSubmittedMap = useMemo(
+    () => buildNavToSuggestedSubmittedMap(submittedInvoices, paginatedNavInvoices, navToSubmittedMap),
+    [submittedInvoices, paginatedNavInvoices, navToSubmittedMap]
   );
 
   // 2. Collect all invoice IDs displayed on the current page
@@ -245,6 +250,7 @@ export function InvoiceTableContainer() {
       ) : (
         <NavInvoiceTable
           navToSubmittedMap={navToSubmittedMap}
+          navToSuggestedSubmittedMap={navToSuggestedSubmittedMap}
           pageInvoiceIdToTransactionsMap={pageInvoiceIdToTransactionsMap}
           onRowClick={handleRowClick}
           onToggleExclude={handleToggleExclude}

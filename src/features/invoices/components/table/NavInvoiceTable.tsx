@@ -11,9 +11,11 @@ import { ArrowUpDown, Info, ChevronsUpDown, ChevronsDownUp } from 'lucide-react'
 import { NavInvoiceRow } from './NavInvoiceRow';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { SubmittedInvoice, TransactionRecord } from '../../types';
+import type { SuggestedSubmittedInvoiceWithScore } from '../../utils/invoiceRelations';
 
 interface NavInvoiceTableProps {
   navToSubmittedMap: Map<string, SubmittedInvoice[]>;
+  navToSuggestedSubmittedMap?: Map<string, SuggestedSubmittedInvoiceWithScore[]>;
   pageInvoiceIdToTransactionsMap: Map<string, TransactionRecord[]>;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
@@ -21,6 +23,7 @@ interface NavInvoiceTableProps {
 
 export function NavInvoiceTable({
   navToSubmittedMap,
+  navToSuggestedSubmittedMap,
   pageInvoiceIdToTransactionsMap,
   onRowClick,
   onToggleExclude,
@@ -233,6 +236,7 @@ export function NavInvoiceTable({
                       key={invoice.id}
                       invoice={invoice}
                       navToSubmittedMap={navToSubmittedMap}
+                      navToSuggestedSubmittedMap={navToSuggestedSubmittedMap}
                       pageInvoiceIdToTransactionsMap={pageInvoiceIdToTransactionsMap}
                       onRowClick={onRowClick}
                       onToggleExclude={onToggleExclude}

@@ -6,6 +6,8 @@ import {
   isGrossAmountMatch,
   isNavAndSubmittedInvoiceMatch,
   normalizeInvoiceNumber,
+  evaluateNavAndSubmittedSuggestedMatch,
+  isForeignSubmittedInvoice,
 } from './invoiceMatchingUtils';
 
 describe('invoiceMatchingUtils', () => {
@@ -73,6 +75,11 @@ describe('invoiceMatchingUtils', () => {
     it('rejects significantly different amounts in same currency', () => {
       expect(isGrossAmountMatch(61595, 26135)).toBe(false);
       expect(isGrossAmountMatch(10000, 20000)).toBe(false);
+    });
+
+    it('rejects when currencies differ (e.g. HUF vs EUR)', () => {
+      expect(isGrossAmountMatch(11932625, 32, 'HUF', 'EUR')).toBe(false);
+      expect(isGrossAmountMatch(100, 100, 'EUR', 'USD')).toBe(false);
     });
 
     it('handles null/undefined amounts gracefully', () => {
@@ -191,6 +198,245 @@ describe('invoiceMatchingUtils', () => {
       };
 
       expect(isNavAndSubmittedInvoiceMatch(nav, sub)).toBe(false);
+    });
+  });
+
+  describe('evaluateNavAndSubmittedSuggestedMatch', () => {
+    it('SUGGESTED MATCH: Truncated prefix SZJE-2026-1 vs JE-2026-1 with same tax and amount', () => {
+      const nav = {
+        invoice_number: 'SZJE-2026-1',
+        invoice_direction: 'INBOUND',
+        supplier_name: 'Szőke Józsefné e.v.',
+        supplier_tax_number: '71221539-1-23',
+        invoice_gross_amount: 150000,
+        currency: 'HUF',
+        invoice_issue_date: '2026-08-10',
+      };
+      const sub = {
+        bizonylatsorszam: 'JE-2026-1', // OCR truncated prefix
+        invoice_direction: 'INBOUND',
+        elado_nev: 'Szőke Józsefné',
+        elado_vat_id: '71221539',
+        brutto_vegosszeg: 150000,
+        penznem: 'HUF',
+        kibocsatas_datuma: '2026-08-10',
+      };
+
+      const result = evaluateNavAndSubmittedSuggestedMatch(nav, sub);
+      expect(result.isMatch).toBe(true);
+      expect(result.isSuffixMatch).toBe(true);
+      expect(result.score).toBeGreaterThanOrEqual(90);
+      expect(result.reason).toContain('Partner adószám');
+      expect(result.reason).toContain('Bruttó összeg');
+      expect(result.reason).toContain('Sorszám részleges/suffix egyezés');
+    });
+
+    it('SUGGESTED MATCH: SZZJ-2026-5 vs J-2026-5 with name and amount match', () => {
+      const nav = {
+        invoice_number: 'SZZJ-2026-5',
+        invoice_direction: 'INBOUND',
+        supplier_name: 'Szanyi Zoltánné',
+        supplier_tax_number: '11032773-2-03',
+        invoice_gross_amount: 85200,
+        currency: 'HUF',
+        invoice_issue_date: '2026-08-12',
+      };
+      const sub = {
+        bizonylatsorszam: 'J-2026-5',
+        invoice_direction: 'INBOUND',
+        elado_nev: 'Szanyi Zoltánné e.v.',
+        elado_vat_id: '11032773',
+        brutto_vegosszeg: 85200,
+        penznem: 'HUF',
+        kibocsatas_datuma: '2026-08-12',
+      };
+
+      const result = evaluateNavAndSubmittedSuggestedMatch(nav, sub);
+      expect(result.isMatch).toBe(true);
+      expect(result.isSuffixMatch).toBe(true);
+      expect(result.score).toBeGreaterThanOrEqual(90);
+    });
+
+    it('SUGGESTED MATCH: Non-suffix but same partner, amount, and exact issue date', () => {
+      const nav = {
+        invoice_number: 'INV-2026-0099',
+        invoice_direction: 'INBOUND',
+        supplier_name: 'Alpha Trans Kft.',
+        supplier_tax_number: '24067263-2-41',
+        invoice_gross_amount: 45000,
+        currency: 'HUF',
+        invoice_issue_date: '2026-08-01',
+      };
+      const sub = {
+        bizonylatsorszam: 'SZLA-99',
+        invoice_direction: 'INBOUND',
+        elado_nev: 'Alpha Trans Kft',
+        elado_vat_id: '24067263',
+        brutto_vegosszeg: 45000,
+        penznem: 'HUF',
+        kibocsatas_datuma: '2026-08-01',
+      };
+
+      const result = evaluateNavAndSubmittedSuggestedMatch(nav, sub);
+      expect(result.isMatch).toBe(true);
+      expect(result.score).toBeGreaterThanOrEqual(90);
+    });
+
+    it('REJECTS: Same partner and same amount but different issue dates (Trend-Art recurring invoice)', () => {
+      // Replicating user's second screenshot:
+      // NAV: TRNDR-2026-17, Trend-Art Media Nonprofit Kft., 32885923, 2026.08.25, 530 000 Ft
+      const nav = {
+        invoice_number: 'TRNDR-2026-17',
+        invoice_direction: 'INBOUND',
+        supplier_name: 'Trend-Art Media Nonprofit Kft.',
+        supplier_tax_number: '32885923-2-41',
+        invoice_gross_amount: 530000,
+        currency: 'HUF',
+        invoice_issue_date: '2026-08-25',
+      };
+      // Submitted: TRNDR-2026-15, Trend-Art Media Nonprofit Kft., 32885923, 2026.08.14, 530 000 Ft
+      const sub = {
+        bizonylatsorszam: 'TRNDR-2026-15',
+        invoice_direction: 'INBOUND',
+        elado_nev: 'Trend-Art Media Nonprofit Kft.',
+        elado_vat_id: 'HU32885923',
+        brutto_vegosszeg: 530000,
+        penznem: 'HUF',
+        kibocsatas_datuma: '2026-08-14',
+      };
+
+      const result = evaluateNavAndSubmittedSuggestedMatch(nav, sub);
+      expect(result.isMatch).toBe(false);
+      expect(result.score).toBe(0);
+    });
+
+    it('REJECTS: Conflicting tax numbers even with same amount', () => {
+      const nav = {
+        invoice_number: 'SZJE-2026-1',
+        invoice_direction: 'INBOUND',
+        supplier_name: 'Szőke Józsefné',
+        supplier_tax_number: '71221539-1-23',
+        invoice_gross_amount: 150000,
+        currency: 'HUF',
+      };
+      const sub = {
+        bizonylatsorszam: 'JE-2026-1',
+        invoice_direction: 'INBOUND',
+        elado_nev: 'Másik Cég Kft.',
+        elado_vat_id: '99999999-2-03',
+        brutto_vegosszeg: 150000,
+        penznem: 'HUF',
+      };
+
+      const result = evaluateNavAndSubmittedSuggestedMatch(nav, sub);
+      expect(result.isMatch).toBe(false);
+      expect(result.score).toBe(0);
+    });
+
+    it('REJECTS: Conflicting amounts with same partner', () => {
+      const nav = {
+        invoice_number: 'SZJE-2026-1',
+        invoice_direction: 'INBOUND',
+        supplier_name: 'Szőke Józsefné',
+        supplier_tax_number: '71221539-1-23',
+        invoice_gross_amount: 150000,
+        currency: 'HUF',
+      };
+      const sub = {
+        bizonylatsorszam: 'JE-2026-1',
+        invoice_direction: 'INBOUND',
+        elado_nev: 'Szőke Józsefné',
+        elado_vat_id: '71221539',
+        brutto_vegosszeg: 280000,
+        penznem: 'HUF',
+      };
+
+      const result = evaluateNavAndSubmittedSuggestedMatch(nav, sub);
+      expect(result.isMatch).toBe(false);
+      expect(result.score).toBe(0);
+    });
+
+    it('REJECTS: Foreign invoice against domestic NAV invoice (Mailgun vs Wagner Global)', () => {
+      // Replicating the user's exact screenshot scenario:
+      // NAV: THINK-2026-29, Wagner Global Services Kft., tax: 11183965, HUF 11 932 625, OUTBOUND
+      const nav = {
+        id: 'nav-uuid-1',
+        invoice_number: 'THINK-2026-29',
+        invoice_direction: 'OUTBOUND',
+        customer_name: 'Wagner Global Services Kft.',
+        customer_tax_number: '11183965',
+        supplier_name: 'Thinkerman Kft.',
+        supplier_tax_number: '32478620-2-43',
+        invoice_gross_amount: 11932625,
+        currency: 'HUF',
+        invoice_issue_date: '2026-08-31',
+      };
+
+      // Submitted: #91413303, Mailgun Technologies, Inc. / Balazs Lederer, EUR 32.00, INBOUND
+      const sub = {
+        id: 'sub-uuid-1',
+        bizonylatsorszam: '91413303',
+        invoice_direction: 'INBOUND',
+        elado_nev: 'Mailgun Technologies, Inc.',
+        elado_vat_id: 'US123456',
+        vevo_nev: 'Thinkerman Kft.',
+        vevo_vat_id: 'HU32478620',
+        brutto_vegosszeg: 32,
+        penznem: 'EUR',
+        kibocsatas_datuma: '2026-09-01',
+        nav_status: 'not_applicable',
+      };
+
+      const result = evaluateNavAndSubmittedSuggestedMatch(nav, sub);
+      expect(result.isMatch).toBe(false);
+      expect(result.score).toBe(0);
+    });
+
+    it('REJECTS: Direction mismatch (OUTBOUND NAV vs INBOUND submitted with same partner)', () => {
+      const nav = {
+        invoice_number: 'SZ-001',
+        invoice_direction: 'OUTBOUND',
+        customer_name: 'Partner Kft.',
+        customer_tax_number: '12345678',
+        invoice_gross_amount: 100000,
+        currency: 'HUF',
+      };
+      const sub = {
+        bizonylatsorszam: 'SZ-001-EXTRA',
+        invoice_direction: 'INBOUND',
+        elado_nev: 'Partner Kft.',
+        elado_vat_id: '12345678',
+        brutto_vegosszeg: 100000,
+        penznem: 'HUF',
+      };
+
+      const result = evaluateNavAndSubmittedSuggestedMatch(nav, sub);
+      expect(result.isMatch).toBe(false);
+      expect(result.score).toBe(0);
+    });
+  });
+
+  describe('isForeignSubmittedInvoice', () => {
+    it('returns true when nav_status is not_applicable', () => {
+      expect(isForeignSubmittedInvoice({ nav_status: 'not_applicable' })).toBe(true);
+    });
+
+    it('returns true for foreign seller VAT prefix', () => {
+      expect(isForeignSubmittedInvoice({ elado_vat_id: 'US-8492049' })).toBe(true);
+      expect(isForeignSubmittedInvoice({ elado_vat_id: 'DE123456789' })).toBe(true);
+      expect(isForeignSubmittedInvoice({ elado_vat_id: 'FR987654321' })).toBe(true);
+    });
+
+    it('returns true for non-HUF currency without Hungarian tax number', () => {
+      expect(isForeignSubmittedInvoice({ penznem: 'EUR', elado_vat_id: null })).toBe(true);
+      expect(isForeignSubmittedInvoice({ penznem: 'USD', elado_vat_id: '' })).toBe(true);
+    });
+
+    it('returns false for domestic invoices', () => {
+      expect(isForeignSubmittedInvoice({ elado_vat_id: 'HU12345678' })).toBe(false);
+      expect(isForeignSubmittedInvoice({ elado_vat_id: '12345678-2-42' })).toBe(false);
+      expect(isForeignSubmittedInvoice({ elado_vat_id: '12345678' })).toBe(false);
+      expect(isForeignSubmittedInvoice({ invoice_direction: 'OUTBOUND' })).toBe(false);
     });
   });
 });

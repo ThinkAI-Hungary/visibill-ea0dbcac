@@ -12,6 +12,7 @@ import {
   buildSubmittedToNavMap,
   buildLinkedInvoicesMap,
   resolveLinkedInvoices,
+  buildNavToSuggestedSubmittedMap,
 } from '../utils/invoiceRelations';
 
 describe('Invoices Feature Domain Layer', () => {
@@ -110,6 +111,59 @@ describe('Invoices Feature Domain Layer', () => {
       expect(matches).toBeDefined();
       expect(matches?.length).toBe(1);
       expect(matches?.[0].id).toBe('nav-1');
+    });
+
+    it('should build suggested matches when exact match is missing due to prefix truncation', () => {
+      const exactMap = buildNavToSubmittedMap(mockSubmittedInvoices, mockNavInvoices);
+      
+      const navWithPrefix: NavInvoice = {
+        id: 'nav-prefix-1',
+        invoice_number: 'SZJE-2026-1',
+        invoice_direction: 'INBOUND',
+        invoice_issue_date: '2026-08-01',
+        invoice_delivery_date: '2026-08-01',
+        invoice_gross_amount: 127000,
+        supplier_name: 'Test Supplier Kft.',
+        supplier_tax_number: '12345678-2-42',
+        currency: 'HUF',
+        payment_method: 'TRANSFER',
+        submitted: false,
+      };
+
+      const subWithTruncated: SubmittedInvoice = {
+        id: 'sub-truncated-1',
+        bizonylatsorszam: 'JE-2026-1',
+        kibocsatas_datuma: '2026-08-01',
+        teljesites_datuma: '2026-08-01',
+        elado_nev: 'Test Supplier Kft.',
+        elado_vat_id: '12345678',
+        vevo_nev: 'Our Company Kft.',
+        adoalap_osszesen: 100000,
+        brutto_vegosszeg: 127000,
+        afa_osszeg_osszesen: 27000,
+        penznem: 'HUF',
+        category_id: null,
+        project_id: null,
+        image_url: 'https://example.com/invoice.pdf',
+        melleklet_url: null,
+        invoice_direction: 'INBOUND',
+        reference_number: null,
+        fizetesi_mod: 'Átutalás',
+        invoice_type: 'NORMAL',
+      };
+
+      const suggestedMap = buildNavToSuggestedSubmittedMap(
+        [...mockSubmittedInvoices, subWithTruncated],
+        [...mockNavInvoices, navWithPrefix],
+        exactMap
+      );
+
+      const suggestions = suggestedMap.get('SZJE-2026-1');
+      expect(suggestions).toBeDefined();
+      expect(suggestions?.length).toBe(1);
+      expect(suggestions?.[0].id).toBe('sub-truncated-1');
+      expect(suggestions?.[0].isSuffixMatch).toBe(true);
+      expect(suggestions?.[0].suggestedScore).toBeGreaterThanOrEqual(90);
     });
 
     it('should resolve hierarchical parent/child linked invoices (advance / storno chains)', () => {

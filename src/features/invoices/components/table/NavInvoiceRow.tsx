@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/h
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
-import { ChevronDown, Scale, FileText, Package } from 'lucide-react';
+import { ChevronDown, Scale, FileText, Package, Sparkles } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
 import { normalizeInvoiceNumber } from '@/lib/invoiceMatchingUtils';
@@ -16,10 +16,12 @@ import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { NavInvoice, SubmittedInvoice, TransactionRecord } from '../../types';
+import type { SuggestedSubmittedInvoiceWithScore } from '../../utils/invoiceRelations';
 
 interface NavInvoiceRowProps {
   invoice: NavInvoice;
   navToSubmittedMap: Map<string, SubmittedInvoice[]>;
+  navToSuggestedSubmittedMap?: Map<string, SuggestedSubmittedInvoiceWithScore[]>;
   pageInvoiceIdToTransactionsMap: Map<string, TransactionRecord[]>;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
@@ -28,6 +30,7 @@ interface NavInvoiceRowProps {
 export function NavInvoiceRow({
   invoice,
   navToSubmittedMap,
+  navToSuggestedSubmittedMap,
   pageInvoiceIdToTransactionsMap,
   onRowClick,
   onToggleExclude,
@@ -55,6 +58,8 @@ export function NavInvoiceRow({
     linkedInvoicesLoading,
     invalidateInvoiceData,
     navIdToCourierReportsMap,
+    setSuggestedLinkDialogOpen,
+    setSelectedSuggestedLinkPair,
   } = useInvoiceContext();
 
   const partnerName = getInvoicePartnerName(invoice);
@@ -370,7 +375,7 @@ export function NavInvoiceRow({
             return (
               <Select
                 value={effectiveProjectId || 'none'}
-                onValueChange={(value) => handleProjectChange(invoice.id, value, invoice.invoice_number)}
+                onValueChange={(value) => handleProjectChange(invoice.id, value)}
               >
                 <SelectTrigger className="w-[100px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
                   <SelectValue placeholder="Válassz..." />
@@ -396,7 +401,8 @@ export function NavInvoiceRow({
 
         <TableCell className="text-center">
           {(() => {
-            const matchedSubs = navToSubmittedMap.get(normalizeInvoiceNumber(invoice.invoice_number));
+            const navKey = normalizeInvoiceNumber(invoice.invoice_number);
+            const matchedSubs = navToSubmittedMap.get(navKey);
             const sub = matchedSubs?.find(s => s.image_url || s.melleklet_url);
             if (sub) {
               return (
@@ -425,6 +431,49 @@ export function NavInvoiceRow({
                 </HoverCard>
               );
             }
+
+            const suggestedSubs = navToSuggestedSubmittedMap?.get(navKey);
+            const suggestedSub = suggestedSubs?.[0];
+            if (suggestedSub) {
+              return (
+                <>
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-1.5 gap-1 bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/40 text-amber-600 dark:text-amber-400 font-medium text-xs transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedSuggestedLinkPair({
+                              navInvoice: invoice,
+                              suggestedInvoice: suggestedSub,
+                            });
+                            setSuggestedLinkDialogOpen(true);
+                          }}
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          <Sparkles className="h-3 w-3 text-amber-500 animate-pulse" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="max-w-[280px]">
+                        <div className="text-xs space-y-1">
+                          <p className="font-semibold text-amber-600 dark:text-amber-400">
+                            Javasolt számlakép ({suggestedSub.suggestedScore}%)
+                          </p>
+                          <p className="text-muted-foreground">
+                            Kinyert sorszám: <span className="font-mono font-medium text-foreground">{suggestedSub.bizonylatsorszam || '-'}</span>
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">Kattintson az összerendeléshez és jóváhagyáshoz!</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </>
+              );
+            }
+
             return <FileText className="h-4 w-4 mx-auto text-muted-foreground/30" />;
           })()}
         </TableCell>
