@@ -28,23 +28,28 @@ export function InvoiceImagePreview({
   const [loading, setLoading] = useState(false);
   const [iframeLoading, setIframeLoading] = useState(true);
   const [error, setError] = useState(false);
-  const fetchedRef = useRef(false);
+  const lastFetchedIdRef = useRef<string | null>(null);
 
   const displayUrl = imageUrl || mellekletUrl;
   const isPDF = displayUrl?.toLowerCase().endsWith('.pdf');
 
   useEffect(() => {
-    if (!isOpen || !invoiceId || fetchedRef.current) return;
+    if (!isOpen || !invoiceId) return;
 
     // Check cache
     const cached = signedUrlCache.get(invoiceId);
     if (cached) {
       setSignedUrl(cached);
+      setError(false);
+      lastFetchedIdRef.current = invoiceId;
       return;
     }
 
-    fetchedRef.current = true;
+    if (lastFetchedIdRef.current === invoiceId) return;
+    lastFetchedIdRef.current = invoiceId;
+
     setLoading(true);
+    setError(false);
 
     supabase.functions.invoke('get-invoice-image-url', {
       body: { invoiceId }

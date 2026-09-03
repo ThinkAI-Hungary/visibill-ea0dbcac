@@ -189,9 +189,9 @@ SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
 BEGIN
-  IF NEW.bizonylatsorszam IS NOT NULL AND (TG_OP = 'INSERT' OR OLD.bizonylatsorszam IS NULL OR OLD.bizonylatsorszam != NEW.bizonylatsorszam) THEN
+  IF (TG_OP = 'INSERT' OR OLD.bizonylatsorszam IS DISTINCT FROM NEW.bizonylatsorszam) THEN
     -- Check if authoritative nav_invoices record exists for this company
-    IF EXISTS (
+    IF NEW.bizonylatsorszam IS NOT NULL AND EXISTS (
       SELECT 1 FROM public.nav_invoices ni
       WHERE ni.company_id = NEW.company_id
         AND REPLACE(LOWER(ni.invoice_number), ' ', '') = REPLACE(LOWER(NEW.bizonylatsorszam), ' ', '')
@@ -199,6 +199,13 @@ BEGIN
       NEW.nav_status := 'verified';
       IF NEW.statusz = 'jovahagyasra_var' AND NEW.approved_at IS NULL THEN
         NEW.statusz := 'feldolgozott';
+      END IF;
+    ELSE
+      -- Ha a számlát korábban verified-nek jelölték (és nincs explicit könyvelői jóváhagyás approved_at),
+      -- de az új sorszámhoz nincs érvényes NAV tétel (vagy üres a sorszám), visszaállítjuk missing_nav-ra és zároljuk!
+      IF NEW.approved_at IS NULL AND NEW.nav_status = 'verified' THEN
+        NEW.nav_status := 'missing_nav';
+        NEW.statusz := 'jovahagyasra_var';
       END IF;
     END IF;
   END IF;
