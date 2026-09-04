@@ -73,6 +73,15 @@ export type ErrorRow = {
   context: Record<string, unknown> | null;
   stack_trace?: string | null;
   url?: string | null;
+  project?: string;
+  retry_count?: number;
+  fallback_chain?: string[];
+  history?: Array<{
+    id: string;
+    source: string;
+    error_message: string | null;
+    timestamp: string;
+  }>;
 };
 
 export async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
@@ -195,6 +204,44 @@ export async function buildErrors(admin: ReturnType<typeof createClient>, url: U
       });
     }
   }
+
+  // Deduplicate upload errors: if multiple error rows belong to the same physical file for the same company,
+  // group them, keep only the latest authoritative attempt, and track retry_count + fallback history.
+  const deduplicatedErrors: ErrorRow[] = [];
+  const uploadGroups = new Map<string, ErrorRow[]>();
+
+  for (const err of allErrors) {
+    const isUpload = UPLOAD_SOURCES.has(err.source) || err.source.endsWith("_uploads");
+    if (isUpload && err.company_id && (err.file_name || err.file_url)) {
+      const rawName = err.file_name || (err.file_url ? decodeURIComponent(err.file_url.split('/').pop()?.split('?')[0] || '') : '');
+      const normName = rawName.toLowerCase().trim();
+      const groupKey = `${err.company_id}::${normName}`;
+      const group = uploadGroups.get(groupKey) || [];
+      group.push(err);
+      uploadGroups.set(groupKey, group);
+    } else {
+      deduplicatedErrors.push(err);
+    }
+  }
+
+  for (const group of uploadGroups.values()) {
+    // Sort within group descending by error_timestamp (latest first)
+    group.sort((a, b) => new Date(b.error_timestamp).getTime() - new Date(a.error_timestamp).getTime());
+    const primary = group[0];
+    if (group.length > 1) {
+      primary.retry_count = group.length;
+      primary.fallback_chain = Array.from(new Set(group.map(g => g.source)));
+      primary.history = group.map(g => ({
+        id: g.id,
+        source: g.source,
+        error_message: g.error_message,
+        timestamp: g.error_timestamp,
+      }));
+    }
+    deduplicatedErrors.push(primary);
+  }
+
+  allErrors = deduplicatedErrors;
 
   const totalErrors = allErrors.length;
   const now = Date.now();
@@ -493,8 +540,8 @@ export async function migrateRowToTable(
     user_id: row.user_id,
     company_id: row.company_id,
     file_name: row.file_name,
-    file_type: row.file_type,
-    file_size: row.file_size,
+    file_type: row.file_type || "application/octet-stream",
+    file_size: row.file_size || 0,
     file_url: row.file_url,
     upload_status: row.upload_status || "uploaded",
     processing_status: "pending",
@@ -506,6 +553,8 @@ export async function migrateRowToTable(
 
   if (targetTable === "invoice_uploads") {
     targetRow.document_category = row.document_category || "invoice";
+  } else if (targetTable === "report_uploads") {
+    targetRow.report_type = row.report_type || "gls";
   }
 
   const { error: delErr } = await client

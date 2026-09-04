@@ -98,6 +98,14 @@ export interface ErrorRow {
   stack_trace?: string | null;
   url?: string | null;
   project?: string;
+  retry_count?: number;
+  fallback_chain?: string[];
+  history?: Array<{
+    id: string;
+    source: string;
+    error_message: string | null;
+    timestamp: string;
+  }>;
 }
 
 export interface ErrorsData {

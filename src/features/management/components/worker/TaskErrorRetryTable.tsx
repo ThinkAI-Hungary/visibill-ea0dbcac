@@ -698,6 +698,8 @@ export function TaskErrorRetryTable(props: TaskErrorRetryTableProps) {
                         <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] px-1.5 py-0 font-medium">ERROR</Badge>
                       ) : j.status === 'REDIRECTED' ? (
                         <Badge variant="outline" className="bg-info/10 text-info border-info/20 text-[10px] px-1.5 py-0 font-medium">REDIRECT</Badge>
+                      ) : j.status === 'SUPERSEDED' ? (
+                        <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] px-1.5 py-0 font-medium" title="Környezeti hiba vagy fallback miatt eldobva/felváltva">SUPERSEDED</Badge>
                       ) : (
                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px] px-1.5 py-0 font-medium">OK</Badge>
                       )}
@@ -709,7 +711,7 @@ export function TaskErrorRetryTable(props: TaskErrorRetryTableProps) {
                         {j.project && j.project !== 'PROD' && <span className="text-primary/50 mr-1">[{j.project}]</span>}
                         {j.worker_id || '—'}
                       </div>
-                      {j.source && j.upload_id && (
+                      {j.source && j.upload_id && j.status !== 'SUPERSEDED' && (
                         <Button 
                           variant="ghost" 
                           size="icon" 

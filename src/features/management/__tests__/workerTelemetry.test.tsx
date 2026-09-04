@@ -204,6 +204,53 @@ describe('Worker Telemetry Decomposed Architecture', () => {
     });
   });
 
+  describe('TaskErrorRetryTable Presenter', () => {
+    it('renders SUPERSEDED badge when a job has superseded status', async () => {
+      const { TaskErrorRetryTable } = await import('../components/worker/TaskErrorRetryTable');
+      const jobsWithSuperseded = [
+        {
+          id: 'job-superseded',
+          upload_id: 'up-super',
+          created_at: new Date().toISOString(),
+          pipeline: 'invoice',
+          file_name: 'superseded_invoice.pdf',
+          company_name: 'Acme Corp',
+          model_name: 'gemini-2.0-flash',
+          total_tokens: 1000,
+          estimated_cost_usd: 0.001,
+          processing_duration_ms: 800,
+          worker_id: 'worker-prod-1',
+          project: 'PROD',
+          status: 'SUPERSEDED',
+        },
+      ];
+
+      renderWithProviders(
+        <TaskErrorRetryTable
+          viewMode="recent"
+          workerErrorSearch=""
+          setWorkerErrorSearch={vi.fn()}
+          workerErrorCompany=""
+          setWorkerErrorCompany={vi.fn()}
+          workerErrorPipeline=""
+          setWorkerErrorPipeline={vi.fn()}
+          expandedErrorRowId={null}
+          setExpandedErrorRowId={vi.fn()}
+          filteredJobs={jobsWithSuperseded}
+          filteredErrorJobs={[]}
+          retrying={false}
+          onOpenRetryModal={vi.fn()}
+          onOpenBatchRetry={vi.fn()}
+          onOpenPreview={vi.fn()}
+          formatDuration={(ms) => `${ms}ms`}
+        />
+      );
+
+      expect(screen.getByText('SUPERSEDED')).toBeInTheDocument();
+      expect(screen.getByText('superseded_invoice.pdf')).toBeInTheDocument();
+    });
+  });
+
   describe('WorkerPanel Orchestrator', () => {
     it('renders KPI summary cards and switches between subpanels seamlessly', async () => {
       vi.mocked(fetchManagementData).mockResolvedValue(mockWorkerData);

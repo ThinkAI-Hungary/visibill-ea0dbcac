@@ -321,7 +321,9 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
             .in("id", uploadIds);
           for (const u of (invUploads || [])) {
             const hasError = u.processing_status === "error" || u.processing_status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
-            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            const isRedirected = !!u.error_message && u.error_message.toLowerCase().includes("redirected");
+            const isProcessing = u.processing_status === "processing" || u.processing_status === "pending";
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : isRedirected ? "REDIRECTED" : isProcessing ? "PROCESSING" : "OK");
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "invoice_uploads");
           }
@@ -334,7 +336,9 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
             .in("id", uploadIds);
           for (const u of (txUploads || [])) {
             const hasError = u.processing_status === "error" || u.processing_status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
-            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            const isRedirected = !!u.error_message && u.error_message.toLowerCase().includes("redirected");
+            const isProcessing = u.processing_status === "processing" || u.processing_status === "pending";
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : isRedirected ? "REDIRECTED" : isProcessing ? "PROCESSING" : "OK");
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "transaction_uploads");
           }
@@ -347,7 +351,9 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
             .in("id", uploadIds);
           for (const u of (bankUploads || [])) {
             const hasError = u.processing_status === "error" || u.processing_status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
-            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            const isRedirected = !!u.error_message && u.error_message.toLowerCase().includes("redirected");
+            const isProcessing = u.processing_status === "processing" || u.processing_status === "pending";
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : isRedirected ? "REDIRECTED" : isProcessing ? "PROCESSING" : "OK");
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "bank_statement_uploads");
           }
@@ -360,7 +366,9 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
             .in("id", uploadIds);
           for (const u of (reportUploads || [])) {
             const hasError = u.processing_status === "error" || u.processing_status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
-            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            const isRedirected = !!u.error_message && u.error_message.toLowerCase().includes("redirected");
+            const isProcessing = u.processing_status === "processing" || u.processing_status === "pending";
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : isRedirected ? "REDIRECTED" : isProcessing ? "PROCESSING" : "OK");
             if (u.file_url) uploadUrlMap.set(u.id, u.file_url);
             uploadSourceMap.set(u.id, "report_uploads");
           }
@@ -373,7 +381,9 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
             .in("id", uploadIds);
           for (const u of (glUploads || [])) {
             const hasError = u.processing_status === "error" || u.processing_status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
-            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            const isRedirected = !!u.error_message && u.error_message.toLowerCase().includes("redirected");
+            const isProcessing = u.processing_status === "processing" || u.processing_status === "pending";
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : isRedirected ? "REDIRECTED" : isProcessing ? "PROCESSING" : "OK");
             uploadSourceMap.set(u.id, "gl_upload_notifications");
           }
         } catch {}
@@ -385,7 +395,9 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
             .in("id", uploadIds);
           for (const u of (accUploads || [])) {
             const hasError = u.status === "error" || u.status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
-            uploadStatusMap.set(u.id, hasError ? "ERROR" : "OK");
+            const isRedirected = !!u.error_message && u.error_message.toLowerCase().includes("redirected");
+            const isProcessing = u.status === "processing" || u.status === "pending";
+            uploadStatusMap.set(u.id, hasError ? "ERROR" : isRedirected ? "REDIRECTED" : isProcessing ? "PROCESSING" : "OK");
             if (u.file_path) uploadUrlMap.set(u.id, u.file_path);
             uploadSourceMap.set(u.id, "accounty_uploads");
           }
@@ -408,7 +420,7 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
           worker_id: r.worker_id || `worker-${pc.name.toLowerCase()}`,
           project: pc.name,
           upload_id: r.upload_id || null,
-          status: r.upload_id ? (uploadStatusMap.get(r.upload_id) || "OK") : "OK",
+          status: r.upload_id ? (uploadStatusMap.has(r.upload_id) ? uploadStatusMap.get(r.upload_id)! : "SUPERSEDED") : "OK",
           file_url: r.upload_id ? (uploadUrlMap.get(r.upload_id) || null) : null,
           source: resolvedSource,
         };

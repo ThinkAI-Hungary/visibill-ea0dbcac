@@ -23,10 +23,10 @@ import {
 
 interface ErrorControlPanelProps {
   onOpenCompany: (id: string) => void;
-  allUsers: ControlCenterUser[];
+  allUsers?: ControlCenterUser[];
 }
 
-export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers }: ErrorControlPanelProps) {
+export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = [] }: ErrorControlPanelProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const PAGE_SIZE = 25;
 
@@ -184,7 +184,30 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers }: E
 
   const handleDelete = async (ids: Array<{ source: string; id: string; project?: string }>) => {
     if (ids.length === 0) return;
-    setDeleteTargets(ids);
+    // For any upload error representing a grouped set of fallback attempts,
+    // include all sibling attempts from history so they are dismissed together
+    const expandedIds: Array<{ source: string; id: string; project?: string }> = [];
+    const seen = new Set<string>();
+
+    for (const item of ids) {
+      const key = `${item.source}:${item.id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        expandedIds.push(item);
+      }
+      const row = errRows.find(r => r.id === item.id);
+      if (row?.history) {
+        for (const h of row.history) {
+          const hKey = `${h.source}:${h.id}`;
+          if (!seen.has(hKey)) {
+            seen.add(hKey);
+            expandedIds.push({ source: h.source, id: h.id, project: item.project });
+          }
+        }
+      }
+    }
+
+    setDeleteTargets(expandedIds);
     setDeleteModalOpen(true);
   };
 
@@ -197,6 +220,8 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers }: E
       setSelected(new Set());
       queryClient.invalidateQueries({ queryKey: ['management-errors'] });
       queryClient.invalidateQueries({ queryKey: ['management-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['management-files'] });
+      queryClient.invalidateQueries({ queryKey: ['worker-telemetry'] });
     } catch (e) {
       reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Delete errors failed:', error: e });
       toast({ title: 'Törlés sikertelen', description: 'Hiba történt a törlés során.', variant: 'destructive' });
@@ -293,6 +318,8 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers }: E
       await Promise.all([
         queryClient.refetchQueries({ queryKey: ['management-errors'], type: 'active' }),
         queryClient.refetchQueries({ queryKey: ['management-overview'], type: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['management-files'] }),
+        queryClient.invalidateQueries({ queryKey: ['worker-telemetry'] }),
       ]);
     } catch (e) {
       apiError = true;
@@ -969,22 +996,29 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers }: E
                             {r.error_category_label}
                           </Badge>
                         </td>
-                        <td className="py-1.5 px-3 max-w-[140px]" onClick={e => e.stopPropagation()}>
-                          {r.file_url && r.file_name ? (
-                            <button
-                              className="group inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors duration-150 truncate max-w-full"
-                              title={`Előnézet: ${r.file_name}`}
-                              onClick={() => openPreview({ url: r.file_url!, name: r.file_name! })}
-                            >
-                              <Eye className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                              <span className="truncate">{r.file_name}</span>
-                            </button>
-                          ) : (
-                            <span className="text-foreground/50 truncate inline-flex items-center gap-1 max-w-full">
-                              <span className="w-3 h-3 shrink-0" />
-                              <span className="truncate">{r.file_name || '—'}</span>
-                            </span>
-                          )}
+                        <td className="py-1.5 px-3 max-w-[170px]" onClick={e => e.stopPropagation()}>
+                          <div className="flex items-center gap-1.5 max-w-full">
+                            {r.file_url && r.file_name ? (
+                              <button
+                                className="group inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors duration-150 truncate flex-1"
+                                title={`Előnézet: ${r.file_name}`}
+                                onClick={() => openPreview({ url: r.file_url!, name: r.file_name! })}
+                              >
+                                <Eye className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <span className="truncate">{r.file_name}</span>
+                              </button>
+                            ) : (
+                              <span className="text-foreground/50 truncate inline-flex items-center gap-1 flex-1">
+                                <span className="w-3 h-3 shrink-0" />
+                                <span className="truncate">{r.file_name || '—'}</span>
+                              </span>
+                            )}
+                            {r.retry_count && r.retry_count > 1 ? (
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-medium shrink-0" title={`${r.retry_count} sikertelen kísérlet / fallback`}>
+                                {r.retry_count}x
+                              </Badge>
+                            ) : null}
+                          </div>
                         </td>
                         <td className="py-1.5 px-3 text-foreground/50 truncate max-w-[200px]" title={r.error_message || ''}>
                           {r.error_message ? r.error_message.slice(0, 55) + (r.error_message.length > 55 ? '…' : '') : '—'}
@@ -1039,6 +1073,24 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers }: E
                                   <p className="text-foreground tabular-nums">{new Date(r.created_at).toLocaleString('hu-HU')}</p>
                                 </div>
                               </div>
+
+                              {r.fallback_chain && r.fallback_chain.length > 1 && (
+                                <div className="p-2.5 rounded-md bg-amber-500/5 border border-amber-500/20 text-xs">
+                                  <p className="text-amber-600 dark:text-amber-400 font-semibold mb-1">
+                                    Fallback lánc ({r.retry_count} próbálkozás):
+                                  </p>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {r.fallback_chain.map((step, sIdx) => (
+                                      <React.Fragment key={sIdx}>
+                                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-mono">
+                                          {step}
+                                        </Badge>
+                                        {sIdx < r.fallback_chain!.length - 1 && <span className="text-muted-foreground text-xs font-bold">→</span>}
+                                      </React.Fragment>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
 
                               {r.url && (
                                 <div>

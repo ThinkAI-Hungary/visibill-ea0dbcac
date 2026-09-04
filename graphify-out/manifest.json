@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788488508.0843322,
-    "ast_hash": "dbbc2c92ef6cb16b8b053974f6526775",
+    "mtime": 1788493734.2722123,
+    "ast_hash": "f06a023f49ae096a35138cf497d636c9",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788488519.9728196,
-    "ast_hash": "b008b710c979c2110a349fc767a488ee",
+    "mtime": 1788493746.9152226,
+    "ast_hash": "045d2cebb26de4fc6fb4a53cfc1c6c7b",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -7460,8 +7460,8 @@
     "semantic_hash": ""
   },
   "src/features/management/api/types.ts": {
-    "mtime": 1788176363.8687663,
-    "ast_hash": "c56c796096d6a77e863975cd3b1db4df",
+    "mtime": 1788490729.2836895,
+    "ast_hash": "14500274fd0858238cd18fce6a34c0f7",
     "semantic_hash": ""
   },
   "src/features/management/components/ControlCenter.tsx": {
@@ -7510,8 +7510,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/errors/ErrorControlPanel.tsx": {
-    "mtime": 1788176386.3917842,
-    "ast_hash": "229c2fb8a1cb88a000d955e8ad5eb212",
+    "mtime": 1788492066.1242943,
+    "ast_hash": "1ae7f85433db92174481aab20a2e30c2",
     "semantic_hash": ""
   },
   "src/features/management/components/files/FilesPanel.tsx": {
@@ -8355,8 +8355,8 @@
     "semantic_hash": ""
   },
   "src/features/management/__tests__/workerTelemetry.test.tsx": {
-    "mtime": 1788222413.1761856,
-    "ast_hash": "95a88d42af4cd5d5d4cb88eaa00a1a63",
+    "mtime": 1788490935.7808561,
+    "ast_hash": "e49b49fbd44351afc0672ba3b8724268",
     "semantic_hash": ""
   },
   "src/features/management/components/worker/ContainerMetricsCard.tsx": {
@@ -8375,23 +8375,23 @@
     "semantic_hash": ""
   },
   "src/features/management/components/worker/TaskErrorRetryTable.tsx": {
-    "mtime": 1788222305.8700204,
-    "ast_hash": "887d231bba4c5e34e0649256810659ef",
+    "mtime": 1788491481.6533823,
+    "ast_hash": "20f5cc8d9ae5835cfd7819090cfc017d",
     "semantic_hash": ""
   },
   "src/features/management/hooks/useWorkerTelemetry.ts": {
-    "mtime": 1788222267.6294253,
-    "ast_hash": "6681642fd53b64181f8264d43640f431",
+    "mtime": 1788490839.7529678,
+    "ast_hash": "fecedaf0efca353734bea24e6b023ba6",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/errorsHandler.ts": {
-    "mtime": 1788269432.1483397,
-    "ast_hash": "47fa69b0b52d9e802215015292c74fa9",
+    "mtime": 1788492768.9184453,
+    "ast_hash": "91c25714f6455f090feca95f2afb7c91",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/filesHandler.ts": {
-    "mtime": 1788222198.7744179,
-    "ast_hash": "df038e99ce73c671c3a1dfaff8790bfb",
+    "mtime": 1788491462.1976783,
+    "ast_hash": "70ab501019476146d4b6dfa9d81fde03",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/llmCostsHandler.ts": {
@@ -8415,8 +8415,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/workerHandler.ts": {
-    "mtime": 1788222219.210032,
-    "ast_hash": "8782f8064c058a3b5f68d2c863fc2dba",
+    "mtime": 1788490677.451358,
+    "ast_hash": "9ca0b89aeac79db9e0f40937e028b68f",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/middleware/auth.ts": {
@@ -8927,6 +8927,31 @@
   "docs/product/decisions/P-068-gl-search-and-comparison-pagination-ux.md": {
     "mtime": 1788488496.1506658,
     "ast_hash": "6c9786dde1b21386b2465e1692320776",
+    "semantic_hash": ""
+  },
+  "src/features/management/__tests__/errorControlPanelDedup.test.tsx": {
+    "mtime": 1788491083.415203,
+    "ast_hash": "a8fe2be50b6ed40f3b892d6c1bd8b0a8",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260904140000_cleanup_duplicate_error_uploads.sql": {
+    "mtime": 1788490343.2583592,
+    "ast_hash": "8e44837b3daedee1ca62c68b3b8b57ad",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260904150000_dedup_get_management_files.sql": {
+    "mtime": 1788490815.7197597,
+    "ast_hash": "b93389997d7161cda7da4c987146bf8d",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-088-management-dashboard-dedup-and-worker-fallback-loop-prevention.md": {
+    "mtime": 1788493728.3456087,
+    "ast_hash": "6c92c260902936c72f192385426c2798",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-069-management-dashboard-error-dedup-and-fallback-chain-ux.md": {
+    "mtime": 1788493431.2198822,
+    "ast_hash": "a2b76cf6ea2abe0f5fe8379d04e51ef2",
     "semantic_hash": ""
   }
 }

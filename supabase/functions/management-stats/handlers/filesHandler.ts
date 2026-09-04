@@ -144,15 +144,36 @@ export async function buildFiles(admin: ReturnType<typeof createClient>, url: UR
   const isError = (r: typeof mappedRows[0]) => ERROR_STATUSES.has(r.processing_status || "") || (!!r.error_message && !isCompletedMessage(r.error_message));
   const isSuccess = (r: typeof mappedRows[0]) => isCompletedMessage(r.error_message) && SUCCESS_STATUSES.has(r.processing_status || "");
 
+  // Deduplicate raw rows across upload tables matching the get_management_files RPC
+  const dedupMap = new Map<string, typeof mappedRows[0]>();
+  for (const r of mappedRows) {
+    const normKey = `${r.company_id || ''}::${(r.file_name || r.file_url || '').toLowerCase().trim()}`;
+    const existing = dedupMap.get(normKey);
+    if (!existing) {
+      dedupMap.set(normKey, r);
+    } else {
+      const existingSuccess = isSuccess(existing);
+      const currentSuccess = isSuccess(r);
+      if (!existingSuccess && currentSuccess) {
+        dedupMap.set(normKey, r);
+      } else if (existingSuccess === currentSuccess) {
+        if (new Date(r.created_at).getTime() > new Date(existing.created_at).getTime()) {
+          dedupMap.set(normKey, r);
+        }
+      }
+    }
+  }
+  const dedupedRows = Array.from(dedupMap.values());
+
   const stats = {
-    totalCount: mappedRows.length,
-    successCount: mappedRows.filter(isSuccess).length,
-    errorCount: mappedRows.filter(isError).length,
+    totalCount: dedupedRows.length,
+    successCount: dedupedRows.filter(isSuccess).length,
+    errorCount: dedupedRows.filter(isError).length,
     pendingCount: 0,
   };
   stats.pendingCount = stats.totalCount - stats.successCount - stats.errorCount;
 
-  let filteredRows = mappedRows;
+  let filteredRows = dedupedRows;
   if (status) {
     const vals = status.split(",");
     const wantPending = vals.includes("pending");
@@ -272,21 +293,63 @@ export async function deleteFiles(
   const storageErrors: string[] = [];
   const dbErrors: string[] = [];
 
+  const deletingIds = new Set(files.map(x => x.id));
+  const deletedStoragePaths = new Set<string>();
+
   await Promise.all(
     files.map(async (f) => {
       const dbTable = SOURCE_TABLE_TO_DB[f.source_table];
 
-      if (f.file_url && !dbOnly) {
-        const parsed = parseStorageUrl(f.file_url);
+      let shouldDeleteStorage = Boolean(f.file_url && !dbOnly);
+
+      if (shouldDeleteStorage) {
+        // Guard: check if any SURVIVING upload record in any table still references this exact file_url
+        try {
+          const checkTables = ["invoice_uploads", "transaction_uploads", "report_uploads", "bank_statement_uploads"];
+          const checkResults = await Promise.all(
+            checkTables.map(tbl =>
+              admin.from(tbl).select("id").eq("file_url", f.file_url!).limit(10)
+            )
+          );
+          const hasSiblingRef = checkResults.some(r =>
+            (r.data || []).some((row: any) => !deletingIds.has(row.id))
+          );
+
+          // Guard: check if any finalized invoice references this file_url
+          let hasInvoiceRef = false;
+          try {
+            const invCheck = await admin
+              .from("invoices")
+              .select("id")
+              .or(`melleklet_url.eq.${f.file_url},image_url.eq.${f.file_url}`)
+              .limit(1);
+            hasInvoiceRef = Boolean(invCheck.data && invCheck.data.length > 0);
+          } catch {}
+
+          if (hasSiblingRef || hasInvoiceRef) {
+            shouldDeleteStorage = false;
+            console.info(`[delete-files] Preserving physical storage blob for ${f.id} because surviving records reference ${f.file_url}`);
+          }
+        } catch (err) {
+          console.warn(`[delete-files] Failed to check sibling references for ${f.id}, defaulting to storage delete:`, err);
+        }
+      }
+
+      if (shouldDeleteStorage) {
+        const parsed = parseStorageUrl(f.file_url!);
         if (parsed) {
-          const { error: storageError } = await admin.storage
-            .from(parsed.bucket)
-            .remove([parsed.path]);
-          if (storageError) {
-            storageErrors.push(`${f.id}: ${storageError.message}`);
-            console.error(`[delete-files] Storage removal failed for ${f.id}:`, storageError.message);
-          } else {
-            storageDeleted++;
+          const storageKey = `${parsed.bucket}:${parsed.path}`;
+          if (!deletedStoragePaths.has(storageKey)) {
+            deletedStoragePaths.add(storageKey);
+            const { error: storageError } = await admin.storage
+              .from(parsed.bucket)
+              .remove([parsed.path]);
+            if (storageError) {
+              storageErrors.push(`${f.id}: ${storageError.message}`);
+              console.error(`[delete-files] Storage removal failed for ${f.id}:`, storageError.message);
+            } else {
+              storageDeleted++;
+            }
           }
         } else {
           storageErrors.push(`${f.id}: could not parse storage URL`);

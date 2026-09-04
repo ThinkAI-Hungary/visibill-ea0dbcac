@@ -107,6 +107,8 @@ export function useWorkerTelemetry() {
           grouped[key].status = 'ERROR';
         } else if (j.status === 'REDIRECTED' && grouped[key].status !== 'ERROR') {
           grouped[key].status = 'REDIRECTED';
+        } else if (j.status === 'SUPERSEDED' && grouped[key].status !== 'ERROR') {
+          grouped[key].status = 'SUPERSEDED';
         }
       }
     }

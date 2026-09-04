@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-04  
-> **Összesen:** 63 döntés | ✅ Decided: 59 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 64 döntés | ✅ Decided: 60 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -111,6 +111,7 @@
 |---|--------|---------|------|
 | P-036 | Management Dashboard UI és navigáció | ✅ Decided | [P-036](./P-036-management-dashboard.md) |
 | P-061 | Management Worker Telemetry Decomposition & Calendar Month LLM UX | ✅ Decided | [P-061](./P-061-management-worker-telemetry-and-monthly-llm-ux.md) |
+| P-069 | Management Dashboard Hiba Dedublikáció, Fallback Lánc és Állapot Kormányzás UX | ✅ Decided | [P-069](./P-069-management-dashboard-error-dedup-and-fallback-chain-ux.md) |
 
 ## 👥 Partnertörzs
 
