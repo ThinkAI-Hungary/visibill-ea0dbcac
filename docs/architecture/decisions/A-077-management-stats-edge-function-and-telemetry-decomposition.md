@@ -41,6 +41,7 @@ Megtartottuk az egységes Edge Function végpontot (`index.ts`), de a funkcióka
   - `filesHandler.ts`: `buildFiles`, `updateFileStatus`, `deleteFiles`, `parseStorageUrl`.
   - `superadminHandler.ts`: `buildSuperadminData` (15+ modul lapozható adata).
   - `workerHandler.ts`: `buildWorkerStatus`, `getActiveErrors`.
+  - `ticketsHandler.ts`: `createTicketOnBehalf` (hibajegy létrehozása célfelhasználó nevében admin hitelesítéssel, RLS bypass és audit trail).
 - **`index.ts` (Router Facade)**: Egy letisztult (~90 soros) delegáló router, amely autentikálja a kérést, majd a megfelelő handlerhez irányítja azt.
 
 ### B. Frontend Worker Telemetria Dekomponálása (`src/features/management/`)

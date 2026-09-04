@@ -19,6 +19,8 @@
   - `/:companyId/:dateRange/tickets/:ticketId?` (fő app)
   - `/accounty/tickets/:ticketId?` (Accounty)
   - `/tickets/:ticketId?` (standalone)
+  - `/management?view=tickets` (Management Dashboard, beágyazva)
+- Management hibajegy nyitás ügyfél nevében (`ManagementCreateTicketDialog.tsx`): a Management Dashboard felületén a sub-tabs sávból indítható `+ Új hibajegy nyitása`, amellyel a support admin célfelhasználó nevében rögzíthet jegyet auto-fill cégválasztással, formázott leírással és csatolmányokkal (részletek: [P-070](./P-070-management-impersonated-ticket-creation-ux.md), [A-089](../../architecture/decisions/A-089-management-ticket-creation-on-behalf-of-user.md))
 - Ticket típusok: Hibajelentés (bug), Visszajelzés (feedback), Kérdés (question)
 - Ticket prioritás: alacsony/közepes/magas/kritikus — user választhatja beküldéskor
 - Ticket lista: kereshető (jegyszám, üzenet, cég, email), szűrhető (multi-status, prioritás, platform)

@@ -8,6 +8,7 @@ import { buildUserPermissions, updatePermissions, deleteUser } from "./handlers/
 import { buildSuperadminData } from "./handlers/superadminHandler.ts";
 import { buildFiles, updateFileStatus, deleteFiles } from "./handlers/filesHandler.ts";
 import { buildWorkerStatus } from "./handlers/workerHandler.ts";
+import { createTicketOnBehalf } from "./handlers/ticketsHandler.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -117,6 +118,13 @@ serve(async (req) => {
     if (action === "llm-costs") {
       const period = url.searchParams.get("period") || "7d";
       return json(await buildLLMCosts(admin, period));
+    }
+
+    if (action === "create-ticket") {
+      if (req.method !== "POST") return json({ error: "POST required" }, 405);
+      const body = await req.json().catch(() => ({}));
+      const res = await createTicketOnBehalf(admin, body, authContext.userId);
+      return json(res, res.error ? 400 : 200);
     }
 
     return json({ error: "Unknown action", ...emptyOverview });

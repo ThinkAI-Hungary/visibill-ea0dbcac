@@ -263,3 +263,34 @@ export interface WorkerStatusData {
     company_name?: string | null;
   }>;
 }
+
+export interface CreateTicketOnBehalfPayload {
+  targetUserId: string;
+  companyId?: string | null;
+  companyName?: string | null;
+  service?: string; // 'eaisybill' | 'accounty'
+  type: string; // 'bug' | 'feedback' | 'question'
+  priority?: string; // 'low' | 'medium' | 'high' | 'critical'
+  message: string;
+  attachments?: string[];
+  assignedTo?: string | null;
+  pageUrl?: string;
+}
+
+export interface CreateTicketResponse {
+  success?: boolean;
+  error?: string;
+  ticket?: {
+    id: string;
+    ticket_number: string;
+    status: string;
+    priority: string | null;
+    type: string;
+    service: string | null;
+    created_at: string;
+    user_id: string;
+    user_email: string | null;
+    user_name: string | null;
+    company_name: string | null;
+  };
+}

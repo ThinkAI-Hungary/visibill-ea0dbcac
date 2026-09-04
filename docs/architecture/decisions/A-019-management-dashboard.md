@@ -47,7 +47,7 @@ if (requesterProfile?.role !== "management" && requesterProfile?.role !== "think
 
 ### API Design: Action-based Query Params
 
-Egyetlen Edge Function, 16 action:
+Egyetlen Edge Function, 17 action:
 
 | Action | Params | Visszatérés |
 |---|---|---|
@@ -66,6 +66,7 @@ Egyetlen Edge Function, 16 action:
 | `superadmin-module-data` | `companyId`, `module`, `page`, `pageSize`, `dateFrom`, `dateTo`, `search` | Cégenként 27 modul bármelyikének lapozott adatai (rows[], totalCount) |
 | `worker-status` | — | containers[] (heartbeat health), queues[] (PGMQ metrics), pipelines[] (24h teljesítmény + 7d sparkline), recent_jobs[] (utolsó 20), summary KPI-k |
 | `llm-costs` | `period` (24h/7d/30d/90d) | Cross-project LLM költségaggregáció: kpi{total_cost, total_jobs, avg_cost_per_job, total_tokens}, by_pipeline[], by_project[], top_companies[] (top 3), daily_trend[], by_model[] |
+| `create-ticket` | POST body: `{ targetUserId, title, message, service?, type?, priority?, companyId?, assigneeId?, attachments? }` | Hibajegy létrehozása célfelhasználó nevében admin hitelesítéssel, service_role beszúrással, automatikus triggerrel és audit naplózással ([A-089](./A-089-management-ticket-creation-on-behalf-of-user.md)) |
 
 ### Adatforrások
 

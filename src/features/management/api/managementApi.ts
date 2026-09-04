@@ -58,3 +58,9 @@ export async function postManagementData<T = any>(
   }
   return res.json();
 }
+
+export async function createTicketOnBehalf(
+  payload: import('./types').CreateTicketOnBehalfPayload
+): Promise<import('./types').CreateTicketResponse> {
+  return postManagementData<import('./types').CreateTicketResponse>('create-ticket', payload);
+}

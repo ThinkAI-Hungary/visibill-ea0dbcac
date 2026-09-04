@@ -45,7 +45,15 @@ import {
   ChevronLeft,
   ChevronRight,
   HelpCircle,
+  TicketPlus,
 } from "lucide-react";
+import {
+  ManagementCreateTicketDialog,
+  type ManagementUserOption,
+} from "@/features/management/components/tickets/ManagementCreateTicketDialog";
+import { useQuery } from "@tanstack/react-query";
+import { fetchManagementData } from "@/features/management/api/managementApi";
+import type { OverviewData } from "@/features/management/api/types";
 import { UnifiedPagination } from "@/components/ui/unified-pagination";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
@@ -70,15 +78,21 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface TicketsPageProps {
   embeddedInManagement?: boolean;
+  managementUsers?: ManagementUserOption[];
 }
 
-export default function TicketsPage({ embeddedInManagement = false }: TicketsPageProps) {
+export default function TicketsPage({
+  embeddedInManagement = false,
+  managementUsers,
+}: TicketsPageProps) {
   const routeParams = useParams<{ ticketId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const ticketId = embeddedInManagement ? searchParams.get('id') || undefined : routeParams.ticketId;
   const subView = embeddedInManagement 
     ? (searchParams.get('subView') as 'list' | 'console' | 'analytics' | 'assignment') || 'list' 
     : 'list';
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -102,6 +116,19 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   const { data: supportAgents = [] } = useSupportAgents();
   const { mutateAsync: updateAssignee } = useUpdateTicketAssignee();
   const { mutateAsync: updateStatus } = useUpdateTicketStatus();
+
+  // Query management overview for user list if not passed via props
+  const { data: overviewData } = useQuery<OverviewData>({
+    queryKey: ['management-overview'],
+    queryFn: () => fetchManagementData('overview'),
+    enabled: !!user && (embeddedInManagement || !!isAdmin) && (!managementUsers || managementUsers.length === 0),
+    staleTime: 60_000,
+  });
+
+  const availableUsers: ManagementUserOption[] = useMemo(() => {
+    if (managementUsers && managementUsers.length > 0) return managementUsers;
+    return overviewData?.users || [];
+  }, [managementUsers, overviewData?.users]);
 
   // Helper: update search params without overwriting parent dashboard params
   const updateParams = (updates: Record<string, string | null>) => {
@@ -309,43 +336,53 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
   const renderTabsHeader = () => {
     if (!embeddedInManagement || !isAdmin) return null;
     return (
-    <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 mb-6 w-fit gap-1">
-        <button
-          onClick={() => setSubTab('list')}
-          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
-            subView === 'list' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
-          }`}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+        <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 gap-1">
+          <button
+            onClick={() => setSubTab('list')}
+            className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
+              subView === 'list' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
+            }`}
+          >
+            <Layers className="h-3.5 w-3.5" />
+            Jegyek Listája
+          </button>
+          <button
+            onClick={() => setSubTab('console')}
+            className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
+              subView === 'console' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
+            }`}
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            Kezelőkonzol
+          </button>
+          <button
+            onClick={() => setSubTab('analytics')}
+            className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
+              subView === 'analytics' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
+            }`}
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            Analitika & SLA
+          </button>
+          <button
+            onClick={() => setSubTab('assignment')}
+            className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
+              subView === 'assignment' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
+            }`}
+          >
+            <UserCheck className="h-3.5 w-3.5" />
+            Terhelés & Elosztás
+          </button>
+        </div>
+
+        <Button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="gap-2 h-9 text-xs font-semibold shadow-sm"
         >
-          <Layers className="h-3.5 w-3.5" />
-          Jegyek Listája
-        </button>
-        <button
-          onClick={() => setSubTab('console')}
-          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
-            subView === 'console' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
-          }`}
-        >
-          <MessageSquare className="h-3.5 w-3.5" />
-          Kezelőkonzol
-        </button>
-        <button
-          onClick={() => setSubTab('analytics')}
-          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
-            subView === 'analytics' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
-          }`}
-        >
-          <BarChart3 className="h-3.5 w-3.5" />
-          Analitika & SLA
-        </button>
-        <button
-          onClick={() => setSubTab('assignment')}
-          className={`py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap border ${
-            subView === 'assignment' ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-transparent'
-          }`}
-        >
-          <UserCheck className="h-3.5 w-3.5" />
-          Terhelés & Elosztás
-        </button>
+          <TicketPlus className="h-4 w-4" />
+          <span>Új hibajegy nyitása</span>
+        </Button>
       </div>
     );
   };
@@ -1089,6 +1126,19 @@ export default function TicketsPage({ embeddedInManagement = false }: TicketsPag
       {subView === 'console' && <div key="console">{renderConsoleView()}</div>}
       {subView === 'analytics' && <div key="analytics">{renderAnalyticsView()}</div>}
       {subView === 'assignment' && <div key="assignment">{renderAssignmentView()}</div>}
+
+      {/* Modal to create ticket on behalf of a user */}
+      <ManagementCreateTicketDialog
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        users={availableUsers}
+        onTicketCreated={(ticket) => {
+          refetch();
+          if (ticket?.id) {
+            openTicket(ticket.id);
+          }
+        }}
+      />
     </div>
   );
 }

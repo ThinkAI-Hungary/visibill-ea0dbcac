@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-04  
-> **Összesen:** 64 döntés | ✅ Decided: 60 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 65 döntés | ✅ Decided: 61 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -104,6 +104,7 @@
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-035 | Hibajegy UI és workflow | ✅ Decided | [P-035](./P-035-ticket-system.md) |
+| P-070 | Management Dashboard Hibajegy Létrehozás Felhasználó Nevében UX | ✅ Decided | [P-070](./P-070-management-impersonated-ticket-creation-ux.md) |
 
 ## 🛠️ Platform Üzemeltetés
 

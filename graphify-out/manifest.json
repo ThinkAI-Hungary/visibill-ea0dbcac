@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "src/pages/TicketsPage.tsx": {
-    "mtime": 1788439667.246806,
-    "ast_hash": "cff8e74ce51b40b0d48e7b82f69f3736",
+    "mtime": 1788494553.2306268,
+    "ast_hash": "a9b3f54d5006ee2117c1ed1f3cc699a8",
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {
@@ -1700,8 +1700,8 @@
     "semantic_hash": "ff7983437ae5d07804815e4662ebd916"
   },
   "supabase/functions/management-stats/index.ts": {
-    "mtime": 1788222242.078193,
-    "ast_hash": "579ef7ff332cf681b5adabca815252fb",
+    "mtime": 1788494447.2185304,
+    "ast_hash": "12b64bf3e3549d4ef0a374b2ed2471a4",
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
@@ -3085,8 +3085,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
-    "mtime": 1788144183.5305989,
-    "ast_hash": "06c7d68a6e1bebcac11694bd78cfd8ba",
+    "mtime": 1788494821.9247513,
+    "ast_hash": "15ae77d6d051e78b5dda774aa1c971de",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-020-auth-trigger-chain-incident.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788493734.2722123,
-    "ast_hash": "f06a023f49ae096a35138cf497d636c9",
+    "mtime": 1788494796.600071,
+    "ast_hash": "1a3e1aa16dd4963a9069463b29b89705",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3555,13 +3555,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1788439841.5350094,
-    "ast_hash": "dfde9d3d1d561c41375c3721e746b57f",
+    "mtime": 1788497080.1363606,
+    "ast_hash": "a08f079c2afa8265a911e45f5436cd97",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
-    "mtime": 1788176987.2637858,
-    "ast_hash": "7d345661a1887cd72e1584f4212f60f1",
+    "mtime": 1788497103.0321014,
+    "ast_hash": "f4b6d3f7bc14fce83e29fc1255508962",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-039-global-search.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788493746.9152226,
-    "ast_hash": "045d2cebb26de4fc6fb4a53cfc1c6c7b",
+    "mtime": 1788494808.895138,
+    "ast_hash": "da6c7ca1dd38150552f3bb13e9c11133",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -7450,18 +7450,18 @@
     "semantic_hash": ""
   },
   "src/features/management/ManagementDashboard.tsx": {
-    "mtime": 1788174347.087768,
-    "ast_hash": "17845b387447d61521d53e97cb5f238f",
+    "mtime": 1788494561.6151106,
+    "ast_hash": "030e58a04c99230729361911a06f22b1",
     "semantic_hash": ""
   },
   "src/features/management/api/managementApi.ts": {
-    "mtime": 1788135614.492393,
-    "ast_hash": "5ba5559879dbea64ef46c9a902021757",
+    "mtime": 1788494466.695793,
+    "ast_hash": "7982138bf8dce62fe16d740436e8dba1",
     "semantic_hash": ""
   },
   "src/features/management/api/types.ts": {
-    "mtime": 1788490729.2836895,
-    "ast_hash": "14500274fd0858238cd18fce6a34c0f7",
+    "mtime": 1788494456.1885176,
+    "ast_hash": "a2ccd65f4176f9157e3beb2f49f54236",
     "semantic_hash": ""
   },
   "src/features/management/components/ControlCenter.tsx": {
@@ -8440,8 +8440,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-077-management-stats-edge-function-and-telemetry-decomposition.md": {
-    "mtime": 1788223448.5055294,
-    "ast_hash": "e4d8b92ae9f474c40c5e25c914ac83a6",
+    "mtime": 1788494827.9429996,
+    "ast_hash": "e419de8f887d2abff332247b58525fb2",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-061-management-worker-telemetry-and-monthly-llm-ux.md": {
@@ -8952,6 +8952,36 @@
   "docs/product/decisions/P-069-management-dashboard-error-dedup-and-fallback-chain-ux.md": {
     "mtime": 1788493431.2198822,
     "ast_hash": "a2b76cf6ea2abe0f5fe8379d04e51ef2",
+    "semantic_hash": ""
+  },
+  "src/features/management/__tests__/managementCreateTicket.test.tsx": {
+    "mtime": 1788494632.6441119,
+    "ast_hash": "85f6fdf1048adbe6d5fdef71e85c2354",
+    "semantic_hash": ""
+  },
+  "src/features/management/components/tickets/ManagementCreateTicketDialog.tsx": {
+    "mtime": 1788495449.1055713,
+    "ast_hash": "6c2b085901e65b85e24de0a5feb32318",
+    "semantic_hash": ""
+  },
+  "src/features/management/hooks/useManagementCreateTicket.ts": {
+    "mtime": 1788494472.3219986,
+    "ast_hash": "10b9c10fa9218bf1fdb82e6607f4fa35",
+    "semantic_hash": ""
+  },
+  "supabase/functions/management-stats/handlers/ticketsHandler.ts": {
+    "mtime": 1788494429.2520623,
+    "ast_hash": "ee4c33b98a67851a8944611b19a35a0b",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-089-management-ticket-creation-on-behalf-of-user.md": {
+    "mtime": 1788494733.9003572,
+    "ast_hash": "73f7f35c769dd51619bc4d20ac20af50",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-070-management-impersonated-ticket-creation-ux.md": {
+    "mtime": 1788494744.3622024,
+    "ast_hash": "81001d2f8d2cd4900370cd428c405948",
     "semantic_hash": ""
   }
 }

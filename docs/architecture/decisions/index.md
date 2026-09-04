@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-04  
-> **Összesen:** 92 döntés | ✅ Decided: 90 | ⛔ Superseded: 2
+> **Összesen:** 93 döntés | ✅ Decided: 91 | ⛔ Superseded: 2
 
 ---
 
@@ -140,6 +140,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-018 | Hibajegy rendszer architektúra (event sourcing, Realtime) | ✅ Decided | [A-018](./A-018-ticket-system.md) |
+| A-089 | Management Dashboard Hibajegy Létrehozás Felhasználó Nevében (Impersonated Ticket Creation) | ✅ Decided | [A-089](./A-089-management-ticket-creation-on-behalf-of-user.md) |
 
 ## 🛠️ Platform Üzemeltetés
 
