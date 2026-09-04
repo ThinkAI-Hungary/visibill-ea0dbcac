@@ -158,7 +158,7 @@
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| P-055 | Könyvelési Napló (Accounting Journals) UX | ✅ Decided | [P-055](./P-055-accounting-journals-ux.md) |
+| P-055 | Könyvelési Napló (Accounting Journals) UX, Nyitó Varázsló és Kézi Rögzítés | ✅ Decided | [P-055](./P-055-accounting-journals-ux.md) |
 | P-056 | Banki Utalások és Csomagkészítés (Bank Transfers) UX | ✅ Decided | [P-056](./P-056-bank-transfers-export-ux.md) |
 | P-065 | NAV Online Számla Ellenőrzés, Vizuális Figyelmeztetések és Könyvelői Jóváhagyási Kapu UX | ✅ Decided | [P-065](./P-065-nav-crosscheck-approval-gate-ux.md) |
 | P-066 | Főkönyvi Dátum Alap Kapcsoló és Beállítások UX | ✅ Decided | [P-066](./P-066-gl-date-basis-toggle-and-settings-ux.md) |

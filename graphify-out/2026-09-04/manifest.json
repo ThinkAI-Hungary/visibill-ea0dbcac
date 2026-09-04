@@ -630,9 +630,9 @@
     "semantic_hash": "7217a7c6bceca8030298e2252204ae40"
   },
   "src/components/ui/input.tsx": {
-    "mtime": 1780695606.3965147,
-    "ast_hash": "3d299f366c5ce41af46a823300ee935d",
-    "semantic_hash": "3d299f366c5ce41af46a823300ee935d"
+    "mtime": 1788548080.359224,
+    "ast_hash": "42291a37c66d52a88b7d15548b8b3f33",
+    "semantic_hash": ""
   },
   "src/components/ui/ios-toggle.tsx": {
     "mtime": 1772416213.6377842,
@@ -705,9 +705,9 @@
     "semantic_hash": "f86e3f716ed7c692309c1a48d85ce2c9"
   },
   "src/components/ui/select.tsx": {
-    "mtime": 1774062574.3766234,
-    "ast_hash": "f64ed7aa8570015682f2dbddeda567b2",
-    "semantic_hash": "f64ed7aa8570015682f2dbddeda567b2"
+    "mtime": 1788548029.7447639,
+    "ast_hash": "81195f3fb2d868991ebc92ed54820a1f",
+    "semantic_hash": ""
   },
   "src/components/ui/separator.tsx": {
     "mtime": 1772416213.640801,
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788494808.895138,
-    "ast_hash": "da6c7ca1dd38150552f3bb13e9c11133",
+    "mtime": 1788541299.4077523,
+    "ast_hash": "a512e492925a8c7ab4daefe2ab8c22bc",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5055,8 +5055,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/07-general-ledger.md": {
-    "mtime": 1782621606.9351022,
-    "ast_hash": "774651cb5de8b74ada922470d7c7219d",
+    "mtime": 1788541332.8352275,
+    "ast_hash": "359acd4e6dad28d10f27878e1eb8623f",
     "semantic_hash": ""
   },
   "docs/architecture/database/08-salary-hr.md": {
@@ -7055,8 +7055,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/AddManualJournalEntryModal.tsx": {
-    "mtime": 1788290618.231068,
-    "ast_hash": "e8cd1686b6e85ec2896b471a21bbcb9e",
+    "mtime": 1788548577.061662,
+    "ast_hash": "f0894a4f6cc2420a49f64912f6859ca7",
     "semantic_hash": ""
   },
   "src/components/journals/AuditTrailDialog.tsx": {
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1788474333.9445145,
-    "ast_hash": "4d83763ccd9248157421d56e0c4edb47",
+    "mtime": 1788548561.7154791,
+    "ast_hash": "6334d183285e7705dfa1f5f3ec50e7f1",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -8155,8 +8155,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/OpeningJournalWizardModal.tsx": {
-    "mtime": 1788407635.2893238,
-    "ast_hash": "b4c7d512b52075dd275c418a2a23653f",
+    "mtime": 1788549578.627394,
+    "ast_hash": "2d1ea258992817e8d4682cd2dc535c1b",
     "semantic_hash": ""
   },
   "src/lib/nav/__tests__/navProtocol.test.ts": {
@@ -8340,8 +8340,8 @@
     "semantic_hash": ""
   },
   "src/components/ui/date-picker.tsx": {
-    "mtime": 1788220195.5801349,
-    "ast_hash": "db8aea054e73ce8ea9321e794ea7ae45",
+    "mtime": 1788548045.3990886,
+    "ast_hash": "6fa8dc2fcaaeb1e6bed3dc28a4dfdc32",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-076-statutory-reporting-and-vat-return-monolith-modularization.md": {
@@ -8995,8 +8995,38 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-090-safe-chart-of-accounts-preset-deletion-and-remapping.md": {
-    "mtime": 1788540398.103348,
-    "ast_hash": "544d582a8bf6a089f6d99993c6a963d5",
+    "mtime": 1788541323.4783044,
+    "ast_hash": "9852dc0b5dc33c0086d5c146d8798a51",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-071-safe-chart-of-accounts-preset-deletion-and-remapping-ux.md": {
+    "mtime": 1788541292.6709127,
+    "ast_hash": "738b89001d9f7f7b08deedc3df8af8fa",
+    "semantic_hash": ""
+  },
+  "src/components/journals/__tests__/AddManualJournalEntryModal.test.tsx": {
+    "mtime": 1788547589.169531,
+    "ast_hash": "a944f1f026ea64de49539b44ed35f46f",
+    "semantic_hash": ""
+  },
+  "src/components/ui/__tests__/number-input.test.tsx": {
+    "mtime": 1788547313.8989587,
+    "ast_hash": "f811e249d6fd0950636b98f338578b8b",
+    "semantic_hash": ""
+  },
+  "src/components/ui/number-input.tsx": {
+    "mtime": 1788548100.7395027,
+    "ast_hash": "642db6c56412007a0e49e019b736bd7e",
+    "semantic_hash": ""
+  },
+  "src/pages/__tests__/JournalsPageActions.test.tsx": {
+    "mtime": 1788548611.269273,
+    "ast_hash": "ce08588818a5d1fcfdd5e639d3eceec7",
+    "semantic_hash": ""
+  },
+  "src/components/journals/__tests__/OpeningJournalWizardModal.test.tsx": {
+    "mtime": 1788549605.5725365,
+    "ast_hash": "868e3e323c3b13e8816fc131a13ab027",
     "semantic_hash": ""
   }
 }

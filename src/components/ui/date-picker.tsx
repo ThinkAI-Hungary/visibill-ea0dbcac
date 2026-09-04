@@ -13,6 +13,7 @@ export interface DatePickerProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  popoverClassName?: string;
   formatStr?: string;
   clearable?: boolean;
   id?: string;
@@ -26,6 +27,7 @@ export function DatePicker({
   placeholder = 'Válassz dátumot',
   disabled = false,
   className,
+  popoverClassName,
   formatStr = 'yyyy. MM. dd.',
   clearable = false,
   id,
@@ -73,7 +75,7 @@ export function DatePicker({
           variant="outline"
           disabled={disabled}
           className={cn(
-            'w-full justify-start text-left font-normal h-10 px-3 py-2 text-sm bg-background border-input hover:bg-accent/50 focus:ring-2 focus:ring-ring focus:ring-offset-0',
+            'w-full justify-start text-left font-normal h-10 px-3 py-2 text-sm bg-background border border-input hover:bg-accent/50 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus:border-primary focus-visible:border-primary transition-colors',
             !selectedDate && 'text-muted-foreground',
             className
           )}
@@ -105,7 +107,7 @@ export function DatePicker({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 border border-border/60 shadow-xl rounded-xl z-50" align="start">
+      <PopoverContent className={cn("w-auto p-0 border border-border/60 shadow-xl rounded-xl z-[1200]", popoverClassName)} align="start">
         <Calendar
           mode="single"
           selected={selectedDate}

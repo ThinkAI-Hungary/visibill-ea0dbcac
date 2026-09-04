@@ -91,6 +91,14 @@
 |--------|------|-------|--------|
 | `TransactionDetailsDialog` | `src/components/TransactionDetailsDialog.tsx` | ~10KB (218 sor) | **Moduláris Dialog Orchestrator (A-059)**: Tranzakció fejléc, kártya, párosított bizonylatok, többszörös párosítások, manuális kereső, főkönyvi számlaválasztó és jegyzetek sub-komponensekből (`src/components/transaction-details/`). |
 
+### Könyvelési Napló Dialógusok & Varázslók (2026-09-04)
+
+| Dialog | Fájl | Méret | Leírás |
+|--------|------|-------|--------|
+| `OpeningJournalWizardModal` | `src/components/journals/OpeningJournalWizardModal.tsx` | ~40KB (820 sor) | **4-lépéses Sztv. 491 Nyitó Varázsló**: Kétszintes fejléc, 4-oszlopos kártyás Progress Stepper (`grid grid-cols-4`), belső görgetés, NumberInput, automatikus állapot-reset és évnyitási duplikáció-figyelmeztető. |
+| `AddManualJournalEntryModal` | `src/components/journals/AddManualJournalEntryModal.tsx` | ~30KB (650 sor) | **Kézi Vegyes és Egyéb Bizonylatrögzítő**: Kétoldalú kontírozás, DatePicker, partner keresősáv (combobox), NumberInput, fókuszkeretek és teljes tooltip fedettség. |
+| `OpeningCSVImportModal` | `src/components/journals/OpeningCSVImportModal.tsx` | ~12KB | Nyitó főkönyvi egyenlegek CSV/JSON tömeges importja. |
+
 ### Egyéb Dialógusok & Részlet Panelek
 
 | Komponens | Fájl | Méret | Felhasználás |
@@ -104,6 +112,46 @@
 | `UnsavedChangesDialog` | `src/components/UnsavedChangesDialog.tsx` | 1.3KB | React Router `useBlocker` elnavigálás védelem |
 | `SupplierInvoiceAssignment` | `src/components/SupplierInvoiceAssignment.tsx` | 15KB | Szállító-számla tömeges projekt összerendelés |
 | `ExpandedInvoiceRow` | `src/components/ExpandedInvoiceRow.tsx` | 80KB | Kétoszlopos lenyitható számlarészlet: balra képelőnézet és ÁFA bontás, jobbra banki tranzakció és tételes GL osztályozás |
+
+---
+
+### Adatsor-szerkesztő Modál & Belső Táblázatgörgetés Konvenció (2026-09-04)
+
+Többsoros táblázatot tartalmazó dialógusoknál (pl. `OpeningJournalWizardModal`, `AddManualJournalEntryModal`) **szigorúan tilos** hagyni, hogy az új sorok hozzáadása kitolja a modált a képernyőből vagy a teljes modál ablak legyen függőlegesen görgethető.
+
+**KÖTELEZŐ MINTA:**
+```tsx
+<DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+  {/* Fix Fejléc (nem görgő) */}
+  <DialogHeader className="px-6 pt-5 pb-4 border-b shrink-0">
+    ...
+  </DialogHeader>
+
+  {/* Belső görgethető munkaterület */}
+  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+    ...
+    {/* Táblázat belső korlátozott magassággal és sticky fejléccel */}
+    <div className="rounded-xl border border-border/60 overflow-hidden shadow-2xs">
+      <div className="max-h-[clamp(200px,calc(85vh-420px),420px)] overflow-y-auto">
+        <table className="w-full text-xs">
+          <thead className="sticky top-0 bg-muted/95 backdrop-blur-xs z-10 border-b">
+            ...
+          </thead>
+          <tbody>
+            ...
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {/* Fix Lábléc (mindig látható akciógombok) */}
+  <DialogFooter className="px-6 py-3 border-t bg-muted/30 shrink-0">
+    ...
+  </DialogFooter>
+</DialogContent>
+```
+*Előnyök:* A fejléc, az összesítő/egyenleg kártyák és a lábléc akciógombjai mindig láthatók és azonnal elérhetők maradnak, függetlenül attól, hogy a könyvelő 2 vagy 50 sort rögzít.
 
 ---
 

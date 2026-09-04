@@ -59,6 +59,7 @@ import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CustomTooltip } from '@/components/ui/custom-tooltip';
 
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -783,7 +784,7 @@ export default function JournalsPage() {
                     <TableHead className="w-[150px] text-right whitespace-nowrap">Összeg</TableHead>
                     <TableHead className="w-[100px] text-center whitespace-nowrap">Típus</TableHead>
                     <TableHead className="w-[130px] text-center whitespace-nowrap">Státusz</TableHead>
-                    <TableHead className="w-[120px] text-right whitespace-nowrap">Műveletek</TableHead>
+                    <TableHead className="w-[135px] text-right whitespace-nowrap">Műveletek</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/20">
@@ -913,35 +914,95 @@ export default function JournalsPage() {
                                 {statusInfo.label}
                               </Badge>
                             </TableCell>
-                            <TableCell className="w-[120px] text-right">
+                            <TableCell className="w-[135px] text-right">
                               <div className="flex justify-end gap-1">
-                                <Button size="icon" variant="ghost" className="w-6 h-6 text-muted-foreground hover:text-foreground" onClick={() => setSelectedEntry(e)}>
-                                  <Eye className="w-3.5 h-3.5" />
-                                </Button>
-                                <Button size="icon" variant="ghost" className="w-6 h-6 text-muted-foreground hover:text-foreground" onClick={() => setAuditEntryId(e.id)}>
-                                  <History className="w-3.5 h-3.5" />
-                                </Button>
+                                <CustomTooltip content="Bizonylat megtekintése">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="w-6 h-6 text-muted-foreground hover:text-foreground"
+                                    onClick={() => setSelectedEntry(e)}
+                                    aria-label="Bizonylat megtekintése"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </Button>
+                                </CustomTooltip>
+
+                                <CustomTooltip content="Módosítási előzmények">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="w-6 h-6 text-muted-foreground hover:text-foreground"
+                                    onClick={() => setAuditEntryId(e.id)}
+                                    aria-label="Módosítási előzmények"
+                                  >
+                                    <History className="w-3.5 h-3.5" />
+                                  </Button>
+                                </CustomTooltip>
+
                                 {e.status === 'KONYVELT' && (
                                   <>
-                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-destructive hover:bg-destructive/10" title="Sztornózás" onClick={() => handleStorno(e.id, false)}>
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/30" title="Javítás/Helyesbítés" onClick={() => handleStorno(e.id, true)}>
-                                      <CornerDownRight className="w-3.5 h-3.5" />
-                                    </Button>
+                                    <CustomTooltip content="Sztornózás">
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="w-6 h-6 text-destructive hover:bg-destructive/10"
+                                        onClick={() => handleStorno(e.id, false)}
+                                        aria-label="Bizonylat sztornózása"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </CustomTooltip>
+                                    <CustomTooltip content="Javítás / Helyesbítés">
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="w-6 h-6 text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/30"
+                                        onClick={() => handleStorno(e.id, true)}
+                                        aria-label="Javítás vagy helyesbítés"
+                                      >
+                                        <CornerDownRight className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </CustomTooltip>
                                   </>
                                 )}
+
                                 {(e.status === 'KEZI_PISZKOZAT' || e.status === 'JOVAHAGYASRA_VAR' || e.status === 'GEPI_JAVASLAT') && (
                                   <>
-                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-emerald-600 hover:bg-emerald-500/10 dark:hover:bg-emerald-950/30" title="Könyvelés" onClick={() => postMutation.mutate(e.id)} disabled={postMutation.isPending}>
-                                      <ShieldCheck className="w-3.5 h-3.5" />
-                                    </Button>
-                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-primary" title="Szerkesztés" onClick={() => { setEditingEntryId(e.id); setManualEntryOpen(true); }}>
-                                      <FileSpreadsheet className="w-3.5 h-3.5" />
-                                    </Button>
-                                    <Button size="icon" variant="ghost" className="w-6 h-6 text-destructive hover:bg-destructive/10" title="Piszkozat törlése" onClick={(ev) => { ev.stopPropagation(); setSingleDeleteTarget({ id: e.id, description: e.description || e.document_id }); }}>
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
+                                    <CustomTooltip content="Könyvelés">
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="w-6 h-6 text-emerald-600 hover:bg-emerald-500/10 dark:hover:bg-emerald-950/30"
+                                        onClick={() => postMutation.mutate(e.id)}
+                                        disabled={postMutation.isPending}
+                                        aria-label="Bizonylat végleges könyvelése"
+                                      >
+                                        <ShieldCheck className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </CustomTooltip>
+                                    <CustomTooltip content="Szerkesztés">
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="w-6 h-6 text-primary"
+                                        onClick={() => { setEditingEntryId(e.id); setManualEntryOpen(true); }}
+                                        aria-label="Bizonylat szerkesztése"
+                                      >
+                                        <FileSpreadsheet className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </CustomTooltip>
+                                    <CustomTooltip content="Piszkozat törlése">
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="w-6 h-6 text-destructive hover:bg-destructive/10"
+                                        onClick={(ev) => { ev.stopPropagation(); setSingleDeleteTarget({ id: e.id, description: e.description || e.document_id }); }}
+                                        aria-label="Piszkozat törlése"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </CustomTooltip>
                                   </>
                                 )}
                               </div>

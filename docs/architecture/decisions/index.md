@@ -89,7 +89,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-053 | Tárgyi Eszközök Projektekhez Rendelése (Fixed Assets Project Assignment) | ✅ Decided | [A-053](./A-053-fixed-assets-project-assignment.md) |
 | A-055 | Server-Side Invoice Query, KPI Aggregation & GIN Trigram Optimization | ✅ Decided | [A-055](./A-055-server-side-invoice-query-kpi-optimization.md) |
 | A-056 | pg_cron Storage Cleanup Guard & Edge Function Schema Alignment | ✅ Decided | [A-056](./A-056-pgcron-storage-cleanup-and-edge-function-guards.md) |
-| A-057 | Könyvelési Napló Rendszer Architektúra (Accounting Journals) | ✅ Decided | [A-057](./A-057-accounting-journals-architecture.md) |
+| A-057 | Könyvelési Napló Rendszer Architektúra, Nyitó Varázsló és Duplikáció-védelem | ✅ Decided | [A-057](./A-057-accounting-journals-architecture.md) |
 | A-058 | Banki Utalások és Csomagkészítés Architektúra (Bank Transfers) | ✅ Decided | [A-058](./A-058-bank-transfers-architecture.md) |
 | A-068 | Szerver-oldali Fájl Lapozás és Összesítés (`get_management_files` RPC) | ✅ Decided | [A-068](./A-068-management-files-rpc-pagination.md) |
 | A-071 | Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity | ✅ Decided | [A-071](./A-071-ev-and-org-tables-restoration.md) |

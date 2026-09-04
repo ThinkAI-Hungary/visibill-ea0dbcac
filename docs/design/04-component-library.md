@@ -13,6 +13,8 @@
 | **Button** | `button.tsx` | `@radix-ui/react-slot` | CVA variánsok |
 | **Badge** | `badge.tsx` | – | Státusz jelzők |
 | **Input** | `input.tsx` | – | Form input |
+| **NumberInput** | `number-input.tsx` | – | Szám és összeg beviteli mező egyedi léptető nyilakkal, tabular-nums (2026-09-04) |
+| **DatePicker** | `date-picker.tsx` | Popover + Calendar | Tervezési token kompatibilis dátumválasztó |
 | **Textarea** | `textarea.tsx` | – | Többsoros input |
 | **Label** | `label.tsx` | `@radix-ui/react-label` | Form label |
 | **Checkbox** | `checkbox.tsx` | `@radix-ui/react-checkbox` | Jelölőnégyzet |

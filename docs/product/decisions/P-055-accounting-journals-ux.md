@@ -43,10 +43,30 @@ Hogyan jelenjen meg a Könyvelési Napló (Accounting Journals) felülete az eai
    - **Sztornó művelet (`StornoDialog`):** Indoklás megadásával automatikusan elkészíti az ellentétes előjelű sztornó tételt és megnyitja a javító piszkozatot.
    - **Naplókivonat Export:** CSV és nyomtatható nézet a tételekről.
 
+6. **Nyitó Tétel Varázsló és Kézi Bizonylatrögzítés UX Modernizáció (2026-09-04):**
+   - **Kétszintes Fejléc-architektúra (`OpeningJournalWizardModal.tsx`):**
+     - **Felső sáv:** Lekerekített `BookOpen` könyv ikon stílusos áttetsző zöld kerettel és háttérrel (`bg-primary/10 border-primary/20 shadow-2xs`), tiszta `Nyitó tételek rögzítése & Varázsló` főcím, különálló `Badge` az `Sztv. 491` jelöléshez és diszkrét alcím a mérlegfolytonosságról.
+     - **Alsó sáv (4-oszlopos kártyás Progress Stepper):** `grid grid-cols-4 gap-2.5` rács, kör alakú állapotjelzőkkel (aktuális lépésszám, elvégzett lépéseknél zöld pipa `✓`), „1. LÉPÉS” mikrotipográfiával és interaktív visszanavigálással a korábbi fázisokra.
+   - **Form és Beviteli Mező Modernizációk:**
+     - **Dátumválasztó (`DatePicker`):** A nyers HTML dátummezők helyett az egységes dizájn token alapú `DatePicker` komponens került be. Évfordulós nyitásnál (`EVFORDULOS`) automatikusan az adóév első napjára (`01-01`) zárolódik, míg évközi áttérésnél szabadon módosítható.
+     - **Egyedi Számbevitel (`NumberInput`):** Rendszerszintű numerikus beviteli mező finom léptető nyilakkal és fix szélességű `tabular-nums` számformázással a sorösszegeknél.
+     - **Partner Keresősáv (`AddManualJournalEntryModal.tsx`):** A korábbi szimpla select helyett kereshető combobox popup (`Popover` + `CommandInput`) gyorspartner-kereséssel.
+     - **Kiemelt Fókuszkeret:** Minden beviteli mező, select és popover gomb egységes `focus:border-primary` vizuális visszajelzést kap billentyűzetes Tab navigáció során.
+     - **Teljes Tooltip Fedettség:** Minden műveleti ikonon (törlés, megjegyzés, ellenszámla) kontextuális magyarázó címke található.
+   - **Viewport-túlcsordulás elleni Védelem:**
+     - Belső táblázatgörgetés (`max-h-[clamp(200px,calc(85vh-420px),420px)]`) rögzített (`sticky top-0`) fejléccel. A táblázat a modálon belül önállóan görgethető, így az akciógombok és a valós idejű 491-es egyenleg KPI kártya tetszőleges számú sornál is fixen a képernyőn marad.
+   - **Könyvelői Gyorsított Billentyűzet-navigáció:**
+     - Az összeg mezőben megnyomott Enter billentyű automatikusan a tétel leírására ugrik.
+     - A táblázat utolsó sorából indított Tab vagy Enter automatikusan új könyvelési sort szúr be és azonnal a következő főkönyvi számlaválasztóra fókuszál.
+   - **Automatikus Állapot-reset és Duplikáció-védelem:**
+     - **Reset on Close/Finish:** A modál bezárásakor vagy a „Kész / Befejezés” gombra kattintva a varázsló teljesen visszaáll az 1. lépésre tiszta alapállapotba.
+     - **Évnyitási Duplikáció-védelem:** Az 1. lépés automatikusan ellenőrzi a kiválasztott év lekönyvelt nyitó bizonylatait (`acc_journal_headers`), és létező nyitás esetén sárga figyelmeztető panellel (`AlertTriangle`) tájékoztatja a könyvelőt a duplikált egyenlegek elkerülése érdekében.
+
 ## Current Implementation
 
 - Oldal: `src/pages/JournalsPage.tsx`
-- Komponensek: `src/components/journals/*`
+- Komponensek: `src/components/journals/*` (`OpeningJournalWizardModal.tsx`, `AddManualJournalEntryModal.tsx`, `OpeningCSVImportModal.tsx`)
+- Beviteli Komponensek: `src/components/ui/number-input.tsx`, `src/components/ui/date-picker.tsx`
 - Szolgáltatások: `src/features/journals/services/draftFallbackGenerator.ts`
 - Hook & State: `useQuery` `.limit(10000)` a naplófejek és sorok lekérdezéséhez, optimista frissítések a könyvelési állapotokhoz.
 
@@ -54,9 +74,10 @@ Hogyan jelenjen meg a Könyvelési Napló (Accounting Journals) felülete az eai
 
 - A könyvelők számára a naplózás a legfontosabb ellenőrzési felület: elengedhetetlen, hogy a bizonylatok sorszám szerint, naplónként rendezve és egyensúly-ellenőrzéssel legyenek elérhetők.
 - A fix és rázkódásmentes táblázatos megjelenítés növeli a felhasználói hatékonyságot többszáz tételes listák lapozásakor és auditálásakor.
+- Az automatikus állapot-reset és duplikáció-védelem meggátolja a véletlen többszörös nyitást és az Sztv. mérlegfolytonossági sérüléseit.
 
 ## Kapcsolódó
 - **ADR:** [A-057: Könyvelési Napló Architektúra](../../architecture/decisions/A-057-accounting-journals-architecture.md)
 - **BRD:** [043: Könyvelési Naplók](../../business/decisions/043-accounting-journals.md)
 - **DB Schema:** [22-accounting-journals.md](../../architecture/database/22-accounting-journals.md)
-- **Design:** [11-data-display-tables.md](../../design/11-data-display-tables.md)
+- **Design:** [11-data-display-tables.md](../../design/11-data-display-tables.md), [12-dialogs-modals.md](../../design/12-dialogs-modals.md), [04-component-library.md](../../design/04-component-library.md)

@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-08-27  
-**Utoljára frissítve:** 2026-09-03  
+**Utoljára frissítve:** 2026-09-04  
 
 ---
 
@@ -68,6 +68,16 @@ A Postgres szintű adatintegritásra épülő, trigger- és RPC-vezérelt modul�
   - `OpeningJournalWizardModal.tsx` és `JournalsPage.tsx`: Könyvelési művelet lefutásakor azonnal invalidálja a `glBalances`, `glItems` és `subledger-reconciliation` query kulcsokat.
   - `LiveNotificationProvider.tsx`: Globális `postgres_changes` csatornán figyeljük az `acc_journal_headers` tábla változásait, így a Naplóban történő könyvelés azonnal és automatikusan frissíti az aktív Főkönyvi kivonatot minden megnyitott kliensen.
 
+### 8. Nyitó Varázsló Kliensoldali Állapotkezelés és Évnyitási Duplikáció-védelem (2026-09-04)
+- **Állapot-életciklus és Reset (`OpeningJournalWizardModal.tsx`):**
+  - A modál komponens unmountolás nélküli perzisztens memóriastruktúrájából adódó beragadások ellen egy determinisztikus `resetWizard()` eljárás került bevezetésre.
+  - A `Dialog onOpenChange`, a `handleClose`, a `Bezárás` és a `Kész / Befejezés` gombok, valamint a reaktív `useEffect(() => { if (!open) resetWizard(); }, [open])` figyelő garantálja, hogy a modál elhagyásakor (befejezés, ESC, kattintás kívülre) a belső állapot azonnal visszatér az 1. lépésre (`step = 1`), a könyvelési sorok visszaállnak a 2 tiszta alapértelmezett sorra, és a korábbi RPC futási eredmények törlődnek.
+- **Évnyitási Duplikáció-detektálás (Sztv. mérlegfolytonosság):**
+  - Az 1. lépés reaktív Supabase query-t (`['existing-opening-entry', companyId, accountingYear]`) futtat:
+    `SELECT id, document_id, posting_date, status FROM acc_journal_headers WHERE company_id = $1 AND accounting_year = $2 AND entry_type = 'OPENING' AND status != 'TOROLT' ORDER BY created_at DESC LIMIT 1`.
+  - Ha a lekérdezés lekönyvelt nyitó bizonylatot talál az adott üzleti évhez, sárga figyelmeztető banner jelenik meg a bizonylatszámmal, dátummal és a dupla nyitás kockázatára való felhívással.
+  - A nyitó bizonylat sikeres könyvelésekor (`saveAndPostMutation.onSuccess`) a rendszer azonnal invalidálja a `existing-opening-entry` cache kulcsot is.
+
 ## Consequences
 
 **Pozitív:**
@@ -77,6 +87,7 @@ A Postgres szintű adatintegritásra épülő, trigger- és RPC-vezérelt modul�
 - Nagy adathalmazok esetén is atomi, másodpercek alatt lefutó szerveroldali kontírozás timeout és rate limit kockázatok nélkül.
 - Tökéletes összhang a Naplók és a Főkönyvi kivonat (GL) között: a nyitó és lekönyvelt tételek azonnal láthatóak a mérlegszámlákon (pl. 311, 4531, 491 = 0 Ft).
 - Nincs körkörös javaslatképzés és az analitikai egyeztetés az évközi számlakifizetések után is 100%-ban stabil marad.
+- A nyitó varázsló mindig megbízhatóan tiszta állapottal nyílik meg, a meglévő nyitások azonnali detektálása pedig megvédi a könyvelőt a véletlen egyenleg-duplikációktól.
 
 **Negatív / Kötöttségek:**
 - A lekönyvelt tételeket a felhasználó közvetlenül nem írhatja felül; a javítás mindig 2-lépéses sztornó műveletet igényel.
@@ -85,5 +96,5 @@ A Postgres szintű adatintegritásra épülő, trigger- és RPC-vezérelt modul�
 - **BRD:** [043: Könyvelési Naplók](../../business/decisions/043-accounting-journals.md)
 - **PRD:** [P-055: Könyvelési Napló UX](../../product/decisions/P-055-accounting-journals-ux.md)
 - **DB Schema:** [22-accounting-journals.md](../database/22-accounting-journals.md)
-- **Design:** [11-data-display-tables.md](../../design/11-data-display-tables.md)
+- **Design:** [11-data-display-tables.md](../../design/11-data-display-tables.md), [12-dialogs-modals.md](../../design/12-dialogs-modals.md)
 - **RPC Katalógus:** [A-016: PostgreSQL Query Stratégia](./A-016-postgresql-query-strategy.md)
