@@ -1235,6 +1235,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           <p className="text-sm font-bold text-foreground tabular-nums">
                             {formatCurrency(entry.amount)} Ft
                           </p>
+                          {entry.foreign_currency && entry.foreign_currency !== 'HUF' && entry.foreign_amount && (
+                            <p className="text-[10px] font-medium text-muted-foreground tabular-nums">
+                              {Number(entry.foreign_amount).toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {entry.foreign_currency}
+                              {entry.exchange_rate ? ` (@${Number(entry.exchange_rate).toLocaleString('hu-HU')} Ft)` : ''}
+                            </p>
+                          )}
                           <p className={cn(
                             "text-[10px] font-semibold mt-0.5",
                             isDebit ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"

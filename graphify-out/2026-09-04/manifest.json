@@ -3285,8 +3285,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/032-payroll-module.md": {
-    "mtime": 1781082894.2040653,
-    "ast_hash": "4df0e7277336a7b8ff87fcb25822524b",
+    "mtime": 1788476737.5801125,
+    "ast_hash": "cd39ad9ff2fe3c75187e551599d356eb",
     "semantic_hash": ""
   },
   "docs/business/decisions/033-vat-return-module.md": {
@@ -8685,13 +8685,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md": {
-    "mtime": 1788476620.0144212,
-    "ast_hash": "32c9966f229098a66727443f3162c702",
+    "mtime": 1788476746.5165613,
+    "ast_hash": "280c6bb26a9e63d026362b3fc729716d",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-063-payroll-bulk-import-and-reconstruction-ux.md": {
-    "mtime": 1788476633.8840814,
-    "ast_hash": "aa90643fd1f57d30cf6b146b17b47d56",
+    "mtime": 1788476754.3167102,
+    "ast_hash": "6ac3f835e155bc042418c6135695fea2",
     "semantic_hash": ""
   },
   "scratch/debug_raiffeisen_extraction.py": {

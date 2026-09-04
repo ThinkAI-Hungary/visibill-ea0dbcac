@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1788471995.2848537,
-    "ast_hash": "e614a8c9946f0affa021274a23b22ea0",
+    "mtime": 1788480356.1147337,
+    "ast_hash": "abc6d44de4d43ae0031ec74b71c7ee3e",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788476639.1802616,
-    "ast_hash": "ac6bbd4da9a3cd39ec9ef7ded7b52988",
+    "mtime": 1788480884.364179,
+    "ast_hash": "ba944364e25a489ebb2a1fbe3f68ed7c",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -8867,6 +8867,11 @@
   "docs/product/decisions/P-067-gl-posting-status-filter-and-journal-governance-ux.md": {
     "mtime": 1788474458.5041502,
     "ast_hash": "c90a11177be045d489e225fbc721b028",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-087-magnum-audit-xml-gl-ingestion-and-sync.md": {
+    "mtime": 1788480872.6449158,
+    "ast_hash": "cee7f305e9964ec0d7562788a24904eb",
     "semantic_hash": ""
   }
 }

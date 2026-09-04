@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-04  
-> **Összesen:** 89 döntés | ✅ Decided: 87 | ⛔ Superseded: 2
+> **Összesen:** 90 döntés | ✅ Decided: 88 | ⛔ Superseded: 2
 
 ---
 
@@ -95,6 +95,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-071 | Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity | ✅ Decided | [A-071](./A-071-ev-and-org-tables-restoration.md) |
 | A-078 | Telefonszámla ÁFA Részleges Levonhatóság (70/30 Szabály) és Tételszintű Arányosítás | ✅ Decided | [A-078](./A-078-telecom-vat-deductibility-rules.md) |
 | A-082 | Részben Fizetett Számlák Státusz, Szerveroldali Összeg-Aggregáció és Trigger Igazítás | ✅ Decided | [A-082](./A-082-partially-paid-invoices-status.md) |
+| A-087 | Magnum Audit XML Főkönyvi Import, Tükörkód Feloldás, Számlatükör Auto-Szinkronizáció és RPC Robusztusság | ✅ Decided | [A-087](./A-087-magnum-audit-xml-gl-ingestion-and-sync.md) |
 
 ## 🖥️ Frontend
 
