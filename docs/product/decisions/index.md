@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-04  
-> **Összesen:** 65 döntés | ✅ Decided: 61 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 66 döntés | ✅ Decided: 62 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -164,3 +164,4 @@
 | P-066 | Főkönyvi Dátum Alap Kapcsoló és Beállítások UX | ✅ Decided | [P-066](./P-066-gl-date-basis-toggle-and-settings-ux.md) |
 | P-067 | Főkönyvi Könyvelési Státusz Szűrés, Naplózási Kormányzás és ÁFA Audit Jelző UX | ✅ Decided | [P-067](./P-067-gl-posting-status-filter-and-journal-governance-ux.md) |
 | P-068 | Főkönyvi Gyorskeresés, Összehasonlító Táblázat Pagináció és Felületi Ergonómia UX | ✅ Decided | [P-068](./P-068-gl-search-and-comparison-pagination-ux.md) |
+| P-071 | Biztonságos Számlatükör Törlés és Tételek Átkötése (Safe CoA Preset Remapping) UX | ✅ Decided | [P-071](./P-071-safe-chart-of-accounts-preset-deletion-and-remapping-ux.md) |

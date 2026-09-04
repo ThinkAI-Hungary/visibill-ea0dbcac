@@ -192,6 +192,10 @@
 
 **Indexek:** `idx_presets_company_id`
 
+**Kapcsolódó RPC-k és Életciklus Műveletek:**
+- `check_chart_of_accounts_preset_usage(p_preset_id UUID)`: Függőségek és hivatkozások felmérése a sablonhoz tartozó számlákon (`acc_journal_lines`, `transactions`, `invoices`, `nav_invoices`, `fixed_assets`, `annual_reports`, `accrual_entries`).
+- `delete_chart_of_accounts_preset(p_preset_id UUID, p_target_preset_id UUID)`: Tranzakciós törlés és automatikus tétel-átkötés (remapping) az azonos főkönyvi számú célszámlákra, szigorú immutability és multi-tenancy védelemmel (részletesen: [A-090](../decisions/A-090-safe-chart-of-accounts-preset-deletion-and-remapping.md)).
+
 ---
 
 ### `vat_codes`

@@ -10782,9 +10782,17 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      check_chart_of_accounts_preset_usage: {
+        Args: { p_preset_id: string }
+        Returns: Json
+      }
       cleanup_pdf_exports: { Args: never; Returns: undefined }
       cleanup_stale_impersonations: { Args: never; Returns: undefined }
       delete_audit_import: { Args: { p_import_id: string }; Returns: undefined }
+      delete_chart_of_accounts_preset: {
+        Args: { p_preset_id: string; p_target_preset_id?: string | null }
+        Returns: Json
+      }
       delete_company_email_settings: {
         Args: { p_company_id: string }
         Returns: Json

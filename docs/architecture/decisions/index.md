@@ -128,6 +128,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-085 | Főkönyvi Dátum Alap RPC Pushdown és Dinamikus Chunk Reload Recovery | ✅ Decided | [A-085](./A-085-gl-date-basis-rpc-and-chunk-error-recovery.md) |
 | A-086 | Főkönyvi Könyvelési Státusz Szűrő (POSTED_ONLY) és Naplózási Irányelvek | ✅ Decided | [A-086](./A-086-gl-posting-status-filter-and-journal-governance.md) |
 | A-087 | Főkönyvi Adatbázis-alapú Keresés, Számla-szintű Lapozás és Tooltip Architektúra | ✅ Decided | [A-087](./A-087-gl-database-search-and-account-pagination.md) |
+| A-090 | Biztonságos Számlatükör Sablon Törlés, Függőség-Ellenőrzés és Tételek Átkötése (Remapping) | ✅ Decided | [A-090](./A-090-safe-chart-of-accounts-preset-deletion-and-remapping.md) |
 
 ## 💳 Fizetés
 

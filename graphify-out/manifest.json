@@ -380,9 +380,9 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
-    "mtime": 1780305936.2928188,
-    "ast_hash": "3fc261ab4b94e52a718df440100b641a",
-    "semantic_hash": "3fc261ab4b94e52a718df440100b641a"
+    "mtime": 1788541069.438551,
+    "ast_hash": "31f8aecbee4a9b63cb95742e2d14278b",
+    "semantic_hash": ""
   },
   "src/components/general-ledger/UploadChartOfAccountsModal.tsx": {
     "mtime": 1788212014.2199724,
@@ -1060,8 +1060,8 @@
     "semantic_hash": "776b6ed65c3cb4d27beb42298fa888ce"
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1788484289.215213,
-    "ast_hash": "7c55a1bbdd39add99c693d3200b078c5",
+    "mtime": 1788541060.4518957,
+    "ast_hash": "fe3c82b919262abe707020d2fcf25522",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788407901.6226704,
-    "ast_hash": "dde640b3745584b51111e9b4fc355e52",
+    "mtime": 1788540380.1037705,
+    "ast_hash": "922bbb61a380ffa104a0933c66e42a99",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788494796.600071,
-    "ast_hash": "1a3e1aa16dd4963a9069463b29b89705",
+    "mtime": 1788540411.3902233,
+    "ast_hash": "ba6bcbcba4559f1b3d67e2a2f06a7e82",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788494808.895138,
-    "ast_hash": "da6c7ca1dd38150552f3bb13e9c11133",
+    "mtime": 1788541299.4077523,
+    "ast_hash": "a512e492925a8c7ab4daefe2ab8c22bc",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5055,8 +5055,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/07-general-ledger.md": {
-    "mtime": 1782621606.9351022,
-    "ast_hash": "774651cb5de8b74ada922470d7c7219d",
+    "mtime": 1788541332.8352275,
+    "ast_hash": "359acd4e6dad28d10f27878e1eb8623f",
     "semantic_hash": ""
   },
   "docs/architecture/database/08-salary-hr.md": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788439133.4918182,
+    "mtime": 1788539326.5837612,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -8982,6 +8982,26 @@
   "docs/product/decisions/P-070-management-impersonated-ticket-creation-ux.md": {
     "mtime": 1788494744.3622024,
     "ast_hash": "81001d2f8d2cd4900370cd428c405948",
+    "semantic_hash": ""
+  },
+  "src/components/general-ledger/__tests__/ManagePresetsModal.test.tsx": {
+    "mtime": 1788540996.234307,
+    "ast_hash": "263eeadc5b0f212d2753278450f50560",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260904120000_safe_coa_preset_deletion_and_remapping.sql": {
+    "mtime": 1788540934.2143092,
+    "ast_hash": "bd03074fa5a32698297b6b48197139c4",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-090-safe-chart-of-accounts-preset-deletion-and-remapping.md": {
+    "mtime": 1788541323.4783044,
+    "ast_hash": "9852dc0b5dc33c0086d5c146d8798a51",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-071-safe-chart-of-accounts-preset-deletion-and-remapping-ux.md": {
+    "mtime": 1788541292.6709127,
+    "ast_hash": "738b89001d9f7f7b08deedc3df8af8fa",
     "semantic_hash": ""
   }
 }

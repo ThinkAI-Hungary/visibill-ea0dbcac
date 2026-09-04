@@ -72,6 +72,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `freeze_annual_data(p_report_id, p_company_id, p_preset_id, p_fiscal_year, p_exchange_rates?)` | DEFINER | AnnualReportPage.tsx | Éves beszámoló zárolás |
 | `validate_annual_report(p_report_id)` | DEFINER | AnnualReportPage.tsx | Éves beszámoló validáció |
 | `rematch_courier_report(p_report_id)` | DEFINER | useCourierReportData.ts | Futárjelentés újrapárosítás |
+| `check_chart_of_accounts_preset_usage(p_preset_id)` | DEFINER | ManagePresetsModal.tsx | Számlatükör sablon használatának ellenőrzése (hivatkozó naplótételek, tranzakciók, számlák) |
 
 #### ✏️ 2.2 Frontend által hívott Mutation RPC-k
 
@@ -85,6 +86,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `seed_default_vat_codes(p_company_id)` | INVOKER | VatReturnPage.tsx | ÁFA kódok inicializálás |
 | `assign_supplier_default_projects(p_company_id)` | DEFINER | ProjectsPage.tsx | Szállítók alapértelmezett projektjének beállítása |
 | `delete_upload_with_data(p_upload_id, p_upload_type)` | DEFINER | InvoiceFilesDialog, UploadedFilesModal | Feltöltés cascade törlés (B mód) — töröl: invoices/transactions/transport_docs/shipment_matches/costs. `p_upload_type`: `'invoice'\|'transaction'\|'report'`. Returns: `{deleted_invoices, deleted_transactions, deleted_transport_docs}` |
+| `delete_chart_of_accounts_preset(p_preset_id, p_target_preset_id?)` | DEFINER | ManagePresetsModal.tsx | Számlatükör sablon tranzakcionális törlése automatikus tétel-átkötéssel (remapping), hierarchia-feloldással és FK védelemmel |
 | `settle_storno_invoice_group(p_company_id, p_invoice_ids, p_sources, p_note)` | DEFINER | InvoiceTable / NAV table | Sztornó számlaláncolat manuális lezárása |
 | `reopen_storno_invoice_group(p_company_id, p_invoice_ids, p_sources)` | DEFINER | InvoiceTable / NAV table | Lezárt sztornó számlaláncolat újranyitása |
 | `acc_get_next_journal_number(p_journal_id, p_year)` | DEFINER | JournalsPage.tsx | Ugrásmentes folyósorszám kiosztás naplózáshoz |
