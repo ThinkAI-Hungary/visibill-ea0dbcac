@@ -9,6 +9,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { UploadCloud, FileText, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { cn } from '@/lib/utils';
 
 interface UploadAuditXmlModalProps {
@@ -78,7 +79,7 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
       setStatus('processing');
 
       // 2. Create gl_audit_imports row (status=pending triggers worker)
-      const importRow: Record<string, any> = {
+      const importRow = {
         company_id: selectedCompany.id,
         file_name: file.name,
         storage_path: storagePath,
@@ -87,12 +88,8 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
         processing_status: 'pending',
         imported_by: user?.id || null,
         dry_run: dryRun,
+        ...(presetMode === 'existing' && selectedPresetId ? { preset_id: selectedPresetId } : {}),
       };
-
-      // If using existing preset, set it
-      if (presetMode === 'existing' && selectedPresetId) {
-        importRow.preset_id = selectedPresetId;
-      }
 
       const { data: insertedData, error: insertError } = await supabase
         .from('gl_audit_imports')
@@ -215,9 +212,11 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
                 </div>
                 <div className="bg-card border p-3 rounded-xl">
                   <div className="text-[10px] text-muted-foreground">Forrásprogram</div>
-                  <div className="text-xs font-semibold mt-0.5 truncate" title={`${previewData.source_program} ${previewData.source_version || ''}`}>
-                    {previewData.source_program || 'Ismeretlen'}
-                  </div>
+                  <CustomTooltip content={`${previewData.source_program} ${previewData.source_version || ''}`} side="top">
+                    <div className="text-xs font-semibold mt-0.5 truncate">
+                      {previewData.source_program || 'Ismeretlen'}
+                    </div>
+                  </CustomTooltip>
                 </div>
                 <div className="bg-card border p-3 rounded-xl">
                   <div className="text-[10px] text-muted-foreground">Főkönyvi számok</div>

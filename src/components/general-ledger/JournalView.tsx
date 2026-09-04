@@ -12,6 +12,7 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { exportToFile } from '@/lib/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, GlDateBasis, GlPostingStatus } from '@/lib/glData';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -38,17 +39,53 @@ interface JournalEntry {
   source_table: string | null;
   original_amount?: number;
   original_currency?: string;
+  is_unclassified?: boolean;
+  logical_type?: string;
 }
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 
-const TYPE_LABELS: Record<string, string> = {
+export const TYPE_LABELS: Record<string, string> = {
+  invoice_items: 'Számla',
   invoice: 'Számla',
-  transaction: 'Tranzakció',
+  invoices: 'Számla',
+  nav_invoice_items: 'NAV Számla',
   nav_invoice: 'NAV Számla',
-  journal_entry: 'Naplótétel',
+  nav_invoices: 'NAV Számla',
+  acc_journal_lines: 'Naplótétel',
+  journal_entry: 'XML Naplótétel',
+  gl_journal_entries: 'XML Naplótétel',
+  transactions: 'Banki tranzakció',
+  transaction: 'Banki tranzakció',
+  petty_cash: 'Házipénztár',
+  cash_transactions: 'Készpénz',
+  payroll_records: 'Bérszámfejtés',
 };
+
+export function getLogicalTypeLabel(sourceTable?: string | null, itemType?: string | null): string {
+  if (sourceTable && TYPE_LABELS[sourceTable]) {
+    return TYPE_LABELS[sourceTable];
+  }
+  if (itemType && TYPE_LABELS[itemType]) {
+    return TYPE_LABELS[itemType];
+  }
+  if (itemType) {
+    const lower = itemType.toLowerCase();
+    if (lower.includes('nav')) return 'NAV Számla';
+    if (lower.includes('számla') || lower.includes('költség') || lower.includes('bevétel')) return 'Számla';
+    if (lower.includes('bank') || lower.includes('tranzakció')) return 'Banki tranzakció';
+    if (lower.includes('xml')) return 'XML Naplótétel';
+    if (lower.includes('napló') || lower.includes('nyitó') || lower.includes('záró') || lower.includes('vegyes')) return 'Naplótétel';
+    return itemType;
+  }
+  if (sourceTable) {
+    return sourceTable
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+  return 'Egyéb';
+}
 
 export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'kibocsatas', postingStatus = 'all' }: JournalViewProps) {
   const { selectedCompany } = useCompany();
@@ -118,10 +155,30 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
       .filter((i: any) => !i.is_excluded)
       .map((item: any) => {
         const gl = glMap[item.gl_account_id];
+        const isUnclassified =
+          !item.gl_account_id ||
+          item.gl_account_id === '00000000-0000-0000-0000-000000000000' ||
+          gl?.gl_number === 'UNCLASSIFIED' ||
+          item.gl_number === 'UNCLASSIFIED' ||
+          !gl?.gl_number ||
+          gl?.gl_number === '—';
+
+        const glNumber = isUnclassified
+          ? 'Besorolatlan'
+          : (gl?.gl_number || item.gl_number || 'Besorolatlan');
+
+        const glName = isUnclassified
+          ? 'Besorolatlan tétel'
+          : (gl?.short_name || item.gl_name || 'Besorolatlan tétel');
+
+        const logicalType = getLogicalTypeLabel(item.source_table, item.item_type);
+
         return {
           ...item,
-          gl_number: gl?.gl_number || '—',
-          gl_name: gl?.short_name || 'Besorolatlan',
+          gl_number: glNumber,
+          gl_name: glName,
+          is_unclassified: isUnclassified,
+          logical_type: logicalType,
         };
       });
   }, [rawItems, glMap]);
@@ -129,14 +186,23 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
   // Filter + search
   const filtered = useMemo(() => {
     let result = enrichedItems;
-    if (typeFilter !== 'all') result = result.filter((i: any) => i.source_table === typeFilter || i.item_type === typeFilter);
+    if (typeFilter !== 'all') {
+      result = result.filter((i: any) =>
+        i.source_table === typeFilter ||
+        i.item_type === typeFilter ||
+        i.logical_type === typeFilter
+      );
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((i: any) =>
         (i.partner && i.partner.toLowerCase().includes(q)) ||
         (i.description && i.description.toLowerCase().includes(q)) ||
-        (i.gl_number && i.gl_number.includes(q)) ||
-        (i.gl_name && i.gl_name.toLowerCase().includes(q))
+        (i.gl_number && i.gl_number.toLowerCase().includes(q)) ||
+        (i.gl_name && i.gl_name.toLowerCase().includes(q)) ||
+        (i.logical_type && i.logical_type.toLowerCase().includes(q)) ||
+        (i.item_type && i.item_type.toLowerCase().includes(q)) ||
+        (i.is_unclassified && ('besorolatlan'.includes(q) || 'unclassified'.includes(q)))
       );
     }
     // Sort by date
@@ -154,11 +220,18 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
     return filtered.slice(start, start + pageSize);
   }, [filtered, currentPage]);
 
-  // Unique types for filter
-  const uniqueTypes = useMemo(() => {
-    const s = new Set<string>();
-    enrichedItems.forEach((i: any) => s.add(i.source_table || i.item_type || 'unknown'));
-    return Array.from(s).sort();
+  // Unique types for filter with logical labels
+  const typeFilterOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    enrichedItems.forEach((i: any) => {
+      const key = i.source_table || i.item_type;
+      if (key && !map.has(key)) {
+        map.set(key, i.logical_type || getLogicalTypeLabel(i.source_table, i.item_type));
+      }
+    });
+    return Array.from(map.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'hu'));
   }, [enrichedItems]);
 
   // Totals
@@ -178,9 +251,9 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
       item.item_date ? item.item_date.substring(0, 10) : '',
       item.partner || '',
       item.description || '',
-      item.gl_number || '',
-      item.gl_name || '',
-      TYPE_LABELS[item.source_table] || item.source_table || '',
+      item.gl_number || 'Besorolatlan',
+      item.gl_name || 'Besorolatlan tétel',
+      item.logical_type || getLogicalTypeLabel(item.source_table, item.item_type),
       item.amount > 0 ? item.amount.toString() : '',
       item.amount < 0 ? Math.abs(item.amount).toString() : '',
     ]);
@@ -207,7 +280,11 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           <SelectTrigger className="w-44 h-9 text-sm"><SelectValue placeholder="Típus" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Összes típus</SelectItem>
-            {uniqueTypes.map(t => <SelectItem key={t} value={t}>{TYPE_LABELS[t] || t}</SelectItem>)}
+            {typeFilterOptions.map(opt => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleExport} disabled={isLoading || filtered.length === 0}>
@@ -296,21 +373,29 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
                   <div className="col-span-1 p-2.5 text-center font-mono text-xs tabular-nums text-muted-foreground">
                     {item.item_date ? item.item_date.substring(0, 10).replace(/-/g, '.') : '—'}
                   </div>
-                  <div className="col-span-2 p-2.5 truncate text-sm font-medium" title={item.partner || ''}>
-                    {item.partner || '—'}
-                  </div>
-                  <div className="col-span-3 p-2.5 truncate text-sm text-muted-foreground" title={item.description || ''}>
-                    {item.description || '—'}
-                  </div>
+                  <CustomTooltip content={item.partner}>
+                    <div className="col-span-2 p-2.5 truncate text-sm font-medium">
+                      {item.partner || '—'}
+                    </div>
+                  </CustomTooltip>
+                  <CustomTooltip content={item.description}>
+                    <div className="col-span-3 p-2.5 truncate text-sm text-muted-foreground">
+                      {item.description || '—'}
+                    </div>
+                  </CustomTooltip>
                   <div className="col-span-2 p-2.5 text-center">
-                    <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded" title={item.gl_name}>
-                      {item.gl_number}
-                    </span>
+                    <CustomTooltip content={item.gl_name}>
+                      <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded cursor-help">
+                        {item.gl_number}
+                      </span>
+                    </CustomTooltip>
                   </div>
                   <div className="col-span-1 p-2.5 text-center">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/5 text-primary/70 font-medium">
-                      {TYPE_LABELS[item.source_table] || item.source_table || '?'}
-                    </span>
+                    <CustomTooltip content={item.item_type && item.item_type !== item.logical_type ? item.item_type : undefined}>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/5 text-primary/70 font-medium cursor-help">
+                        {item.logical_type}
+                      </span>
+                    </CustomTooltip>
                   </div>
                   <div className={cn('col-span-1 p-2.5 text-right tabular-nums', debit > 0 && 'text-emerald-600 font-medium')}>
                     {debit > 0 ? formatCurrency(debit) : ''}

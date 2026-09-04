@@ -13,11 +13,14 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck } from 'lucide-react';
 import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
 import GeneralLedgerTable, { GeneralLedgerTableRef } from '@/components/general-ledger/GeneralLedgerTable';
+import { GlSearchAutocomplete } from '@/components/general-ledger/GlSearchAutocomplete';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
+import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
 import JournalView from '@/components/general-ledger/JournalView'; // F7
 import { AddManualJournalEntryModal } from '@/components/general-ledger/AddManualJournalEntryModal';
@@ -45,13 +48,14 @@ export default function GeneralLedgerPage() {
   const [auditXmlModalOpen, setAuditXmlModalOpen] = useState(false);
   const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
-  const [globalSearch, setGlobalSearch] = useState('');
   const [activeViewTab, setActiveViewTab] = useState<'extract' | 'journal' | 'comparison'>('extract'); // F7
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
   const [printLayoutMode, setPrintLayoutMode] = useState<'synthetic' | 'analytical'>('analytical');
   const [glStats, setGlStats] = useState<{ accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number } | null>(null);
+  const [isTableLoading, setIsTableLoading] = useState(true);
   const tableRef = useRef<GeneralLedgerTableRef>(null);
   const handleStatsChange = useCallback((stats: typeof glStats) => setGlStats(stats), []);
+  const handleLoadingChange = useCallback((loading: boolean) => setIsTableLoading(loading), []);
 
   // ── P4: Audit imports — conditional polling ──
   const { data: auditImports } = useQuery({
@@ -111,15 +115,19 @@ export default function GeneralLedgerPage() {
   }, [searchParams]);
 
   const handleDateBasisChange = useCallback((newBasis: GlDateBasis) => {
+    if (newBasis === dateBasis) return;
+    setIsTableLoading(true);
     setDateBasis(newBasis);
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
       next.set('date_basis', newBasis);
       return next;
     }, { replace: true });
-  }, [setSearchParams]);
+  }, [dateBasis, setSearchParams]);
 
   const handlePostingStatusChange = useCallback((newStatus: GlPostingStatus) => {
+    if (newStatus === postingStatus) return;
+    setIsTableLoading(true);
     setPostingStatus(newStatus);
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
@@ -130,71 +138,75 @@ export default function GeneralLedgerPage() {
       }
       return next;
     }, { replace: true });
-  }, [setSearchParams]);
+  }, [postingStatus, setSearchParams]);
 
   const renderDateBasisToggle = () => (
     <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-1 shadow-2xs text-xs select-none">
-      <button
-        type="button"
-        onClick={() => handleDateBasisChange('kibocsatas')}
-        className={cn(
-          "inline-flex w-[104px] h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
-          dateBasis === 'kibocsatas'
-            ? "bg-background text-foreground shadow-xs border-border/60 font-semibold"
-            : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-        )}
-        title="Számla kibocsátásának kelte alapján gyűjti az adatokat"
-      >
-        <Calendar className="w-3.5 h-3.5 shrink-0" />
-        <span>Kibocsátás</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => handleDateBasisChange('teljesites')}
-        className={cn(
-          "inline-flex w-[104px] h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
-          dateBasis === 'teljesites'
-            ? "bg-background text-foreground shadow-xs border-border/60 font-semibold"
-            : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-        )}
-        title="Számla / tétel gazdasági teljesítésének dátuma alapján gyűjti az adatokat"
-      >
-        <CalendarCheck className="w-3.5 h-3.5 shrink-0" />
-        <span>Teljesítés</span>
-      </button>
+      <CustomTooltip content="Számla kibocsátásának kelte alapján gyűjti az adatokat" side="bottom">
+        <button
+          type="button"
+          onClick={() => handleDateBasisChange('kibocsatas')}
+          className={cn(
+            "inline-flex w-[104px] h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
+            dateBasis === 'kibocsatas'
+              ? "bg-background text-foreground shadow-xs border-border/60 font-semibold"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <Calendar className="w-3.5 h-3.5 shrink-0" />
+          <span>Kibocsátás</span>
+        </button>
+      </CustomTooltip>
+      <CustomTooltip content="Számla / tétel gazdasági teljesítésének dátuma alapján gyűjti az adatokat" side="bottom">
+        <button
+          type="button"
+          onClick={() => handleDateBasisChange('teljesites')}
+          className={cn(
+            "inline-flex w-[104px] h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
+            dateBasis === 'teljesites'
+              ? "bg-background text-foreground shadow-xs border-border/60 font-semibold"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <CalendarCheck className="w-3.5 h-3.5 shrink-0" />
+          <span>Teljesítés</span>
+        </button>
+      </CustomTooltip>
     </div>
   );
 
   const renderPostingStatusToggle = () => (
     <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-1 shadow-2xs text-xs select-none">
-      <button
-        type="button"
-        onClick={() => handlePostingStatusChange('all')}
-        className={cn(
-          "inline-flex w-[104px] h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
-          postingStatus === 'all'
-            ? "bg-background text-foreground shadow-xs border-border/60 font-semibold"
-            : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-        )}
-        title="Minden tétel megjelenítése (operatív számlák és lekönyvelt bizonylatok együtt)"
-      >
-        <Layers className="w-3.5 h-3.5 shrink-0" />
-        <span>Összes tétel</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => handlePostingStatusChange('posted_only')}
-        className={cn(
-          "inline-flex w-[114px] h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
-          postingStatus === 'posted_only'
-            ? "bg-background text-foreground shadow-xs border-border/60 font-semibold text-emerald-600 dark:text-emerald-400"
-            : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-        )}
-        title="Kizárólag a hivatalosan naplózott és lezárt bizonylatok megjelenítése (Sztv. szerinti zárt könyvelés)"
-      >
-        <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-        <span>Csak lekönyvelt</span>
-      </button>
+      <CustomTooltip content="Minden tétel megjelenítése (operatív számlák és lekönyvelt bizonylatok együtt)" side="bottom">
+        <button
+          type="button"
+          onClick={() => handlePostingStatusChange('all')}
+          className={cn(
+            "inline-flex w-[104px] h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
+            postingStatus === 'all'
+              ? "bg-background text-foreground shadow-xs border-border/60 font-semibold"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <Layers className="w-3.5 h-3.5 shrink-0" />
+          <span>Összes tétel</span>
+        </button>
+      </CustomTooltip>
+      <CustomTooltip content="Kizárólag a hivatalosan naplózott és lezárt bizonylatok megjelenítése (Sztv. szerinti zárt könyvelés)" side="bottom">
+        <button
+          type="button"
+          onClick={() => handlePostingStatusChange('posted_only')}
+          className={cn(
+            "inline-flex w-[114px] h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
+            postingStatus === 'posted_only'
+              ? "bg-background text-foreground shadow-xs border-border/60 font-semibold text-emerald-600 dark:text-emerald-400"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <span>Csak lekönyvelt</span>
+        </button>
+      </CustomTooltip>
     </div>
   );
 
@@ -219,7 +231,7 @@ export default function GeneralLedgerPage() {
     if (actionFromUrl === 'manage' && !manageModalOpen) setManageModalOpen(true);
   }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
+  const { activePresetId, setActivePresetId, presets, isLoading: isPresetsLoading } = useActivePreset(selectedCompany?.id);
 
   useEffect(() => {
     if (!selectedCompany?.id) return;
@@ -328,9 +340,9 @@ export default function GeneralLedgerPage() {
     { combo: { key: 'p', ctrl: true }, handler: handlePrint, description: 'Nyomtatás' },
   ]);
 
-  // U6: Detect "first use" (no presets)
+  // U6: Detect "first use" (no presets) only when company is selected and query has finished loading
   const hasPresets = presets && presets.length > 0;
-  const showOnboarding = !hasPresets;
+  const showOnboarding = Boolean(selectedCompany) && !isPresetsLoading && presets !== undefined && !hasPresets;
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
@@ -498,7 +510,7 @@ export default function GeneralLedgerPage() {
       </div>
 
       {/* ── KPI Summary Bar (F1) ── */}
-      {glStats && glStats.accountCount > 0 && (() => {
+      {!isTableLoading && glStats && glStats.accountCount > 0 ? (() => {
         const fmtHuf = (v: number) => new Intl.NumberFormat('hu-HU').format(Math.round(v));
         return (
           <>
@@ -520,24 +532,66 @@ export default function GeneralLedgerPage() {
               <div><div className="text-lg font-bold tabular-nums">{fmtHuf(glStats.totalCredit)}</div><div className="text-[11px] text-muted-foreground">Követel (Ft)</div></div>
             </div>
           </div>
-          {/* ── Classification Progress Bar (F2) ── */}
-          {glStats.totalItems > 0 && (() => {
-            const pct = Math.round((glStats.classifiedItems / glStats.totalItems) * 100);
-            return (
-              <div className="mt-3 print:hidden">
-                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                  <span>Besorolás: {glStats.classifiedItems}/{glStats.totalItems} tétel</span>
-                  <span className={pct === 100 ? 'text-emerald-600 font-semibold' : ''}>{pct}%</span>
+          {/* ── Classification Progress Bar / Reserved Space (F2) ── */}
+          <div className="h-6 mt-3 print:hidden">
+            {glStats.totalItems > 0 && (() => {
+              const pct = Math.round((glStats.classifiedItems / glStats.totalItems) * 100);
+              return (
+                <div>
+                  <div className="flex justify-between text-[10px] text-muted-foreground mb-1 leading-none">
+                    <span>Besorolás: {glStats.classifiedItems}/{glStats.totalItems} tétel</span>
+                    <span className={pct === 100 ? 'text-emerald-600 font-semibold' : ''}>{pct}%</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-primary to-blue-500'}`} style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-primary to-blue-500'}`} style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
+          </div>
           </>
         );
-      })()}
+      })() : (
+        <div className="space-y-3 print:hidden animate-pulse">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+              <div className="bg-primary/10 p-2 rounded-lg"><Skeleton className="w-4 h-4 rounded" /></div>
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="h-5 w-16 bg-muted/60" />
+                <Skeleton className="h-3 w-24 bg-muted/40" />
+              </div>
+            </div>
+            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+              <div className="bg-blue-500/10 p-2 rounded-lg"><Skeleton className="w-4 h-4 rounded" /></div>
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="h-5 w-16 bg-muted/60" />
+                <Skeleton className="h-3 w-24 bg-muted/40" />
+              </div>
+            </div>
+            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+              <div className="bg-orange-500/10 p-2 rounded-lg"><Skeleton className="w-4 h-4 rounded" /></div>
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="h-5 w-28 bg-muted/60" />
+                <Skeleton className="h-3 w-20 bg-muted/40" />
+              </div>
+            </div>
+            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+              <div className="bg-sky-500/10 p-2 rounded-lg"><Skeleton className="w-4 h-4 rounded" /></div>
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="h-5 w-28 bg-muted/60" />
+                <Skeleton className="h-3 w-20 bg-muted/40" />
+              </div>
+            </div>
+          </div>
+          <div className="h-6 mt-3 print:hidden space-y-1.5">
+            <div className="flex justify-between leading-none">
+              <Skeleton className="h-2.5 w-36 bg-muted/50" />
+              <Skeleton className="h-2.5 w-8 bg-muted/50" />
+            </div>
+            <Skeleton className="h-1.5 w-full rounded-full bg-muted/50" />
+          </div>
+        </div>
+      )}
 
       {/* F7: View tabs — Kivonat vs Naplófőkönyv vs Összehasonlítás */}
       <Tabs value={activeViewTab} onValueChange={v => setActiveViewTab(v as any)} className="print:hidden">
@@ -557,7 +611,7 @@ export default function GeneralLedgerPage() {
       {/* Extract (default) view */}
       <div className={activeViewTab !== 'extract' ? 'hidden' : ''}>
         <Card className="border-border/60 shadow-md print:border-none print:shadow-none print:bg-transparent content-animate">
-          <CardHeader className="py-4 border-b border-border/40 bg-muted/30 relative overflow-hidden print:hidden">
+          <CardHeader className="py-4 border-b border-border/40 bg-muted/30 relative z-30 overflow-visible print:hidden">
             <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary/40 via-primary/20 to-transparent"></div>
             <CardTitle className="text-xl font-bold flex items-center gap-3">
               <div className="bg-primary/10 text-primary p-2 rounded-lg">
@@ -565,36 +619,34 @@ export default function GeneralLedgerPage() {
               </div>
               Főkönyvi Kivonat
               <div className="ml-auto flex items-center gap-3">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Keresés a főkönyvben..." 
-                    className="w-[250px] h-9 pl-9 text-xs bg-background"
-                    value={globalSearch}
-                    onChange={(e) => setGlobalSearch(e.target.value)}
-                  />
-                </div>
+                <GlSearchAutocomplete
+                  companyId={selectedCompany?.id}
+                  presetId={activePresetId}
+                  onSelect={(result) => tableRef.current?.navigateToEntity(result)}
+                />
                 <div className="flex items-center gap-1 border-l pl-3 border-border/60">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 px-2 text-xs gap-1 text-muted-foreground"
-                    onClick={() => tableRef.current?.expandAll()}
-                    title="Összes szint kinyitása"
-                  >
-                    <Maximize2 className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Kinyit</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 px-2 text-xs gap-1 text-muted-foreground"
-                    onClick={() => tableRef.current?.collapseAll()}
-                    title="Összes szint összecsukása"
-                  >
-                    <Minimize2 className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Összecsuk</span>
-                  </Button>
+                  <CustomTooltip content="Összes szint kinyitása" side="bottom">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-2 text-xs gap-1 text-muted-foreground"
+                      onClick={() => tableRef.current?.expandAll()}
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Kinyit</span>
+                    </Button>
+                  </CustomTooltip>
+                  <CustomTooltip content="Összes szint összecsukása" side="bottom">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-2 text-xs gap-1 text-muted-foreground"
+                      onClick={() => tableRef.current?.collapseAll()}
+                    >
+                      <Minimize2 className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Összecsuk</span>
+                    </Button>
+                  </CustomTooltip>
                 </div>
                 {/* Dátum alap kapcsoló (Kibocsátás vs Teljesítés) */}
                 {renderDateBasisToggle()}
@@ -615,9 +667,9 @@ export default function GeneralLedgerPage() {
               dateTo={dateTo}
               dateBasis={dateBasis}
               postingStatus={postingStatus}
-              globalSearch={globalSearch}
               isPolling={isAIRunning}
               onStatsChange={handleStatsChange}
+              onLoadingChange={handleLoadingChange}
             />
           </CardContent>
         </Card>

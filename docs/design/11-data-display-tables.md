@@ -452,6 +452,25 @@ A kettős könyvvitel felületein (Főkönyvi kivonat, Naplók, Analitika) az al
    - Ha egy könyvelési időszak le van zárva, a fejlécben megjelenik a lakat ikon (`Lock` sárga színben), a táblázat sorai read-only módba lépnek, és a fejléc alatt a `PeriodClosingSettings` sáv figyelmeztet.
 3. **Audit Trail Nyomkövetés:**
    - Minden kézi főkönyvi és napló tételnél elérhető az `AuditTrailDialog`, amely megjeleníti a módosítás előtti és utáni JSON diff állapotot, a felhasználót és az időbélyeget.
+4. **Egységes Táblázat Eszköztár Minta (Unified Table Toolbar):**
+   - A Naplófőkönyv (`JournalView`) és Főkönyvi Összehasonlítás (`GeneralLedgerComparisonTable`) felületeken egységes eszköztárat alkalmazunk:
+     - Keresőmező (`SearchInput`) automatikus törlés (`X`) gombbal.
+     - Eltérés / Státusz szűrő dropdown (`Select`).
+     - Statisztikai sáv: szűrt számlák/tételek darabszáma, összesített egyenlegek és differenciák monospaced (`tabular-nums`) formátumban.
+     - Közvetlen XLSX export gomb (`exportToFile`).
+     - `UnifiedPagination` beépített lapméret választóval (25, 50, 100, 200).
+5. **Finom Tipográfiai Megjelenítés (Non-Badge Flat Styling):**
+   - A főkönyvi számok és forrástípusok esetén a vaskos badge keretek (`border border-primary/20`, `shadow-sm`) vizuális zajt keltenek a sűrű sorokban.
+   - Helyette letisztult, keret nélküli monospaced szövegformázást alkalmazunk:
+     - Főkönyvi szám: `font-mono bg-muted/60 text-foreground px-2 py-0.5 rounded text-xs`
+     - Bizonylattípus: `bg-primary/5 text-primary/70 font-mono text-xs px-2 py-0.5 rounded`
+   - A forrástípusok magyar elnevezést kapnak (`Számla`, `Naplótétel`, `NAV Számla`, `Banki tranzakció`, `XML Naplótétel`) belső adatbázis táblanevek helyett, és az `UNCLASSIFIED` helyett a **"Besorolatlan"** felirat jelenik meg.
+6. **Lapozási Stabilitási Szabály (Non-Disruptive Pagination):**
+   - A táblázatok lapozásakor a `UnifiedPagination` **nem gördítheti fel a nézetet az oldal tetejére**.
+   - Az automatikus `scrollTo({ top: 0 })` hívás tiltott, mert megszakítja a felhasználó munkafolyamatát és látómezejét.
+7. **Egységes Tooltip Szabvány (`CustomTooltip`):**
+   - A natív böngésző HTML `title` attribútumok használata tilos a táblázatokban és modálokban.
+   - Minden súgószöveghez a Radix UI alapú `<CustomTooltip content="...">` komponenst kell használni, amely biztosítja az akadálymentes megjelenést és a design rendszerhez illeszkedő sötét/világos stílust.
 
 ---
 

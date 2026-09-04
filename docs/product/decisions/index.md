@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-04  
-> **Összesen:** 62 döntés | ✅ Decided: 58 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 63 döntés | ✅ Decided: 59 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -161,3 +161,4 @@
 | P-065 | NAV Online Számla Ellenőrzés, Vizuális Figyelmeztetések és Könyvelői Jóváhagyási Kapu UX | ✅ Decided | [P-065](./P-065-nav-crosscheck-approval-gate-ux.md) |
 | P-066 | Főkönyvi Dátum Alap Kapcsoló és Beállítások UX | ✅ Decided | [P-066](./P-066-gl-date-basis-toggle-and-settings-ux.md) |
 | P-067 | Főkönyvi Könyvelési Státusz Szűrés, Naplózási Kormányzás és ÁFA Audit Jelző UX | ✅ Decided | [P-067](./P-067-gl-posting-status-filter-and-journal-governance-ux.md) |
+| P-068 | Főkönyvi Gyorskeresés, Összehasonlító Táblázat Pagináció és Felületi Ergonómia UX | ✅ Decided | [P-068](./P-068-gl-search-and-comparison-pagination-ux.md) |

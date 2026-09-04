@@ -11096,10 +11096,13 @@ export type Database = {
           p_preset_id: string
         }
         Returns: {
-          gl_account_id: string
+          gl_account_id: string | null
           gl_number: string
           short_name: string
           total_balance: number
+          final_balance: number
+          temp_balance: number
+          item_count: number
         }[]
       }
       get_gl_categorized_items: {
@@ -11111,6 +11114,7 @@ export type Database = {
           p_exchange_rates?: Json
           p_posting_status?: string
           p_preset_id: string
+          p_gl_account_id?: string | null
         }
         Returns: {
           amount: number

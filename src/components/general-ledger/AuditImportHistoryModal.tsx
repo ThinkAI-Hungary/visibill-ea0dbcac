@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { FileText, Trash2, Loader2, CheckCircle2, AlertTriangle, Clock, User, Calendar, Hash } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CustomTooltip } from '@/components/ui/custom-tooltip';
 
 interface AuditImportHistoryModalProps {
   open: boolean;
@@ -34,7 +35,7 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
     refetchInterval: open ? 5000 : false,
   });
 
-  // Fetch user emails for display
+  // Fetch user names for display
   const { data: users } = useQuery({
     queryKey: ['auditImportUsers', imports?.map(i => i.imported_by).filter(Boolean)],
     queryFn: async () => {
@@ -42,10 +43,10 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
       if (userIds.length === 0) return {};
       const { data } = await supabase
         .from('profiles')
-        .select('id, email, display_name')
+        .select('id, name')
         .in('id', userIds);
       const map: Record<string, string> = {};
-      data?.forEach(u => { map[u.id] = u.display_name || u.email || u.id; });
+      data?.forEach(u => { map[u.id] = u.name || u.id; });
       return map;
     },
     enabled: !!imports?.length,
@@ -158,7 +159,9 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
                       {statusIcon(imp.processing_status)}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap min-w-0">
-                          <p className="font-medium text-sm truncate max-w-[280px]" title={imp.file_name}>{imp.file_name}</p>
+                          <CustomTooltip content={imp.file_name} side="top">
+                            <p className="font-medium text-sm truncate max-w-[280px]">{imp.file_name}</p>
+                          </CustomTooltip>
                           {imp.dry_run && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
                               Előnézet (Dry Run)

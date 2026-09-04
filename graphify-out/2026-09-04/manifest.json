@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1788471995.2848537,
-    "ast_hash": "e614a8c9946f0affa021274a23b22ea0",
+    "mtime": 1788488143.4771345,
+    "ast_hash": "b9fe2d1410222b887303416512e55245",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -790,13 +790,13 @@
     "semantic_hash": "2342cfa40b5b31148997f87d1642359e"
   },
   "src/components/ui/tooltip.tsx": {
-    "mtime": 1781824092.217587,
-    "ast_hash": "61397dc6322239e9f8f99eb0afc7de31",
+    "mtime": 1788487033.248813,
+    "ast_hash": "b613da53c4c610f8890e58d1a9ce0132",
     "semantic_hash": ""
   },
   "src/components/ui/unified-pagination.tsx": {
-    "mtime": 1783245820.7346113,
-    "ast_hash": "0bd07f1d901f2bd3d986b9fed0fa7264",
+    "mtime": 1788487888.4875073,
+    "ast_hash": "22293ebcf1c32859e82786dad15c2ade",
     "semantic_hash": ""
   },
   "src/components/ui/use-toast.ts": {
@@ -900,8 +900,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useActivePreset.ts": {
-    "mtime": 1781445891.3160348,
-    "ast_hash": "d1f9a4e00d4961943f23712c769d5eac",
+    "mtime": 1788486406.8654356,
+    "ast_hash": "ae8b59397865da45c0b9aa673a14eff4",
     "semantic_hash": ""
   },
   "src/hooks/useAppReady.ts": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": "776b6ed65c3cb4d27beb42298fa888ce"
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1788472309.1548808,
-    "ast_hash": "c680c7f00ad06a5f572aba068b0b95e1",
+    "mtime": 1788484289.215213,
+    "ast_hash": "7c55a1bbdd39add99c693d3200b078c5",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1480,8 +1480,8 @@
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
-    "mtime": 1788472743.3695407,
-    "ast_hash": "4e97f821bdb9d0a6b8fcbe148853c3ce",
+    "mtime": 1788487054.1013913,
+    "ast_hash": "641b7def557ce9451960f2268864ee3b",
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788476639.1802616,
-    "ast_hash": "ac6bbd4da9a3cd39ec9ef7ded7b52988",
+    "mtime": 1788480884.364179,
+    "ast_hash": "ba944364e25a489ebb2a1fbe3f68ed7c",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3740,18 +3740,18 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/AuditImportHistoryModal.tsx": {
-    "mtime": 1787753315.8263693,
-    "ast_hash": "91a3116a0653649fa68954a26b905ed7",
+    "mtime": 1788487215.7256024,
+    "ast_hash": "b6cd93c64998306a456331309199d007",
     "semantic_hash": ""
   },
   "src/components/general-ledger/JournalView.tsx": {
-    "mtime": 1788472006.8181689,
-    "ast_hash": "ad449ed91af2194fac879e934cc8b2b3",
+    "mtime": 1788487797.5772648,
+    "ast_hash": "c0bf85cde089da1404c2d1a7f10234ff",
     "semantic_hash": ""
   },
   "src/components/general-ledger/UploadAuditXmlModal.tsx": {
-    "mtime": 1784554389.5437732,
-    "ast_hash": "2234c9f08523214dab75704bc2a1b802",
+    "mtime": 1788487222.0097852,
+    "ast_hash": "bb2123da8b905738a0d1689a1e685017",
     "semantic_hash": ""
   },
   "src/components/invoices/FadInvoicePanel.tsx": {
@@ -6885,8 +6885,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerComparisonTable.tsx": {
-    "mtime": 1788472729.522241,
-    "ast_hash": "9618db6993a742e35e232f0dcb5cdab4",
+    "mtime": 1788488018.7795966,
+    "ast_hash": "a55adf641b1697761966faa678af94ed",
     "semantic_hash": ""
   },
   "src/components/integrations/EmailAccountCard.tsx": {
@@ -8620,13 +8620,13 @@
     "semantic_hash": ""
   },
   "src/lib/glData.test.ts": {
-    "mtime": 1788472322.3847966,
-    "ast_hash": "ae04dcfe624b77ef441e829286e8091c",
+    "mtime": 1788485406.8453176,
+    "ast_hash": "25055a1a8c6f2975c5c1b5b4c628f13d",
     "semantic_hash": ""
   },
   "src/lib/glData.ts": {
-    "mtime": 1788471938.058066,
-    "ast_hash": "13e9e16bfeaf974e04f70c35b08ab248",
+    "mtime": 1788485410.7192278,
+    "ast_hash": "bca500d7183488893f957b3a27aa6cf3",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md": {
@@ -8867,6 +8867,56 @@
   "docs/product/decisions/P-067-gl-posting-status-filter-and-journal-governance-ux.md": {
     "mtime": 1788474458.5041502,
     "ast_hash": "c90a11177be045d489e225fbc721b028",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-087-magnum-audit-xml-gl-ingestion-and-sync.md": {
+    "mtime": 1788480872.6449158,
+    "ast_hash": "cee7f305e9964ec0d7562788a24904eb",
+    "semantic_hash": ""
+  },
+  "src/components/general-ledger/GlSearchAutocomplete.tsx": {
+    "mtime": 1788487243.6664505,
+    "ast_hash": "629c5334b8f56e04ab0ca02152f7e272",
+    "semantic_hash": ""
+  },
+  "src/components/general-ledger/__tests__/GlSearchAutocomplete.test.tsx": {
+    "mtime": 1788487252.7203653,
+    "ast_hash": "a7af1fdc0e5cbe6cf782a5cb7ba199a9",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260904110000_optimize_gl_balances_and_items.sql": {
+    "mtime": 1788484148.993112,
+    "ast_hash": "6d0f8415e064e9d325cfd307fa69a5b6",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260904120000_paginate_gl_categorized_items.sql": {
+    "mtime": 1788485003.5827532,
+    "ast_hash": "580deef1484dc628554b6a6e42ce3a1b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260904130000_search_gl_entities.sql": {
+    "mtime": 1788485377.3594668,
+    "ast_hash": "c0476337716ab75df0e0d023222d03f7",
+    "semantic_hash": ""
+  },
+  "src/components/ui/__tests__/CustomTooltip.test.tsx": {
+    "mtime": 1788487299.5350025,
+    "ast_hash": "daa9b8d808efe269943a222d646b42ee",
+    "semantic_hash": ""
+  },
+  "src/components/ui/custom-tooltip.tsx": {
+    "mtime": 1788487023.7264185,
+    "ast_hash": "df7423173f5eb6c3948d3fb45f88e847",
+    "semantic_hash": ""
+  },
+  "src/components/general-ledger/__tests__/JournalView.test.tsx": {
+    "mtime": 1788487677.3884745,
+    "ast_hash": "5271772e475ea2f31140f02a532068f5",
+    "semantic_hash": ""
+  },
+  "src/components/general-ledger/__tests__/GeneralLedgerComparisonTable.test.tsx": {
+    "mtime": 1788488045.7475705,
+    "ast_hash": "1fa9118f64f89ecb40eabdd4c1f4499b",
     "semantic_hash": ""
   }
 }

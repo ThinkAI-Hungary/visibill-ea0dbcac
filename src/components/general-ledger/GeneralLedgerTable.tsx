@@ -1,11 +1,11 @@
-import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef, useDeferredValue } from 'react';
+import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
-import { fetchAllGlBalances, fetchAllGlCategorizedItems, GlDateBasis, GlPostingStatus } from '@/lib/glData';
+import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
+import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { 
   Select, 
   SelectContent, 
@@ -50,6 +51,8 @@ interface LedgerItem {
   name: string; // Megnevezés
   balance: number; // Összesített Egyenleg
   hasChildren?: boolean;
+  hasAccountChildren?: boolean;
+  hasItemChildren?: boolean;
   cid: string;
   isItem?: boolean;
   itemType?: string;
@@ -61,8 +64,17 @@ interface LedgerItem {
   originalCurrency?: string;
   isExcluded?: boolean;
   isTemporary?: boolean;
+  itemCount?: number;
   finalBalance?: number;
   tempBalance?: number;
+  directFinalBalance?: number;
+  directTempBalance?: number;
+  directItemCount?: number;
+  glAccountId?: string | null;
+  isLoadingRow?: boolean;
+  isLoadMoreRow?: boolean;
+  targetCid?: string;
+  isLoadingMore?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -73,18 +85,9 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-// F4: Highlight search matches in text
-function highlightMatch(text: string, query: string): React.ReactNode {
-  if (!query || query.length < 2) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return text;
-  return (
-    <>
-      {text.slice(0, idx)}
-      <mark className="bg-yellow-200 dark:bg-yellow-500/40 rounded-sm px-0.5">{text.slice(idx, idx + query.length)}</mark>
-      {text.slice(idx + query.length)}
-    </>
-  );
+function cleanIdVal(val: any): string {
+  if (val === null || val === undefined) return '';
+  return String(val).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 export interface GeneralLedgerTableRef {
@@ -94,6 +97,7 @@ export interface GeneralLedgerTableRef {
   getStats: () => { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number };
   expandAll: () => void;
   collapseAll: () => void;
+  navigateToEntity: (result: GlSearchResult) => Promise<void>;
 }
 
 interface GeneralLedgerTableProps {
@@ -105,12 +109,67 @@ interface GeneralLedgerTableProps {
   globalSearch?: string;
   isPolling?: boolean; // P4: only poll when AI/import is running
   onStatsChange?: (stats: { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number }) => void;
+  onLoadingChange?: (isLoading: boolean) => void;
   printLayoutMode?: 'synthetic' | 'analytical';
 }
 
+interface LoadMoreSentinelRowProps {
+  row: LedgerItem;
+  hiddenClass: string;
+  indentPadding: string;
+  onLoadMore: (cid: string) => void;
+}
+
+function LoadMoreSentinelRow({ row, hiddenClass, indentPadding, onLoadMore }: LoadMoreSentinelRowProps) {
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const targetCid = row.targetCid!;
+  const isLoadingMore = !!row.isLoadingMore;
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore(targetCid);
+        }
+      },
+      { rootMargin: '250px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [targetCid, isLoadingMore, onLoadMore]);
+
+  return (
+    <div
+      ref={sentinelRef}
+      onClick={() => !isLoadingMore && onLoadMore(targetCid)}
+      className={cn(
+        "grid grid-cols-12 divide-x divide-border/10 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer py-2.5 items-center select-none border-b border-border/20",
+        hiddenClass
+      )}
+    >
+      <div className="col-span-2 p-2 flex items-center justify-center">
+        {isLoadingMore ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+        ) : (
+          <ChevronDown className="w-3.5 h-3.5 text-primary" />
+        )}
+      </div>
+      <div className="col-span-7 py-1 pr-3 text-xs flex items-center gap-2 font-medium text-primary" style={{ paddingLeft: indentPadding }}>
+        <span>{isLoadingMore ? 'Következő 100 tétel betöltése...' : row.name}</span>
+      </div>
+      <div className="col-span-3 p-2 flex justify-end items-center text-[11px] text-muted-foreground pr-4 font-mono">
+        {isLoadingMore ? 'Betöltés...' : 'Görgess vagy kattints'}
+      </div>
+    </div>
+  );
+}
+
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
-  const { presetId, dateFrom, dateTo, dateBasis = 'kibocsatas', postingStatus = 'all', globalSearch, isPolling, onStatsChange, printLayoutMode = 'analytical' } = props;
-  const deferredSearch = useDeferredValue(globalSearch);
+  const { presetId, dateFrom, dateTo, dateBasis = 'kibocsatas', postingStatus = 'all', isPolling, onStatsChange, onLoadingChange, printLayoutMode = 'analytical' } = props;
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
   const { toast } = useToast();
@@ -152,8 +211,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     return new Set(['1', '13', '14']);
   });
   
-  const [savedExpandedRowIds, setSavedExpandedRowIds] = useState<Set<string> | null>(null);
-  const lastSearchRef = useRef('');
+  const [highlightedRowId, setHighlightedRowId] = useState<string | null>(null);
+  const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!presetId || !selectedCompany?.id) return;
@@ -207,33 +266,40 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     },
     enabled: !!presetId && !!selectedCompany?.id && !!exchangeRates,
     refetchInterval: isPolling ? 3000 : false, // P4: conditional polling
-    placeholderData: (prev: any) => prev,
+    placeholderData: isPolling ? (prev: any) => prev : undefined,
   });
 
-  // Fetch detailed items categorized to this company (paginated)
-  const { data: dbItems, isLoading: isLoadingItems, refetch: refetchItems } = useQuery({
-    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus],
-    queryFn: async () => {
-      if (!selectedCompany?.id || !presetId) return [];
-      try {
-        return await fetchAllGlCategorizedItems({
-          companyId: selectedCompany.id,
-          presetId,
-          dateFrom,
-          dateTo,
-          dateBasis,
-          postingStatus,
-          exchangeRates: exchangeRates || {},
-        });
-      } catch (error: any) {
-        reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching GL items:', error });
-        return [];
-      }
-    },
-    enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
-    refetchInterval: isPolling ? 3000 : false, // P4: conditional polling
-    placeholderData: (prev: any) => prev,
-  });
+  // On-demand loaded transaction items per account CID: Map<accountCid, LedgerItem[]>
+  const [loadedAccountItems, setLoadedAccountItems] = useState<Map<string, LedgerItem[]>>(new Map());
+  const [loadingAccountCids, setLoadingAccountCids] = useState<Set<string>>(new Set());
+  const [hasMoreAccountCids, setHasMoreAccountCids] = useState<Set<string>>(new Set());
+  const [loadingMoreAccountCids, setLoadingMoreAccountCids] = useState<Set<string>>(new Set());
+
+  // Reset loaded account items when filters change
+  useEffect(() => {
+    setLoadedAccountItems(new Map());
+    setLoadingAccountCids(new Set());
+    setHasMoreAccountCids(new Set());
+    setLoadingMoreAccountCids(new Set());
+  }, [presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis, postingStatus]);
+
+  // Filter change detection: whenever filters change, show skeleton until query finishes
+  const currentFilterKey = `${presetId}_${selectedCompany?.id}_${dateFrom}_${dateTo}_${dateBasis}_${postingStatus}`;
+  const [renderedFilterKey, setRenderedFilterKey] = useState(currentFilterKey);
+
+  const isFilterChanging = currentFilterKey !== renderedFilterKey;
+  const isDataLoading = isLoading || isFilterChanging || !presetId || !dbData;
+
+  useEffect(() => {
+    if (isFilterChanging && !isFetching) {
+      setRenderedFilterKey(currentFilterKey);
+    }
+  }, [isFilterChanging, isFetching, currentFilterKey]);
+
+  useEffect(() => {
+    onLoadingChange?.(isDataLoading);
+  }, [isDataLoading, onLoadingChange]);
+
 
   const [selectedLeafAccount, setSelectedLeafAccount] = useState<{ code: string; name: string } | null>(null);
 
@@ -272,8 +338,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   const handleRefetchAll = () => {
     refetchBalances();
-    refetchItems();
+    setLoadedAccountItems(new Map());
   };
+
 
   // NOTE: Realtime subscription for GL tables (transactions, invoice_items,
   // nav_invoices, nav_invoice_items) is handled globally by LiveNotificationProvider.
@@ -334,192 +401,208 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     const cleanId = cleanIdVal;
     
     if (dbData && dbData.length > 0) {
-      // Step 1: Pre-calculate hasChildren and clean IDs
+      // Step 1: Pre-calculate hasAccountChildren, hasItemChildren and clean IDs
       const rawData = dbData.map(dbItem => {
-         const cid = cleanId(dbItem.gl_number);
-         const hasChildren = dbData.some(d => 
-            cleanId(d.gl_number).startsWith(cid) && 
-            cleanId(d.gl_number) !== cid
-         );
-         
-         return {
-           id: String(dbItem.gl_number),
-           name: fixCharacterEncoding(dbItem.short_name),
-           balance: Number(dbItem.total_balance) || 0,
-           hasChildren,
-           cid
-         };
+        const cid = cleanId(dbItem.gl_number);
+        const hasAccountChildren = dbData.some(d => 
+          cleanId(d.gl_number).startsWith(cid) && 
+          cleanId(d.gl_number) !== cid
+        );
+        const directItemCount = Number(dbItem.item_count) || 0;
+        const hasItemChildren = directItemCount > 0;
+        
+        return {
+          id: String(dbItem.gl_number),
+          name: fixCharacterEncoding(dbItem.short_name),
+          glAccountId: dbItem.gl_account_id,
+          balance: Number(dbItem.total_balance) || 0,
+          directFinalBalance: Number(dbItem.final_balance) || 0,
+          directTempBalance: Number(dbItem.temp_balance) || 0,
+          directItemCount,
+          hasChildren: hasAccountChildren || hasItemChildren,
+          hasAccountChildren,
+          hasItemChildren,
+          cid
+        };
       });
 
       // Now roll up sums and split final vs temporary balances for all parent nodes
       let rolledUpData: LedgerItem[] = rawData.map(item => {
-        // Find ALL descendants in rawData (including self)
-        const descendants = rawData.filter(d => d.cid.startsWith(item.cid));
-        
-        let finalBalance = 0;
-        let tempBalance = 0;
-
-        if (dbItems && dbItems.length > 0) {
-          const descendantsCids = new Set(descendants.map(d => d.cid));
-          dbItems.forEach(dbItem => {
-            if (dbItem.is_excluded) return;
-            const parentDbItem = dbData.find(db => db.gl_account_id === dbItem.gl_account_id);
-            if (parentDbItem) {
-              const parentCid = cleanId(parentDbItem.gl_number);
-              if (descendantsCids.has(parentCid)) {
-                const isTemp = (!dbItem.gl_account_id || dbItem.gl_account_id === '00000000-0000-0000-0000-000000000000');
-                if (isTemp) {
-                  tempBalance += Number(dbItem.amount) || 0;
-                } else {
-                  finalBalance += Number(dbItem.amount) || 0;
-                }
-              }
-            }
+        if (item.hasAccountChildren) {
+          const descendants = rawData.filter(d => d.cid.startsWith(item.cid));
+          let finalBalance = 0;
+          let tempBalance = 0;
+          descendants.forEach(d => {
+            finalBalance += d.directFinalBalance;
+            tempBalance += d.directTempBalance;
           });
+          const totalBalance = finalBalance + tempBalance;
+
+          return { 
+            ...item, 
+            balance: totalBalance,
+            finalBalance,
+            tempBalance
+          };
         } else {
-          finalBalance = item.balance;
+          return {
+            ...item,
+            balance: item.balance,
+            finalBalance: item.directFinalBalance,
+            tempBalance: item.directTempBalance
+          };
         }
-
-        const totalBalance = finalBalance + tempBalance;
-
-        return { 
-          ...item, 
-          balance: totalBalance,
-          finalBalance,
-          tempBalance
-        };
       });
 
-      if (dbItems && dbItems.length > 0) {
-        // Filter out excluded items for the main table
-        const activeItems = dbItems.filter(i => !i.is_excluded);
+      // ── Build hierarchical tree and flatten in depth-first order ──
+      const compareGlAccounts = (a: LedgerItem, b: LedgerItem) => {
+        if (a.cid === 'UNCLASSIFIED') return 1;
+        if (b.cid === 'UNCLASSIFIED') return -1;
 
-        // Tag GL accounts that have matching items as having children
-        rolledUpData = rolledUpData.map(item => {
-           const dbRecord = dbData.find(db => cleanId(db.gl_number) === item.cid);
-           if (!dbRecord) return item;
-           const hasItemChildren = activeItems.some(i => i.gl_account_id === dbRecord.gl_account_id);
-           return {
-              ...item,
-              hasChildren: item.hasChildren || hasItemChildren
-           };
-        });
+        const isPureDigitsA = /^\d+$/.test(a.cid);
+        const isPureDigitsB = /^\d+$/.test(b.cid);
 
-        // Group items by their parent account's CID
-        const itemsByGL = new Map<string, LedgerItem[]>();
+        if (isPureDigitsA && isPureDigitsB) {
+          return a.cid.localeCompare(b.cid);
+        }
 
-        activeItems.forEach(item => {
-           const parentDbItem = dbData.find(db => db.gl_account_id === item.gl_account_id);
-           if (!parentDbItem) return;
-           const parentCid = cleanId(parentDbItem.gl_number);
-           const pseudoCid = `${parentCid}_${item.item_id}`;
+        return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' });
+      };
 
-           // Create a descriptive name
-           let displayDesc = item.description || item.partner || 'Névtelen tétel';
-           if (item.partner && item.description && item.partner !== item.description) {
-             displayDesc = `${item.partner} - ${item.description}`;
-           }
-           displayDesc = fixCharacterEncoding(displayDesc);
+      const childrenMap = new Map<string, LedgerItem[]>();
+      const roots: LedgerItem[] = [];
 
-           if (!itemsByGL.has(parentCid)) {
-               itemsByGL.set(parentCid, []);
-           }
-
-           itemsByGL.get(parentCid)!.push({
-             id: `item_${item.item_id}`,
-             name: displayDesc,
-             balance: Number(item.amount) || 0,
-             hasChildren: false,
-             cid: pseudoCid,
-             isItem: true,
-             itemType: fixCharacterEncoding(item.item_type),
-             partner: fixCharacterEncoding(item.partner),
-             date: item.item_date,
-             sourceTable: item.source_table,
-             originalGlId: item.gl_account_id,
-             // @ts-ignore
-             originalAmount: Number(item.original_amount) || 0,
-             // @ts-ignore
-             originalCurrency: item.original_currency,
-             isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000')
-           });
-        });
-
-        // Interleave the arrays: parent node followed immediately by its direct items
-        const combinedData: LedgerItem[] = [];
-        rolledUpData.forEach(parent => {
-            combinedData.push(parent);
-            if (itemsByGL.has(parent.cid)) {
-                // Optionally sort items by date within the category
-                const parentItems = itemsByGL.get(parent.cid)!;
-                parentItems.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-                combinedData.push(...parentItems);
+      rolledUpData.forEach(node => {
+        let directParent: LedgerItem | null = null;
+        rolledUpData.forEach(candidate => {
+          if (candidate.cid !== node.cid && node.cid.startsWith(candidate.cid)) {
+            if (!directParent || candidate.cid.length > directParent.cid.length) {
+              directParent = candidate;
             }
+          }
         });
 
-        return combinedData;
-      }
+        if (!directParent) {
+          roots.push(node);
+        } else {
+          if (!childrenMap.has(directParent.cid)) {
+            childrenMap.set(directParent.cid, []);
+          }
+          childrenMap.get(directParent.cid)!.push(node);
+        }
+      });
 
-      return rolledUpData;
+      const combinedData: LedgerItem[] = [];
+
+      const traverseTree = (node: LedgerItem) => {
+        // 1. Emit the account node itself
+        combinedData.push(node);
+
+        // 2. Emit direct transaction items booked to this account (if expanded)
+        if (expandedRowIds.has(node.id)) {
+          if (loadingAccountCids.has(node.cid)) {
+            combinedData.push({
+              id: `loading_${node.cid}`,
+              name: 'Tételek betöltése...',
+              balance: 0,
+              hasChildren: false,
+              cid: `${node.cid}_loading`,
+              isItem: true,
+              isLoadingRow: true
+            });
+          } else {
+            const directItems = loadedAccountItems.get(node.cid);
+            if (directItems && directItems.length > 0) {
+              combinedData.push(...directItems);
+
+              // If there are more items to load for this account, emit sentinel load-more row
+              if (hasMoreAccountCids.has(node.cid)) {
+                const totalItemCount = node.directItemCount || 0;
+                combinedData.push({
+                  id: `loadmore_${node.cid}`,
+                  name: `További 100 tétel betöltése (${directItems.length} / ${totalItemCount > 0 ? totalItemCount : 'több'} megjelenítve)`,
+                  balance: 0,
+                  hasChildren: false,
+                  cid: `${node.cid}_loadmore`,
+                  isItem: true,
+                  isLoadMoreRow: true,
+                  targetCid: node.cid,
+                  isLoadingMore: loadingMoreAccountCids.has(node.cid)
+                });
+              }
+            }
+          }
+        }
+
+        // 3. Emit direct child accounts (sorted by compareGlAccounts)
+        const childAccounts = childrenMap.get(node.cid);
+        if (childAccounts && childAccounts.length > 0) {
+          childAccounts.sort(compareGlAccounts);
+          childAccounts.forEach(child => traverseTree(child));
+        }
+      };
+
+      roots.sort(compareGlAccounts);
+      roots.forEach(root => traverseTree(root));
+
+      return combinedData;
     }
     return [];
-  }, [dbData, dbItems]);
+  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds]);
+
+  const orphanItem = dbData?.find(d => d.gl_number === 'UNCLASSIFIED');
+  const orphanCount = orphanItem ? Number(orphanItem.item_count || 0) : 0;
 
   // Separate list of excluded items for the "Nem könyvelt" section
-  const excludedItems = useMemo(() => {
-    if (!dbItems) return [];
-    return dbItems
-      .filter(i => i.is_excluded)
-      .map(item => {
-        let displayDesc = item.description || item.partner || 'Névtelen tétel';
-        if (item.partner && item.description && item.partner !== item.description) {
-          displayDesc = `${item.partner} - ${item.description}`;
-        }
+  const { data: excludedItems = [] } = useQuery({
+    queryKey: ['glExcludedItems', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, bizonylatsorszam, elado_nev, vevo_nev, brutto_vegosszeg, kibocsatas_datuma, invoice_type')
+        .eq('company_id', selectedCompany.id)
+        .eq('exclude_from_accounting', true);
+
+      if (error || !data) return [];
+      return data.map(item => {
+        const partner = item.elado_nev || item.vevo_nev || '';
         return {
-          id: item.item_id,
-          name: displayDesc,
-          amount: Number(item.amount) || 0,
-          itemType: item.item_type,
-          partner: item.partner,
-          date: item.item_date,
-          sourceTable: item.source_table,
+          id: item.id,
+          name: fixCharacterEncoding(partner || item.bizonylatsorszam || 'Névtelen tétel'),
+          amount: Number(item.brutto_vegosszeg) || 0,
+          itemType: fixCharacterEncoding(item.invoice_type || 'számla'),
+          partner: fixCharacterEncoding(partner),
+          date: item.kibocsatas_datuma,
+          sourceTable: 'invoices',
           isExcluded: true
         };
       });
-  }, [dbItems]);
-
-  const orphanCount = dbItems?.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000' && !i.is_excluded).length || 0;
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 5 * 60 * 1000
+  });
 
   // ── Fire stats callback when tableData changes ──
   useEffect(() => {
-    if (!onStatsChange || tableData.length === 0) return;
+    if (!onStatsChange || tableData.length === 0 || !dbData) return;
     const glAccountsOnly = tableData.filter(d => !d.isItem);
-    const leaves = glAccountsOnly.filter(d => !d.hasChildren);
+    const leaves = glAccountsOnly.filter(d => !d.hasAccountChildren);
     const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
     const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
-    const aiItems = dbItems?.filter(i => i.source_table !== 'journal_entry') || [];
-    const totalItemCount = aiItems.length;
-    const aiOrphanCount = aiItems.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000' && !i.is_excluded).length;
-    const classifiedItemCount = totalItemCount - aiOrphanCount;
+    const totalItemCount = dbData.reduce((s, d) => s + Number(d.item_count || 0), 0);
+    const classifiedItemCount = Math.max(0, totalItemCount - orphanCount);
     onStatsChange({ accountCount: glAccountsOnly.length, leafCount: leaves.length, totalDebit, totalCredit, classifiedItems: classifiedItemCount, totalItems: totalItemCount });
-  }, [tableData, onStatsChange, dbItems, orphanCount]);
+  }, [tableData, onStatsChange, dbData, orphanCount]);
+
 
   useEffect(() => {
-    const currentSearch = (deferredSearch || '').trim();
-    const lastSearch = lastSearchRef.current;
-    
-    if (currentSearch && !lastSearch) {
-      // Search started: save current state and expand all parent nodes
-      setSavedExpandedRowIds(new Set(expandedRowIds));
-      const allParentIds = tableData.filter(d => d.hasChildren).map(d => d.id);
-      setExpandedRowIds(new Set(allParentIds));
-    } else if (!currentSearch && lastSearch && savedExpandedRowIds !== null) {
-      // Search cleared: restore saved expansion state
-      setExpandedRowIds(savedExpandedRowIds);
-      setSavedExpandedRowIds(null);
-    }
-    lastSearchRef.current = currentSearch;
-  }, [deferredSearch, tableData]);
+    return () => {
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+      }
+    };
+  }, []);
   
   // Parse localStorage to check if banner was dismissed for this preset
   const localBannerState = useMemo(() => {
@@ -533,7 +616,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   const isPermanentlyHidden = localBannerState?.hidden && localBannerState?.orphanCount >= orphanCount;
 
-  const hasOrphans = tableData.some(d => d.id === 'ORPHAN');
+  const hasOrphans = orphanCount > 0;
   // Banner ONLY shows if: there are orphans AND the user actually switched templates AND they haven't dismissed it
   const isBannerVisible = hasOrphans && hasSwitchedPreset && dismissedBannerForPreset !== presetId && !isPermanentlyHidden;
 
@@ -552,8 +635,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     setIsAiReclassifying(true);
     
     try {
-      const orphanCount = dbItems?.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000').length || 0;
-      if (orphanCount === 0) return;
+      const targetOrphanCount = orphanCount;
+      if (targetOrphanCount === 0) return;
 
       // PGMQ: INSERT into gl_upload_notifications triggers the DB trigger
       // which enqueues the job to the gl_classification_jobs PGMQ queue.
@@ -563,7 +646,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           company_id: selectedCompany.id,
           target_preset_id: presetId,
           processing_status: 'pending',
-          message: `AI átsorolás indítva (${orphanCount} besorolatlan tétel)`
+          message: `AI átsorolás indítva (${targetOrphanCount} besorolatlan tétel)`
         });
 
       if (error) {
@@ -590,17 +673,139 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       await exportGlExcel(processedRows, companyName, footerTotals, dateBasis, dateFrom, dateTo);
     },
     exportAnalyticalExcel: async (companyName?: string) => {
-      await exportGlAnalyticalExcel(processedRows, companyName, footerTotals, dateBasis, dateFrom, dateTo);
+      if (!selectedCompany?.id || !presetId || !dbData) return;
+      toast({ title: 'Exportálás folyamatban...', description: 'Analitikus tételek lekérése az Excelhez.' });
+      try {
+        const allItems = await fetchAllGlCategorizedItems({
+          companyId: selectedCompany.id,
+          presetId,
+          dateFrom,
+          dateTo,
+          dateBasis,
+          postingStatus,
+          exchangeRates: exchangeRates || {},
+        });
+
+        const cleanId = cleanIdVal;
+        const glIdToCid = new Map<string, string>();
+        dbData.forEach(db => {
+          if (db.gl_account_id) {
+            glIdToCid.set(db.gl_account_id, cleanId(db.gl_number));
+          }
+        });
+
+        const itemsByGL = new Map<string, LedgerItem[]>();
+        allItems.filter(i => !i.is_excluded).forEach(item => {
+          const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
+          const parentCid = isUnclass ? 'UNCLASSIFIED' : glIdToCid.get(item.gl_account_id);
+          if (!parentCid) return;
+          const pseudoCid = `${parentCid}_${item.item_id}`;
+
+          let displayDesc = item.description || item.partner || 'Névtelen tétel';
+          if (item.partner && item.description && item.partner !== item.description) {
+            displayDesc = `${item.partner} - ${item.description}`;
+          }
+          displayDesc = fixCharacterEncoding(displayDesc);
+
+          if (!itemsByGL.has(parentCid)) {
+            itemsByGL.set(parentCid, []);
+          }
+          itemsByGL.get(parentCid)!.push({
+            id: `item_${item.item_id}`,
+            name: displayDesc,
+            balance: Number(item.amount) || 0,
+            hasChildren: false,
+            cid: pseudoCid,
+            isItem: true,
+            itemType: fixCharacterEncoding(item.item_type),
+            partner: fixCharacterEncoding(item.partner),
+            date: item.item_date,
+            sourceTable: item.source_table,
+            originalGlId: item.gl_account_id,
+            originalAmount: Number(item.original_amount) || 0,
+            originalCurrency: item.original_currency,
+            isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000')
+          });
+        });
+
+        const rawAccounts = dbData.map(dbItem => {
+          const cid = cleanId(dbItem.gl_number);
+          const hasAccountChildren = dbData.some(d =>
+            cleanId(d.gl_number).startsWith(cid) && cleanId(d.gl_number) !== cid
+          );
+          return {
+            id: String(dbItem.gl_number),
+            name: fixCharacterEncoding(dbItem.short_name),
+            balance: Number(dbItem.total_balance) || 0,
+            hasChildren: hasAccountChildren || itemsByGL.has(cid),
+            hasAccountChildren,
+            hasItemChildren: itemsByGL.has(cid),
+            cid
+          };
+        });
+
+        const compareGlAccounts = (a: any, b: any) => {
+          if (a.cid === 'UNCLASSIFIED') return 1;
+          if (b.cid === 'UNCLASSIFIED') return -1;
+          const isPureDigitsA = /^\d+$/.test(a.cid);
+          const isPureDigitsB = /^\d+$/.test(b.cid);
+          if (isPureDigitsA && isPureDigitsB) return a.cid.localeCompare(b.cid);
+          return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' });
+        };
+
+        const childrenMap = new Map<string, any[]>();
+        const roots: any[] = [];
+        rawAccounts.forEach(node => {
+          let directParent: any = null;
+          rawAccounts.forEach(candidate => {
+            if (candidate.cid !== node.cid && node.cid.startsWith(candidate.cid)) {
+              if (!directParent || candidate.cid.length > directParent.cid.length) {
+                directParent = candidate;
+              }
+            }
+          });
+          if (!directParent) roots.push(node);
+          else {
+            if (!childrenMap.has(directParent.cid)) childrenMap.set(directParent.cid, []);
+            childrenMap.get(directParent.cid)!.push(node);
+          }
+        });
+
+        const fullExportRows: any[] = [];
+        const traverse = (node: any, depth = 0) => {
+          fullExportRows.push({ ...node, depth, isRoot: depth === 0 });
+          const directItems = itemsByGL.get(node.cid);
+          if (directItems && directItems.length > 0) {
+            directItems.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+            directItems.forEach(item => fullExportRows.push({ ...item, depth: depth + 1 }));
+          }
+          const children = childrenMap.get(node.cid);
+          if (children && children.length > 0) {
+            children.sort(compareGlAccounts);
+            children.forEach(child => traverse(child, depth + 1));
+          }
+        };
+
+        roots.sort(compareGlAccounts);
+        roots.forEach(root => traverse(root, 0));
+
+        await exportGlAnalyticalExcel(fullExportRows, companyName, footerTotals, dateBasis, dateFrom, dateTo);
+        toast({ title: 'Sikeres exportálás', description: 'Az analitikus Excel fájl elkészült.', className: 'bg-green-50 text-green-900 border-green-200' });
+      } catch (err: any) {
+        reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Export error:', error: err });
+        toast({ title: 'Exportálási hiba', description: err.message, variant: 'destructive' });
+      }
     },
     getStats: () => {
       const glAccountsOnly = tableData.filter(d => !d.isItem);
-      const leaves = glAccountsOnly.filter(d => !d.hasChildren);
+      const leaves = glAccountsOnly.filter(d => !d.hasAccountChildren);
       const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
       const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
       return { accountCount: glAccountsOnly.length, leafCount: leaves.length, totalDebit, totalCredit };
     },
     expandAll: handleExpandAll,
-    collapseAll: handleCollapseAll
+    collapseAll: handleCollapseAll,
+    navigateToEntity: (result: GlSearchResult) => handleNavigateToEntity(result),
   }));
 
   const handleExpandAll = () => {
@@ -612,18 +817,293 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     setExpandedRowIds(new Set([])); // Collapse to only root items
   };
 
+  const fetchAccountItemsOnDemand = useCallback(async (targetCid: string) => {
+    if (!dbData || !selectedCompany?.id || !presetId) return;
+    if (loadedAccountItems.has(targetCid) || loadingAccountCids.has(targetCid)) return;
+
+    setLoadingAccountCids(prev => new Set(prev).add(targetCid));
+    try {
+      const cleanId = cleanIdVal;
+      const glAccountId = targetCid === 'UNCLASSIFIED'
+        ? '00000000-0000-0000-0000-000000000000'
+        : (dbData.find(d => cleanId(d.gl_number) === targetCid)?.gl_account_id || null);
+
+      const isPagedAccount = targetCid === 'UNCLASSIFIED' || (dbData.find(d => cleanId(d.gl_number) === targetCid)?.item_count ?? 0) > 100;
+
+      const items = await fetchGlItemsForAccount({
+        companyId: selectedCompany.id,
+        presetId,
+        glAccountId,
+        dateFrom,
+        dateTo,
+        dateBasis,
+        postingStatus,
+        exchangeRates: exchangeRates || {},
+        limit: isPagedAccount ? 100 : null,
+        offset: 0,
+      });
+
+      const mappedItems: LedgerItem[] = items.map(item => {
+        const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
+        const parentCid = isUnclass ? 'UNCLASSIFIED' : targetCid;
+        const pseudoCid = `${parentCid}_${item.item_id}`;
+
+        let displayDesc = item.description || item.partner || 'Névtelen tétel';
+        if (item.partner && item.description && item.partner !== item.description) {
+          displayDesc = `${item.partner} - ${item.description}`;
+        }
+        displayDesc = fixCharacterEncoding(displayDesc);
+
+        return {
+          id: `item_${item.item_id}`,
+          name: displayDesc,
+          balance: Number(item.amount) || 0,
+          hasChildren: false,
+          cid: pseudoCid,
+          isItem: true,
+          itemType: fixCharacterEncoding(item.item_type),
+          partner: fixCharacterEncoding(item.partner),
+          date: item.item_date,
+          sourceTable: item.source_table,
+          originalGlId: item.gl_account_id,
+          originalAmount: Number(item.original_amount) || 0,
+          originalCurrency: item.original_currency,
+          isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary)
+        };
+      });
+
+      setLoadedAccountItems(prev => {
+        const next = new Map(prev);
+        next.set(targetCid, mappedItems);
+        return next;
+      });
+
+      if (isPagedAccount && items.length === 100) {
+        setHasMoreAccountCids(prev => new Set(prev).add(targetCid));
+      } else {
+        setHasMoreAccountCids(prev => {
+          const next = new Set(prev);
+          next.delete(targetCid);
+          return next;
+        });
+      }
+    } catch (error) {
+      reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching account items:', error });
+    } finally {
+      setLoadingAccountCids(prev => {
+        const next = new Set(prev);
+        next.delete(targetCid);
+        return next;
+      });
+    }
+  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedAccountItems, loadingAccountCids]);
+
+  const fetchMoreAccountItems = useCallback(async (targetCid: string) => {
+    if (!dbData || !selectedCompany?.id || !presetId) return;
+    if (loadingMoreAccountCids.has(targetCid)) return;
+
+    const currentItems = loadedAccountItems.get(targetCid) || [];
+    setLoadingMoreAccountCids(prev => new Set(prev).add(targetCid));
+
+    try {
+      const cleanId = cleanIdVal;
+      const glAccountId = targetCid === 'UNCLASSIFIED'
+        ? '00000000-0000-0000-0000-000000000000'
+        : (dbData.find(d => cleanId(d.gl_number) === targetCid)?.gl_account_id || null);
+
+      const items = await fetchGlItemsForAccount({
+        companyId: selectedCompany.id,
+        presetId,
+        glAccountId,
+        dateFrom,
+        dateTo,
+        dateBasis,
+        postingStatus,
+        exchangeRates: exchangeRates || {},
+        limit: 100,
+        offset: currentItems.length,
+      });
+
+      const mappedItems: LedgerItem[] = items.map(item => {
+        const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
+        const parentCid = isUnclass ? 'UNCLASSIFIED' : targetCid;
+        const pseudoCid = `${parentCid}_${item.item_id}`;
+
+        let displayDesc = item.description || item.partner || 'Névtelen tétel';
+        if (item.partner && item.description && item.partner !== item.description) {
+          displayDesc = `${item.partner} - ${item.description}`;
+        }
+        displayDesc = fixCharacterEncoding(displayDesc);
+
+        return {
+          id: `item_${item.item_id}`,
+          name: displayDesc,
+          balance: Number(item.amount) || 0,
+          hasChildren: false,
+          cid: pseudoCid,
+          isItem: true,
+          itemType: fixCharacterEncoding(item.item_type),
+          partner: fixCharacterEncoding(item.partner),
+          date: item.item_date,
+          sourceTable: item.source_table,
+          originalGlId: item.gl_account_id,
+          originalAmount: Number(item.original_amount) || 0,
+          originalCurrency: item.original_currency,
+          isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary)
+        };
+      });
+
+      setLoadedAccountItems(prev => {
+        const next = new Map(prev);
+        const existing = prev.get(targetCid) || [];
+        next.set(targetCid, [...existing, ...mappedItems]);
+        return next;
+      });
+
+      if (items.length < 100) {
+        setHasMoreAccountCids(prev => {
+          const next = new Set(prev);
+          next.delete(targetCid);
+          return next;
+        });
+      }
+    } catch (error) {
+      reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching more account items:', error });
+    } finally {
+      setLoadingMoreAccountCids(prev => {
+        const next = new Set(prev);
+        next.delete(targetCid);
+        return next;
+      });
+    }
+  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedAccountItems, loadingMoreAccountCids]);
+
+  const handleNavigateToEntity = useCallback(async (result: GlSearchResult) => {
+    const targetGl = result.target_gl_number || result.gl_number;
+    const cleanId = cleanIdVal;
+    const targetCid = targetGl === 'UNCLASSIFIED' ? 'UNCLASSIFIED' : cleanId(targetGl);
+
+    // 1. Expand all ancestors leading to targetCid
+    const accountsToExpand = new Set<string>();
+    tableData.filter(d => !d.isItem).forEach(node => {
+      if (targetCid.startsWith(node.cid)) {
+        accountsToExpand.add(node.id);
+      }
+    });
+
+    // 2. If it's an item, expand the parent account as well
+    if (result.entity_type === 'item') {
+      const parentNode = tableData.find(d => !d.isItem && (cleanId(d.id) === targetCid || d.cid === targetCid));
+      if (parentNode) {
+        accountsToExpand.add(parentNode.id);
+      } else {
+        accountsToExpand.add(targetGl);
+      }
+    }
+
+    setExpandedRowIds(prev => new Set([...prev, ...accountsToExpand]));
+
+    // 3. If item, ensure items for this account are fetched on demand
+    const expectedItemId = `item_${result.entity_id}`;
+    if (result.entity_type === 'item' && targetCid) {
+      if (!loadedAccountItems.has(targetCid)) {
+        await fetchAccountItemsOnDemand(targetCid);
+      }
+      // Ensure the selected search result is guaranteed to be in the rendered list even if it was beyond the first 100 items
+      setLoadedAccountItems(prev => {
+        const next = new Map(prev);
+        const existingList = next.get(targetCid) || [];
+        const alreadyPresent = existingList.some(it => it.id === expectedItemId);
+        if (!alreadyPresent) {
+          const parentCid = targetCid;
+          const pseudoCid = `${parentCid}_${result.entity_id}`;
+          let displayDesc = result.title || 'Névtelen tétel';
+          if (result.subtitle && !displayDesc.includes(result.subtitle)) {
+            displayDesc = `${displayDesc} - ${result.subtitle}`;
+          }
+          const injectedItem: LedgerItem = {
+            id: expectedItemId,
+            name: fixCharacterEncoding(displayDesc),
+            balance: Number(result.amount) || 0,
+            hasChildren: false,
+            cid: pseudoCid,
+            isItem: true,
+            itemType: fixCharacterEncoding(result.item_type || ''),
+            partner: fixCharacterEncoding(result.title),
+            date: result.item_date || null,
+            sourceTable: result.source_table || null,
+            originalGlId: null,
+            originalAmount: Number(result.amount) || 0,
+            originalCurrency: result.currency || 'HUF',
+            isTemporary: targetCid === 'UNCLASSIFIED',
+          };
+          next.set(targetCid, [injectedItem, ...existingList]);
+        }
+        return next;
+      });
+    }
+
+    // 4. Set highlight on the row
+    const targetRowId = result.entity_type === 'account' ? result.gl_number : expectedItemId;
+    if (highlightTimerRef.current) {
+      clearTimeout(highlightTimerRef.current);
+    }
+    setHighlightedRowId(targetRowId);
+    highlightTimerRef.current = setTimeout(() => {
+      setHighlightedRowId(null);
+    }, 4500);
+
+    // 5. Smooth scroll into view
+    const scrollToTarget = () => {
+      const el = document.getElementById(`row_${targetRowId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
+      }
+      return false;
+    };
+
+    if (!scrollToTarget()) {
+      setTimeout(() => {
+        if (!scrollToTarget()) {
+          setTimeout(scrollToTarget, 300);
+        }
+      }, 120);
+    }
+  }, [tableData, loadedAccountItems, fetchAccountItemsOnDemand]);
+
   const toggleRow = (id: string, hasChildren?: boolean) => {
     if (!hasChildren) return;
+    const isCurrentlyExpanded = expandedRowIds.has(id);
     setExpandedRowIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
+      if (isCurrentlyExpanded) {
         next.delete(id);
       } else {
         next.add(id);
       }
       return next;
     });
+
+    if (!isCurrentlyExpanded) {
+      const targetRow = tableData.find(d => d.id === id);
+      if (targetRow && targetRow.hasItemChildren) {
+        fetchAccountItemsOnDemand(targetRow.cid);
+      }
+    }
   };
+
+  // Load items for any expanded leaf accounts on mount / expand restore
+  useEffect(() => {
+    if (!dbData || !selectedCompany?.id || !presetId) return;
+    expandedRowIds.forEach(id => {
+      const row = tableData.find(d => d.id === id);
+      if (row && row.hasItemChildren) {
+        fetchAccountItemsOnDemand(row.cid);
+      }
+    });
+  }, [expandedRowIds, tableData, dbData, selectedCompany?.id, presetId, fetchAccountItemsOnDemand]);
+
 
 
 
@@ -645,35 +1125,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // Determine if a row should be visible based on expanded state of its ancestors
   const processedRows = useMemo(() => {
-    const lowerQuery = deferredSearch?.toLowerCase().trim() || '';
-    const directMatchIds = new Set<string>();
-    const matchCids = new Set<string>();
-    
     const nonItemNodes = tableData.filter(d => !d.isItem);
-    
-    if (lowerQuery) {
-      tableData.forEach(item => {
-        if (
-          item.name.toLowerCase().includes(lowerQuery) || 
-          (item.partner && item.partner.toLowerCase().includes(lowerQuery)) ||
-          item.id.toLowerCase().includes(lowerQuery)
-        ) {
-          directMatchIds.add(item.id);
-          matchCids.add(item.cid);
-        }
-      });
-    }
-
-    const prefixesOfMatches = new Set<string>();
-    if (lowerQuery) {
-      matchCids.forEach(cid => {
-        nonItemNodes.forEach(node => {
-          if (cid.startsWith(node.cid) && cid !== node.cid) {
-            prefixesOfMatches.add(node.cid);
-          }
-        });
-      });
-    }
 
     return tableData.map(item => {
       // Find all ancestors (only searching through the ~100 category nodes, not all 10,000 items)
@@ -682,23 +1134,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const isRoot = ancestors.length === 0 && !item.isItem;
       const depth = ancestors.length;
       
-      let isVisibleOnScreen = false;
-      let isVisibleDuringPrint = false;
-
-      if (!lowerQuery) {
-        isVisibleOnScreen = isRoot || ancestors.every(a => expandedRowIds.has(a.id));
-        isVisibleDuringPrint = isRoot || ancestors.every(a => {
-          if (printLayoutMode === 'synthetic') return true;
-          return categoriesWithItems.has(a.id);
-        });
-      } else {
-        const isDirectMatch = directMatchIds.has(item.id);
-        const ancestorMatches = ancestors.some(a => directMatchIds.has(a.id));
-        const descendantMatches = prefixesOfMatches.has(item.cid);
-
-        isVisibleOnScreen = isDirectMatch || ancestorMatches || descendantMatches;
-        isVisibleDuringPrint = isVisibleOnScreen;
-      }
+      const isVisibleOnScreen = isRoot || ancestors.every(a => expandedRowIds.has(a.id));
+      let isVisibleDuringPrint = isRoot || ancestors.every(a => {
+        if (printLayoutMode === 'synthetic') return true;
+        return categoriesWithItems.has(a.id);
+      });
 
       if (printLayoutMode === 'synthetic' && item.isItem) {
         isVisibleDuringPrint = false;
@@ -706,7 +1146,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       
       return { ...item, isVisibleOnScreen, isVisibleDuringPrint, isRoot, depth };
     });
-  }, [expandedRowIds, tableData, deferredSearch, categoriesWithItems, printLayoutMode]);
+  }, [expandedRowIds, tableData, categoriesWithItems, printLayoutMode]);
 
   // Calculate generic footer totals by summing root level items
   const footerTotals = useMemo(() => {
@@ -729,7 +1169,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     }, 0);
   }, [tableData]);
 
-  if (isLoading || isLoadingItems) {
+  if (isDataLoading) {
     return (
       <div className="w-full flex flex-col h-[65vh] max-h-[800px] bg-card overflow-hidden rounded-md border border-border">
         {/* Header */}
@@ -760,6 +1200,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               </div>
             );
           })}
+        </div>
+        {/* Skeleton Footer */}
+        <div className="shrink-0 grid grid-cols-12 border-t border-border/60 bg-muted/95 backdrop-blur font-bold text-sm">
+          <div className="col-span-9 p-3 text-right uppercase tracking-wider text-muted-foreground text-xs">Összesen:</div>
+          <div className="col-span-3 p-3 flex items-center justify-end gap-2 pr-4">
+            <Skeleton className="h-4 w-24 bg-muted/50 rounded" />
+            <Skeleton className="h-6 w-6 rounded-full bg-muted/50" />
+          </div>
         </div>
       </div>
     );
@@ -822,7 +1270,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             </div>
           )}
           <div className="flex-1 overflow-auto print:overflow-visible w-full relative">
-            <div className="w-full flex flex-col min-h-full pb-8 print:pb-0">
+            <div className="w-full flex flex-col min-h-full pb-2 print:pb-0">
               
               {/* Header */}
               <div className="bg-muted/80 backdrop-blur-md border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none shadow-sm">
@@ -855,15 +1303,50 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                     : ['5', '8'].includes(classChar) ? 'border-l-4 border-l-red-500 dark:border-l-red-400'
                     : classChar === '9' ? 'border-l-4 border-l-emerald-500 dark:border-l-emerald-400'
                     : '';
+                  if (row.isLoadingRow) {
+                    return (
+                      <div
+                        key={row.id}
+                        className={cn(
+                          "grid grid-cols-12 divide-x divide-border/10 bg-muted/20 animate-pulse items-center",
+                          hiddenClass
+                        )}
+                      >
+                        <div className="col-span-2 p-3 flex items-center justify-center">
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        </div>
+                        <div className="col-span-7 py-3 pr-3 text-sm flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
+                          <span className="text-xs text-muted-foreground italic flex items-center gap-2">
+                            {row.name}
+                          </span>
+                        </div>
+                        <div className="col-span-3 p-3 flex justify-end items-center" />
+                      </div>
+                    );
+                  }
+
+                  if (row.isLoadMoreRow && row.targetCid) {
+                    return (
+                      <LoadMoreSentinelRow
+                        key={row.id}
+                        row={row}
+                        hiddenClass={hiddenClass}
+                        indentPadding={indentPadding}
+                        onLoadMore={fetchMoreAccountItems}
+                      />
+                    );
+                  }
 
                   return (
                     <div 
                       key={row.id} 
+                      id={`row_${row.id}`}
                       className={cn(
                         "group grid-cols-12 divide-x divide-border/10 transition-colors hover:bg-muted/40",
                         hiddenClass,
                         isRoot && "border-t border-border/50 bg-muted/10 font-medium",
-                        row.hasChildren ? "cursor-pointer" : ""
+                        row.hasChildren ? "cursor-pointer" : "",
+                        highlightedRowId === row.id && "ring-2 ring-primary/80 bg-primary/10 transition-all duration-700 shadow-md"
                       )}
                       onClick={() => toggleRow(row.id, row.hasChildren)}
                     >
@@ -886,7 +1369,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                              <span className="text-xs truncate">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : ''}</span>
                            </>
                         ) : (
-                           !row.hasChildren ? (
+                           !row.hasAccountChildren ? (
                              <span 
                                className={cn(
                                  "font-semibold cursor-pointer hover:underline text-primary transition-colors",
@@ -899,7 +1382,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                                  setSelectedLeafAccount({ code: row.id, name: row.name });
                                }}
                              >
-                              {highlightMatch(row.id, deferredSearch)}
+                               {row.id}
                              </span>
                            ) : (
                              <span className={cn(
@@ -908,7 +1391,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                                  ? "text-orange-500 dark:text-orange-400" 
                                  : "text-foreground"
                              )}>
-                              {highlightMatch(row.id, deferredSearch)}
+                               {row.id}
                              </span>
                            )
                         )}
@@ -921,9 +1404,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             </div>
                           )}
                         </div>
-                        <span className={cn("truncate", isRoot ? "uppercase" : "", row.isItem ? "text-muted-foreground italic" : "")} title={row.name}>
-                          {highlightMatch(row.name, deferredSearch)}
-                        </span>
+                        <CustomTooltip content={row.name} side="top">
+                          <span className={cn("truncate", isRoot ? "uppercase" : "", row.isItem ? "text-muted-foreground italic" : "")}>
+                            {row.name}
+                          </span>
+                        </CustomTooltip>
                         {row.isItem && row.itemType && (
                           <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-muted whitespace-nowrap text-muted-foreground hidden lg:inline-block">
                             {row.itemType}
@@ -959,20 +1444,23 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                            ) : (
                              <div className="flex flex-col items-end gap-0.5">
                                {row.finalBalance !== 0 && (
-                                 <span 
-                                   className={cn(
-                                     "font-semibold",
-                                     row.finalBalance > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                                   )} 
-                                   title="Végleges egyenleg"
-                                 >
-                                   {formatCurrency(row.finalBalance || 0)}
-                                 </span>
+                                 <CustomTooltip content="Végleges egyenleg" side="top">
+                                   <span 
+                                     className={cn(
+                                       "font-semibold",
+                                       row.finalBalance > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                                     )} 
+                                   >
+                                     {formatCurrency(row.finalBalance || 0)}
+                                   </span>
+                                 </CustomTooltip>
                                )}
                                {row.tempBalance !== 0 && (
-                                 <span className="text-orange-500 dark:text-orange-400 font-semibold text-xs" title="Ideiglenes egyenleg">
-                                   {formatCurrency(row.tempBalance || 0)} <span className="text-[10px] opacity-80">(Ideigl.)</span>
-                                 </span>
+                                 <CustomTooltip content="Ideiglenes egyenleg" side="top">
+                                   <span className="text-orange-500 dark:text-orange-400 font-semibold text-xs">
+                                     {formatCurrency(row.tempBalance || 0)} <span className="text-[10px] opacity-80">(Ideigl.)</span>
+                                   </span>
+                                 </CustomTooltip>
                                )}
                                {(!row.finalBalance || row.finalBalance === 0) && (!row.tempBalance || row.tempBalance === 0) && row.balance !== 0 && (
                                  <span className={cn(
@@ -991,22 +1479,23 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           )}
                         </div>
                         {row.isItem && row.sourceTable !== 'acc_journal_lines' && row.sourceTable !== 'journal_entry' ? (
-                          <Button
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 transition-opacity print:hidden shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingItem(row);
-                              // We use originalGlId to pre-fill the form, or UNCLASSIFIED if not mapped
-                              setSelectedNewGL(row.originalGlId || 'UNCLASSIFIED');
-                              setSearchQuery('');
-                              setIsEditOpen(true);
-                            }}
-                            title="Főkönyvi szám módosítása"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
-                          </Button>
+                          <CustomTooltip content="Főkönyvi szám módosítása" side="left">
+                            <Button
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 transition-opacity print:hidden shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingItem(row);
+                                // We use originalGlId to pre-fill the form, or UNCLASSIFIED if not mapped
+                                setSelectedNewGL(row.originalGlId || 'UNCLASSIFIED');
+                                setSearchQuery('');
+                                setIsEditOpen(true);
+                              }}
+                            >
+                              <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                            </Button>
+                          </CustomTooltip>
                         ) : (
                           // Placeholder to keep spacing identical even when there's no edit button
                           <div className="w-6 h-6 shrink-0 print:hidden" />
@@ -1019,7 +1508,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
               {/* Excluded items section */}
               {excludedItems.length > 0 && (
-                <div className="border-t-2 border-amber-400/40 bg-amber-500/5 print:hidden">
+                <div className="border-t border-amber-500/20 bg-amber-500/5">
                   <button
                     type="button"
                     onClick={() => setExpandedRowIds(prev => {
@@ -1043,12 +1532,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           <div className="col-span-2 font-mono tabular-nums text-center">
                             {item.date ? item.date.substring(0, 10).replace(/-/g, '.') : ''}
                           </div>
-                          <div className="col-span-7 truncate" title={item.name}>
-                            {item.name}
-                            {item.itemType && (
-                              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 whitespace-nowrap">{item.itemType}</span>
-                            )}
-                          </div>
+                          <CustomTooltip content={item.name} side="top">
+                            <div className="col-span-7 truncate">
+                              {item.name}
+                              {item.itemType && (
+                                <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 whitespace-nowrap">{item.itemType}</span>
+                              )}
+                            </div>
+                          </CustomTooltip>
                           <div className="col-span-3 text-right font-mono tabular-nums font-medium">
                             {item.amount !== 0 ? formatCurrency(item.amount) : ''}
                           </div>
@@ -1058,26 +1549,32 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   )}
                 </div>
               )}
-
-              {/* Footer */}
-              <div className="sticky bottom-0 z-20 grid grid-cols-12 border-t border-border/60 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bg-muted/95 backdrop-blur font-bold text-sm">
-                 <div className="col-span-9 p-3 text-right uppercase tracking-wider text-muted-foreground">Összesen:</div>
-                 <div className="col-span-3 p-3 text-right tabular-nums text-foreground flex items-center justify-end gap-2">
-                    {formatCurrency(footerTotals)}
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={handleRefetchAll} 
-                      disabled={isFetching}
-                      className="h-6 w-6 rounded-full"
-                      title="Frissítés"
-                    >
-                      <RefreshCw className={cn("h-3 w-3", isFetching ? "animate-spin" : "")} />
-                    </Button>
-                 </div>
-              </div>
-
             </div>
+          </div>
+
+          {/* Fixed Footer at the bottom of the table card */}
+          <div className="shrink-0 grid grid-cols-12 border-t border-border/60 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bg-muted/95 backdrop-blur font-bold text-sm z-20 print:border-t-2">
+             <div className="col-span-9 p-3 text-right uppercase tracking-wider text-muted-foreground">Összesen:</div>
+             <div className="col-span-3 p-3 text-right tabular-nums text-foreground flex items-center justify-end gap-2 pr-4">
+                {isDataLoading ? (
+                  <div className="h-4 w-20 animate-pulse bg-muted rounded" />
+                ) : (
+                  <>
+                    {formatCurrency(footerTotals)}
+                    <CustomTooltip content="Adatok frissítése" side="top">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={handleRefetchAll} 
+                        disabled={isFetching}
+                        className="h-6 w-6 rounded-full"
+                      >
+                        <RefreshCw className={cn("h-3 w-3", isFetching ? "animate-spin" : "")} />
+                      </Button>
+                    </CustomTooltip>
+                  </>
+                )}
+             </div>
           </div>
         </div>
       </ContextMenuTrigger>

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset } from './glData';
+import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset, fetchGlItemsForAccount } from './glData';
+
 import { supabase } from '@/integrations/supabase/client';
 
 vi.mock('@/integrations/supabase/client', () => ({
@@ -207,4 +208,165 @@ describe('glData pagination utilities', () => {
       expect(mockRange).toHaveBeenNthCalledWith(2, 1000, 1999);
     });
   });
+
+  describe('fetchGlItemsForAccount', () => {
+    it('passes p_gl_account_id to get_gl_categorized_items RPC', async () => {
+      const mockRange = vi.fn().mockResolvedValue({ data: [{ item_id: 'item-1', amount: 500 }], error: null });
+      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+
+      const result = await fetchGlItemsForAccount({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        glAccountId: 'gl-acc-123',
+      });
+
+      expect(result).toHaveLength(1);
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', {
+        p_company_id: 'company-1',
+        p_preset_id: 'preset-1',
+        p_date_from: null,
+        p_date_to: null,
+        p_exchange_rates: {},
+        p_date_basis: 'kibocsatas',
+        p_posting_status: 'ALL',
+        p_gl_account_id: 'gl-acc-123',
+      });
+      expect(mockRange).toHaveBeenCalledWith(0, 999);
+    });
+
+    it('defaults to 00000000-0000-0000-0000-000000000000 when glAccountId is null', async () => {
+      const mockRange = vi.fn().mockResolvedValue({ data: [], error: null });
+      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+
+      await fetchGlItemsForAccount({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        glAccountId: null,
+      });
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', expect.objectContaining({
+        p_gl_account_id: '00000000-0000-0000-0000-000000000000',
+      }));
+    });
+
+    it('passes p_limit and p_offset directly to get_gl_categorized_items RPC when limit is provided', async () => {
+      const mockItems = Array.from({ length: 100 }, (_, i) => ({ item_id: `item-${i}`, amount: 100 }));
+      (supabase.rpc as any).mockResolvedValue({ data: mockItems, error: null });
+
+      const result = await fetchGlItemsForAccount({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        glAccountId: 'gl-acc-123',
+        limit: 100,
+        offset: 200,
+      });
+
+      expect(result).toHaveLength(100);
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', {
+        p_company_id: 'company-1',
+        p_preset_id: 'preset-1',
+        p_date_from: null,
+        p_date_to: null,
+        p_exchange_rates: {},
+        p_date_basis: 'kibocsatas',
+        p_posting_status: 'ALL',
+        p_gl_account_id: 'gl-acc-123',
+        p_limit: 100,
+        p_offset: 200,
+      });
+    });
+
+    it('defaults p_offset to 0 when limit is provided without explicit offset', async () => {
+      (supabase.rpc as any).mockResolvedValue({ data: [], error: null });
+
+      await fetchGlItemsForAccount({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        glAccountId: '00000000-0000-0000-0000-000000000000',
+        limit: 100,
+      });
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', expect.objectContaining({
+        p_limit: 100,
+        p_offset: 0,
+      }));
+    });
+  });
+
+  describe('searchGlEntities', () => {
+    it('returns empty array when query has less than 2 characters without calling RPC', async () => {
+      const { searchGlEntities } = await import('./glData');
+      const result = await searchGlEntities({
+        companyId: 'comp-1',
+        presetId: 'preset-1',
+        query: ' a ',
+      });
+
+      expect(result).toEqual([]);
+      expect(supabase.rpc).not.toHaveBeenCalled();
+    });
+
+    it('calls search_gl_entities RPC with trimmed query and default limit', async () => {
+      const { searchGlEntities } = await import('./glData');
+      const mockResults = [
+        {
+          entity_type: 'account',
+          entity_id: '261',
+          gl_number: '261',
+          title: '261 - Kereskedelmi áruk',
+          subtitle: 'Főkönyvi számla',
+          account_id: 'acc-uuid-1',
+          target_gl_number: '261',
+          amount: null,
+        },
+      ];
+      (supabase.rpc as any).mockResolvedValue({ data: mockResults, error: null });
+
+      const result = await searchGlEntities({
+        companyId: 'comp-1',
+        presetId: 'preset-1',
+        query: '  261  ',
+      });
+
+      expect(result).toEqual(mockResults);
+      expect(supabase.rpc).toHaveBeenCalledWith('search_gl_entities', {
+        p_company_id: 'comp-1',
+        p_preset_id: 'preset-1',
+        p_query: '261',
+        p_limit: 12,
+      });
+    });
+
+    it('passes custom limit when specified', async () => {
+      const { searchGlEntities } = await import('./glData');
+      (supabase.rpc as any).mockResolvedValue({ data: [], error: null });
+
+      await searchGlEntities({
+        companyId: 'comp-1',
+        presetId: 'preset-1',
+        query: 'gitár',
+        limit: 5,
+      });
+
+      expect(supabase.rpc).toHaveBeenCalledWith('search_gl_entities', {
+        p_company_id: 'comp-1',
+        p_preset_id: 'preset-1',
+        p_query: 'gitár',
+        p_limit: 5,
+      });
+    });
+
+    it('throws error when RPC returns an error', async () => {
+      const { searchGlEntities } = await import('./glData');
+      (supabase.rpc as any).mockResolvedValue({ data: null, error: new Error('Database error') });
+
+      await expect(searchGlEntities({
+        companyId: 'comp-1',
+        presetId: 'preset-1',
+        query: 'test',
+      })).rejects.toThrow('Database error');
+    });
+  });
 });
+
+
