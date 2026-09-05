@@ -764,16 +764,25 @@ export default function JournalsPage() {
                   <TableRow className="bg-muted/40 border-b border-border/40 text-muted-foreground select-none uppercase font-semibold text-[10px] tracking-wider">
                     <TableHead className="w-[44px] text-center p-0">
                       <div className="flex items-center justify-center">
-                        <Checkbox
-                          checked={
-                            paginatedEntries.length > 0 &&
-                            paginatedEntries
-                              .filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status))
-                              .every((e: any) => selectedEntryIds.has(e.id))
-                          }
-                          onCheckedChange={(checked) => handleSelectAll(!!checked, paginatedEntries)}
-                          aria-label="Összes piszkozat kijelölése"
-                        />
+                        {(() => {
+                          const pageDrafts = paginatedEntries.filter((e: any) =>
+                            ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)
+                          );
+                          const isAllSelected =
+                            pageDrafts.length > 0 &&
+                            pageDrafts.every((e: any) => selectedEntryIds.has(e.id));
+                          const isSomeSelected =
+                            pageDrafts.some((e: any) => selectedEntryIds.has(e.id));
+
+                          return (
+                            <Checkbox
+                              checked={isAllSelected ? true : isSomeSelected ? 'indeterminate' : false}
+                              disabled={pageDrafts.length === 0}
+                              onCheckedChange={(checked) => handleSelectAll(!!checked, paginatedEntries)}
+                              aria-label="Összes piszkozat kijelölése ezen az oldalon"
+                            />
+                          );
+                        })()}
                       </div>
                     </TableHead>
                     <TableHead className="w-[95px] whitespace-nowrap">Dátum</TableHead>
@@ -840,7 +849,17 @@ export default function JournalsPage() {
                                   />
                                 </div>
                               ) : (
-                                <div className="w-4 h-4 mx-auto" />
+                                <div className="flex items-center justify-center">
+                                  <CustomTooltip content={
+                                    e.status === 'SZTORNOZOTT'
+                                      ? "Sztornózott tétel (lezárt, nem jelölhető ki tömeges műveletre)"
+                                      : "Lekönyvelt zárt tétel (hivatalos naplószámmal ellátva). Közvetlenül nem jelölhető ki tömeges műveletekre; módosításához használd a sorvégi sztornó vagy helyesbítés ikont."
+                                  }>
+                                    <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors">
+                                      <Lock className="w-3.5 h-3.5" />
+                                    </span>
+                                  </CustomTooltip>
+                                </div>
                               )}
                             </TableCell>
                             <TableCell className="w-[95px] font-mono text-muted-foreground whitespace-nowrap">
@@ -1157,21 +1176,6 @@ export default function JournalsPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Modals components */}
-      {manualEntryOpen && (
-        <AddManualJournalEntryModal
-          open={manualEntryOpen}
-          onOpenChange={setManualEntryOpen}
-          entryId={editingEntryId}
-        />
-      )}
-
-      {periodClosingOpen && (
-        <PeriodClosingSettings
-          open={periodClosingOpen}
-          onOpenChange={setPeriodClosingOpen}
-        />
-      )}
 
       {auditEntryId && (
         <AuditTrailDialog

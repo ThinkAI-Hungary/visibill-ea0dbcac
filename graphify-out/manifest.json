@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788584495.3899777,
-    "ast_hash": "017d21620832fafd291564f1c9ee0d7e",
+    "mtime": 1788586834.1294947,
+    "ast_hash": "0d3371526c89e68f54c3581507d34680",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1788548561.7154791,
-    "ast_hash": "6334d183285e7705dfa1f5f3ec50e7f1",
+    "mtime": 1788586629.2690773,
+    "ast_hash": "0d6dfab4c476de5b591789d9fd6a0ead",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -7270,8 +7270,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-057-accounting-journals-architecture.md": {
-    "mtime": 1788555191.8653731,
-    "ast_hash": "66099d0cbed82b8089d523f6d935cd04",
+    "mtime": 1788586819.852818,
+    "ast_hash": "3b71cfcb328c8704d655df98f4f2a41d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-058-bank-transfers-architecture.md": {
@@ -9020,8 +9020,8 @@
     "semantic_hash": ""
   },
   "src/pages/__tests__/JournalsPageActions.test.tsx": {
-    "mtime": 1788548611.269273,
-    "ast_hash": "ce08588818a5d1fcfdd5e639d3eceec7",
+    "mtime": 1788586681.5065327,
+    "ast_hash": "c1158925c27bdfb0168a6b4c5482beea",
     "semantic_hash": ""
   },
   "src/components/journals/__tests__/OpeningJournalWizardModal.test.tsx": {
@@ -9052,6 +9052,11 @@
   "docs/architecture/decisions/A-091-bank-statement-boundary-and-summary-artifact-guard.md": {
     "mtime": 1788584484.6793,
     "ast_hash": "aef0d92c9b2fd889383c95aae90075f5",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905120000_acc_generate_drafts_robust_partner_matching.sql": {
+    "mtime": 1788586074.850767,
+    "ast_hash": "c3a8e3ec936c2c85da946a82fce0e869",
     "semantic_hash": ""
   }
 }

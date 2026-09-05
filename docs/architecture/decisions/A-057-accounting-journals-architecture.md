@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-08-27  
-**Utoljára frissítve:** 2026-09-04  
+**Utoljára frissítve:** 2026-09-05  
 
 ---
 
@@ -76,7 +76,14 @@ A Postgres szintű adatintegritásra épülő, trigger- és RPC-vezérelt modul�
   - Az 1. lépés reaktív Supabase query-t (`['existing-opening-entry', companyId, accountingYear]`) futtat:
     `SELECT id, document_id, posting_date, status FROM acc_journal_headers WHERE company_id = $1 AND accounting_year = $2 AND entry_type = 'OPENING' AND status != 'TOROLT' ORDER BY created_at DESC LIMIT 1`.
   - Ha a lekérdezés lekönyvelt nyitó bizonylatot talál az adott üzleti évhez, sárga figyelmeztető banner jelenik meg a bizonylatszámmal, dátummal és a dupla nyitás kockázatára való felhívással.
-  - A nyitó bizonylat sikeres könyvelésekor (`saveAndPostMutation.onSuccess`) a rendszer azonnal invalidálja a `existing-opening-entry` cache kulcsot is.
+### 9. Robusztus Partner Felismerés & Zárt Tételek UX Védelme (2026-09-05 — Migráció `20260905120000`)
+- **Robusztus Partner Felismerés (`acc_generate_drafts_from_ledger`):**
+  - **8-jegyű törzsszám illesztés:** A számlák és NAV bizonylatok adószámának nem-numerikus karaktereit (kötőjelek, szóközök, EU/HU előtag) eltávolítva az első 8 számjegy (törzsszám) alapján kapcsolja össze a partnert a `partners` törzzsel, kivédve a formázási eltérésekből eredő `NULL` partnerkapcsolatokat.
+  - **Név alapú fallback:** Ha adószám alapján nincs találat, kis- és nagybetű független, levágott (`LOWER(TRIM(name)) = LOWER(TRIM(v_partner_name))`) illesztéssel köti össze a számlafejet a partnerrekorddal.
+- **Zárt és Lekönyvelt Tételek UX Védelme (`JournalsPage.tsx`):**
+  - A kettős könyvviteli elvek szerint a lekönyvelt (`KONYVELT`) és sztornózott (`SZTORNOZOTT`) tételek nem jelölhetők ki tömeges piszkozat-műveletekre (könyvelés, törlés, jóváhagyásra küldés).
+  - A korábbi megtévesztő üres cella helyett a felület egy lakat ikont (`<Lock />`) és magyarázó tooltipet jelenít meg, egyértelműsítve, hogy a zárt tétel közvetlenül nem jelölhető ki, módosítása kizárólag a sorvégi sztornó/helyesbítés művelettel lehetséges.
+  - A táblázatfejléc jelölőnégyzete felkészítve a háromállapotú kijelölésre (teljes, `indeterminate`, inaktív ha nincs kijelölhető piszkozat az oldalon).
 
 ## Consequences
 
