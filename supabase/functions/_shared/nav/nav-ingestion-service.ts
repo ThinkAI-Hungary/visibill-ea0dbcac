@@ -81,7 +81,7 @@ export class NavIngestionService {
 
         // 5. Partnerek automatikus szinkronizálása / frissítése (ADR A-024)
         if (effectiveCompanyId) {
-          await this.syncPartnersFromInvoices(invoices, options.direction, effectiveCompanyId);
+          await this.syncPartnersFromInvoices(invoices, options.direction, effectiveCompanyId, options.userId);
         }
 
         // 6. Opcionális tételszintű részletek letöltése (ha kérték)
@@ -186,7 +186,8 @@ export class NavIngestionService {
   async syncPartnersFromInvoices(
     invoices: NavInvoiceDigest[],
     direction: 'INBOUND' | 'OUTBOUND',
-    companyId: string
+    companyId: string,
+    userId?: string | null
   ): Promise<void> {
     try {
       const requiredType = direction === 'OUTBOUND' ? 'customer' : 'supplier';
@@ -225,6 +226,7 @@ export class NavIngestionService {
         if (!existing) {
           toInsert.push({
             company_id: companyId,
+            user_id: userId || null,
             name: partner.name,
             tax_number: partner.taxNumber,
             partner_type: requiredType

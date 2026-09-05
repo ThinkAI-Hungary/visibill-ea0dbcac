@@ -64,7 +64,7 @@
 | Oszlop | Típus | Null | Default |
 |--------|-------|------|---------|
 | id | uuid | — | `gen_random_uuid()` |
-| user_id | uuid | — |  |
+| user_id | uuid | ✓ |  |
 | company_id | uuid | ✓ |  |
 | tax_number | text | — |  |
 | name | text | — |  |
