@@ -99,6 +99,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-091 | Bank Statement Boundary Governance & Defense-in-Depth Summary Artifact Filtering | ✅ Decided | [A-091](./A-091-bank-statement-boundary-and-summary-artifact-guard.md) |
 | A-092 | Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció | ✅ Decided | [A-092](./A-092-database-security-and-performance-optimization.md) |
 | A-093 | Atomi Cégbeállítások Upsert, Versenyhelyzet Megelőzés és Parciális Frissítések Izolációja | ✅ Decided | [A-093](./A-093-atomic-company-settings-upsert-and-partial-update-isolation.md) |
+| A-094 | Bérszámfejtési Ciklus Végtelen Re-render Védelem és Kézi Jelenlét Perzisztencia | ✅ Decided | [A-094](./A-094-payroll-cycle-render-stability-and-attendance-persistence.md) |
+| A-095 | Nemzetközi Kártyaelfogadó Terminál (Europay POS) Clearing Devizafelülírás Védelme | ✅ Decided | [A-095](./A-095-international-pos-clearing-currency-override-guard.md) |
 
 ## 🖥️ Frontend
 
