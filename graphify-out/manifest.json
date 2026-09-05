@@ -3005,8 +3005,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-003-multi-tenancy-rls.md": {
-    "mtime": 1782992441.281695,
-    "ast_hash": "9f3ea740183f43c65fba3659851741e8",
+    "mtime": 1788625185.5582912,
+    "ast_hash": "8674cdad711bdbca91b4054d64e39bc7",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-004-pgmq-queue.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788586834.1294947,
-    "ast_hash": "0d3371526c89e68f54c3581507d34680",
+    "mtime": 1788625172.9793289,
+    "ast_hash": "e3bafc9537d952ce7ae54e5a460504ea",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -5020,8 +5020,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database-schema.md": {
-    "mtime": 1788130322.376325,
-    "ast_hash": "48eded328ec3bbbcb13ea11d15b0e80a",
+    "mtime": 1788625193.1418178,
+    "ast_hash": "ac7de1dbca409769524a1f1eab677f05",
     "semantic_hash": ""
   },
   "docs/architecture/database/01-auth-users.md": {
@@ -9057,6 +9057,126 @@
   "supabase/migrations/20260905120000_acc_generate_drafts_robust_partner_matching.sql": {
     "mtime": 1788586074.850767,
     "ast_hash": "c3a8e3ec936c2c85da946a82fce0e869",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905161000_fix_accrual_entries_security_and_rls.sql": {
+    "mtime": 1788615306.5320663,
+    "ast_hash": "0022a9d74c59c50176391a0f00c464f4",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905163000_fix_ticket_events_security_and_rls.sql": {
+    "mtime": 1788615772.4026313,
+    "ast_hash": "260b9d3bf55b14607fbd6878f0cb711b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905164000_fix_get_auth_emails_security.sql": {
+    "mtime": 1788616195.8584616,
+    "ast_hash": "fae25e9dd835000584e917fe1198b982",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905165000_fix_match_transaction_overrides_log_rls_and_indexes.sql": {
+    "mtime": 1788616499.4626908,
+    "ast_hash": "42a4e70c7c6763f4b2ce66a5daefa78b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905170000_fix_cmr_documents_security_invoker.sql": {
+    "mtime": 1788617053.6337442,
+    "ast_hash": "3d2e45172acef86f31657ab870c74b7e",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905171000_optimize_batch1_gl_accounting_initplan.sql": {
+    "mtime": 1788617737.5701556,
+    "ast_hash": "790dd0a6b2c2a3feee654b58f24500f8",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905172000_optimize_batch2_petty_cash_szep_initplan.sql": {
+    "mtime": 1788618097.5223129,
+    "ast_hash": "c0bf482a85c7c547b73e80d0a9b1d600",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905173000_optimize_batch3_invoices_banking_initplan.sql": {
+    "mtime": 1788618450.6593447,
+    "ast_hash": "8f0770d7921b31fef9ed0d294bba3057",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905174000_optimize_batch4_accounty_core_initplan.sql": {
+    "mtime": 1788618656.108698,
+    "ast_hash": "8879ae26c3137cdceb067acdd50d272b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905175000_optimize_batch5_accounty_settings_tax_condo_initplan.sql": {
+    "mtime": 1788618753.482645,
+    "ast_hash": "e54cab97edfe2c8d1210d1fac499b939",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905180000_optimize_batch6_system_audit_notes_salary_initplan.sql": {
+    "mtime": 1788618894.9568176,
+    "ast_hash": "db1214329f4a5e742dd6a06b457a50ab",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905181000_fix_worker_heartbeats_rls.sql": {
+    "mtime": 1788619015.5928242,
+    "ast_hash": "7689db89d8b5bf4b71767a944ab6c190",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905183000_add_fk_indexes_core_billing.sql": {
+    "mtime": 1788619990.4741876,
+    "ast_hash": "46e26be5b3408114c49eb04ce6d79c65",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905184000_add_fk_indexes_accounting_gl.sql": {
+    "mtime": 1788619990.475186,
+    "ast_hash": "f4b9b2afa2fd702c746671245e9c89f4",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905185000_add_fk_indexes_accounty_ev.sql": {
+    "mtime": 1788619990.475186,
+    "ast_hash": "2f3cfdcc2a259699dcc0681c8ff26f62",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905190000_consolidate_core_dual_rls_policies.sql": {
+    "mtime": 1788620238.1061337,
+    "ast_hash": "5cb773232e77ffffc5d5ec294dbfee0d",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905191000_fix_all_vs_select_overlap_core.sql": {
+    "mtime": 1788620254.6726933,
+    "ast_hash": "9d15a1dbb2b3c10eedc787f71a005dbe",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905192000_fix_profiles_rls_and_role_explosion.sql": {
+    "mtime": 1788620269.6672573,
+    "ast_hash": "b77069b210b5f0958168a25a92b141d1",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905193000_fix_accounting_gl_write_policies.sql": {
+    "mtime": 1788620285.0411022,
+    "ast_hash": "cfb061a6096fc5f12b9ad5bf861475f3",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905194000_consolidate_accounty_ev_and_legacy_rls.sql": {
+    "mtime": 1788620332.206871,
+    "ast_hash": "0b64f61be608bd81ebdc67128c17988b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905195000_optimize_query_performance_indexes.sql": {
+    "mtime": 1788621346.465466,
+    "ast_hash": "af529b1cd3298a798fc85694a53b67e8",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905200000_fix_function_search_path_mutable.sql": {
+    "mtime": 1788622309.5385065,
+    "ast_hash": "940f971018c99b3a1460c4dfe2fd6701",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905201000_fix_remaining_security_warnings.sql": {
+    "mtime": 1788622854.0006692,
+    "ast_hash": "8cd0d318629cd0df118899b5499c4d0e",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-092-database-security-and-performance-optimization.md": {
+    "mtime": 1788625158.3446443,
+    "ast_hash": "3ea02b82a9f36510e30eea3d8fb49a88",
     "semantic_hash": ""
   }
 }

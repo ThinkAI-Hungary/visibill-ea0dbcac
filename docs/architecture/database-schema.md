@@ -1,9 +1,10 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-08-31  
-> **Összesen:** ~178 tábla | **RLS:** mind engedélyezve | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-05  
+> **Összesen:** ~178 tábla | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
+A teljes biztonsági és indexelési irányelveket az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
 
 ---
 
