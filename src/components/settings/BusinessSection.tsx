@@ -64,11 +64,14 @@ export function BusinessSection({
   }, [compEffectiveSettings?.gl_date_basis]);
 
   const handleGlBasisChange = async (newBasis: 'kibocsatas' | 'teljesites') => {
+    if (newBasis === glBasis || compSaveMutation.isPending) return;
+    const prevBasis = glBasis;
     setGlBasis(newBasis);
     try {
       await compSaveMutation.mutateAsync({ gl_date_basis: newBasis });
     } catch {
-      // toast is automatically displayed by mutation
+      // Revert optimistic state if mutation fails (error toast shown by mutation)
+      setGlBasis(prevBasis);
     }
   };
 
@@ -332,10 +335,9 @@ export function BusinessSection({
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <label
-                  onClick={() => isOwner && handleGlBasisChange('kibocsatas')}
                   className={cn(
                     "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
-                    isOwner ? "cursor-pointer" : "cursor-default opacity-80",
+                    isOwner && !compSaveMutation.isPending ? "cursor-pointer" : "cursor-default opacity-80",
                     glBasis === 'kibocsatas'
                       ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
                       : "border-border bg-card hover:bg-muted/50"
@@ -346,8 +348,8 @@ export function BusinessSection({
                     name="main_gl_date_basis"
                     value="kibocsatas"
                     checked={glBasis === 'kibocsatas'}
-                    onChange={() => isOwner && handleGlBasisChange('kibocsatas')}
-                    disabled={!isOwner}
+                    onChange={() => isOwner && !compSaveMutation.isPending && handleGlBasisChange('kibocsatas')}
+                    disabled={!isOwner || compSaveMutation.isPending}
                     className="mt-1 accent-primary"
                   />
                   <div className="space-y-1">
@@ -362,10 +364,9 @@ export function BusinessSection({
                 </label>
 
                 <label
-                  onClick={() => isOwner && handleGlBasisChange('teljesites')}
                   className={cn(
                     "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
-                    isOwner ? "cursor-pointer" : "cursor-default opacity-80",
+                    isOwner && !compSaveMutation.isPending ? "cursor-pointer" : "cursor-default opacity-80",
                     glBasis === 'teljesites'
                       ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
                       : "border-border bg-card hover:bg-muted/50"
@@ -376,8 +377,8 @@ export function BusinessSection({
                     name="main_gl_date_basis"
                     value="teljesites"
                     checked={glBasis === 'teljesites'}
-                    onChange={() => isOwner && handleGlBasisChange('teljesites')}
-                    disabled={!isOwner}
+                    onChange={() => isOwner && !compSaveMutation.isPending && handleGlBasisChange('teljesites')}
+                    disabled={!isOwner || compSaveMutation.isPending}
                     className="mt-1 accent-primary"
                   />
                   <div className="space-y-1">

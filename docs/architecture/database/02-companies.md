@@ -66,6 +66,8 @@
 
 **Indexek:** `company_settings_company_id_key`
 
+> **Architektúra Döntés (2026-09-05):** A `company_settings` egyedi rekordjainak mentése atomi PostgREST upserttel (`onConflict: 'company_id'`) történik a kliensoldali TOCTOU és `23505 duplicate key` hibák kiküszöbölésére, parciális frissítési izolációval — lásd [A-093](../decisions/A-093-atomic-company-settings-upsert-and-partial-update-isolation.md).
+
 ---
 
 ### `company_locations`

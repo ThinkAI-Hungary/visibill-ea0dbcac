@@ -445,8 +445,8 @@
     "semantic_hash": "690594953770aff80b0787de83a31fc2"
   },
   "src/components/settings/BusinessSection.tsx": {
-    "mtime": 1788390802.1977282,
-    "ast_hash": "24ba4d39e06cd574817fc9597071e44c",
+    "mtime": 1788641559.941328,
+    "ast_hash": "08982ccbeafcc3db9ce7a911d75bc42b",
     "semantic_hash": ""
   },
   "src/components/settings/InviteUserDialog.tsx": {
@@ -915,8 +915,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useCompanySettings.ts": {
-    "mtime": 1788390587.5463276,
-    "ast_hash": "2f76573ade3840e291b717b43cefe0e0",
+    "mtime": 1788641780.8631265,
+    "ast_hash": "c18213dffadf38482b149b85e59bb2a3",
     "semantic_hash": ""
   },
   "src/hooks/useComputedStatus.ts": {
@@ -1410,8 +1410,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/SettingsPage.tsx": {
-    "mtime": 1788390776.8479743,
-    "ast_hash": "ebacc7f9d60994f5fe0d1a92b75ce914",
+    "mtime": 1788641694.130826,
+    "ast_hash": "08c2b1c61d66c9556f00913f5857ad0f",
     "semantic_hash": ""
   },
   "src/pages/Accounty/TaxCalendarPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788625172.9793289,
-    "ast_hash": "e3bafc9537d952ce7ae54e5a460504ea",
+    "mtime": 1788642150.8903334,
+    "ast_hash": "ac4ea926d20bc90a730c44fc1df35d13",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -4940,8 +4940,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/settings/GeneralSettingsTab.tsx": {
-    "mtime": 1788390752.2250607,
-    "ast_hash": "8675887f8099bfadd718ffab39cbe1f3",
+    "mtime": 1788641263.5155454,
+    "ast_hash": "5995a846bd20bde196beb4cf5112e9ab",
     "semantic_hash": ""
   },
   "src/pages/Accounty/settings/NavChannelTab.tsx": {
@@ -5030,8 +5030,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/02-companies.md": {
-    "mtime": 1788392647.5574572,
-    "ast_hash": "ab5c518dc8966ff210e115f1449acfd2",
+    "mtime": 1788642257.1568415,
+    "ast_hash": "c72dfe32f851c364dc8ee4b2ffdbe140",
     "semantic_hash": ""
   },
   "docs/architecture/database/03-permissions.md": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788539326.5837612,
+    "mtime": 1788640985.867471,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -8790,8 +8790,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-066-gl-date-basis-toggle-and-settings-ux.md": {
-    "mtime": 1788392564.2040114,
-    "ast_hash": "a6866b9f87751492328aec5f407e3b17",
+    "mtime": 1788642161.541885,
+    "ast_hash": "c75793b81bf472f78e74dde812487443",
     "semantic_hash": ""
   },
   "src/test/tickets/uploadTicketAttachment.test.ts": {
@@ -9177,6 +9177,16 @@
   "docs/architecture/decisions/A-092-database-security-and-performance-optimization.md": {
     "mtime": 1788625158.3446443,
     "ast_hash": "3ea02b82a9f36510e30eea3d8fb49a88",
+    "semantic_hash": ""
+  },
+  "src/hooks/__tests__/useCompanySettings.test.ts": {
+    "mtime": 1788641571.3428462,
+    "ast_hash": "88eaba9bea8b12ee621de5a71cf0f3f8",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-093-atomic-company-settings-upsert-and-partial-update-isolation.md": {
+    "mtime": 1788642133.292704,
+    "ast_hash": "482549e076aaf24df58ff144a427890f",
     "semantic_hash": ""
   }
 }

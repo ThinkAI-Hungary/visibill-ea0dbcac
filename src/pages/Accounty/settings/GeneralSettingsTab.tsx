@@ -124,7 +124,6 @@ export default function GeneralSettingsTab({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <label 
-            onClick={() => setGlDateBasis?.('kibocsatas')}
             className={cn(
               "flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer",
               glDateBasis === 'kibocsatas'
@@ -152,7 +151,6 @@ export default function GeneralSettingsTab({
           </label>
 
           <label 
-            onClick={() => setGlDateBasis?.('teljesites')}
             className={cn(
               "flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer",
               glDateBasis === 'teljesites'

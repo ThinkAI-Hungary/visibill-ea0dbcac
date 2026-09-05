@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-05  
-> **Összesen:** 95 döntés | ✅ Decided: 93 | ⛔ Superseded: 2
+> **Összesen:** 96 döntés | ✅ Decided: 94 | ⛔ Superseded: 2
 
 ---
 
@@ -98,6 +98,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-087 | Magnum Audit XML Főkönyvi Import, Tükörkód Feloldás, Számlatükör Auto-Szinkronizáció és RPC Robusztusság | ✅ Decided | [A-087](./A-087-magnum-audit-xml-gl-ingestion-and-sync.md) |
 | A-091 | Bank Statement Boundary Governance & Defense-in-Depth Summary Artifact Filtering | ✅ Decided | [A-091](./A-091-bank-statement-boundary-and-summary-artifact-guard.md) |
 | A-092 | Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció | ✅ Decided | [A-092](./A-092-database-security-and-performance-optimization.md) |
+| A-093 | Atomi Cégbeállítások Upsert, Versenyhelyzet Megelőzés és Parciális Frissítések Izolációja | ✅ Decided | [A-093](./A-093-atomic-company-settings-upsert-and-partial-update-isolation.md) |
 
 ## 🖥️ Frontend
 

@@ -36,3 +36,4 @@ Hogyan biztosítsuk a könyvelők számára a Főkönyvben a teljesítés és ki
 ## Kapcsolódó
 - BRD: [Decision 049: Főkönyvi Dátum Alap Üzleti Szabály](../../business/decisions/049-gl-date-basis-fulfillment-vs-issue.md)
 - ADR: [A-085: Főkönyvi Dátum Alap RPC Pushdown és Dinamikus Chunk Reload Recovery](../../architecture/decisions/A-085-gl-date-basis-rpc-and-chunk-error-recovery.md)
+- ADR: [A-093: Atomi Cégbeállítások Upsert, Versenyhelyzet Megelőzés és Parciális Frissítések Izolációja](../../architecture/decisions/A-093-atomic-company-settings-upsert-and-partial-update-isolation.md)

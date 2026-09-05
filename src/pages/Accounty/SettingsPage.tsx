@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompany } from '@/contexts/CompanyContext';
 
 // Tab components
 import GeneralSettingsTab from './settings/GeneralSettingsTab';
@@ -25,6 +26,7 @@ type SettingsTab = 'general' | 'notifications' | 'team' | 'cafeteria' | 'nav' | 
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { selectedCompany } = useCompany();
   const { role: currentUserRole, isAdmin, isSenior } = useAccountyRole();
   const { toast } = useToast();
   const { effectiveSettings, saveMutation: saveCompanySettings } = useCompanySettings();
@@ -202,10 +204,12 @@ export default function SettingsPage() {
       });
     }
 
-    try {
-      await saveCompanySettings.mutateAsync({ gl_date_basis: glDateBasis });
-    } catch (e) {
-      console.warn('Failed to save company settings gl_date_basis:', e);
+    if (selectedCompany?.id) {
+      try {
+        await saveCompanySettings.mutateAsync({ gl_date_basis: glDateBasis });
+      } catch (e) {
+        console.warn('Failed to save company settings gl_date_basis:', e);
+      }
     }
 
     setSaving(false);

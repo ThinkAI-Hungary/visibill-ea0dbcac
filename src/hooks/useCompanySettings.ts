@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +6,9 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { CompanyWorkSettings } from '@/lib/payrollUtils';
+import type { Database } from '@/integrations/supabase/types';
+
+type CompanySettingsInsert = Database['public']['Tables']['company_settings']['Insert'];
 
 const DEFAULT_SETTINGS: Omit<CompanyWorkSettings, 'id' | 'company_id' | 'created_at' | 'updated_at'> = {
   work_start_time: '09:00',
@@ -51,36 +54,22 @@ export function useCompanySettings() {
     }) => {
       if (!user || !selectedCompany) throw new Error('No user/company');
 
-      const payload = {
-        ...(form.work_start_time !== undefined && { work_start_time: form.work_start_time }),
-        ...(form.work_end_time !== undefined && { work_end_time: form.work_end_time }),
-        ...(form.admin_deadline !== undefined && { admin_deadline: form.admin_deadline }),
-        ...(form.monthly_working_hours !== undefined && { monthly_working_hours: form.monthly_working_hours }),
-        ...(form.gl_date_basis !== undefined && { gl_date_basis: form.gl_date_basis }),
+      const payload: CompanySettingsInsert = {
+        company_id: selectedCompany.id,
         updated_at: new Date().toISOString(),
       };
 
-      if (settings) {
-        const { error } = await supabase
-          .from('company_settings')
-          .update(payload)
-          .eq('id', settings.id);
+      if (form.work_start_time !== undefined) payload.work_start_time = form.work_start_time;
+      if (form.work_end_time !== undefined) payload.work_end_time = form.work_end_time;
+      if (form.admin_deadline !== undefined) payload.admin_deadline = form.admin_deadline;
+      if (form.monthly_working_hours !== undefined) payload.monthly_working_hours = form.monthly_working_hours;
+      if (form.gl_date_basis !== undefined) payload.gl_date_basis = form.gl_date_basis;
 
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('company_settings')
-          .insert({
-            company_id: selectedCompany.id,
-            work_start_time: form.work_start_time ?? DEFAULT_SETTINGS.work_start_time,
-            work_end_time: form.work_end_time ?? DEFAULT_SETTINGS.work_end_time,
-            admin_deadline: form.admin_deadline ?? DEFAULT_SETTINGS.admin_deadline,
-            monthly_working_hours: form.monthly_working_hours ?? DEFAULT_SETTINGS.monthly_working_hours,
-            gl_date_basis: form.gl_date_basis ?? DEFAULT_SETTINGS.gl_date_basis,
-          });
+      const { error } = await supabase
+        .from('company_settings')
+        .upsert(payload, { onConflict: 'company_id' });
 
-        if (error) throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       toast({ title: 'Siker', description: 'Beállítások mentve.' });
@@ -96,13 +85,13 @@ export function useCompanySettings() {
   });
 
   // Effective settings (use saved or defaults)
-  const effectiveSettings = {
+  const effectiveSettings = useMemo(() => ({
     work_start_time: settings?.work_start_time ?? DEFAULT_SETTINGS.work_start_time,
     work_end_time: settings?.work_end_time ?? DEFAULT_SETTINGS.work_end_time,
     admin_deadline: settings?.admin_deadline ?? DEFAULT_SETTINGS.admin_deadline,
     monthly_working_hours: settings?.monthly_working_hours ?? DEFAULT_SETTINGS.monthly_working_hours,
     gl_date_basis: (settings?.gl_date_basis as 'kibocsatas' | 'teljesites') ?? DEFAULT_SETTINGS.gl_date_basis,
-  };
+  }), [settings]);
 
   return {
     settings,
