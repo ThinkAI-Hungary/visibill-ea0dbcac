@@ -1060,8 +1060,8 @@
     "semantic_hash": "776b6ed65c3cb4d27beb42298fa888ce"
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1788571865.0591235,
-    "ast_hash": "4f9b8cf16cc16664c265961b6276a351",
+    "mtime": 1788575990.1925745,
+    "ast_hash": "2dd593c2fe7a29618dcb204b8063628d",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1525,8 +1525,8 @@
     "semantic_hash": ""
   },
   "src/pages/PartnersPage.tsx": {
-    "mtime": 1788141063.7854793,
-    "ast_hash": "3246ed8851c9db69cd6b08e49b6c0d22",
+    "mtime": 1788575998.0957265,
+    "ast_hash": "039b3b4708efe87aeed336bec277e563",
     "semantic_hash": ""
   },
   "src/pages/PettyCashPage.tsx": {
@@ -5125,8 +5125,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/21-master-data.md": {
-    "mtime": 1783218725.1406019,
-    "ast_hash": "2578cb9212b317ce90cc727af52964d2",
+    "mtime": 1788576006.107623,
+    "ast_hash": "7a43805b56947e8a69c14c524d06985a",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-022-categories-projects-sync.md": {
@@ -8185,8 +8185,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/nav-ingestion-service.ts": {
-    "mtime": 1788404786.4504807,
-    "ast_hash": "a7614d9c7d4e57d1b7009b0e8de2cf47",
+    "mtime": 1788575982.10552,
+    "ast_hash": "1c1aceabda0b1578c2bc5c9572aa9108",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/types.ts": {
@@ -9037,6 +9037,16 @@
   "supabase/migrations/20260905100000_add_accounty_uploads_updated_at.sql": {
     "mtime": 1788571074.6684155,
     "ast_hash": "30d0a3a6f531821f21e081f5e293b8c2",
+    "semantic_hash": ""
+  },
+  "src/lib/nav/__tests__/navPartnerSync.test.ts": {
+    "mtime": 1788576019.3870647,
+    "ast_hash": "2cad58ec27ce2bebe85ad6985af7fa55",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260905110000_make_partners_user_id_nullable.sql": {
+    "mtime": 1788575954.1206331,
+    "ast_hash": "8405815722c78c582319061653d5b47a",
     "semantic_hash": ""
   }
 }

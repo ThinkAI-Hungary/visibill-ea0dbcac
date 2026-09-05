@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788574458.910404,
-    "ast_hash": "7c196b65f5ffa3f26fddd2e82c226e5f",
+    "mtime": 1788584495.3899777,
+    "ast_hash": "017d21620832fafd291564f1c9ee0d7e",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -9047,6 +9047,11 @@
   "supabase/migrations/20260905110000_make_partners_user_id_nullable.sql": {
     "mtime": 1788575954.1206331,
     "ast_hash": "8405815722c78c582319061653d5b47a",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-091-bank-statement-boundary-and-summary-artifact-guard.md": {
+    "mtime": 1788584484.6793,
+    "ast_hash": "aef0d92c9b2fd889383c95aae90075f5",
     "semantic_hash": ""
   }
 }
