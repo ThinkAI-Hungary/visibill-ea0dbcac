@@ -32,3 +32,9 @@
   - `useBulkImportPayroll.ts`: Reaktív kötegelt mentő hook tranzakció-szerű beszúrással (`accounty_employees`, `accounty_employments`, `accounty_payroll_cycles`, `accounty_payroll_calculations`).
 
 **Rationale:** A stepper-alapú workflow vizuálisan vezeti a könyvelőt a bérszámfejtés lépésein. A lezárt fázis biztosítja az audit trail-t és megakadályozza a utólagos módosítást. Az új 08-as XML és Excel importáló motor pedig azonnali áttérést biztosít korábbi bérprogramokból az évközi számfejtések 1-kattintásos rekonstruálásával.
+
+## Kapcsolódó döntések
+- [P-072: Bérszámfejtési Ciklus Jelenlét Kézi Rögzítés és Cafeteria UX Stabilitás](./P-072-payroll-cycle-attendance-manual-entry-and-cafeteria-ux.md) — A 4 fázisú alapot felváltó részletes 8-lépéses havi bérszámfejtési wizard (`CYCLE_STEPS`), a kézi jelenléti ív automatikus mentése és a villódzásmentes cafeteria kezelés.
+- [P-063: Bérszámfejtés Gyors Rekonstrukció és Dolgozói Tömeges Import UX](./P-063-payroll-bulk-import-and-reconstruction-ux.md) — NAV 08 és Excel tömeges import és visszamenőleges havi bérszámfejtési ciklusok automatikus generálása.
+- [A-094: Bérszámfejtési Ciklus Végtelen Re-render Védelem és Jelenlét Perzisztencia](../../architecture/decisions/A-094-payroll-cycle-render-stability-and-attendance-persistence.md) — Determinisztikus függőségi kulcsok, Single Source of Truth prop átadás és sémakonform cikluslezárás.
+

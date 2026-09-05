@@ -1390,8 +1390,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollCyclePage.tsx": {
-    "mtime": 1788644577.3451006,
-    "ast_hash": "761823f61bf02da90f191c8abb730e77",
+    "mtime": 1788304050.8429704,
+    "ast_hash": "3d96dfd64791ac389fd0258c808e75b5",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollDashboardPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788645564.8438797,
-    "ast_hash": "12d2ebac735770e2bd02a8f45408ada9",
+    "mtime": 1788642150.8903334,
+    "ast_hash": "ac4ea926d20bc90a730c44fc1df35d13",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3545,8 +3545,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-033-payroll-cycle.md": {
-    "mtime": 1788645579.0651145,
-    "ast_hash": "40d9d3d80e727977cffe85915919c041",
+    "mtime": 1788304962.263343,
+    "ast_hash": "901a64171c5f3ea193ceeb0118bc9163",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-034-approval-queue.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788645571.4112892,
-    "ast_hash": "a46593159d6d2be81a40902677c2399c",
+    "mtime": 1788555248.039615,
+    "ast_hash": "ee3fcce30c51d40cf1fe1735111d1bfa",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -4605,8 +4605,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep4.tsx": {
-    "mtime": 1788644517.679974,
-    "ast_hash": "9ac3884dc8f2d56b4b9c7135f1ddc57d",
+    "mtime": 1788304050.8378975,
+    "ast_hash": "a9e654a4754dfa6a63328896465133d9",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep5.tsx": {
@@ -4625,8 +4625,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep8.tsx": {
-    "mtime": 1788644569.434752,
-    "ast_hash": "b89a298c9df1049b8ee124dd874f03af",
+    "mtime": 1788304050.8399699,
+    "ast_hash": "aaf48b8d2d9ee43e11859faf9bde9486",
     "semantic_hash": ""
   },
   "src/components/partners/PartnerInvoiceDetailDialog.tsx": {
@@ -9187,21 +9187,6 @@
   "docs/architecture/decisions/A-093-atomic-company-settings-upsert-and-partial-update-isolation.md": {
     "mtime": 1788642133.292704,
     "ast_hash": "482549e076aaf24df58ff144a427890f",
-    "semantic_hash": ""
-  },
-  "src/test/accounty/payrollCycleStability.test.ts": {
-    "mtime": 1788644534.1884382,
-    "ast_hash": "f924a60bfac2b6bb6c6a56b09073b0c4",
-    "semantic_hash": ""
-  },
-  "docs/architecture/decisions/A-094-payroll-cycle-render-stability-and-attendance-persistence.md": {
-    "mtime": 1788645585.6356807,
-    "ast_hash": "5529575bdb45b7d9a892889b920f1d6c",
-    "semantic_hash": ""
-  },
-  "docs/product/decisions/P-072-payroll-cycle-attendance-manual-entry-and-cafeteria-ux.md": {
-    "mtime": 1788645558.4173272,
-    "ast_hash": "652a1c1fa145d8f52ac8fff124f6bee2",
     "semantic_hash": ""
   }
 }

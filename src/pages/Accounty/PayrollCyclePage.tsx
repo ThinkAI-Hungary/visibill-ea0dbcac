@@ -89,7 +89,7 @@ export default function PayrollCyclePage() {
   const isNewCycle = !cycleId || cycleId === 'new';
   const { data: cycle, isLoading: cycleLoading, isError: cycleError, refetch: refetchCycle } = usePayrollCycle(isNewCycle ? '' : cycleId || '');
   const { data: employees = [] } = usePayrollEmployees(companyId || '');
-  const activeEmployees = employees.filter(e => e.status === 'active');
+  const activeEmployees = useMemo(() => employees.filter(e => e.status === 'active'), [employees]);
   const { data: items = [] } = usePayrollItems(cycle?.id || '');
   const { data: calculations = [] } = usePayrollCalculations(cycle?.id || '');
   const updateStep = useUpdateCycleStep();
@@ -362,21 +362,30 @@ export default function PayrollCyclePage() {
 
   const [cafeteriaItems, setCafeteriaItems] = useState<any[]>([]);
 
-  React.useEffect(() => {
-    const activeEmploymentIds = allEmployments
+  // Stable key of active employment IDs to avoid infinite fetch loops
+  const activeEmploymentIdsKey = useMemo(() => {
+    return allEmployments
       .filter(e => activeEmployees.some(emp => emp.id === e.employee_id))
-      .map(e => e.id);
+      .map(e => e.id)
+      .sort()
+      .join(',');
+  }, [allEmployments, activeEmployees]);
 
-    if (activeEmploymentIds.length === 0) return;
+  React.useEffect(() => {
+    if (!activeEmploymentIdsKey) {
+      setCafeteriaItems([]);
+      return;
+    }
 
+    const ids = activeEmploymentIdsKey.split(',');
     supabase
       .from('accounty_cafeteria')
       .select('*')
-      .in('employment_id', activeEmploymentIds)
+      .in('employment_id', ids)
       .then(({ data }) => {
         if (data) setCafeteriaItems(data);
       });
-  }, [activeEmployees, allEmployments]);
+  }, [activeEmploymentIdsKey]);
 
   const buildPayslipData = (calc: any): PayslipData => {
     const meta = calc.metadata as any;
@@ -524,8 +533,37 @@ export default function PayrollCyclePage() {
     }
   };
 
+  const saveAttendanceData = async () => {
+    if (!cycle?.id || Object.keys(attendanceData).length === 0 || allEmployments.length === 0) return;
+    try {
+      await supabase
+        .from('accounty_timesheets')
+        .delete()
+        .eq('cycle_id', cycle.id);
+
+      const recordsToInsert = Object.keys(attendanceData).map(employeeId => {
+        const employment = allEmployments.find(e => e.employee_id === employeeId);
+        return {
+          cycle_id: cycle.id,
+          employment_id: employment?.id,
+          ocr_data: attendanceData[employeeId],
+          is_verified: true,
+        };
+      }).filter(r => r.employment_id);
+
+      if (recordsToInsert.length > 0) {
+        await supabase.from('accounty_timesheets').insert(recordsToInsert);
+      }
+    } catch (err) {
+      console.error('Error saving attendance data:', err);
+    }
+  };
+
   const handleStepChange = async (step: number) => {
     if (!cycle?.id) return;
+    if (currentStep === 3) {
+      await saveAttendanceData();
+    }
     const statusMap: Record<number, string> = {
       1: 'data_collection', 2: 'review', 3: 'review', 4: 'review',
       5: 'calculating', 6: 'calculating', 7: 'calculating', 8: 'calculated',
@@ -766,6 +804,8 @@ export default function PayrollCyclePage() {
               activeEmployees={activeEmployees}
               allEmployments={allEmployments}
               items={items}
+              cafeteriaItems={cafeteriaItems}
+              setCafeteriaItems={setCafeteriaItems}
             />
           )}
           {currentStep === 5 && (
@@ -803,6 +843,7 @@ export default function PayrollCyclePage() {
               getCalcName={getCalcName}
               handlePrintPayslip={handlePrintPayslip}
               handlePrintAllPayslips={handlePrintAllPayslips}
+              cafeteriaItems={cafeteriaItems}
             />
           )}
         </div>
@@ -841,7 +882,7 @@ export default function PayrollCyclePage() {
             disabled={updateStep.isPending}
             onClick={async () => {
               if (!cycle?.id) return;
-              await supabase.from('payroll_cycles').update({ status: 'closed', current_step: 8 }).eq('id', cycle.id);
+              await supabase.from('accounty_payroll_cycles').update({ status: 'closed', current_step: 8 }).eq('id', cycle.id);
               toast({ title: ' Ciklus lezárva', description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva.` });
               navigate(`/eaisybooks/payroll/${companyId}`);
             }}

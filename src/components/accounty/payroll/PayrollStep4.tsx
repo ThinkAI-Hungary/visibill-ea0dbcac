@@ -7,46 +7,63 @@ interface PayrollStep4Props {
   activeEmployees: any[];
   allEmployments: any[];
   items?: any[];
+  cafeteriaItems?: any[];
+  setCafeteriaItems?: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 export default function PayrollStep4({
   activeEmployees,
   allEmployments,
   items = [],
+  cafeteriaItems: propCafeteriaItems,
+  setCafeteriaItems: propSetCafeteriaItems,
 }: PayrollStep4Props) {
-  const [cafeteriaItems, setCafeteriaItems] = React.useState<any[]>([]);
+  const [localCafeteriaItems, setLocalCafeteriaItems] = React.useState<any[]>([]);
+  const cafeteriaItems = propCafeteriaItems ?? localCafeteriaItems;
+  const setCafeteriaItems = propSetCafeteriaItems ?? setLocalCafeteriaItems;
+
   const [loading, setLoading] = React.useState(false);
   const [localHoInputs, setLocalHoInputs] = React.useState<Record<string, string>>({});
 
+  const activeEmploymentIdsKey = React.useMemo(() => {
+    return allEmployments
+      .filter(e => activeEmployees.some(emp => emp.id === e.employee_id))
+      .map(e => e.id)
+      .sort()
+      .join(',');
+  }, [allEmployments, activeEmployees]);
+
   React.useEffect(() => {
+    // If parent already provided cafeteriaItems, skip duplicate network call
+    if (propCafeteriaItems !== undefined) return;
+
+    if (!activeEmploymentIdsKey) {
+      setCafeteriaItems([]);
+      return;
+    }
+
+    let isMounted = true;
     const fetchCafeteria = async () => {
-      const activeEmploymentIds = allEmployments
-        .filter(e => activeEmployees.some(emp => emp.id === e.employee_id))
-        .map(e => e.id);
-
-      if (activeEmploymentIds.length === 0) {
-        setCafeteriaItems([]);
-        return;
-      }
-
-      setLoading(true);
+      const ids = activeEmploymentIdsKey.split(',');
+      if (cafeteriaItems.length === 0) setLoading(true);
       try {
         const { data, error } = await supabase
           .from('accounty_cafeteria')
           .select('*')
-          .in('employment_id', activeEmploymentIds);
+          .in('employment_id', ids);
         
         if (error) throw error;
-        setCafeteriaItems(data || []);
+        if (isMounted) setCafeteriaItems(data || []);
       } catch (err) {
         console.error('Error fetching cafeteria items:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchCafeteria();
-  }, [activeEmployees, allEmployments]);
+    return () => { isMounted = false; };
+  }, [activeEmploymentIdsKey, propCafeteriaItems]);
 
   // Aggregate totals
   const szepHospitality = React.useMemo(() => cafeteriaItems
@@ -87,7 +104,7 @@ export default function PayrollStep4({
     return `${employee.last_name} ${employee.first_name}`;
   };
 
-  if (loading) {
+  if (propCafeteriaItems === undefined && loading && cafeteriaItems.length === 0) {
     return (
       <div className="flex justify-center items-center h-48 text-muted-foreground">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

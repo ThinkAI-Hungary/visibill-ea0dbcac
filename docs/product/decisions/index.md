@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-04  
-> **Összesen:** 66 döntés | ✅ Decided: 62 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-05  
+> **Összesen:** 67 döntés | ✅ Decided: 63 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -92,6 +92,7 @@
 | P-060 | Modular UX for Statutory Reporting, VAT 2665 Calculator/Replica and Reusable Popover DatePicker | ✅ Decided | [P-060](./P-060-statutory-reporting-and-vat-return-modular-ux.md) |
 | P-062 | Könyvelési Szabályok (Prompt Library) Felület és Hibahatár UX | ✅ Decided | [P-062](./P-062-company-prompt-rules-library-and-error-boundary-ux.md) |
 | P-063 | Bérszámfejtés Gyors Rekonstrukció és Dolgozói Tömeges Import (Excel & NAV 08) UX | ✅ Decided | [P-063](./P-063-payroll-bulk-import-and-reconstruction-ux.md) |
+| P-072 | Bérszámfejtési Ciklus Jelenlét Kézi Rögzítés és Cafeteria UX Stabilitás | ✅ Decided | [P-072](./P-072-payroll-cycle-attendance-manual-entry-and-cafeteria-ux.md) |
 
 ## 🔍 Keresés
 

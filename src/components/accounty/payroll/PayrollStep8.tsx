@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
-interface PayrollStep8Props {
+export interface PayrollStep8Props {
   calculations: any[];
   activeEmployees: any[];
   allEmployments?: any[];
@@ -15,6 +15,7 @@ interface PayrollStep8Props {
   getCalcName: (calc: any) => string;
   handlePrintPayslip: (calc: any) => void;
   handlePrintAllPayslips?: () => void;
+  cafeteriaItems?: any[];
 }
 
 export default function PayrollStep8({
@@ -28,9 +29,11 @@ export default function PayrollStep8({
   getCalcName,
   handlePrintPayslip,
   handlePrintAllPayslips,
+  cafeteriaItems: propCafeteriaItems,
 }: PayrollStep8Props) {
   const [isKiva, setIsKiva] = React.useState(false);
-  const [cafeteriaItems, setCafeteriaItems] = React.useState<any[]>([]);
+  const [localCafeteriaItems, setLocalCafeteriaItems] = React.useState<any[]>([]);
+  const cafeteriaItems = propCafeteriaItems ?? localCafeteriaItems;
 
   React.useEffect(() => {
     if (!companyId) return;
@@ -44,21 +47,30 @@ export default function PayrollStep8({
       });
   }, [companyId]);
 
-  React.useEffect(() => {
-    const activeEmploymentIds = allEmployments
+  const activeEmploymentIdsKey = React.useMemo(() => {
+    return allEmployments
       .filter(e => activeEmployees.some(emp => emp.id === e.employee_id))
-      .map(e => e.id);
+      .map(e => e.id)
+      .sort()
+      .join(',');
+  }, [allEmployments, activeEmployees]);
 
-    if (activeEmploymentIds.length === 0) return;
+  React.useEffect(() => {
+    if (propCafeteriaItems !== undefined) return;
+    if (!activeEmploymentIdsKey) {
+      setLocalCafeteriaItems([]);
+      return;
+    }
 
+    const ids = activeEmploymentIdsKey.split(',');
     supabase
       .from('accounty_cafeteria')
       .select('*')
-      .in('employment_id', activeEmploymentIds)
+      .in('employment_id', ids)
       .then(({ data }) => {
-        if (data) setCafeteriaItems(data);
+        if (data) setLocalCafeteriaItems(data);
       });
-  }, [activeEmployees, allEmployments]);
+  }, [activeEmploymentIdsKey, propCafeteriaItems]);
 
   const getSzocho = (calc: any) => {
     if (isKiva) return 0;
