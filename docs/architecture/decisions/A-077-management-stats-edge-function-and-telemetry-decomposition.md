@@ -54,6 +54,25 @@ Megtartottuk az egységes Edge Function végpontot (`index.ts`), de a funkcióka
   - `TaskErrorRetryTable.tsx`: Hibás feldolgozások táblázata (kijelölés, részletes hiba kibontás, lapozás), sikeres feldolgozások listája, folyamatban lévő elemek és a cél-pipeline kiválasztó modál.
 - **`WorkerPanel.tsx`**: Letisztult orchestrator komponens, amely deklaratívan kapcsolja össze a hookot és a vizuális komponenseket.
 
+### C. Aktív Feldolgozások PostgREST Lekérdezési Invariánsai (`workerHandler.ts: buildActiveProcessing` — 2026-09-05)
+
+A telemetria 5 másodpercenként lekérdezi az éppen futó feladatokat a különböző forrásokból (`uploads`, `report_uploads`, `gl_upload_notifications`, `accounty_uploads`). A lekérdezéseknek szigorúan igazodniuk kell a forrástáblák valódi PostgreSQL sémájához (megelőzve a `42703 undefined_column` hibákat):
+
+1. **`gl_upload_notifications` (Főkönyvi feldolgozás):**
+   - Nem rendelkezik `file_name` és `updated_at` oszlopokkal (lásd: [07-general-ledger.md](../database/07-general-ledger.md)).
+   - A lekérdezés a tényleges mezőket kéri le: `id, message, company_id, processing_status, created_at`.
+   - A frontend felé a `file_name` mezőbe a `message || "Főkönyvi átsorolás"` kerül fallbackként, az időbélyeg a `created_at`.
+   - Szűrés: `.eq("processing_status", "processing")` (a várakozó `pending` rekordok a queue-ban jelennek meg, nem árasztják el az aktív folyamatokat).
+
+2. **`accounty_uploads` (eaisyBooks feltöltések):**
+   - A tábla oszlopai: `id, file_name, company_id, status, created_at, updated_at`. A 2026-09-05-ös migráció (`20260905100000_add_accounty_uploads_updated_at.sql`) hozzáadta a hiányzó `updated_at` mezőt és a `trg_accounty_uploads_updated_at` triggert (lásd: [13-eaisybooks-core.md](../database/13-eaisybooks-core.md)).
+   - Státusz check constraint: `CHECK (status IN ('pending', 'uploading', 'success', 'error'))`.
+   - Szűrés: `.in("status", ["processing", "uploading"])` — ezzel a portálon éppen feltöltés alatt álló elemek is valós időben megjelennek a telemetrián.
+
+3. **Multi-Project Resilience & Időbélyeg Biztonság (`elapsed_sec`):**
+   - A többprojektes telemetria (`multiProject.ts`) végett a PostgREST lekérdezés a mindegyik környezetben garantáltan létező `created_at` mezőt kéri le.
+   - A kiszámított futási idő (`elapsed_sec`) NaN- és negatív érték védett: `!isNaN(parsed) ? Math.max(0, Math.floor((now.getTime() - parsed) / 1000)) : 0`.
+
 ---
 
 ## 3. Consequences

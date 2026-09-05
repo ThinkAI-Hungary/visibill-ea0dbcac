@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788574458.910404,
-    "ast_hash": "7c196b65f5ffa3f26fddd2e82c226e5f",
+    "mtime": 1788555242.776281,
+    "ast_hash": "d5a69c854370589f6aae4fe42a2864cf",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -8415,8 +8415,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/workerHandler.ts": {
-    "mtime": 1788574080.9421482,
-    "ast_hash": "2f630c83ac4295540dfce70831aec074",
+    "mtime": 1788571028.5728612,
+    "ast_hash": "52b4cc0ea8c7c3b4d0c3a2b7c1a6b300",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/middleware/auth.ts": {
@@ -8440,8 +8440,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-077-management-stats-edge-function-and-telemetry-decomposition.md": {
-    "mtime": 1788574454.5779755,
-    "ast_hash": "bb2a061a80b8ecbbfc38694a25968983",
+    "mtime": 1788494827.9429996,
+    "ast_hash": "e419de8f887d2abff332247b58525fb2",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-061-management-worker-telemetry-and-monthly-llm-ux.md": {

@@ -396,7 +396,7 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
           for (const u of (accUploads || [])) {
             const hasError = u.status === "error" || u.status === "failed" || (!!u.error_message && !isCompletedMessage(u.error_message));
             const isRedirected = !!u.error_message && u.error_message.toLowerCase().includes("redirected");
-            const isProcessing = u.status === "processing" || u.status === "pending";
+            const isProcessing = u.status === "processing" || u.status === "pending" || u.status === "uploading";
             uploadStatusMap.set(u.id, hasError ? "ERROR" : isRedirected ? "REDIRECTED" : isProcessing ? "PROCESSING" : "OK");
             if (u.file_path) uploadUrlMap.set(u.id, u.file_path);
             uploadSourceMap.set(u.id, "accounty_uploads");
@@ -624,13 +624,15 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
     try {
       const { data } = await pc.client
         .from("gl_upload_notifications")
-        .select("id, file_name, company_id, processing_status, created_at, updated_at")
+        .select("id, message, company_id, processing_status, created_at")
         .eq("processing_status", "processing")
-        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(50);
       for (const r of (data || [])) {
         results.push({
           ...r,
+          file_name: r.message || "Főkönyvi átsorolás",
+          updated_at: r.created_at,
           pipeline_type: "gl_journal",
           document_category: "general_ledger",
           source: "gl_upload_notifications",
@@ -641,9 +643,9 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
     try {
       const { data } = await pc.client
         .from("accounty_uploads")
-        .select("id, file_name, company_id, status, created_at, updated_at")
-        .eq("status", "processing")
-        .order("updated_at", { ascending: false })
+        .select("id, file_name, company_id, status, created_at")
+        .in("status", ["processing", "uploading"])
+        .order("created_at", { ascending: false })
         .limit(50);
       for (const r of (data || [])) {
         results.push({
@@ -651,6 +653,7 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
           pipeline_type: "accounty",
           document_category: "accounty_upload",
           processing_status: r.status,
+          updated_at: r.created_at,
           source: "accounty_uploads",
         });
       }
@@ -670,19 +673,24 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
       } catch {}
     }
 
-    return results.map((r: any) => ({
-      id: r.id,
-      file_name: r.file_name,
-      company_name: companyNameMap.get(r.company_id) || null,
-      company_id: r.company_id,
-      pipeline_type: r.pipeline_type,
-      started_at: r.updated_at,
-      created_at: r.created_at,
-      document_category: r.document_category || 'unknown',
-      source: r.source || 'upload',
-      elapsed_sec: Math.floor((now.getTime() - new Date(r.updated_at).getTime()) / 1000),
-      project: pc.name,
-    }));
+    return results.map((r: any) => {
+      const ts = r.updated_at || r.created_at;
+      const parsed = ts ? new Date(ts).getTime() : NaN;
+      const elapsed_sec = !isNaN(parsed) ? Math.max(0, Math.floor((now.getTime() - parsed) / 1000)) : 0;
+      return {
+        id: r.id,
+        file_name: r.file_name,
+        company_name: companyNameMap.get(r.company_id) || null,
+        company_id: r.company_id,
+        pipeline_type: r.pipeline_type,
+        started_at: r.updated_at || r.created_at,
+        created_at: r.created_at,
+        document_category: r.document_category || 'unknown',
+        source: r.source || 'upload',
+        elapsed_sec,
+        project: pc.name,
+      };
+    });
   });
   const processingResults = await Promise.all(processingFetches);
   const active_processing = processingResults.flat().sort((a, b) => a.elapsed_sec - b.elapsed_sec);

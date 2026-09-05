@@ -4483,6 +4483,7 @@ export type Database = {
           portal_token: string | null
           status: string
           storage_bucket: string | null
+          updated_at: string
           upload_source: string | null
           uploaded_by: string | null
         }
@@ -4500,6 +4501,7 @@ export type Database = {
           portal_token?: string | null
           status?: string
           storage_bucket?: string | null
+          updated_at?: string
           upload_source?: string | null
           uploaded_by?: string | null
         }
@@ -4517,6 +4519,7 @@ export type Database = {
           portal_token?: string | null
           status?: string
           storage_bucket?: string | null
+          updated_at?: string
           upload_source?: string | null
           uploaded_by?: string | null
         }

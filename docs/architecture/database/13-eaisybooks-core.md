@@ -252,6 +252,7 @@
 | uploaded_by | uuid | ✓ |  |
 | portal_token | text | ✓ |  |
 | created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
 | completed_at | timestamp with time zone | ✓ |  |
 
 **FK:** `company_id` → `companies.id`, `missing_item_id` → `accounty_missing_items.id`, `uploaded_by` → `auth.users.id`
