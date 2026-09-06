@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-06  
-> **Összesen:** 99 döntés | ✅ Decided: 97 | ⛔ Superseded: 2
+> **Összesen:** 100 döntés | ✅ Decided: 98 | ⛔ Superseded: 2
 
 ---
 
@@ -139,6 +139,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-087 | Főkönyvi Adatbázis-alapú Keresés, Számla-szintű Lapozás és Tooltip Architektúra | ✅ Decided | [A-087](./A-087-gl-database-search-and-account-pagination.md) |
 | A-090 | Biztonságos Számlatükör Sablon Törlés, Függőség-Ellenőrzés és Tételek Átkötése (Remapping) | ✅ Decided | [A-090](./A-090-safe-chart-of-accounts-preset-deletion-and-remapping.md) |
 | A-094 | Bérszámfejtési Ciklus Végtelen Re-render Védelem, Stabil Függőségi Kulcsok és Kézi Jelenlét Perzisztencia | ✅ Decided | [A-094](./A-094-payroll-cycle-render-stability-and-attendance-persistence.md) |
+| A-099 | Számlakép Törlés Kettős Döntési Modell (Dual Choice), Lebegő Műveletsáv Kijelölés-kezelés és Lapozási Határeset Auto-Recovery | ✅ Decided | [A-099](./A-099-invoice-and-upload-deletion-governance.md) |
 
 ## 💳 Fizetés
 

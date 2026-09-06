@@ -3,17 +3,26 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { cn } from '@/lib/utils';
+import { cn, extractStoragePath } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, FileText, ListOrdered } from 'lucide-react';
+import { Plus, Trash2, FileText, ListOrdered, Loader2 } from 'lucide-react';
 import { reportError } from '@/lib/errorReporter';
 
 interface Category {
@@ -28,6 +37,7 @@ interface Project {
 
 interface SubmittedInvoice {
   id: string;
+  bizonylatsorszam?: string | null;
   kibocsatas_datuma: string;
   teljesites_datuma: string | null;
   elado_nev: string;
@@ -40,6 +50,7 @@ interface SubmittedInvoice {
   project_id: string | null;
   image_url: string | null;
   melleklet_url: string | null;
+  invoice_uploads_id?: string | null;
 }
 
 interface InvoiceLineItem {
@@ -92,6 +103,13 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
     project_id: 'none',
   });
 
+  // ── Image & File Deletion State ──
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const [currentMellekletUrl, setCurrentMellekletUrl] = useState<string | null>(null);
+  const [currentInvoiceUploadsId, setCurrentInvoiceUploadsId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeletingImage, setIsDeletingImage] = useState(false);
+
   // ── Line items state ──
   const [editableItems, setEditableItems] = useState<EditableLineItem[]>([]);
   const [itemsInitialized, setItemsInitialized] = useState(false);
@@ -127,6 +145,24 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
         category_id: invoice.category_id || 'none',
         project_id: invoice.project_id || 'none',
       });
+      setCurrentImageUrl(invoice.image_url ?? null);
+      setCurrentMellekletUrl(invoice.melleklet_url ?? null);
+      setCurrentInvoiceUploadsId((invoice as any).invoice_uploads_id ?? null);
+
+      // Fetch authoritative latest image & upload metadata from DB
+      supabase
+        .from('invoices')
+        .select('image_url, melleklet_url, invoice_uploads_id')
+        .eq('id', invoice.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            setCurrentImageUrl(data.image_url ?? null);
+            setCurrentMellekletUrl(data.melleklet_url ?? null);
+            setCurrentInvoiceUploadsId(data.invoice_uploads_id ?? null);
+          }
+        });
+
       setItemsInitialized(false);
       setActiveTab('details');
     }
@@ -293,6 +329,169 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
       toast({ title: 'Nem sikerült menteni a változtatásokat', variant: 'destructive' });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // ── Image / Invoice Deletion Handlers ──
+  const hasImageOrFile = Boolean(currentImageUrl || currentMellekletUrl || currentInvoiceUploadsId);
+
+  // Option 1: Delete invoice row from table, but keep uploaded document record & storage file in DB
+  const handleDeleteImageOnly = async () => {
+    if (!invoice?.id) return;
+    setIsDeletingImage(true);
+    try {
+      // 1. Delete invoice record (invoice_items cascades automatically)
+      const { error: deleteError } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoice.id);
+
+      if (deleteError) throw deleteError;
+
+      // 2. Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['company-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['nav-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['recentInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['invoiceKpis'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices'] });
+
+      toast({
+        title: 'Számla törölve',
+        description: 'A számla sora törölve lett. Az eredetileg feltöltött dokumentum megmaradt az adatbázisban.',
+      });
+
+      setDeleteDialogOpen(false);
+      onSave();
+      onClose();
+    } catch (err: any) {
+      reportError({
+        type: 'db_query',
+        component: 'InvoiceFullEditDialog',
+        action: 'delete_invoice_keep_document',
+        message: 'Hiba a számla törlése során',
+        error: err,
+      });
+      toast({
+        title: 'Hiba',
+        description: err.message || 'Nem sikerült törölni a számlát.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeletingImage(false);
+    }
+  };
+
+  // Option 2: Delete invoice row AND original uploaded file from storage and invoice_uploads
+  const handleDeleteImageAndFile = async () => {
+    if (!invoice?.id) return;
+    setIsDeletingImage(true);
+    try {
+      let uploadId = currentInvoiceUploadsId;
+      let imgUrl = currentImageUrl;
+      let mellekletUrl = currentMellekletUrl;
+
+      // Fresh fetch to ensure we have the uploadId and file urls
+      const { data: invRow } = await supabase
+        .from('invoices')
+        .select('image_url, melleklet_url, invoice_uploads_id')
+        .eq('id', invoice.id)
+        .maybeSingle();
+
+      if (invRow) {
+        uploadId = invRow.invoice_uploads_id;
+        imgUrl = invRow.image_url;
+        mellekletUrl = invRow.melleklet_url;
+      }
+
+      // 1. Delete invoice record first (invoice_items cascades automatically)
+      const { error: deleteError } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoice.id);
+
+      if (deleteError) throw deleteError;
+
+      // 2. If there is a linked invoice_uploads record, delete it and storage file
+      if (uploadId) {
+        // Check if any other invoices reference this upload record
+        const { data: otherInvoices } = await supabase
+          .from('invoices')
+          .select('id')
+          .eq('invoice_uploads_id', uploadId);
+
+        if (!otherInvoices || otherInvoices.length === 0) {
+          const { data: uploadData } = await supabase
+            .from('invoice_uploads')
+            .select('file_url')
+            .eq('id', uploadId)
+            .maybeSingle();
+
+          const { error: delUploadError } = await supabase
+            .from('invoice_uploads')
+            .delete()
+            .eq('id', uploadId);
+
+          if (delUploadError) throw delUploadError;
+
+          if (uploadData?.file_url) {
+            const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
+            if (storagePath) {
+              await supabase.storage.from('invoice-uploads').remove([storagePath]);
+            }
+          }
+        }
+      }
+
+      // 3. Clean up any direct storage paths in image_url / melleklet_url
+      for (const url of [imgUrl, mellekletUrl]) {
+        if (!url) continue;
+        for (const bucket of ['invoice-uploads', 'szla_image']) {
+          const storagePath = extractStoragePath(url, bucket);
+          if (storagePath) {
+            await supabase.storage.from(bucket).remove([storagePath]);
+          }
+        }
+      }
+
+      // 4. Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['company-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['nav-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['recentInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['invoiceKpis'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+
+      toast({
+        title: 'Sikeres törlés',
+        description: 'A számla és a hozzá tartozó feltöltött fájl véglegesen törölve lett a rendszerből.',
+      });
+
+      setDeleteDialogOpen(false);
+      onSave();
+      onClose();
+    } catch (err: any) {
+      reportError({
+        type: 'db_query',
+        component: 'InvoiceFullEditDialog',
+        action: 'delete_invoice_and_document',
+        message: 'Hiba a számla és a fájl törlése során',
+        error: err,
+      });
+      toast({
+        title: 'Hiba',
+        description: err.message || 'Nem sikerült törölni a számlát és a fájlt.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeletingImage(false);
     }
   };
 
@@ -640,15 +839,114 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSaving}>
-            Mégse
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Mentés...' : 'Mentés'}
-          </Button>
+        <DialogFooter className="flex-row items-center justify-between sm:justify-between w-full">
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={cn(
+                "gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive transition-colors",
+                !hasImageOrFile && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={() => setDeleteDialogOpen(true)}
+              disabled={!hasImageOrFile || isSaving || isDeletingImage}
+              title={!hasImageOrFile ? "Ehhez a számlához nem tartozik csatolt számlakép vagy fájl" : "Csatolt számlakép vagy fájl törlése"}
+            >
+              <Trash2 className="h-4 w-4" />
+              Számlakép törlése
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={onClose} disabled={isSaving || isDeletingImage}>
+              Mégse
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving || isDeletingImage}>
+              {isSaving ? 'Mentés...' : 'Mentés'}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* ── Warning & Decision Alert Dialog for Image/File Deletion ── */}
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={(isOpen) => {
+          if (!isOpen && !isDeletingImage) setDeleteDialogOpen(false);
+        }}
+      >
+        <AlertDialogContent className="max-w-md border-border bg-card">
+          <AlertDialogHeader className="w-full min-w-0">
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Számlakép törlése
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 w-full min-w-0">
+                <p className="text-sm text-foreground">Válaszd ki a számlakép törlésének módját:</p>
+                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-2.5 py-1 w-full min-w-0">
+            {/* Option 1: Csak a számlakép */}
+            <button
+              type="button"
+              disabled={isDeletingImage}
+              onClick={handleDeleteImageOnly}
+              className="w-full text-left p-3.5 rounded-lg border border-border/70 hover:border-amber-500/60 hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400">1</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                    Csak a számlasor törlése
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    A számla sora törlődik a nyilvántartásból, de az eredetileg feltöltött dokumentumfájl megmarad az adatbázisban.
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* Option 2: Számlasor + feltöltött fájl */}
+            <button
+              type="button"
+              disabled={isDeletingImage}
+              onClick={handleDeleteImageAndFile}
+              className="w-full text-left p-3.5 rounded-lg border border-red-200 dark:border-red-900/40 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400">2</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-destructive">
+                    Számlasor és feltöltött fájl törlése
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    A számla sora és a hozzá tartozó eredeti feltöltött fájl is véglegesen törlődik a tárhelyről és az adatbázisból.
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          {isDeletingImage && (
+            <div className="flex items-center justify-center py-2">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Törlés folyamatban...</span>
+            </div>
+          )}
+
+          <AlertDialogFooter className="w-full min-w-0 mt-2">
+            <AlertDialogCancel disabled={isDeletingImage}>Mégse</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };

@@ -101,15 +101,36 @@ A számlarészletező (tételek) dialógusban a felhasználók tömegesen be- é
 
 ---
 
+## Számlák Főlistája — Lebegő Csoportos Műveleti Sáv (2026-09-06)
+
+A bejövő és kimenő beküldött számlák (`SUBMITTED_INBOUND`, `SUBMITTED_OUTBOUND`) és NAV számlák felületén lebegő csoportos műveleti sáv (`InvoiceBulkActionsBar`) segíti a tömeges adatkezelést:
+
+### Funkciók és UX Kialakítás
+1. **Lebegő sáv megjelenése:** Amint legalább 1 számla ki van jelölve, a képernyő alsó részén megjelenik a `z-[9999]` lebegő panel, amely mutatja a kijelölt számlák számát.
+2. **Kategória és Projekt hozzárendelés:**
+   - DropdownMenu a kijelölt számlák egyidejű kategóriába vagy projektbe sorolásához.
+   - A dropdown panelek `z-[10001]` és `sideOffset={8}` beállítással nyílnak a lebegő panel fölé, megelőzve az elemek eltűnését.
+3. **Mégse gomb:** Az `X` ikonnal ellátott Mégse gomb azonnal meghívja a `clearSelection` funkciót, megszünteti a kijelöléseket és elrejti a lebegő panelt.
+4. **Tömeges Törlés (Dual Choice Deletion):**
+   - A piros "Törlés" gombra kattintva megnyílik a `BulkDeleteDialog`.
+   - A felhasználó választ:
+     - **1. Csak a számlasorok törlése:** a rekordok törlődnek, a feltöltött eredeti fájlok az adatbázisban és a storage-ban maradnak.
+     - **2. Számlasorok és feltöltött fájlok törlése:** a rekordok mellett a kapcsolódó egyedi `invoice_uploads` bejegyzések és a felhőbeli fájlok is véglegesen megsemmisülnek.
+5. **Lapozási Határeset Auto-Recovery (Pagination Boundary Auto-Recovery):**
+   - Ha a felhasználó a számlalista utolsó oldalán tartózkodik (pl. oldal 2/2), és a törlés következtében az adott oldalon lévő összes számla törlődik, az állapot nem ragad az üres 2. oldalon ("Nincs megjeleníthető számla").
+   - A rendszer automatikusan észleli a kiürült oldalt (`currentPage > 1 && result.length === 0`), és a szerveroldali KPI fallback alapján azonnal visszalépteti a felhasználót a megelőző érvényes utolsó oldalra (pl. oldal 1-re).
+   - A lapozó vezérlő (`UnifiedPagination`) és az URL paraméterezés (`?p=...`) automatikusan és szinkronban frissül.
+
+---
+
 ## Tervezett (még nem implementált)
 
-- Checkbox bulk select a fő számla listában (InvoicesPage táblában)
-- Bulk GL kategorizálás (több tranzakció egyszerre)
-- Bulk export (kijelölt számlák CSV-be)
+- Bulk GL kategorizálás (több tranzakció egyszerre a tranzakciók táblában)
+- Bulk export (kijelölt számlák szelektív CSV/XLSX exportálása)
 
 **Rationale:** Standard UX pattern, hatékony nagy adathalmazoknál. Az A/B törlési mód explicit döntést kényszerít a userre: csak tárhelyet takarít meg (A), vagy valóban törli az adatokat (B). A confirm dialógus megvédi a véletlen tömeges módosítástól.
 
 **Cross-referenciák:**
+- `P-012` — Invoice Editing (Számlakép törlése egyedi dialógus)
 - `P-013` — Upload UX (UploadedFilesModal)
-- `design/12` — Dialog és AlertDialog patternek
-- `A-016` — RPC katalógus (`delete_upload_with_data`)
+- `A-099` — Számlakép Törlés Kettős Döntési Modell és Lapozási Határeset Auto-Recovery

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useDeferredValue, useCallback } from 'react';
+import { useState, useMemo, useEffect, useDeferredValue, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -176,9 +176,16 @@ export function useInvoiceFilters(
   // Debounce search with useDeferredValue
   const deferredSearch = useDeferredValue(filters.search);
 
-  // Reset page when filters, KPI filter, or tab change
-  useEffect(() => { setNavCurrentPage(1); }, [filters, kpiFilter, activeTab]);
-  useEffect(() => { setSubmittedCurrentPage(1); }, [filters, kpiFilter, activeTab]);
+  // Reset page when filters, KPI filter, or tab change (skip initial mount to preserve URL page param)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setNavCurrentPage(1);
+    setSubmittedCurrentPage(1);
+  }, [filters, kpiFilter, activeTab]);
 
   const isNavTab = activeTab === 'OUTBOUND' || activeTab === 'INBOUND';
   const navDirection = activeTab === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
@@ -313,13 +320,62 @@ export function useInvoiceFilters(
   });
 
   // Extract paginated data and total counts directly from server
+  const currentKpiCount = kpiFilter === 'matched'
+    ? invoiceKpis.matched
+    : kpiFilter === 'suggested'
+    ? invoiceKpis.suggested
+    : kpiFilter === 'unmatched'
+    ? invoiceKpis.unmatched
+    : invoiceKpis.total;
+
   const paginatedNavInvoices = navResult as (NavInvoice & { match_status: string })[];
-  const navTotalCount = Number((navResult[0] as any)?.total_count ?? 0);
+  const navTotalCount = Number(
+    (navResult[0] as any)?.total_count ?? (isNavTab && currentKpiCount > 0 ? currentKpiCount : 0)
+  );
   const navTotalPages = Math.max(1, Math.ceil(navTotalCount / navPageSize));
 
   const paginatedSubmittedInvoices = submittedResult as (SubmittedInvoice & { match_status: string })[];
-  const submittedTotalCount = Number((submittedResult[0] as any)?.total_count ?? 0);
+  const submittedTotalCount = Number(
+    (submittedResult[0] as any)?.total_count ?? (isSubmittedTab && currentKpiCount > 0 ? currentKpiCount : 0)
+  );
   const submittedTotalPages = Math.max(1, Math.ceil(submittedTotalCount / submittedPageSize));
+
+  // Auto-recover if current page is out of bounds or empty following deletion/filtering
+  useEffect(() => {
+    if (!enabled || !isSubmittedTab) return;
+    if (submittedFilterLoading || submittedFetching) return;
+
+    if (submittedCurrentPage > 1 && (submittedResult.length === 0 || submittedCurrentPage > submittedTotalPages)) {
+      const validPage = Math.max(1, Math.min(submittedCurrentPage - 1, submittedTotalPages));
+      setSubmittedCurrentPage(validPage);
+    }
+  }, [
+    enabled,
+    isSubmittedTab,
+    submittedFilterLoading,
+    submittedFetching,
+    submittedCurrentPage,
+    submittedResult.length,
+    submittedTotalPages,
+  ]);
+
+  useEffect(() => {
+    if (!enabled || !isNavTab) return;
+    if (navLoading || navFetching) return;
+
+    if (navCurrentPage > 1 && (navResult.length === 0 || navCurrentPage > navTotalPages)) {
+      const validPage = Math.max(1, Math.min(navCurrentPage - 1, navTotalPages));
+      setNavCurrentPage(validPage);
+    }
+  }, [
+    enabled,
+    isNavTab,
+    navLoading,
+    navFetching,
+    navCurrentPage,
+    navResult.length,
+    navTotalPages,
+  ]);
 
   // Toggle KPI filter
   const toggleKpiFilter = useCallback((filter: KpiFilterType) => {

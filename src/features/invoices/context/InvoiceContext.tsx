@@ -154,7 +154,7 @@ export interface InvoiceContextValue
   handleExport: (exportFormat: 'csv' | 'xlsx') => void;
   handleBulkCategoryChange: (categoryId: string | null) => Promise<void>;
   handleBulkProjectChange: (projectId: string | null) => Promise<void>;
-  handleBulkDeleteSubmitted: () => Promise<void>;
+  handleBulkDeleteSubmitted: (mode?: 'row_only' | 'row_and_file') => Promise<void>;
 }
 
 export const InvoiceContext = createContext<InvoiceContextValue | null>(null);
@@ -400,6 +400,11 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     const activeList = isSubmittedTab ? paginatedSubmittedInvoices : paginatedNavInvoices;
     return activeList.length > 0 && activeList.every(i => activeSelection.has(i.id));
   }, [isSubmittedTab, paginatedSubmittedInvoices, paginatedNavInvoices, activeSelection]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedInvoiceIds(new Set());
+    setSelectedSubmittedIds(new Set());
+  }, []);
 
   // ── Row expansion helpers ──
   const toggleRowExpanded = useCallback((id: string) => {
@@ -812,6 +817,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       toggleSelectRow,
       isRowSelected,
       isAllSelected,
+      clearSelection,
       expandedRowIds,
       setExpandedRowIds,
       toggleRowExpanded,
@@ -830,6 +836,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       toggleSelectRow,
       isRowSelected,
       isAllSelected,
+      clearSelection,
       expandedRowIds,
       setExpandedRowIds,
       toggleRowExpanded,

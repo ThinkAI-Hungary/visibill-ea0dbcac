@@ -11,6 +11,7 @@ export interface InvoiceSelectionContextValue {
   toggleSelectRow: (id: string) => void;
   isRowSelected: (id: string) => boolean;
   isAllSelected: boolean;
+  clearSelection: () => void;
 
   expandedRowIds: Set<string>;
   setExpandedRowIds: React.Dispatch<React.SetStateAction<Set<string>>>;

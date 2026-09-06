@@ -35,7 +35,7 @@ export function UnifiedPagination({
 }: UnifiedPaginationProps) {
 
   const isFirstPage = currentPage === 1;
-  const isLastPage = currentPage === totalPages || totalPages === 0;
+  const isLastPage = currentPage >= totalPages || totalPages <= 1;
 
   // Generate page numbers to show (max 5)
   const getPageNumbers = () => {
@@ -47,7 +47,7 @@ export function UnifiedPagination({
         pages.push(i);
       }
     } else {
-      let start = Math.max(1, currentPage - 2);
+      let start = Math.max(1, Math.min(currentPage, totalPages) - 2);
       let end = Math.min(totalPages, start + maxVisible - 1);
       
       if (end - start < maxVisible - 1) {

@@ -82,6 +82,7 @@ describe('Invoice Sub-Contexts', () => {
       toggleSelectRow: () => {},
       isRowSelected: (id: string) => id === 'inv-1',
       isAllSelected: false,
+      clearSelection: () => {},
       expandedRowIds: new Set(['inv-1']),
       setExpandedRowIds: () => {},
       toggleRowExpanded: () => {},

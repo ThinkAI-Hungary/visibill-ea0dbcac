@@ -155,8 +155,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceFullEditDialog.tsx": {
-    "mtime": 1788441749.8542948,
-    "ast_hash": "13d70787d10465e3fe53c136b1f17f8a",
+    "mtime": 1788702741.8764749,
+    "ast_hash": "8fbb97d484c05629ff5976d5da171b82",
     "semantic_hash": ""
   },
   "src/components/InvoiceImageDialog.tsx": {
@@ -985,8 +985,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceMutations.ts": {
-    "mtime": 1788308744.4057386,
-    "ast_hash": "992072303a8a42aeea32c0a73d73eb1f",
+    "mtime": 1788703304.402595,
+    "ast_hash": "85825f87ef0aeef2ea7396692b3e5cbb",
     "semantic_hash": ""
   },
   "src/hooks/useKeyboardShortcuts.ts": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788700346.700566,
-    "ast_hash": "6ff8170264fdcdf5eebd26796f544100",
+    "mtime": 1788702180.4860573,
+    "ast_hash": "792e604b7d7a13d856dce52ef924fae1",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -5040,8 +5040,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/04-invoices.md": {
-    "mtime": 1788387907.0310247,
-    "ast_hash": "801d216d0cc7011fa84d887f6acfb272",
+    "mtime": 1788702165.559174,
+    "ast_hash": "dd0bdc81d853c4477b4aade172578b69",
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {
@@ -7620,13 +7620,13 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/actions/InvoiceBulkActionsBar.tsx": {
-    "mtime": 1788136957.3643825,
-    "ast_hash": "8089dee06e229daf2a71e2ff26a2ca57",
+    "mtime": 1788703626.5565064,
+    "ast_hash": "9f1d141701249c4640bb346f26d7cacb",
     "semantic_hash": ""
   },
   "src/features/invoices/components/dialogs/BulkDeleteDialog.tsx": {
-    "mtime": 1788136961.167001,
-    "ast_hash": "5f8eccf653f8e0ff28d2d2b838731f7d",
+    "mtime": 1788703330.7872708,
+    "ast_hash": "0d6bad81ab248e1c9184b3ffe179ae1a",
     "semantic_hash": ""
   },
   "src/features/invoices/components/dialogs/InvoiceDialogManager.tsx": {
@@ -7685,8 +7685,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceContext.tsx": {
-    "mtime": 1788445462.3525505,
-    "ast_hash": "d4287650b722d3c36337011446b96cd4",
+    "mtime": 1788703602.3594093,
+    "ast_hash": "278ba3b56e3476da8e57f3210e3f52dc",
     "semantic_hash": ""
   },
   "src/features/invoices/context/useInvoiceContext.ts": {
@@ -7945,8 +7945,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/invoiceContexts.test.tsx": {
-    "mtime": 1788142395.752971,
-    "ast_hash": "26f0fad5bb01be8f01e7d3b024fc23e0",
+    "mtime": 1788703612.15056,
+    "ast_hash": "eb38dcb354e4284c051b5f2a11092265",
     "semantic_hash": ""
   },
   "src/features/invoices/components/expanded-row/ContinuousServiceCardSection.tsx": {
@@ -8025,8 +8025,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceSelectionContext.tsx": {
-    "mtime": 1788142362.4176054,
-    "ast_hash": "3f29c95b99fb2b59f8cc8dd6f0a6b3c5",
+    "mtime": 1788703588.310587,
+    "ast_hash": "d44a6bb8737ad3e1302dbf727d2b71bc",
     "semantic_hash": ""
   },
   "src/features/invoices/context/index.ts": {
@@ -9237,6 +9237,26 @@
   "supabase/migrations/20260906153000_fix_cash_and_manual_payment_matching_status.sql": {
     "mtime": 1788701519.3806136,
     "ast_hash": "90c064f7cb1e73d98410fc6dc8a3fa2a",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-098-cash-and-manual-payment-matching-status-consistency.md": {
+    "mtime": 1788702155.8365545,
+    "ast_hash": "ab0551b864f689c9609ff6da43f86ed4",
+    "semantic_hash": ""
+  },
+  "src/components/__tests__/InvoiceFullEditDialog.test.tsx": {
+    "mtime": 1788702948.7001352,
+    "ast_hash": "0ee2ee3ca6e325906aeeddb7c3699f31",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/__tests__/BulkDeleteDialog.test.tsx": {
+    "mtime": 1788703361.9648771,
+    "ast_hash": "abb30ef9525b69014c8a0acc78f10da1",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/__tests__/InvoiceBulkActionsBar.test.tsx": {
+    "mtime": 1788703671.032132,
+    "ast_hash": "dc278308839b8392f034f926d2ac317f",
     "semantic_hash": ""
   }
 }

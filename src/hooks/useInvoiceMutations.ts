@@ -5,6 +5,8 @@ import { exportToFile } from '@/lib/exportUtils';
 import type { NavInvoice, SubmittedInvoice } from './useInvoiceData';
 import { reportError } from '@/lib/errorReporter';
 import type { SyncProgress } from '@/components/nav/NavSyncDialog';
+import { useQueryClient } from '@tanstack/react-query';
+import { extractStoragePath } from '@/lib/utils';
 
 interface UseInvoiceMutationsParams {
   companyId: string;
@@ -35,6 +37,7 @@ export function useInvoiceMutations({
   getProjectName,
   isSubmittedTab,
 }: UseInvoiceMutationsParams) {
+  const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
   const SYNC_COOLDOWN_SECONDS = 60;
 
@@ -424,24 +427,113 @@ export function useInvoiceMutations({
     }
   };
 
-  const handleBulkDeleteSubmitted = async () => {
+  const handleBulkDeleteSubmitted = async (mode: 'row_only' | 'row_and_file' = 'row_only') => {
     if (selectedInvoiceIds.size === 0) {
       toast({ title: 'Nincs kijelölt számla', variant: 'destructive' });
       return;
     }
     const ids = Array.from(selectedInvoiceIds);
     try {
-      const { error } = await supabase
-        .from('invoices')
-        .delete()
-        .in('id', ids);
-      if (error) throw error;
-      setSelectedInvoiceIds(new Set());
-      invalidateInvoiceData();
-      toast({ title: `${ids.length} db számla sikeresen törölve` });
-    } catch (error) {
+      if (mode === 'row_and_file') {
+        // Fetch invoice rows first to get their storage urls and invoice_uploads_id
+        const { data: invRows, error: fetchErr } = await supabase
+          .from('invoices')
+          .select('id, image_url, melleklet_url, invoice_uploads_id')
+          .in('id', ids);
+
+        if (fetchErr) throw fetchErr;
+
+        // 1. Delete invoice records (invoice_items cascades automatically)
+        const { error: deleteError } = await supabase
+          .from('invoices')
+          .delete()
+          .in('id', ids);
+
+        if (deleteError) throw deleteError;
+
+        // 2. Identify unique invoice_uploads_id
+        const uploadIds = Array.from(
+          new Set(
+            (invRows || [])
+              .map((r) => r.invoice_uploads_id)
+              .filter((id): id is string => Boolean(id))
+          )
+        );
+
+        for (const uploadId of uploadIds) {
+          // Check if any remaining invoices still reference this upload record
+          const { data: remainingInvoices } = await supabase
+            .from('invoices')
+            .select('id')
+            .eq('invoice_uploads_id', uploadId);
+
+          if (!remainingInvoices || remainingInvoices.length === 0) {
+            const { data: uploadData } = await supabase
+              .from('invoice_uploads')
+              .select('file_url')
+              .eq('id', uploadId)
+              .maybeSingle();
+
+            const { error: delUploadError } = await supabase
+              .from('invoice_uploads')
+              .delete()
+              .eq('id', uploadId);
+
+            if (delUploadError) {
+              console.error('Error deleting invoice_uploads:', delUploadError);
+            }
+
+            if (uploadData?.file_url) {
+              const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
+              if (storagePath) {
+                await supabase.storage.from('invoice-uploads').remove([storagePath]);
+              }
+            }
+          }
+        }
+
+        // 3. Clean up direct storage paths
+        const directUrls = new Set<string>();
+        for (const row of invRows || []) {
+          if (row.image_url) directUrls.add(row.image_url);
+          if (row.melleklet_url) directUrls.add(row.melleklet_url);
+        }
+        for (const url of directUrls) {
+          for (const bucket of ['invoice-uploads', 'szla_image']) {
+            const storagePath = extractStoragePath(url, bucket);
+            if (storagePath) {
+              await supabase.storage.from(bucket).remove([storagePath]);
+            }
+          }
+        }
+
+        setSelectedInvoiceIds(new Set());
+        invalidateInvoiceData();
+        queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+
+        toast({
+          title: 'Sikeres törlés',
+          description: `${ids.length} db számla és a hozzájuk tartozó feltöltött fájlok véglegesen törölve lettek.`,
+        });
+      } else {
+        // mode === 'row_only': Only delete the invoice rows
+        const { error } = await supabase
+          .from('invoices')
+          .delete()
+          .in('id', ids);
+
+        if (error) throw error;
+        setSelectedInvoiceIds(new Set());
+        invalidateInvoiceData();
+        toast({
+          title: 'Sikeres törlés',
+          description: `${ids.length} db számlasor sikeresen törölve (az eredeti dokumentumok megmaradtak).`,
+        });
+      }
+    } catch (error: any) {
       reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error bulk deleting invoices:', error });
-      toast({ title: 'Hiba a csoportos törléskor', variant: 'destructive' });
+      toast({ title: 'Hiba a csoportos törléskor', description: error?.message, variant: 'destructive' });
     }
   };
 
