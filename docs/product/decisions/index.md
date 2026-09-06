@@ -1,6 +1,6 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-05  
+> **Utoljára frissítve:** 2026-09-06  
 > **Összesen:** 67 döntés | ✅ Decided: 63 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
@@ -27,9 +27,9 @@
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-010 | Számla lista nézet & szűrők | ✅ Decided | [P-010](./P-010-invoice-list.md) |
-| P-012 | Számla szerkesztés (3 szintű dialógus) | ✅ Decided | [P-012](./P-012-invoice-editing.md) |
+| P-012 | Számla szerkesztés és számlakép törlés (kettős döntési modál) | ✅ Decided | [P-012](./P-012-invoice-editing.md) |
 | P-013 | Feltöltés UX (multi-file batch upload) | ✅ Decided | [P-013](./P-013-upload-ux.md) |
-| P-015 | Tömeges műveletek (checkbox bulk actions) | ✅ Decided | [P-015](./P-015-bulk-actions.md) |
+| P-015 | Tömeges műveletek (lebegő műveleti sáv, dual choice törlés, lapozási auto-recovery) | ✅ Decided | [P-015](./P-015-bulk-actions.md) |
 | P-045 | PDF Export UX & Banner viselkedés (auto-download, fallback, toast) | ✅ Decided | [P-045](./P-045-pdf-export-ux.md) |
 | P-046 | Pénztárbizonylatok feltöltési fül (vouchers tab + elkülönített upload) | ✅ Decided | [P-046](./P-046-penztarbizonylat-upload-ux.md) |
 | P-054 | Scalable Server-Side Invoice Pagination & KPI Card Filtering UX | ✅ Decided | [P-054](./P-054-server-side-invoice-pagination-and-kpi-filters-ux.md) |

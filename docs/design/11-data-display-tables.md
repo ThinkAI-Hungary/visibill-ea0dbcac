@@ -471,6 +471,10 @@ A kettős könyvvitel felületein (Főkönyvi kivonat, Naplók, Analitika) az al
 7. **Egységes Tooltip Szabvány (`CustomTooltip`):**
    - A natív böngésző HTML `title` attribútumok használata tilos a táblázatokban és modálokban.
    - Minden súgószöveghez a Radix UI alapú `<CustomTooltip content="...">` komponenst kell használni, amely biztosítja az akadálymentes megjelenést és a design rendszerhez illeszkedő sötét/világos stílust.
+8. **Lapozási Határeset Auto-Recovery Szabály (Pagination Boundary Auto-Recovery — 2026-09-06):**
+   - Amikor egy táblázatban sorok törlése vagy szűrése következtében a felhasználó aktuális oldala kiürül (`currentPage > 1 && items.length === 0`), a táblázatot vezérlő hooknak azonnal vissza kell léptetnie a nézetet a megelőző legmagasabb érvényes oldalra (`Math.max(1, Math.min(currentPage - 1, totalPages))`).
+   - Tilos a felhasználót üres táblázat állapotban ("Nincs megjeleníthető elem") ragasztani a lapozóban, miközben az előző oldalakon léteznek adatok.
+   - A `UnifiedPagination` komponensben az `isLastPage` feltételnek védettnek kell lennie (`currentPage >= totalPages || totalPages <= 1`), a kezdőlapszám-kalkulációt pedig korlátozni kell (`Math.min(currentPage, totalPages)`).
 
 ---
 

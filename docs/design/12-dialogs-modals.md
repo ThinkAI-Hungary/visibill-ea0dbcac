@@ -79,7 +79,8 @@
 |--------|------|-------|-------------|
 | `InvoiceDetailPopup` | 12KB | Nagy | Számla részletek |
 | `InvoiceEditDialog` | 5KB | Közepes | Gyors szerkesztés |
-| `InvoiceFullEditDialog` | 9KB | Nagy | Teljes szerkesztés |
+| `InvoiceFullEditDialog` | 42KB | Nagy | Teljes szerkesztés + Számlakép törlése kétlépcsős AlertDialog-gal (2026-09-06) |
+| `BulkDeleteDialog` | 5KB | Közepes | Kijelölt számlák tömeges törlése kétlépcsős döntési modállal (2026-09-06) |
 | `InvoiceImageDialog` | 5KB | Nagy | Számla kép nagyítás |
 | `InvoiceItemsDialog` | 15KB | Nagy | Számla tételek |
 | `InvoiceFilesDialog` | 28KB | Nagy | Csatolt fájlok — batch delete, A/B mód (2026-06-24) |
