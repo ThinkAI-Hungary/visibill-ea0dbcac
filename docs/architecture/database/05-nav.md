@@ -73,12 +73,13 @@ Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-a
 
 ### `nav_invoice_items`
 
-**RLS:** ✅ | **Sorok:** ~42696
+**RLS:** ✅ | **Sorok:** ~126394
 
 | Oszlop | Típus | Null | Default |
 |--------|-------|------|---------|
 | id | uuid | — | `gen_random_uuid()` |
 | nav_invoice_id | uuid | — |  |
+| company_id | uuid | ✓ |  | ← Cég azonosító közvetlen multi-tenant indexeléshez (denormalizált, lásd [A-097](../decisions/A-097-multi-tenant-nav-items-denormalization-and-gl-optimization.md)) |
 | line_number | integer | — |  |
 | line_description | text | ✓ |  |
 | quantity | numeric | ✓ |  |
@@ -96,9 +97,20 @@ Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-a
 | exclude_from_accounting | boolean | — | `false` |
 | deductible_percentage | numeric(5,2) | — | `100.00` |
 
-**FK:** `nav_invoice_id` → `nav_invoices.id`, `project_id` → `projects.id`
+**FK:** `company_id` → `companies.id`, `nav_invoice_id` → `nav_invoices.id`, `project_id` → `projects.id`
 
-**Indexek:** `idx_nav_invoice_items_nav_invoice_id`, `idx_nav_invoice_items_project_id`
+**Indexek:**
+- `idx_nav_invoice_items_company_id` (`company_id`)
+- `idx_nav_invoice_items_company_unclassified` (`company_id, id` WHERE `(gl_classifications = '{}'::jsonb OR gl_classifications IS NULL) AND exclude_from_accounting = false`)
+- `idx_nav_invoice_items_nav_invoice_id` (`nav_invoice_id`)
+- `idx_nav_invoice_items_project_id` (`project_id`)
+
+**Triggerek:**
+- `trg_set_nav_invoice_items_company_id` (`BEFORE INSERT OR UPDATE ON nav_invoice_items`): Ha az új tételen hiányzik a `company_id`, a szülő `nav_invoices` alapján automatikusan feltölti.
+- `trg_sync_nav_invoice_items_company_id` (`AFTER UPDATE OF company_id ON nav_invoices`): Szinkronban tartja a tételek `company_id`-ját, ha a számla cége módosulna.
+
+**Kapcsolódó RPC:**
+- `get_unclassified_gl_items(p_company_id UUID, p_limit INT)`: Nagy sebességű GL osztályozási tétel-lekérdező worker és automatizációk számára.
 
 ---
 
@@ -121,10 +133,11 @@ Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-a
 | started_at | timestamp with time zone | ✓ | `now()` |
 | completed_at | timestamp with time zone | ✓ |  |
 | company_id | uuid | ✓ |  |
+| created_at | timestamp with time zone | ✓ | `now()` |
 
 **FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`
 
-**Indexek:** `idx_nav_sync_logs_company_id`, `idx_nav_sync_logs_user_id`, `nav_sync_logs_started_at_idx`
+**Indexek:** `idx_nav_sync_logs_company_id`, `idx_nav_sync_logs_created_at`, `idx_nav_sync_logs_user_id`, `nav_sync_logs_started_at_idx`
 
 ---
 

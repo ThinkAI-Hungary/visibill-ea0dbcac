@@ -102,6 +102,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-093 | Atomi Cégbeállítások Upsert, Versenyhelyzet Megelőzés és Parciális Frissítések Izolációja | ✅ Decided | [A-093](./A-093-atomic-company-settings-upsert-and-partial-update-isolation.md) |
 | A-094 | Bérszámfejtési Ciklus Végtelen Re-render Védelem és Kézi Jelenlét Perzisztencia | ✅ Decided | [A-094](./A-094-payroll-cycle-render-stability-and-attendance-persistence.md) |
 | A-095 | Nemzetközi Kártyaelfogadó Terminál (Europay POS) Clearing Devizafelülírás Védelme | ✅ Decided | [A-095](./A-095-international-pos-clearing-currency-override-guard.md) |
+| A-096 | Hivatalos NAV Tételsor Védőháló és Számla Szinkronizáció | ✅ Decided | [A-096](./A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md) |
+| A-097 | Multi-Tenant nav_invoice_items Denormalizáció, GL Statement Timeout Felszámolása és RLS Optimalizálás | ✅ Decided | [A-097](./A-097-multi-tenant-nav-items-denormalization-and-gl-optimization.md) |
 
 ## 🖥️ Frontend
 

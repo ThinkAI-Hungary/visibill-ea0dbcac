@@ -1060,8 +1060,8 @@
     "semantic_hash": "776b6ed65c3cb4d27beb42298fa888ce"
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1788698189.126947,
-    "ast_hash": "705c490db487aa1ec59b73a494dc4283",
+    "mtime": 1788698764.6285977,
+    "ast_hash": "dc3d8a6b0d302b4beb4ae079bb2c1ee9",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -9220,8 +9220,13 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260906150000_add_company_id_to_nav_invoice_items.sql": {
-    "mtime": 1788698097.4923897,
-    "ast_hash": "b72e8c2bb9bccdfc203d963e760eb961",
+    "mtime": 1788698911.2926624,
+    "ast_hash": "9083a0bbf3b14fe87606ba1d8a227212",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260906151500_optimize_nav_invoice_items_rls_and_sync.sql": {
+    "mtime": 1788699054.0609996,
+    "ast_hash": "dd1da8b8b23f5fde9962e0e1acb55d1a",
     "semantic_hash": ""
   }
 }
