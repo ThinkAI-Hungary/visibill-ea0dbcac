@@ -5360,7 +5360,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "accounty_exportbutton_exportbutton",
-      "community": 613,
+      "community": 9,
       "norm_label": "exportbutton()"
     },
     {
@@ -9410,7 +9410,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "nav_evalertscenter",
-      "community": 22,
+      "community": 49,
       "norm_label": "evalertscenter.tsx"
     },
     {
@@ -9420,7 +9420,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "nav_evalertscenter_portfolioalert",
-      "community": 22,
+      "community": 49,
       "norm_label": "portfolioalert"
     },
     {
@@ -9430,7 +9430,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "nav_evalertscenter_evalertscenterprops",
-      "community": 22,
+      "community": 49,
       "norm_label": "evalertscenterprops"
     },
     {
@@ -9440,7 +9440,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "nav_evalertscenter_evalertscenter",
-      "community": 22,
+      "community": 49,
       "norm_label": "evalertscenter()"
     },
     {
@@ -15870,7 +15870,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "contexts_daterangecontext",
-      "community": 18,
+      "community": 585,
       "norm_label": "daterangecontext.tsx"
     },
     {
@@ -15880,7 +15880,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "contexts_daterangecontext_daterangecontexttype",
-      "community": 18,
+      "community": 585,
       "norm_label": "daterangecontexttype"
     },
     {
@@ -15890,7 +15890,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "contexts_daterangecontext_daterangecontext",
-      "community": 18,
+      "community": 585,
       "norm_label": "daterangecontext"
     },
     {
@@ -15900,7 +15900,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "contexts_daterangecontext_formatdate",
-      "community": 18,
+      "community": 585,
       "norm_label": "formatdate()"
     },
     {
@@ -15910,7 +15910,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "contexts_daterangecontext_parselocaldate",
-      "community": 18,
+      "community": 585,
       "norm_label": "parselocaldate()"
     },
     {
@@ -15920,7 +15920,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "contexts_daterangecontext_getinitialdates",
-      "community": 18,
+      "community": 585,
       "norm_label": "getinitialdates()"
     },
     {
@@ -15930,7 +15930,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "contexts_daterangecontext_daterangeprovider",
-      "community": 18,
+      "community": 585,
       "norm_label": "daterangeprovider()"
     },
     {
@@ -20770,7 +20770,7 @@
       "source_location": "L177",
       "_origin": "ast",
       "id": "accounty_useaccountyclients_useaccountyclient",
-      "community": 333,
+      "community": 18,
       "norm_label": "useaccountyclient()"
     },
     {
@@ -21340,7 +21340,7 @@
       "source_location": "L227",
       "_origin": "ast",
       "id": "accounty_useaccountypayroll_usetransfers",
-      "community": 332,
+      "community": 613,
       "norm_label": "usetransfers()"
     },
     {
@@ -22810,7 +22810,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "hooks_useevdata_evtaxpayerform",
-      "community": 48,
+      "community": 49,
       "norm_label": "evtaxpayerform"
     },
     {
@@ -22830,7 +22830,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "hooks_useevdata_evvatstatus",
-      "community": 48,
+      "community": 49,
       "norm_label": "evvatstatus"
     },
     {
@@ -22960,7 +22960,7 @@
       "source_location": "L173",
       "_origin": "ast",
       "id": "hooks_useevdata_usecashbooktotals",
-      "community": 22,
+      "community": 333,
       "norm_label": "usecashbooktotals()"
     },
     {
@@ -23010,7 +23010,7 @@
       "source_location": "L380",
       "_origin": "ast",
       "id": "hooks_useevdata_useevtaxreturns",
-      "community": 333,
+      "community": 18,
       "norm_label": "useevtaxreturns()"
     },
     {
@@ -23080,7 +23080,7 @@
       "source_location": "L501",
       "_origin": "ast",
       "id": "hooks_useevdata_evtaxreturn",
-      "community": 419,
+      "community": 22,
       "norm_label": "evtaxreturn"
     },
     {
@@ -23140,7 +23140,7 @@
       "source_location": "L603",
       "_origin": "ast",
       "id": "hooks_useevdata_useevhipacalc",
-      "community": 333,
+      "community": 18,
       "norm_label": "useevhipacalc()"
     },
     {
@@ -23170,7 +23170,7 @@
       "source_location": "L663",
       "_origin": "ast",
       "id": "hooks_useevdata_useevvehiclelog",
-      "community": 333,
+      "community": 18,
       "norm_label": "useevvehiclelog()"
     },
     {
@@ -23220,7 +23220,7 @@
       "source_location": "L815",
       "_origin": "ast",
       "id": "hooks_useevdata_useallevclientsettings",
-      "community": 22,
+      "community": 333,
       "norm_label": "useallevclientsettings()"
     },
     {
@@ -23230,7 +23230,7 @@
       "source_location": "L832",
       "_origin": "ast",
       "id": "hooks_useevdata_useevrealtotals",
-      "community": 22,
+      "community": 333,
       "norm_label": "useevrealtotals()"
     },
     {
@@ -23250,7 +23250,7 @@
       "source_location": "L907",
       "_origin": "ast",
       "id": "hooks_useevdata_useevytdrevenue",
-      "community": 22,
+      "community": 333,
       "norm_label": "useevytdrevenue()"
     },
     {
@@ -23320,7 +23320,7 @@
       "source_location": "L1067",
       "_origin": "ast",
       "id": "hooks_useevdata_useevvatreturns",
-      "community": 18,
+      "community": 48,
       "norm_label": "useevvatreturns()"
     },
     {
@@ -23350,7 +23350,7 @@
       "source_location": "L1159",
       "_origin": "ast",
       "id": "hooks_useevdata_useevrecordcounts",
-      "community": 48,
+      "community": 585,
       "norm_label": "useevrecordcounts()"
     },
     {
@@ -25547,7 +25547,7 @@
       "label": "DatabaseWithoutInternals",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11611",
+      "source_location": "L11644",
       "_origin": "ast",
       "id": "supabase_types_databasewithoutinternals",
       "community": 34,
@@ -25557,7 +25557,7 @@
       "label": "DefaultSchema",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11613",
+      "source_location": "L11646",
       "_origin": "ast",
       "id": "supabase_types_defaultschema",
       "community": 34,
@@ -25567,7 +25567,7 @@
       "label": "Tables",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11615",
+      "source_location": "L11648",
       "_origin": "ast",
       "id": "supabase_types_tables",
       "community": 34,
@@ -25577,7 +25577,7 @@
       "label": "TablesInsert",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11644",
+      "source_location": "L11677",
       "_origin": "ast",
       "id": "supabase_types_tablesinsert",
       "community": 34,
@@ -25587,7 +25587,7 @@
       "label": "TablesUpdate",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11669",
+      "source_location": "L11702",
       "_origin": "ast",
       "id": "supabase_types_tablesupdate",
       "community": 34,
@@ -25597,7 +25597,7 @@
       "label": "Enums",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11694",
+      "source_location": "L11727",
       "_origin": "ast",
       "id": "supabase_types_enums",
       "community": 34,
@@ -25607,7 +25607,7 @@
       "label": "CompositeTypes",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11711",
+      "source_location": "L11744",
       "_origin": "ast",
       "id": "supabase_types_compositetypes",
       "community": 34,
@@ -25617,7 +25617,7 @@
       "label": "Constants",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11728",
+      "source_location": "L11761",
       "_origin": "ast",
       "id": "supabase_types_constants",
       "community": 34,
@@ -27810,7 +27810,7 @@
       "source_location": "L374",
       "_origin": "ast",
       "id": "lib_evcalculations_thresholdstatus",
-      "community": 22,
+      "community": 333,
       "norm_label": "thresholdstatus"
     },
     {
@@ -27820,7 +27820,7 @@
       "source_location": "L376",
       "_origin": "ast",
       "id": "lib_evcalculations_thresholdcheck",
-      "community": 22,
+      "community": 333,
       "norm_label": "thresholdcheck"
     },
     {
@@ -27830,7 +27830,7 @@
       "source_location": "L385",
       "_origin": "ast",
       "id": "lib_evcalculations_checkthresholdstatus",
-      "community": 22,
+      "community": 333,
       "norm_label": "checkthresholdstatus()"
     },
     {
@@ -27840,7 +27840,7 @@
       "source_location": "L396",
       "_origin": "ast",
       "id": "lib_evcalculations_getevthresholds",
-      "community": 22,
+      "community": 333,
       "norm_label": "getevthresholds()"
     },
     {
@@ -33460,7 +33460,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_cashbookentryform",
-      "community": 48,
+      "community": 49,
       "norm_label": "cashbookentryform.tsx"
     },
     {
@@ -33470,7 +33470,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "ev_cashbookentryform_entrydirection",
-      "community": 48,
+      "community": 49,
       "norm_label": "entrydirection"
     },
     {
@@ -33480,7 +33480,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "ev_cashbookentryform_cashbookentryformdata",
-      "community": 48,
+      "community": 49,
       "norm_label": "cashbookentryformdata"
     },
     {
@@ -33490,7 +33490,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "ev_cashbookentryform_cashbookentryformprops",
-      "community": 48,
+      "community": 49,
       "norm_label": "cashbookentryformprops"
     },
     {
@@ -33500,7 +33500,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "ev_cashbookentryform_categorynode",
-      "community": 48,
+      "community": 49,
       "norm_label": "categorynode"
     },
     {
@@ -33510,7 +33510,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "ev_cashbookentryform_cashbook_categories",
-      "community": 48,
+      "community": 49,
       "norm_label": "cashbook_categories"
     },
     {
@@ -33520,7 +33520,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "ev_cashbookentryform_flat_categories",
-      "community": 48,
+      "community": 49,
       "norm_label": "flat_categories"
     },
     {
@@ -33530,7 +33530,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "ev_cashbookentryform_vat_rates",
-      "community": 48,
+      "community": 49,
       "norm_label": "vat_rates"
     },
     {
@@ -33540,7 +33540,7 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "ev_cashbookentryform_kata_allowed_categories",
-      "community": 48,
+      "community": 49,
       "norm_label": "kata_allowed_categories"
     },
     {
@@ -33550,7 +33550,7 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "ev_cashbookentryform_cashbookentryform",
-      "community": 48,
+      "community": 49,
       "norm_label": "cashbookentryform()"
     },
     {
@@ -33660,7 +33660,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_clientevmainpage",
-      "community": 22,
+      "community": 333,
       "norm_label": "clientevmainpage.tsx"
     },
     {
@@ -33670,7 +33670,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "ev_clientevmainpage_form_labels",
-      "community": 22,
+      "community": 333,
       "norm_label": "form_labels"
     },
     {
@@ -33680,7 +33680,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "ev_clientevmainpage_employment_labels",
-      "community": 22,
+      "community": 333,
       "norm_label": "employment_labels"
     },
     {
@@ -33690,7 +33690,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "ev_clientevmainpage_vat_labels",
-      "community": 22,
+      "community": 333,
       "norm_label": "vat_labels"
     },
     {
@@ -33700,7 +33700,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "ev_clientevmainpage_org_type_labels",
-      "community": 22,
+      "community": 333,
       "norm_label": "org_type_labels"
     },
     {
@@ -33710,7 +33710,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "ev_clientevmainpage_clientevmainpage",
-      "community": 22,
+      "community": 333,
       "norm_label": "clientevmainpage()"
     },
     {
@@ -33720,7 +33720,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evcalendarpage",
-      "community": 419,
+      "community": 22,
       "norm_label": "evcalendarpage.tsx"
     },
     {
@@ -33730,7 +33730,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "ev_evcalendarpage_month_names",
-      "community": 419,
+      "community": 22,
       "norm_label": "month_names"
     },
     {
@@ -33740,7 +33740,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "ev_evcalendarpage_return_type_map",
-      "community": 419,
+      "community": 22,
       "norm_label": "return_type_map"
     },
     {
@@ -33750,7 +33750,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "ev_evcalendarpage_type_labels",
-      "community": 419,
+      "community": 22,
       "norm_label": "type_labels"
     },
     {
@@ -33760,7 +33760,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "ev_evcalendarpage_type_colors",
-      "community": 419,
+      "community": 22,
       "norm_label": "type_colors"
     },
     {
@@ -33770,7 +33770,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "ev_evcalendarpage_deadlinestatus",
-      "community": 419,
+      "community": 22,
       "norm_label": "deadlinestatus"
     },
     {
@@ -33780,7 +33780,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "ev_evcalendarpage_status_icon",
-      "community": 419,
+      "community": 22,
       "norm_label": "status_icon"
     },
     {
@@ -33860,7 +33860,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evcompanycartaxpage",
-      "community": 333,
+      "community": 18,
       "norm_label": "evcompanycartaxpage.tsx"
     },
     {
@@ -33870,7 +33870,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "ev_evcompanycartaxpage_engine_labels",
-      "community": 333,
+      "community": 18,
       "norm_label": "engine_labels"
     },
     {
@@ -33880,7 +33880,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "ev_evcompanycartaxpage_evcompanycartaxpage",
-      "community": 333,
+      "community": 18,
       "norm_label": "evcompanycartaxpage()"
     },
     {
@@ -34290,7 +34290,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evhipareturnpage",
-      "community": 333,
+      "community": 18,
       "norm_label": "evhipareturnpage.tsx"
     },
     {
@@ -34300,7 +34300,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "ev_evhipareturnpage_status_cfg",
-      "community": 333,
+      "community": 18,
       "norm_label": "status_cfg"
     },
     {
@@ -34310,7 +34310,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_evhipareturnpage_escapexml",
-      "community": 333,
+      "community": 18,
       "norm_label": "escapexml()"
     },
     {
@@ -34320,7 +34320,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "ev_evhipareturnpage_evhipareturnpage",
-      "community": 333,
+      "community": 18,
       "norm_label": "evhipareturnpage()"
     },
     {
@@ -34370,7 +34370,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evinnovationlevypage",
-      "community": 333,
+      "community": 18,
       "norm_label": "evinnovationlevypage.tsx"
     },
     {
@@ -34380,7 +34380,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "ev_evinnovationlevypage_evinnovationlevypage",
-      "community": 333,
+      "community": 18,
       "norm_label": "evinnovationlevypage()"
     },
     {
@@ -34560,7 +34560,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard",
-      "community": 22,
+      "community": 49,
       "norm_label": "evportfoliodashboard.tsx"
     },
     {
@@ -34570,7 +34570,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_evfilingstatus",
-      "community": 22,
+      "community": 49,
       "norm_label": "evfilingstatus"
     },
     {
@@ -34580,7 +34580,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_enrichedevclient",
-      "community": 48,
+      "community": 49,
       "norm_label": "enrichedevclient"
     },
     {
@@ -34590,7 +34590,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_form_labels",
-      "community": 22,
+      "community": 49,
       "norm_label": "form_labels"
     },
     {
@@ -34600,7 +34600,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_employment_labels",
-      "community": 22,
+      "community": 49,
       "norm_label": "employment_labels"
     },
     {
@@ -34610,7 +34610,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_vat_labels",
-      "community": 22,
+      "community": 49,
       "norm_label": "vat_labels"
     },
     {
@@ -34620,7 +34620,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_filing_status",
-      "community": 22,
+      "community": 49,
       "norm_label": "filing_status"
     },
     {
@@ -34630,7 +34630,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_threshold_config",
-      "community": 22,
+      "community": 49,
       "norm_label": "threshold_config"
     },
     {
@@ -34640,7 +34640,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_org_type_labels",
-      "community": 22,
+      "community": 49,
       "norm_label": "org_type_labels"
     },
     {
@@ -34650,7 +34650,7 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_filtermode",
-      "community": 22,
+      "community": 49,
       "norm_label": "filtermode"
     },
     {
@@ -34660,7 +34660,7 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_evportfoliodashboard",
-      "community": 22,
+      "community": 333,
       "norm_label": "evportfoliodashboard()"
     },
     {
@@ -34790,7 +34790,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evrecordsoverviewpage",
-      "community": 48,
+      "community": 585,
       "norm_label": "evrecordsoverviewpage.tsx"
     },
     {
@@ -34800,7 +34800,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "ev_evrecordsoverviewpage_recordtype",
-      "community": 48,
+      "community": 585,
       "norm_label": "recordtype"
     },
     {
@@ -34810,7 +34810,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "ev_evrecordsoverviewpage_records",
-      "community": 48,
+      "community": 585,
       "norm_label": "records"
     },
     {
@@ -34820,7 +34820,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "ev_evrecordsoverviewpage_evrecordsoverviewpage",
-      "community": 48,
+      "community": 585,
       "norm_label": "evrecordsoverviewpage()"
     },
     {
@@ -34980,7 +34980,7 @@
       "source_location": "L167",
       "_origin": "ast",
       "id": "ev_evszjareturnpage_evszjareturnpage",
-      "community": 333,
+      "community": 18,
       "norm_label": "evszjareturnpage()"
     },
     {
@@ -34990,7 +34990,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage",
-      "community": 22,
+      "community": 333,
       "norm_label": "evthresholdmonitorpage.tsx"
     },
     {
@@ -35000,7 +35000,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_projectedthresholdcheck",
-      "community": 22,
+      "community": 333,
       "norm_label": "projectedthresholdcheck"
     },
     {
@@ -35010,7 +35010,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_clientthresholdrow",
-      "community": 22,
+      "community": 333,
       "norm_label": "clientthresholdrow"
     },
     {
@@ -35020,7 +35020,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_worstof",
-      "community": 22,
+      "community": 333,
       "norm_label": "worstof()"
     },
     {
@@ -35030,7 +35030,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_status_config",
-      "community": 22,
+      "community": 333,
       "norm_label": "status_config"
     },
     {
@@ -35040,7 +35040,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_evthresholdmonitorpage",
-      "community": 22,
+      "community": 333,
       "norm_label": "evthresholdmonitorpage()"
     },
     {
@@ -35050,7 +35050,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evvatcarreturnpage",
-      "community": 333,
+      "community": 18,
       "norm_label": "evvatcarreturnpage.tsx"
     },
     {
@@ -35060,7 +35060,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "ev_evvatcarreturnpage_status_cfg",
-      "community": 333,
+      "community": 18,
       "norm_label": "status_cfg"
     },
     {
@@ -35070,7 +35070,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_evvatcarreturnpage_getdatestatus",
-      "community": 333,
+      "community": 18,
       "norm_label": "getdatestatus()"
     },
     {
@@ -35080,7 +35080,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "ev_evvatcarreturnpage_mapreturn",
-      "community": 333,
+      "community": 18,
       "norm_label": "mapreturn()"
     },
     {
@@ -35090,7 +35090,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "ev_evvatcarreturnpage_evvatcarreturnpage",
-      "community": 333,
+      "community": 18,
       "norm_label": "evvatcarreturnpage()"
     },
     {
@@ -35250,7 +35250,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "ev_orgcivilpage_orgcivilpage",
-      "community": 77,
+      "community": 18,
       "norm_label": "orgcivilpage()"
     },
     {
@@ -35890,7 +35890,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage",
-      "community": 613,
+      "community": 9,
       "norm_label": "navdeadlinespage.tsx"
     },
     {
@@ -35900,7 +35900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage_deadline",
-      "community": 613,
+      "community": 9,
       "norm_label": "deadline"
     },
     {
@@ -35910,7 +35910,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage_type_config",
-      "community": 613,
+      "community": 9,
       "norm_label": "type_config"
     },
     {
@@ -35920,7 +35920,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage_status_options",
-      "community": 613,
+      "community": 9,
       "norm_label": "status_options"
     },
     {
@@ -35930,7 +35930,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage_generatedeadlines",
-      "community": 613,
+      "community": 9,
       "norm_label": "generatedeadlines()"
     },
     {
@@ -35940,7 +35940,7 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage_navdeadlinespage",
-      "community": 613,
+      "community": 9,
       "norm_label": "navdeadlinespage()"
     },
     {
@@ -38190,7 +38190,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "documents_transferlistpage",
-      "community": 332,
+      "community": 613,
       "norm_label": "transferlistpage.tsx"
     },
     {
@@ -38210,7 +38210,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "documents_transferlistpage_downloadsepaxml",
-      "community": 332,
+      "community": 613,
       "norm_label": "downloadsepaxml()"
     },
     {
@@ -38220,7 +38220,7 @@
       "source_location": "L244",
       "_origin": "ast",
       "id": "documents_transferlistpage_downloadmt940",
-      "community": 332,
+      "community": 613,
       "norm_label": "downloadmt940()"
     },
     {
@@ -38230,7 +38230,7 @@
       "source_location": "L268",
       "_origin": "ast",
       "id": "documents_transferlistpage_escapexml",
-      "community": 332,
+      "community": 613,
       "norm_label": "escapexml()"
     },
     {
@@ -38240,7 +38240,7 @@
       "source_location": "L272",
       "_origin": "ast",
       "id": "documents_transferlistpage_downloadfile",
-      "community": 332,
+      "community": 613,
       "norm_label": "downloadfile()"
     },
     {
@@ -38730,7 +38730,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "filings_genericfilingpage",
-      "community": 613,
+      "community": 9,
       "norm_label": "genericfilingpage.tsx"
     },
     {
@@ -38740,7 +38740,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "filings_genericfilingpage_filingtype",
-      "community": 613,
+      "community": 9,
       "norm_label": "filingtype"
     },
     {
@@ -38750,7 +38750,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "filings_genericfilingpage_filingconfig",
-      "community": 613,
+      "community": 9,
       "norm_label": "filingconfig"
     },
     {
@@ -38760,7 +38760,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "filings_genericfilingpage_configs",
-      "community": 613,
+      "community": 9,
       "norm_label": "configs"
     },
     {
@@ -38770,7 +38770,7 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "filings_genericfilingpage_genericfilingpage",
-      "community": 613,
+      "community": 9,
       "norm_label": "genericfilingpage()"
     },
     {
@@ -55640,7 +55640,7 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "project_documentation_key_edge_functions",
-      "community": 24,
+      "community": 593,
       "norm_label": "key edge functions"
     },
     {
@@ -55650,7 +55650,7 @@
       "source_location": "L129",
       "_origin": "ast",
       "id": "project_documentation_email_system",
-      "community": 24,
+      "community": 593,
       "norm_label": "email system"
     },
     {
@@ -55660,7 +55660,7 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "project_documentation_nav_integration_hungarian_tax_authority",
-      "community": 24,
+      "community": 593,
       "norm_label": "nav integration (hungarian tax authority)"
     },
     {
@@ -55670,7 +55670,7 @@
       "source_location": "L160",
       "_origin": "ast",
       "id": "project_documentation_invoice_processing",
-      "community": 24,
+      "community": 593,
       "norm_label": "invoice processing"
     },
     {
@@ -55680,7 +55680,7 @@
       "source_location": "L174",
       "_origin": "ast",
       "id": "project_documentation_email_integrations",
-      "community": 24,
+      "community": 593,
       "norm_label": "email integrations"
     },
     {
@@ -55690,7 +55690,7 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "project_documentation_payment_subscription",
-      "community": 24,
+      "community": 593,
       "norm_label": "payment & subscription"
     },
     {
@@ -55700,7 +55700,7 @@
       "source_location": "L205",
       "_origin": "ast",
       "id": "project_documentation_data_management",
-      "community": 24,
+      "community": 593,
       "norm_label": "data management"
     },
     {
@@ -55840,7 +55840,7 @@
       "source_location": "L302",
       "_origin": "ast",
       "id": "project_documentation_email_system_302",
-      "community": 24,
+      "community": 593,
       "norm_label": "email system"
     },
     {
@@ -55850,7 +55850,7 @@
       "source_location": "L304",
       "_origin": "ast",
       "id": "project_documentation_outgoing_emails_resend",
-      "community": 24,
+      "community": 593,
       "norm_label": "outgoing emails (resend)"
     },
     {
@@ -55860,7 +55860,7 @@
       "source_location": "L323",
       "_origin": "ast",
       "id": "project_documentation_incoming_emails_mailgun",
-      "community": 24,
+      "community": 593,
       "norm_label": "incoming emails (mailgun)"
     },
     {
@@ -55870,7 +55870,7 @@
       "source_location": "L339",
       "_origin": "ast",
       "id": "project_documentation_email_sync_nylas",
-      "community": 24,
+      "community": 593,
       "norm_label": "email sync (nylas)"
     },
     {
@@ -56040,7 +56040,7 @@
       "source_location": "L446",
       "_origin": "ast",
       "id": "project_documentation_environment_variables_secrets",
-      "community": 24,
+      "community": 593,
       "norm_label": "environment variables & secrets"
     },
     {
@@ -56050,7 +56050,7 @@
       "source_location": "L448",
       "_origin": "ast",
       "id": "project_documentation_supabase",
-      "community": 24,
+      "community": 593,
       "norm_label": "supabase"
     },
     {
@@ -56060,7 +56060,7 @@
       "source_location": "L453",
       "_origin": "ast",
       "id": "project_documentation_email_services",
-      "community": 24,
+      "community": 593,
       "norm_label": "email services"
     },
     {
@@ -56070,7 +56070,7 @@
       "source_location": "L460",
       "_origin": "ast",
       "id": "project_documentation_email_sync",
-      "community": 24,
+      "community": 593,
       "norm_label": "email sync"
     },
     {
@@ -56080,7 +56080,7 @@
       "source_location": "L464",
       "_origin": "ast",
       "id": "project_documentation_payment",
-      "community": 24,
+      "community": 593,
       "norm_label": "payment"
     },
     {
@@ -56090,7 +56090,7 @@
       "source_location": "L468",
       "_origin": "ast",
       "id": "project_documentation_automation",
-      "community": 24,
+      "community": 593,
       "norm_label": "automation"
     },
     {
@@ -56170,7 +56170,7 @@
       "source_location": "L527",
       "_origin": "ast",
       "id": "project_documentation_development_guidelines",
-      "community": 49,
+      "community": 24,
       "norm_label": "development guidelines"
     },
     {
@@ -56180,7 +56180,7 @@
       "source_location": "L529",
       "_origin": "ast",
       "id": "project_documentation_local_development",
-      "community": 49,
+      "community": 24,
       "norm_label": "local development"
     },
     {
@@ -56190,7 +56190,7 @@
       "source_location": "L536",
       "_origin": "ast",
       "id": "project_documentation_edge_functions",
-      "community": 49,
+      "community": 24,
       "norm_label": "edge functions"
     },
     {
@@ -56200,7 +56200,7 @@
       "source_location": "L542",
       "_origin": "ast",
       "id": "project_documentation_frontend_deployment",
-      "community": 49,
+      "community": 24,
       "norm_label": "frontend deployment"
     },
     {
@@ -56210,7 +56210,7 @@
       "source_location": "L547",
       "_origin": "ast",
       "id": "project_documentation_database_migrations",
-      "community": 49,
+      "community": 24,
       "norm_label": "database migrations"
     },
     {
@@ -56220,7 +56220,7 @@
       "source_location": "L553",
       "_origin": "ast",
       "id": "project_documentation_design_system",
-      "community": 49,
+      "community": 24,
       "norm_label": "design system"
     },
     {
@@ -56350,7 +56350,7 @@
       "source_location": "L644",
       "_origin": "ast",
       "id": "project_documentation_api_rate_limits_quotas",
-      "community": 593,
+      "community": 24,
       "norm_label": "api rate limits & quotas"
     },
     {
@@ -56360,7 +56360,7 @@
       "source_location": "L646",
       "_origin": "ast",
       "id": "project_documentation_supabase_free_tier",
-      "community": 593,
+      "community": 24,
       "norm_label": "supabase (free tier)"
     },
     {
@@ -56370,7 +56370,7 @@
       "source_location": "L653",
       "_origin": "ast",
       "id": "project_documentation_resend_free_tier",
-      "community": 593,
+      "community": 24,
       "norm_label": "resend (free tier)"
     },
     {
@@ -56380,7 +56380,7 @@
       "source_location": "L659",
       "_origin": "ast",
       "id": "project_documentation_nav_api",
-      "community": 593,
+      "community": 24,
       "norm_label": "nav api"
     },
     {
@@ -56390,7 +56390,7 @@
       "source_location": "L665",
       "_origin": "ast",
       "id": "project_documentation_stripe",
-      "community": 593,
+      "community": 24,
       "norm_label": "stripe"
     },
     {
@@ -56450,7 +56450,7 @@
       "source_location": "L700",
       "_origin": "ast",
       "id": "project_documentation_monitoring_logging",
-      "community": 24,
+      "community": 607,
       "norm_label": "monitoring & logging"
     },
     {
@@ -56460,7 +56460,7 @@
       "source_location": "L702",
       "_origin": "ast",
       "id": "project_documentation_edge_function_logs",
-      "community": 24,
+      "community": 607,
       "norm_label": "edge function logs"
     },
     {
@@ -56470,7 +56470,7 @@
       "source_location": "L708",
       "_origin": "ast",
       "id": "project_documentation_database_logs",
-      "community": 24,
+      "community": 607,
       "norm_label": "database logs"
     },
     {
@@ -56480,7 +56480,7 @@
       "source_location": "L714",
       "_origin": "ast",
       "id": "project_documentation_error_tracking",
-      "community": 24,
+      "community": 607,
       "norm_label": "error tracking"
     },
     {
@@ -56490,7 +56490,7 @@
       "source_location": "L719",
       "_origin": "ast",
       "id": "project_documentation_usage_monitoring",
-      "community": 24,
+      "community": 607,
       "norm_label": "usage monitoring"
     },
     {
@@ -309981,5 +309981,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "29bb3d53369e9a7c9c12c464403e788e4751d9e0"
+  "built_at_commit": "cba0cddd81128efceee5bdff590547fd1c1df646"
 }
