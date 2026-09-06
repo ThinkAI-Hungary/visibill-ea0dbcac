@@ -266,7 +266,7 @@ const Projects = () => {
                   company_id
                 )
               `)
-              .eq('nav_invoices.company_id', selectedCompany!.id)
+              .eq('company_id', selectedCompany!.id)
               .not('project_id', 'is', null)
               .range(itemFrom, itemFrom + PAGE_SIZE - 1);
 

@@ -7378,6 +7378,7 @@ export type Database = {
       }
       nav_invoice_items: {
         Row: {
+          company_id: string | null
           created_at: string | null
           deductible_percentage: number
           exclude_from_accounting: boolean
@@ -7400,6 +7401,7 @@ export type Database = {
           vat_rate: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           deductible_percentage?: number
           exclude_from_accounting?: boolean
@@ -7422,6 +7424,7 @@ export type Database = {
           vat_rate?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           deductible_percentage?: number
           exclude_from_accounting?: boolean
@@ -7444,6 +7447,13 @@ export type Database = {
           vat_rate?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "nav_invoice_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "nav_invoice_items_nav_invoice_id_fkey"
             columns: ["nav_invoice_id"]
@@ -11148,6 +11158,29 @@ export type Database = {
         Args: { p_company_id: string; p_date_from: string; p_date_to: string }
         Returns: {
           completed_count: number
+        }
+      }
+      get_unclassified_gl_items: {
+        Args: {
+          p_company_id: string
+          p_preset_id: string
+        }
+        Returns: {
+          id: string
+          source_table: string
+          direction: string
+          partner_name: string | null
+          document_number: string | null
+          document_date: string | null
+          description: string | null
+          product_code: string | null
+          amount: number | null
+          quantity: number | null
+          unit: string | null
+          vat_rate: string | null
+          is_reverse_charge: boolean
+        }[]
+      }
           currency: string
           processing_count: number
           total_count: number

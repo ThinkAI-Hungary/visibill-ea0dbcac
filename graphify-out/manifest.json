@@ -1060,8 +1060,8 @@
     "semantic_hash": "776b6ed65c3cb4d27beb42298fa888ce"
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1788697162.303778,
-    "ast_hash": "82b4315c9136f05502e288f34b5cdfbf",
+    "mtime": 1788698189.126947,
+    "ast_hash": "705c490db487aa1ec59b73a494dc4283",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1540,8 +1540,8 @@
     "semantic_hash": ""
   },
   "src/pages/Projects.tsx": {
-    "mtime": 1788143975.7917044,
-    "ast_hash": "f80b5d4c23089bae86a6bd7ae0d32859",
+    "mtime": 1788698206.629404,
+    "ast_hash": "53b20e1fb8c2cba7af40b75571acdcab",
     "semantic_hash": ""
   },
   "src/pages/ResetPassword.tsx": {
@@ -5630,8 +5630,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useNotesData.ts": {
-    "mtime": 1787931793.4564164,
-    "ast_hash": "d829fc99e4c162805b807ccc76bb70b4",
+    "mtime": 1788698210.3896585,
+    "ast_hash": "abde772ae8495f5768282730f04b0af2",
     "semantic_hash": ""
   },
   "src/pages/NotesPage.tsx": {
@@ -9217,6 +9217,11 @@
   "supabase/migrations/20260906143000_add_created_at_to_nav_sync_logs.sql": {
     "mtime": 1788697151.5011406,
     "ast_hash": "e153c3c88433ceb221be57b85cad9d82",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260906150000_add_company_id_to_nav_invoice_items.sql": {
+    "mtime": 1788698097.4923897,
+    "ast_hash": "b72e8c2bb9bccdfc203d963e760eb961",
     "semantic_hash": ""
   }
 }

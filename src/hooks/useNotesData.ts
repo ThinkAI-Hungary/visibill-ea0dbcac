@@ -148,7 +148,7 @@ export function useNotesData(companyId: string | undefined) {
             invoice_issue_date
           )
         `)
-        .eq('nav_invoices.company_id', companyId)
+        .eq('company_id', companyId)
         .not('notes', 'is', null);
 
       // Fetch invoice_items notes
