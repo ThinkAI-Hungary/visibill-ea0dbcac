@@ -9233,5 +9233,10 @@
     "mtime": 1788700338.032582,
     "ast_hash": "911e55cb579f66cb108421edbf0efa1b",
     "semantic_hash": ""
+  },
+  "supabase/migrations/20260906153000_fix_cash_and_manual_payment_matching_status.sql": {
+    "mtime": 1788701519.3806136,
+    "ast_hash": "90c064f7cb1e73d98410fc6dc8a3fa2a",
+    "semantic_hash": ""
   }
 }
