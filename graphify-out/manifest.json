@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788648850.0217917,
-    "ast_hash": "e5612f726e8d31314ee5e736279ba003",
+    "mtime": 1788657034.1304495,
+    "ast_hash": "a6ce6e5d5c964356c3711073aef02d54",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -9207,6 +9207,11 @@
   "docs/architecture/decisions/A-095-international-pos-clearing-currency-override-guard.md": {
     "mtime": 1788648831.7471085,
     "ast_hash": "b05441c2b58a89808f52aad6f32b67cd",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md": {
+    "mtime": 1788657258.7989721,
+    "ast_hash": "4ddd5f974afd2c11c3bdaf40b0305b53",
     "semantic_hash": ""
   }
 }

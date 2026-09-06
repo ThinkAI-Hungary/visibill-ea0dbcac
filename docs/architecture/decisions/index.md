@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-05  
-> **Összesen:** 97 döntés | ✅ Decided: 95 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-06  
+> **Összesen:** 98 döntés | ✅ Decided: 96 | ⛔ Superseded: 2
 
 ---
 
@@ -48,6 +48,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-039 | Transaction Matcher Performance Optimization (O(1) in-memory hash indexing) | ✅ Decided | [A-039](./A-039-transaction-matcher-performance-optimization.md) |
 | A-047 | Robust PDF Export Pipeline, Paired Image Resolution & eaisybill Brand Kontírozó Lap | ✅ Decided | [A-047](./A-047-pdf-export-enhancements-and-posting-slips.md) |
 | A-059 | Tranzakció Párosítási Mag & Moduláris UI Architektúra (TransactionMatchingCore) | ✅ Decided | [A-059](./A-059-transaction-matching-core-and-modular-ui.md) |
+| A-096 | Hivatalos NAV Tételsor Védőháló, Sorszám Szinkronizáció és 23505 Ütközésvédelem | ✅ Decided | [A-096](./A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md) |
 
 ## 🔒 Biztonság & Auth
 

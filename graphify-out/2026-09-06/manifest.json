@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788645564.8438797,
-    "ast_hash": "12d2ebac735770e2bd02a8f45408ada9",
+    "mtime": 1788657034.1304495,
+    "ast_hash": "a6ce6e5d5c964356c3711073aef02d54",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -9202,6 +9202,16 @@
   "docs/product/decisions/P-072-payroll-cycle-attendance-manual-entry-and-cafeteria-ux.md": {
     "mtime": 1788645558.4173272,
     "ast_hash": "652a1c1fa145d8f52ac8fff124f6bee2",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-095-international-pos-clearing-currency-override-guard.md": {
+    "mtime": 1788648831.7471085,
+    "ast_hash": "b05441c2b58a89808f52aad6f32b67cd",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md": {
+    "mtime": 1788657021.7862234,
+    "ast_hash": "14dbf466effe6a30407beba0c48aaeb9",
     "semantic_hash": ""
   }
 }
