@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788705636.6142392,
-    "ast_hash": "11afae8ce01ecc01915c963f0a11d7d2",
+    "mtime": 1788709466.9226985,
+    "ast_hash": "b09dc5bc946ed07b07a71d4c5c5e89b5",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -5050,8 +5050,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
-    "mtime": 1788130267.556707,
-    "ast_hash": "c451c1689cfe73d830d0075fdde6b388",
+    "mtime": 1788709438.619021,
+    "ast_hash": "3f25e9810070e8ce7876cb46e3302ca6",
     "semantic_hash": ""
   },
   "docs/architecture/database/07-general-ledger.md": {
@@ -9267,6 +9267,16 @@
   "docs/architecture/decisions/A-099-invoice-and-upload-deletion-governance.md": {
     "mtime": 1788705619.4884079,
     "ast_hash": "1391a41df2560bf3b6ae91a34c0e72b4",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260906180000_expand_unique_transaction_entry_with_amount.sql": {
+    "mtime": 1788709391.576758,
+    "ast_hash": "12e284f48d279a48af3dd0f6e81aa9d5",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-100-transaction-unique-constraint-amount-inclusion.md": {
+    "mtime": 1788709449.4326613,
+    "ast_hash": "0a0fe6de2f2e42b06a6020783a4bcfcb",
     "semantic_hash": ""
   }
 }

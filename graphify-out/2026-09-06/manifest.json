@@ -3385,13 +3385,13 @@
     "semantic_hash": ""
   },
   "docs/design/11-data-display-tables.md": {
-    "mtime": 1788488533.0755363,
-    "ast_hash": "a7549661a556cb2dc31a7a4c0a905922",
+    "mtime": 1788705844.6112995,
+    "ast_hash": "949d70712c853bd3489f127e630d9783",
     "semantic_hash": ""
   },
   "docs/design/12-dialogs-modals.md": {
-    "mtime": 1788555208.6661994,
-    "ast_hash": "212aa6b6ecb6b9288a4ef297b3a6b5a6",
+    "mtime": 1788705834.9586308,
+    "ast_hash": "6e07a647beec5b10c5898575af4a6247",
     "semantic_hash": ""
   },
   "docs/design/design_opcio/DESIGN.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788645571.4112892,
-    "ast_hash": "a46593159d6d2be81a40902677c2399c",
+    "mtime": 1788705821.8277235,
+    "ast_hash": "0574a9708ba7f5d34cf6371f532df1f0",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
