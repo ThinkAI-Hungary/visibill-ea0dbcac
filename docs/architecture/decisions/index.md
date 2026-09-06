@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-06  
-> **Összesen:** 98 döntés | ✅ Decided: 96 | ⛔ Superseded: 2
+> **Összesen:** 99 döntés | ✅ Decided: 97 | ⛔ Superseded: 2
 
 ---
 
@@ -104,6 +104,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-095 | Nemzetközi Kártyaelfogadó Terminál (Europay POS) Clearing Devizafelülírás Védelme | ✅ Decided | [A-095](./A-095-international-pos-clearing-currency-override-guard.md) |
 | A-096 | Hivatalos NAV Tételsor Védőháló és Számla Szinkronizáció | ✅ Decided | [A-096](./A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md) |
 | A-097 | Multi-Tenant nav_invoice_items Denormalizáció, GL Statement Timeout Felszámolása és RLS Optimalizálás | ✅ Decided | [A-097](./A-097-multi-tenant-nav-items-denormalization-and-gl-optimization.md) |
+| A-098 | Készpénzes és Manuális Kifizetésű Számlák Egységes Párosítási Státusza és KPI Integritása | ✅ Decided | [A-098](./A-098-cash-and-manual-payment-matching-status-consistency.md) |
 
 ## 🖥️ Frontend
 

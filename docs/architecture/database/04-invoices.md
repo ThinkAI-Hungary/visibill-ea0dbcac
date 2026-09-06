@@ -69,6 +69,11 @@
 | planned_payment_date | date | ✓ |  |
 | selexped_registry_number | text | ✓ |  |
 | intermediary_service | boolean | — | `false` |
+| is_manual_payment | boolean | ✓ | `false` |
+| manual_payment_date | date | ✓ |  |
+| manual_payment_type | text | ✓ |  |
+| manual_payment_note | text | ✓ |  |
+| confidence_score | numeric | ✓ |  |
 | nav_status | text | ✓ | `'missing_nav'::text` |
 | approved_at | timestamp with time zone | ✓ |  |
 | approved_by | uuid | ✓ |  |
@@ -77,6 +82,10 @@
 **FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `invoice_uploads_id` → `invoice_uploads.id`, `project_id` → `projects.id`, `transaction_id` → `transactions.id`, `approved_by` → `auth.users.id`
 
 **Indexek:** `idx_invoices_bizonylatsorszam_company`, `idx_invoices_cash_fizmod`, `idx_invoices_category_id`, `idx_invoices_company_date`, `idx_invoices_company_direction_date`, `idx_invoices_company_dir_date_desc`, `idx_invoices_company_fizmod`, `idx_invoices_company_nav_status`, `idx_invoices_exclude`, `idx_invoices_gl_account_id`, `idx_invoices_invoice_uploads_id`, `idx_invoices_outbound_unpaid`, `idx_invoices_project_id`, `idx_invoices_reference_number`, `idx_invoices_search_trgm` (GIN trigram), `idx_invoices_statusz`, `idx_invoices_transaction_id`, `idx_invoices_user_id`, `invoices_company_id_bizonylatsorszam_key`
+
+> **Párosítási és Fizetettségi Szabály (A-098):**
+> A szerveroldali lekérdező RPC-k (`get_filtered_submitted_invoices`, `get_invoice_kpis`, `get_filtered_nav_invoices`) a készpénzes (`LOWER(fizetesi_mod) IN ('készpénz', 'keszpenz', 'cash')` vagy `ILIKE`) és a manuálisan lezárt (`is_manual_payment = true`) számlákat automatikusan teljes mértékben kiegyenlítettnek minősítik (`paid_amount = gross_abs`, `remaining_amount = 0`, `match_status = 'matched'`), függetlenül attól, hogy van-e hozzájuk banki bankszámlakivonat-tranzakció.
+
 
 ---
 

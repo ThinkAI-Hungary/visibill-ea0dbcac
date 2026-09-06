@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788657034.1304495,
-    "ast_hash": "a6ce6e5d5c964356c3711073aef02d54",
+    "mtime": 1788700346.700566,
+    "ast_hash": "6ff8170264fdcdf5eebd26796f544100",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -5045,8 +5045,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {
-    "mtime": 1788282455.7825215,
-    "ast_hash": "a3e9dfee4155a377a99c16c4c321e2e0",
+    "mtime": 1788700371.3182483,
+    "ast_hash": "6bf8af813360189d0100fdf79080c969",
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
@@ -8185,8 +8185,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/nav-ingestion-service.ts": {
-    "mtime": 1788575982.10552,
-    "ast_hash": "1c1aceabda0b1578c2bc5c9572aa9108",
+    "mtime": 1788699308.8631008,
+    "ast_hash": "002313bff127dc7956a1d88805151b00",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/types.ts": {
@@ -9227,6 +9227,16 @@
   "supabase/migrations/20260906151500_optimize_nav_invoice_items_rls_and_sync.sql": {
     "mtime": 1788699054.0609996,
     "ast_hash": "dd1da8b8b23f5fde9962e0e1acb55d1a",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-097-multi-tenant-nav-items-denormalization-and-gl-optimization.md": {
+    "mtime": 1788700338.032582,
+    "ast_hash": "911e55cb579f66cb108421edbf0efa1b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260906153000_fix_cash_and_manual_payment_matching_status.sql": {
+    "mtime": 1788701519.3806136,
+    "ast_hash": "90c064f7cb1e73d98410fc6dc8a3fa2a",
     "semantic_hash": ""
   }
 }
