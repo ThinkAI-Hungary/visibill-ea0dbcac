@@ -35,7 +35,7 @@
 
 **FK:** `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `upload_id` → `transaction_uploads.id`
 
-**Indexek:** `idx_transactions_cash_types`, `idx_transactions_company_date`, `idx_transactions_company_date_currency`, `idx_transactions_company_matched`, `idx_transactions_company_type`, `idx_transactions_gl_account_id`, `idx_transactions_upload_id`, `unique_transaction_entry`
+**Indexek:** `idx_transactions_cash_types`, `idx_transactions_company_date`, `idx_transactions_company_date_currency`, `idx_transactions_company_matched`, `idx_transactions_company_type`, `idx_transactions_gl_account_id`, `idx_transactions_upload_id`, `unique_transaction_entry` (UNIQUE: `company_id, transaction_date, description, amount`)
 
 ---
 
