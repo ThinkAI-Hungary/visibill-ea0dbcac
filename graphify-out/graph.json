@@ -15827,7 +15827,7 @@
       "label": "CompanyContextType",
       "file_type": "code",
       "source_file": "src/contexts/CompanyContext.tsx",
-      "source_location": "L25",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "contexts_companycontext_companycontexttype",
       "community": 92,
@@ -15837,7 +15837,7 @@
       "label": "CompanyContext",
       "file_type": "code",
       "source_file": "src/contexts/CompanyContext.tsx",
-      "source_location": "L36",
+      "source_location": "L38",
       "_origin": "ast",
       "id": "contexts_companycontext_companycontext",
       "community": 92,
@@ -15847,7 +15847,7 @@
       "label": "CompanyProvider()",
       "file_type": "code",
       "source_file": "src/contexts/CompanyContext.tsx",
-      "source_location": "L49",
+      "source_location": "L51",
       "_origin": "ast",
       "id": "contexts_companycontext_companyprovider",
       "community": 653,
@@ -15857,7 +15857,7 @@
       "label": "useCompany()",
       "file_type": "code",
       "source_file": "src/contexts/CompanyContext.tsx",
-      "source_location": "L206",
+      "source_location": "L208",
       "_origin": "ast",
       "id": "contexts_companycontext_usecompany",
       "community": 431,
@@ -25547,7 +25547,7 @@
       "label": "DatabaseWithoutInternals",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11608",
+      "source_location": "L11611",
       "_origin": "ast",
       "id": "supabase_types_databasewithoutinternals",
       "community": 34,
@@ -25557,7 +25557,7 @@
       "label": "DefaultSchema",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11610",
+      "source_location": "L11613",
       "_origin": "ast",
       "id": "supabase_types_defaultschema",
       "community": 34,
@@ -25567,7 +25567,7 @@
       "label": "Tables",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11612",
+      "source_location": "L11615",
       "_origin": "ast",
       "id": "supabase_types_tables",
       "community": 34,
@@ -25577,7 +25577,7 @@
       "label": "TablesInsert",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11641",
+      "source_location": "L11644",
       "_origin": "ast",
       "id": "supabase_types_tablesinsert",
       "community": 34,
@@ -25587,7 +25587,7 @@
       "label": "TablesUpdate",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11666",
+      "source_location": "L11669",
       "_origin": "ast",
       "id": "supabase_types_tablesupdate",
       "community": 34,
@@ -25597,7 +25597,7 @@
       "label": "Enums",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11691",
+      "source_location": "L11694",
       "_origin": "ast",
       "id": "supabase_types_enums",
       "community": 34,
@@ -25607,7 +25607,7 @@
       "label": "CompositeTypes",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11708",
+      "source_location": "L11711",
       "_origin": "ast",
       "id": "supabase_types_compositetypes",
       "community": 34,
@@ -25617,7 +25617,7 @@
       "label": "Constants",
       "file_type": "code",
       "source_file": "src/integrations/supabase/types.ts",
-      "source_location": "L11725",
+      "source_location": "L11728",
       "_origin": "ast",
       "id": "supabase_types_constants",
       "community": 34,
@@ -55640,7 +55640,7 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "project_documentation_key_edge_functions",
-      "community": 49,
+      "community": 24,
       "norm_label": "key edge functions"
     },
     {
@@ -55650,7 +55650,7 @@
       "source_location": "L129",
       "_origin": "ast",
       "id": "project_documentation_email_system",
-      "community": 49,
+      "community": 24,
       "norm_label": "email system"
     },
     {
@@ -55660,7 +55660,7 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "project_documentation_nav_integration_hungarian_tax_authority",
-      "community": 49,
+      "community": 24,
       "norm_label": "nav integration (hungarian tax authority)"
     },
     {
@@ -55670,7 +55670,7 @@
       "source_location": "L160",
       "_origin": "ast",
       "id": "project_documentation_invoice_processing",
-      "community": 49,
+      "community": 24,
       "norm_label": "invoice processing"
     },
     {
@@ -55680,7 +55680,7 @@
       "source_location": "L174",
       "_origin": "ast",
       "id": "project_documentation_email_integrations",
-      "community": 49,
+      "community": 24,
       "norm_label": "email integrations"
     },
     {
@@ -55690,7 +55690,7 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "project_documentation_payment_subscription",
-      "community": 49,
+      "community": 24,
       "norm_label": "payment & subscription"
     },
     {
@@ -55700,7 +55700,7 @@
       "source_location": "L205",
       "_origin": "ast",
       "id": "project_documentation_data_management",
-      "community": 49,
+      "community": 24,
       "norm_label": "data management"
     },
     {
@@ -55840,7 +55840,7 @@
       "source_location": "L302",
       "_origin": "ast",
       "id": "project_documentation_email_system_302",
-      "community": 49,
+      "community": 24,
       "norm_label": "email system"
     },
     {
@@ -55850,7 +55850,7 @@
       "source_location": "L304",
       "_origin": "ast",
       "id": "project_documentation_outgoing_emails_resend",
-      "community": 49,
+      "community": 24,
       "norm_label": "outgoing emails (resend)"
     },
     {
@@ -55860,7 +55860,7 @@
       "source_location": "L323",
       "_origin": "ast",
       "id": "project_documentation_incoming_emails_mailgun",
-      "community": 49,
+      "community": 24,
       "norm_label": "incoming emails (mailgun)"
     },
     {
@@ -55870,7 +55870,7 @@
       "source_location": "L339",
       "_origin": "ast",
       "id": "project_documentation_email_sync_nylas",
-      "community": 49,
+      "community": 24,
       "norm_label": "email sync (nylas)"
     },
     {
@@ -56040,7 +56040,7 @@
       "source_location": "L446",
       "_origin": "ast",
       "id": "project_documentation_environment_variables_secrets",
-      "community": 49,
+      "community": 24,
       "norm_label": "environment variables & secrets"
     },
     {
@@ -56050,7 +56050,7 @@
       "source_location": "L448",
       "_origin": "ast",
       "id": "project_documentation_supabase",
-      "community": 49,
+      "community": 24,
       "norm_label": "supabase"
     },
     {
@@ -56060,7 +56060,7 @@
       "source_location": "L453",
       "_origin": "ast",
       "id": "project_documentation_email_services",
-      "community": 49,
+      "community": 24,
       "norm_label": "email services"
     },
     {
@@ -56070,7 +56070,7 @@
       "source_location": "L460",
       "_origin": "ast",
       "id": "project_documentation_email_sync",
-      "community": 49,
+      "community": 24,
       "norm_label": "email sync"
     },
     {
@@ -56080,7 +56080,7 @@
       "source_location": "L464",
       "_origin": "ast",
       "id": "project_documentation_payment",
-      "community": 49,
+      "community": 24,
       "norm_label": "payment"
     },
     {
@@ -56090,7 +56090,7 @@
       "source_location": "L468",
       "_origin": "ast",
       "id": "project_documentation_automation",
-      "community": 49,
+      "community": 24,
       "norm_label": "automation"
     },
     {
@@ -56170,7 +56170,7 @@
       "source_location": "L527",
       "_origin": "ast",
       "id": "project_documentation_development_guidelines",
-      "community": 24,
+      "community": 49,
       "norm_label": "development guidelines"
     },
     {
@@ -56180,7 +56180,7 @@
       "source_location": "L529",
       "_origin": "ast",
       "id": "project_documentation_local_development",
-      "community": 24,
+      "community": 49,
       "norm_label": "local development"
     },
     {
@@ -56190,7 +56190,7 @@
       "source_location": "L536",
       "_origin": "ast",
       "id": "project_documentation_edge_functions",
-      "community": 24,
+      "community": 49,
       "norm_label": "edge functions"
     },
     {
@@ -56200,7 +56200,7 @@
       "source_location": "L542",
       "_origin": "ast",
       "id": "project_documentation_frontend_deployment",
-      "community": 24,
+      "community": 49,
       "norm_label": "frontend deployment"
     },
     {
@@ -56210,7 +56210,7 @@
       "source_location": "L547",
       "_origin": "ast",
       "id": "project_documentation_database_migrations",
-      "community": 24,
+      "community": 49,
       "norm_label": "database migrations"
     },
     {
@@ -56220,7 +56220,7 @@
       "source_location": "L553",
       "_origin": "ast",
       "id": "project_documentation_design_system",
-      "community": 24,
+      "community": 49,
       "norm_label": "design system"
     },
     {
@@ -56350,7 +56350,7 @@
       "source_location": "L644",
       "_origin": "ast",
       "id": "project_documentation_api_rate_limits_quotas",
-      "community": 24,
+      "community": 593,
       "norm_label": "api rate limits & quotas"
     },
     {
@@ -56360,7 +56360,7 @@
       "source_location": "L646",
       "_origin": "ast",
       "id": "project_documentation_supabase_free_tier",
-      "community": 24,
+      "community": 593,
       "norm_label": "supabase (free tier)"
     },
     {
@@ -56370,7 +56370,7 @@
       "source_location": "L653",
       "_origin": "ast",
       "id": "project_documentation_resend_free_tier",
-      "community": 24,
+      "community": 593,
       "norm_label": "resend (free tier)"
     },
     {
@@ -56380,7 +56380,7 @@
       "source_location": "L659",
       "_origin": "ast",
       "id": "project_documentation_nav_api",
-      "community": 24,
+      "community": 593,
       "norm_label": "nav api"
     },
     {
@@ -56390,7 +56390,7 @@
       "source_location": "L665",
       "_origin": "ast",
       "id": "project_documentation_stripe",
-      "community": 24,
+      "community": 593,
       "norm_label": "stripe"
     },
     {
@@ -56450,7 +56450,7 @@
       "source_location": "L700",
       "_origin": "ast",
       "id": "project_documentation_monitoring_logging",
-      "community": 593,
+      "community": 24,
       "norm_label": "monitoring & logging"
     },
     {
@@ -56460,7 +56460,7 @@
       "source_location": "L702",
       "_origin": "ast",
       "id": "project_documentation_edge_function_logs",
-      "community": 593,
+      "community": 24,
       "norm_label": "edge function logs"
     },
     {
@@ -56470,7 +56470,7 @@
       "source_location": "L708",
       "_origin": "ast",
       "id": "project_documentation_database_logs",
-      "community": 593,
+      "community": 24,
       "norm_label": "database logs"
     },
     {
@@ -56480,7 +56480,7 @@
       "source_location": "L714",
       "_origin": "ast",
       "id": "project_documentation_error_tracking",
-      "community": 593,
+      "community": 24,
       "norm_label": "error tracking"
     },
     {
@@ -56490,7 +56490,7 @@
       "source_location": "L719",
       "_origin": "ast",
       "id": "project_documentation_usage_monitoring",
-      "community": 593,
+      "community": 24,
       "norm_label": "usage monitoring"
     },
     {
@@ -293295,9 +293295,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L37",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_decision",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_3_szigor\u00fa_mem\u00f3riabeli_ellen\u0151rz\u00e9s_0_ft_tolerancia_partner_egyez\u00e9s",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_3_szigor\u00fa_mem\u00f3riabeli_ellen\u0151rz\u00e9s_0_ft_tolerancia_partner_egyez\u00e9s"
     },
     {
       "relation": "contains",
@@ -309981,5 +309981,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "5da25d283789a203f7282ef217f7eccb5fcad356"
+  "built_at_commit": "29bb3d53369e9a7c9c12c464403e788e4751d9e0"
 }

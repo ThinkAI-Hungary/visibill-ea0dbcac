@@ -157,7 +157,7 @@ export function useDocumentUpload(channelId: UploadChannelId) {
 
       // Register live notifications for worker tracking
       for (const rec of records) {
-        registerPendingUpload(rec.id, config.notificationType);
+        registerPendingUpload(rec.id);
       }
 
       // Optimistically update upload history cache

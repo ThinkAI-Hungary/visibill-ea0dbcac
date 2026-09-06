@@ -14,6 +14,8 @@ export interface Company {
   name: string;
   tax_number: string | null;
   address: string | null;
+  description?: string | null;
+  primary_teaor?: string | null;
   owner_id: string;
   share_token?: string | null;
   vat_regime?: VatRegime;
@@ -105,15 +107,15 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
 
       const result = await supabase
         .from('companies')
-        .select('id, name, tax_number, address, owner_id, share_token, vat_regime, vat_regime_effective_from, created_at, updated_at')
+        .select('id, name, tax_number, address, description, primary_teaor, owner_id, share_token, vat_regime, vat_regime_effective_from, created_at, updated_at')
         .in('id', allCompanyIds)
         .order('created_at', { ascending: true });
 
       data = result.data;
       error = result.error;
 
-      // Fallback: if vat_regime columns don't exist yet, retry without them
-      if (error && (error.message?.includes('vat_regime') || error.code === '42703' || error.code === 'PGRST204')) {
+      // Fallback: if optional columns (vat_regime, description, primary_teaor) don't exist yet, retry without them
+      if (error && (error.message?.includes('vat_regime') || error.message?.includes('description') || error.message?.includes('primary_teaor') || error.code === '42703' || error.code === 'PGRST204')) {
         const fallback = await supabase
           .from('companies')
           .select('id, name, tax_number, address, owner_id, share_token, created_at, updated_at')

@@ -7672,6 +7672,7 @@ export type Database = {
         Row: {
           company_id: string | null
           completed_at: string | null
+          created_at: string
           date_from: string | null
           date_to: string | null
           duration_ms: number | null
@@ -7687,6 +7688,7 @@ export type Database = {
         Insert: {
           company_id?: string | null
           completed_at?: string | null
+          created_at?: string
           date_from?: string | null
           date_to?: string | null
           duration_ms?: number | null
@@ -7702,6 +7704,7 @@ export type Database = {
         Update: {
           company_id?: string | null
           completed_at?: string | null
+          created_at?: string
           date_from?: string | null
           date_to?: string | null
           duration_ms?: number | null

@@ -1,7 +1,7 @@
 # Graph Report - eaisybill-prod  (2026-09-06)
 
 ## Corpus Check
-- 1685 files · ~2,201,904 words
+- 1686 files · ~2,202,035 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5da25d28`
+- Built from commit: `29bb3d53`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -784,8 +784,8 @@ Cohesion: 0.22
 Nodes (12): InvoiceContext, InvoiceFilterContext, InvoiceFilterProvider(), useInvoiceFilterContext(), InvoicePaginationContext, InvoicePaginationContextValue, InvoicePaginationProvider(), useInvoicePaginationContext() (+4 more)
 
 ### Community 24 - "Accounty Mockdata Blockingcategory"
-Cohesion: 0.07
-Nodes (29): API Rate Limits & Quotas, Architecture Overview, Backend, Database Migrations, Design System, Developer Contacts, Development Guidelines, Directory Structure (+21 more)
+Cohesion: 0.06
+Nodes (40): Architecture Overview, Automation, Backend, Data Management, Database Logs, Developer Contacts, Directory Structure, Documentation (+32 more)
 
 ### Community 25 - "Accounty Mockdata Blockingitem"
 Cohesion: 0.05
@@ -884,8 +884,8 @@ Cohesion: 0.03
 Nodes (71): FUND_TYPES, Props, CATEGORIES, PRIORITIES, Props, STATUSES, Props, UNIT_TYPES (+63 more)
 
 ### Community 49 - "Fixed Assets Depreciationcards Depreciationcards"
-Cohesion: 0.12
-Nodes (17): Automation, Data Management, Email Integrations, Email Services, Email Sync, Email Sync (Nylas), Email System, Email System (+9 more)
+Cohesion: 0.33
+Nodes (6): Database Migrations, Design System, Development Guidelines, Edge Functions, Frontend Deployment, Local Development
 
 ### Community 50 - "Fixed Assets Inventorycheckdialog Inventorycheckdi"
 Cohesion: 0.11
@@ -2489,7 +2489,7 @@ Nodes (6): CASH_TYPES, computePaymentStatus(), MatchStatus, PaymentStatus, Trans
 
 ### Community 593 - "Community 593"
 Cohesion: 0.40
-Nodes (5): Database Logs, Edge Function Logs, Error Tracking, Monitoring & Logging, Usage Monitoring
+Nodes (5): API Rate Limits & Quotas, NAV API, Resend (Free Tier), Stripe, Supabase (Free Tier)
 
 ### Community 594 - "Community 594"
 Cohesion: 0.11
@@ -2737,7 +2737,7 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `cn()` connect `Community 374` to `Core Platform & Infrastructure`, `Community 515`, `Community 132`, `Community 644`, `Invoice Type Definitions`, `Accounty Accountyrolecontext Useaccountyrole`, `Accounty Clientinvoicespage Clientinvoicespage`, `Accounty Generaterequestemail Addtoapprovalqueue`, `Community 653`, `Community 655`, `Accounty Generaterequestemail Messagecategory`, `Accounty Generaterequestemail Messagestatus`, `Community 529`, `Community 660`, `Accounty Generaterequestemail Saveapprovalqueue`, `Accounty Generaterequestemail Updatemessagebody`, `Accounty Mockdata Blockingitem`, `Accounty Mockdata Clientdata`, `Accounty Types Blockingcategory`, `Accounty Types Blockingitem`, `Components Emailpreferences Emailpreferences`, `Components Feedbackfab Feedbackfab`, `Community 419`, `Contexts Companycontext Company`, `Community 174`, `Community 431`, `Eaisybill Prod Readme`, `Community 175`, `Community 181`, `Hooks Useaccountydata Accountyaccountant`, `Community 184`, `Community 441`, `Hooks Useaccountydata Accountykpis`, `Community 569`, `Community 572`, `Hooks Useaccountydata Auditlogentry`, `Hooks Useaccountydata Colleaguestat`, `Community 447`, `Community 578`, `Hooks Useaccountydata Monthlytrendpoint`, `Community 455`, `Hooks Useaccountydata Useaccountyauditlog`, `Community 201`, `Community 585`, `Community 332`, `Community 77`, `Community 333`, `Community 334`, `Community 82`, `Community 596`, `Community 343`, `Community 216`, `Community 601`, `Community 602`, `Community 475`, `Community 604`, `Hooks Useaccountydata Useupdatekanbanstatus`, `Hooks Useaccountydata Useupsertcommunicationprefs`, `Community 479`, `Community 603`, `Hooks Useaccountydata Useresolvemissingitem`, `Community 485`, `Community 613`, `Community 367`, `Hooks Usedashboarddata Monthlydata`, `Community 242`, `Hooks Usedashboarddata Vatbreakdownresult`, `Community 629`, `Community 630`, `Community 634`, `Community 635`?**
   _High betweenness centrality (0.051) - this node is a cross-community bridge._
-- **Why does `VisiBill - Project Documentation` connect `Accounty Mockdata Blockingcategory` to `Hooks Useaccountydata Invoicereportrow`, `Dashboard Dashboardskeleton Metriccardskeleton`, `Community 493`, `Fixed Assets Depreciationcards Depreciationcards`, `Fixed Assets Inventorycheckdialog Inventorycheckdi`, `Community 593`, `Hooks Useaccountydata Useaccountytaxprofile`, `Community 533`, `Hooks Useaccountydata Accountycommunicationprefs`?**
+- **Why does `VisiBill - Project Documentation` connect `Accounty Mockdata Blockingcategory` to `Hooks Useaccountydata Invoicereportrow`, `Dashboard Dashboardskeleton Metriccardskeleton`, `Community 493`, `Community 593`, `Fixed Assets Inventorycheckdialog Inventorycheckdi`, `Fixed Assets Depreciationcards Depreciationcards`, `Hooks Useaccountydata Useaccountytaxprofile`, `Community 533`, `Hooks Useaccountydata Accountycommunicationprefs`?**
   _High betweenness centrality (0.029) - this node is a cross-community bridge._
 - **Why does `Common Workflows` connect `Hooks Useaccountydata Accountycommunicationprefs` to `Accounty Mockdata Blockingcategory`, `Accounty Types Blockingitem`, `Accounty Types Clientdata`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._

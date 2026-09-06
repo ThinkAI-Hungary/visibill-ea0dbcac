@@ -3930,7 +3930,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "components_idlewarningmodal_formattime",
-      "community": 657,
+      "community": 242,
       "norm_label": "formattime()"
     },
     {
@@ -3940,7 +3940,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "components_idlewarningmodal_idlewarningmodal",
-      "community": 657,
+      "community": 242,
       "norm_label": "idlewarningmodal()"
     },
     {
@@ -5360,7 +5360,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "accounty_exportbutton_exportbutton",
-      "community": 9,
+      "community": 613,
       "norm_label": "exportbutton()"
     },
     {
@@ -8510,7 +8510,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "integrations_emailaccountcard",
-      "community": 30,
+      "community": 21,
       "norm_label": "emailaccountcard.tsx"
     },
     {
@@ -9410,7 +9410,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "nav_evalertscenter",
-      "community": 95,
+      "community": 22,
       "norm_label": "evalertscenter.tsx"
     },
     {
@@ -9420,7 +9420,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "nav_evalertscenter_portfolioalert",
-      "community": 95,
+      "community": 22,
       "norm_label": "portfolioalert"
     },
     {
@@ -9430,7 +9430,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "nav_evalertscenter_evalertscenterprops",
-      "community": 95,
+      "community": 22,
       "norm_label": "evalertscenterprops"
     },
     {
@@ -9440,7 +9440,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "nav_evalertscenter_evalertscenter",
-      "community": 95,
+      "community": 22,
       "norm_label": "evalertscenter()"
     },
     {
@@ -14880,7 +14880,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_toggle_group",
-      "community": 374,
+      "community": 82,
       "norm_label": "toggle-group.tsx"
     },
     {
@@ -14890,7 +14890,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "ui_toggle_group_togglegroupcontext",
-      "community": 374,
+      "community": 82,
       "norm_label": "togglegroupcontext"
     },
     {
@@ -14900,7 +14900,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "ui_toggle_group_togglegroup",
-      "community": 374,
+      "community": 82,
       "norm_label": "togglegroup"
     },
     {
@@ -14910,7 +14910,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "ui_toggle_group_togglegroupitem",
-      "community": 374,
+      "community": 82,
       "norm_label": "togglegroupitem"
     },
     {
@@ -14920,7 +14920,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_toggle",
-      "community": 374,
+      "community": 82,
       "norm_label": "toggle.tsx"
     },
     {
@@ -14930,7 +14930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "ui_toggle_togglevariants",
-      "community": 374,
+      "community": 82,
       "norm_label": "togglevariants"
     },
     {
@@ -14940,7 +14940,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "ui_toggle_toggle",
-      "community": 374,
+      "community": 82,
       "norm_label": "toggle"
     },
     {
@@ -15870,7 +15870,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "contexts_daterangecontext",
-      "community": 585,
+      "community": 18,
       "norm_label": "daterangecontext.tsx"
     },
     {
@@ -15880,7 +15880,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "contexts_daterangecontext_daterangecontexttype",
-      "community": 585,
+      "community": 18,
       "norm_label": "daterangecontexttype"
     },
     {
@@ -15890,7 +15890,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "contexts_daterangecontext_daterangecontext",
-      "community": 585,
+      "community": 18,
       "norm_label": "daterangecontext"
     },
     {
@@ -15900,7 +15900,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "contexts_daterangecontext_formatdate",
-      "community": 585,
+      "community": 18,
       "norm_label": "formatdate()"
     },
     {
@@ -15910,7 +15910,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "contexts_daterangecontext_parselocaldate",
-      "community": 585,
+      "community": 18,
       "norm_label": "parselocaldate()"
     },
     {
@@ -15920,7 +15920,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "contexts_daterangecontext_getinitialdates",
-      "community": 585,
+      "community": 18,
       "norm_label": "getinitialdates()"
     },
     {
@@ -15930,7 +15930,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "contexts_daterangecontext_daterangeprovider",
-      "community": 585,
+      "community": 18,
       "norm_label": "daterangeprovider()"
     },
     {
@@ -19770,7 +19770,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_vatcalculatorview",
-      "community": 21,
+      "community": 216,
       "norm_label": "vatcalculatorview.tsx"
     },
     {
@@ -19780,7 +19780,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "components_vatcalculatorview_vatdatareturn",
-      "community": 21,
+      "community": 216,
       "norm_label": "vatdatareturn"
     },
     {
@@ -19790,7 +19790,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "components_vatcalculatorview_vatcalculatorviewprops",
-      "community": 21,
+      "community": 216,
       "norm_label": "vatcalculatorviewprops"
     },
     {
@@ -19890,7 +19890,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_vatreturnviewtab",
-      "community": 479,
+      "community": 216,
       "norm_label": "vatreturnviewtab.tsx"
     },
     {
@@ -20150,7 +20150,7 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "vat_types_fmteft",
-      "community": 21,
+      "community": 216,
       "norm_label": "fmteft()"
     },
     {
@@ -20770,7 +20770,7 @@
       "source_location": "L177",
       "_origin": "ast",
       "id": "accounty_useaccountyclients_useaccountyclient",
-      "community": 18,
+      "community": 333,
       "norm_label": "useaccountyclient()"
     },
     {
@@ -21340,7 +21340,7 @@
       "source_location": "L227",
       "_origin": "ast",
       "id": "accounty_useaccountypayroll_usetransfers",
-      "community": 613,
+      "community": 332,
       "norm_label": "usetransfers()"
     },
     {
@@ -22810,7 +22810,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "hooks_useevdata_evtaxpayerform",
-      "community": 95,
+      "community": 48,
       "norm_label": "evtaxpayerform"
     },
     {
@@ -22830,7 +22830,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "hooks_useevdata_evvatstatus",
-      "community": 95,
+      "community": 48,
       "norm_label": "evvatstatus"
     },
     {
@@ -22960,7 +22960,7 @@
       "source_location": "L173",
       "_origin": "ast",
       "id": "hooks_useevdata_usecashbooktotals",
-      "community": 333,
+      "community": 22,
       "norm_label": "usecashbooktotals()"
     },
     {
@@ -23010,7 +23010,7 @@
       "source_location": "L380",
       "_origin": "ast",
       "id": "hooks_useevdata_useevtaxreturns",
-      "community": 18,
+      "community": 333,
       "norm_label": "useevtaxreturns()"
     },
     {
@@ -23080,7 +23080,7 @@
       "source_location": "L501",
       "_origin": "ast",
       "id": "hooks_useevdata_evtaxreturn",
-      "community": 22,
+      "community": 419,
       "norm_label": "evtaxreturn"
     },
     {
@@ -23140,7 +23140,7 @@
       "source_location": "L603",
       "_origin": "ast",
       "id": "hooks_useevdata_useevhipacalc",
-      "community": 18,
+      "community": 333,
       "norm_label": "useevhipacalc()"
     },
     {
@@ -23170,7 +23170,7 @@
       "source_location": "L663",
       "_origin": "ast",
       "id": "hooks_useevdata_useevvehiclelog",
-      "community": 18,
+      "community": 333,
       "norm_label": "useevvehiclelog()"
     },
     {
@@ -23220,7 +23220,7 @@
       "source_location": "L815",
       "_origin": "ast",
       "id": "hooks_useevdata_useallevclientsettings",
-      "community": 333,
+      "community": 22,
       "norm_label": "useallevclientsettings()"
     },
     {
@@ -23230,7 +23230,7 @@
       "source_location": "L832",
       "_origin": "ast",
       "id": "hooks_useevdata_useevrealtotals",
-      "community": 333,
+      "community": 22,
       "norm_label": "useevrealtotals()"
     },
     {
@@ -23250,7 +23250,7 @@
       "source_location": "L907",
       "_origin": "ast",
       "id": "hooks_useevdata_useevytdrevenue",
-      "community": 333,
+      "community": 22,
       "norm_label": "useevytdrevenue()"
     },
     {
@@ -23320,7 +23320,7 @@
       "source_location": "L1067",
       "_origin": "ast",
       "id": "hooks_useevdata_useevvatreturns",
-      "community": 48,
+      "community": 18,
       "norm_label": "useevvatreturns()"
     },
     {
@@ -23350,7 +23350,7 @@
       "source_location": "L1159",
       "_origin": "ast",
       "id": "hooks_useevdata_useevrecordcounts",
-      "community": 585,
+      "community": 48,
       "norm_label": "useevrecordcounts()"
     },
     {
@@ -27420,7 +27420,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "templates_tableexporttemplate_buildtableexportdescriptor",
-      "community": 175,
+      "community": 9,
       "norm_label": "buildtableexportdescriptor()"
     },
     {
@@ -27810,7 +27810,7 @@
       "source_location": "L374",
       "_origin": "ast",
       "id": "lib_evcalculations_thresholdstatus",
-      "community": 333,
+      "community": 22,
       "norm_label": "thresholdstatus"
     },
     {
@@ -27820,7 +27820,7 @@
       "source_location": "L376",
       "_origin": "ast",
       "id": "lib_evcalculations_thresholdcheck",
-      "community": 333,
+      "community": 22,
       "norm_label": "thresholdcheck"
     },
     {
@@ -27830,7 +27830,7 @@
       "source_location": "L385",
       "_origin": "ast",
       "id": "lib_evcalculations_checkthresholdstatus",
-      "community": 333,
+      "community": 22,
       "norm_label": "checkthresholdstatus()"
     },
     {
@@ -27840,7 +27840,7 @@
       "source_location": "L396",
       "_origin": "ast",
       "id": "lib_evcalculations_getevthresholds",
-      "community": 333,
+      "community": 22,
       "norm_label": "getevthresholds()"
     },
     {
@@ -28010,7 +28010,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_exportpdf",
-      "community": 175,
+      "community": 9,
       "norm_label": "exportpdf.ts"
     },
     {
@@ -28030,7 +28030,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "lib_exportpdf_exportpdf",
-      "community": 175,
+      "community": 9,
       "norm_label": "exportpdf()"
     },
     {
@@ -28040,7 +28040,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "lib_exportpdf_getpdfbloburl",
-      "community": 175,
+      "community": 9,
       "norm_label": "getpdfbloburl()"
     },
     {
@@ -30340,7 +30340,7 @@
       "source_location": "L222",
       "_origin": "ast",
       "id": "payroll_filinggenerator_downloadxml",
-      "community": 613,
+      "community": 580,
       "norm_label": "downloadxml()"
     },
     {
@@ -33460,7 +33460,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_cashbookentryform",
-      "community": 95,
+      "community": 48,
       "norm_label": "cashbookentryform.tsx"
     },
     {
@@ -33470,7 +33470,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "ev_cashbookentryform_entrydirection",
-      "community": 95,
+      "community": 48,
       "norm_label": "entrydirection"
     },
     {
@@ -33480,7 +33480,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "ev_cashbookentryform_cashbookentryformdata",
-      "community": 95,
+      "community": 48,
       "norm_label": "cashbookentryformdata"
     },
     {
@@ -33490,7 +33490,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "ev_cashbookentryform_cashbookentryformprops",
-      "community": 95,
+      "community": 48,
       "norm_label": "cashbookentryformprops"
     },
     {
@@ -33500,7 +33500,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "ev_cashbookentryform_categorynode",
-      "community": 95,
+      "community": 48,
       "norm_label": "categorynode"
     },
     {
@@ -33510,7 +33510,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "ev_cashbookentryform_cashbook_categories",
-      "community": 95,
+      "community": 48,
       "norm_label": "cashbook_categories"
     },
     {
@@ -33520,7 +33520,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "ev_cashbookentryform_flat_categories",
-      "community": 95,
+      "community": 48,
       "norm_label": "flat_categories"
     },
     {
@@ -33530,7 +33530,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "ev_cashbookentryform_vat_rates",
-      "community": 95,
+      "community": 48,
       "norm_label": "vat_rates"
     },
     {
@@ -33540,7 +33540,7 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "ev_cashbookentryform_kata_allowed_categories",
-      "community": 95,
+      "community": 48,
       "norm_label": "kata_allowed_categories"
     },
     {
@@ -33550,7 +33550,7 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "ev_cashbookentryform_cashbookentryform",
-      "community": 95,
+      "community": 48,
       "norm_label": "cashbookentryform()"
     },
     {
@@ -33660,7 +33660,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_clientevmainpage",
-      "community": 333,
+      "community": 22,
       "norm_label": "clientevmainpage.tsx"
     },
     {
@@ -33670,7 +33670,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "ev_clientevmainpage_form_labels",
-      "community": 333,
+      "community": 22,
       "norm_label": "form_labels"
     },
     {
@@ -33680,7 +33680,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "ev_clientevmainpage_employment_labels",
-      "community": 333,
+      "community": 22,
       "norm_label": "employment_labels"
     },
     {
@@ -33690,7 +33690,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "ev_clientevmainpage_vat_labels",
-      "community": 333,
+      "community": 22,
       "norm_label": "vat_labels"
     },
     {
@@ -33700,7 +33700,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "ev_clientevmainpage_org_type_labels",
-      "community": 333,
+      "community": 22,
       "norm_label": "org_type_labels"
     },
     {
@@ -33710,7 +33710,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "ev_clientevmainpage_clientevmainpage",
-      "community": 333,
+      "community": 22,
       "norm_label": "clientevmainpage()"
     },
     {
@@ -33720,7 +33720,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evcalendarpage",
-      "community": 22,
+      "community": 419,
       "norm_label": "evcalendarpage.tsx"
     },
     {
@@ -33730,7 +33730,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "ev_evcalendarpage_month_names",
-      "community": 22,
+      "community": 419,
       "norm_label": "month_names"
     },
     {
@@ -33740,7 +33740,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "ev_evcalendarpage_return_type_map",
-      "community": 22,
+      "community": 419,
       "norm_label": "return_type_map"
     },
     {
@@ -33750,7 +33750,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "ev_evcalendarpage_type_labels",
-      "community": 22,
+      "community": 419,
       "norm_label": "type_labels"
     },
     {
@@ -33760,7 +33760,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "ev_evcalendarpage_type_colors",
-      "community": 22,
+      "community": 419,
       "norm_label": "type_colors"
     },
     {
@@ -33770,7 +33770,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "ev_evcalendarpage_deadlinestatus",
-      "community": 22,
+      "community": 419,
       "norm_label": "deadlinestatus"
     },
     {
@@ -33780,7 +33780,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "ev_evcalendarpage_status_icon",
-      "community": 22,
+      "community": 419,
       "norm_label": "status_icon"
     },
     {
@@ -33860,7 +33860,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evcompanycartaxpage",
-      "community": 18,
+      "community": 333,
       "norm_label": "evcompanycartaxpage.tsx"
     },
     {
@@ -33870,7 +33870,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "ev_evcompanycartaxpage_engine_labels",
-      "community": 18,
+      "community": 333,
       "norm_label": "engine_labels"
     },
     {
@@ -33880,7 +33880,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "ev_evcompanycartaxpage_evcompanycartaxpage",
-      "community": 18,
+      "community": 333,
       "norm_label": "evcompanycartaxpage()"
     },
     {
@@ -34290,7 +34290,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evhipareturnpage",
-      "community": 18,
+      "community": 333,
       "norm_label": "evhipareturnpage.tsx"
     },
     {
@@ -34300,7 +34300,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "ev_evhipareturnpage_status_cfg",
-      "community": 18,
+      "community": 333,
       "norm_label": "status_cfg"
     },
     {
@@ -34310,7 +34310,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_evhipareturnpage_escapexml",
-      "community": 18,
+      "community": 333,
       "norm_label": "escapexml()"
     },
     {
@@ -34320,7 +34320,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "ev_evhipareturnpage_evhipareturnpage",
-      "community": 18,
+      "community": 333,
       "norm_label": "evhipareturnpage()"
     },
     {
@@ -34370,7 +34370,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evinnovationlevypage",
-      "community": 18,
+      "community": 333,
       "norm_label": "evinnovationlevypage.tsx"
     },
     {
@@ -34380,7 +34380,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "ev_evinnovationlevypage_evinnovationlevypage",
-      "community": 18,
+      "community": 333,
       "norm_label": "evinnovationlevypage()"
     },
     {
@@ -34560,7 +34560,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard",
-      "community": 95,
+      "community": 22,
       "norm_label": "evportfoliodashboard.tsx"
     },
     {
@@ -34570,7 +34570,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_evfilingstatus",
-      "community": 95,
+      "community": 22,
       "norm_label": "evfilingstatus"
     },
     {
@@ -34580,7 +34580,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_enrichedevclient",
-      "community": 95,
+      "community": 48,
       "norm_label": "enrichedevclient"
     },
     {
@@ -34590,7 +34590,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_form_labels",
-      "community": 95,
+      "community": 22,
       "norm_label": "form_labels"
     },
     {
@@ -34600,7 +34600,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_employment_labels",
-      "community": 95,
+      "community": 22,
       "norm_label": "employment_labels"
     },
     {
@@ -34610,7 +34610,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_vat_labels",
-      "community": 95,
+      "community": 22,
       "norm_label": "vat_labels"
     },
     {
@@ -34620,7 +34620,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_filing_status",
-      "community": 95,
+      "community": 22,
       "norm_label": "filing_status"
     },
     {
@@ -34630,7 +34630,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_threshold_config",
-      "community": 95,
+      "community": 22,
       "norm_label": "threshold_config"
     },
     {
@@ -34640,7 +34640,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_org_type_labels",
-      "community": 95,
+      "community": 22,
       "norm_label": "org_type_labels"
     },
     {
@@ -34650,7 +34650,7 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_filtermode",
-      "community": 95,
+      "community": 22,
       "norm_label": "filtermode"
     },
     {
@@ -34660,7 +34660,7 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_evportfoliodashboard",
-      "community": 333,
+      "community": 22,
       "norm_label": "evportfoliodashboard()"
     },
     {
@@ -34790,7 +34790,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evrecordsoverviewpage",
-      "community": 585,
+      "community": 48,
       "norm_label": "evrecordsoverviewpage.tsx"
     },
     {
@@ -34800,7 +34800,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "ev_evrecordsoverviewpage_recordtype",
-      "community": 585,
+      "community": 48,
       "norm_label": "recordtype"
     },
     {
@@ -34810,7 +34810,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "ev_evrecordsoverviewpage_records",
-      "community": 585,
+      "community": 48,
       "norm_label": "records"
     },
     {
@@ -34820,7 +34820,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "ev_evrecordsoverviewpage_evrecordsoverviewpage",
-      "community": 585,
+      "community": 48,
       "norm_label": "evrecordsoverviewpage()"
     },
     {
@@ -34980,7 +34980,7 @@
       "source_location": "L167",
       "_origin": "ast",
       "id": "ev_evszjareturnpage_evszjareturnpage",
-      "community": 18,
+      "community": 333,
       "norm_label": "evszjareturnpage()"
     },
     {
@@ -34990,7 +34990,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage",
-      "community": 333,
+      "community": 22,
       "norm_label": "evthresholdmonitorpage.tsx"
     },
     {
@@ -35000,7 +35000,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_projectedthresholdcheck",
-      "community": 333,
+      "community": 22,
       "norm_label": "projectedthresholdcheck"
     },
     {
@@ -35010,7 +35010,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_clientthresholdrow",
-      "community": 333,
+      "community": 22,
       "norm_label": "clientthresholdrow"
     },
     {
@@ -35020,7 +35020,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_worstof",
-      "community": 333,
+      "community": 22,
       "norm_label": "worstof()"
     },
     {
@@ -35030,7 +35030,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_status_config",
-      "community": 333,
+      "community": 22,
       "norm_label": "status_config"
     },
     {
@@ -35040,7 +35040,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_evthresholdmonitorpage",
-      "community": 333,
+      "community": 22,
       "norm_label": "evthresholdmonitorpage()"
     },
     {
@@ -35050,7 +35050,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evvatcarreturnpage",
-      "community": 18,
+      "community": 333,
       "norm_label": "evvatcarreturnpage.tsx"
     },
     {
@@ -35060,7 +35060,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "ev_evvatcarreturnpage_status_cfg",
-      "community": 18,
+      "community": 333,
       "norm_label": "status_cfg"
     },
     {
@@ -35070,7 +35070,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_evvatcarreturnpage_getdatestatus",
-      "community": 18,
+      "community": 333,
       "norm_label": "getdatestatus()"
     },
     {
@@ -35080,7 +35080,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "ev_evvatcarreturnpage_mapreturn",
-      "community": 18,
+      "community": 333,
       "norm_label": "mapreturn()"
     },
     {
@@ -35090,7 +35090,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "ev_evvatcarreturnpage_evvatcarreturnpage",
-      "community": 18,
+      "community": 333,
       "norm_label": "evvatcarreturnpage()"
     },
     {
@@ -35250,7 +35250,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "ev_orgcivilpage_orgcivilpage",
-      "community": 18,
+      "community": 77,
       "norm_label": "orgcivilpage()"
     },
     {
@@ -35890,7 +35890,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage",
-      "community": 9,
+      "community": 613,
       "norm_label": "navdeadlinespage.tsx"
     },
     {
@@ -35900,7 +35900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage_deadline",
-      "community": 9,
+      "community": 613,
       "norm_label": "deadline"
     },
     {
@@ -35910,7 +35910,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage_type_config",
-      "community": 9,
+      "community": 613,
       "norm_label": "type_config"
     },
     {
@@ -35920,7 +35920,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage_status_options",
-      "community": 9,
+      "community": 613,
       "norm_label": "status_options"
     },
     {
@@ -35930,7 +35930,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage_generatedeadlines",
-      "community": 9,
+      "community": 613,
       "norm_label": "generatedeadlines()"
     },
     {
@@ -35940,7 +35940,7 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "accounty_navdeadlinespage_navdeadlinespage",
-      "community": 9,
+      "community": 613,
       "norm_label": "navdeadlinespage()"
     },
     {
@@ -36500,7 +36500,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "accounty_profilesettingspage_companyaccesscard",
-      "community": 657,
+      "community": 242,
       "norm_label": "companyaccesscard()"
     },
     {
@@ -38190,7 +38190,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "documents_transferlistpage",
-      "community": 613,
+      "community": 332,
       "norm_label": "transferlistpage.tsx"
     },
     {
@@ -38210,7 +38210,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "documents_transferlistpage_downloadsepaxml",
-      "community": 613,
+      "community": 332,
       "norm_label": "downloadsepaxml()"
     },
     {
@@ -38220,7 +38220,7 @@
       "source_location": "L244",
       "_origin": "ast",
       "id": "documents_transferlistpage_downloadmt940",
-      "community": 613,
+      "community": 332,
       "norm_label": "downloadmt940()"
     },
     {
@@ -38230,7 +38230,7 @@
       "source_location": "L268",
       "_origin": "ast",
       "id": "documents_transferlistpage_escapexml",
-      "community": 613,
+      "community": 332,
       "norm_label": "escapexml()"
     },
     {
@@ -38240,7 +38240,7 @@
       "source_location": "L272",
       "_origin": "ast",
       "id": "documents_transferlistpage_downloadfile",
-      "community": 613,
+      "community": 332,
       "norm_label": "downloadfile()"
     },
     {
@@ -38670,7 +38670,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "filings_filingworkflowpage",
-      "community": 175,
+      "community": 9,
       "norm_label": "filingworkflowpage.tsx"
     },
     {
@@ -38680,7 +38680,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_step",
-      "community": 175,
+      "community": 9,
       "norm_label": "step"
     },
     {
@@ -38690,7 +38690,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_steps",
-      "community": 175,
+      "community": 9,
       "norm_label": "steps"
     },
     {
@@ -38700,7 +38700,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_filing_type_labels",
-      "community": 175,
+      "community": 9,
       "norm_label": "filing_type_labels"
     },
     {
@@ -38710,7 +38710,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_fmt",
-      "community": 175,
+      "community": 9,
       "norm_label": "fmt()"
     },
     {
@@ -38720,7 +38720,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_filingworkflowpage",
-      "community": 175,
+      "community": 9,
       "norm_label": "filingworkflowpage()"
     },
     {
@@ -38730,7 +38730,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "filings_genericfilingpage",
-      "community": 9,
+      "community": 613,
       "norm_label": "genericfilingpage.tsx"
     },
     {
@@ -38740,7 +38740,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "filings_genericfilingpage_filingtype",
-      "community": 9,
+      "community": 613,
       "norm_label": "filingtype"
     },
     {
@@ -38750,7 +38750,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "filings_genericfilingpage_filingconfig",
-      "community": 9,
+      "community": 613,
       "norm_label": "filingconfig"
     },
     {
@@ -38760,7 +38760,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "filings_genericfilingpage_configs",
-      "community": 9,
+      "community": 613,
       "norm_label": "configs"
     },
     {
@@ -38770,7 +38770,7 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "filings_genericfilingpage_genericfilingpage",
-      "community": 9,
+      "community": 613,
       "norm_label": "genericfilingpage()"
     },
     {
@@ -41230,7 +41230,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "pages_settings_companyaccesscard",
-      "community": 657,
+      "community": 242,
       "norm_label": "companyaccesscard()"
     },
     {
@@ -42880,7 +42880,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "routes_authroutes",
-      "community": 37,
+      "community": 242,
       "norm_label": "authroutes.tsx"
     },
     {
@@ -42890,7 +42890,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "routes_authroutes_auth",
-      "community": 37,
+      "community": 242,
       "norm_label": "auth"
     },
     {
@@ -42900,7 +42900,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "routes_authroutes_authcallback",
-      "community": 37,
+      "community": 242,
       "norm_label": "authcallback"
     },
     {
@@ -42910,7 +42910,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "routes_authroutes_resetpassword",
-      "community": 37,
+      "community": 242,
       "norm_label": "resetpassword"
     },
     {
@@ -42920,7 +42920,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "routes_authroutes_employeeregister",
-      "community": 37,
+      "community": 242,
       "norm_label": "employeeregister"
     },
     {
@@ -42930,7 +42930,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "routes_authroutes_clientportalpage",
-      "community": 37,
+      "community": 242,
       "norm_label": "clientportalpage"
     },
     {
@@ -42940,7 +42940,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "routes_authroutes_managementdashboard",
-      "community": 37,
+      "community": 242,
       "norm_label": "managementdashboard"
     },
     {
@@ -42950,7 +42950,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "routes_authroutes_notfound",
-      "community": 37,
+      "community": 242,
       "norm_label": "notfound"
     },
     {
@@ -43260,7 +43260,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "routes_redirects",
-      "community": 242,
+      "community": 95,
       "norm_label": "redirects.tsx"
     },
     {
@@ -43270,7 +43270,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "routes_redirects_index",
-      "community": 242,
+      "community": 95,
       "norm_label": "index"
     },
     {
@@ -43280,7 +43280,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "routes_redirects_accountyapp",
-      "community": 242,
+      "community": 95,
       "norm_label": "accountyapp"
     },
     {
@@ -43300,7 +43300,7 @@
       "source_location": "L143",
       "_origin": "ast",
       "id": "routes_redirects_accountyrootredirect",
-      "community": 242,
+      "community": 95,
       "norm_label": "accountyrootredirect()"
     },
     {
@@ -43320,7 +43320,7 @@
       "source_location": "L200",
       "_origin": "ast",
       "id": "routes_redirects_passwordrecoveryredirect",
-      "community": 242,
+      "community": 95,
       "norm_label": "passwordrecoveryredirect()"
     },
     {
@@ -43330,7 +43330,7 @@
       "source_location": "L232",
       "_origin": "ast",
       "id": "routes_redirects_accountylegacyclientredirect",
-      "community": 242,
+      "community": 95,
       "norm_label": "accountylegacyclientredirect()"
     },
     {
@@ -43340,7 +43340,7 @@
       "source_location": "L243",
       "_origin": "ast",
       "id": "routes_redirects_payrolllegacyredirect",
-      "community": 242,
+      "community": 95,
       "norm_label": "payrolllegacyredirect()"
     },
     {
@@ -43350,7 +43350,7 @@
       "source_location": "L254",
       "_origin": "ast",
       "id": "routes_redirects_missinginvoiceslegacyredirect",
-      "community": 242,
+      "community": 95,
       "norm_label": "missinginvoiceslegacyredirect()"
     },
     {
@@ -43360,7 +43360,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "routes_shellcomponents",
-      "community": 37,
+      "community": 242,
       "norm_label": "shellcomponents.tsx"
     },
     {
@@ -43370,7 +43370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "routes_shellcomponents_protectedpage",
-      "community": 37,
+      "community": 242,
       "norm_label": "protectedpage()"
     },
     {
@@ -43380,7 +43380,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "routes_shellcomponents_removeinitialloader",
-      "community": 37,
+      "community": 242,
       "norm_label": "removeinitialloader()"
     },
     {
@@ -43390,7 +43390,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "routes_shellcomponents_scrolltotop",
-      "community": 37,
+      "community": 242,
       "norm_label": "scrolltotop()"
     },
     {
@@ -47550,7 +47550,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "management_stats_types",
-      "community": 607,
+      "community": 41,
       "norm_label": "types.ts"
     },
     {
@@ -47590,7 +47590,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "management_stats_types_projectclient",
-      "community": 607,
+      "community": 41,
       "norm_label": "projectclient"
     },
     {
@@ -47600,7 +47600,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "management_stats_types_emptyoverview",
-      "community": 607,
+      "community": 41,
       "norm_label": "emptyoverview"
     },
     {
@@ -47610,7 +47610,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "management_stats_types_emptycompanydetail",
-      "community": 607,
+      "community": 41,
       "norm_label": "emptycompanydetail"
     },
     {
@@ -47620,7 +47620,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "management_stats_types_emptyuserdetail",
-      "community": 607,
+      "community": 41,
       "norm_label": "emptyuserdetail"
     },
     {
@@ -47630,7 +47630,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "management_stats_types_emptyerrors",
-      "community": 607,
+      "community": 41,
       "norm_label": "emptyerrors"
     },
     {
@@ -47640,7 +47640,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "management_stats_types_emptyfiles",
-      "community": 607,
+      "community": 41,
       "norm_label": "emptyfiles"
     },
     {
@@ -47650,7 +47650,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "management_stats_types_emptyworkerstatus",
-      "community": 607,
+      "community": 41,
       "norm_label": "emptyworkerstatus"
     },
     {
@@ -47660,7 +47660,7 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "management_stats_types_emptyllmcosts",
-      "community": 607,
+      "community": 41,
       "norm_label": "emptyllmcosts"
     },
     {
@@ -68234,20 +68234,20 @@
       "norm_label": "2. tobblepcsos intelligens jeloltkereses (`find_matching_nav_invoice_and_items`)"
     },
     {
-      "label": "3. Szigor\u00fa mem\u00f3riabeli ellen\u0151rz\u00e9s (0 Ft tolerancia)",
+      "label": "3. Szigor\u00fa mem\u00f3riabeli ellen\u0151rz\u00e9s (0 Ft tolerancia & Partner egyez\u00e9s)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L37",
       "_origin": "ast",
-      "id": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_3_szigor\u00fa_mem\u00f3riabeli_ellen\u0151rz\u00e9s_0_ft_tolerancia",
+      "id": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_3_szigor\u00fa_mem\u00f3riabeli_ellen\u0151rz\u00e9s_0_ft_tolerancia_partner_egyez\u00e9s",
       "community": 351,
-      "norm_label": "3. szigoru memoriabeli ellenorzes (0 ft tolerancia)"
+      "norm_label": "3. szigoru memoriabeli ellenorzes (0 ft tolerancia & partner egyezes)"
     },
     {
       "label": "4. Fejl\u00e9c hiteles\u00edt\u00e9s \u00e9s 23505 \u00fctk\u00f6z\u00e9sv\u00e9delem (`apply_nav_verified_status`)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
-      "source_location": "L42",
+      "source_location": "L48",
       "_origin": "ast",
       "id": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_4_fejl\u00e9c_hiteles\u00edt\u00e9s_\u00e9s_23505_\u00fctk\u00f6z\u00e9sv\u00e9delem_apply_nav_verified_status",
       "community": 351,
@@ -68257,7 +68257,7 @@
       "label": "5. T\u00e9telsorok \u00e1tv\u00e9tele \u00e9s metaadat meg\u0151rz\u00e9s (`save_nav_items_to_invoice`)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
-      "source_location": "L47",
+      "source_location": "L53",
       "_origin": "ast",
       "id": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_5_t\u00e9telsorok_\u00e1tv\u00e9tele_\u00e9s_metaadat_meg\u0151rz\u00e9s_save_nav_items_to_invoice",
       "community": 351,
@@ -68267,7 +68267,7 @@
       "label": "6. Robusztus Fallback",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
-      "source_location": "L51",
+      "source_location": "L57",
       "_origin": "ast",
       "id": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_6_robusztus_fallback",
       "community": 351,
@@ -68277,7 +68277,7 @@
       "label": "Consequences",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
-      "source_location": "L56",
+      "source_location": "L62",
       "_origin": "ast",
       "id": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_consequences",
       "community": 351,
@@ -68287,7 +68287,7 @@
       "label": "Pozit\u00edv",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
-      "source_location": "L58",
+      "source_location": "L64",
       "_origin": "ast",
       "id": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_pozit\u00edv",
       "community": 351,
@@ -68297,7 +68297,7 @@
       "label": "Negat\u00edv / Kock\u00e1zatok",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
-      "source_location": "L64",
+      "source_location": "L70",
       "_origin": "ast",
       "id": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_negat\u00edv_kock\u00e1zatok",
       "community": 351,
@@ -68307,7 +68307,7 @@
       "label": "Kapcsol\u00f3d\u00f3",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
-      "source_location": "L69",
+      "source_location": "L75",
       "_origin": "ast",
       "id": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_kapcsol\u00f3d\u00f3",
       "community": 351,
@@ -293225,9 +293225,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_a_096_hivatalos_nav_t\u00e9telsor_v\u00e9d\u0151h\u00e1l\u00f3_sorsz\u00e1m_szinkroniz\u00e1ci\u00f3_\u00e9s_23505_\u00fctk\u00f6z\u00e9sv\u00e9delem_authoritative_nav_line_items_crosscheck_sync_guard",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_a_096_hivatalos_nav_t\u00e9telsor_v\u00e9d\u0151h\u00e1l\u00f3_sorsz\u00e1m_szinkroniz\u00e1ci\u00f3_\u00e9s_23505_\u00fctk\u00f6z\u00e9sv\u00e9delem_authoritative_nav_line_items_crosscheck_sync_guard"
     },
     {
       "relation": "contains",
@@ -293235,9 +293235,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L56",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_a_096_hivatalos_nav_t\u00e9telsor_v\u00e9d\u0151h\u00e1l\u00f3_sorsz\u00e1m_szinkroniz\u00e1ci\u00f3_\u00e9s_23505_\u00fctk\u00f6z\u00e9sv\u00e9delem_authoritative_nav_line_items_crosscheck_sync_guard",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_consequences",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_consequences"
     },
     {
       "relation": "contains",
@@ -293245,9 +293245,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_a_096_hivatalos_nav_t\u00e9telsor_v\u00e9d\u0151h\u00e1l\u00f3_sorsz\u00e1m_szinkroniz\u00e1ci\u00f3_\u00e9s_23505_\u00fctk\u00f6z\u00e9sv\u00e9delem_authoritative_nav_line_items_crosscheck_sync_guard",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_context",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_context"
     },
     {
       "relation": "contains",
@@ -293255,9 +293255,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_a_096_hivatalos_nav_t\u00e9telsor_v\u00e9d\u0151h\u00e1l\u00f3_sorsz\u00e1m_szinkroniz\u00e1ci\u00f3_\u00e9s_23505_\u00fctk\u00f6z\u00e9sv\u00e9delem_authoritative_nav_line_items_crosscheck_sync_guard",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_decision",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_decision"
     },
     {
       "relation": "contains",
@@ -293265,9 +293265,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L69",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_a_096_hivatalos_nav_t\u00e9telsor_v\u00e9d\u0151h\u00e1l\u00f3_sorsz\u00e1m_szinkroniz\u00e1ci\u00f3_\u00e9s_23505_\u00fctk\u00f6z\u00e9sv\u00e9delem_authoritative_nav_line_items_crosscheck_sync_guard",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_kapcsol\u00f3d\u00f3",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_kapcsol\u00f3d\u00f3"
     },
     {
       "relation": "contains",
@@ -293275,9 +293275,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_decision",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_1_c\u00e9ghez_rendel\u00e9s_\u00e9s_routing_ut\u00e1ni_aktiv\u00e1l\u00e1s",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_1_c\u00e9ghez_rendel\u00e9s_\u00e9s_routing_ut\u00e1ni_aktiv\u00e1l\u00e1s"
     },
     {
       "relation": "contains",
@@ -293285,9 +293285,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_decision",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_2_t\u00f6bbl\u00e9pcs\u0151s_intelligens_jel\u00f6ltkeres\u00e9s_find_matching_nav_invoice_and_items",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_2_t\u00f6bbl\u00e9pcs\u0151s_intelligens_jel\u00f6ltkeres\u00e9s_find_matching_nav_invoice_and_items"
     },
     {
       "relation": "contains",
@@ -293296,7 +293296,7 @@
       "source_location": "L37",
       "weight": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_decision",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_3_szigor\u00fa_mem\u00f3riabeli_ellen\u0151rz\u00e9s_0_ft_tolerancia",
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_3_szigor\u00fa_mem\u00f3riabeli_ellen\u0151rz\u00e9s_0_ft_tolerancia_partner_egyez\u00e9s",
       "confidence_score": 1.0
     },
     {
@@ -293305,9 +293305,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L42",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_decision",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_4_fejl\u00e9c_hiteles\u00edt\u00e9s_\u00e9s_23505_\u00fctk\u00f6z\u00e9sv\u00e9delem_apply_nav_verified_status",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_4_fejl\u00e9c_hiteles\u00edt\u00e9s_\u00e9s_23505_\u00fctk\u00f6z\u00e9sv\u00e9delem_apply_nav_verified_status"
     },
     {
       "relation": "contains",
@@ -293315,9 +293315,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L47",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_decision",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_5_t\u00e9telsorok_\u00e1tv\u00e9tele_\u00e9s_metaadat_meg\u0151rz\u00e9s_save_nav_items_to_invoice",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_5_t\u00e9telsorok_\u00e1tv\u00e9tele_\u00e9s_metaadat_meg\u0151rz\u00e9s_save_nav_items_to_invoice"
     },
     {
       "relation": "contains",
@@ -293325,9 +293325,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L51",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_decision",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_6_robusztus_fallback",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_6_robusztus_fallback"
     },
     {
       "relation": "contains",
@@ -293335,9 +293335,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L64",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_consequences",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_negat\u00edv_kock\u00e1zatok",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_negat\u00edv_kock\u00e1zatok"
     },
     {
       "relation": "contains",
@@ -293345,9 +293345,9 @@
       "source_file": "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md",
       "source_location": "L58",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_consequences",
-      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_pozit\u00edv",
-      "confidence_score": 1.0
+      "target": "decisions_a_096_authoritative_nav_line_items_crosscheck_and_sync_guard_pozit\u00edv"
     },
     {
       "relation": "contains",

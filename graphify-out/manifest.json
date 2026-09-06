@@ -870,8 +870,8 @@
     "semantic_hash": ""
   },
   "src/contexts/CompanyContext.tsx": {
-    "mtime": 1787568622.8623374,
-    "ast_hash": "36da282538f99766ccdcd9261f515999",
+    "mtime": 1788697193.439015,
+    "ast_hash": "f3bc679c009ccfb574608675813b081c",
     "semantic_hash": ""
   },
   "src/contexts/DateRangeContext.tsx": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": "776b6ed65c3cb4d27beb42298fa888ce"
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1788575990.1925745,
-    "ast_hash": "2dd593c2fe7a29618dcb204b8063628d",
+    "mtime": 1788697162.303778,
+    "ast_hash": "82b4315c9136f05502e288f34b5cdfbf",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788640985.867471,
+    "mtime": 1788697026.913969,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -7920,8 +7920,8 @@
     "semantic_hash": ""
   },
   "src/features/upload/hooks/useDocumentUpload.ts": {
-    "mtime": 1788140415.617132,
-    "ast_hash": "69d534d6a0de66ae3eb2a542287c0d70",
+    "mtime": 1788697170.3147023,
+    "ast_hash": "f72efc2a07eb1102fad973394949c58a",
     "semantic_hash": ""
   },
   "src/features/upload/index.ts": {
@@ -9212,6 +9212,11 @@
   "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md": {
     "mtime": 1788657258.7989721,
     "ast_hash": "4ddd5f974afd2c11c3bdaf40b0305b53",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260906143000_add_created_at_to_nav_sync_logs.sql": {
+    "mtime": 1788697151.5011406,
+    "ast_hash": "e153c3c88433ceb221be57b85cad9d82",
     "semantic_hash": ""
   }
 }
