@@ -65,7 +65,7 @@ SET search_path TO 'public'
 AS $$
 BEGIN
   RETURN QUERY
-    -- 1. NAV invoice items (unclassified for preset_id)
+    -- 1. NAV invoice items (unclassified for preset_id, excluding excluded_from_accounting)
     SELECT 
       nii.id,
       'nav_invoice_items'::text AS source_table,
@@ -83,11 +83,14 @@ BEGIN
     FROM public.nav_invoices ni
     JOIN public.nav_invoice_items nii ON nii.nav_invoice_id = ni.id
     WHERE ni.company_id = p_company_id
+      AND nii.company_id = p_company_id
+      AND COALESCE(ni.exclude_from_accounting, false) = false
+      AND COALESCE(nii.exclude_from_accounting, false) = false
       AND (nii.gl_classifications IS NULL OR NOT (nii.gl_classifications ? p_preset_id))
 
     UNION ALL
 
-    -- 2. Manual invoice items (unclassified for preset_id)
+    -- 2. Manual invoice items (unclassified for preset_id, excluding excluded_from_accounting)
     SELECT 
       ii.id,
       'invoice_items'::text AS source_table,
@@ -105,6 +108,8 @@ BEGIN
     FROM public.invoices i
     JOIN public.invoice_items ii ON ii.invoice_id = i.id
     WHERE i.company_id = p_company_id
+      AND COALESCE(i.exclude_from_accounting, false) = false
+      AND COALESCE(ii.exclude_from_accounting, false) = false
       AND (ii.gl_classifications IS NULL OR NOT (ii.gl_classifications ? p_preset_id))
 
     UNION ALL
