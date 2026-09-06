@@ -11158,7 +11158,11 @@ export type Database = {
         Args: { p_company_id: string; p_date_from: string; p_date_to: string }
         Returns: {
           completed_count: number
-        }
+          currency: string
+          processing_count: number
+          total_count: number
+          total_gross: number
+        }[]
       }
       get_unclassified_gl_items: {
         Args: {
@@ -11179,12 +11183,6 @@ export type Database = {
           unit: string | null
           vat_rate: string | null
           is_reverse_charge: boolean
-        }[]
-      }
-          currency: string
-          processing_count: number
-          total_count: number
-          total_gross: number
         }[]
       }
       get_linked_invoices: {
