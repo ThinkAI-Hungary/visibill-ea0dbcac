@@ -270,10 +270,10 @@ export class NavIngestionService {
       try {
         const details = await navClient.queryInvoiceData(inv.invoice_number, direction);
 
-        // Számla ID kikeresése a nav_invoices táblából
+        // Számla ID és company_id kikeresése a nav_invoices táblából
         let query = this.supabase
           .from('nav_invoices')
-          .select('id')
+          .select('id, company_id')
           .eq('invoice_number', inv.invoice_number);
 
         if (companyId) query = query.eq('company_id', companyId);
@@ -300,8 +300,10 @@ export class NavIngestionService {
 
           // 2. Tételsorok idempotens mentése (korábbi tételek törlése + batch beszúrás)
           if (details.lineItems && details.lineItems.length > 0) {
+            const resolvedCompanyId = dbInvoice.company_id || companyId || null;
             const itemsToInsert = details.lineItems.map(item => ({
               nav_invoice_id: dbInvoice.id,
+              company_id: resolvedCompanyId,
               line_number: item.lineNumber,
               line_description: item.lineDescription || null,
               quantity: item.quantity || null,
