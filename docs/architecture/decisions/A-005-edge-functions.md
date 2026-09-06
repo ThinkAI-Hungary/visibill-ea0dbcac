@@ -14,6 +14,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 **Közös kód:** `_shared/` mappa:
 - `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
+- `_shared/client-guard.ts` — Szkript-automatizáció elleni védelmi pajzs (`checkAutomationShield`) és kibővített `corsHeaders` (lásd: [A-101](./A-101-direct-script-automation-restriction.md)).
 - `_shared/cors.ts`, `_shared/supabase.ts` — CORS headers, Supabase client és segédfüggvények.
 
 ---
@@ -167,3 +168,4 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 - [A-030: Accounty Email Notification Architecture](./A-030-accounty-email-notifications.md)
 - [A-034: Accounty Digest Emails](./A-034-accounty-digest-emails.md)
 - [A-052: Multi-Profile Email Accounts](./A-052-multi-profile-email-accounts-vault-integration.md)
+- [A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz](./A-101-direct-script-automation-restriction.md)

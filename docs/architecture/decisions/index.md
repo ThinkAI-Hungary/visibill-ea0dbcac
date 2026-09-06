@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-06  
-> **Összesen:** 102 döntés | ✅ Decided: 100 | ⛔ Superseded: 2
+> **Összesen:** 103 döntés | ✅ Decided: 101 | ⛔ Superseded: 2
 
 ---
 
@@ -63,6 +63,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-049 | Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete) | ✅ Decided | [A-049](./A-049-user-deletion-soft-delete-strategy.md) |
 | A-072 | Robust Accounting Firm Assignment RLS & Direct Client Creation | ✅ Decided | [A-072](./A-072-accounting-assignments-insert-rls.md) |
 | A-073 | eaisybill ↔ eaisyBooks Cégfelviteli Automatikus Szinkronizáció | ✅ Decided | [A-073](./A-073-eaisybill-eaisybooks-company-auto-sync.md) |
+| A-101 | Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz (PostgREST Pre-Request Hook & Edge Function Client Guard) | ✅ Decided | [A-101](./A-101-direct-script-automation-restriction.md) |
 
 ## 📧 Email & Integráció
 

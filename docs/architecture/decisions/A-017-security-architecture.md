@@ -9,7 +9,7 @@ A rendszer pénzügyi adatokat kezel (számlák, banki tranzakciók, NAV credent
 
 ## Decision
 
-**8 rétegű biztonsági modell:**
+**9 rétegű biztonsági modell (Defense-in-Depth):**
 
 ---
 
@@ -233,18 +233,30 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 } />
 ```
 
+---
+
+### 9. réteg: Szkript-Automatizáció Szűrő Retesz (PostgREST Pre-Request Hook & Edge Function Client Guard)
+
+Részletek: [A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz](./A-101-direct-script-automation-restriction.md)
+
+A rendszer aktív védelmi retesszel szűri ki a közvetlen gépi szkriptek (Node.js, Python, cURL, Postman, PowerShell stb.) általi API és adatbázis hívásokat:
+- **PostgREST szint:** `public.check_request()` pre-request hook minden `/rest/v1/*` kérésnél vizsgálja a hívási kontextust, és azonnali `HTTP 403 Forbidden` (`AUTOMATION_BLOCKED`) választ ad a nem böngészős vagy script runner hívásokra.
+- **Edge Function szint:** `_shared/client-guard.ts` (`checkAutomationShield`) megvédi a 20 user-facing Edge Function-t a jogosulatlan gépi indításoktól és az AI tokenek (OpenAI / DeepSeek) kontrolálatlan fogyasztásától.
+- **Bypass kivételek:** A háttér-worker (`service_role`), a Deno belső hívások, a hivatalos webapp (`x-visibill-client: web-app`) és a bejövő külső Mailgun webhookok azonnali felmentést élveznek.
+
 ## Consequences
 
 **Pozitív:**
-- 8 réteg → defense in depth
+- 9 réteg → megerősített defense in depth
 - RLS → adatszivárgás kockázat minimális, DB-szintű védelemmel
 - AES-256-GCM → credentials biztonságos tárolás
 - Audit trail → visszakereshető minden módosítás
+- Szkript-retesz → kizárja az illetéktelen gépi lehalászást és az AI token égetést
 
 **Negatív:**
 - CORS: jelenleg `*` → production-ben szűkítendő
 - Nincs MFA → jövőbeli feature
-- Nincs rate limiting a frontend API hívásokon (az `openclaw-api` EF-en van)
+- Ad-hoc fejlesztői cURL hívások usertokennel blokkolva (service_role vagy webapp header szükséges)
 - Key rotation nincs implementálva (ENCRYPTION_KEY)
 - `service_role_key` kompromittálása = teljes hozzáférés
 
@@ -253,4 +265,6 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 - [A-009: Auth és RBAC](./A-009-auth-rbac.md)
 - [A-010: Credential Titkosítás](./A-010-credential-encryption.md)
 - [A-005: Edge Functions](./A-005-edge-functions.md)
+- [A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz](./A-101-direct-script-automation-restriction.md)
 - [BRD 028: GDPR & Adatvédelem](../../business/decisions/028-gdpr-compliance.md)
+- [BRD 030: API & Third-party Hozzáférés](../../business/decisions/030-api-access.md)

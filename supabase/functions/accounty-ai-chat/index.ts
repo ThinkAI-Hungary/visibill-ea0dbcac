@@ -1,9 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, checkAutomationShield } from '../_shared/client-guard.ts'
 
 const SYSTEM_PROMPT = `Te egy magyar bérszámfejtési AI asszisztens vagy az eaisybooks rendszerben. A feladatod, hogy segítsd a könyvelőket a napi munkájukban.
 
@@ -58,6 +54,11 @@ function checkRateLimit(userId: string): boolean {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const automationBlock = checkAutomationShield(req);
+  if (automationBlock) {
+    return automationBlock;
   }
 
   try {

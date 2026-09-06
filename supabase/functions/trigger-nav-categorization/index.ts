@@ -1,9 +1,5 @@
-﻿import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders, checkAutomationShield } from '../_shared/client-guard.ts';
 
 interface InvoiceWithItems {
   id: string;
@@ -23,6 +19,12 @@ Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Block unauthorized external script automation
+  const blocked = checkAutomationShield(req);
+  if (blocked) {
+    return blocked;
   }
 
   try {

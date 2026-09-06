@@ -1,10 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders, checkAutomationShield } from "../_shared/client-guard.ts";
 
 // Escape special XML characters
 function escapeXml(str: string): string {
@@ -21,6 +16,11 @@ Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const automationBlock = checkAutomationShield(req);
+  if (automationBlock) {
+    return automationBlock;
   }
 
   try {

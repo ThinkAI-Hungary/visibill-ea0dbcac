@@ -1055,9 +1055,9 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/client.ts": {
-    "mtime": 1772416213.6458733,
-    "ast_hash": "776b6ed65c3cb4d27beb42298fa888ce",
-    "semantic_hash": "776b6ed65c3cb4d27beb42298fa888ce"
+    "mtime": 1788712508.9579937,
+    "ast_hash": "99865860f2768f7d425a45e3c5a362a4",
+    "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
     "mtime": 1788698764.6285977,
@@ -1665,33 +1665,33 @@
     "semantic_hash": ""
   },
   "supabase/functions/create-email-alias/index.ts": {
-    "mtime": 1781447479.427135,
-    "ast_hash": "c674b7ae05844da2bea38081a0c64448",
+    "mtime": 1788711844.766259,
+    "ast_hash": "365cf30a857bb3c745ec5985ddaab1b4",
     "semantic_hash": ""
   },
   "supabase/functions/delete-email-alias/index.ts": {
-    "mtime": 1781447495.8874152,
-    "ast_hash": "f80d36f2e965e8a84409f27d1088ec81",
+    "mtime": 1788711852.2162871,
+    "ast_hash": "8a87c181aa97003eb68e211f8e19f130",
     "semantic_hash": ""
   },
   "supabase/functions/delete-nav-credentials/index.ts": {
-    "mtime": 1780305936.3601656,
-    "ast_hash": "e047c112e701fb93f3ba9ae6099f8ecd",
-    "semantic_hash": "e047c112e701fb93f3ba9ae6099f8ecd"
+    "mtime": 1788711869.897938,
+    "ast_hash": "194407543107c08686a7b8465a97a657",
+    "semantic_hash": ""
   },
   "supabase/functions/export-user-data/index.ts": {
-    "mtime": 1780305936.3607428,
-    "ast_hash": "a7c63807fa8d75b85def6e7ff410b6a5",
-    "semantic_hash": "a7c63807fa8d75b85def6e7ff410b6a5"
+    "mtime": 1788711860.2276194,
+    "ast_hash": "ab3d5798e76eaa62c428cfcf56a1f645",
+    "semantic_hash": ""
   },
   "supabase/functions/get-invoice-image-url/index.ts": {
-    "mtime": 1780305936.3613594,
-    "ast_hash": "7685136004b0566e1d585b8fa754435d",
-    "semantic_hash": "7685136004b0566e1d585b8fa754435d"
+    "mtime": 1788712068.6294458,
+    "ast_hash": "95011f8e0a23ba1540318a41042405b9",
+    "semantic_hash": ""
   },
   "supabase/functions/invite-user/index.ts": {
-    "mtime": 1783413875.6161668,
-    "ast_hash": "5ba6cb0813e8bafc798a7da873c2dc54",
+    "mtime": 1788712137.118154,
+    "ast_hash": "14146da78ca196a39091075f85cf3a47",
     "semantic_hash": ""
   },
   "supabase/functions/join-company/index.ts": {
@@ -1710,13 +1710,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/nav-query-outbound-invoices/index.ts": {
-    "mtime": 1788215585.05106,
-    "ast_hash": "e98c039dc36160a731ac115274116e03",
+    "mtime": 1788712027.5715625,
+    "ast_hash": "5b656edf833e7adc7fee8bdb1bcb0ad6",
     "semantic_hash": ""
   },
   "supabase/functions/nav-sync/index.ts": {
-    "mtime": 1788215589.8421483,
-    "ast_hash": "5d9a988b7a424e921113f3be9ad77fde",
+    "mtime": 1788712032.294843,
+    "ast_hash": "319f47ba7a8a2997f6e042f09b749364",
     "semantic_hash": ""
   },
   "supabase/functions/nav-tax-profile-sync/index.ts": {
@@ -1750,14 +1750,14 @@
     "semantic_hash": ""
   },
   "supabase/functions/query-nav-invoices/index.ts": {
-    "mtime": 1788215597.3614485,
-    "ast_hash": "6e007fe46499649eab7ddcdf5a8d169c",
+    "mtime": 1788712038.5911195,
+    "ast_hash": "41156f2e45224e223b30bc6c66619c31",
     "semantic_hash": ""
   },
   "supabase/functions/save-credentials/index.ts": {
-    "mtime": 1780305936.3684862,
-    "ast_hash": "4868fdb01751407ade4505dfa7276b11",
-    "semantic_hash": "4868fdb01751407ade4505dfa7276b11"
+    "mtime": 1788711880.0506823,
+    "ast_hash": "c0cf6202a4c392e083880df43888ebb1",
+    "semantic_hash": ""
   },
   "supabase/functions/send-accounty-email/index.ts": {
     "mtime": 1780695588.3118012,
@@ -1815,9 +1815,9 @@
     "semantic_hash": ""
   },
   "supabase/functions/trigger-nav-categorization/index.ts": {
-    "mtime": 1780305936.375951,
-    "ast_hash": "f4e91aa7a093760d0f7790c8dd578c2d",
-    "semantic_hash": "f4e91aa7a093760d0f7790c8dd578c2d"
+    "mtime": 1788711836.5350807,
+    "ast_hash": "9c76595178647e97daf3f5813c45926d",
+    "semantic_hash": ""
   },
   "supabase/functions/validate-employee-token/index.ts": {
     "mtime": 1780695606.4205859,
@@ -3015,8 +3015,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1788222503.0505302,
-    "ast_hash": "4540d20c4a2bf0671332d46299a599bd",
+    "mtime": 1788712337.1494706,
+    "ast_hash": "c13a6d86985fe5f244535c172c51327d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -3070,13 +3070,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788540380.1037705,
-    "ast_hash": "922bbb61a380ffa104a0933c66e42a99",
+    "mtime": 1788711429.222597,
+    "ast_hash": "3ee591f628b6c54c2bce326aeabc8f59",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
-    "mtime": 1782992421.86225,
-    "ast_hash": "d6f41a64645e33858919b48b6967680c",
+    "mtime": 1788712353.7483003,
+    "ast_hash": "580805e74122c388af42a1fcc199ae56",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-018-ticket-system.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788705636.6142392,
-    "ast_hash": "11afae8ce01ecc01915c963f0a11d7d2",
+    "mtime": 1788712321.3899715,
+    "ast_hash": "3618cc244e4ee50030fa8d043b861a23",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3275,8 +3275,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/030-api-access.md": {
-    "mtime": 1782233922.645424,
-    "ast_hash": "79dca09ea7ea4cfba5a9233b32f6a190",
+    "mtime": 1788712364.6435225,
+    "ast_hash": "86a2cbf2e7fab2e553b65e550ebc27f4",
     "semantic_hash": ""
   },
   "docs/business/decisions/031-accounty-module.md": {
@@ -4320,8 +4320,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/accounty-ai-chat/index.ts": {
-    "mtime": 1787568622.9118497,
-    "ast_hash": "1acb66675a187064cf7352c61f467ea8",
+    "mtime": 1788712089.7124455,
+    "ast_hash": "7cb90aea824d640cd83f09d9cd37865e",
     "semantic_hash": ""
   },
   "supabase/functions/fetch-legal-updates/index.ts": {
@@ -4995,8 +4995,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/shipment-retroactive-match/index.ts": {
-    "mtime": 1782347507.7185035,
-    "ast_hash": "840d6b2fc5219de70c1abe8129d85579",
+    "mtime": 1788712117.8075905,
+    "ast_hash": "a73bd1c31f944437f4566db56d8d298a",
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
@@ -5050,8 +5050,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
-    "mtime": 1788130267.556707,
-    "ast_hash": "c451c1689cfe73d830d0075fdde6b388",
+    "mtime": 1788709438.619021,
+    "ast_hash": "3f25e9810070e8ce7876cb46e3302ca6",
     "semantic_hash": ""
   },
   "docs/architecture/database/07-general-ledger.md": {
@@ -5350,8 +5350,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/impersonate-company/index.ts": {
-    "mtime": 1783093378.2644737,
-    "ast_hash": "87343329e408dc0d45296b67fec282aa",
+    "mtime": 1788712142.8152895,
+    "ast_hash": "9038790d3c03bdb713d5e3b1cc6d33f4",
     "semantic_hash": ""
   },
   "supabase/test_penzforgalmi_seed.sql": {
@@ -5390,8 +5390,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/generate-pdf-export/index.ts": {
-    "mtime": 1785270798.2025766,
-    "ast_hash": "e4e42a6c19dc349ad3a6f21cb75abfd8",
+    "mtime": 1788712062.1275036,
+    "ast_hash": "9687a1271b77ee68067e8c306b6e3245",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-027-partner-ranking-treemap.md": {
@@ -5670,13 +5670,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/delete-email-settings/index.ts": {
-    "mtime": 1787835737.059667,
-    "ast_hash": "7668512a4610159e8294fdd66270c245",
+    "mtime": 1788712050.169506,
+    "ast_hash": "0a42222329efd4c95fbcacc2f722067a",
     "semantic_hash": ""
   },
   "supabase/functions/test-email-connection/index.ts": {
-    "mtime": 1787835731.6007366,
-    "ast_hash": "4d35c45ca184ea473e9f089d79ef48f5",
+    "mtime": 1788712056.7269578,
+    "ast_hash": "7f8b6f15b6f4bd230b35ca92f3aa28ea",
     "semantic_hash": ""
   },
   "supabase/migrations/20260715111000_add_company_email_settings.sql": {
@@ -6110,13 +6110,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/accounty-ai-categorize/index.ts": {
-    "mtime": 1787568622.9118497,
-    "ast_hash": "07933301925a8f96bd8ab59b2d1b5ce8",
+    "mtime": 1788712074.5127828,
+    "ast_hash": "9a55638a08fc07d1f0d527df7b343940",
     "semantic_hash": ""
   },
   "supabase/functions/accounty-generate-xml/index.ts": {
-    "mtime": 1784733132.6004953,
-    "ast_hash": "bcf8a8bfd05b98556e15e689cf0ee8b7",
+    "mtime": 1788712104.40672,
+    "ast_hash": "a0edb39786044e5b5b62e1377eb562a8",
     "semantic_hash": ""
   },
   "supabase/migrations/20260721120000_seed_ev_tax_parameters.sql": {
@@ -8205,8 +8205,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/generate-company-description/index.ts": {
-    "mtime": 1788212014.2281156,
-    "ast_hash": "fc6946389d936e360f685958842486fc",
+    "mtime": 1788712096.5585556,
+    "ast_hash": "a1bfb7a0efeab93a93de2c6eb9cfcf6a",
     "semantic_hash": ""
   },
   "supabase/migrations/20260831000000_eaisybill_modulator.sql": {
@@ -9267,6 +9267,31 @@
   "docs/architecture/decisions/A-099-invoice-and-upload-deletion-governance.md": {
     "mtime": 1788705619.4884079,
     "ast_hash": "1391a41df2560bf3b6ae91a34c0e72b4",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260906180000_expand_unique_transaction_entry_with_amount.sql": {
+    "mtime": 1788709391.576758,
+    "ast_hash": "12e284f48d279a48af3dd0f6e81aa9d5",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-100-transaction-unique-constraint-amount-inclusion.md": {
+    "mtime": 1788709449.4326613,
+    "ast_hash": "0a0fe6de2f2e42b06a6020783a4bcfcb",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260906183000_block_external_script_automations.sql": {
+    "mtime": 1788712570.629195,
+    "ast_hash": "c20da1afe40bd227b679e320bf02a740",
+    "semantic_hash": ""
+  },
+  "supabase/functions/_shared/client-guard.ts": {
+    "mtime": 1788712548.7718937,
+    "ast_hash": "e045aca75154b63c8b04f8215855c9a9",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-101-direct-script-automation-restriction.md": {
+    "mtime": 1788712674.1433344,
+    "ast_hash": "b921aed04d6baabbb3c3d96c76780173",
     "semantic_hash": ""
   }
 }

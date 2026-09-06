@@ -1,16 +1,18 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { logError } from "../_shared/error-logger.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, checkAutomationShield } from "../_shared/client-guard.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Block unauthorized external script automation
+  const blocked = checkAutomationShield(req);
+  if (blocked) {
+    return blocked;
   }
 
   try {

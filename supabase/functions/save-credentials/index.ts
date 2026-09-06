@@ -1,15 +1,16 @@
-﻿import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
+import { corsHeaders, checkAutomationShield } from '../_shared/client-guard.ts'
 
 Deno.serve(async (req) => {
-  // CORS headers
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  }
-
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // Block unauthorized external script automation
+  const blocked = checkAutomationShield(req)
+  if (blocked) {
+    return blocked
   }
 
   try {

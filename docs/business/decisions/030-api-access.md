@@ -38,6 +38,11 @@ Read-only REST API endpoint az `openclaw-api` Edge Function-ön keresztül, saj�
 
 **Szűrő operátorok:** `column=value` (exact), `column__gte`, `column__lte`, `column__like`, `column__neq`, `column__is=null|true|false`
 
+### ⚠️ Közvetlen Felhasználói Szkript-Automatizáció Tiltása
+
+A felhasználói bejelentkezési adatokkal (JWT Bearer token) történő közvetlen szkript-alapú automatizáció (Node.js, Python, cURL, Postman stb.) szigorúan tiltott és blokkolt a platform szintjén (lásd: [A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz](../../architecture/decisions/A-101-direct-script-automation-restriction.md)).
+Minden külső gépi integrációhoz és automatizációhoz hivatalos, jóváhagyott API kulcs szükséges.
+
 **Rationale:**
 
 - Az OpenClaw AI agent számára szükséges az eaisybill adatbázis read-only elérése
@@ -45,8 +50,10 @@ Read-only REST API endpoint az `openclaw-api` Edge Function-ön keresztül, saj�
 - Generikus table query megközelítés → nem kell minden táblához külön endpoint
 - SHA-256 hash-elt kulcsok → a nyers kulcs kompromittálása esetén is biztonságos
 - Table allowlist/blocklist → szenzitív adatok védelme
+- Szigorú API határok: a felhasználók a webes bejelentkezésüket nem használhatják kontrolálatlan automatizált adatleszívásra
 
 **Kapcsolódó:**
 - [A-005: Edge Functions](../../architecture/decisions/A-005-edge-functions.md) — `openclaw-api` EF
 - [A-016: PostgreSQL Query Strategy](../../architecture/decisions/A-016-postgresql-query-strategy.md) — `generate_api_key`, `revoke_api_key` RPC
-- [A-017: Security Architecture](../../architecture/decisions/A-017-security-architecture.md) — 4. réteg: API Key Auth
+- [A-017: Security Architecture](../../architecture/decisions/A-017-security-architecture.md) — 4. réteg: API Key Auth, 9. réteg: Script Automation Shield
+- [A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz](../../architecture/decisions/A-101-direct-script-automation-restriction.md)

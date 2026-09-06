@@ -109,7 +109,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `is_company_member_or_above(p_company_id)` | DEFINER | RLS policy-k | Member+ jogosultság ellenőrzés |
 | `user_has_company_access(p_company_id)` | DEFINER | RLS policy-k | Céghez való hozzáférés ellenőrzés |
 | `user_is_company_member(p_company_id)` | DEFINER | RLS policy-k | Cég tagság ellenőrzés |
-| `check_request()` | DEFINER | PostgREST pre-request hook | Globális request validáció (rate limiting, auth check) |
+| `check_request()` | DEFINER | PostgREST pre-request hook | Globális request validáció (rate limiting, bot/script shield, x-visibill-client) |
 | `increment_invoice_usage(user_uuid)` | DEFINER | Trigger / EF | Havi számlafeldolgozási kvóta növelése |
 | `calculate_hourly_cost(p_base_salary, p_monthly_hours?)` | INVOKER | Frontend | Óradíj kalkuláció alapbérből |
 | `generate_api_key(p_company_id?, p_name?)` | DEFINER | Frontend / SQL | API kulcs generálás külső integrációkhoz (SHA-256 hash, nyers kulcs csak egyszer jelenik meg) |
@@ -230,6 +230,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | Function | Security | Cél |
 |---|---|---|
 | `global_audit_trigger_func()` | DEFINER | Globális audit log trigger (INSERT/UPDATE/DELETE naplózás). UPDATE-nél `invoice_uploads.processing_status = 'processed'` átmenetre tüzel. |
+| `check_request()` | DEFINER | PostgREST pre-request hook — IP-alapú mutációs rate limiting és szkript-automatizáció szűrő retesz (Origin/Referer és User-Agent ellenőrzés, ld. [A-101](./A-101-direct-script-automation-restriction.md)) |
 | `rls_auto_enable()` | DEFINER | Automatikus RLS engedélyezés új táblákon |
 | `reset_monthly_usage()` | DEFINER | Havi számlafeldolgozási kvóta nullázás (cron) |
 | `sync_sandbox_from_taxology()` | DEFINER | Sandbox adatok szinkronizálás taxology-ból |
@@ -325,4 +326,5 @@ messages = await asyncio.to_thread(_sync_rpc_read, ...)
 - [A-005: Edge Functions](./A-005-edge-functions.md)
 - [A-014: React Query Cache](./A-014-react-query-cache.md)
 - [A-017: Security Architecture](./A-017-security-architecture.md)
+- [A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz](./A-101-direct-script-automation-restriction.md)
 - [Worker DB pattern](../../../worker/docs/ARCHITECTURE.md#6-adatbázis-műveletek-dbpy)

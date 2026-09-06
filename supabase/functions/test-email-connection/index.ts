@@ -1,16 +1,17 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
 import nodemailer from 'https://esm.sh/nodemailer@6.9.13'
 import { ImapFlow } from 'https://esm.sh/imapflow@1.0.156'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, checkAutomationShield } from '../_shared/client-guard.ts'
 
 Deno.serve(async (req: Request) => {
   // CORS configuration
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  const automationBlock = checkAutomationShield(req)
+  if (automationBlock) {
+    return automationBlock
   }
 
   const debugId = `test-conn-${Date.now()}`
