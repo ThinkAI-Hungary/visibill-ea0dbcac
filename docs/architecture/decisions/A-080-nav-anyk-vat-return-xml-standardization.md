@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-01  
-**Utoljára frissítve:** 2026-09-03  
+**Utoljára frissítve:** 2026-09-07  
 
 ## Context
 A Visibill / eaisyBooks rendszer ÁFA moduljában a 65-ös ÁFA-bevallás XML letöltése korábban egyedi hierarchikus címkéket használt (`<nyomtatvany><fejlec><fobevallas>...`), továbbá az `XmlDocumentAdapter` a számmal kezdődő mezőnevekből érvénytelen XML elemcímkéket generált (pl. `<01_adoszam_torzs>`), ami sértette a W3C XML szabványt és az ÁNYK (Általános Nyomtatványkitöltő / AbevJava) beolvasáskor azonnali hibát (*„hibás a file”*) eredményezett.
@@ -30,8 +30,10 @@ Szükségessé vált az ÁFA-bevallási XML export teljes szabványosítása a N
 
 4. **Adószám Normalizálás és Karakterkódolási Védelem (Hibatűrés):**
    - A `parseTaxNumber` univerzális segédfüggvénnyel a rendszer automatikusan kezeli mind a standard kötőjeles (`13086905-2-08`), mind az egybefüggő 11 jegyű (`13086905208`), mind a szóközös vagy csak törzsszámot tartalmazó adószámokat.
-   - A főlapon a törzsszám (`01_0001`), áfakód (`01_0002`), megyekód (`01_0003`) és formázott teljes adószám (`01_0004`) garantáltan konzisztens marad.
-   - A 65M összesítő lapokon a partnerek adószámából automatikusan kinyerésre kerül a NAV által megkövetelt 8 számjegyű törzsszám (`M_XXXX_0001_adoszam`).
+   - A normalizálás kiterjesztésre került valamennyi export és bevallási modulra: `vatReturnXml.ts`, `vatReturnTemplate.ts`, `contrib2658Xml.ts`, `t101Xml.ts`, `EvKataReturnPage.tsx`, `EvHipaReturnPage.tsx`, `EvKataPage.tsx`, és `accounty-generate-xml`.
+   - A főlapon a törzsszám (`01_0001`), áfakód (`01_0002`), megyekód (`01_0003`) és formázott teljes adószám (`01_0004`) garantáltan konzisztens és érvényes hosszúságú marad.
+   - A 65M összesítő lapokon a partnerek adószámából mind a közvetlen XML építőben, mind a DocumentEngine sablonban automatikusan kinyerésre kerül a NAV által megkövetelt 8 számjegyű törzsszám (`M_XXXX_0001_adoszam`).
+   - A `vatEngine.ts` adószám-validációja szinkronizálva lett: a korábbi szigorú kötőjeles regex mellett elfogadja az egybefüggő 11 számjegyű formátumot (`/^\d{11}$/`) is, feloldva az űrlapok és a kalkulációs motor közötti validációs inkonzisztenciát.
    - Az XML kimenet tiszta UTF-8 kódolással (BOM-mentesen, `<?xml version="1.0" encoding="UTF-8"?>` fejléccel) generálódik, ami garantálja a magyar ékezetes karakterek (`á, é, í, ó, ö, ő, ú, ü, ű`) hibátlan megjelenítését és megakadályozza a Java Xerces parser `Content is not allowed in prolog` típusú indítási hibáit.
 
 ## Consequences
