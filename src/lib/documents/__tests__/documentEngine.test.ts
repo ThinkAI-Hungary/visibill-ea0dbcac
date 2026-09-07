@@ -141,7 +141,7 @@ describe('DocumentEngine', () => {
       expect(descriptor.type).toBe('vat_return');
       expect(descriptor.rawPayload?.anykOptions?.formId).toBe('2665');
       expect(descriptor.rawPayload?.fields['01_0001_adoszam_torzs']).toBe('11223344');
-      expect(descriptor.rawPayload?.fields['M_1_0001_adoszam']).toBe('99887766-2-41');
+      expect(descriptor.rawPayload?.fields['M_1_0001_adoszam']).toBe('99887766');
 
       const { contentString, mimeType } = await DocumentEngine.render(descriptor, 'xml');
       expect(mimeType).toBe('application/xml;charset=utf-8');

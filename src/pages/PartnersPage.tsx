@@ -64,6 +64,7 @@ import {
   type PartnerInvoice,
 } from "@/components/partners/PartnerInvoiceDetailDialog";
 import { decodeHtmlEntities, getInitials as _getInitials, getAvatarColor } from '@/lib/helpers';
+import { parseTaxNumber } from '@/lib/validationUtils';
 
 const DEFAULT_PAGE_SIZE = 15;
 
@@ -506,9 +507,17 @@ export default function PartnersPage() {
       handleCloseDialog();
     },
     onError: (error: any) => {
+      let description = error?.message || "Nem sikerült menteni a partnert.";
+      if (
+        error?.code === "23505" ||
+        error?.message?.includes("partners_company_id_tax_number_key") ||
+        error?.message?.includes("duplicate key")
+      ) {
+        description = "Ez az adószám már létezik a cég partnertörzsében.";
+      }
       toast({
         title: "Hiba",
-        description: error.message || "Nem sikerült menteni a partnert.",
+        description,
         variant: "destructive",
       });
     },
@@ -685,7 +694,31 @@ export default function PartnersPage() {
     // If editing a foreign partner and tax_number left empty, keep the original FOREIGN: value
     const finalTaxNumber = isEditingForeign && !formData.tax_number.trim()
       ? editingPartner.tax_number
-      : formData.tax_number;
+      : formData.tax_number.trim();
+
+    // Check duplicate tax_number locally before sending request to DB (avoiding unnecessary 23505 DB error logs)
+    if (partners && finalTaxNumber) {
+      const targetParsed = parseTaxNumber(finalTaxNumber);
+      const existing = partners.find((p) => {
+        if (p.id === editingPartner?.id) return false;
+        if (p.tax_number === finalTaxNumber) return true;
+        // If both have an 8-digit Hungarian tax base, compare the base (handles hyphenated vs unhyphenated)
+        if (targetParsed.base && targetParsed.base.length === 8) {
+          const pParsed = parseTaxNumber(p.tax_number);
+          if (pParsed.base === targetParsed.base) return true;
+        }
+        return false;
+      });
+      if (existing) {
+        toast({
+          title: "Már létező partner",
+          description: `Ezzel az adószámmal már létezik partner (${decodeHtmlEntities(existing.name)}) a partnertörzsben.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     saveMutation.mutate({
       ...formData,
       tax_number: finalTaxNumber,

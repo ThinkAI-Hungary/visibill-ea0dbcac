@@ -270,6 +270,17 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
       let headerIdResult = entryId;
 
       if (entryId) {
+        // Concurrency & status guard: ensure the entry has not been posted in the meantime
+        const { data: currentHeader, error: checkErr } = await supabase
+          .from('acc_journal_headers')
+          .select('status')
+          .eq('id', entryId)
+          .maybeSingle();
+        if (checkErr) throw checkErr;
+        if (currentHeader && (currentHeader.status === 'POSTED' || currentHeader.status === 'LEKONYVELVE')) {
+          throw new Error("Ez a bizonylat időközben lekönyvelésre került, módosítása már nem lehetséges!");
+        }
+
         // Update header
         const { error: headerErr } = await supabase
           .from('acc_journal_headers')
@@ -324,6 +335,15 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     e.preventDefault();
     if (!journalId) {
       toast({ title: "Figyelmeztetés", description: "Válasszon naplót!", variant: "destructive" });
+      return;
+    }
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!postingDate?.trim() || !dateRegex.test(postingDate.trim())) {
+      toast({ title: "Figyelmeztetés", description: "Érvényes könyvelési dátum megadása kötelező (ÉÉÉÉ-HH-NN formátumban)!", variant: "destructive" });
+      return;
+    }
+    if (!documentDate?.trim() || !dateRegex.test(documentDate.trim())) {
+      toast({ title: "Figyelmeztetés", description: "Érvényes bizonylat kelte megadása kötelező (ÉÉÉÉ-HH-NN formátumban)!", variant: "destructive" });
       return;
     }
     if (!documentId.trim()) {

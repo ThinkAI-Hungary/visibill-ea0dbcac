@@ -1525,8 +1525,8 @@
     "semantic_hash": ""
   },
   "src/pages/PartnersPage.tsx": {
-    "mtime": 1788575998.0957265,
-    "ast_hash": "039b3b4708efe87aeed336bec277e563",
+    "mtime": 1788786723.1188273,
+    "ast_hash": "36cf7b7908558ea5107a086dd8767f10",
     "semantic_hash": ""
   },
   "src/pages/PettyCashPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788766105.4366033,
-    "ast_hash": "7fc2ec9f386c773d38a9185cfd767f6a",
+    "mtime": 1788786104.6791966,
+    "ast_hash": "9275cc72b4351c74ee0afdd098cc4e44",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3840,8 +3840,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useAiChatSessions.ts": {
-    "mtime": 1782236357.338543,
-    "ast_hash": "76a02f403f27d9ff479f1e75f16bff52",
+    "mtime": 1788785991.8470182,
+    "ast_hash": "cec5811a82b998297e8c453b4741767d",
     "semantic_hash": ""
   },
   "src/hooks/useEaisybillPermissions.ts": {
@@ -5085,8 +5085,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/13-eaisybooks-core.md": {
-    "mtime": 1788573213.4888368,
-    "ast_hash": "3d3add9be4f1b5731bf702308c5247b3",
+    "mtime": 1788787050.1233146,
+    "ast_hash": "d955bfe188fb9c7a872a942ce6bf5024",
     "semantic_hash": ""
   },
   "docs/architecture/database/14-eaisybooks-payroll.md": {
@@ -7055,8 +7055,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/AddManualJournalEntryModal.tsx": {
-    "mtime": 1788773219.4515536,
-    "ast_hash": "73f4f5b4e7371af0eff082f0e14dd940",
+    "mtime": 1788786740.749518,
+    "ast_hash": "0d48c5312c45f1ee5d2c0471fab79642",
     "semantic_hash": ""
   },
   "src/components/journals/AuditTrailDialog.tsx": {
@@ -7710,8 +7710,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/documentEngine.test.ts": {
-    "mtime": 1788773713.0721684,
-    "ast_hash": "7414c7d544f7d44cfb7ffabd081a578b",
+    "mtime": 1788786303.984347,
+    "ast_hash": "897c8dc1db3887a489e45d2c11f10eb2",
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/hungarianEncoding.test.ts": {
@@ -9367,6 +9367,16 @@
   "supabase/migrations/20260907120000_vat_pro_rata_schema.sql": {
     "mtime": 1788773029.6096625,
     "ast_hash": "292dc046d6addc88e170d5777a230ee5",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907_optimize_accounty_access_and_rls.sql": {
+    "mtime": 1788786706.9975288,
+    "ast_hash": "ee90c9fc8758ab860410e35636f711e9",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-103-accounty-rls-performance-optimization-and-error-guarding.md": {
+    "mtime": 1788786826.2503774,
+    "ast_hash": "b71410c8639af00ca9beebc34ddebc99",
     "semantic_hash": ""
   }
 }

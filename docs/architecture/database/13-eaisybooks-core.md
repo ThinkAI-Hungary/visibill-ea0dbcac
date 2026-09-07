@@ -94,8 +94,9 @@
 ### `accounty_missing_items`
 
 > Az Accounty modul központi entitása: detektált hiányzó dokumentumok és tételek. Minden detektor (NAV, Bank, Bér) ide ír.
+> RLS optimalizálás: [A-103](../decisions/A-103-accounty-rls-performance-optimization-and-error-guarding.md).
 
-**RLS:** ✅ | **Sorok:** ~5893
+**RLS:** ✅ (A-103: InitPlan Hashed SubPlan optimalizált) | **Sorok:** ~22200+
 
 | Oszlop | Típus | Null | Default |
 |--------|-------|------|---------|

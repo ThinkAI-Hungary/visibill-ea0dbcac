@@ -115,10 +115,12 @@ export function useAiChatSessions() {
 
 /* ─── Hook for session messages ─── */
 export function useAiChatMessages(sessionId: string | null) {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: messagesKey(sessionId || ''),
     queryFn: async () => {
-      if (!sessionId) return [];
+      if (!sessionId || !user?.id) return [];
       const { data, error } = await (supabase as any)
         .from('accounty_ai_chat_messages')
         .select('*')
@@ -127,7 +129,7 @@ export function useAiChatMessages(sessionId: string | null) {
       if (error) throw error;
       return (data || []) as AiChatMessage[];
     },
-    enabled: !!sessionId,
+    enabled: !!sessionId && !!user?.id,
     staleTime: 10_000,
   });
 }

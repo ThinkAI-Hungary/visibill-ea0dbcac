@@ -107,6 +107,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-097 | Multi-Tenant nav_invoice_items Denormalizáció, GL Statement Timeout Felszámolása és RLS Optimalizálás | ✅ Decided | [A-097](./A-097-multi-tenant-nav-items-denormalization-and-gl-optimization.md) |
 | A-098 | Készpénzes és Manuális Kifizetésű Számlák Egységes Párosítási Státusza és KPI Integritása | ✅ Decided | [A-098](./A-098-cash-and-manual-payment-matching-status-consistency.md) |
 | A-100 | Banki Tranzakció Egyediségi Megkötés Bővítése Összeggel és Csendes Duplikátum-kezelés | ✅ Decided | [A-100](./A-100-transaction-unique-constraint-amount-inclusion.md) |
+| A-103 | Accounty RLS Teljesítményoptimalizálás és Postgres Hibanapló Stabilizálás | ✅ Decided | [A-103](./A-103-accounty-rls-performance-optimization-and-error-guarding.md) |
 
 ## 🖥️ Frontend
 
