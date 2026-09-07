@@ -8650,8 +8650,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
-    "mtime": 1788773727.3556733,
-    "ast_hash": "59b7f2461ea6b2cd19817d933f705833",
+    "mtime": 1788775556.2973912,
+    "ast_hash": "0f9cfefc75264225ab0696597931eb1d",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollReconstructionDialog.tsx": {

@@ -4795,8 +4795,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvKataReturnPage.tsx": {
-    "mtime": 1787568622.8833425,
-    "ast_hash": "62b08d11ec03cac9aca1efc7da39a153",
+    "mtime": 1788784231.8435233,
+    "ast_hash": "4c90a5d0274ded7d947ee4a5554d475f",
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvLifecyclePage.tsx": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788753437.0682495,
+    "mtime": 1788783567.42269,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -7805,8 +7805,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/templates/vatReturnTemplate.ts": {
-    "mtime": 1788394929.9385507,
-    "ast_hash": "4113812636f851086ce07cd9ba4530d3",
+    "mtime": 1788784267.8355134,
+    "ast_hash": "37906aaa052247600330891654a311d6",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-061-decompose-management-dashboard.md": {
@@ -8280,8 +8280,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/__tests__/vatEngine.test.ts": {
-    "mtime": 1788219472.8039784,
-    "ast_hash": "70684a8b4f7211488ccbc0fcbee5e452",
+    "mtime": 1788784316.6163304,
+    "ast_hash": "53cd243ed430c32c55721d9425d8e084",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatA60Table.tsx": {
@@ -8315,8 +8315,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/core/vatEngine.ts": {
-    "mtime": 1788298699.2580366,
-    "ast_hash": "7b626f42f50e13b4faddad58d37bcc5f",
+    "mtime": 1788784282.846574,
+    "ast_hash": "79d322a6296ce3982cb6eab98aa1d8b9",
     "semantic_hash": ""
   },
   "src/features/vat/hooks/useVatReturnData.ts": {
