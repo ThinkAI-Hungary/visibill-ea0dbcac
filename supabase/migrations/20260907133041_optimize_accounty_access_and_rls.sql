@@ -1,4 +1,4 @@
--- Migration: 20260907_optimize_accounty_access_and_rls.sql
+-- Migration: 20260907133041_optimize_accounty_access_and_rls.sql
 -- Purpose: Optimize accounty access functions and RLS policies to eliminate statement timeouts.
 -- Impact: Reduces query latency on accounty_missing_items from ~3,000ms (and timeouts) to <5ms.
 

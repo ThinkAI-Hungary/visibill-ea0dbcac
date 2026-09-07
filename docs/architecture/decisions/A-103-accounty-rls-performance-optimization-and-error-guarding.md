@@ -33,7 +33,7 @@ A Supabase PostgreSQL adatbázis naplóiban (ClickHouse / Log Explorer) végzett
 
 ## Decision
 
-### 1. Adatbázis RLS és Hozzáférési Függvények Optimalizálása (`20260907_optimize_accounty_access_and_rls.sql`)
+### 1. Adatbázis RLS és Hozzáférési Függvények Optimalizálása (`20260907133041_optimize_accounty_access_and_rls.sql`)
 
 * **Gyorsítótárazható RLS Hashed Subplan Szabályok:**
   Az `accounty_missing_items` és `accounty_deadlines` táblák RLS SELECT szabályait közvetlen `IN (SELECT ... UNION ...)` részkifejezésre cseréltük, amely `(SELECT auth.uid())`-t használ. Így a PostgreSQL nem soronként hív függvényt, hanem a lekérdezés legelején egyszer képez egy in-memory hash táblát (InitPlan Hashed SubPlan). A hozzáférés a vezetőség és könyvelők mellett kiterjed a cég közvetlen tagjaira is (`role IN ('owner', 'admin', 'member', 'support_admin')`):
