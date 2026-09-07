@@ -58,53 +58,122 @@ CREATE TABLE IF NOT EXISTS vat_pro_rata_periods (
     CONSTRAINT vat_pro_rata_periods_company_year_month_key UNIQUE (company_id, accounting_year, period_month)
 );
 
--- Indexek
+-- Indexek (DB-3 FK és lekérdezési indexek)
 CREATE INDEX IF NOT EXISTS idx_vat_pro_rata_settings_company_year ON vat_pro_rata_settings(company_id, accounting_year);
+CREATE INDEX IF NOT EXISTS idx_vat_pro_rata_settings_gl_account ON vat_pro_rata_settings(non_deductible_gl_account_id);
 CREATE INDEX IF NOT EXISTS idx_vat_pro_rata_periods_company_year_month ON vat_pro_rata_periods(company_id, accounting_year, period_month);
+CREATE INDEX IF NOT EXISTS idx_acc_journal_lines_pro_rata ON acc_journal_lines(header_id, vat_deductibility_type) WHERE vat_deductibility_type = 'PRO_RATA';
 
--- 5. RLS politikák
+-- Triggerek az updated_at frissítésére
+DROP TRIGGER IF EXISTS trg_vat_pro_rata_settings_updated_at ON vat_pro_rata_settings;
+CREATE TRIGGER trg_vat_pro_rata_settings_updated_at
+    BEFORE UPDATE ON vat_pro_rata_settings
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS trg_vat_pro_rata_periods_updated_at ON vat_pro_rata_periods;
+CREATE TRIGGER trg_vat_pro_rata_periods_updated_at
+    BEFORE UPDATE ON vat_pro_rata_periods
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 5. RLS politikák (DB-2 InitPlan optimalizáció, DB-11 redundancia-mentesség)
 ALTER TABLE vat_pro_rata_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vat_pro_rata_periods ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
+    -- Settings table policies
     DROP POLICY IF EXISTS "Users can view pro rata settings of their company" ON vat_pro_rata_settings;
     CREATE POLICY "Users can view pro rata settings of their company" ON vat_pro_rata_settings
         FOR SELECT USING (
             EXISTS (
                 SELECT 1 FROM company_members cm
                 WHERE cm.company_id = vat_pro_rata_settings.company_id
-                AND cm.user_id = auth.uid()
+                AND cm.user_id = (SELECT auth.uid())
             )
         );
 
     DROP POLICY IF EXISTS "Users can manage pro rata settings of their company" ON vat_pro_rata_settings;
-    CREATE POLICY "Users can manage pro rata settings of their company" ON vat_pro_rata_settings
-        FOR ALL USING (
+    DROP POLICY IF EXISTS "Users can insert pro rata settings of their company" ON vat_pro_rata_settings;
+    CREATE POLICY "Users can insert pro rata settings of their company" ON vat_pro_rata_settings
+        FOR INSERT WITH CHECK (
             EXISTS (
                 SELECT 1 FROM company_members cm
                 WHERE cm.company_id = vat_pro_rata_settings.company_id
-                AND cm.user_id = auth.uid()
+                AND cm.user_id = (SELECT auth.uid())
             )
         );
 
+    DROP POLICY IF EXISTS "Users can update pro rata settings of their company" ON vat_pro_rata_settings;
+    CREATE POLICY "Users can update pro rata settings of their company" ON vat_pro_rata_settings
+        FOR UPDATE USING (
+            EXISTS (
+                SELECT 1 FROM company_members cm
+                WHERE cm.company_id = vat_pro_rata_settings.company_id
+                AND cm.user_id = (SELECT auth.uid())
+            )
+        ) WITH CHECK (
+            EXISTS (
+                SELECT 1 FROM company_members cm
+                WHERE cm.company_id = vat_pro_rata_settings.company_id
+                AND cm.user_id = (SELECT auth.uid())
+            )
+        );
+
+    DROP POLICY IF EXISTS "Users can delete pro rata settings of their company" ON vat_pro_rata_settings;
+    CREATE POLICY "Users can delete pro rata settings of their company" ON vat_pro_rata_settings
+        FOR DELETE USING (
+            EXISTS (
+                SELECT 1 FROM company_members cm
+                WHERE cm.company_id = vat_pro_rata_settings.company_id
+                AND cm.user_id = (SELECT auth.uid())
+            )
+        );
+
+    -- Periods table policies
     DROP POLICY IF EXISTS "Users can view pro rata periods of their company" ON vat_pro_rata_periods;
     CREATE POLICY "Users can view pro rata periods of their company" ON vat_pro_rata_periods
         FOR SELECT USING (
             EXISTS (
                 SELECT 1 FROM company_members cm
                 WHERE cm.company_id = vat_pro_rata_periods.company_id
-                AND cm.user_id = auth.uid()
+                AND cm.user_id = (SELECT auth.uid())
             )
         );
 
     DROP POLICY IF EXISTS "Users can manage pro rata periods of their company" ON vat_pro_rata_periods;
-    CREATE POLICY "Users can manage pro rata periods of their company" ON vat_pro_rata_periods
-        FOR ALL USING (
+    DROP POLICY IF EXISTS "Users can insert pro rata periods of their company" ON vat_pro_rata_periods;
+    CREATE POLICY "Users can insert pro rata periods of their company" ON vat_pro_rata_periods
+        FOR INSERT WITH CHECK (
             EXISTS (
                 SELECT 1 FROM company_members cm
                 WHERE cm.company_id = vat_pro_rata_periods.company_id
-                AND cm.user_id = auth.uid()
+                AND cm.user_id = (SELECT auth.uid())
+            )
+        );
+
+    DROP POLICY IF EXISTS "Users can update pro rata periods of their company" ON vat_pro_rata_periods;
+    CREATE POLICY "Users can update pro rata periods of their company" ON vat_pro_rata_periods
+        FOR UPDATE USING (
+            EXISTS (
+                SELECT 1 FROM company_members cm
+                WHERE cm.company_id = vat_pro_rata_periods.company_id
+                AND cm.user_id = (SELECT auth.uid())
+            )
+        ) WITH CHECK (
+            EXISTS (
+                SELECT 1 FROM company_members cm
+                WHERE cm.company_id = vat_pro_rata_periods.company_id
+                AND cm.user_id = (SELECT auth.uid())
+            )
+        );
+
+    DROP POLICY IF EXISTS "Users can delete pro rata periods of their company" ON vat_pro_rata_periods;
+    CREATE POLICY "Users can delete pro rata periods of their company" ON vat_pro_rata_periods
+        FOR DELETE USING (
+            EXISTS (
+                SELECT 1 FROM company_members cm
+                WHERE cm.company_id = vat_pro_rata_periods.company_id
+                AND cm.user_id = (SELECT auth.uid())
             )
         );
 END $$;

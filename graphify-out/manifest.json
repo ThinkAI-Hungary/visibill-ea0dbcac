@@ -9364,19 +9364,19 @@
     "ast_hash": "41671da8d381dc3cf58e0794f7d917db",
     "semantic_hash": ""
   },
-  "supabase/migrations/20260907120000_vat_pro_rata_schema.sql": {
-    "mtime": 1788773029.6096625,
-    "ast_hash": "292dc046d6addc88e170d5777a230ee5",
-    "semantic_hash": ""
-  },
-  "supabase/migrations/20260907_optimize_accounty_access_and_rls.sql": {
-    "mtime": 1788786706.9975288,
-    "ast_hash": "ee90c9fc8758ab860410e35636f711e9",
-    "semantic_hash": ""
-  },
   "docs/architecture/decisions/A-103-accounty-rls-performance-optimization-and-error-guarding.md": {
-    "mtime": 1788786826.2503774,
-    "ast_hash": "b71410c8639af00ca9beebc34ddebc99",
+    "mtime": 1788787879.3909836,
+    "ast_hash": "ddd115d03cf070d051f7da5bf669c30d",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907133041_optimize_accounty_access_and_rls.sql": {
+    "mtime": 1788787885.7124596,
+    "ast_hash": "6b9615d260eadb62c65e3d223e079b9e",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907133743_vat_pro_rata_schema.sql": {
+    "mtime": 1788788249.712193,
+    "ast_hash": "8ce62dcbf324602abc1ab01f00d0eb05",
     "semantic_hash": ""
   }
 }
