@@ -383,11 +383,18 @@ BEGIN
          LIMIT 1;
       END IF;
       
-      -- 2. Fallback: match by name (case-insensitive & trimmed)
+      -- 2. Fallback: match by name (case-insensitive & trimmed) ONLY if tax numbers do not conflict
       IF v_partner_id IS NULL AND v_partner_name IS NOT NULL AND TRIM(v_partner_name) <> '' THEN
         SELECT id INTO v_partner_id FROM public.partners 
          WHERE company_id = p_company_id 
            AND LOWER(TRIM(name)) = LOWER(TRIM(v_partner_name)) 
+           AND (
+             v_partner_tax IS NULL OR TRIM(v_partner_tax) = ''
+             OR tax_number IS NULL OR tax_number LIKE 'FOREIGN:%'
+             OR length(regexp_replace(v_partner_tax, '[^0-9]', '', 'g')) < 8
+             OR length(regexp_replace(tax_number, '[^0-9]', '', 'g')) < 8
+             OR SUBSTRING(regexp_replace(tax_number, '[^0-9]', '', 'g') FROM 1 FOR 8) = SUBSTRING(regexp_replace(v_partner_tax, '[^0-9]', '', 'g') FROM 1 FOR 8)
+           )
          LIMIT 1;
       END IF;
 
