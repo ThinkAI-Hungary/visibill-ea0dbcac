@@ -177,11 +177,11 @@ Deno.serve(async (req) => {
 
       xml += `<?xml version="1.0" encoding="UTF-8"?>\n`;
       xml += `<!-- Nemzeti Adó- és Vámhivatal ÁNYK XML Export -->\n`;
-      xml += `<nyomtatvanyok xmlns="http://www.nav.gov.hu/nyomtatvanyok" verzio="1.0">\n`;
+      xml += `<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">\n`;
       xml += `  <nyomtatvany>\n`;
       xml += `    <nyomtatvanyinformacio>\n`;
       xml += `      <nyomtatvanyazonosito>${taxYear}KATA</nyomtatvanyazonosito>\n`;
-      xml += `      <verzio>1.0</verzio>\n`;
+      xml += `      <nyomtatvanyverzio>1.0</nyomtatvanyverzio>\n`;
       xml += `    </nyomtatvanyinformacio>\n`;
       xml += `    <mezok>\n`;
       xml += `      <mezo eazon="01_0001_adoszam_torzs">${taxNum8}</mezo>\n`;

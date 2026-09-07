@@ -56,14 +56,12 @@ export function buildAnykEnvelope(
   options: AnykHeaderOptions,
   bodyXml: string
 ): string {
-  const software = options.softwareName || 'Visibill / eaisyBooks';
   return `<?xml version="1.0" encoding="UTF-8"?>
-<nyomtatvanyok xmlns="http://schema.nav.gov.hu/anyk/1.0">
+<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">
   <nyomtatvany>
     <nyomtatvanyinformacio>
       <nyomtatvanyazonosito>${escapeXml(options.formId)}</nyomtatvanyazonosito>
       <nyomtatvanyverzio>${escapeXml(options.formVersion)}</nyomtatvanyverzio>
-      <programnev>${escapeXml(software)}</programnev>
     </nyomtatvanyinformacio>
     <mezok>
 ${bodyXml}

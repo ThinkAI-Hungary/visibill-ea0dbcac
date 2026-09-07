@@ -12,6 +12,7 @@ import { useEvTaxReturns, useEvHipaCalc, useUpdateEvTaxReturn } from '@/hooks/us
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { parseTaxNumber } from '@/lib/validationUtils';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -82,7 +83,7 @@ export default function EvHipaReturnPage() {
 
     // Generate expected HIPA entries and merge with DB records
     const now = new Date();
-    const hipaAmount = hipaCalc?.hipa_amount || 0;
+    const hipaAmount = hipaCalc?.tax_amount || 0;
 
     const getStatus = (deadline: string) => {
       const d = new Date(deadline);
@@ -152,11 +153,11 @@ export default function EvHipaReturnPage() {
 
       const currentDate = new Date().toISOString().slice(0, 10);
 
-      const taxNum = company?.tax_number || client?.taxNumber || '';
-      const taxParts = taxNum.split('-');
-      const taxNum8 = taxParts[0] || '';
-      const taxNumVat = taxParts[1] || '';
-      const taxNumCounty = taxParts[2] || '';
+      const parsedTax = parseTaxNumber(company?.tax_number || client?.taxNumber);
+      const taxNum8 = parsedTax.base;
+      const taxNumVat = parsedTax.vat;
+      const taxNumCounty = parsedTax.county;
+      const fullTaxNumber = parsedTax.fullFormatted;
 
       const taxId = (company as any)?.tax_id || '8329900747';
       const clientName = company?.name || client?.name || 'Egyéni Vállalkozó';
@@ -169,11 +170,11 @@ export default function EvHipaReturnPage() {
 
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
       xml += `<!-- Nemzeti Adó- és Vámhivatal ÁNYK XML Export -->\n`;
-      xml += `<nyomtatvanyok xmlns="http://www.nav.gov.hu/nyomtatvanyok" verzio="1.0">\n`;
+      xml += `<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">\n`;
       xml += `  <nyomtatvany>\n`;
       xml += `    <nyomtatvanyinformacio>\n`;
       xml += `      <nyomtatvanyazonosito>${selectedYear}HIPA</nyomtatvanyazonosito>\n`;
-      xml += `      <verzio>1.0</verzio>\n`;
+      xml += `      <nyomtatvanyverzio>1.0</nyomtatvanyverzio>\n`;
       xml += `    </nyomtatvanyinformacio>\n`;
       xml += `    <mezok>\n`;
       xml += `      <!-- ========================================== -->\n`;
@@ -182,7 +183,7 @@ export default function EvHipaReturnPage() {
       xml += `      <mezo eazon="01_0001_adoszam_torzs">${taxNum8}</mezo>\n`;
       xml += `      <mezo eazon="01_0002_adoszam_afa">${taxNumVat}</mezo>\n`;
       xml += `      <mezo eazon="01_0003_adoszam_megye">${taxNumCounty}</mezo>\n`;
-      xml += `      <mezo eazon="01_0004_adoszam_teljes">${taxNum}</mezo>\n`;
+      xml += `      <mezo eazon="01_0004_adoszam_teljes">${escapeXml(fullTaxNumber)}</mezo>\n`;
       xml += `      <mezo eazon="01_0005_adoazonosito">${taxId}</mezo>\n`;
       xml += `      <mezo eazon="01_0006_adozo_nev">${escapeXml(clientName)}</mezo>\n`;
       xml += `      <mezo eazon="01_0007_szekhely_cim">${escapeXml(clientAddress)}</mezo>\n`;

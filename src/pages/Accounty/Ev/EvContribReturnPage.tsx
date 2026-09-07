@@ -10,6 +10,7 @@ import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import { formatHuf, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS, calculateQuarterlyContributions } from '@/lib/evCalculations';
 import { useEvTaxReturns, useEvContributions, useUpdateEvTaxReturn, useEvClientSettings } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
+import { parseTaxNumber } from '@/lib/validationUtils';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -159,28 +160,29 @@ export default function EvContribReturnPage() {
 
       const currentDate = new Date().toISOString().slice(0, 10);
 
-      const taxNum = client?.taxNumber || client?.tax_number || '';
-      const taxParts = taxNum.split('-');
-      const taxNum8 = taxParts[0] || '';
-      const taxNumVat = taxParts[1] || '';
-      const taxNumCounty = taxParts[2] || '';
+      const parsedTax = parseTaxNumber(client?.taxNumber);
+      const taxNum8 = parsedTax.base;
+      const taxNumVat = parsedTax.vat;
+      const taxNumCounty = parsedTax.county;
+      const fullTaxNumber = parsedTax.fullFormatted;
 
-      const taxId = client?.taxId || client?.tax_id || '8329900747';
+      const clientAny = client as any;
+      const taxId = clientAny?.taxId || clientAny?.tax_id || '8329900747';
       const clientName = client?.name || 'Egyéni Vállalkozó';
-      const clientAddress = client?.address || '1054 Budapest, Alkotmány utca 4.';
-      const clientEmail = client?.email || `${clientName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
-      const clientPhone = client?.phone || '+36 30 123 4567';
+      const clientAddress = clientAny?.address || '1054 Budapest, Alkotmány utca 4.';
+      const clientEmail = clientAny?.email || `${clientName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+      const clientPhone = clientAny?.phone || '+36 30 123 4567';
 
       const tbBase = ret.tbAmount > 0 ? Math.round(ret.tbAmount / taxParams.tbJarulekKulcs) : 0;
       const szochoBase = ret.szochoAmount > 0 ? Math.round(ret.szochoAmount / taxParams.szochoKulcs) : 0;
 
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
       xml += `<!-- Nemzeti Adó- és Vámhivatal ÁNYK XML Export -->\n`;
-      xml += `<nyomtatvanyok xmlns="http://www.nav.gov.hu/nyomtatvanyok" verzio="1.0">\n`;
+      xml += `<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">\n`;
       xml += `  <nyomtatvany>\n`;
       xml += `    <nyomtatvanyinformacio>\n`;
       xml += `      <nyomtatvanyazonosito>${taxYear % 100}58</nyomtatvanyazonosito>\n`;
-      xml += `      <verzio>1.0</verzio>\n`;
+      xml += `      <nyomtatvanyverzio>1.0</nyomtatvanyverzio>\n`;
       xml += `    </nyomtatvanyinformacio>\n`;
       xml += `    <mezok>\n`;
       xml += `      <!-- ========================================== -->\n`;
@@ -189,7 +191,7 @@ export default function EvContribReturnPage() {
       xml += `      <mezo eazon="01_0001_adoszam_torzs">${taxNum8}</mezo>\n`;
       xml += `      <mezo eazon="01_0002_adoszam_afa">${taxNumVat}</mezo>\n`;
       xml += `      <mezo eazon="01_0003_adoszam_megye">${taxNumCounty}</mezo>\n`;
-      xml += `      <mezo eazon="01_0004_adoszam_teljes">${taxNum}</mezo>\n`;
+      xml += `      <mezo eazon="01_0004_adoszam_teljes">${escapeXml(fullTaxNumber)}</mezo>\n`;
       xml += `      <mezo eazon="01_0005_adoazonosito">${taxId}</mezo>\n`;
       xml += `      <mezo eazon="01_0006_adozo_nev">${escapeXml(clientName)}</mezo>\n`;
       xml += `      <mezo eazon="01_0007_szekhely_cim">${escapeXml(clientAddress)}</mezo>\n`;

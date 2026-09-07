@@ -44,9 +44,9 @@ describe('xmlSanitizer', () => {
       );
 
       expect(envelope).toContain('<?xml version="1.0" encoding="UTF-8"?>');
+      expect(envelope).toContain('<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">');
       expect(envelope).toContain('<nyomtatvanyazonosito>2665</nyomtatvanyazonosito>');
       expect(envelope).toContain('<nyomtatvanyverzio>1.0</nyomtatvanyverzio>');
-      expect(envelope).toContain('<programnev>Visibill / eaisyBooks</programnev>');
       expect(envelope).toContain('<sor_01_alap>1000</sor_01_alap>');
     });
   });

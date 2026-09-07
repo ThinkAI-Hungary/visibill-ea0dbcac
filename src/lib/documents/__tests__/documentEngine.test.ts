@@ -145,7 +145,7 @@ describe('DocumentEngine', () => {
 
       const { contentString, mimeType } = await DocumentEngine.render(descriptor, 'xml');
       expect(mimeType).toBe('application/xml;charset=utf-8');
-      expect(contentString).toContain('<nyomtatvanyok xmlns="http://schema.nav.gov.hu/anyk/1.0">');
+      expect(contentString).toContain('<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">');
       expect(contentString).toContain('<nyomtatvanyazonosito>2665</nyomtatvanyazonosito>');
       expect(contentString).toContain('<mezo eazon="01_0001_adoszam_torzs">11223344</mezo>');
       expect(contentString).toContain('<mezo eazon="01_0006_adozo_nev">Példa &amp; Társa Kft.</mezo>');

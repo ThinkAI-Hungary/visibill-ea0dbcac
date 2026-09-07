@@ -33,9 +33,9 @@ describe('vatReturnXml (NAV ÁNYK 2665 Generator)', () => {
 
     // Valid XML header and root
     expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
-    expect(xml).toContain('<nyomtatvanyok xmlns="http://www.nav.gov.hu/nyomtatvanyok" verzio="1.0">');
+    expect(xml).toContain('<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">');
     expect(xml).toContain('<nyomtatvanyazonosito>2665</nyomtatvanyazonosito>');
-    expect(xml).toContain('<programnev>Visibill / eaisyBooks</programnev>');
+    expect(xml).toContain('<nyomtatvanyverzio>1.0</nyomtatvanyverzio>');
 
     // Főlap fields
     expect(xml).toContain('<mezo eazon="01_0001_adoszam_torzs">13086905</mezo>');
@@ -54,9 +54,9 @@ describe('vatReturnXml (NAV ÁNYK 2665 Generator)', () => {
     expect(xml).toContain('<mezo eazon="sor_07_ado">1991</mezo>');
     expect(xml).toContain('<mezo eazon="sor_83_ado">1984</mezo>');
 
-    // M-sheets
+    // M-sheets (partner tax base is strictly 8-digit)
     expect(xml).toContain('<mezo eazon="M_partner_osszesen">1</mezo>');
-    expect(xml).toContain('<mezo eazon="M_1_0001_adoszam">12345678-2-42</mezo>');
+    expect(xml).toContain('<mezo eazon="M_1_0001_adoszam">12345678</mezo>');
     expect(xml).toContain('<mezo eazon="M_1_0002_nev">Partner &lt;Alpha&gt; Kft.</mezo>');
     expect(xml).toContain('<mezo eazon="M_1_0003_szamlak_szama">3</mezo>');
     expect(xml).toContain('<mezo eazon="M_1_0004_alap">72</mezo>');
@@ -67,6 +67,80 @@ describe('vatReturnXml (NAV ÁNYK 2665 Generator)', () => {
     // Declaration
     expect(xml).toContain('<mezo eazon="03_0001_nyilatkozat_adat_valos">1</mezo>');
     expect(xml).toContain('</nyomtatvanyok>');
+  });
+
+  it('handles undashed 11-digit tax numbers for company and M-lap partners (1. Vakfolt)', () => {
+    const xml = buildVatReturnXml({
+      companyName: 'NoDash Cég',
+      companyTaxNumber: '13086905208', // Kötőjel nélküli 11 jegyű
+      companyAddress: 'Budapest',
+      periodYear: 2026,
+      periodMonth: 8,
+      frequency: 'H',
+      lines: [],
+      mLines: [
+        {
+          partner_name: 'Partner Bt.',
+          partner_tax_number: '98765432142', // Kötőjel nélküli 11 jegyű partner
+          invoice_count: 1,
+          base_amount_rounded: 100,
+          tax_amount_rounded: 27,
+          tax_5_amount: 0,
+          tax_18_amount: 0,
+          tax_27_amount: 27,
+        },
+      ],
+    });
+
+    // Főlap felbontott adószám mezők
+    expect(xml).toContain('<mezo eazon="01_0001_adoszam_torzs">13086905</mezo>');
+    expect(xml).toContain('<mezo eazon="01_0002_adoszam_afa">2</mezo>');
+    expect(xml).toContain('<mezo eazon="01_0003_adoszam_megye">08</mezo>');
+    expect(xml).toContain('<mezo eazon="01_0004_adoszam_teljes">13086905-2-08</mezo>');
+
+    // M-lap partner törzsszám (8 karakter)
+    expect(xml).toContain('<mezo eazon="M_1_0001_adoszam">98765432</mezo>');
+  });
+
+  it('correctly encodes Hungarian accented characters and XML escaping without corruption (3. Vakfolt)', () => {
+    const xml = buildVatReturnXml({
+      companyName: 'Árvíztűrő tükörfúrógép Kft. & Fia',
+      companyTaxNumber: '11223344-2-13',
+      companyAddress: '9021 Győr, Széchenyi tér 1. 2. em. 4/A',
+      periodYear: 2026,
+      periodMonth: 5,
+      frequency: 'H',
+      lines: [],
+      mLines: [
+        {
+          partner_name: 'Márvány & Öntvény Építőipari Kkt. <Bp>',
+          partner_tax_number: '88776655-1-41',
+          invoice_count: 2,
+          base_amount_rounded: 500,
+          tax_amount_rounded: 135,
+          tax_5_amount: 0,
+          tax_18_amount: 0,
+          tax_27_amount: 135,
+        },
+      ],
+    });
+
+    // Valid UTF-8 XML declaration
+    expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+
+    // Hungarian accents preserved verbatim
+    expect(xml).toContain('Árvíztűrő tükörfúrógép Kft. &amp; Fia');
+    expect(xml).toContain('9021 Győr, Széchenyi tér 1. 2. em. 4/A');
+    expect(xml).toContain('Márvány &amp; Öntvény Építőipari Kkt. &lt;Bp&gt;');
+
+    // Filename handles accents cleanly
+    // @ts-ignore
+    const filename = getVatReturnFilename({
+      companyName: 'Árvíztűrő tükörfúrógép Kft.',
+      periodYear: 2026,
+      periodMonth: 5,
+    });
+    expect(filename).toBe('NAV_2665_2026_05_Árvíztűrő_tükörfúrógép_Kft.xml');
   });
 
   it('correctly adapts formId and date range for quarterly and yearly frequencies', () => {
@@ -99,3 +173,4 @@ describe('vatReturnXml (NAV ÁNYK 2665 Generator)', () => {
     expect(filename).not.toContain('..');
   });
 });
+

@@ -4,6 +4,7 @@ import {
   isValidAmount,
   isNotBlank,
   isValidTaxId,
+  parseTaxNumber,
 } from "./validationUtils";
 
 // ─── EMAIL ─────────────────────────────────────────────
@@ -113,3 +114,45 @@ describe("isValidTaxId", () => {
     expect(isValidTaxId("")).toBe(false);
   });
 });
+
+// ─── ADÓSZÁM PARSE & NORMALIZÁLÁS (1. VAKFOLT) ──────────
+describe("parseTaxNumber", () => {
+  it("helyesen bontja a standard kötőjeles adószámot", () => {
+    const res = parseTaxNumber("13086905-2-08");
+    expect(res.base).toBe("13086905");
+    expect(res.vat).toBe("2");
+    expect(res.county).toBe("08");
+    expect(res.fullFormatted).toBe("13086905-2-08");
+  });
+
+  it("helyesen bontja és formázza az egybefüggő 11 jegyű adószámot", () => {
+    const res = parseTaxNumber("13086905208");
+    expect(res.base).toBe("13086905");
+    expect(res.vat).toBe("2");
+    expect(res.county).toBe("08");
+    expect(res.fullFormatted).toBe("13086905-2-08");
+  });
+
+  it("kezeli a szóközökkel ellátott vagy szabálytalanul tagolt adószámot", () => {
+    const res = parseTaxNumber(" 13086905 - 2 - 08 ");
+    expect(res.base).toBe("13086905");
+    expect(res.vat).toBe("2");
+    expect(res.county).toBe("08");
+    expect(res.fullFormatted).toBe("13086905-2-08");
+  });
+
+  it("kezeli a csak 8 számjegyű törzsszámot", () => {
+    const res = parseTaxNumber("13086905");
+    expect(res.base).toBe("13086905");
+    expect(res.vat).toBe("");
+    expect(res.county).toBe("");
+    expect(res.fullFormatted).toBe("13086905");
+  });
+
+  it("kezeli az üres, null és undefined bemenetet", () => {
+    expect(parseTaxNumber("")).toEqual({ raw: "", base: "", vat: "", county: "", fullFormatted: "" });
+    expect(parseTaxNumber(null)).toEqual({ raw: "", base: "", vat: "", county: "", fullFormatted: "" });
+    expect(parseTaxNumber(undefined)).toEqual({ raw: "", base: "", vat: "", county: "", fullFormatted: "" });
+  });
+});
+

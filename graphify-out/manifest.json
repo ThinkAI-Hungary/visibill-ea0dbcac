@@ -1275,14 +1275,14 @@
     "semantic_hash": ""
   },
   "src/lib/validationUtils.test.ts": {
-    "mtime": 1774313959.839518,
-    "ast_hash": "7cfa92564f5dfb19724e89f988bcf90f",
-    "semantic_hash": "7cfa92564f5dfb19724e89f988bcf90f"
+    "mtime": 1788775329.4441278,
+    "ast_hash": "bf45eb69503eac7e69b03bf91afdd59d",
+    "semantic_hash": ""
   },
   "src/lib/validationUtils.ts": {
-    "mtime": 1774313957.8265624,
-    "ast_hash": "663f8ba8ce62203fc56434670f6312ec",
-    "semantic_hash": "663f8ba8ce62203fc56434670f6312ec"
+    "mtime": 1788775152.9202194,
+    "ast_hash": "7f33e5529a60c8ae8520db592c100ca6",
+    "semantic_hash": ""
   },
   "src/lib/vatReturnPdf.ts": {
     "mtime": 1788137742.0770578,
@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1788394921.2395184,
-    "ast_hash": "d39973fa7d8f5f6d962ce143430f89df",
+    "mtime": 1788775185.5750768,
+    "ast_hash": "ab65f42f3fa5833afa0fda6270456c8e",
     "semantic_hash": ""
   },
   "src/main.tsx": {
@@ -2750,8 +2750,8 @@
     "semantic_hash": ""
   },
   "PROJECT_DOCUMENTATION.md": {
-    "mtime": 1787753315.8218594,
-    "ast_hash": "4505dc75e8fa6a58884745eb2a7a1a42",
+    "mtime": 1788773029.6050675,
+    "ast_hash": "dcd16df025a0bd32524cf5de52559828",
     "semantic_hash": ""
   },
   "README.md": {
@@ -4735,8 +4735,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvContribReturnPage.tsx": {
-    "mtime": 1787568622.8793433,
-    "ast_hash": "d1f3fcb31a44c98d677228a501b51a41",
+    "mtime": 1788775258.674241,
+    "ast_hash": "de45d1f256a6c1da34cd64208571949e",
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvContributionsPage.tsx": {
@@ -4775,8 +4775,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvHipaReturnPage.tsx": {
-    "mtime": 1787568622.881343,
-    "ast_hash": "69204d25e00da14a5d67efe5fa9ce9e6",
+    "mtime": 1788775305.0913162,
+    "ast_hash": "4a7922ae23ded6662582df3d5e6629c4",
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvIncomeReportPage.tsx": {
@@ -4790,8 +4790,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvKataPage.tsx": {
-    "mtime": 1787753315.8365023,
-    "ast_hash": "31a2599b7d381a9d1eb14a1c13b5c13c",
+    "mtime": 1788775279.3194506,
+    "ast_hash": "cf54943f1aec2d7234a27cadfdeff45c",
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvKataReturnPage.tsx": {
@@ -6115,8 +6115,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/accounty-generate-xml/index.ts": {
-    "mtime": 1788712104.40672,
-    "ast_hash": "a0edb39786044e5b5b62e1377eb562a8",
+    "mtime": 1788773689.9293213,
+    "ast_hash": "ecabfb94542ab6ca14f7583acbce243e",
     "semantic_hash": ""
   },
   "supabase/migrations/20260721120000_seed_ev_tax_parameters.sql": {
@@ -6925,13 +6925,13 @@
     "semantic_hash": ""
   },
   "src/lib/contrib2658Xml.ts": {
-    "mtime": 1787568622.8673368,
-    "ast_hash": "3779aa667ad11fdbfabc43d07dec2827",
+    "mtime": 1788775217.2782338,
+    "ast_hash": "529f0cf579c39692919d265fda66b241",
     "semantic_hash": ""
   },
   "src/lib/t101Xml.ts": {
-    "mtime": 1787568622.868336,
-    "ast_hash": "1b3f1359b373ec8b651ac4f5f39e7264",
+    "mtime": 1788775234.019901,
+    "ast_hash": "215add37e7b4d258fa056507282e732d",
     "semantic_hash": ""
   },
   "src/test/accounty/financialStatementsUpgrades.test.tsx": {
@@ -7055,8 +7055,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/AddManualJournalEntryModal.tsx": {
-    "mtime": 1788548577.061662,
-    "ast_hash": "f0894a4f6cc2420a49f64912f6859ca7",
+    "mtime": 1788773219.4515536,
+    "ast_hash": "73f4f5b4e7371af0eff082f0e14dd940",
     "semantic_hash": ""
   },
   "src/components/journals/AuditTrailDialog.tsx": {
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1788586629.2690773,
-    "ast_hash": "0d6dfab4c476de5b591789d9fd6a0ead",
+    "mtime": 1788773029.6096625,
+    "ast_hash": "ba39d988739ee29acec5458429d34101",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -7710,8 +7710,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/documentEngine.test.ts": {
-    "mtime": 1788298542.2656717,
-    "ast_hash": "84bd2ac295ed4c4645443928e20f7db6",
+    "mtime": 1788773713.0721684,
+    "ast_hash": "7414c7d544f7d44cfb7ffabd081a578b",
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/hungarianEncoding.test.ts": {
@@ -7720,8 +7720,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/xmlSanitizer.test.ts": {
-    "mtime": 1788137759.1116521,
-    "ast_hash": "f0c146c886b0c8eecf0ac8deb6a71b4d",
+    "mtime": 1788774512.9439993,
+    "ast_hash": "5249df88ac63d165f0abb24b03c27ed6",
     "semantic_hash": ""
   },
   "src/lib/documents/adapters/HtmlPreviewAdapter.ts": {
@@ -7770,8 +7770,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/encoding/xmlSanitizer.ts": {
-    "mtime": 1788137613.0886495,
-    "ast_hash": "0da4fdfce582d80f51a78affefb1c101",
+    "mtime": 1788773639.8908136,
+    "ast_hash": "01837c909459fd3dce2ef5d6b7c5ef13",
     "semantic_hash": ""
   },
   "src/lib/documents/index.ts": {
@@ -8155,8 +8155,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/OpeningJournalWizardModal.tsx": {
-    "mtime": 1788549578.627394,
-    "ast_hash": "2d1ea258992817e8d4682cd2dc535c1b",
+    "mtime": 1788773219.452075,
+    "ast_hash": "52af4c909ed8761d1d9ddc1c54d34dec",
     "semantic_hash": ""
   },
   "src/lib/nav/__tests__/navProtocol.test.ts": {
@@ -8290,8 +8290,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatCalculatorView.tsx": {
-    "mtime": 1788219533.5759358,
-    "ast_hash": "93b2ae476ef2e0894d0578b9c3b3bd94",
+    "mtime": 1788773029.6066148,
+    "ast_hash": "238b5a28cc7304aecb1dae9b657ba8d6",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatNav65Replica.tsx": {
@@ -8325,13 +8325,13 @@
     "semantic_hash": ""
   },
   "src/features/vat/index.ts": {
-    "mtime": 1788219551.2196388,
-    "ast_hash": "4e14c2cd89e52fdb110b6cadf803a3cd",
+    "mtime": 1788773029.6081238,
+    "ast_hash": "4f9f655d1eabaf58d2b6fb7ef9e69a26",
     "semantic_hash": ""
   },
   "src/features/vat/types.ts": {
-    "mtime": 1788219455.537692,
-    "ast_hash": "1e1f8c3907f61e568f1545e2f8328d7d",
+    "mtime": 1788773029.6081238,
+    "ast_hash": "465df5556e62fb80268ff506eafa58e9",
     "semantic_hash": ""
   },
   "src/components/ui/__tests__/date-picker.test.tsx": {
@@ -8645,13 +8645,13 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatReturnXml.test.ts": {
-    "mtime": 1788394884.958196,
-    "ast_hash": "95191985688e7560f86a27acbadcfb20",
+    "mtime": 1788775356.462128,
+    "ast_hash": "c041ca42b1b35a83d821141509581ce6",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
-    "mtime": 1788395080.4608207,
-    "ast_hash": "5b3b41f4dee39f582d3133760032a760",
+    "mtime": 1788775556.2973912,
+    "ast_hash": "0f9cfefc75264225ab0696597931eb1d",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollReconstructionDialog.tsx": {
@@ -9025,8 +9025,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/__tests__/OpeningJournalWizardModal.test.tsx": {
-    "mtime": 1788549605.5725365,
-    "ast_hash": "868e3e323c3b13e8816fc131a13ab027",
+    "mtime": 1788774806.702598,
+    "ast_hash": "439ed3075f7a76c037cb110e49d4af15",
     "semantic_hash": ""
   },
   "src/features/management/__tests__/workerTelemetryActiveProcessing.test.tsx": {
@@ -9055,8 +9055,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260905120000_acc_generate_drafts_robust_partner_matching.sql": {
-    "mtime": 1788586074.850767,
-    "ast_hash": "c3a8e3ec936c2c85da946a82fce0e869",
+    "mtime": 1788773029.6096625,
+    "ast_hash": "b324097698082c10e617fe9f213708ff",
     "semantic_hash": ""
   },
   "supabase/migrations/20260905161000_fix_accrual_entries_security_and_rls.sql": {
@@ -9352,6 +9352,21 @@
   "docs/product/decisions/P-076-eaisybooks-dual-mode-navigation-and-company-switcher-ux.md": {
     "mtime": 1788764257.89137,
     "ast_hash": "80998ca1c5d8ea23cef66ce36d105fc3",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatProRataCalculatorModal.tsx": {
+    "mtime": 1788773029.6081238,
+    "ast_hash": "d2426cac2de81a9e4322b64ab0c55344",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatProRataSettingsCard.tsx": {
+    "mtime": 1788773029.6081238,
+    "ast_hash": "41671da8d381dc3cf58e0794f7d917db",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907120000_vat_pro_rata_schema.sql": {
+    "mtime": 1788773029.6096625,
+    "ast_hash": "292dc046d6addc88e170d5777a230ee5",
     "semantic_hash": ""
   }
 }

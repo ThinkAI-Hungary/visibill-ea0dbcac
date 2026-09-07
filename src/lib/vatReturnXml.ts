@@ -5,6 +5,7 @@
 
 import { escapeXml } from './documents/encoding/xmlSanitizer';
 import { downloadString } from './documents/core/downloadHelper';
+import { parseTaxNumber } from './validationUtils';
 
 export interface XmlExportData {
   companyName: string;
@@ -26,11 +27,12 @@ export function buildVatReturnXml(data: XmlExportData): string {
   const getBase = (row: string): number => lineMap.get(row)?.base_amount_rounded ?? 0;
   const getTax = (row: string): number => lineMap.get(row)?.tax_amount_rounded ?? 0;
 
-  // Tax number parts: 12345678-1-23
-  const taxParts = (data.companyTaxNumber || '').split('-');
-  const taxNum8 = taxParts[0] || '';
-  const taxNumVat = taxParts[1] || '';
-  const taxNumCounty = taxParts[2] || '';
+  // Tax number normalization: handles 12345678-1-23, undashed 12345678123, or 8-digit base
+  const parsedTax = parseTaxNumber(data.companyTaxNumber);
+  const taxNum8 = parsedTax.base;
+  const taxNumVat = parsedTax.vat;
+  const taxNumCounty = parsedTax.county;
+  const fullTaxNumber = parsedTax.fullFormatted;
 
   let periodFrom = '';
   let periodTo = '';
@@ -54,12 +56,11 @@ export function buildVatReturnXml(data: XmlExportData): string {
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<!-- Nemzeti Adó- és Vámhivatal ÁNYK XML Export -->\n`;
-  xml += `<nyomtatvanyok xmlns="http://www.nav.gov.hu/nyomtatvanyok" verzio="1.0">\n`;
+  xml += `<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">\n`;
   xml += `  <nyomtatvany>\n`;
   xml += `    <nyomtatvanyinformacio>\n`;
   xml += `      <nyomtatvanyazonosito>${formId}</nyomtatvanyazonosito>\n`;
-  xml += `      <verzio>1.0</verzio>\n`;
-  xml += `      <programnev>Visibill / eaisyBooks</programnev>\n`;
+  xml += `      <nyomtatvanyverzio>1.0</nyomtatvanyverzio>\n`;
   xml += `    </nyomtatvanyinformacio>\n`;
   xml += `    <mezok>\n`;
 
@@ -69,7 +70,7 @@ export function buildVatReturnXml(data: XmlExportData): string {
   xml += `      <mezo eazon="01_0001_adoszam_torzs">${taxNum8}</mezo>\n`;
   xml += `      <mezo eazon="01_0002_adoszam_afa">${taxNumVat}</mezo>\n`;
   xml += `      <mezo eazon="01_0003_adoszam_megye">${taxNumCounty}</mezo>\n`;
-  xml += `      <mezo eazon="01_0004_adoszam_teljes">${escapeXml(data.companyTaxNumber)}</mezo>\n`;
+  xml += `      <mezo eazon="01_0004_adoszam_teljes">${escapeXml(fullTaxNumber)}</mezo>\n`;
   xml += `      <mezo eazon="01_0006_adozo_nev">${escapeXml(data.companyName)}</mezo>\n`;
   xml += `      <mezo eazon="01_0007_szekhely_cim">${escapeXml(data.companyAddress)}</mezo>\n`;
   xml += `      <mezo eazon="01_0010_adoev">${data.periodYear}</mezo>\n`;
@@ -98,7 +99,9 @@ export function buildVatReturnXml(data: XmlExportData): string {
     xml += `      <mezo eazon="M_partner_osszesen">${data.mLines.length}</mezo>\n`;
     data.mLines.forEach((m, idx) => {
       const pIdx = idx + 1;
-      xml += `      <mezo eazon="M_${pIdx}_0001_adoszam">${escapeXml(m.partner_tax_number)}</mezo>\n`;
+      const partnerParsedTax = parseTaxNumber(m.partner_tax_number);
+      const partnerTaxBase = partnerParsedTax.base || m.partner_tax_number;
+      xml += `      <mezo eazon="M_${pIdx}_0001_adoszam">${escapeXml(partnerTaxBase)}</mezo>\n`;
       xml += `      <mezo eazon="M_${pIdx}_0002_nev">${escapeXml(m.partner_name)}</mezo>\n`;
       xml += `      <mezo eazon="M_${pIdx}_0003_szamlak_szama">${m.invoice_count}</mezo>\n`;
       xml += `      <mezo eazon="M_${pIdx}_0004_alap">${m.base_amount_rounded}</mezo>\n`;

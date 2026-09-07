@@ -11,8 +11,8 @@ Szükségessé vált az ÁFA-bevallási XML export teljes szabványosítása a N
 
 ## Decision
 1. **Hivatalos ÁNYK Burkoló (Envelope) és Mezőkódolás:**
-   - A generált XML gyökéreleme a `<nyomtatvanyok xmlns="http://www.nav.gov.hu/nyomtatvanyok" verzio="1.0">`.
-   - A fejléc a `<nyomtatvanyinformacio>` blokkban tartalmazza a dinamikus nyomtatványazonosítót (`${periodYear % 100}65`, pl. 2026-ra `2665`, 2025-re `2565`, 2024-re `2465`), verziót és szoftvernevet.
+   - A generált XML gyökéreleme a `<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">`.
+   - A fejléc a `<nyomtatvanyinformacio>` blokkban tartalmazza a dinamikus nyomtatványazonosítót (`${periodYear % 100}65`, pl. 2026-ra `2665`, 2025-re `2565`, 2024-re `2465`) és a nyomtatványverziót (`<nyomtatvanyverzio>1.0</nyomtatvanyverzio>`).
    - Minden adatmező kötelezően a `<mezok>` blokkon belül, `<mezo eazon="KULCS">ÉRTÉK</mezo>` formátumban kerül kódolásra, elkerülve a W3C XML számmal kezdődő tag hibáit.
 
 2. **Főlap, Bevallási Sorok és 65M Belföldi Összesítő Lapok:**
@@ -27,6 +27,12 @@ Szükségessé vált az ÁFA-bevallási XML export teljes szabványosítása a N
      `NAV_${formId}_${year}_${monthStr}_${safeName}.xml` (pl. `NAV_2665_2026_07_TS_Consult_Kft.xml`).
    - **Dupla pont (`..xml`) és útvonal védelem:** A cégnevek végén található pontok (`Kft.`, `Bt.`) és írásjelek automatikusan eltávolításra kerülnek, így megelőzi a Java / AbevJava `JFileChooser` szülőkönyvtár félreértelmezéseit és a Windows kettős kiterjesztésből eredő importálási hibáit.
    - Export indításakor a felület egyértelmű Toast visszajelzést ad és ellenőrzi az adószám meglétét.
+
+4. **Adószám Normalizálás és Karakterkódolási Védelem (Hibatűrés):**
+   - A `parseTaxNumber` univerzális segédfüggvénnyel a rendszer automatikusan kezeli mind a standard kötőjeles (`13086905-2-08`), mind az egybefüggő 11 jegyű (`13086905208`), mind a szóközös vagy csak törzsszámot tartalmazó adószámokat.
+   - A főlapon a törzsszám (`01_0001`), áfakód (`01_0002`), megyekód (`01_0003`) és formázott teljes adószám (`01_0004`) garantáltan konzisztens marad.
+   - A 65M összesítő lapokon a partnerek adószámából automatikusan kinyerésre kerül a NAV által megkövetelt 8 számjegyű törzsszám (`M_XXXX_0001_adoszam`).
+   - Az XML kimenet tiszta UTF-8 kódolással (BOM-mentesen, `<?xml version="1.0" encoding="UTF-8"?>` fejléccel) generálódik, ami garantálja a magyar ékezetes karakterek (`á, é, í, ó, ö, ő, ú, ü, ű`) hibátlan megjelenítését és megakadályozza a Java Xerces parser `Content is not allowed in prolog` típusú indítási hibáit.
 
 ## Consequences
 **Pozitív:**

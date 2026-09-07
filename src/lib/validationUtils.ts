@@ -49,3 +49,57 @@ export function isValidTaxId(taxId: string): boolean {
   const plainFormat = /^\d{10,11}$/;
   return plainFormat.test(trimmed);
 }
+
+export interface ParsedTaxNumber {
+  raw: string;
+  base: string;           // 8 számjegyű törzsszám
+  vat: string;            // 1 számjegyű áfakód
+  county: string;         // 2 számjegyű megyekód
+  fullFormatted: string;  // Formázott: "12345678-1-42" vagy ha hiányos, a raw
+}
+
+/**
+ * Normalizálja és felbontja a magyar adószámot (törzsszám, áfakód, megyekód).
+ * Kezeli mind a kötőjeles (12345678-1-42), mind az egybefüggő 11 jegyű (12345678142),
+ * mind a szóközös vagy csak törzsszámot tartalmazó formátumokat.
+ */
+export function parseTaxNumber(taxNum: string | null | undefined): ParsedTaxNumber {
+  if (!taxNum || typeof taxNum !== 'string') {
+    return { raw: '', base: '', vat: '', county: '', fullFormatted: '' };
+  }
+
+  const raw = taxNum.trim();
+  const digits = raw.replace(/\D/g, '');
+
+  let base = '';
+  let vat = '';
+  let county = '';
+
+  if (raw.includes('-')) {
+    const parts = raw.split('-').map(p => p.trim());
+    base = parts[0] ? parts[0].replace(/\D/g, '').slice(0, 8) : '';
+    vat = parts[1] ? parts[1].replace(/\D/g, '').slice(0, 1) : '';
+    county = parts[2] ? parts[2].replace(/\D/g, '').slice(0, 2) : '';
+  } else if (digits.length >= 11) {
+    base = digits.slice(0, 8);
+    vat = digits.slice(8, 9);
+    county = digits.slice(9, 11);
+  } else if (digits.length >= 8) {
+    base = digits.slice(0, 8);
+    vat = digits.slice(8, 9) || '';
+    county = digits.slice(9, 11) || '';
+  } else {
+    base = digits;
+  }
+
+  const fullFormatted = base && vat && county ? `${base}-${vat}-${county}` : raw;
+
+  return {
+    raw,
+    base,
+    vat,
+    county,
+    fullFormatted,
+  };
+}
+
