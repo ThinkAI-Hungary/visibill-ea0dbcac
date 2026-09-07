@@ -28,19 +28,20 @@ export function validateHungarianTaxNumber(taxNumber: string): TaxValidationResu
   }
 
   const is8Digit = /^\d{8}$/.test(trimmed);
-  const is11Digit = /^\d{8}-\d-\d{2}$/.test(trimmed);
+  const isDashed11 = /^\d{8}-\d-\d{2}$/.test(trimmed);
+  const isPlain11 = /^\d{11}$/.test(trimmed);
 
-  if (!is8Digit && !is11Digit) {
+  if (!is8Digit && !isDashed11 && !isPlain11) {
     return {
       isValid: false,
-      reason: 'Hibás formátum (helyes: XXXXXXXX-X-XX vagy 8 jegyű törzsszám)',
+      reason: 'Hibás formátum (helyes: XXXXXXXX-X-XX vagy 8-11 jegyű szám)',
       severity: 'warning',
       status: 'invalid',
     };
   }
 
-  const base = is8Digit ? trimmed : trimmed.split('-')[0];
-  const vatCode = is11Digit ? trimmed.split('-')[1] : undefined;
+  const base = is8Digit ? trimmed : trimmed.replace(/\D/g, '').slice(0, 8);
+  const vatCode = isDashed11 ? trimmed.split('-')[1] : isPlain11 ? trimmed[8] : undefined;
 
   // CDV check (modulo 10 of weighted 8 digits)
   const digits = base.split('').map(Number);

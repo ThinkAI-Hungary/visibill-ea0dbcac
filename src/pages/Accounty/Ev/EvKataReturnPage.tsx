@@ -11,6 +11,7 @@ import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import { formatHuf, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS } from '@/lib/evCalculations';
 import { useEvTaxReturns, useUpdateEvTaxReturn } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
+import { parseTaxNumber } from '@/lib/validationUtils';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -120,11 +121,11 @@ export default function EvKataReturnPage() {
       const periodFrom = isH1 ? `${selectedYear}-01-01` : `${selectedYear}-07-01`;
       const periodTo = isH1 ? `${selectedYear}-06-30` : `${selectedYear}-12-31`;
 
-      const taxNum = client?.taxNumber || client?.tax_number || '';
-      const taxParts = taxNum.split('-');
-      const taxNum8 = taxParts[0] || '';
-      const taxNumVat = taxParts[1] || '';
-      const taxNumCounty = taxParts[2] || '';
+      const parsedTax = parseTaxNumber(client?.taxNumber || client?.tax_number);
+      const taxNum8 = parsedTax.base;
+      const taxNumVat = parsedTax.vat;
+      const taxNumCounty = parsedTax.county;
+      const fullTaxNumber = parsedTax.fullFormatted;
 
       const taxId = client?.taxId || client?.tax_id || '8329900747';
       const clientName = client?.name || 'Egyéni Vállalkozó';
@@ -145,7 +146,7 @@ export default function EvKataReturnPage() {
             taxNum8,
             taxNumVat,
             taxNumCounty,
-            taxNum,
+            taxNum: fullTaxNumber,
             taxId,
             clientName,
             clientAddress,

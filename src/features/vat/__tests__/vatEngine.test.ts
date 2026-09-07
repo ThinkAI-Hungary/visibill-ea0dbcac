@@ -24,6 +24,13 @@ describe('VatEngine', () => {
       expect(res.status).toBe('active');
     });
 
+    it('validates an undashed 11-digit continuous tax number', () => {
+      const res = validateHungarianTaxNumber('12345676241');
+      expect(res.isValid).toBe(true);
+      expect(res.vatCode).toBe('2');
+      expect(res.status).toBe('active');
+    });
+
     it('identifies VAT code 1 as exempt', () => {
       const res = validateHungarianTaxNumber('12345676-1-41');
       expect(res.isValid).toBe(true);

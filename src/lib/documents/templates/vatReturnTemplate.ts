@@ -5,6 +5,7 @@
 
 import { DocumentDescriptor } from '../core/types';
 import { DocumentEngine } from '../core/DocumentEngine';
+import { parseTaxNumber } from '../../validationUtils';
 
 export interface VatReturnData {
   companyName: string;
@@ -29,11 +30,12 @@ export function buildVatReturnDescriptor(data: VatReturnData): DocumentDescripto
 
   const formId = `${data.periodYear % 100}65`;
 
-  // Build ÁNYK XML Payload
-  const taxParts = (data.companyTaxNumber || '').split('-');
-  const taxNum8 = taxParts[0] || '';
-  const taxNumVat = taxParts[1] || '';
-  const taxNumCounty = taxParts[2] || '';
+  // Build ÁNYK XML Payload: normalize tax number
+  const parsedTax = parseTaxNumber(data.companyTaxNumber);
+  const taxNum8 = parsedTax.base;
+  const taxNumVat = parsedTax.vat;
+  const taxNumCounty = parsedTax.county;
+  const fullTaxNumber = parsedTax.fullFormatted;
 
   let periodFrom = '';
   let periodTo = '';
@@ -56,7 +58,7 @@ export function buildVatReturnDescriptor(data: VatReturnData): DocumentDescripto
     '01_0001_adoszam_torzs': taxNum8,
     '01_0002_adoszam_afa': taxNumVat,
     '01_0003_adoszam_megye': taxNumCounty,
-    '01_0004_adoszam_teljes': data.companyTaxNumber,
+    '01_0004_adoszam_teljes': fullTaxNumber,
     '01_0006_adozo_nev': data.companyName,
     '01_0007_szekhely_cim': data.companyAddress,
     '01_0010_adoev': data.periodYear,
@@ -78,7 +80,9 @@ export function buildVatReturnDescriptor(data: VatReturnData): DocumentDescripto
     anykFields['M_partner_osszesen'] = data.mLines.length;
     data.mLines.forEach((m, idx) => {
       const pIdx = idx + 1;
-      anykFields[`M_${pIdx}_0001_adoszam`] = m.partner_tax_number;
+      const partnerParsed = parseTaxNumber(m.partner_tax_number);
+      const partnerTaxBase = partnerParsed.base || m.partner_tax_number;
+      anykFields[`M_${pIdx}_0001_adoszam`] = partnerTaxBase;
       anykFields[`M_${pIdx}_0002_nev`] = m.partner_name;
       anykFields[`M_${pIdx}_0003_szamlak_szama`] = m.invoice_count;
       anykFields[`M_${pIdx}_0004_alap`] = m.base_amount_rounded;
