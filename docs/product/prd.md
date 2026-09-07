@@ -1,22 +1,38 @@
 # Visibill — Product Requirements Document (PRD)
 
-> **Verzió:** 1.3 | **Dátum:** 2026-06-27  
-> **Kapcsolódó:** [Information Architecture](./information-architecture.md) · [Product Decisions](./decisions/index.md)
+> **Verzió:** 2.0 | **Dátum:** 2026-09-07  
+> **Kapcsolódó:** [Information Architecture](./information-architecture.md) · [Product Decisions](./decisions/index.md) · [Architecture Decisions](../architecture/decisions/index.md)
 
 ---
 
 ## 1. Termék Összefoglaló
 
-A Visibill egy webes pénzügyi asszisztens magyar KKV cégvezetőknek. A termék 7 fő modulból áll, amelyek lefedik a napi pénzügyi adminisztrációt a számla beérkezéstől az éves beszámoló benyújtásáig.
+A platform két szorosan együttműködő, de önálló alkalmazási rétegből áll:
+1. **eaisyBill**: Intelligens pénzügyi és számlakezelő asszisztens magyar KKV vezetőknek és pénzügyeseknek.
+2. **eaisyBooks (kódban: Accounty)**: Professzionális, több ügyfelet kezelő könyvelőirodai platform könyvelőknek, bérszámfejtőknek és irodavezetőknek.
 
-**Felhasználói szerepek:**
+### Felhasználói Szerepek:
 
-| Szerep | Hozzáférés |
-|--------|-----------|
-| Owner | Teljes hozzáférés minden modulhoz és beállításhoz |
-| Admin | Teljes hozzáférés (owner alias) |
-| Member | Teljes hozzáférés minden modulhoz és beállításhoz |
-| Employee | Csak Munkaidő modul |
+#### eaisyBill Szerepkörök (Cég szintű RBAC):
+| Szerep | Hozzáférés & Hatáskör |
+|--------|-----------------------|
+| `owner` | Teljes körű hozzáférés minden modulhoz, beállításhoz, cégtörléshez és tagkezeléshez |
+| `admin` | Teljes hozzáférés a céges modulokhoz és felhasználók meghívásához |
+| `member` | Hozzáférés a számlákhoz, tranzakciókhoz, GL kontírozáshoz és riportokhoz |
+| `assistant` | Számlafeltöltés, bizonylatkezelés, olvasási jog |
+| `viewer` | Kizárólag olvasási jogosultság a pénzügyi adatokhoz |
+| `employee` | Kizárólag saját munkaidő/jelenlét és bizonylat rögzítése |
+| `management` | Rendszerszintű üzemeltetési és audit hozzáférés (SuperAdmin) |
+
+#### eaisyBooks Szerepkörök (Irodai szintű RBAC + Adatbázis Overrides):
+| Szerep | Hozzáférés & Hatáskör |
+|--------|-----------------------|
+| `iroda_admin` | Teljes hozzáférés az irodai portfólióhoz, cégekhez, bérhez, adózáshoz, beállításokhoz, könyvelők hozzárendeléséhez és a jogosultsági mátrixhoz |
+| `senior_könyvelő` | Portfólió, bérszámfejtési jóváhagyás, EV, TAO/KIVA, zárások, szakmai sablonok és jogszabályi paraméterek kezelése |
+| `könyvelő` | Hozzárendelt ügyfelek operatív könyvelése (számlák, bér, pénztárkönyv, adónaptár, hiányzó tételek) |
+| `asszisztens` | Bizonylatok feltöltése, hiányzó számlák ellenőrzése, operatív támogatás (zárások és jóváhagyások nélkül) |
+
+> **Megjegyzés:** Az `accounty_module_permissions` tábla révén az `iroda_admin` felhasználónként és modulonként felülbírálhatja az írási/olvasási jogosultságokat (`can_read`, `can_write`).
 
 ---
 
@@ -136,44 +152,93 @@ Cég és felhasználói beállítások, csapatkezelés.
 
 ---
 
-### 2.8 eaisyBooks EV Modul & Client-Centric Layout (2026-08-04)
+### 2.8 eaisyBooks (Könyvelőirodai Platform & ERP)
 
-Az eaisyBooks könyvelői nézeten belüli modulok és navigáció teljes, hierarchikus ügyfélkontextus-alapú újratervezése.
+Az eaisyBooks a könyvelőirodák és bérszámfejtők számára dedikált, több ügyfelet (multi-client) aggregáló munkafelület. Teljes körűen kezeli a könyvelési és bérügyi folyamatokat, az ügyfél-kommunikációt és a hatósági adatszolgáltatásokat.
 
-| Funkció | Leírás | Ref |
-|---------|--------|-----|
-| Client-Centric Sidebar | Ha belépünk egy ügyfélbe, a sidebar átvált Ügyfél Kontextus Módra, külön **Egyéni Vállalkozás** (`Coins` ikon), **Társasági Adó** (`Landmark` ikon), és **Hiányzó számlák** (`FileWarning` ikon) gombokkal, kiküszöbölve a kontextusvesztést. | [IA](./information-architecture.md) |
-| Ügyfélválasztó Switcher | A fejléc switcher UUID cserével működik, megőrizve az éppen aktív aloldalt (pl. bérszámfejtés vagy számlák) cégváltáskor. | — |
-| Tabbed Settings | A `CegkapuSettingsPage.tsx` és `CompanyPayrollSettingsPage.tsx` lapfüles elrendezésű lett (Radix UI Tabs), növelve az olvashatóságot és koherenciát. | — |
-| E-mail Előnézet | A hiányzó számlák bekérésekor a rendszer egy részletes előnézeti modált (Email Preview Modal) mutat a küldés jóváhagyása előtt. | — |
-| Self-Healing NAV Banner | A NAV szinkronizáció sikertelensége esetén a rendszer egy figyelemfelkeltő piros figyelmeztető sávot mutat a fejléc alatt, ahonnan egy gombnyomással a technikai felhasználó beállításaiba jut a felhasználó. | — |
-| Glassmorphic Search | A `Ctrl + K` Command Palette teljesen glassmorphic külsőt kapott, és a cégekre keresve azonnal a hierarchikus `/client/:id/overview` oldalra visz. | [P-039](./decisions/P-039-global-search.md) |
-| EV Főoldal | Pénztárkönyv egyenleg, havi bevétel/kiadás, éves összesítők, küszöbérték-figyelő | — |
-| Pénztárkönyv | Egyszeres könyvvitel: bevétel/kiadás könyvelés, időszak-zárás, storno, nyomtatás | — |
-| Nyilvántartások | 14 féle: vevők, szállítók, tárgyi eszközök, beruházások, készlet, gépjármű, stb. | — |
-| Adóforma-összehasonlítás | Átalányadó vs VSZJA vs KATA interaktív kalkulátor. Bevétel slider, költséghányad, foglalkoztatási státusz és szakképzettség toggle-ökkel. | [020](../business/decisions/020-tax-module.md) |
-| TB-járulék & szocho | TB (18,5%) + szocho (13%) kalkuláció adóformánként. Főfoglalkozásúaknál minimumjárulék-alap érvényesül (minimálbér vagy garantált bérminimum). Kiegészítő tevékenységűek mentesek. | [020](../business/decisions/020-tax-module.md) |
-| Küszöbérték-figyelő | KATA keret (18M), átalány bevételi határ (38,7M/193,7M), ÁFA alanyi mentesség (20M) — zöld/sárga/piros státusz | — |
-| Bevallások | SZJA, ÁFA, Járulék, HIPA, KATA, cégautóadó — draft/submitted/accepted workflow, XML generálás | — |
-| HIPA | Egyszerűsített (sávos) és általános módszer, települési adókulcs beállítás | — |
-| Életút | EV alapítás, adóforma-váltás, szüneteltetés, megszüntetés — idővonalas megjelenítés | — |
-| Optimalizáció | AI-alapú adó-optimalizálási javaslatok (tervezett) | — |
+#### 2.8.1 Portfólió Menedzsment & Ügyfélkezelés (`/eaisybooks` / `/eaisybooks/portfolio`)
+- **Háromféle Nézet:**
+  - **Grid nézet:** Vizuális kártyák cégenként státuszjelzőkkel, hiányzó számlák számával, zárási készültséggel.
+  - **Lista nézet:** Kompakt táblázat gyorskeresővel, rendezéssel és szűréssel.
+  - **Kanban tábla:** Drag-and-drop státuszmozgatás a havi zárási szakaszok között (*Adatbekérés folyamatban* → *Feldolgozás alatt* → *Ellenőrzésre vár* → *Havi zárás kész*).
+- **Szűrők:** Felelős könyvelő, adózási forma (EV, KIVA, TAO, KATA), zárási státusz, sürgősség.
+- **KPI Kártyák:** Aktív ügyfelek száma, feldolgozatlan számlák, lezáratlan bérszámfejtések, közeledő határidők.
+- **Ügyfél Regisztráció & Onboarding (`/eaisybooks/onboarding/new-client`):** Manuális és NAV-alapú ügyfélfelvétel, adószám validáció, könyvelői felelős és szerepkör kiosztása.
+
+#### 2.8.2 Jóváhagyási Sor & Hiányzó Számlák
+- **Jóváhagyási Sor (`/eaisybooks/approval-queue`):** Konszolidált lista az összes ügyfél jóváhagyásra váró számláiról és tételeiről. Tömeges (batch) elfogadás vagy elutasítás indoklással.
+- **Hiányzó Számlák Portfólió Nézet (`/eaisybooks/missing-invoices`):** Az AI és NAV adategyeztetés által detektált hiányzó bizonylatok (pl. banki terhelés számla nélkül, vagy bejövő teljesítés igazolás nélkül).
+- **Email Preview Modal:** Címzett, tárgy és testreszabható magyar nyelvű levélsablon előnézete küldés előtt.
+- **Ügyfélportál & Magic Link (`/eaisybooks/client-portal`):** Jelszómentes, biztonsági tokennel ellátott egyedi link generálása, ahol az ügyfél közvetlenül töltheti fel a hiányzó bizonylatokat mobilról vagy asztali gépről.
+
+#### 2.8.3 Adónaptár & Riasztási Központ
+- **Adó Naptár (`/eaisybooks/tax-calendar`):** Aggregált naptár nézet (havi, heti) az összes ügyfél ÁFA, bér (08-as), HIPA, TAO és KIVA fizetési és bevallási határidejéről.
+- **Riasztási Központ (`/eaisybooks/alerts`):** Valós idejű push és in-app figyelmeztetések kritikus eseményekről: NAV technikai felhasználó token lejárat, elakadt szinkronizáció, negatív pénztáregyenleg, határidő-túllépés.
+
+#### 2.8.4 Bérszámfejtési Ciklus & HR Modul (`/eaisybooks/:companyId/:dateRange/payroll`)
+- **4 Fázisú Havi Bérszámfejtési Workflow:**
+  1. *Előkészítés / Jelenlét (Draft):* Jelenléti ív rögzítése (munkanapok, szabadság, betegszabadság, táppénz, túlóra), cafeteria és jutalmak beállítása.
+  2. *Számfejtés (Calculation):* Bruttó-nettó bérkalkuláció, kedvezmények érvényesítése (25 év alattiak, személyi, első házasok, családi kedvezmény), munkáltatói terhek (Szocho 13%).
+  3. *Könyvelői Ellenőrzés (Approval):* Tételek auditálása, eltérések jelzése.
+  4. *Lezárás & Publikálás (Closed):* Bérjegyzékek generálása, banki átutalási fájl exportálása, 08-as bevallás véglegesítése.
+- **Foglalkoztatotti Törzs:** Többes jogviszony kezelése egyazon dolgozónál, szerződésmódosítások idővonala, kiléptető varázsló (leszámoló lapok, igazolások automatikus kitöltése).
+- **Tömeges Import & NAV 08 ÁNYK XML Rekonstrukció (`/payroll/filings`):** Korábbi könyvelőprogramból vagy ÁNYK-ból származó havi 08-as XML fájlok beolvasása, amelyből a rendszer automatikusan felépíti a dolgozói adatokat, jogviszonyokat és a múltbeli bérösszegeket.
+- **E-Bérjegyzék Ügyfélportál:** Titkosított, jelszóval vagy kétlépcsős azonosítással védett portál a dolgozók felé a havi bérjegyzékek letöltésére.
+
+#### 2.8.5 Egyéni Vállalkozás (EV) & Egyszeres Könyvvitel (`/eaisybooks/:companyId/:dateRange/ev`)
+- **8 Céges Lapfül (Radix UI Tabs):**
+  1. *Áttekintés:* Vállalkozói bevételek, költségek, aktuális adóforma mutatói, keretfigyelők.
+  2. *Kalkulátor:* Interaktív kalkulátor Átalányadó, Vállalkozói SZJA (VSZJA) és KATA formákhoz, költséghányad (40%, 80%, 90%) és szakképzettség paraméterekkel.
+  3. *Pénztárkönyv:* Törvényes egyszeres könyvvitel: bevételek és költségek analitikus könyvelése, időszaki pénztárkönyv zárási varázsló, stornózási funkció, PDF és Excel nyomtatvány generálás.
+  4. *Járulékok:* Főfoglalkozású, másodállású és kiegészítő tevékenységet folytató EV TB-járulék (18,5%) és szocho (13%) megállapítása minimum járulékalapok figyelembevételével.
+  5. *Bevallások:* Havi és negyedéves járulékbevallások (58-as), ÁFA bevallások, HIPA és éves SZJA bevallások XML generálása ÁNYK-ba.
+  6. *Nyilvántartások:* 14 kötelező törvényi nyilvántartás (Vevők, Szállítók, Tárgyi eszközök, Beruházási és felújítási költségek, Készletek, Gépjármű-használati nyilvántartás / útnyilvántartás, Szigorú számadású nyomtatványok, stb.).
+  7. *Adóoptimalizáció:* AI-alapú összehasonlító elemzés a legkedvezőbb adózási mód kiválasztására az aktuális évre és a következő adóévre.
+  8. *Életút:* EV státuszváltozások naplózása (szüneteltetés kezdet-vég, telephely módosítás, adónem váltások).
+- **Szervezeti Könyvviteli Módok:** Nemcsak EV-k, hanem egyéb egyszeres könyvvitelt vezető szervezetek támogatása: Civil szervezetek (alapítványok, egyesületek), Társasházak, Egyszerűsített beszámolót készítő jogi személyek.
+
+#### 2.8.6 Társasági Adó (TAO / KIVA) Modul (`/eaisybooks/:companyId/:dateRange/tao`)
+- **7 Lapfül:**
+  1. *Áttekintés:* Társasági adóalap és várható adókötelezettség folyamatos követése év közben.
+  2. *Adózási Mód:* TAO vs KIVA státusz, belépési/kilépési feltételek vizsgálata.
+  3. *Adónaptár:* Előlegfizetési határidők és összegek nyilvántartása.
+  4. *Év Végi Zárás:* Zárási ellenőrző lista, adóalap-korrekciós tételek (növelő és csökkentő tételek rögzítése: értékcsökkenés, céltartalék, reprezentáció, bírságok).
+  5. *Társasági Adó Kalkulátor:* 9%-os TAO alap számítás, beruházási adókedvezmények, veszteségelhatárolás.
+  6. *KIVA Kalkulátor:* 10%-os Kisvállalati adó kalkuláció személyi jellegű kifizetések és jóváhagyott osztalék alapján.
+  7. *TAO vs KIVA Összehasonlító:* Szimulációs modell a vállalkozás számai alapján a legoptimálisabb társasági adózási nem kiválasztására.
+
+#### 2.8.7 Könyvelési Szabálytár & Céges Prompt Tár (`/eaisybooks/:companyId/:dateRange/prompts`)
+- **AI Kontírozási Szabályok (`company_prompt_rules`):** Cégre szabott gépi tanulási és LLM szabályok rögzítése (pl. *"Minden Google Ireland számlát a 529-es szoftverlicenc főkönyvi számra kontírozz fordított ÁFA-val"*).
+- **Hibahatár és Megbízhatósági Küszöb:** Minimális konfidencia-érték, amely alatt a rendszer emberi könyvelői jóváhagyást kér.
+
+#### 2.8.8 Kormányzás & Irodai Adminisztráció (`/eaisybooks/admin/*`)
+- **Audit Napló (`/eaisybooks/admin/audit-log`):** Minden könyvelői művelet, bizonylatmódosítás, zárási lépés és adatletöltés naplózása felhasználóval és időbélyeggel.
+- **GDPR & Adatmegőrzés (`/eaisybooks/admin/gdpr`, `/data-retention`):** Számviteli törvény szerinti 8 éves bizonylatmegőrzési zárolás, anonimizálási folyamatok.
+- **Szakmai Paraméterek:** Sablonok (`/admin/templates`), FEOR és jogviszonykódok (`/admin/job-codes`), hatósági adómértékek (`/admin/tax-parameters`), jogszabály-változások tára (`/admin/legal-updates`).
+- **Jogosultságkezelő Mátrix (`/admin/permission-matrix`):** Felhasználónkénti és modulonkénti finomhangolt írási/olvasási jogosultságok felülbírálata (`accounty_module_permissions`).
+- **Könyvelők Menedzsmentje (`/admin/accountants`):** Irodai munkatársak meghívása, ügyfelekhez rendelése és kapacitás-követése.
+
+#### 2.8.9 Hivatalos Integrációk & Képviselet
+- **Cégkapu / KÜNY Tárhely (`/cegkapu`):** Hivatalos tárhely szinkronizáció, NAV és önkormányzati küldemények automatikus letöltése és bizonylattárhoz csatolása.
+- **Képviselet & EGYKE Meghatalmazások (`/representation`):** Meghatalmazások érvényességének, típusának és képviselői jogosultságainak elektronikus nyilvántartása.
+- **Cégstruktúra (`/structure`):** Telephelyek, költséghelyek és projektek hierarchikus leképezése a könyvelési analitikához.
 
 **Kulcs számítási paraméterek (2026):**
 
 | Paraméter | Érték |
 |-----------|-------|
 | SZJA kulcs | 15% |
-| Vállalkozói SZJA | 9% |
+| Vállalkozói SZJA (VSZJA) | 9% |
+| Társasági adó (TAO) | 9% |
+| Kisvállalati adó (KIVA) | 10% |
 | TB-járulék | 18,5% |
-| Szocho | 13% |
-| Minimálbér | 322.800 Ft/hó |
-| Garantált bérminimum | 373.200 Ft/hó |
-| Átalány költséghányad | 45% / 80% / 90% |
+| Szociális hozzájárulási adó (Szocho) | 13% |
+| Minimálbér (2026) | 322.800 Ft/hó |
+| Garantált bérminimum (2026) | 373.200 Ft/hó |
+| Átalány költséghányadok | 40% (általános) / 80% (kiemelt) / 90% (kiskereskedelem) |
 | KATA havi tétel | 50.000 Ft |
 | KATA éves keret | 18.000.000 Ft |
-
-**Implementáció:** `evCalculations.ts` (pure functions) + `EvComparePage.tsx` (UI)
+| Alanyi ÁFA-mentesség keret | 20.000.000 Ft |
 
 ---
 

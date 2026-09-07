@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-06  
-> **Összesen:** 103 döntés | ✅ Decided: 101 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-07  
+> **Összesen:** 104 döntés | ✅ Decided: 102 | ⛔ Superseded: 2
 
 ---
 
@@ -30,7 +30,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
-| A-005 | Edge Functions (Deno) — 58 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
+| A-005 | Edge Functions (Deno) — 59 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
 | A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
 | A-074 | PDF Export Edge Function Invocation Resilience | ✅ Decided | [A-074](./A-074-pdf-export-edge-function-invocation-resilience.md) |
 
@@ -83,7 +83,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-016 | PostgreSQL query stratégia — ~90+ RPC function teljes katalógus | ✅ Decided | [A-016](./A-016-postgresql-query-strategy.md) |
+| A-016 | PostgreSQL query stratégia — 132 RPC + 72 trigger function teljes katalógus | ✅ Decided | [A-016](./A-016-postgresql-query-strategy.md) |
 | A-022 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [A-022](./A-022-categories-projects-sync.md) |
 | A-036 | Pénztárbizonylat (Cash Voucher) Processing | ✅ Decided | [A-036](./A-036-penztarbizonylat-processing.md) |
 | A-037 | Jegyzetek Rendszer Architektúra (Notes System Architecture) | ✅ Decided | [A-037](./A-037-notes-architecture.md) |
@@ -142,6 +142,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-090 | Biztonságos Számlatükör Sablon Törlés, Függőség-Ellenőrzés és Tételek Átkötése (Remapping) | ✅ Decided | [A-090](./A-090-safe-chart-of-accounts-preset-deletion-and-remapping.md) |
 | A-094 | Bérszámfejtési Ciklus Végtelen Re-render Védelem, Stabil Függőségi Kulcsok és Kézi Jelenlét Perzisztencia | ✅ Decided | [A-094](./A-094-payroll-cycle-render-stability-and-attendance-persistence.md) |
 | A-099 | Számlakép Törlés Kettős Döntési Modell (Dual Choice), Lebegő Műveletsáv Kijelölés-kezelés és Lapozási Határeset Auto-Recovery | ✅ Decided | [A-099](./A-099-invoice-and-upload-deletion-governance.md) |
+| A-102 | eaisyBooks Kettős Működési Mód (Dual-Mode Router), Kliens Kontextus és Hibrid Szerepkör Architektúra | ✅ Decided | [A-102](./A-102-eaisybooks-dual-mode-modular-architecture.md) |
 
 ## 💳 Fizetés
 

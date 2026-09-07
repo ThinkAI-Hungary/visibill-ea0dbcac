@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-08-31
+**Utoljára frissítve:** 2026-09-07
 
 ## Context
 
@@ -10,7 +10,9 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — **58 deployed function** + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — **59 deployed function** + `_shared/` közös kód.
+
+> 📖 **Teljes, részletes katalógus:** Mind az 59 Edge Function részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza.
 
 **Közös kód:** `_shared/` mappa:
 - `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
@@ -19,7 +21,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ---
 
-### Teljes Edge Function Katalógus (58 db)
+### Teljes Edge Function Katalógus (59 db)
 
 #### 🏛️ NAV Integráció (7 db)
 
@@ -108,7 +110,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `nylas-auth` | ✅ | Nylas OAuth flow indítása |
 | `nylas-callback` | ❌ | Nylas OAuth callback kezelése |
 
-#### 🛠️ Management & Üzemeltetés (7 db)
+#### 🛠️ Management & Üzemeltetés (8 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
@@ -119,6 +121,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `check-missing-invoices` | ❌ | Hiányzó számlák ellenőrzése (cron) |
 | `check-payment-deadlines` | ❌ | Fizetési határidők ellenőrzése (cron) |
 | `sandbox-storage-cleanup` | ❌ | SANDBOX cég mock számlaképek törlése Storage-ból. |
+| `generate-company-description` | ✅ | Cég tevékenység és profil intelligens AI generálása TEÁOR kód alapján (DeepSeek / OpenAI). |
 
 #### 🔌 External API (1 db)
 
@@ -145,7 +148,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 | JWT beállítás | Darabszám | Mikor |
 |---|---|---|
-| `verify_jwt: true` | 13 | Frontend-ből közvetlenül, bejelentkezett felhasználói JWT-vel hívott function-ök |
+| `verify_jwt: true` | 14 | Frontend-ből közvetlenül, bejelentkezett felhasználói JWT-vel hívott function-ök |
 | `verify_jwt: false` | 45 | Webhook-ok, cron jobok, belső hívások, service_role auth, API key auth, magic link tokenek |
 
 ---
@@ -161,6 +164,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 - 60s végrehajtási időkorlát (a nehéz számítások a Python workerbe kerültek).
 
 ## Kapcsolódó
+- [Supabase Edge Functions Katalógus](../edge-functions.md) — Hivatalos, teljes Edge Functions jegyzék
 - [A-011: Mailgun Email Processing](./A-011-email-processing.md)
 - [A-012: NAV Integration](./A-012-nav-integration.md)
 - [A-010: Credential Encryption](./A-010-credential-encryption.md)

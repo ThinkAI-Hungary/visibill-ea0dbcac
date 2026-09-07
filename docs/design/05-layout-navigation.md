@@ -146,6 +146,45 @@
 
 ---
 
+## eaisyBooks Dual-Mode Sidebar & Layout (`AccountySidebar.tsx`)
+
+Az eaisyBooks a könyvelőirodák speciális igényeire tervezett **kétállapotú (dual-mode)** oldalsávval és dedikált `AccountyLayout`-tal rendelkezik:
+
+```
+┌────────────────────────────────────────────────────────┐
+│ 1. Portfólió Mód (/eaisybooks/*)                       │
+│    ▸ Portfólió (Kanban / Grid / List)                 │
+│    ▸ Jóváhagyási sor (Approval Queue)                  │
+│    ▸ Hiányzó számlák & Felszólítások                  │
+│    ▸ Adónaptár & Riasztások                            │
+│    ▸ Riportok & AI Asszisztens                         │
+│    ▾ Adminisztráció (Mátrix, Könyvelők, Audit)         │
+├────────────────────────────────────────────────────────┤
+│ 2. Ügyfél Mód (/eaisybooks/:companyId/:dateRange/*)    │
+│    [← Vissza a portfólióhoz]                           │
+│    [CompanySwitcher: Cégnév ▾] (subpage-megőrző)       │
+│    ▸ Áttekintés & Cégprofil                            │
+│    ▸ Számlák & Tranzakciók                             │
+│    ▸ Bérszámfejtés (4 fázis, NAV 08 import)           │
+│    ▸ EV Könyvvitel (Pénztárkönyv zárási varázsló)      │
+│    ▸ TAO & KIVA modul                                  │
+│    ▸ Cégkapu & EGYKE Képviselet                        │
+│    ▸ Céges Szabálytár (company_prompt_rules)           │
+└────────────────────────────────────────────────────────┘
+```
+
+### Dual-Mode Viselkedési Tulajdonságok
+
+| Tulajdonság | Portfólió Mód | Ügyfél Mód |
+|-------------|---------------|------------|
+| **URL Minta** | `/eaisybooks/*` (pl. `/eaisybooks/portfolio`) | `/eaisybooks/:companyId/:dateRange/*` |
+| **Header Cégváltó** | Rejtett | **Subpage-megőrző `CompanySwitcher`**: Cégváltáskor az aktuális aloldalon marad (pl. `/payroll`) |
+| **Visszalépés** | N/A | Kiemelt "← Vissza a portfólióhoz" gomb az oldalsáv tetején |
+| **Hibaszigetelés** | Route-level `AccountyErrorBoundary` automatikus reset-tel URL váltáskor (A-079) |
+| **Szerepkörök** | 4 szint (`iroda_admin`, `senior_könyvelő`, `könyvelő`, `asszisztens`) + DB felülbírálat |
+
+---
+
 ## Scoped Routing
 
 ### URL Struktúra

@@ -3015,8 +3015,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1788712337.1494706,
-    "ast_hash": "c13a6d86985fe5f244535c172c51327d",
+    "mtime": 1788766062.612977,
+    "ast_hash": "7ceb1b36a08b7f521acc26d6aafcf5b3",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788712872.9755971,
-    "ast_hash": "9f6165cced91b2f16fe4646b97c08028",
+    "mtime": 1788765921.638966,
+    "ast_hash": "0a43b231372ac5c355a6353e0b0445d6",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788712321.3899715,
-    "ast_hash": "3618cc244e4ee50030fa8d043b861a23",
+    "mtime": 1788766105.4366033,
+    "ast_hash": "7fc2ec9f386c773d38a9185cfd767f6a",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3120,13 +3120,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/overview.md": {
-    "mtime": 1788215298.3060298,
-    "ast_hash": "051f0031f89fd4833fa3fca7630a796f",
+    "mtime": 1788766079.0408237,
+    "ast_hash": "86e30df6af662bf9bf1343741d52c308",
     "semantic_hash": ""
   },
   "docs/business/brd.md": {
-    "mtime": 1788306075.3043268,
-    "ast_hash": "10033318f7e79ff488e443bf370aaeb2",
+    "mtime": 1788763962.4152503,
+    "ast_hash": "50ed96e5c7799669976cb390c6831c82",
     "semantic_hash": ""
   },
   "docs/business/decisions/001-primary-audience.md": {
@@ -3280,8 +3280,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/031-accounty-module.md": {
-    "mtime": 1782233922.645424,
-    "ast_hash": "b8d70a78121564966b84a9ef8264d530",
+    "mtime": 1788764005.3308785,
+    "ast_hash": "7ca89240dd06502a0d9f8af3500daade",
     "semantic_hash": ""
   },
   "docs/business/decisions/032-payroll-module.md": {
@@ -3325,23 +3325,23 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1788474085.7715135,
-    "ast_hash": "765d0a1e79aa1196b07d1a3761a297b1",
+    "mtime": 1788764053.2891982,
+    "ast_hash": "48a3fa897b981246cfb0e23583b51c14",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
-    "mtime": 1783602354.4595785,
-    "ast_hash": "c8ca5a95b547f5397d297dadaf698df2",
+    "mtime": 1788763939.323204,
+    "ast_hash": "1963cc12e108e95da983fa4584743a0e",
     "semantic_hash": ""
   },
   "docs/business/use-cases.md": {
-    "mtime": 1783094768.3011425,
-    "ast_hash": "d364d241c114654f602b36903401949c",
+    "mtime": 1788763985.9285188,
+    "ast_hash": "ceea80e38ecca0cf5ba62ae1075cc002",
     "semantic_hash": ""
   },
   "docs/business/user-journeys.md": {
-    "mtime": 1780952199.9587042,
-    "ast_hash": "e8c1ea32d8fe8f59f64c6abe6e102b0b",
+    "mtime": 1788764150.7570398,
+    "ast_hash": "c01ca324c18d4389d00365b97e1351a1",
     "semantic_hash": ""
   },
   "docs/design/00-overview.md": {
@@ -3360,8 +3360,8 @@
     "semantic_hash": ""
   },
   "docs/design/05-layout-navigation.md": {
-    "mtime": 1788135222.237066,
-    "ast_hash": "08e91ea4e3d44fd46d725380d4b81844",
+    "mtime": 1788764282.5261204,
+    "ast_hash": "95cef35c82fddf98bc224752d6f89880",
     "semantic_hash": ""
   },
   "docs/design/07-loading-patterns.md": {
@@ -3535,8 +3535,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-031-accounty-layout.md": {
-    "mtime": 1782233922.6475375,
-    "ast_hash": "fba5a73cb7154aed01167f8692dd843c",
+    "mtime": 1788764225.4286828,
+    "ast_hash": "aa10acbf4b293defc164bd240697f89e",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-032-vat-return-workflow.md": {
@@ -3550,8 +3550,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-034-approval-queue.md": {
-    "mtime": 1782233922.64864,
-    "ast_hash": "a8290abb0184724328bf718f346f084d",
+    "mtime": 1788764232.548419,
+    "ast_hash": "72591b4061b914cf91df9bb950f4091e",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
@@ -3570,18 +3570,18 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788705821.8277235,
-    "ast_hash": "0574a9708ba7f5d34cf6371f532df1f0",
+    "mtime": 1788764269.3928492,
+    "ast_hash": "ac0ae7820fd024dfbceb8408dacaf1f3",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1788306067.0158696,
-    "ast_hash": "ce4cac0f681e12925b91aee1689de37a",
+    "mtime": 1788763870.7291706,
+    "ast_hash": "5f9d128154cff992e0ea17f56c04dd85",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
-    "mtime": 1785923358.7184522,
-    "ast_hash": "bbb0a432a4243f428ca907eae1de41b7",
+    "mtime": 1788763915.8533063,
+    "ast_hash": "ad24373b89da1085aed22f62070d324c",
     "semantic_hash": ""
   },
   "src/hooks/useTransactionMatcher.ts": {
@@ -5020,8 +5020,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database-schema.md": {
-    "mtime": 1788625193.1418178,
-    "ast_hash": "ac7de1dbca409769524a1f1eab677f05",
+    "mtime": 1788765684.3188643,
+    "ast_hash": "b2a26bb8de760f2b363e24435ea441b9",
     "semantic_hash": ""
   },
   "docs/architecture/database/01-auth-users.md": {
@@ -5045,8 +5045,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {
-    "mtime": 1788700371.3182483,
-    "ast_hash": "6bf8af813360189d0100fdf79080c969",
+    "mtime": 1788765665.8235261,
+    "ast_hash": "38261b9775cbc53a2f70384de3e795ad",
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
@@ -5115,8 +5115,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/19-platform-ops.md": {
-    "mtime": 1788130302.5162492,
-    "ast_hash": "f0212768993a2b6af9634b3ed25f4f0f",
+    "mtime": 1788765634.1469123,
+    "ast_hash": "fb6cf7b1013c247f726e179a0f196bce",
     "semantic_hash": ""
   },
   "docs/architecture/database/20-tickets.md": {
@@ -6230,8 +6230,8 @@
     "semantic_hash": ""
   },
   "docs/glossary/01-business-and-domain/brands-and-naming.md": {
-    "mtime": 1784983440.9075735,
-    "ast_hash": "b5b8108cd2187b4160a644f33d720ee8",
+    "mtime": 1788764216.2978365,
+    "ast_hash": "17722f28ee925b1d44352000f54efbb5",
     "semantic_hash": ""
   },
   "docs/glossary/01-business-and-domain/ev-taxation-domain.md": {
@@ -9292,6 +9292,66 @@
   "docs/architecture/decisions/A-101-direct-script-automation-restriction.md": {
     "mtime": 1788712674.1433344,
     "ast_hash": "b921aed04d6baabbb3c3d96c76780173",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-102-eaisybooks-dual-mode-modular-architecture.md": {
+    "mtime": 1788764092.8039865,
+    "ast_hash": "b27556ce4719596469089fc37a2f58d1",
+    "semantic_hash": ""
+  },
+  "docs/architecture/eaisybooks-architecture.md": {
+    "mtime": 1788764082.0877154,
+    "ast_hash": "3ae8eee70544ac815758d42cb294323f",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/051-ev-and-org-bookkeeping.md": {
+    "mtime": 1788764013.748979,
+    "ast_hash": "a4fd3ad6cd99b3a90cad20d0f5ab768f",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/052-tao-kiva-module.md": {
+    "mtime": 1788764019.9982102,
+    "ast_hash": "d0987a86896ed699d99155ae5f8c2bec",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/053-nav08-xml-payroll-reconstruction.md": {
+    "mtime": 1788764025.5853698,
+    "ast_hash": "8ebbc300b0617e01ad07bcf7b7e0c938",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/054-eaisybooks-client-centric-navigation.md": {
+    "mtime": 1788764034.2310965,
+    "ast_hash": "d99e8e2ca800d1e9e1f34135676a8867",
+    "semantic_hash": ""
+  },
+  "docs/architecture/edge-functions.md": {
+    "mtime": 1788766036.474217,
+    "ast_hash": "ce991f20277153797537aa9046bd93bc",
+    "semantic_hash": ""
+  },
+  "docs/architecture/rpc-catalog.md": {
+    "mtime": 1788765903.6677413,
+    "ast_hash": "e85a0e645682648bdc026e7fe550ae64",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
+    "mtime": 1788764238.7290707,
+    "ast_hash": "07a5bb45966c14bb5d2307434e1880b9",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-074-tao-kiva-module-ux.md": {
+    "mtime": 1788764244.1754909,
+    "ast_hash": "ad44d44ac65179f0dafc5755855a60b0",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-075-cegkapu-and-representation-ux.md": {
+    "mtime": 1788764250.20846,
+    "ast_hash": "7901ab7707134822f8663fad5ee5fee4",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-076-eaisybooks-dual-mode-navigation-and-company-switcher-ux.md": {
+    "mtime": 1788764257.89137,
+    "ast_hash": "80998ca1c5d8ea23cef66ce36d105fc3",
     "semantic_hash": ""
   }
 }

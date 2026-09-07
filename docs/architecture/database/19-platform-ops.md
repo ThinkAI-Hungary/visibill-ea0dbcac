@@ -2,7 +2,7 @@
 
 > Hibalogok, audit trail, LLM költségek, API kulcsok, email aliasok, devizaárfolyamok, visszajelzések.
 
-**Táblák ebben a csoportban:** 10
+**Táblák ebben a csoportban:** 12
 
 ---
 
@@ -271,3 +271,42 @@
 
 ---
 
+### `worker_heartbeats`
+
+> Python háttér-worker liveness, konténer állapot és erőforrás-kihasználtság (CPU, RAM) monitoring tábla.
+
+**RLS:** ✅ | **Sorok:** ~1310
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| `id` | uuid | — | `gen_random_uuid()` |
+| `container_name` | text | — | — |
+| `host_ip` | text | ✓ | NULL |
+| `supabase_project` | text | ✓ | NULL |
+| `started_at` | timestamp with time zone | — | — |
+| `last_heartbeat` | timestamp with time zone | — | `now()` |
+| `version` | text | ✓ | NULL |
+| `active_queues` | text[] | ✓ | NULL |
+| `cpu_usage` | real | ✓ | NULL |
+| `ram_usage` | real | ✓ | NULL |
+
+---
+
+### `company_prompt_rules`
+
+> Cégenkénti egyedi LLM prompt szabályok és instrukciók (pl. speciális könyvelési megkötések, számlafeldolgozási kivételek, A-079).
+
+**RLS:** ✅ | **Sorok:** ~3
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| `id` | uuid | — | `gen_random_uuid()` |
+| `company_id` | uuid | — | — |
+| `rule_name` | text | — | — |
+| `rule_prompt` | text | — | — |
+| `is_active` | boolean | — | `true` |
+| `created_by` | uuid | ✓ | NULL |
+| `created_at` | timestamp with time zone | — | `now()` |
+| `updated_at` | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`, `created_by` → `auth.users.id`

@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-Q3 (implementálva) → Folyamatosan bővül  
-**Utoljára frissítve:** 2026-08-31
+**Utoljára frissítve:** 2026-09-07
 
 ## Context
 
@@ -11,6 +11,8 @@ A Supabase PostgREST automatikusan REST API-t generál minden táblához. Egysze
 ## Decision
 
 **Kettős query stratégia:** PostgREST direkt query + PostgreSQL RPC funkciók.
+
+> 📖 **Teljes, részletes specifikáció:** A rendszerben elérhető mind a 132 hívható RPC és 72 trigger függvény tételes listáját és leírását az autoritatív [PostgreSQL RPC Katalógus](../rpc-catalog.md) tartalmazza.
 
 ---
 
@@ -43,9 +45,9 @@ await supabase.from('invoices').update({ status: 'verified' }).eq('id', invoiceI
 
 ---
 
-### 2. Teljes RPC Function Katalógus
+### 2. Teljes RPC Function Katalógus Áttekintés
 
-**Összesen: ~90+ function** a `public` sémában.
+**Összesen: 132 hívható RPC function** és **72 trigger function** a `public` sémában (részletesen: [rpc-catalog.md](../rpc-catalog.md)).
 
 ---
 
@@ -321,6 +323,7 @@ messages = await asyncio.to_thread(_sync_rpc_read, ...)
 - Nincs type safety az RPC response-oknál (a frontend manuálisan tipizál)
 
 ## Kapcsolódó
+- [PostgreSQL RPC Katalógus](../rpc-catalog.md) — Hivatalos, teljes RPC és trigger jegyzék
 - [A-002: Supabase mint BaaS](./A-002-supabase-baas.md)
 - [A-003: Multi-tenancy RLS](./A-003-multi-tenancy-rls.md)
 - [A-005: Edge Functions](./A-005-edge-functions.md)

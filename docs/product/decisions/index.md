@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-06  
-> **Összesen:** 67 döntés | ✅ Decided: 63 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-07  
+> **Összesen:** 71 döntés | ✅ Decided: 67 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -93,6 +93,10 @@
 | P-062 | Könyvelési Szabályok (Prompt Library) Felület és Hibahatár UX | ✅ Decided | [P-062](./P-062-company-prompt-rules-library-and-error-boundary-ux.md) |
 | P-063 | Bérszámfejtés Gyors Rekonstrukció és Dolgozói Tömeges Import (Excel & NAV 08) UX | ✅ Decided | [P-063](./P-063-payroll-bulk-import-and-reconstruction-ux.md) |
 | P-072 | Bérszámfejtési Ciklus Jelenlét Kézi Rögzítés és Cafeteria UX Stabilitás | ✅ Decided | [P-072](./P-072-payroll-cycle-attendance-manual-entry-and-cafeteria-ux.md) |
+| P-073 | Egyéni Vállalkozói (EV) Könyvvitel & Pénztárkönyv Zárási Varázsló UX | ✅ Decided | [P-073](./P-073-ev-bookkeeping-and-cashbook-ux.md) |
+| P-074 | TAO és KIVA Tervező, Zárási Ellenőrzőlista és Adókalkulátor UX | ✅ Decided | [P-074](./P-074-tao-kiva-module-ux.md) |
+| P-075 | Cégkapu / KÜNY Tárhely Szinkronizáció és EGYKE Képviseleti Nyilvántartás UX | ✅ Decided | [P-075](./P-075-cegkapu-and-representation-ux.md) |
+| P-076 | Hierarchikus Kliens Kontextus & Dual-Mode Aloldal-megőrző Company Switcher UX | ✅ Decided | [P-076](./P-076-eaisybooks-dual-mode-navigation-and-company-switcher-ux.md) |
 
 ## 🔍 Keresés
 

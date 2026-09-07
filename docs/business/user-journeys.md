@@ -240,3 +240,108 @@ graph LR
 | Telephely | location_id → company_locations |
 
 **Sikerkritérium:** Eszköz nyilvántartva, értékcsökkenés kalkulálva, események naplózva.
+
+---
+
+## Journey 9: Könyvelő Iroda Napi Munkafolyamata (Portfólió & Jóváhagyás)
+
+```mermaid
+graph TD
+    A[Belépés: /eaisybooks] --> B[Portfólió Áttekintés Kanban/Grid]
+    B --> C{Teendő kiválasztása}
+    C -->|Hiányzó bizonylatok| D[MissingInvoicesPage]
+    D --> E[Email előnézet & felszólítás kiküldése]
+    C -->|Jóváhagyási sor| F[ApprovalQueuePage]
+    F --> G[Kötegelt jóváhagyás & Kontírozás]
+    C -->|Határidők & adónaptár| H[TaxCalendarPage & Alerts]
+    H --> I[NAV bevallási határidők ellenőrzése]
+```
+
+**Szereplő:** Könyvelő / Senior könyvelő  
+**Trigger:** Napi operatív könyvelési munka indítása az irodában  
+
+| Lépés | Oldal/Komponens | Leírás |
+|-------|----------------|--------|
+| Portfólió audit | `AccountyPortfolio` (`/eaisybooks`) | KPI-k áttekintése, Kanban oszlopok ellenőrzése (feldolgozás alatt, hiánypótlás, jóváhagyásra vár, kész). |
+| Bizonylat hiánypótlás | `MissingInvoicesPage` (`/eaisybooks/missing-invoices`) | Kimenő/bejövő hiányzó számlák szűrése, `EmailPreviewModal` megnyitása és automatikus értesítő kiküldése az ügyfélnek. |
+| Jóváhagyási sor | `ApprovalQueuePage` (`/eaisybooks/approval-queue`) | AI által előkontírozott tételek szakmai áttekintése, tömeges jóváhagyás (`approve_all`) vagy javítás. |
+| Határidő menedzsment | `TaxCalendarPage` és `AlertsCenterPage` | Közelgő ÁFA, bér vagy helyi adó határidők ellenőrzése, feladatok szétosztása. |
+
+**Sikerkritérium:** A portfólió naprakész, nincsenek elakadt jóváhagyások, az ügyfelek megkapták a bizonylatpótlási értesítőket.
+
+---
+
+## Journey 10: Havi Bérszámfejtési Ciklus & NAV 08 Bevallás
+
+```mermaid
+graph LR
+    A[1. Draft: Jelenlét] --> B[2. Calculation: Bérszámítás]
+    B --> C[3. Approval: Könyvelői Audit]
+    C --> D[4. Closed: Bérjegyzék & NAV 08]
+    D --> E[Banki utalás SEPA HUF export]
+```
+
+**Szereplő:** Bérszámfejtő / Könyvelő  
+**Trigger:** Hónap végi / tárgyhó eleji kötelező bérszámfejtési időszak  
+
+| Lépés | Fázis / Komponens | Leírás |
+|-------|-------------------|--------|
+| Cég és ciklus megnyitása | `PayrollDashboard` (`/eaisybooks/:companyId/:dateRange/payroll`) | Tárgyhavi ciklus inicializálása `draft` státuszban. |
+| Jelenlét és kieső idők | `PayrollCycleAttendanceGrid` | Betegszabadság, táppénz, fizetett szabadság és túlóra rögzítése dolgozónként. |
+| Bérszámítás futtatása | `PayrollCalculationView` | Bruttó bér, SZJA (kedvezmények: családi, 25 év alatti, stb.), TB és Szocho automatikus kalkulációja. |
+| Szakmai jóváhagyás | `PayrollApprovalView` | Összesítők és eltérések ellenőrzése, státuszváltás `approved`-ra. |
+| Lezárás & Bizonylatok | `PayrollClosingWizard` | Ciklus lezárása (`closed`), PDF bérjegyzékek generálása és kiküldése a munkavállalói portálra. |
+| Hatósági export | `nav08XmlParser` / Export | NAV ÁNYK kompatibilis 08-as havi adó- és járulékbevallás XML generálása. |
+| Banki utalás | Utalási csomag generátor | Dolgozói nettó bérek és NAV adószámlák SEPA HUF XML vagy CSV exportja. |
+
+**Sikerkritérium:** A bérszámfejtés hibátlanul lezárva, a bérjegyzékek kiküldve, a 08-as XML benyújtásra kész, az utalási csomag letöltve.
+
+---
+
+## Journey 11: Új Ügyfél Onboarding & Bér/Könyvelés Rekonstrukció
+
+```mermaid
+graph TD
+    A[Új cég felvétele /eaisybooks/portfolio] --> B[NAV Online Számla Technikai Felhasználó Összekötés]
+    B --> C[NAV 08 ÁNYK XML Tömeges Import]
+    C --> D[Munkavállalók & Jogviszonyok Automatikus Rekonstrukciója]
+    D --> E[Cégspecifikus Könyvelési Szabályok Beállítása company_prompt_rules]
+```
+
+**Szereplő:** Senior Könyvelő / Iroda Admin  
+**Trigger:** Új ügyfél szerződéskötése az irodával  
+
+| Lépés | Komponens | Leírás |
+|-------|-----------|--------|
+| Cégregisztráció | `CompanyCreationDialog` | Cég alapadatai, adószám, könyvelési típus kiválasztása (Kettős / EV / Nonprofit). |
+| NAV API összekapcsolás | Cégbeállítások / NAV integráció | Technikai felhasználó megadása, azonnali automatikus számlaszinkronizáció indítása. |
+| Múltbéli béradatok importja | `Nav08XmlBulkImportModal` | Az előző könyvelőtől kapott 08-as havi XML bevallások feltöltése. |
+| Törzsadat generálás | `nav08XmlParser` feldolgozó | Dolgozók, adóazonosítók, TAJ számok, munkaszerződések és korábbi járulékalapok automatikus beemelése. |
+| AI szabályok finomhangolása | `CompanyPromptRulesLibrary` | Ügyfélspecifikus kontírozási elvek, költséghelyek és konfidencia küszöbök rögzítése. |
+
+**Sikerkritérium:** Az új ügyfél teljes történeti és számlaadatai perceken belül rendelkezésre állnak manuális adatbevitel nélkül.
+
+---
+
+## Journey 12: Egyéni Vállalkozó Havi Könyvelése & Pénztárkönyv Zárás
+
+```mermaid
+graph LR
+    A[NAV Számlák Szinkronja] --> B[Pénzforgalmi Kiegyenlítés & Bank]
+    B --> C[Nyilvántartások Vezetése: 14 analitika]
+    C --> D[Pénztárkönyv Zárási Varázsló]
+    D --> E[Adó- és Járulékkalkuláció: Átalány/VSZJA/KATA]
+```
+
+**Szereplő:** Könyvelő  
+**Trigger:** EV ügyfél havi pénzforgalmának és adókötelezettségének megállapítása  
+
+| Lépés | Oldal / Tab | Leírás |
+|-------|-------------|--------|
+| Bizonylatok beolvasása | `EvBookkeepingPage` / Számlák | NAV-ból érkező bejövő és kimenő számlák szinkronizálása és tételes ellenőrzése. |
+| Bank és Készpénz tételek | Pénztárkönyv (`CashBookGrid`) | Pénzforgalmi kiegyenlítések párosítása, készpénzes kifizetések rögzítése. |
+| Törvényes analitikák | Nyilvántartások tab | Gépjárműhasználat, tárgyi eszközök, selejtezések és vevő-szállító analitikák frissítése. |
+| Pénztárkönyv Zárás | Zárási varázsló | Negatív pénztáregyenleg vizsgálata, nyitó-záró egyenlegek egyeztetése, pénztárkönyv hitelesítése. |
+| Havi adókalkuláció | Kalkulátor & Járulékok tab | Átalányadó göngyölt jövedelemkeret figyelése, mentesített sávok számítása, fizetendő SZJA és TB megállapítása. |
+
+**Sikerkritérium:** A pénztárkönyv egyeztetve és lezárva, a havi járulékfizetési értesítő elküldve az egyéni vállalkozónak.

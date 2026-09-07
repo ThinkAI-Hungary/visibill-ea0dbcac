@@ -2,7 +2,7 @@
 
 > NAV Online Számla rendszer — bejövő/kimenő számlák, szinkron logok.
 
-**Táblák ebben a csoportban:** 4
+**Táblák ebben a csoportban:** 3
 
 ---
 
@@ -141,31 +141,6 @@ Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-a
 
 ---
 
-### `nav_outbound_invoices`
+### `nav_invoices` (Kimenő számlák kezelése)
 
-> NAV-ból lekérdezett kimenő számlák gyorsítótárazott táblája.
-
-**RLS:** ✅ | **Sorok:** Dinamikus
-
-| Oszlop | Típus | Null | Default |
-|--------|-------|------|---------|
-| id | uuid | — | `gen_random_uuid()` |
-| company_id | uuid | — | — |
-| invoice_number | text | — | — |
-| customer_name | text | ✓ | — |
-| customer_tax_number | text | ✓ | — |
-| invoice_issue_date | date | ✓ | — |
-| invoice_delivery_date | date | ✓ | — |
-| payment_date | date | ✓ | — |
-| invoice_net_amount | numeric | ✓ | — |
-| invoice_vat_amount | numeric | ✓ | — |
-| invoice_gross_amount | numeric | ✓ | — |
-| currency | text | — | `'HUF'` |
-| created_at | timestamp with time zone | — | `now()` |
-
-**FK:** `company_id` → `companies.id`
-
-**Indexek:** `idx_nav_outbound_invoices_company_date`, `idx_nav_outbound_invoices_number`
-
----
-
+> 💡 **Architekturális megjegyzés:** A rendszerben nincs különálló `nav_outbound_invoices` fizikai tábla. A NAV-ból szinkronizált kimenő számlák egységesen a központi `nav_invoices` táblában tárolódnak `invoice_direction = 'outbound'` attribútummal. A `nav-query-outbound-invoices` Edge Function és a felületi lekérdező eljárások (`get_filtered_nav_invoices`) ezen az oszlopon keresztül végzik a szűrést és aggregációt.

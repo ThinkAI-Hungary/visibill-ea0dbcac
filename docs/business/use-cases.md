@@ -332,3 +332,148 @@
 
 **Utófeltétel:** Számla kifizetettként rögzítve, virtuális tranzakció létrejött és párosítva.
 
+---
+
+## UC-014: Könyvelői Portfólió Menedzsment & Státuszkövetés
+
+| Mező | Érték |
+|------|-------|
+| **Aktor** | Könyvelő, Senior Könyvelő, Irodavezető (`iroda_admin`) |
+| **Előfeltétel** | Az irodához legalább egy ügyfélcég hozzá van rendelve (`accounty_assignments`) |
+| **Trigger** | Havi könyvelési ciklus indítása vagy napi státuszellenőrzés |
+
+**Fő folyamat:**
+1. A könyvelő bejelentkezik az eaisyBooks felületre (`/eaisybooks/portfolio`)
+2. Megtekinti az irodai KPI kártyákat (ügyfélszám, nyitott tételek, zárási határidők)
+3. Nézetet vált az igényei szerint: Grid, Lista vagy Kanban nézet
+4. Szűr a felelős könyvelőre és zárási státuszra
+5. A Kanban táblán drag-and-drop mozgatással lépteti a céget az aktuális fázisba:
+   *Adatbekérés folyamatban* → *Feldolgozás alatt* → *Ellenőrzésre vár* → *Havi zárás kész*
+6. A kártyára kattintva közvetlenül belép az adott ügyfél kontextusába (`/eaisybooks/:companyId/:dateRange/overview`)
+
+**Utófeltétel:** Az ügyfél státusza frissül az adatbázisban, a munkamegosztás átlátható.
+
+---
+
+## UC-015: Hiányzó Számlák Detektálása, Felszólítás & Ügyfélportál
+
+| Mező | Érték |
+|------|-------|
+| **Aktor** | Könyvelő, Asszisztens |
+| **Előfeltétel** | Banki kivonat feltöltve számla nélkül, vagy NAV számlakép hiányzik |
+| **Trigger** | Hóközi vagy hó végi analitika ellenőrzése |
+
+**Fő folyamat:**
+1. A könyvelő megnyitja a Hiányzó Számlák nézetet (`/eaisybooks/missing-invoices`)
+2. A rendszer automatikusan listázza a párosítatlan banki terheléseket és hiányzó bizonylatokat
+3. A könyvelő kiválasztja az ügyfelet és a hiányzó tételeket, majd a "Felszólító levél küldése" gombra kattint
+4. Megnyílik az Email Preview Modal, ahol a rendszer előre kitölti az egyenleget és a hiányzó tételeket
+5. A könyvelő ellenőrzi vagy módosítja a levélszöveget, majd jóváhagyja a kiküldést
+6. A rendszer e-mailt küld az ügyfélnek, amely tartalmaz egy jelszómentes, biztonságos Magic Linket (`/eaisybooks/client-portal?token=...`)
+7. Az ügyfél a portálon közvetlenül feltölti a számlaképeket, amelyek azonnal bekerülnek a könyvelői feldolgozási sorba
+
+**Utófeltétel:** Hiányzó tételek követve, felszólítás elküldve, pótolt bizonylatok automatikusan beérkezve.
+
+---
+
+## UC-016: Havi Bérszámfejtési Ciklus Lefuttatása
+
+| Mező | Érték |
+|------|-------|
+| **Aktor** | Bérszámfejtő, Senior Könyvelő |
+| **Előfeltétel** | Cég bérszámfejtési beállításai és dolgozói jogviszonyai rögzítve |
+| **Trigger** | Tárgyhót követő bérszámfejtési időszak elérkezése (pl. tárgyhó 5-10. napja) |
+
+**Fő folyamat:**
+1. Belépés az ügyfél Bérszámfejtés oldalára (`/eaisybooks/:companyId/:dateRange/payroll`)
+2. Új bérszámfejtési ciklus indítása a Ciklus fülön (`status = 'draft'`)
+3. Jelenléti adatok ellenőrzése és rögzítése a havi jelenléti rácson (ledolgozott napok, táppénz, szabadság, cafeteria)
+4. Számfejtés futtatása (`status = 'calculation'`): bruttó bér, kedvezmények (25 év alattiak, családi), levonások és Szocho kalkulációja
+5. Senior könyvelői audit és jóváhagyás (`status = 'approval'`)
+6. Ciklus lezárása (`status = 'closed'`):
+   - Dolgozói bérjegyzék PDF-ek generálása
+   - Banki átutalási csomag (HUF SEPA fájl) exportálása
+   - NAV 08-as havi járulékbevallás XML generálása
+7. Bérjegyzékek automatikus publikálása a dolgozói e-bérjegyzék portálra
+
+**Utófeltétel:** Bérszámfejtési ciklus lezárva, bizonylatok generálva, utalási és adókötelezettségek rögzítve.
+
+---
+
+## UC-017: Munkavállalói Tömeges Import & NAV 08 ÁNYK XML Rekonstrukció
+
+| Mező | Érték |
+|------|-------|
+| **Aktor** | Könyvelő, Senior Könyvelő |
+| **Előfeltétel** | Új ügyfél onboarding vagy korábbi bérszámfejtő program váltása |
+| **Trigger** | Történeti béradatok és dolgozói törzs gyors bevitele kézi adatrögzítés nélkül |
+
+**Fő folyamat:**
+1. A könyvelő megnyitja a Bérszámfejtés / Foglalkoztatottak oldalt
+2. A "Tömeges Import / Rekonstrukció" gombra kattint
+3. Feltölti a korábbi havi NAV 08 (pl. 2608, 2508) ÁNYK XML fájlokat
+4. A feldolgozó motor (`nav08XmlParser`) beolvassa az XML-t, azonosítja a dolgozókat (adóazonosító, TAJ), jogviszonyokat, havi bruttó béreket és kedvezményeket
+5. Előnézeti képernyőn ellenőrzi az importálandó dolgozókat és a detektált múltbéli ciklusokat
+6. Jóváhagyás után a rendszer létrehozza a `payroll_employees`, `payroll_contracts` és lezárt `payroll_cycles` rekordokat
+
+**Utófeltétel:** A dolgozói törzs és a múltbéli béradatok hiánytalanul rekonstruálva vannak az adatbázisban.
+
+---
+
+## UC-018: Egyéni Vállalkozói Könyvelés & Pénztárkönyv Zárás
+
+| Mező | Érték |
+|------|-------|
+| **Aktor** | Könyvelő |
+| **Előfeltétel** | Az ügyfél egyéni vállalkozóként (EV) van regisztrálva a rendszerben |
+| **Trigger** | Havi vagy negyedéves pénztárkönyvi zárás és járulékbevallási kötelezettség |
+
+**Fő folyamat:**
+1. Belépés az EV modulba (`/eaisybooks/:companyId/:dateRange/ev`)
+2. A Pénztárkönyv lapfülön a bejövő és kimenő NAV számlák automatikusan megjelennek; a könyvelő rögzíti a készpénzes és banki kiegyenlítéseket
+3. Időszaki Pénztárkönyv Zárási Varázsló indítása: a rendszer ellenőrzi a nyitó és záró egyenleget, a negatív pénztáregyenleget és a párosítatlan tételeket
+4. A Járulékok lapfülön a rendszer kalkulálja az adóforma szerinti kötelezettséget (átalányadó szakképzettség/garantált bérminimum figyelembevételével)
+5. A Bevallások lapfülön a könyvelő legenerálja a havi 58-as járulékbevallás és az időszaki ÁFA bevallás ÁNYK XML fájlját
+6. Az időszak végleges lezárása és nyomtatható PDF pénztárkönyv archiválása
+
+**Utófeltétel:** Pénztárkönyv lezárva, törvényes nyilvántartások frissítve, bevallási XML-ek letöltve.
+
+---
+
+## UC-019: Cégkapu / KÜNY Tárhely Integráció és EGYKE Meghatalmazás Kezelés
+
+| Mező | Érték |
+|------|-------|
+| **Aktor** | Könyvelő, Irodavezető (`iroda_admin`) |
+| **Előfeltétel** | Érvényes Cégkapu gép-gép vagy KÜNY technikai hozzáférés |
+| **Trigger** | Hatósági levelek beérkezése vagy meghatalmazás ellenőrzése |
+
+**Fő folyamat:**
+1. Belépés a cég Cégkapu oldalára (`/eaisybooks/:companyId/:dateRange/cegkapu`)
+2. Tárhely szinkronizáció indítása: a rendszer lekéri a NAV és egyéb hatóságok hivatalos küldeményeit
+3. A letöltött határozatok, adófolyószámla-kivonatok automatikusan archiválásra kerülnek az ügyfél dokumentumtárában
+4. A Képviselet / EGYKE lapfülön (`/representation`) a könyvelő rögzíti és ellenőrzi a NAV EGYKE meghatalmazás érvényességét
+5. Lejárat előtti határidő esetén a rendszer automatikus figyelmeztetést helyez el az Adónaptárban és a Riasztási Központban
+
+**Utófeltétel:** Hivatalos dokumentumok naprakészen letöltve, képviseleti jogosultságok auditálva.
+
+---
+
+## UC-020: Könyvelőirodai Jogosultságok és Modul Felülbírálatok Kezelése (RBAC)
+
+| Mező | Érték |
+|------|-------|
+| **Aktor** | Irodavezető (`iroda_admin`) |
+| **Előfeltétel** | Bejelentkezett iroda adminisztrátor |
+| **Trigger** | Új munkatárs érkezése vagy egyedi jogosultsági igény |
+
+**Fő folyamat:**
+1. Navigáció az Adminisztráció → Jogosultságkezelő oldalra (`/eaisybooks/admin/permission-matrix`)
+2. Az irodavezető kiválasztja a könyvelő munkatársat
+3. Megtekinti a munkatárs alapértelmezett szerepkörét (`senior_könyvelő`, `könyvelő`, `asszisztens`)
+4. A mátrix táblázatban modulonként egyedileg felülbírálhatja az írási vagy olvasási jogot (pl. asszisztensnek olvasási jogot ad a bérszámfejtéshez)
+5. Mentéskor a rendszer frissíti az `accounty_module_permissions` táblát
+6. A munkatárs következő munkamenetében a `useAccountyPermissions` hook azonnal a felülbírált jogosultságokat érvényesíti
+
+**Utófeltétel:** Egyedi modul jogosultságok biztonságosan rögzítve az adatbázisban, az audit naplóban naplózva.
+

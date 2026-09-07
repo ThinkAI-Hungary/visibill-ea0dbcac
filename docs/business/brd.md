@@ -34,7 +34,7 @@ Mindkét alkalmazás felülete **kizárólag magyar nyelvű**. A pénznem alapé
 **Hivatkozás:** [003](./decisions/003-localization-strategy.md)
 
 ### REQ-2.3: Dual-app architektúra
-A két alkalmazás egyetlen React SPA-ként fut, közös `App.tsx` routing-gal. Az eaisyBill a `/:companyId/:dateRange/*` route-okon él (`ScopedLayout`), az eaisyBooks a `/accounty/*` route-okon (`AccountyLayout`). A `RootRedirect` komponens dönti el, melyik felületet mutassa az adott felhasználónak. Az `AppModeSwitcher` lehetővé teszi a két mód közötti váltást, ha a felhasználó mindkettőhöz rendelkezik hozzáféréssel (`useHasEaisybillAccess`, `useHasAccountyAccess`).  
+A két alkalmazás egyetlen React SPA-ként fut, közös `App.tsx` routing-gal. Az eaisyBill a `/:companyId/:dateRange/*` route-okon él (`ScopedLayout`), az eaisyBooks a `/eaisybooks/*` (portfólió és adminisztráció) és a `/eaisybooks/:companyId/:dateRange/*` (ügyfél kontextus mód) útvonalakon (`AccountyLayout`), míg a korábbi `/accounty/*` hivatkozásokat a rendszer automatikusan átirányítja. A `RootRedirect` komponens dönti el, melyik felületet mutassa az adott felhasználónak. Az `AppModeSwitcher` lehetővé teszi a két mód közötti zökkenőmentes váltást, ha a felhasználó mindkettőhöz rendelkezik jogosultsággal (`useHasEaisybillAccess`, `useHasAccountyAccess`).  
 **Státusz:** ✅ Decided
 
 ---
@@ -288,6 +288,51 @@ Az iroda_admin számára elérhető admin oldalak:
 | `accounty_missing_items` | Hiányzó számlák/dokumentumok nyilvántartás |
 
 **Státusz:** ✅ Decided
+
+### REQ-8b.14: Egyéni Vállalkozói (EV) & Szervezeti Egyszeres Könyvvitel
+A rendszer az egyéni vállalkozók számára teljes körű egyszeres könyvviteli és adózási funkciókat nyújt:
+- 3 EV adózási forma (Átalányadó, VSZJA, KATA) kezelése és szimulációs összehasonlító kalkulátor.
+- Törvényes Pénztárkönyv analitika, időszaki pénztárkönyv zárási varázsló, stornózási mechanizmus, PDF és Excel nyomtatás.
+- TB-járulék és szociális hozzájárulási adó kalkuláció minimum járulékalapok és szakképzettség figyelembevételével.
+- 14 kötelező törvényi nyilvántartás vezetése (vevők, szállítók, beruházások, eszközök, gépjárműhasználat, stb.).
+- Havi járulékbevallások (58-as) és éves SZJA bevallások XML generálása ÁNYK importra.
+- Nemcsak EV-k, hanem egyéb egyszeres könyvvitelt vezető szervezetek támogatása: Civil szervezetek (alapítványok, egyesületek), Társasházak.  
+**Státusz:** ✅ Decided  
+**Hivatkozás:** [020](./decisions/020-tax-module.md) · [051](./decisions/051-ev-and-org-bookkeeping.md)
+
+### REQ-8b.15: Társasági Adó (TAO) & Kisvállalati Adó (KIVA) Modul
+Társas vállalkozások évközi és év végi adózási folyamatainak kezelése:
+- Évközi adóalap és várható adókötelezettség folyamatos követése, adóelőleg naptár.
+- Év végi zárási ellenőrző lista és adóalap-korrekciós tételek (növelő és csökkentő tételek rögzítése).
+- 9%-os TAO és 10%-os KIVA kalkulátorok, valamint összehasonlító szimulációs döntéstámogatás.  
+**Státusz:** ✅ Decided  
+**Hivatkozás:** [052](./decisions/052-tao-kiva-module.md)
+
+### REQ-8b.16: Cégkapu / KÜNY Tárhely Integráció
+Hivatalos elektronikus tárhely szinkronizáció könyvelőirodák és ügyfeleik számára:
+- Cégkapu és KÜNY tárhelyekről érkező hatósági és NAV levelek, határozatok, kivonatok automatikus letöltése.
+- Dokumentumok közvetlen csatolása a cég irattárához és könyvelési bizonylataihoz.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.17: Képviselet & EGYKE Meghatalmazások
+A könyvelőiroda által képviselt ügyfelek NAV EGYKE és egyéb hatósági meghatalmazásainak elektronikus nyilvántartása:
+- Meghatalmazotti státuszok, érvényességi idők, meghatalmazott könyvelő személyének rögzítése.
+- Lejárat előtti figyelmeztetések a Riasztási Központban.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.18: Cég-specifikus Könyvelési Szabálytár (`company_prompt_rules`)
+Könyvelői és kontírozási szabályok rögzítése cégenként:
+- Egyedi partner- vagy leírás-alapú kontírozási és adókód szabályok beállítása, amelyeket az AI feldolgozó motor figyelembe vesz.
+- Konfidencia küszöbérték beállítása az automatikus elfogadáshoz.  
+**Státusz:** ✅ Decided  
+**Hivatkozás:** [P-062](../product/decisions/P-062-company-prompt-rules-library-and-error-boundary-ux.md) · [A-079](../architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md)
+
+### REQ-8b.19: Hierarchikus Ügyfélkontextus és Company Switcher
+Az eaisyBooks felületén a könyvelő a portfólióból beléphet az egyes ügyfelekbe (`/eaisybooks/:companyId/:dateRange/*`):
+- A fejlécben dinamikus `CompanySwitcher` működik, amely cégváltáskor megőrzi az aktuális aloldalt (pl. bérszámfejtés vagy számlák).
+- A navigációs sávban közvetlen "Vissza a portfólióhoz" gomb biztosítja az azonnali visszalépést az irodai összegzőbe.  
+**Státusz:** ✅ Decided  
+**Hivatkozás:** [054](./decisions/054-eaisybooks-client-centric-navigation.md) · [P-073](../product/decisions/P-073-eaisybooks-dual-mode-sidebar-and-client-context-ux.md)
 
 ---
 

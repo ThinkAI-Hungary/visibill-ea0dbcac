@@ -9,8 +9,8 @@
 
 | Brand Név | Leírás | DB prefix | Kód prefix | URL Path |
 |-----------|--------|-----------|------------|----------|
-| **eaisyBill** | Fő alkalmazás — Cégvezetői pénzügyi asszisztens | — | — | `/` |
-| **eaisyBooks** | Könyvelői nézet (korábban "Accounty") | `accounty_*` | `Accounty*` | `/accounty/` |
+| **eaisyBill** | Fő alkalmazás — Cégvezetői pénzügyi asszisztens | — | — | `/` vagy `/:companyId/:dateRange/` |
+| **eaisyBooks** | Könyvelői modul & ERP (korábban "Accounty") | `accounty_*` | `Accounty*` | `/eaisybooks/` |
 | **Visibill** | A teljes platform / projekt gyűjtőneve | — | — | — |
 
 ---
@@ -19,10 +19,10 @@
 
 | Ha ezt mondod / olvasod... | Erre gondolsz... | Kódbeli / Adatbázisbeli Azonosító |
 |------------------|-------------------|---------------------|
-| **"eaisyBooks"** | Könyvelői modul / felület | `accounty_*` táblák, `Accounty*` komponensek |
+| **"eaisyBooks"** | Könyvelői modul / ERP alrendszer | `accounty_*` táblák, `Accounty*` komponensek |
 | **"Accounty"** | Ugyanaz mint eaisyBooks (korábbi név) | `accounty_*` táblák, `Accounty*` komponensek |
-| **"könyvelői nézet"** | eaisyBooks modul | `/accounty/` útvonal |
-| **"könyvelő iroda"** | eaisyBooks irodai funkciók | `accounty_assignments`, `accounty_sites` |
+| **"könyvelői nézet"** | eaisyBooks modul | `/eaisybooks/` útvonal (legacy: `/accounty/`) |
+| **"könyvelő iroda"** | eaisyBooks irodai funkciók | `accounty_assignments`, `accounty_module_permissions` |
 | **"eaisyBill"** | Fő alkalmazás (KKV cégvezetői dashboard) | `invoices`, `transactions`, `salary` |
 
 ---
@@ -38,5 +38,5 @@
 3. **Edge Function-ök neve változatlan:**  
    Meglévő funkciók: `accounty-seed`, `accounty-detect-missing`, `accounty-detect-bank`, `accounty-generate-deadlines`, `accounty-ai-phone`. Ezen Edge Function-ök neve nem módosul a rebrand miatt.
 
-4. **URL path nem változott:**  
-   A könyvelői modul elérése változatlanul a `/accounty/` URL címen érhető el.
+4. **URL Path és Útvonalszerkezet:**  
+   A könyvelői modul elsődleges hivatalos URL útvonala a `/eaisybooks/` (Portfólió Mód: `/eaisybooks/*`, Ügyfél Kontextus Mód: `/eaisybooks/:companyId/:dateRange/*`). A korábbi `/accounty/*` útvonalak automatikusan átirányításra kerülnek a megfelelő `/eaisybooks/*` címre.

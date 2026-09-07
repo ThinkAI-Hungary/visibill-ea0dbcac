@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-09-04  
-> **Összesen:** 50 döntés | ✅ Decided: 34 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
+> **Utoljára frissítve:** 2026-09-07  
+> **Összesen:** 54 döntés | ✅ Decided: 38 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
 
 ---
 
@@ -102,12 +102,16 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| 031 | eaisyBooks modul scope | ✅ Decided | [031-accounty-module.md](./031-accounty-module.md) |
+| 031 | eaisyBooks modul scope & könyvelőirodai architektúra | ✅ Decided | [031-accounty-module.md](./031-accounty-module.md) |
 | 032 | Payroll (bérszámfejtés) modul | ✅ Decided | [032-payroll-module.md](./032-payroll-module.md) |
 | 033 | ÁFA bevallás modul | ✅ Decided | [033-vat-return-module.md](./033-vat-return-module.md) |
 | 034 | Worker pipeline (háttérfeldolgozás) | ✅ Decided | [034-worker-pipeline.md](./034-worker-pipeline.md) |
 | 035 | eaisyBooks ügyfélportál | ✅ Decided | [035-accounty-client-portal.md](./035-accounty-client-portal.md) |
 | 047 | Egyedi Céges Könyvelési Szabályok és AI Kontírozási Házirend | ✅ Decided | [047-company-prompt-rules-ai-classification.md](./047-company-prompt-rules-ai-classification.md) |
+| 051 | Egyéni Vállalkozói (EV) és Szervezeti Egyszeres Könyvvitel | ✅ Decided | [051-ev-and-org-bookkeeping.md](./051-ev-and-org-bookkeeping.md) |
+| 052 | Társasági Adó (TAO) és Kisvállalati Adó (KIVA) Modul | ✅ Decided | [052-tao-kiva-module.md](./052-tao-kiva-module.md) |
+| 053 | NAV 08 ÁNYK XML Rekonstrukció és Tömeges Béradat Import | ✅ Decided | [053-nav08-xml-payroll-reconstruction.md](./053-nav08-xml-payroll-reconstruction.md) |
+| 054 | eaisyBooks Kliensközpontú Navigáció és Dual-Mode Sidebar | ✅ Decided | [054-eaisybooks-client-centric-navigation.md](./054-eaisybooks-client-centric-navigation.md) |
 
 ## 🎫 Ügyfélszolgálat & Support
 

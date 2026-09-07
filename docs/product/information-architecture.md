@@ -275,45 +275,55 @@ A sidebar 6 logikai, összecsukható (collapsible) csoportba rendezi a modulokat
 
 ---
 
-## 8. [eaisyBooks] Layout Struktúra (kódban: AccountyLayout)
+## 8. [eaisyBooks] Layout & Navigációs Architektúra (kódban: AccountyLayout)
 
-Az eaisyBooks modul **teljesen önálló layout-ot** használ (`AccountyLayout`), amely független a fő app `ProtectedLayout`-jától.
+Az eaisyBooks modul **teljesen önálló moduláris layout-ot** használ (`AccountyLayout`), amely el van különítve a fő app `ProtectedLayout`-jától. A felület modern URL-struktúrája a `/eaisybooks/*` útvonalon fut (a korábbi `/accounty/*` útvonalakat a `renderAccountyRoutes()` automatikusan átirányítja).
 
 ```
-┌─────────────────────────────────────────────┐
-│                  AccountyLayout              │
-│  ┌──────┬──────────────────────────────────┐ │
-│  │      │   Header (search, theme, user)  │ │
-│  │      ├──────────────────────────────────┤ │
-│  │  A   │                                  │ │
-│  │  C   │                                  │ │
-│  │  C   │        <Outlet />                │ │
-│  │  O   │     (page content)               │ │
-│  │  U   │                                  │ │
-│  │  N   │                                  │ │
-│  │  T   │                                  │ │
-│  │  Y   │                                  │ │
-│  │      │                                  │ │
-│  │  S   ├──────────────────────────────────┤ │
-│  │  I   │       FeedbackFab               │ │
-│  │  D   │                                  │ │
-│  │  E   │                                  │ │
-│  │  B   │                                  │ │
-│  │  A   │                                  │ │
-│  │  R   │                                  │ │
-│  └──────┴──────────────────────────────────┘ │
-└─────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│ AccountyLayout                                                         │
+│  ├── Header: Brand (eaisyBooks) + AppModeSwitcher                      │
+│  │   + [Client Módban: CompanySwitcher + "Vissza a portfólióhoz"]      │
+│  │   + Command Palette (Ctrl+K) + Global Search + LiveNotifications    │
+│  │   + Téma választó + User Profile Dropdown                           │
+│  │                                                                     │
+│  ├── Kétállapotú Navigáció (AccountySidebar):                          │
+│  │   ┌──────────────────────────┬──────────────────────────────────┐   │
+│  │   │ PORTFÓLIÓ MÓD            │ ÜGYFÉL KONTEXTUS MÓD             │   │
+│  │   │ (/eaisybooks/*)          │ (/eaisybooks/:companyId/:range/*)│   │
+│  │   ├──────────────────────────┼──────────────────────────────────┤   │
+│  │   │ • Portfólió (Grid/List/  │ • Cég Áttekintés                 │   │
+│  │   │   Kanban)                │ • Cégprofil                      │   │
+│  │   │ • Jóváhagyási Sor        │ • Számlák & Bizonylatok          │   │
+│  │   │ • Hiányzó Számlák        │ • Hiányzó Bizonylatok            │   │
+│  │   │ • Adó Naptár             │ • Egyéni Vállalkozás (EV - 8 tab)│   │
+│  │   │ • AI Asszisztens (Chat)  │ • Társasági Adó (TAO/KIVA - 7 tab│   │
+│  │   │ • Riasztási Központ      │ • Bérszámfejtés (5 tab)          │   │
+│  │   │ • Ügyfél Portál (Portal) │ • NAV Bevallások                 │   │
+│  │   │                          │ • Könyvelési Szabályok (Prompts) │   │
+│  │   │ ▾ ADMINISZTRÁCIÓ         │ • Beállítások (Tabs)             │   │
+│  │   │   ▸ Iroda (Könyvelők, ..)│ • Cégkapu / KÜNY Tárhely        │   │
+│  │   │   ▸ Szakmai (Sablonok,..)│ • EGYKE Meghatalmazások          │   │
+│  │   │   ▸ Biztonság (Audit,..) │ • Adatmegőrzési Szabályzat       │   │
+│  │   │   ▸ Támogatás (Ticketek) │ • Cégstruktúra (Telephelyek)     │   │
+│  │   └──────────────────────────┴──────────────────────────────────┘   │
+│  │                                                                     │
+│  └── Tartalmi Terület (<Outlet /> + ErrorBoundary + DateRangeProvider) │
+│       + Lebegő Visszajelzés Gomb (<FeedbackFab />)                     │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Komponens hierarchia:**
-```
+### Komponens & Provider Hierarchia:
+```tsx
 <App>
   <AuthProvider>
     <CompanyProvider>
       <ProtectedRoute>
-        <AccountyLayout>             ← saját sidebar + header
-          <AccountyRoleProvider>      ← admin/könyvelő role context
-            <Outlet />               ← lazy loaded Accounty page
+        <AccountyLayout>              {/* Fő keret, header, theme, notifikációk */}
+          <AccountyRoleProvider>       {/* 4 irodai szerepkör + DB override jogok */}
+            <DateRangeProvider>        {/* Dátumtartomány állapot kliens kontextusban */}
+              <Outlet />               {/* Lazy-loaded modul oldal */}
+            </DateRangeProvider>
           </AccountyRoleProvider>
           <FeedbackFab />
         </AccountyLayout>
@@ -323,15 +333,64 @@ Az eaisyBooks modul **teljesen önálló layout-ot** használ (`AccountyLayout`)
 </App>
 ```
 
-**Különbségek a fő app-tól:**
-| Tulajdonság | Fő app (ProtectedLayout) | eaisyBooks (AccountyLayout) |
+### Kétállapotú Sidebar Működés (`AccountySidebar.tsx`)
+
+A navigációs sáv az URL mintázata alapján automatikusan vált a két nézet között (`sidebarMode === 'portfolio' | 'client'`):
+
+#### 1. Portfólió Mód (`/eaisybooks/*`)
+Irodai szintű áttekintés, ahol a könyvelő az összes hozzárendelt ügyfélcéget egyben látja és kezeli.
+
+| Menüpont | Útvonal | Ikon | Leírás & Funkció |
+|---|---|---|---|
+| **Portfólió** | `/eaisybooks` vagy `/eaisybooks/portfolio` | `Briefcase` | Grid / Lista / Kanban nézet az összes cégről; szűrés státuszra, könyvelőre; KPI mutatók |
+| **Jóváhagyási sor** | `/eaisybooks/approval-queue` | `MailCheck` | Jóváhagyandó számlák és bizonylatok kötegelt (batch) ellenőrzése és elfogadása |
+| **Hiányzó számlák** | `/eaisybooks/missing-invoices` | `FileWarning` | Irodai szintű konszolidált lista a hiányzó bizonylatokról, felszólító email küldéssel |
+| **Adó naptár** | `/eaisybooks/tax-calendar` | `Calendar` | Aggregált NAV és önkormányzati határidők az összes ügyfélre kiterjedően |
+| **AI Asszisztens** | `/eaisybooks/ai-assistant` | `Bot` | Könyvelési jogszabály-értelmező, kontírozási tanácsadó és adatelemző chat felület |
+| **Riasztások** | `/eaisybooks/alerts` | `Bell` | Kritikus események (lejárt határidő, sikertelen NAV sync, elakadt bérszámfejtés) |
+| **Ügyfélportál** | `/eaisybooks/client-portal` | `ExternalLink` | Az ügyfelek számára generált magic-linkes bizonylatpótló felület konfigurációja és előnézete |
+
+**Adminisztrációs Csoportok (iroda_admin & senior_könyvelő jogosultság):**
+- **Iroda:** Könyvelők kezelése (`/eaisybooks/admin/accountants`), Irodai beállítások (`/eaisybooks/settings`)
+- **Szakmai:** Sablonok (`/eaisybooks/admin/templates`), Jogviszonykódok (`/eaisybooks/admin/job-codes`), Adómértékek (`/eaisybooks/admin/tax-parameters`), Jogszabály-frissítések (`/eaisybooks/admin/legal-updates`)
+- **Biztonság & Kormányzás:** Audit napló (`/eaisybooks/admin/audit-log`), GDPR kérelmek (`/eaisybooks/admin/gdpr`), Adatmegőrzési szabályzatok (`/eaisybooks/admin/data-retention`), Jogosultságkezelő mátrix (`/eaisybooks/admin/permission-matrix`)
+- **Támogatás:** Hibajegykezelés és belső support
+
+#### 2. Ügyfél Kontextus Mód (`/eaisybooks/:companyId/:dateRange/*`)
+Amikor a könyvelő kiválaszt egy ügyfelet a portfólióból, a sidebar átvált a cég-specifikus navigációs struktúrára. A fejlécben megjelenik a `CompanySwitcher` (amely UUID cserével a kiválasztott cégnél tartja az aktuális aloldalt) és a **"Vissza a portfólióhoz"** gomb.
+
+| Menüpont | Relatív Útvonal | Ikon | Leírás & Lapfülek (Tabs) |
+|---|---|---|---|
+| **Áttekintés** | `/overview` | `LayoutDashboard` | Ügyfél KPI-k, havi zárási státusz, hiányzó tételek, gyorslinkek |
+| **Cégprofil** | `/profile` | `Building2` | Cégadatok, adószámok, bankszámlák, képviseleti adatok |
+| **Számlák** | `/invoices` | `FileText` | Számlák listája, NAV számlák, jóváhagyási státuszok, bizonylatcsatolmányok |
+| **Hiányzó számlák** | `/missing-invoices` | `FileWarning` | Cégre szűrt hiányzó bizonylatok, interaktív email előnézeti modál küldés előtt |
+| **Egyéni Vállalkozás (EV)** | `/ev` | `Coins` | **8 Tab:** Áttekintés, Kalkulátor (Átalány/VSZJA/KATA), Pénztárkönyv (zárási varázslóval), Járulékok (TB/szocho/min. alapok), Bevallások (XML), Nyilvántartások (14 féle), Adóoptimalizáció, Életút |
+| **Társasági Adó (TAO / KIVA)** | `/tao` | `Landmark` | **7 Tab:** Áttekintés, Adózási mód, Adónaptár, Év végi zárás, Társasági adó kalkulátor, KIVA kalkulátor, TAO vs KIVA összehasonlító |
+| **Bérszámfejtés** | `/payroll` | `Calculator` | **5 Tab:** Ciklus (4 fázisú workflow), Foglalkoztatottak (többes jogviszony, kiléptető varázsló), NAV bevallások (08 ÁNYK XML rekonstrukció), Ügyfélportál (e-bérjegyzék), Beállítások |
+| **NAV Bevallások** | `/payroll/filings` | `FileCheck` | Havi 08-as, T1041, M30 és egyéb bérügyi bevallások állapota és XML exportja |
+| **Könyvelési Szabályok** | `/prompts` | `Sparkles` | Egyedi céges AI kontírozási és számlaosztályozási szabálytár (`company_prompt_rules`) |
+| **Beállítások** | `/settings` | `Settings` | Lapfüles cégbeállítások (Radix UI Tabs): Általános, Cégkapu, Bér paraméterek, Értesítések |
+| **Cégkapu / KÜNY** | `/cegkapu` | `Inbox` | Hivatalos tárhely szinkronizáció, NAV és hatósági levelek letöltése |
+| **Képviselet / EGYKE** | `/representation` | `ShieldCheck` | EGYKE meghatalmazások nyilvántartása, érvényességi idők, jogosultsági körök |
+| **Adatmegőrzés** | `/data-retention` | `Archive` | Számviteli törvény (Sztv.) szerinti kötelező bizonylat-megőrzési szabályzatok és naplózás |
+| **Cégstruktúra** | `/structure` | `Network` | Telephelyek, fióktelepek, költséghelyek és szervezeti egységek kezelése |
+
+---
+
+### Szerepkör-alapú Jogosultsági Rendszer (eaisyBooks RBAC)
+
+Az eaisyBooks négy hierarchikus irodai szerepkört alkalmaz az `accounty_assignments` táblából, amelyet az `accounty_module_permissions` tábla segítségével az adminisztrátor felhasználónként és modulonként egyedileg felülbírálhat:
+
+| Szerepkör (`role`) | Megnevezés | Hatáskör & Menühozzáférés |
 |---|---|---|
-| Sidebar | AppSidebar (19 menüpont) | Saját eaisyBooks sidebar (9 menüpont + payroll submenus) |
-| URL pattern | `/:companyId/:dateRange/page` | `/accounty/page` |
-| Company context | GlobalDatePicker + CompanySelector | Nem használ CompanySelector (multi-client) |
-| Branding | eaisyBill | eaisyBill \| eaisyBooks (piros gradiens) |
-| Role | Owner/Admin/Member/Employee | admin/könyvelő |
-| Command palette | Nincs | Ctrl+K — oldalak + ügyfelek keresése |
+| `iroda_admin` | Irodavezető | Teljes körű hozzáférés minden modulhoz, adminisztrációs felülethez, könyvelők hozzárendeléséhez és a jogosultsági mátrixhoz. |
+| `senior_könyvelő` | Senior Könyvelő | Portfólió, bérszámfejtés, TAO/KIVA, EV, riportok, jóváhagyási sor és szakmai beállítások. Nem szerkesztheti az irodai könyvelőket és a jogosultsági mátrixot. |
+| `könyvelő` | Könyvelő | A hozzárendelt ügyfelek teljes körű operatív kezelése (számlák, bér, EV, TAO, hiányzó tételek, naptár). Nincs hozzáférése az irodai admin menühöz. |
+| `asszisztens` | Asszisztens | Operatív adatrögzítés, hiányzó bizonylatok követése és számlafeltöltés. Zárási műveletek és jóváhagyások korlátozva. |
+
+**Adatbázis-szintű Modul Felülbírálat (DB Overrides):**
+A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accounty_module_permissions` táblában az adott felhasználóhoz létezik bejegyzés (`can_read`, `can_write`), a rendszer ezt veszi figyelembe a statikus szerepkör helyett.
 
 ---
 

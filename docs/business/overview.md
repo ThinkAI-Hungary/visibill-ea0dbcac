@@ -26,50 +26,57 @@ A rendszer három fő problémát old meg:
 
 ## Kinek készül?
 
-### Elsődleges célcsoport
-**Magyar KKV cégvezetők** (Kft, Bt, Zrt), akik:
-- Kettős könyvvitelt vezetnek
-- Szeretnék átlátni a cégük pénzügyi helyzetét valós időben
-- Nem akarnak órákat tölteni adminisztrációval
-- Könyvelőjükkel hatékonyabban szeretnének együttműködni
+A platform két szorosan együttműködő, de önálló alkalmazási rétegből áll:
 
-### Másodlagos célcsoport (jövőkép)
-- **Könyvelő irodák**, amelyek több ügyfél pénzügyeit kezelik egyetlen felületen
-- **E-commerce vállalkozók**, akiknek futárszolgálati elszámolásokat is kezelniük kell
+### 1. Elsődleges célcsoport: Magyar KKV Cégvezetők & Pénzügyesek (`eaisyBill`)
+- Kettős könyvvitelt vezető kis- és középvállalkozások
+- Szeretnék átlátni a cégük valós pénzügyi helyzetét valós időben
+- Automatizálni kívánják a számlabegyűjtést, számlafeldolgozást és banki tranzakció-párosítást
+- Szoros és gördülékeny digitális kapcsolatot akarnak fenntartani a könyvelőjükkel
+
+### 2. Egyenrangú szakmai célcsoport: Könyvelőirodák, Könyvelők & Bérszámfejtők (`eaisyBooks`)
+- Több tucat vagy több száz ügyfélcég könyvelését és bérszámfejtését végző szolgáltatók
+- Havi zárási folyamatok, jóváhagyási sorok és hiányzó bizonylatok hatékony követése
+- Egyéni vállalkozások (EV) átalány, VSZJA és KATA könyvelése, pénztárkönyv zárása
+- Teljes körű havi bérszámfejtési ciklus, NAV 08-as XML import és rekonstrukció
+- TAO és KIVA adónemek, előlegek és év végi korrekciós zárások kezelése
+- Hivatalos hatósági kapcsolatok: Cégkapu / KÜNY tárhely szinkronizáció és EGYKE meghatalmazások
+
+### 3. Iparági specializációk
+- **E-commerce vállalkozások:** futárszolgálati (GLS, DPD, Foxpost, Packeta) és fizetési kapu (Stripe, Barion, Europay POS) elszámolások
+- **Kiskereskedelmi cégek:** több regiszteres házipénztár és napi készpénzforgalom kezelése
 
 ---
 
 ## Hogyan működik?
 
 ### 1. Számlák beérkezése
-A számlák három úton juthatnak be a rendszerbe — a cégvezetőnek csak egyet kell ismernie:
+A számlák több csatornán juthatnak be a rendszerbe:
+- **Email:** A cég egyedi email címet kap (pl. `cegnev@inbox.visibill.hu`), ahonnan a rendszer a mellékleteket automatikusan feldolgozza.
+- **NAV szinkronizáció:** Közvetlen NAV Online Számla 3.0 API szinkronizáció a bejövő és kimenő számlákra.
+- **Kézi és tömeges feltöltés:** PDF, kép, vagy ZIP archívumok feltöltése drag-and-drop módon.
+- **Cégkapu / KÜNY:** Hatósági levelek és bizonylatok közvetlen letöltése.
 
-- **Email:** A cég kap egy egyedi email címet (pl. `cegnev@inbox.visibill.hu`). Amit ide küldenek, az automatikusan feldolgozásra kerül.
-- **NAV szinkronizáció:** A rendszer közvetlenül a NAV Online Számla rendszeréből kéri le a bejövő és kimenő számlákat.
-- **Kézi feltöltés:** PDF vagy fénykép feltöltése a felületen.
-
-### 2. AI feldolgozás
+### 2. AI feldolgozás & Tanulás
 Minden beérkezett dokumentumot a rendszer automatikusan feldolgoz:
-- Felismeri a szöveget (OCR)
-- Kinyeri a releváns adatokat (szállító, összeg, ÁFA, fizetési határidő)
-- Hozzárendeli a megfelelő főkönyvi kategóriához
-- Megtanulja a cég egyedi kategorizálási szokásait
+- Optikai szövegfelismerés (Vision OCR + MarkItDown)
+- Strukturált adatkinyerés (partner, adószám, deviza, bruttó/nettó/áfa, fizetési határidő)
+- Automatikus kontírozás a számlatükör és a cég egyedi könyvelési szabálytára (`company_prompt_rules`) alapján
+- Könyvelői visszajelzések és kézi korrekciók alapján folyamatos tanulás
 
-### 3. Banki egyeztetés
-A banki kivonat feltöltése után a rendszer automatikusan összerendeli a tranzakciókat a számlákkal — a cégvezetőnek csak a kétes eseteket kell jóváhagynia.
+### 3. Banki egyeztetés & Párosítás
+A banki kivonatok (CSV, CAMT.053) feltöltése után az algoritmus automatikusan összerendeli a tranzakciókat a számlákkal többdimenziós heurisztika alapján (partner, összeg, közlemény, devizakonverzió).
 
-### 4. Pénzügyi áttekintés
-Az irányítópulton egy pillantás alatt látható:
-- Bevételek és kiadások alakulása
-- Kintlévőségek (ki mennyivel tartozik, mióta)
-- Lejárt számlák (automatikus fizetési felszólítás küldés)
-- Pénzforgalmi előrejelzés
+### 4. Pénzügyi áttekintés & Könyvelői Jóváhagyási Kapu
+- Dashboard és KPI mutatók a cégvezetőnek
+- Dedikált könyvelői jóváhagyási sor az ellenőrzésre váró tételekről
+- Lejárt követelések kezelése és hiányzó bizonylatok magic-linkes bekérése az ügyféltől
 
-### 5. Éves zárás
-Az év végén a rendszer az összegyűjtött adatokból elkészíti:
-- Az eredménykimutatást
-- A mérleget
-- Az éves beszámolót (kiegészítő mellékletekkel)
+### 5. Zárás & Hatósági Bevallások
+- Havi bérszámfejtési ciklus lezárása, bérjegyzékek kiküldése és NAV 08 ÁNYK XML export
+- Havi / negyedéves ÁFA bevallás (2665) és 65M összesítő nyilatkozat összeállítása
+- Egyéni vállalkozói pénztárkönyv zárása és járulékbevallások (58-as)
+- Éves mérleg, eredménykimutatás, TAO és KIVA kalkuláció
 
 ---
 
@@ -77,22 +84,26 @@ Az év végén a rendszer az összegyűjtött adatokból elkészíti:
 
 | Funkció | Mit csinál? | Kinek hasznos? |
 |---------|-------------|----------------|
-| **Számlafeldolgozás** | Email, NAV, feltöltés → automatikus adatkinyerés | Minden felhasználó |
-| **NAV szinkronizáció** | Bejövő + kimenő számlák lekérdezése a NAV-ból | Minden magyar cég |
-| **Banki tranzakció párosítás** | CSV import → AI párosítás számlákhoz | Cégvezetők |
-| **Főkönyv (GL)** | Automatikus kategorizálás, számlatükör | Könyvelők, cégvezetők |
+| **Számlafeldolgozás** | Email, NAV, feltöltés → automatikus OCR és adatkinyerés | Cégvezetők, könyvelők |
+| **NAV szinkronizáció** | Bejövő + kimenő számlák kétirányú szinkronja NAV v3 API-val | Minden magyar cég |
+| **Banki tranzakció párosítás** | CSV/CAMT import → AI párosítás számlákhoz | Cégvezetők, könyvelők |
+| **Főkönyv (GL) & Kontírozás** | Automatikus kategorizálás, számlatükör, könyvelési naplók | Könyvelők |
+| **Portfólió Menedzsment** | Grid, Lista és Kanban nézet az összes ügyfél zárási státuszával | Könyvelőirodák (eaisyBooks) |
+| **Jóváhagyási Sor & Hiányzók** | Bizonylatok kötegelt jóváhagyása, hiányzók magic-link bekérése | Könyvelők, ügyfelek |
+| **Bérszámfejtési Ciklus** | 4 fázisú havi bér, jelenlét, cafeteria, bérjegyzék, utalási lista | Bérszámfejtők, könyvelők |
+| **NAV 08 XML Rekonstrukció** | Korábbi havi 08-as bevallásokból dolgozók és bérek visszaállítása | Könyvelők (eaisyBooks) |
+| **EV & Egyszeres Könyvvitel** | Átalány/VSZJA/KATA, pénztárkönyv, 14 nyilvántartás, járulékok | Egyéni vállalkozók, könyvelők |
+| **TAO & KIVA Modul** | Évközi követés, év végi korrekciós zárás, kalkulátorok | Társas vállalkozások, könyvelők |
+| **Cégkapu & KÜNY Tárhely** | Hivatalos tárhely szinkronizáció és letöltés | Könyvelők, cégvezetők |
+| **Képviselet & EGYKE** | Képviseleti jogosultságok nyilvántartása | Könyvelőirodák |
+| **Könyvelési Szabálytár** | Cégre szabott AI szabályok és promptok könyvtára | Könyvelők |
+| **Irodai Jogosultságok (RBAC)**| 4 szintű szerepkör és modul-szintű adatbázis felülbírálat | Irodavezetők |
 | **Kintlévőség kezelés** | Lejárt számlák nyomon követése, felszólítás küldés | Cégvezetők |
-| **Eredménykimutatás** | Bevételek és ráfordítások automatikus összesítése | Könyvelők |
-| **Mérleg** | Eszközök és források kimutatása | Könyvelők |
-| **Éves beszámoló** | Teljes beszámoló összeállítás és véglegesítés | Könyvelők, cégvezetők |
-| **Tárgyi eszközök** | Eszköznyilvántartás, értékcsökkenés kalkuláció | Cégvezetők |
-| **Bérek & járulékok** | Bérjegyzék feldolgozás, bérköltség nyilvántartás | Cégvezetők |
-| **Munkaidő nyilvántartás** | Dolgozók munkaideje, szabadságkezelés | HR / cégvezetők |
-| **Futárszolgálat riportok** | GLS, MPL, DPD, FoxPost stb. elszámolások | E-commerce cégek |
-| **Házipénztár** | Több regiszter (pénztár), több deviza, alapertelm. regiszter, szabály-alapú tr. elosztás | Kiskereskedelmi cégek |
-| **Árfolyamok** | MNB napi árfolyamok (SOAP API, auto-sync), devizás árfolyam-különbözet dashboard | Exportáló cégek |
-| **XML főkönyv import** | Könyvelőprogram XML főkönyvi kivonat feltöltés és feldolgozás | Könyvelők |
-| **EV modul** | Egyéni vállalkozó kezelés: 3 adóforma (átalány/VSZJA/KATA), járulék-kalkuláció minimumjárulékkal, pénztárkönyv, 14 nyilvántartás, bevallások, adóforma-összehasonlítás | Könyvelők (eaisyBooks) |
+| **Éves beszámoló** | Eredménykimutatás, mérleg és kiegészítő melléklet | Könyvelők, cégvezetők |
+| **Tárgyi eszközök (TENY)** | Eszköznyilvántartás, értékcsökkenés kalkuláció | Cégvezetők, könyvelők |
+| **Futárszolgálat riportok** | GLS, MPL, DPD, FoxPost elszámolások feldolgozása | E-commerce cégek |
+| **Házipénztár** | Több regiszter, több deviza, szabály-alapú pénztárkönyvelés | Kiskereskedelmi cégek |
+| **Árfolyamok** | MNB napi árfolyamok, devizás árfolyam-különbözet dashboard | Exportáló/importáló cégek |
 
 ---
 
