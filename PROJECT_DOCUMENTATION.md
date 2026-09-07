@@ -892,6 +892,13 @@ npm run preview      # Preview production build
   - Replaced hardcoded blue backgrounds and label colors in `ClientProfileTab.tsx` with dynamic theme design system tokens.
   - Removed `dark:bg-slate-900/50` from table rows and standardized row styling in `ClientInvoicesPage.tsx` to use neutral onyx cards and row hover highlights.
 
+### Version 1.7.0 (2026-09-07)
+- **ÁFA Arányosítás (Pro-rata VAT Allocation) Module (Áfa tv. 123. § & 5. sz. melléklet):**
+  - **Database Migration:** Added Supabase migration (`20260907120000_vat_pro_rata_schema.sql`) for `vat_deductibility_enum`, `vat_pro_rata_settings` (method 9a vs 9b & $L(H)$ storage), and `vat_pro_rata_periods`.
+  - **Worker Processor:** Developed `vat_pro_rata_processor.py` in the worker to calculate statutory $L(H)$ pro-rata ratios, enforce 2-decimal ceiling rounding (`ROUND_CEILING`), exclude tangible asset sales ($1\text{xx}$ accounts), incorporate non-taxable subsidies in denominators, and split mixed VAT lines (`split_pro_rata_vat_line`) into deductible ($466$) and expense ($532$) portions.
+  - **Frontend UI:** Integrated ÁFA arányosítás settings card (`VatProRataSettingsCard.tsx`) and interactive formula calculator & simulator (`VatProRataCalculatorModal.tsx`) directly into the main VAT return view (`VatCalculatorView.tsx`).
+  - **Unit Testing:** Added full pytest unit test suite (`test_vat_pro_rata.py`) validating ceiling rounding, subsidy calculations, asset exclusions, and line splits.
+
 ### Version 1.6.0 (2026-08-08)
 - **BinX CSV Bank Statement Processing:**
   - Fixed CSV converter column truncation bug by dynamically computing `max_cols` across all CSV rows instead of defaulting to the first row (which was often metadata / 2 columns), preserving all columns in the converted Markdown table.
