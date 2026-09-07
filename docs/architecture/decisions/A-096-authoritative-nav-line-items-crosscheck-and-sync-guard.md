@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-06  
-**Utoljára frissítve:** 2026-09-06  
+**Utoljára frissítve:** 2026-09-07  
 
 ---
 
@@ -50,11 +50,15 @@ A PostgREST lekérdezési korlátait feloldva 4 szintű lekérdezési stratégi�
 - **Ütközésvédelem:** Ha a célcégnél már létezik egy másik invoice rekord pontosan a NAV hivatalos sorszámával, a rendszer a sorszámot nem írja felül (elkerülve a Postgres 23505 megsértését), de a `nav_status = 'verified'` és `statusz = 'feldolgozott'` státuszt beállítja.
 - **Trigger szinergia:** A bizonylatszám NAV sorszámra módosítása aktiválja a `mark_nav_invoice_as_submitted` adatbázis triggert, ami a `nav_invoices` táblában automatikusan beállítja a `submitted = true` értéket, aktiválva a számlakép ikont a felületen.
 
-### 5. Tételsorok átvétele és metaadat megőrzés (`save_nav_items_to_invoice`)
-- Ha a NAV számlához tartoznak tételsorok (`nav_invoice_items`), a worker idempotensen felülírja a feltöltött számla `invoice_items` rekordjait a hivatalos tételekkel.
-- A natív mezőkön felül hiánytalanul átörökíti a `gl_classifications` (főkönyvi besorolás), `project_id`, `exclude_from_accounting`, `deductible_percentage` és `notes` mezőket.
+### 5. NAV ÁFA-összeg Automatikus Átemelése (Authoritative NAV VAT Override — 2026-09-07)
+- Amennyiben a számlához sikeresen beazonosításra került a NAV számlapár, a worker összeveti a számlaképről kinyert ÁFA összeget (`extraction.afa_osszeg_osszesen`) a NAV számla hivatalos ÁFA értékével (`nav_invoices.invoice_vat_amount`).
+- Ha az ÁFA összegek eltérnek (pl. OCR elütés, kerekítés vagy formázási hiba miatt), a rendszer az `apply_nav_verified_status` hívás során automatikusan beemeli a hivatalos NAV ÁFA összeget az `invoices.afa_osszeg_osszesen` mezőbe (mind a normál mentésnél, mind a 23505 ütközésvédelmi ágon).
 
-### 6. Robusztus Fallback
+### 6. Tételsorok Átvétele (Ideiglenesen felfüggesztve — 2026-09-07)
+- A korábbi közvetlen tételsormásolás (`save_nav_items_to_invoice`) az üzleti döntés alapján **ideiglenesen fel van függesztve**.
+- A védőháló a NAV számla fejlécének hitelesítését (`nav_status = 'verified'`), a hivatalos bizonylatszám beállítását és az ÁFA-összeg korrekcióját végzi el, míg a tételsoroknál változatlanul az OCR/LLM által kinyert tételek kerülnek mentésre (`save_line_items`).
+
+### 7. Robusztus Fallback
 - Ha nincs NAV számla találat, vagy a NAV-ban 0 tétel található (egyszerűsített adatközlés vagy még nem letöltött részletek): a worker zökkenőmentesen megtartja az AI által kinyert tételeket (`save_line_items`).
 
 ---

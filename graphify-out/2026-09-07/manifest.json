@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788753437.0682495,
+    "mtime": 1788697026.913969,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -9210,8 +9210,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md": {
-    "mtime": 1788756157.8088841,
-    "ast_hash": "2439cb34ec8af71fd5503e450adbfcee",
+    "mtime": 1788657258.7989721,
+    "ast_hash": "4ddd5f974afd2c11c3bdaf40b0305b53",
     "semantic_hash": ""
   },
   "supabase/migrations/20260906143000_add_created_at_to_nav_sync_logs.sql": {
