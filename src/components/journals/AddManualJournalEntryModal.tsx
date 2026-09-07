@@ -649,8 +649,8 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                               }
                             }}
                             className="h-8 text-right font-semibold text-xs min-w-[120px] w-full"
-                            min="0.01"
-                            step="1"
+                            min="0"
+                            step="any"
                           />
                         </td>
 

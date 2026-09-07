@@ -700,8 +700,8 @@ export default function OpeningJournalWizardModal({
                                   }
                                 }}
                                 className="h-8 text-right font-semibold text-xs min-w-[120px] w-full focus:border-primary focus-visible:border-primary"
-                                min="0.01"
-                                step="1"
+                                min="0"
+                                step="any"
                               />
                             </td>
                             <td className="py-2 px-3">
