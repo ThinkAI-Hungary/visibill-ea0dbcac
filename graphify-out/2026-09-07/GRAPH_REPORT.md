@@ -1,16 +1,16 @@
 # Graph Report - eaisybill-prod  (2026-09-07)
 
 ## Corpus Check
-- 1716 files · ~2,236,485 words
+- 1716 files · ~2,236,529 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 8856 nodes · 21256 edges · 689 communities (559 shown, 130 thin omitted)
+- 8856 nodes · 21260 edges · 687 communities (559 shown, 128 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 40 edges (avg confidence: 0.81)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2f960eca`
+- Built from commit: `5eff7128`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -670,8 +670,6 @@
 - [[_COMMUNITY_Community 680|Community 680]]
 - [[_COMMUNITY_Community 681|Community 681]]
 - [[_COMMUNITY_Community 682|Community 682]]
-- [[_COMMUNITY_Community 683|Community 683]]
-- [[_COMMUNITY_Community 684|Community 684]]
 - [[_COMMUNITY_Community 697|Community 697]]
 - [[_COMMUNITY_Community 702|Community 702]]
 - [[_COMMUNITY_Community 704|Community 704]]
@@ -705,15 +703,15 @@
 - 2-file cycle: `src/features/invoices/context/InvoiceContext.tsx -> src/features/invoices/context/useInvoiceContext.ts -> src/features/invoices/context/InvoiceContext.tsx`
 - 2-file cycle: `src/components/ui/custom-tooltip.tsx -> src/components/ui/tooltip.tsx -> src/components/ui/custom-tooltip.tsx`
 
-## Communities (689 total, 130 thin omitted)
+## Communities (687 total, 128 thin omitted)
 
 ### Community 0 - "Financial Operations & Banking"
 Cohesion: 0.11
 Nodes (19): AppModeSwitcher, Content Skeleton, Copyable Cell, Egyedi Komponensek (Nem shadcn/ui), FeedbackFab & FeedbackDialog, Financial Skeleton, GlobalDatePicker, iOS Toggle (+11 more)
 
 ### Community 1 - "Core Platform & Infrastructure"
-Cohesion: 0.04
-Nodes (50): AccountyRole, useAccountyRole(), CompanySwitcher(), AccountantUser, Assignment, CompanyInfo, CONFIGURABLE_MODULES, ModulePermRow (+42 more)
+Cohesion: 0.05
+Nodes (42): AccountyRole, useAccountyRole(), AccountantUser, Assignment, CompanyInfo, CONFIGURABLE_MODULES, ModulePermRow, PermissionMatrixPage() (+34 more)
 
 ### Community 2 - "Invoice & Subscription Management"
 Cohesion: 0.05
@@ -745,11 +743,11 @@ Nodes (37): activityGrid, activityItem, activityItemError, container, dateRange,
 
 ### Community 9 - "Accounty Accountyrolecontext Useaccountyrole"
 Cohesion: 0.10
-Nodes (42): EvChamberPage(), DetailRow(), EvComparePage(), FORM_COLORS, FORM_ICONS, QUARTER_DEADLINES, QUARTER_LABELS, EvEntrepreneurialBasePage() (+34 more)
+Nodes (41): EvChamberPage(), DetailRow(), EvComparePage(), FORM_COLORS, FORM_ICONS, QUARTER_DEADLINES, QUARTER_LABELS, EvEntrepreneurialBasePage() (+33 more)
 
 ### Community 10 - "Accounty Clientinvoicespage Clientinvoicespage"
-Cohesion: 0.06
-Nodes (47): ACTION_META, ClientDetailsPage(), DEFAULT_META, RecentActivities(), ClientInvoicesPage(), ClientMissingInvoicesPage(), MissingItemForEmail, BlockingCategory (+39 more)
+Cohesion: 0.07
+Nodes (35): ClientDetailsPage(), ClientMissingInvoicesPage(), ClientMissingInvoicesReportPage(), COLORS, defaultBarData, defaultPieData, MissingItemForEmail, CompanyAccessCard() (+27 more)
 
 ### Community 11 - "Accounty Employeedetailspage Employeedetailspage"
 Cohesion: 0.16
@@ -757,15 +755,15 @@ Nodes (17): DunningDialog(), Props, BUCKETS, KintlevoAgingChart(), Props, Kintle
 
 ### Community 12 - "Accounty Generaterequestemail Addtoapprovalqueue"
 Cohesion: 0.08
-Nodes (25): AccountyErrorState(), AccountyErrorStateProps, EmployeeExitWizardPage(), EXIT_DOCS, REASONS, DOCUMENT_TEMPLATES, ExitDocument, STATUS_BADGE (+17 more)
+Nodes (24): AccountyErrorState(), AccountyErrorStateProps, EmployeeExitWizardPage(), EXIT_DOCS, REASONS, DOCUMENT_TEMPLATES, ExitDocument, STATUS_BADGE (+16 more)
 
 ### Community 13 - "Accounty Generaterequestemail Generatedemail"
 Cohesion: 0.17
 Nodes (11): A-042: Sztornó Számla Kézi Lezárás (Storno Settle) Architektúra, Biztonsági zárolás (unmark), Consequences, Context, Decision, `is_manual_payment` és row rendering, Kapcsolódó, Kétlépéses láncolat logika (+3 more)
 
 ### Community 14 - "Accounty Generaterequestemail Generateemailparams"
-Cohesion: 0.07
-Nodes (37): CegkapuSettingsPage(), DEFAULTS, FormData, KauType, TarhelyType, RepresentationPage(), SCOPE_OPTIONS, WIZARD_STEPS (+29 more)
+Cohesion: 0.10
+Nodes (23): CegkapuSettingsPage(), DEFAULTS, FormData, KauType, TarhelyType, CegkapuSettings, useCegkapuSettings(), useUpsertCegkapuSettings() (+15 more)
 
 ### Community 15 - "Accounty Generaterequestemail Generaterequestemail"
 Cohesion: 0.18
@@ -780,8 +778,8 @@ Cohesion: 0.10
 Nodes (36): PayrollCalculation, CafeteriaAllocation, CafeteriaTaxResult, CafeteriaWarning, calculateCafeteriaTax(), calculatePocketTax(), DEFAULT_2026_SZEP_LIMITS, formatCafeteriaSummary() (+28 more)
 
 ### Community 18 - "Accounty Generaterequestemail Messagestatus"
-Cohesion: 0.09
-Nodes (29): AccountingRedirectPage(), useAccountyClient(), EvInnovationLevyPage(), DataField(), EvMasterDataPage(), BookkeepingMode, CostRatio, EmploymentStatus (+21 more)
+Cohesion: 0.08
+Nodes (33): AccountingRedirectPage(), useAccountyClient(), EvInnovationLevyPage(), DataField(), EvMasterDataPage(), EvRecordsOverviewPage(), RECORDS, RecordType (+25 more)
 
 ### Community 19 - "Accounty Generaterequestemail Missingitemforemail"
 Cohesion: 0.02
@@ -792,28 +790,28 @@ Cohesion: 0.07
 Nodes (29): @vitejs/plugin-react, devDependencies, autoprefixer, eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals (+21 more)
 
 ### Community 21 - "Accounty Generaterequestemail Saveapprovalqueue"
-Cohesion: 0.06
-Nodes (49): AccountyScopedLayout(), ProtectedRoute(), ProtectedRouteProps, mockedExtractPageSegment, mockedUseEaisybillPermissions, mockedUseUserRole, queryClient, ScopedLayout() (+41 more)
+Cohesion: 0.08
+Nodes (29): InvoiceStatusTablesSkeleton(), MetricsGridSkeleton(), RevenueChartSkeleton(), VatChartSkeleton(), AddManualJournalEntryModal(), AuditImportHistoryModal(), AuditImportHistoryModalProps, GeneralLedgerComparisonTable() (+21 more)
 
 ### Community 22 - "Accounty Generaterequestemail Updatemessagebody"
 Cohesion: 0.07
-Nodes (36): Alert, AlertCategory, AlertLevel, AlertsCenterPage(), AlertState, CATEGORIES, LEVEL_CONFIG, ClientEvMainPage() (+28 more)
+Nodes (38): Alert, AlertCategory, AlertLevel, AlertsCenterPage(), AlertState, CATEGORIES, LEVEL_CONFIG, ClientEvMainPage() (+30 more)
 
 ### Community 23 - "Accounty Generaterequestemail Updatemessagestatus"
 Cohesion: 0.04
-Nodes (101): ApprovalQueuePage(), BalanceSheetWidgets(), AnnualReportContainer(), Invoice, SupplierInvoiceAssignment(), SupplierInvoiceAssignmentProps, VatA60Table(), VatCalculatorView() (+93 more)
+Nodes (91): ApprovalQueuePage(), BalanceSheetWidgets(), AnnualReportContainer(), Invoice, SupplierInvoiceAssignment(), SupplierInvoiceAssignmentProps, VatA60Table(), VatCalculatorView() (+83 more)
 
 ### Community 24 - "Accounty Mockdata Blockingcategory"
 Cohesion: 0.06
 Nodes (36): Automation, Data Management, Database Logs, Developer Contacts, Directory Structure, Documentation, Edge Function Logs, Email Integrations (+28 more)
 
 ### Community 25 - "Accounty Mockdata Blockingitem"
-Cohesion: 0.06
-Nodes (37): MODULE_OPTIONS, SOURCE_CONFIG, STATUS_CONFIG, CMRDocData, CMREscalationDialogProps, SiblingUpload, UploadRecord, formatDate() (+29 more)
+Cohesion: 0.27
+Nodes (8): formatDate(), formatDateTime(), InvoiceDetailPopup(), useNotesData(), NoteModal(), NoteModalProps, NotesPage(), Note
 
 ### Community 26 - "Accounty Mockdata Clientdata"
 Cohesion: 0.07
-Nodes (35): getStatus(), ENGINE_LABELS, EvCompanyCarTaxPage(), EvContribReturnPage(), QUARTER_LABELS, STATUS_CFG, EvContributionsPage(), EvHipaReturnPage() (+27 more)
+Nodes (36): getStatus(), ENGINE_LABELS, EvCompanyCarTaxPage(), EvContribReturnPage(), QUARTER_LABELS, STATUS_CFG, EvContributionsPage(), EvHipaReturnPage() (+28 more)
 
 ### Community 27 - "Accounty Sharedcomponents Animatednumber"
 Cohesion: 0.15
@@ -824,8 +822,8 @@ Cohesion: 0.09
 Nodes (21): compilerOptions, allowImportingTsExtensions, isolatedModules, jsx, lib, module, moduleDetection, moduleResolution (+13 more)
 
 ### Community 29 - "Accounty Types Blockingcategory"
-Cohesion: 0.07
-Nodes (37): AdminTaxParametersPage(), formatValue(), PARAM_LABELS, AuditLogPage(), EVENT_COLORS, EVENT_LABELS, EVENT_TYPES, CompanyPayrollSettingsPage() (+29 more)
+Cohesion: 0.10
+Nodes (25): AdminTaxParametersPage(), formatValue(), PARAM_LABELS, AuditLogPage(), EVENT_COLORS, EVENT_LABELS, EVENT_TYPES, GdprPage() (+17 more)
 
 ### Community 30 - "Accounty Types Blockingitem"
 Cohesion: 0.33
@@ -864,8 +862,8 @@ Cohesion: 0.04
 Nodes (46): 13 — Autentikáció & Onboarding, 1. eaisybill Jogosultsági Körök, 1. Profilok és Feliratkozások Automatikus Létrehozása, 2. eaisybooks (Accounty) Szerepkörök, 2. kattintás (token már felhasznált):, 2. Meghívási és Ellenőrzési Folyamat, 3. Kereszt-Alkalmazás Szerepkör-feloldás (Cross-App Role Resolution), 3. Könyvelők Áttérése (eaisybooks → eaisybill) (+38 more)
 
 ### Community 39 - "Contexts Companycontext Company"
-Cohesion: 0.12
-Nodes (17): ProductTourTooltip(), Theme, ThemeContext, ThemeContextType, ThemeProvider(), useTheme(), useHasEaisybillAccess(), AccountyTour() (+9 more)
+Cohesion: 0.08
+Nodes (30): ProductTour(), ProductTourProps, ProductTourTooltip(), DateRangeContext, DateRangeContextType, DateRangeProvider(), formatDate(), getInitialDates() (+22 more)
 
 ### Community 40 - "Contexts Daterangecontext Daterangeprovider"
 Cohesion: 0.12
@@ -900,12 +898,12 @@ Cohesion: 0.12
 Nodes (15): compilerOptions, allowImportingTsExtensions, isolatedModules, lib, module, moduleDetection, moduleResolution, noEmit (+7 more)
 
 ### Community 48 - "Eaisybill Prod Readme"
-Cohesion: 0.05
-Nodes (47): FUND_TYPES, Props, CATEGORIES, PRIORITIES, Props, STATUSES, Props, UNIT_TYPES (+39 more)
+Cohesion: 0.04
+Nodes (53): FUND_TYPES, Props, CATEGORIES, PRIORITIES, Props, STATUSES, Props, UNIT_TYPES (+45 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.13
-Nodes (16): CategoryAccordionItem(), CategoryAccordionItemProps, CategoryInvoice, formatCurrencyTotals(), CategoryAmountStat, CategoryAmountSummary(), CategoryAmountSummaryProps, CATEGORY_LABELS (+8 more)
+Cohesion: 0.15
+Nodes (17): RepresentationPage(), SCOPE_OPTIONS, WIZARD_STEPS, WizardData, AuditLogEntry, NavRepresentation, PortalStats, useAddNavRepresentation() (+9 more)
 
 ### Community 50 - "Fixed Assets Inventorycheckdialog Inventorycheckdi"
 Cohesion: 0.11
@@ -941,7 +939,7 @@ Nodes (11): 1. Context, 2. Decision, 3. Consequences, 4. Kapcsolódó Dokumentum
 
 ### Community 58 - "Hooks Useaccountydata Accountykpis"
 Cohesion: 0.03
-Nodes (116): KpiModalType, COLORS, MONTH_NAMES_HU, PromptRule, RULE_TEMPLATES, BankHintSelector(), BankHintSelectorProps, AssetActivationDialogProps (+108 more)
+Nodes (156): Filter, JobCodesPage(), MODULE_OPTIONS, SOURCE_CONFIG, STATUS_CONFIG, KpiModalType, COLORS, MONTH_NAMES_HU (+148 more)
 
 ### Community 59 - "Hooks Useaccountydata Accountymissingitem"
 Cohesion: 0.12
@@ -952,16 +950,16 @@ Cohesion: 0.12
 Nodes (16): 1. lépés: Kulcsszavak kinyerése, 2. lépés: Graphify query, 3. lépés: Döntés-keresés a 4 rétegben, 4. lépés: ⭐ Design Pattern-ek felderítése, 5. lépés: ⭐ Open / Partially Decided döntések feltárása, 6. lépés: Kontextus összesítő, 7. lépés: KÖTELEZŐ — Várd meg a jóváhagyást, a) Business Decisions (BRD) (+8 more)
 
 ### Community 61 - "Hooks Useaccountydata Auditlogentry"
-Cohesion: 0.03
-Nodes (118): BalanceSheetWidgetsProps, CategoryCard(), CategoryCardProps, Props, State, NylasEmailConnectProps, NylasToken, VatNav65ReplicaProps (+110 more)
+Cohesion: 0.02
+Nodes (183): Profile, SystemSettings, fetchManagementData(), postManagementData(), CompanyDetail, FilesData, OverviewData, UserDetail (+175 more)
 
 ### Community 62 - "Hooks Useaccountydata Colleaguestat"
 Cohesion: 0.14
 Nodes (12): Carousel, CarouselApi, CarouselContent, CarouselContext, CarouselContextProps, CarouselItem, CarouselNext, CarouselOptions (+4 more)
 
 ### Community 63 - "Hooks Useaccountydata Companyinvoice"
-Cohesion: 0.17
-Nodes (16): DocumentEngine, CustomHtmlSection, DocumentDescriptor, DocumentMetadata, DocumentSection, DocumentType, ExportFormat, ExportResult (+8 more)
+Cohesion: 0.16
+Nodes (16): HtmlPreviewAdapter, SpreadsheetAdapter, DocumentEngine, createPreviewBlobUrl(), downloadBlob(), DownloadOptions, downloadString(), DocumentDescriptor (+8 more)
 
 ### Community 64 - "Hooks Useaccountydata Fullreportdata"
 Cohesion: 0.17
@@ -976,8 +974,8 @@ Cohesion: 0.15
 Nodes (12): compilerOptions, allowJs, noImplicitAny, noUnusedLocals, noUnusedParameters, paths, skipLibCheck, strictNullChecks (+4 more)
 
 ### Community 67 - "Hooks Useaccountydata Monthlytrendpoint"
-Cohesion: 0.05
-Nodes (69): EvPortfolioDashboard, PayrollPortfolioPage, TaoPortfolioPage, ControlCenterUser, ControlCenterProps, InvoiceItemsDialogProps, InvoiceLineItem, ItemNoteCellProps (+61 more)
+Cohesion: 0.04
+Nodes (75): EvPortfolioDashboard, PayrollPortfolioPage, TaoPortfolioPage, ControlCenterUser, ControlCenterProps, InvoiceItemsDialogProps, InvoiceLineItem, ItemNoteCellProps (+67 more)
 
 ### Community 68 - "Hooks Useaccountydata Portalstats"
 Cohesion: 0.06
@@ -1037,7 +1035,7 @@ Nodes (13): 1. `useState` — Lokális Állapotkezelés, 2. `useEffect` — Mell
 
 ### Community 82 - "Community 82"
 Cohesion: 0.04
-Nodes (58): ChatMessage, MONTHS, PortalRequest, SettingsPage(), SettingsTab, AccountyCommunicationPrefs, AccountyCompanySummary, fetchAllMissingItems() (+50 more)
+Nodes (69): ChatMessage, MONTHS, PortalRequest, SettingsTab, AssignmentRow, CompanyRow, DeadlineRow, InvoiceStatus (+61 more)
 
 ### Community 83 - "Hooks Useaccountydata Useaccountyportaltokens"
 Cohesion: 0.25
@@ -1061,7 +1059,7 @@ Nodes (28): 1. Menü és routing, 2.1 ShipmentMatchingDashboard.tsx, 2.2 UploadH
 
 ### Community 88 - "Hooks Useaccountydata Usecompletedeadline"
 Cohesion: 0.18
-Nodes (10): Bankkivonatok és Tranzakciók, Bevezetés, Jegyzetek oldal integrációja, Kapcsolat, Kinek készült?, Mi a VisiBill?, Tartalomjegyzék, Tranzakciós feljegyzések (Jegyzetek) készítése (+2 more)
+Nodes (10): Bejelentkezés, Bevezetés, Elfelejtett jelszó, Kapcsolat, Kinek készült?, Mi a VisiBill?, Regisztráció és bejelentkezés, Tartalomjegyzék (+2 more)
 
 ### Community 89 - "Hooks Useaccountydata Usegenerateportaltoken"
 Cohesion: 0.43
@@ -1076,8 +1074,8 @@ Cohesion: 0.25
 Nodes (7): Can I connect a custom domain to my Lovable project?, How can I deploy this project?, How can I edit this code?, Key Recent Features, Project info, Welcome to your Lovable project, What technologies are used for this project?
 
 ### Community 92 - "Hooks Useaccountydata Useresolvemissingitem"
-Cohesion: 0.08
-Nodes (27): ACCOUNTY_ADMIN_ONLY, ACCOUNTY_ALWAYS_ACCESSIBLE, ACCOUNTY_SENIOR_MODULES, AccountyModule, AccountyRole, ADMIN_ONLY_MODULES, ALL_MODULES, ASSISTANT_MODULES (+19 more)
+Cohesion: 0.06
+Nodes (44): AccountyRoleContext, AccountyRoleContextType, AccountyRoleProvider(), AccountyScopedLayout(), ACCOUNTY_ADMIN_ONLY, ACCOUNTY_ALWAYS_ACCESSIBLE, ACCOUNTY_SENIOR_MODULES, AccountyModule (+36 more)
 
 ### Community 93 - "Hooks Useaccountydata Useupdatekanbanstatus"
 Cohesion: 0.14
@@ -1104,8 +1102,8 @@ Cohesion: 0.22
 Nodes (8): 12 — Dialógusok & Felugró Ablakok, Activity Log Sheet, AlertDialog Portal Flash Fix (2026-06-24), Overlay Komponensek Összefoglaló, Overlay Stílus Konvenciók, Sheet (Oldalsó Panel), Tooltip Portal Pattern, Z-Index Rétegek
 
 ### Community 99 - "Hooks Usecompanylocations Usecompanylocations"
-Cohesion: 0.09
-Nodes (21): AssignmentRow, CompanyRow, DeadlineRow, InvoiceStatus, kanbanStatusMap, kanbanStatusReverse, MissingItemRow, useAccountyPortalTokens() (+13 more)
+Cohesion: 0.18
+Nodes (12): AssetDetailPanelProps, AssetListTableProps, DisposalDialogProps, InventoryCheckDialogProps, QrLabelDialogProps, ReactivationDialogProps, TransferDialogProps, AssetEvent (+4 more)
 
 ### Community 100 - "Hooks Usecompanysettings Usecompanysettings"
 Cohesion: 0.17
@@ -1148,8 +1146,8 @@ Cohesion: 0.40
 Nodes (4): name, organization_id, organization_slug, ref
 
 ### Community 112 - "Hooks Usedashboarddata Monthlydata"
-Cohesion: 0.35
-Nodes (8): escapeXml(), Filing08Data, Filing08EmployeeLine, generateFiling08Xml(), generateM30Xml(), parseTaxNumber(), baseData, baseEmployee
+Cohesion: 0.21
+Nodes (9): FeedbackDialog(), FeedbackFab(), FeedbackFabProps, LiveNotificationProvider(), _notifiedUploadIds, _pendingSessionUploads, ProtectedLayout(), RedirectTarget (+1 more)
 
 ### Community 113 - "Hooks Usedashboarddata Navvatdata"
 Cohesion: 0.36
@@ -1188,8 +1186,8 @@ Cohesion: 0.07
 Nodes (28): 1. Adatbázis Tábla: `app_error_logs`, 2.1 Frontend — `errorReporter.ts`, 2.2 Worker — `error_reporter.py`, 2.3 Edge Functions — error-logger utility, 2. Hiba Források, 3.1 Architektúra, 3.2 KPI Kártyák, 3.3 Szűrők (+20 more)
 
 ### Community 125 - "Hooks Usefixedassets Usecreatefixedasset"
-Cohesion: 0.05
-Nodes (55): extractErrorInfo(), initAuthHashHandler(), queryClient, IdleWarningModal(), OfflineBanner(), SupportModeBanner(), CompanyProvider(), renderAccountyRoutes() (+47 more)
+Cohesion: 0.06
+Nodes (45): extractErrorInfo(), initAuthHashHandler(), queryClient, IdleWarningModal(), OfflineBanner(), SupportModeBanner(), CompanyProvider(), renderAccountyRoutes() (+37 more)
 
 ### Community 129 - "Hooks Usefixedassets Usereactivateasset"
 Cohesion: 0.09
@@ -1200,8 +1198,8 @@ Cohesion: 0.10
 Nodes (19): ACCOUNTY_ROLE, AccountyRole, ACTIVE_DEADLINE_STATUSES, ACTIVE_MISSING_STATUSES, ADMIN_ROLES, CLIENT_STATUS, CLIENT_STATUS_LIST, ClientStatus (+11 more)
 
 ### Community 131 - "Hooks Usefixedassets Usetransferasset"
-Cohesion: 0.07
-Nodes (44): InvoiceBulkActionsBar(), InvoiceImagePreview(), InvoiceImagePreviewProps, signedUrlCache, Project, ProjectFlowchart(), ProjectFlowchartProps, useInvoiceContext() (+36 more)
+Cohesion: 0.08
+Nodes (31): InvoiceBulkActionsBar(), useInvoiceContext(), BulkDeleteDialog(), InvoiceApprovalDialog(), InvoiceDialogManager(), ListDuplicateDialog(), SuggestedInvoiceLinkDialog(), InvoiceFilterBar() (+23 more)
 
 ### Community 132 - "Community 132"
 Cohesion: 0.18
@@ -1224,8 +1222,8 @@ Cohesion: 0.13
 Nodes (18): DashboardMetrics, DashboardMetricsProps, PettyCashCurrencyBalance, RevenueExpensesChartProps, Category, DashboardMetrics, Invoice, MONTH_NAMES (+10 more)
 
 ### Community 142 - "Hooks Useinvoicefilters Invoicetab"
-Cohesion: 0.16
-Nodes (16): PdfDocumentAdapter, SpreadsheetAdapter, loadPdfLibraries(), loadSpreadsheetLibraries(), KeyValueSection, TableSection, TextSection, formatHungarianCurrency() (+8 more)
+Cohesion: 0.14
+Nodes (21): PdfDocumentAdapter, loadPdfLibraries(), loadSpreadsheetLibraries(), CustomHtmlSection, DocumentMetadata, DocumentSection, DocumentType, ExportResult (+13 more)
 
 ### Community 143 - "Hooks Useinvoicefilters Useinvoicefilters"
 Cohesion: 0.20
@@ -1236,8 +1234,8 @@ Cohesion: 0.17
 Nodes (11): 1. 📊 Frontend Lekérdező és Aggregációs RPC-k, 2. ✏️ Frontend Állapotmódosító és Üzleti RPC-k, 3. 📄 Kettős Könyvviteli Naplók (acc_*) RPC-k, 4. 📘 eaisyBooks és EV Modul RPC-k, 5. 🔐 Jogosultságkezelés és RLS Segédfüggvények, 6. ⚡ Queue, Worker és Job Management (PGMQ) RPC-k, 7. 🛠️ Platform és Management Üzemeltetési RPC-k, 8. 📧 Email Fiókok, Vault és Hitelesítő Adatok (+3 more)
 
 ### Community 148 - "Hooks Useleaverequests Leavestatus"
-Cohesion: 0.05
-Nodes (47): AccountyRoleContext, AccountyRoleContextType, AccountyRoleProvider(), AppLayout(), AppLayoutProps, ContentArea, TopBar, useIdleRoutePrefetch() (+39 more)
+Cohesion: 0.04
+Nodes (60): AccountyLayout(), AccountyLayoutInner(), CompanySwitcher(), useAccountyKpis(), AppLayout(), AppLayoutProps, ContentArea, TopBar (+52 more)
 
 ### Community 149 - "Hooks Useleaverequests Leavetype"
 Cohesion: 0.10
@@ -1252,8 +1250,8 @@ Cohesion: 0.13
 Nodes (14): ALLOWED_TABLES, ApiKeyRecord, authenticateApiKey(), BLOCKED_TABLES, corsHeaders, errorResponse(), json(), queryTable() (+6 more)
 
 ### Community 170 - "Community 170"
-Cohesion: 0.12
-Nodes (21): calculateInsurance(), MultiJobPage(), AccountyDocument, EmployeeJob, Filing, Transfer, useAccountyDocuments(), useAddDeclaration() (+13 more)
+Cohesion: 0.07
+Nodes (37): MissingInvoicesReportPage(), useAccountyClients(), AccountyClient, AccountyDocument, useAccountyDocuments(), useGenerateDocuments(), DOC_CATEGORIES, DocumentCenterPage() (+29 more)
 
 ### Community 171 - "Community 171"
 Cohesion: 0.20
@@ -1296,8 +1294,8 @@ Cohesion: 0.08
 Nodes (24): 1. réteg: Autentikáció (Supabase Auth), 2. réteg: Autorizáció — Row Level Security (RLS), 3. réteg: Edge Function Biztonság, 4. réteg: API Key Autentikáció (Külső Integrációk), 5. réteg: Credential Titkosítás (AES-256-GCM), 6. réteg: Audit Trail, 7. réteg: Worker Biztonság, 8. réteg: Frontend Biztonság (+16 more)
 
 ### Community 181 - "Community 181"
-Cohesion: 0.06
-Nodes (51): fetchManagementData(), postManagementData(), CompanyDetail, FilesData, OverviewData, UserDetail, Skeleton(), SkeletonList() (+43 more)
+Cohesion: 0.15
+Nodes (11): isUploadNotified(), activeStatuses, CMREscalationDialog, cmrStatuses, doneStatuses, pendingStatuses, processingErrorStatuses, processingStatuses (+3 more)
 
 ### Community 182 - "Community 182"
 Cohesion: 0.06
@@ -1432,8 +1430,8 @@ Cohesion: 0.15
 Nodes (12): Alkalmazási Terület, Az Alkalmazás Dióhéjban, Brand Logó, Design Filozófia, Design System Célja, eaisybill Design System — Áttekintés, Konvenciók Új Termékekhez, Multi-Product Design System (+4 more)
 
 ### Community 216 - "Community 216"
-Cohesion: 0.09
-Nodes (20): CompanyInvoice, AccountyClient, AccountyDeadline, AccountyKpis, AccountyMissingItem, AccountyTaxProfile, ClientInvoicesTabProps, ClientReportsTab() (+12 more)
+Cohesion: 0.08
+Nodes (26): ACTION_META, DEFAULT_META, RecentActivities(), ClientInvoicesPage(), BlockingCategory, blockingCategoryMeta, BlockingItem, ClientData (+18 more)
 
 ### Community 217 - "Community 217"
 Cohesion: 0.08
@@ -1457,7 +1455,7 @@ Nodes (23): 1. Portfólió Mód (`/eaisybooks/*`), 1. URL Struktúra, 1. 📊 Á
 
 ### Community 222 - "Community 222"
 Cohesion: 0.15
-Nodes (12): 14. Jövőbeli Döntések, 15. Követelmények Mátrix, 1. Összefoglaló, 8. HR & Munkaidő (eaisyBill), 9. Előfizetés & Árazás, eaisyBill követelmények, eaisyBooks követelmények, REQ-8.1: Munkaidő nyilvántartás (+4 more)
+Nodes (12): 14. Jövőbeli Döntések, 15. Követelmények Mátrix, 1. Összefoglaló, 6. NAV Integráció, 8. HR & Munkaidő (eaisyBill), eaisyBill követelmények, eaisyBooks követelmények, REQ-6.1: NAV Online Számla API v3 (+4 more)
 
 ### Community 223 - "Community 223"
 Cohesion: 0.29
@@ -1537,7 +1535,7 @@ Nodes (4): A-013: Scoped URL Routing Pattern, Consequences, Context, Decision
 
 ### Community 242 - "Community 242"
 Cohesion: 0.04
-Nodes (84): AccountyApp(), AccountyLayout(), AccountyLayoutInner(), OnboardingPage(), PrivacyConsent, PrivacyPolicyPage(), sections, FirmMembersCard() (+76 more)
+Nodes (81): ProfileSettingsPage(), PromptsPage(), CompanySelector(), EmailAliasManager(), InvoiceItemsDialog(), fmtHuf(), SzepCardTab(), UploadedFilesModal() (+73 more)
 
 ### Community 243 - "Community 243"
 Cohesion: 0.50
@@ -1564,12 +1562,12 @@ Cohesion: 0.10
 Nodes (20): 8b. eaisyBooks — Könyvelő Iroda Platform, REQ-8b.10: Ügyfél onboarding, REQ-8b.11: Ügyfélportál, REQ-8b.12: Adminisztráció (iroda_admin), REQ-8b.13: eaisyBooks RBAC adatmodell, REQ-8b.14: Egyéni Vállalkozói (EV) & Szervezeti Egyszeres Könyvvitel, REQ-8b.15: Társasági Adó (TAO) & Kisvállalati Adó (KIVA) Modul, REQ-8b.16: Cégkapu / KÜNY Tárhely Integráció (+12 more)
 
 ### Community 249 - "Community 249"
-Cohesion: 0.18
-Nodes (13): AssetActivationDialog(), AssetDetailPanel(), parseLocalDate(), AssetListTable(), generateInventoryNumber(), useAssetGlAccounts(), useCreateFixedAsset(), useFixedAssetDetail() (+5 more)
+Cohesion: 0.16
+Nodes (15): AssetActivationDialog(), AssetDetailPanel(), parseLocalDate(), AssetListTable(), DisposalDialog(), generateInventoryNumber(), useAssetGlAccounts(), useCreateFixedAsset() (+7 more)
 
 ### Community 250 - "Community 250"
-Cohesion: 0.10
-Nodes (13): BreadcrumbItem, COLOR_MAP, EmptyStateProps, ICON_COLOR_MAP, KpiCard(), KpiCardProps, Breadcrumb, BreadcrumbEllipsis() (+5 more)
+Cohesion: 0.09
+Nodes (19): CompanyPayrollSettingsPage(), DEFAULT_SETTINGS, PayrollSettings, Tab, TABS, BreadcrumbItem, COLOR_MAP, EmptyStateProps (+11 more)
 
 ### Community 251 - "Community 251"
 Cohesion: 0.67
@@ -1648,8 +1646,8 @@ Cohesion: 0.25
 Nodes (5): { createClient }, fs, missingParams, path, supabase
 
 ### Community 332 - "Community 332"
-Cohesion: 0.08
-Nodes (32): ExportButtonProps, Declaration, useDeclarations(), DeclarationArchivePage(), STATUS_BADGE, TYPE_COLORS, TYPE_LABELS, DECLARATION_TYPES (+24 more)
+Cohesion: 0.05
+Nodes (49): ExportButton(), ExportButtonProps, calculateInsurance(), MultiJobPage(), Declaration, EmployeeJob, Filing, Transfer (+41 more)
 
 ### Community 333 - "Community 333"
 Cohesion: 0.11
@@ -1800,8 +1798,8 @@ Cohesion: 0.15
 Nodes (16): APP_LOG_CATEGORY_MAP, appLogSubSource(), buildErrors(), buildQueuePayload(), categorizeError(), categoryLabel(), deleteAllErrors(), deleteErrors() (+8 more)
 
 ### Community 374 - "Community 374"
-Cohesion: 0.03
-Nodes (57): CycleStatusBadge(), KpiCard(), SpeedDialFab(), ItemNoteCell(), MetricCard(), LoadMoreSentinelRow(), formatCurrency(), JournalView() (+49 more)
+Cohesion: 0.04
+Nodes (53): CycleStatusBadge(), KpiCard(), SpeedDialFab(), ItemNoteCell(), MetricCard(), LoadMoreSentinelRow(), formatCurrency(), JournalView() (+45 more)
 
 ### Community 375 - "Community 375"
 Cohesion: 0.33
@@ -1936,8 +1934,8 @@ Cohesion: 0.15
 Nodes (12): 1. LÉPÉS: Kérés fogadása & Hipotézis, 2.1 Specifikációk beolvasása (`visibill-spec-lookup`), 2.2 Adatbázis lekérdezés (`execute_sql` via `supabase-visibill` — CSAK SELECT), 2.3 Kódbázis ellenőrzés, 2. LÉPÉS: Kontextus keresés & Read-Only Adatbázis ellenőrzés (KÖTELEZŐ), 3. LÉPÉS: Gyökérok Elemzés (Root Cause), 4. LÉPÉS: Kétkomponensű Jelentés & Módosítási Javaslat Generálása, 5. LÉPÉS: Végrehajtás & Validáció (KIZÁRÓLAG Jóváhagyás Után) (+4 more)
 
 ### Community 418 - "Community 418"
-Cohesion: 0.09
-Nodes (22): Profile, SystemSettings, ChangePasswordDialog(), EmailPreferences, CompanyMembersCard(), Profile, SystemSettings, VAT_REGIME_COLORS (+14 more)
+Cohesion: 0.25
+Nodes (7): Breadcrumb, BreadcrumbEllipsis(), BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator()
 
 ### Community 419 - "Community 419"
 Cohesion: 0.18
@@ -2005,11 +2003,11 @@ Nodes (8): InvoiceEditDialog(), CASH_TYPES, computePaymentStatus(), getPaymentSt
 
 ### Community 440 - "Community 440"
 Cohesion: 0.25
-Nodes (7): TimeEntry, MonthlyBalanceCard(), MonthlyBalanceProps, StatItem(), TimesheetTableProps, MonthlyTimesheetView(), MonthlyTimesheetViewProps
+Nodes (6): DrawerContent, DrawerDescription, DrawerFooter(), DrawerHeader(), DrawerOverlay, DrawerTitle
 
 ### Community 441 - "Community 441"
-Cohesion: 0.08
-Nodes (22): CASHBOOK_CATEGORIES, CashbookEntryForm(), CashbookEntryFormData, CashbookEntryFormProps, CategoryNode, EntryDirection, FLAT_CATEGORIES, KATA_ALLOWED_CATEGORIES (+14 more)
+Cohesion: 0.20
+Nodes (10): CASHBOOK_CATEGORIES, CashbookEntryForm(), CashbookEntryFormData, CashbookEntryFormProps, CategoryNode, EntryDirection, FLAT_CATEGORIES, KATA_ALLOWED_CATEGORIES (+2 more)
 
 ### Community 442 - "Community 442"
 Cohesion: 0.15
@@ -2064,8 +2062,8 @@ Cohesion: 0.33
 Nodes (5): A-031: Mailgun Webhook Robustness & Error Silencing, Consequences, Context, Decision, Kapcsolódó
 
 ### Community 455 - "Community 455"
-Cohesion: 0.03
-Nodes (159): Filter, JobCodesPage(), CATEGORIES, VARIABLES, CourierReportTabProps, MatchDetails, REPORT_LABELS, STATUS_CONFIG (+151 more)
+Cohesion: 0.04
+Nodes (137): CategoryAccordionItem(), CategoryAccordionItemProps, CategoryInvoice, formatCurrencyTotals(), CategoryAmountStat, CategoryAmountSummary(), CategoryAmountSummaryProps, CategoryCard() (+129 more)
 
 ### Community 456 - "Community 456"
 Cohesion: 0.33
@@ -2324,8 +2322,8 @@ Cohesion: 0.40
 Nodes (4): 📊 A 4 Fő Rate Limiting Algoritmus, 📖 Fogalom Meghatározása, ⏱️ Rate Limiting Algoritmusok (Túlterhelés Elleni Védelem), 💡 Válaszkódok & HTTP Fejlécek
 
 ### Community 529 - "Community 529"
-Cohesion: 0.05
-Nodes (35): AccountyErrorBoundary, Props, State, AccountyWelcomeWizardProps, FeatureCard(), ClientDeadline, DeadlineGroup, deadlineTypeTitle (+27 more)
+Cohesion: 0.06
+Nodes (29): AccountyErrorBoundary, Props, State, AccountyWelcomeWizardProps, FeatureCard(), OnboardingPage(), ErrorBoundary, ExportInvoiceItem (+21 more)
 
 ### Community 530 - "Community 530"
 Cohesion: 0.40
@@ -2508,8 +2506,8 @@ Cohesion: 0.33
 Nodes (5): A-091: Bank Statement Boundary Governance & Defense-in-Depth Summary Artifact Filtering, Consequences, Context, Decision, Kapcsolódó
 
 ### Community 580 - "Community 580"
-Cohesion: 0.16
-Nodes (17): useCopyToClipboard(), UseCopyToClipboardReturn, calculateHourlyCost(), calculateProjectLaborCost(), calculateTotalSalaryCost(), CompanyWorkSettings, EmployeeRate, formatHourlyRate() (+9 more)
+Cohesion: 0.10
+Nodes (24): useCopyToClipboard(), UseCopyToClipboardReturn, calculateHourlyCost(), calculateProjectLaborCost(), calculateTotalSalaryCost(), CompanyWorkSettings, EmployeeRate, formatHourlyRate() (+16 more)
 
 ### Community 581 - "Community 581"
 Cohesion: 0.33
@@ -2580,8 +2578,8 @@ Cohesion: 0.50
 Nodes (4): Confirmation Dialog (Idle Warning), Destructive Action Dialog, Dialog Footer Konvenciók, Standard Form Dialog
 
 ### Community 601 - "Community 601"
-Cohesion: 0.11
-Nodes (26): HtmlPreviewAdapter, XmlDocumentAdapter, createPreviewBlobUrl(), downloadBlob(), DownloadOptions, downloadString(), AnykHeaderOptions, buildAnykEnvelope() (+18 more)
+Cohesion: 0.12
+Nodes (21): XmlDocumentAdapter, AnykHeaderOptions, buildAnykEnvelope(), buildXmlTag(), escapeXml(), buildVatReturnHtml(), esc(), generateVatReturnPreviewUrl() (+13 more)
 
 ### Community 602 - "Community 602"
 Cohesion: 0.20
@@ -2616,8 +2614,8 @@ Cohesion: 0.33
 Nodes (6): Customer Portal, Stripe Integration, Subscription System, Subscription Tiers, Usage Flow, Usage Tracking
 
 ### Community 613 - "Community 613"
-Cohesion: 0.06
-Nodes (63): ClientMissingInvoicesReportPage(), COLORS, defaultBarData, defaultPieData, ClientPortalPage(), EmployeesPage(), ExitDocumentsPage(), ExportButton() (+55 more)
+Cohesion: 0.07
+Nodes (43): ClientPortalPage(), EmployeesPage(), ExitDocumentsPage(), FILING_TYPES, FilingsPage(), MONTHS, STATUS_MAP, CYCLE_STEPS (+35 more)
 
 ### Community 614 - "Community 614"
 Cohesion: 0.40
@@ -2756,8 +2754,8 @@ Cohesion: 0.25
 Nodes (7): mockDelete, mockEq, mockMaybeSingle, mockOrder, mockSelect, mockSingle, mockUpdate
 
 ### Community 657 - "Community 657"
-Cohesion: 0.33
-Nodes (6): LEAVE_STATUS_LABELS, LEAVE_TYPE_LABELS, LeaveStatus, LeaveType, useLeaveRequests(), LeavePanel()
+Cohesion: 0.07
+Nodes (37): AccountyApp(), PrivacyConsent, PrivacyPolicyPage(), sections, FirmMembersCard(), useAccountyPortalStats(), useUpdateClientOwner(), useUpdateKanbanStatus() (+29 more)
 
 ### Community 659 - "Community 659"
 Cohesion: 0.17
@@ -2801,7 +2799,7 @@ Nodes (4): PdfExportJob, formatBytes(), PdfExportBanner(), PdfExportBannerProps
 
 ### Community 674 - "Community 674"
 Cohesion: 0.50
-Nodes (4): Bejelentkezés, Elfelejtett jelszó, Regisztráció és bejelentkezés, Új fiók létrehozása
+Nodes (4): Bankkivonatok és Tranzakciók, Jegyzetek oldal integrációja, Tranzakciós feljegyzések (Jegyzetek) készítése, Tranzakciós fájlok feltöltése és törlése
 
 ### Community 675 - "Community 675"
 Cohesion: 0.50
@@ -2811,9 +2809,9 @@ Nodes (3): exportGlAnalyticalExcel(), exportGlExcel(), GLRow
 Cohesion: 0.50
 Nodes (4): Architecture Overview, Backend, External Integrations, Frontend
 
-### Community 684 - "Community 684"
+### Community 680 - "Community 680"
 Cohesion: 0.67
-Nodes (3): 6. NAV Integráció, REQ-6.1: NAV Online Számla API v3, REQ-6.2: Szinkronizáció stratégia
+Nodes (3): 9. Előfizetés & Árazás, REQ-9.1: Subscription tierek, REQ-9.2: Előfizetés scope
 
 ### Community 697 - "Community 697"
 Cohesion: 0.33
@@ -2834,22 +2832,22 @@ Nodes (17): InvoiceContextValue, InvoiceFilterContext, InvoiceFilterContextValue
 ## Knowledge Gaps
 - **4330 isolated node(s):** `entrypoint_path`, `name`, `files`, `verify_jwt`, `{ createClient }` (+4325 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **130 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **128 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `Community 374` to `Core Platform & Infrastructure`, `Email Processing Ecosystem`, `Invoice Type Definitions`, `Accounty Accountyrolecontext Useaccountyrole`, `Accounty Clientinvoicespage Clientinvoicespage`, `Accounty Employeedetailspage Employeedetailspage`, `Accounty Generaterequestemail Addtoapprovalqueue`, `Accounty Generaterequestemail Generateemailparams`, `Community 529`, `Accounty Generaterequestemail Messagestatus`, `Community 533`, `Accounty Generaterequestemail Updatemessagebody`, `Accounty Generaterequestemail Updatemessagestatus`, `Accounty Generaterequestemail Saveapprovalqueue`, `Accounty Mockdata Blockingitem`, `Accounty Mockdata Clientdata`, `Accounty Sharedcomponents Animatednumber`, `Accounty Types Blockingcategory`, `Components Emailpreferences Emailpreferences`, `Components Feedbackfab Feedbackfab`, `Components Scopedlayout Scopedlayout`, `Contexts Companycontext Company`, `Eaisybill Prod Readme`, `General Ledger Uploadchartofaccountsmodal Uploadch`, `Hooks Useaccountydata Accountyaccountant`, `Hooks Useaccountydata Accountykpis`, `Community 572`, `Hooks Useaccountydata Auditlogentry`, `Hooks Useaccountydata Colleaguestat`, `Hooks Useaccountydata Monthlytrendpoint`, `Community 580`, `Community 585`, `Community 77`, `Community 592`, `Community 82`, `Community 596`, `Community 602`, `Hooks Useaccountydata Useupdatekanbanstatus`, `Hooks Useaccountydata Useupsertcommunicationprefs`, `Community 607`, `Hooks Useaccountydata Useupserttaxprofile`, `Community 613`, `Hooks Usefixedassets Usetransferasset`, `Community 132`, `Community 651`, `Community 653`, `Hooks Useinvoicefilters Useinvoicefilters`, `Community 655`, `Hooks Useleaverequests Leavestatus`, `Community 664`, `Community 665`, `Community 669`, `Community 677`, `Community 170`, `Community 682`, `Community 683`, `Community 174`, `Community 175`, `Community 181`, `Community 184`, `Community 216`, `Community 242`, `Community 250`, `Community 332`, `Community 336`, `Community 367`, `Community 377`, `Community 418`, `Community 440`, `Community 441`, `Community 447`, `Community 455`, `Community 472`, `Community 475`, `Community 479`, `Community 485`, `Community 487`?**
+- **Why does `cn()` connect `Community 374` to `Core Platform & Infrastructure`, `Email Processing Ecosystem`, `Invoice Type Definitions`, `Accounty Accountyrolecontext Useaccountyrole`, `Accounty Clientinvoicespage Clientinvoicespage`, `Accounty Employeedetailspage Employeedetailspage`, `Accounty Generaterequestemail Addtoapprovalqueue`, `Accounty Generaterequestemail Generateemailparams`, `Community 529`, `Accounty Generaterequestemail Messagestatus`, `Community 533`, `Accounty Generaterequestemail Updatemessagebody`, `Accounty Generaterequestemail Updatemessagestatus`, `Accounty Generaterequestemail Saveapprovalqueue`, `Accounty Mockdata Clientdata`, `Accounty Sharedcomponents Animatednumber`, `Components Emailpreferences Emailpreferences`, `Components Feedbackfab Feedbackfab`, `Components Scopedlayout Scopedlayout`, `Contexts Companycontext Company`, `Eaisybill Prod Readme`, `Community 49`, `General Ledger Uploadchartofaccountsmodal Uploadch`, `Hooks Useaccountydata Accountyaccountant`, `Hooks Useaccountydata Accountykpis`, `Community 572`, `Hooks Useaccountydata Auditlogentry`, `Hooks Useaccountydata Colleaguestat`, `Hooks Useaccountydata Monthlytrendpoint`, `Community 580`, `Community 585`, `Community 77`, `Community 592`, `Community 82`, `Community 596`, `Community 602`, `Hooks Useaccountydata Useupdatekanbanstatus`, `Hooks Useaccountydata Useupsertcommunicationprefs`, `Community 607`, `Hooks Useaccountydata Useupserttaxprofile`, `Community 613`, `Hooks Usedashboarddata Monthlydata`, `Hooks Usefixedassets Usetransferasset`, `Community 132`, `Community 651`, `Community 653`, `Hooks Useinvoicefilters Useinvoicefilters`, `Community 655`, `Community 657`, `Hooks Useleaverequests Leavestatus`, `Community 664`, `Community 665`, `Community 669`, `Community 677`, `Community 681`, `Community 170`, `Community 682`, `Community 174`, `Community 175`, `Community 184`, `Community 216`, `Community 242`, `Community 250`, `Community 332`, `Community 336`, `Community 367`, `Community 377`, `Community 418`, `Community 440`, `Community 441`, `Community 447`, `Community 455`, `Community 472`, `Community 475`, `Community 479`, `Community 485`, `Community 487`?**
   _High betweenness centrality (0.044) - this node is a cross-community bridge._
 - **Why does `VisiBill - Project Documentation` connect `Accounty Mockdata Blockingcategory` to `Hooks Useaccountydata Invoicereportrow`, `Community 611`, `Community 678`, `Dashboard Dashboardskeleton Metriccardskeleton`, `Community 493`, `Fixed Assets Inventorycheckdialog Inventorycheckdi`, `Hooks Useaccountydata Accountycommunicationprefs`, `Hooks Useaccountydata Useaccountytaxprofile`, `Community 663`, `Community 635`?**
   _High betweenness centrality (0.030) - this node is a cross-community bridge._
-- **Why does `Common Workflows` connect `Hooks Useaccountydata Accountycommunicationprefs` to `Accounty Mockdata Blockingcategory`, `Hooks Useaccountydata Accountykpis`, `Accounty Types Clientdata`?**
+- **Why does `Common Workflows` connect `Hooks Useaccountydata Accountycommunicationprefs` to `Accounty Mockdata Blockingcategory`, `Hooks Useaccountydata Auditlogentry`, `Accounty Types Clientdata`?**
   _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **What connects `entrypoint_path`, `name`, `files` to the rest of the system?**
   _4337 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Financial Operations & Banking` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
 - **Should `Core Platform & Infrastructure` be split into smaller, more focused modules?**
-  _Cohesion score 0.04426559356136821 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.050314465408805034 - nodes in this community are weakly interconnected._
 - **Should `Invoice & Subscription Management` be split into smaller, more focused modules?**
   _Cohesion score 0.045454545454545456 - nodes in this community are weakly interconnected._
