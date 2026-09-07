@@ -121,17 +121,18 @@ export default function EvKataReturnPage() {
       const periodFrom = isH1 ? `${selectedYear}-01-01` : `${selectedYear}-07-01`;
       const periodTo = isH1 ? `${selectedYear}-06-30` : `${selectedYear}-12-31`;
 
-      const parsedTax = parseTaxNumber(client?.taxNumber || client?.tax_number);
+      const clientAny = client as any;
+      const parsedTax = parseTaxNumber(client?.taxNumber || clientAny?.tax_number);
       const taxNum8 = parsedTax.base;
       const taxNumVat = parsedTax.vat;
       const taxNumCounty = parsedTax.county;
       const fullTaxNumber = parsedTax.fullFormatted;
 
-      const taxId = client?.taxId || client?.tax_id || '8329900747';
+      const taxId = clientAny?.taxId || clientAny?.tax_id || '8329900747';
       const clientName = client?.name || 'Egyéni Vállalkozó';
-      const clientAddress = client?.address || '1054 Budapest, Alkotmány utca 4.';
-      const clientEmail = client?.email || `${clientName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
-      const clientPhone = client?.phone || '+36 30 123 4567';
+      const clientAddress = clientAny?.address || '1054 Budapest, Alkotmány utca 4.';
+      const clientEmail = clientAny?.email || `${clientName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+      const clientPhone = clientAny?.phone || '+36 30 123 4567';
 
       // 2. Invoke the Edge Function to generate the XML
       const { data: responseData, error: invokeError } = await supabase.functions.invoke('accounty-generate-xml', {
