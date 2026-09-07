@@ -347,10 +347,6 @@ export default function OpeningJournalWizardModal({
     }
   });
 
-  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [csvImportOpen, setCsvImportOpen] = useState(false);
-  const [reconcileResult, setReconcileResult] = useState<any>(null);
   const justClosedRef = useRef(false);
 
   // Line Handlers
