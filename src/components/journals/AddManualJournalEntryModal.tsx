@@ -57,6 +57,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingFocusIndex, setPendingFocusIndex] = useState<number | null>(null);
+  const justClosedRef = useRef(false);
 
   // Fetch Lookups
   const { data: journals = [] } = useQuery({
@@ -215,13 +216,15 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     setPendingFocusIndex(nextIndex);
   };
 
-  // Focus the newly added row's GL account trigger button
+  // Focus the newly added row's GL account trigger button and open popover for immediate typing
   useEffect(() => {
     if (pendingFocusIndex !== null) {
       const el = document.getElementById(`gl-account-trigger-${pendingFocusIndex}`);
       if (el) {
-        el.focus();
         el.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+        el.focus();
+        setOpenDropdownIndex(pendingFocusIndex);
+        setSearchQuery('');
         setPendingFocusIndex(null);
       }
     }
@@ -558,7 +561,9 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                 setOpenDropdownIndex(index);
                                 setSearchQuery('');
                               } else {
+                                justClosedRef.current = true;
                                 setOpenDropdownIndex(null);
+                                setTimeout(() => { justClosedRef.current = false; }, 200);
                               }
                             }}
                           >
@@ -567,6 +572,12 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                 id={`gl-account-trigger-${index}`}
                                 variant="outline"
                                 role="combobox"
+                                onFocus={() => {
+                                  if (!justClosedRef.current && openDropdownIndex !== index) {
+                                    setOpenDropdownIndex(index);
+                                    setSearchQuery('');
+                                  }
+                                }}
                                 className="h-8 w-full justify-between font-mono text-xs text-left px-2 border border-input bg-background hover:bg-muted/50 overflow-hidden outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus:border-primary focus-visible:border-primary transition-colors"
                               >
                                 <span className="truncate flex-1 min-w-0">
@@ -591,6 +602,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                   placeholder="Keresés (pl. 111, anyag)..."
                                   value={searchQuery}
                                   onValueChange={setSearchQuery}
+                                  autoFocus
                                 />
                                 <CommandList className="max-h-[250px] overflow-y-auto">
                                   <CommandEmpty>Nincs találat.</CommandEmpty>
@@ -607,6 +619,10 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                           onSelect={() => {
                                             handleUpdateLine(index, 'gl_account_id', gl.id);
                                             setOpenDropdownIndex(null);
+                                            setSearchQuery('');
+                                            setTimeout(() => {
+                                              document.getElementById(`dc-type-trigger-${index}`)?.focus();
+                                            }, 50);
                                           }}
                                           className="font-mono text-xs cursor-pointer hover:bg-accent hover:text-accent-foreground"
                                         >
@@ -685,7 +701,12 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                   handleAddLine();
                                 } else if (e.key === 'Enter') {
                                   e.preventDefault();
-                                  document.getElementById(`gl-account-trigger-${index + 1}`)?.focus();
+                                  const nextIdx = index + 1;
+                                  setOpenDropdownIndex(nextIdx);
+                                  setSearchQuery('');
+                                  setTimeout(() => {
+                                    document.getElementById(`gl-account-trigger-${nextIdx}`)?.focus();
+                                  }, 50);
                                 }
                               }
                             }}

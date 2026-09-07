@@ -347,6 +347,12 @@ export default function OpeningJournalWizardModal({
     }
   });
 
+  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
+  const [reconcileResult, setReconcileResult] = useState<any>(null);
+  const justClosedRef = useRef(false);
+
   // Line Handlers
   const handleAddLine = () => {
     setLines(prev => {
@@ -354,9 +360,15 @@ export default function OpeningJournalWizardModal({
         ...prev,
         { gl_account_id: '', dc_type: 'T' as const, amount: 0, description: 'Nyitó tétel' }
       ];
+      const nextIdx = next.length - 1;
+      setOpenDropdownIndex(nextIdx);
+      setSearchQuery('');
       setTimeout(() => {
-        const nextIdx = next.length - 1;
-        document.getElementById(`gl-account-trigger-${nextIdx}`)?.focus();
+        const el = document.getElementById(`gl-account-trigger-${nextIdx}`);
+        if (el) {
+          el.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+          el.focus();
+        }
       }, 50);
       return next;
     });
@@ -626,12 +638,30 @@ export default function OpeningJournalWizardModal({
                           <tr key={idx} className="hover:bg-muted/20 transition-colors">
                             <td className="py-2 px-3 text-muted-foreground font-mono">{idx + 1}</td>
                             <td className="py-2 px-3">
-                              <Popover open={openDropdownIndex === idx} onOpenChange={(o) => setOpenDropdownIndex(o ? idx : null)}>
+                              <Popover 
+                                open={openDropdownIndex === idx} 
+                                onOpenChange={(open) => {
+                                  if (open) {
+                                    setOpenDropdownIndex(idx);
+                                    setSearchQuery('');
+                                  } else {
+                                    justClosedRef.current = true;
+                                    setOpenDropdownIndex(null);
+                                    setTimeout(() => { justClosedRef.current = false; }, 200);
+                                  }
+                                }}
+                              >
                                 <PopoverTrigger asChild>
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     id={`gl-account-trigger-${idx}`}
+                                    onFocus={() => {
+                                      if (!justClosedRef.current && openDropdownIndex !== idx) {
+                                        setOpenDropdownIndex(idx);
+                                        setSearchQuery('');
+                                      }
+                                    }}
                                     className="w-full justify-between h-8 text-xs font-mono focus:border-primary focus-visible:border-primary"
                                   >
                                     {line.gl_account_id ? (
@@ -649,6 +679,7 @@ export default function OpeningJournalWizardModal({
                                       placeholder="Számlaszám v. név keresése..."
                                       value={searchQuery}
                                       onValueChange={setSearchQuery}
+                                      autoFocus
                                     />
                                     <CommandList className="max-h-60 overflow-y-auto">
                                       <CommandEmpty>Nincs találat.</CommandEmpty>
@@ -663,7 +694,9 @@ export default function OpeningJournalWizardModal({
                                                 handleUpdateLine(idx, 'gl_account_id', account.id);
                                                 setOpenDropdownIndex(null);
                                                 setSearchQuery('');
-                                                document.getElementById(`dc-type-trigger-${idx}`)?.focus();
+                                                setTimeout(() => {
+                                                  document.getElementById(`dc-type-trigger-${idx}`)?.focus();
+                                                }, 50);
                                               }}
                                               className="text-xs font-mono cursor-pointer hover:bg-accent"
                                             >
@@ -716,7 +749,12 @@ export default function OpeningJournalWizardModal({
                                       handleAddLine();
                                     } else if (e.key === 'Enter') {
                                       e.preventDefault();
-                                      document.getElementById(`gl-account-trigger-${idx + 1}`)?.focus();
+                                      const nextIdx = idx + 1;
+                                      setOpenDropdownIndex(nextIdx);
+                                      setSearchQuery('');
+                                      setTimeout(() => {
+                                        document.getElementById(`gl-account-trigger-${nextIdx}`)?.focus();
+                                      }, 50);
                                     }
                                   }
                                 }}
