@@ -460,10 +460,24 @@ export default function JournalsPage() {
 
       const { error: headerErr } = await supabase.from('acc_journal_headers').delete().eq('id', headerId);
       if (headerErr) throw headerErr;
+
+      return headerId;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId) => {
+      // Optimistically remove deleted item from query cache to prevent empty screen flashes
+      queryClient.setQueriesData({ queryKey: ['acc-journal-entries'] }, (oldData: any) => {
+        if (!Array.isArray(oldData)) return oldData;
+        return oldData.filter((item: any) => item.id !== deletedId);
+      });
+      setSelectedEntryIds(prev => {
+        const next = new Set(prev);
+        next.delete(deletedId);
+        return next;
+      });
+      if (selectedEntry?.id === deletedId) {
+        setSelectedEntry(null);
+      }
       invalidateGlAndJournalQueries();
-      setSelectedEntry(null);
       toast({ title: "Piszkozat törölve" });
     },
     onError: (err) => {
@@ -479,10 +493,21 @@ export default function JournalsPage() {
 
       const { error: headerErr } = await supabase.from('acc_journal_headers').delete().in('id', ids);
       if (headerErr) throw headerErr;
+
+      return ids;
     },
-    onSuccess: () => {
-      invalidateGlAndJournalQueries();
+    onSuccess: (deletedIds) => {
+      const deletedSet = new Set(deletedIds);
+      // Optimistically remove deleted items from query cache
+      queryClient.setQueriesData({ queryKey: ['acc-journal-entries'] }, (oldData: any) => {
+        if (!Array.isArray(oldData)) return oldData;
+        return oldData.filter((item: any) => !deletedSet.has(item.id));
+      });
       setSelectedEntryIds(new Set());
+      if (selectedEntry && deletedSet.has(selectedEntry.id)) {
+        setSelectedEntry(null);
+      }
+      invalidateGlAndJournalQueries();
       toast({ title: "Kijelölt piszkozatok sikeresen törölve" });
     },
     onError: (err) => {
@@ -534,6 +559,14 @@ export default function JournalsPage() {
 
   const totalItems = filteredEntries.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  // Auto-clamp currentPage if totalPages decreases due to deletions
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
   const paginatedEntries = filteredEntries.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -1369,8 +1402,15 @@ export default function JournalsPage() {
               disabled={bulkDeleteMutation.isPending}
               onClick={async (ev) => {
                 ev.preventDefault();
-                await bulkDeleteMutation.mutateAsync(Array.from(selectedEntryIds));
+                const ids = Array.from(selectedEntryIds);
                 setBulkDeleteDialogOpen(false);
+                if (ids.length > 0) {
+                  try {
+                    await bulkDeleteMutation.mutateAsync(ids);
+                  } catch {
+                    // Handled in onError
+                  }
+                }
               }}
             >
               {bulkDeleteMutation.isPending ? (
@@ -1418,8 +1458,13 @@ export default function JournalsPage() {
               onClick={async (ev) => {
                 ev.preventDefault();
                 if (singleDeleteTarget) {
-                  await deleteMutation.mutateAsync(singleDeleteTarget.id);
+                  const targetId = singleDeleteTarget.id;
                   setSingleDeleteTarget(null);
+                  try {
+                    await deleteMutation.mutateAsync(targetId);
+                  } catch {
+                    // Handled in onError
+                  }
                 }
               }}
             >
