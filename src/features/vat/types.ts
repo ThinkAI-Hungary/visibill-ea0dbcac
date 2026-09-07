@@ -98,3 +98,35 @@ export const MONTHS = [
 
 export const fmtEft = (v: number | null | undefined) =>
   v === null || v === undefined ? '—' : `${v.toLocaleString('hu-HU')} eFt`;
+
+export interface VatProRataSettings {
+  id?: string;
+  company_id: string;
+  accounting_year: number;
+  method: 'PREVIOUS_YEAR_9A' | 'CUMULATIVE_9B';
+  prev_year_ratio: number;
+  current_final_ratio?: number | null;
+  is_finalized?: boolean;
+  non_deductible_gl_account_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface VatProRataPeriod {
+  id?: string;
+  company_id: string;
+  accounting_year: number;
+  period_month: number;
+  taxable_revenue: number;
+  exempt_revenue: number;
+  non_taxable_subsidies: number;
+  raw_ratio: number;
+  rounded_ratio: number;
+  pro_rata_base_amount: number;
+  pro_rata_input_vat: number;
+  deductible_vat: number;
+  non_deductible_vat: number;
+  created_at?: string;
+  updated_at?: string;
+}
+

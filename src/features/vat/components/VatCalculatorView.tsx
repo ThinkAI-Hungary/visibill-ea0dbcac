@@ -39,6 +39,7 @@ import {
   Shield,
   Search,
   X,
+  Calculator,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VatTrendChart } from '@/components/vat/VatTrendChart';
@@ -46,6 +47,8 @@ import { ReturnHistoryTable } from '@/components/vat/ReturnHistoryTable';
 import { VatRowDrillDown, InvoiceItemsDrillDown } from '@/components/vat/VatRowDrillDown';
 import { VatA60Table } from './VatA60Table';
 import { VatXmlValidationDialog } from './VatXmlValidationDialog';
+import { VatProRataSettingsCard } from './VatProRataSettingsCard';
+import { VatProRataCalculatorModal } from './VatProRataCalculatorModal';
 import { fmtEft } from '../types';
 import type { useVatReturnData } from '../hooks/useVatReturnData';
 
@@ -56,7 +59,9 @@ interface VatCalculatorViewProps {
 }
 
 export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
+  const [proRataCalculatorOpen, setProRataCalculatorOpen] = React.useState(false);
   const {
+
     selectedCompany,
     year,
     setYear,
@@ -172,6 +177,15 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
               : 'Véglegesítve'}
           </Badge>
           <div className="ml-auto flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setProRataCalculatorOpen(true)}
+              className="gap-1.5"
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              ÁFA Arányosítás
+            </Button>
             {(vatReturn as any).status === 'draft' && (
               <Button
                 variant="outline"
@@ -525,6 +539,11 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
             runXmlValidationLocal={runXmlValidationLocal}
           />
         </div>
+      )}
+
+      {/* ÁFA Arányosítás Beállítások (123. §) */}
+      {vatReturn && (
+        <VatProRataSettingsCard year={year} />
       )}
 
       {/* A-Lap Table */}
@@ -1021,6 +1040,12 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
           )}
         </>
       )}
+
+      <VatProRataCalculatorModal
+        open={proRataCalculatorOpen}
+        onOpenChange={setProRataCalculatorOpen}
+        year={year}
+      />
     </>
   );
 }
