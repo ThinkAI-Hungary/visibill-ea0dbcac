@@ -17,12 +17,20 @@
 | id | uuid | — | `gen_random_uuid()` |
 | user_id | uuid | — |  |
 | title | text | — | `'Új beszélgetés'::text` |
+| is_deleted | boolean | — | `false` |
+| deleted_at | timestamp with time zone | Igen | `null` |
 | created_at | timestamp with time zone | — | `now()` |
 | updated_at | timestamp with time zone | — | `now()` |
 
 **FK:** `user_id` → `auth.users.id`
 
-**Indexek:** `idx_accounty_ai_sessions_user`
+**Indexek:**
+- `idx_accounty_ai_sessions_user` (`user_id, updated_at DESC`)
+- `idx_accounty_ai_sessions_user_active` (`user_id, updated_at DESC`) WHERE `is_deleted = false`
+
+**RLS & Soft Delete Szabályzat:**
+- `SELECT`, `INSERT`, `UPDATE` engedélyezett a saját rekordokra (`auth.uid() = user_id`).
+- **Fizikai `DELETE` tiltva** az `authenticated` szerepkörnek. A törlés soft-delete formában fut le (`is_deleted = true, deleted_at = now()`), így a felhasználói felületről azonnal eltűnik, de az üzenetek és a felhasználói értékelések megmaradnak az audit és RAG tuning számára.
 
 ---
 
@@ -60,6 +68,7 @@
 | `message_id` | uuid | Az értékelt válasz azonosítója |
 | `session_id` | uuid | A beszélgetési szál azonosítója |
 | `session_title` | text | A csevegés címe |
+| `is_session_deleted` | boolean | A felhasználó soft-delete-elte-e a csevegést a felületén |
 | `user_id` | uuid | A kérdező felhasználó |
 | `question` | text | A közvetlenül megelőző felhasználói kérdés szövege |
 | `answer` | text | Az asszisztens válasza |

@@ -10,6 +10,8 @@ export interface AiChatSession {
   title: string;
   created_at: string;
   updated_at: string;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
 }
 
 export interface AiChatMessage {
@@ -39,7 +41,7 @@ export function useAiChatSessions() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // ── List sessions (newest first) ──
+  // ── List sessions (newest first, excluding soft-deleted ones) ──
   const sessionsQuery = useQuery({
     queryKey: SESSIONS_KEY,
     queryFn: async () => {
@@ -47,6 +49,7 @@ export function useAiChatSessions() {
         .from('accounty_ai_chat_sessions')
         .select('*')
         .eq('user_id', user!.id)
+        .eq('is_deleted', false)
         .order('updated_at', { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -72,12 +75,15 @@ export function useAiChatSessions() {
     },
   });
 
-  // ── Delete session ──
+  // ── Soft Delete session (preserves messages and ratings in DB for RAG tuning) ──
   const deleteSessionMut = useMutation({
     mutationFn: async (sessionId: string) => {
       const { error } = await (supabase as any)
         .from('accounty_ai_chat_sessions')
-        .delete()
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+        })
         .eq('id', sessionId);
       if (error) throw error;
       return sessionId;

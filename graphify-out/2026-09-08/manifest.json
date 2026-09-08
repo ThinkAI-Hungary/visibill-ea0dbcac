@@ -2945,8 +2945,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/README.md": {
-    "mtime": 1783210835.1512558,
-    "ast_hash": "b81cb42d78b8a7806e641820543295f0",
+    "mtime": 1788859219.2386415,
+    "ast_hash": "de63b2ad5ba0dc9d17f53489abfd93a9",
     "semantic_hash": ""
   },
   ".agents/skills/codebase-audit/SKILL.md": {
@@ -9522,6 +9522,26 @@
   "src/components/ai/AiAssistantChat.tsx": {
     "mtime": 1788857585.2193093,
     "ast_hash": "6aa514238c3f8a3afce34ce10589f0ba",
+    "semantic_hash": ""
+  },
+  ".agents/skills/visibill-knowledge-base-update/scripts/verify_kb_rag.mjs": {
+    "mtime": 1788859159.610309,
+    "ast_hash": "aa57ede2d544a494740b71eace5f2e1b",
+    "semantic_hash": ""
+  },
+  ".agents/skills/visibill-knowledge-base-update/SKILL.md": {
+    "mtime": 1788859090.39519,
+    "ast_hash": "7e9ad9b1b352c1c869002bb213dc780b",
+    "semantic_hash": ""
+  },
+  ".agents/skills/visibill-knowledge-base-update/references/knowledge_base_schema.md": {
+    "mtime": 1788859101.140509,
+    "ast_hash": "0e9ccdef7a323c5a90b4da9b3b187c24",
+    "semantic_hash": ""
+  },
+  ".agents/skills/visibill-knowledge-base-update/references/rag_optimization_guide.md": {
+    "mtime": 1788859109.5848417,
+    "ast_hash": "d2f24f451317dd775c31729576d7fbd9",
     "semantic_hash": ""
   }
 }
