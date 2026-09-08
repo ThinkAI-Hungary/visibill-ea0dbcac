@@ -27,6 +27,14 @@ export async function getPayrollPostingSummary(cycleId: string): Promise<Payroll
 
   if (cycleErr || !cycle) return null;
 
+  const { data: taxProfile } = await supabase
+    .from('accounty_tax_profiles')
+    .select('is_kiva')
+    .eq('company_id', cycle.company_id)
+    .maybeSingle();
+
+  const isKiva = !!taxProfile?.is_kiva;
+
   const { data: calcs = [] } = await supabase
     .from('accounty_payroll_calculations')
     .select('*')
@@ -41,7 +49,7 @@ export async function getPayrollPostingSummary(cycleId: string): Promise<Payroll
 
   for (const c of calcs) {
     totalGross += Number(c.gross_salary || 0);
-    totalSzocho += Number(c.szocho_amount || 0);
+    totalSzocho += isKiva ? 0 : Number(c.szocho_amount || 0);
     totalSzja += Number(c.szja_amount || 0);
     totalTb += Number(c.tb_amount || 0);
     totalDeductions += Number(c.total_deductions || 0);
@@ -160,12 +168,24 @@ export async function resolveCompanyGlAccounts(companyId: string): Promise<Payro
 export async function postPayrollCycleToLedger(
   cycleId: string,
   companyId: string,
-  userId: string
+  userId: string,
+  customGlMapping?: Partial<PayrollGlMapping>
 ): Promise<{ success: boolean; headerId?: string; journalNumber?: string; message: string }> {
   try {
     const summary = await getPayrollPostingSummary(cycleId);
     if (!summary || summary.totalGross === 0) {
       return { success: false, message: 'Nincsenek lekönyvelhető bérszámfejtési adatok a ciklusban.' };
+    }
+
+    // Double check KIVA status to guarantee SZOCHO lines are never posted for KIVA companies
+    const { data: taxProfile } = await supabase
+      .from('accounty_tax_profiles')
+      .select('is_kiva')
+      .eq('company_id', companyId)
+      .maybeSingle();
+
+    if (taxProfile?.is_kiva) {
+      summary.totalSzocho = 0;
     }
 
     // 1. Find VE (Vegyes) journal for company
@@ -183,8 +203,12 @@ export async function postPayrollCycleToLedger(
       return { success: false, message: 'Nem található könyvelési napló (Vegyes napló) a cégnél. Kérjük ellenőrizze a /journals oldalon.' };
     }
 
-    // 2. Fetch & Resolve GL Accounts for Company Active Chart of Accounts Preset
-    const coaMapping = await resolveCompanyGlAccounts(companyId);
+    // 2. Fetch & Resolve GL Accounts for Company Active Chart of Accounts Preset (merged with custom user selections)
+    const resolvedCoa = await resolveCompanyGlAccounts(companyId);
+    const coaMapping: PayrollGlMapping = {
+      ...resolvedCoa,
+      ...(customGlMapping || {}),
+    };
 
     if (!coaMapping.gl541 || !coaMapping.gl471) {
       return {

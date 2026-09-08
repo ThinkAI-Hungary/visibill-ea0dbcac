@@ -32,7 +32,8 @@ import {
   PenLine,
   CheckCircle2,
   XCircle,
-  Sparkles
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
@@ -164,6 +165,7 @@ export default function JournalsPage() {
 
   const [selectedJournalId, setSelectedJournalId] = useState<string>('munkalista');
   const [search, setSearch] = useState('');
+  const [stornoFilter, setStornoFilter] = useState<'all' | 'active' | 'storno'>('all');
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
   
@@ -171,11 +173,11 @@ export default function JournalsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
 
-  // Reset page and selection when search or journal changes
+  // Reset page and selection when search, stornoFilter or journal changes
   useEffect(() => {
     setCurrentPage(1);
     setSelectedEntryIds(new Set());
-  }, [search, selectedJournalId]);
+  }, [search, stornoFilter, selectedJournalId]);
   
   // Modals state
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
@@ -545,8 +547,33 @@ export default function JournalsPage() {
     }
   };
 
+  // Memoized lookups for storno relationships
+  const entriesById = React.useMemo(() => {
+    const map = new Map<string, any>();
+    entries.forEach((e: any) => map.set(e.id, e));
+    return map;
+  }, [entries]);
+
+  const stornoMap = React.useMemo(() => {
+    const map = new Map<string, any>();
+    entries.forEach((e: any) => {
+      if (e.stornoed_entry_id) {
+        map.set(e.stornoed_entry_id, e);
+      } else if (e.entry_type === 'SZTORNO' && e.original_entry_id) {
+        map.set(e.original_entry_id, e);
+      }
+    });
+    return map;
+  }, [entries]);
+
   // Filtered entries
   const filteredEntries = entries.filter((e: any) => {
+    if (stornoFilter === 'active') {
+      if (e.status === 'SZTORNOZOTT' || e.entry_type === 'SZTORNO') return false;
+    } else if (stornoFilter === 'storno') {
+      if (e.status !== 'SZTORNOZOTT' && e.entry_type !== 'SZTORNO') return false;
+    }
+
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
@@ -716,8 +743,8 @@ export default function JournalsPage() {
           )}
 
           {/* Filters */}
-          <div className="flex gap-3 items-center">
-            <div className="relative flex-1">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Keresés (partner, bizonylatszám, megnevezés...)"
@@ -728,6 +755,39 @@ export default function JournalsPage() {
                 }}
                 className="pl-9 bg-card border-border shadow-none"
               />
+            </div>
+            <div className="flex items-center bg-muted/40 p-1 rounded-lg border border-border shrink-0 text-xs">
+              <button
+                type="button"
+                onClick={() => { setStornoFilter('all'); setCurrentPage(1); }}
+                className={cn(
+                  "px-2.5 py-1 rounded-md transition-all text-xs font-medium",
+                  stornoFilter === 'all' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Összes tétel
+              </button>
+              <button
+                type="button"
+                onClick={() => { setStornoFilter('active'); setCurrentPage(1); }}
+                className={cn(
+                  "px-2.5 py-1 rounded-md transition-all text-xs font-medium",
+                  stornoFilter === 'active' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Aktív tételek
+              </button>
+              <button
+                type="button"
+                onClick={() => { setStornoFilter('storno'); setCurrentPage(1); }}
+                className={cn(
+                  "px-2.5 py-1 rounded-md transition-all text-xs font-medium flex items-center gap-1",
+                  stornoFilter === 'storno' ? "bg-background text-amber-600 dark:text-amber-400 shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <RotateCcw className="w-3 h-3 text-amber-500" />
+                Sztornó tételek
+              </button>
             </div>
           </div>
 
@@ -845,11 +905,14 @@ export default function JournalsPage() {
                     <>
                       {paginatedEntries.map((e: any) => {
                         const isForeign = e.currency && e.currency !== 'HUF';
-                        const totalAmount = e.lines?.reduce((acc: number, l: any) => {
+                        const isStornoEntry = e.entry_type === 'SZTORNO';
+                        const isStornoedOriginal = e.status === 'SZTORNOZOTT';
+                        const rawTotalAmount = e.lines?.reduce((acc: number, l: any) => {
                           if (l.dc_type !== 'T') return acc;
                           const val = isForeign ? (l.foreign_amount || l.amount) : l.amount;
                           return acc + Number(val);
                         }, 0) || 0;
+                        const totalAmount = isStornoEntry ? -Math.abs(rawTotalAmount) : rawTotalAmount;
 
                         // Resolve daily exchange rate for the posting date
                         const headerRate = Number(e.exchange_rate) || 0;
@@ -862,16 +925,20 @@ export default function JournalsPage() {
                           : 0;
 
                         // 2. If lines were already converted, use linesHufSum. Otherwise calculate directly using that day's exchange rate
-                        const hufAmount = isForeign
-                          ? (linesHufSum > 0 && Math.abs(linesHufSum - totalAmount) > 0.01 ? linesHufSum : totalAmount * rate)
+                        const rawHufAmount = isForeign
+                          ? (linesHufSum > 0 && Math.abs(linesHufSum - rawTotalAmount) > 0.01 ? linesHufSum : rawTotalAmount * rate)
                           : 0;
+                        const hufAmount = isStornoEntry ? -Math.abs(rawHufAmount) : rawHufAmount;
 
                         const statusInfo = STATUS_LABELS[e.status] || { label: e.status, color: 'bg-slate-500/10' };
                         const journalNum = e.journal_number ? `${e.journal?.code}/${e.journal_number}` : '—';
                         const isDraft = ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status);
                         
+                        const origRefEntry = isStornoEntry ? entriesById.get(e.stornoed_entry_id || e.original_entry_id) : null;
+                        const stornoRefEntry = isStornoedOriginal ? stornoMap.get(e.id) : null;
+
                         return (
-                          <TableRow key={e.id} className="hover:bg-muted/20 transition-colors h-[45px]">
+                          <TableRow key={e.id} className={cn("hover:bg-muted/20 transition-colors h-[45px]", isStornoEntry && "bg-amber-500/5 hover:bg-amber-500/10", isStornoedOriginal && "bg-rose-500/5 hover:bg-rose-500/10")}>
                             <TableCell className="w-[44px] text-center p-0">
                               {isDraft ? (
                                 <div className="flex items-center justify-center">
@@ -899,7 +966,17 @@ export default function JournalsPage() {
                               {e.posting_date.replace(/-/g, '.')}
                             </TableCell>
                             <TableCell className="w-[110px] font-semibold text-foreground whitespace-nowrap truncate">
-                              {journalNum}
+                              <div>{journalNum}</div>
+                              {isStornoEntry && (
+                                <span className="text-[9px] text-amber-600 dark:text-amber-400 font-mono block leading-tight truncate">
+                                  ↩ {origRefEntry ? `${origRefEntry.journal?.code}/${origRefEntry.journal_number}` : 'eredeti'}
+                                </span>
+                              )}
+                              {isStornoedOriginal && (
+                                <span className="text-[9px] text-rose-500 dark:text-rose-400 font-mono block leading-tight truncate">
+                                  ❌ {stornoRefEntry ? `${stornoRefEntry.journal?.code}/${stornoRefEntry.journal_number}` : 'sztornózva'}
+                                </span>
+                              )}
                             </TableCell>
                             <TableCell className="w-[150px] font-mono truncate">
                               {e.document_id ? (
@@ -942,7 +1019,9 @@ export default function JournalsPage() {
                             </TableCell>
                             <TableCell className="w-[150px] text-right font-semibold tabular-nums whitespace-nowrap">
                               <div className="flex flex-col items-end">
-                                <span>{formatCurrency(totalAmount, e.currency || 'HUF')}</span>
+                                <span className={cn(isStornoEntry && "text-amber-600 dark:text-amber-400 font-bold")}>
+                                  {formatCurrency(totalAmount, e.currency || 'HUF')}
+                                </span>
                                 {isForeign && (
                                   <Tooltip delayDuration={150}>
                                     <TooltipTrigger asChild>
@@ -962,9 +1041,15 @@ export default function JournalsPage() {
                               {renderSourceBadge(e.source)}
                             </TableCell>
                             <TableCell className="w-[130px] text-center whitespace-nowrap">
-                              <Badge className={cn("px-2 py-0.5 text-[10px] font-medium border uppercase", statusInfo.color)} variant="outline">
-                                {statusInfo.label}
-                              </Badge>
+                              {isStornoEntry ? (
+                                <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 px-2 py-0.5 text-[10px] font-medium border uppercase inline-flex items-center gap-1" variant="outline">
+                                  <RotateCcw className="w-3 h-3 shrink-0" /> Sztornó
+                                </Badge>
+                              ) : (
+                                <Badge className={cn("px-2 py-0.5 text-[10px] font-medium border uppercase", statusInfo.color)} variant="outline">
+                                  {statusInfo.label}
+                                </Badge>
+                              )}
                             </TableCell>
                             <TableCell className="w-[135px] text-right">
                               <div className="flex justify-end gap-1">
@@ -1108,6 +1193,38 @@ export default function JournalsPage() {
               </SheetHeader>
 
               <div className="space-y-6 py-6">
+                {selectedEntry.entry_type === 'SZTORNO' && (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+                    <RotateCcw className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold block">SZTORNÓ BIZONYLAT</span>
+                      <p className="text-[11px] mt-0.5 leading-relaxed">
+                        Ez a bizonylat ellentétes előjellel sztornózza és kivezeti a kapcsolódó eredeti bizonylatot.
+                        {(() => {
+                          const orig = entriesById.get(selectedEntry.stornoed_entry_id || selectedEntry.original_entry_id);
+                          return orig ? ` Hivatkozott eredeti tétel: ${orig.journal?.code}/${orig.journal_number} (${orig.document_id})` : '';
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedEntry.status === 'SZTORNOZOTT' && (
+                  <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold block">SZTORNÓZOTT (ÉRVÉNYTELENÍTETT) BIZONYLAT</span>
+                      <p className="text-[11px] mt-0.5 leading-relaxed">
+                        Ezt a bizonylatot hivatalosan sztornózták. A könyvelésből kivezetésre került egy ellentétes sztornó bizonylattal.
+                        {(() => {
+                          const st = stornoMap.get(selectedEntry.id);
+                          return st ? ` Sztornó bizonylat száma: ${st.journal?.code}/${st.journal_number}` : '';
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* General Info */}
                 <div className="grid grid-cols-2 gap-4 text-xs bg-muted/30 p-4 rounded-lg border">
                   <div>

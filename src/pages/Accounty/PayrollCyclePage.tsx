@@ -104,6 +104,7 @@ export default function PayrollCyclePage() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailTo, setEmailTo] = useState('');
   const [isPosting, setIsPosting] = useState(false);
+  const [customGlMapping, setCustomGlMapping] = useState<any>(null);
 
   // Fetch all employments for this company
   const [allEmployments, setAllEmployments] = useState<any[]>([]);
@@ -846,6 +847,7 @@ export default function PayrollCyclePage() {
               handlePrintPayslip={handlePrintPayslip}
               handlePrintAllPayslips={handlePrintAllPayslips}
               cafeteriaItems={cafeteriaItems}
+              onGlMappingChange={setCustomGlMapping}
             />
           )}
         </div>
@@ -886,7 +888,7 @@ export default function PayrollCyclePage() {
               if (!cycle?.id || !companyId || !user?.id) return;
               setIsPosting(true);
               try {
-                const postResult = await postPayrollCycleToLedger(cycle.id, companyId, user.id);
+                const postResult = await postPayrollCycleToLedger(cycle.id, companyId, user.id, customGlMapping);
                 if (postResult.success) {
                   toast({
                     title: ' Ciklus lezárva és lekönyvelve!',

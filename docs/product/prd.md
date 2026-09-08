@@ -115,6 +115,7 @@ Főkönyvi kategorizálás, pénzügyi kimutatások és éves beszámoló.
 |---------|--------|-----|
 | GL Javaslat | AI-alapú GL szám javaslat confidence-szel és indoklással. Manuális elfogadás szükséges — nincs auto-accept. | [P-019](./decisions/P-019-gl-suggestion.md) |
 | GL Twin Sync | Párosított számlák (NAV ↔ Beküldött) GL besorolása automatikusan szinkronban marad: ha az egyik tétel GL-jét módosítják, a "testvér" tétel is frissül egyetlen batch RPC hívásban. Matching: `invoice_number` ↔ `bizonylatsorszam` normalizálva + `line_number`. | [P-043](./decisions/P-043-gl-twin-sync.md) |
+| GL Rezsi Mátrix | Főkönyvi számlaosztály-alapú rezsi-kategorizálás (5-ös költségnemek) és testreszabható Hozzárendelési Mátrix a 10 standard rezsikategóriára. | [P-079](./decisions/P-079-overhead-categories-gl-mapping.md) |
 | XML Főkönyv Import | Könyvelőprogram által exportált XML főkönyvi kivonat feltöltése és feldolgozása. Támogatott formátumok: RLB/Novitax/Kulcs-Soft/KÖKÉNY. Automatikus számlatükör + tétel importálás `gl_uploads` táblába, audit trail-lel. | — |
 | Eredménykimutatás | P&L oldal — bevételek és kiadások kimutatása. Főkönyvi adat (XML importból) és NAV számlaalapú összesítés. Szekció-szintű részletezés, korrekciók kezelése. | — |
 | Mérleg | Balance Sheet oldal — eszközök és források. Főkönyvi adat (XML importból) és NAV számlaalapú összeállítás. Társasági adó és osztalék kalkuláció. | — |

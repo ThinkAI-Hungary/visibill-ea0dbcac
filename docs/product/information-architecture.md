@@ -428,14 +428,16 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
 
 ### Kategóriák (`/categories`)
 
-**Layout:** Accordion lista — egy GL kategória / sor
+**Layout:** Accordion lista — 10 standard vezetői rezsikategória (pl. Székhely és irodabérlet, Közművek, IT & Szoftverek, Posta & Kommunikáció stb.)
 
 **Funkciók:**
-- Kategóriákhoz hozzárendelt számlák összegének megjelenítése
-- **Multi-currency:** ha több deviza van, `886 778 Ft | 1 200 USD` formátumban jelenik meg
-- **Hozzárendelési kereső:** mindkét forrásból (NAV + Beküldött) javasol számlákat
+- **Főkönyvi Számlaosztály-Alapú Rezsi-Kategorizálás:** A kategóriák a főkönyv speciális rezsi-összesítő nézetét képezik az 5-ös költségnemek alapján.
+- **Főkönyvi Hozzárendelési Mátrix:** Kategória létrehozásakor/szerkesztésekor kiválaszthatóak a társított 3-jegyű főkönyvi számlák (pl. `521`, `522`, `527`).
+- **G/L Badges:** Az accordion sorokban színes jelvények jelzik az adott kategóriához tartozó főkönyvi számokat.
+- **Költség Összesítés:** A könyvelési naplósorokból (`acc_journal_lines`) és a besorolt számlákból gyűjti össze az időszaki költségeket.
+- **Multi-currency:** ha több deviza van, `886 778 Ft | 1 200 USD` formátumban jelenik meg.
 
-> **Kapcsolódó döntés:** [P-041](./decisions/P-041-categories-multicurrency-search.md)
+> **Kapcsolódó döntések:** [P-041](./decisions/P-041-categories-multicurrency-search.md) · [P-042](./decisions/P-042-categories-projects-sync.md) · [P-079](./decisions/P-079-overhead-categories-gl-mapping.md)
 
 ---
 

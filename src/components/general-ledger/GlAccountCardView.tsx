@@ -182,7 +182,7 @@ export function GlAccountCardView({
       const filteredLines = (rawLines || []).filter((line: any) => {
         const gNum = (line.gl_account?.gl_number || '').replace(/\.$/, '');
         const matchesGl = cleanGlPrefix ? gNum.startsWith(cleanGlPrefix) : true;
-        const matchesStatus = postingStatus === 'all' || line.header?.status === 'KONYVELT';
+        const matchesStatus = postingStatus === 'all' || ['KONYVELT', 'SZTORNOZOTT'].includes(line.header?.status);
         return matchesGl && matchesStatus;
       });
 

@@ -17,6 +17,7 @@ export interface PayrollStep8Props {
   handlePrintPayslip: (calc: any) => void;
   handlePrintAllPayslips?: () => void;
   cafeteriaItems?: any[];
+  onGlMappingChange?: (mapping: PayrollGlMapping) => void;
 }
 
 export default function PayrollStep8({
@@ -31,10 +32,12 @@ export default function PayrollStep8({
   handlePrintPayslip,
   handlePrintAllPayslips,
   cafeteriaItems: propCafeteriaItems,
+  onGlMappingChange,
 }: PayrollStep8Props) {
   const [isKiva, setIsKiva] = React.useState(false);
   const [localCafeteriaItems, setLocalCafeteriaItems] = React.useState<any[]>([]);
   const [glMapping, setGlMapping] = React.useState<PayrollGlMapping | null>(null);
+  const [allGlAccounts, setAllGlAccounts] = React.useState<any[]>([]);
   const cafeteriaItems = propCafeteriaItems ?? localCafeteriaItems;
 
   React.useEffect(() => {
@@ -48,8 +51,28 @@ export default function PayrollStep8({
         if (data?.is_kiva) setIsKiva(true);
       });
 
-    resolveCompanyGlAccounts(companyId).then(setGlMapping);
+    resolveCompanyGlAccounts(companyId).then((mapping) => {
+      setGlMapping(mapping);
+      if (onGlMappingChange) onGlMappingChange(mapping);
+    });
+
+    supabase
+      .from('gl_accounts')
+      .select('id, gl_number, short_name, description')
+      .order('gl_number', { ascending: true })
+      .then(({ data }) => {
+        if (data) setAllGlAccounts(data);
+      });
   }, [companyId]);
+
+  const handleSelectGlAccount = (field: keyof PayrollGlMapping, value: string) => {
+    setGlMapping(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, [field]: value };
+      if (onGlMappingChange) onGlMappingChange(updated);
+      return updated;
+    });
+  };
 
   const activeEmploymentIdsKey = React.useMemo(() => {
     return allEmployments
@@ -112,7 +135,7 @@ export default function PayrollStep8({
             {[
               { label: 'Össz. bruttó', value: calculations.reduce((s, c) => s + (c.gross_salary || 0), 0), color: 'text-slate-900 dark:text-slate-100' },
               { label: 'Össz. SZJA+TB', value: calculations.reduce((s, c) => s + (c.szja_amount || 0) + (c.tb_amount || 0), 0), color: 'text-red-600' },
-              { label: isKiva ? 'Össz. SZOCHO (KIVA)' : 'Össz. SZOCHO', value: calculations.reduce((s, c) => s + getSzocho(c), 0), color: 'text-violet-600' },
+              { label: isKiva ? 'Össz. SZOCHO (KIVA: 0 Ft)' : 'Össz. SZOCHO', value: calculations.reduce((s, c) => s + getSzocho(c), 0), color: 'text-violet-600' },
               { label: 'Össz. Home Office', value: totalHomeOffice, color: 'text-emerald-600 dark:text-emerald-400' },
               { label: 'Össz. Kifizetendő', value: totalFinalPayout, color: 'text-green-600 font-extrabold' },
             ].map((item) => (
@@ -224,13 +247,17 @@ export default function PayrollStep8({
                   <span className="text-xs font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-semibold">
                     Vegyes (VE) Napló
                   </span>
-                  {glMapping?.presetName && (
+                  {isKiva ? (
+                    <span className="text-xs font-mono bg-orange-500/20 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded font-semibold">
+                      KIVA Adózó (SZOCHO Mentes: 0 Ft)
+                    </span>
+                  ) : glMapping?.presetName && (
                     <span className="text-xs font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-semibold">
                       Aktív számlatükör: {glMapping.presetName}
                     </span>
                   )}
                 </div>
-                <h3 className="text-base font-bold text-white mt-1">Főkönyvi Kontírozási Előnézet (T = K Egyensúly)</h3>
+                <h3 className="text-base font-bold text-white mt-1">Főkönyvi Kontírozási Mátrix & Előnézet (Szerkeszthető)</h3>
               </div>
               <div className="text-right">
                 <span className="text-xs text-slate-400">Tett elszámolás:</span>
@@ -244,7 +271,7 @@ export default function PayrollStep8({
               <table className="w-full text-xs font-mono">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-400">
-                    <th className="px-3 py-2 text-left">Főkönyvi Számlaszám & Megnevezés</th>
+                    <th className="px-3 py-2 text-left">Főkönyvi Számlaszám Választó & Megnevezés</th>
                     <th className="px-3 py-2 text-center">T / K</th>
                     <th className="px-3 py-2 text-right">Tartozik (T) Ft</th>
                     <th className="px-3 py-2 text-right">Követel (K) Ft</th>
@@ -254,7 +281,24 @@ export default function PayrollStep8({
                   {/* T 541 Bruttó bér */}
                   <tr>
                     <td className="px-3 py-2 text-slate-200">
-                      <span className="font-bold text-blue-400">541</span> — Munkabér költség (bruttó bér)
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={glMapping?.gl541 || ''}
+                          onChange={(e) => handleSelectGlAccount('gl541', e.target.value)}
+                          className="bg-slate-800 text-blue-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[220px]"
+                        >
+                          {allGlAccounts.length > 0 ? (
+                            allGlAccounts.map(a => (
+                              <option key={a.id} value={a.id}>
+                                {a.gl_number} — {a.short_name || a.description}
+                              </option>
+                            ))
+                          ) : (
+                            <option value="">541 — Munkabér költség</option>
+                          )}
+                        </select>
+                        <span className="text-slate-400 text-[11px]">Munkabér költség (bruttó bér)</span>
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-center font-bold text-blue-400">T</td>
                     <td className="px-3 py-2 text-right font-bold text-blue-400">
@@ -263,11 +307,28 @@ export default function PayrollStep8({
                     <td className="px-3 py-2 text-right text-slate-600">-</td>
                   </tr>
 
-                  {/* T 561 SZOCHO költség */}
-                  {calculations.reduce((s, c) => s + getSzocho(c), 0) > 0 && (
+                  {/* T 561 SZOCHO költség (kizárólag nem-KIVA cégeknél) */}
+                  {!isKiva && calculations.reduce((s, c) => s + getSzocho(c), 0) > 0 && (
                     <tr>
                       <td className="px-3 py-2 text-slate-200">
-                        <span className="font-bold text-blue-400">561</span> — Szociális hozzájárulási adó költség
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={glMapping?.gl561 || ''}
+                            onChange={(e) => handleSelectGlAccount('gl561', e.target.value)}
+                            className="bg-slate-800 text-blue-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[220px]"
+                          >
+                            {allGlAccounts.length > 0 ? (
+                              allGlAccounts.map(a => (
+                                <option key={a.id} value={a.id}>
+                                  {a.gl_number} — {a.short_name || a.description}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="">561 — Szociális hozzájárulási adó költség</option>
+                            )}
+                          </select>
+                          <span className="text-slate-400 text-[11px]">Szociális hozzájárulási adó költség</span>
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-center font-bold text-blue-400">T</td>
                       <td className="px-3 py-2 text-right font-bold text-blue-400">
@@ -277,11 +338,28 @@ export default function PayrollStep8({
                     </tr>
                   )}
 
-                  {/* K 463 SZOCHO kötelezettség */}
-                  {calculations.reduce((s, c) => s + getSzocho(c), 0) > 0 && (
+                  {/* K 463 SZOCHO kötelezettség (kizárólag nem-KIVA cégeknél) */}
+                  {!isKiva && calculations.reduce((s, c) => s + getSzocho(c), 0) > 0 && (
                     <tr>
                       <td className="px-3 py-2 text-slate-200">
-                        <span className="font-bold text-purple-400">463</span> — SZOCHO fizetési kötelezettség
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={glMapping?.gl463 || ''}
+                            onChange={(e) => handleSelectGlAccount('gl463', e.target.value)}
+                            className="bg-slate-800 text-purple-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[220px]"
+                          >
+                            {allGlAccounts.length > 0 ? (
+                              allGlAccounts.map(a => (
+                                <option key={a.id} value={a.id}>
+                                  {a.gl_number} — {a.short_name || a.description}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="">463 — SZOCHO fizetési kötelezettség</option>
+                            )}
+                          </select>
+                          <span className="text-slate-400 text-[11px]">SZOCHO fizetési kötelezettség</span>
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
                       <td className="px-3 py-2 text-right text-slate-600">-</td>
@@ -295,7 +373,24 @@ export default function PayrollStep8({
                   {calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) > 0 && (
                     <tr>
                       <td className="px-3 py-2 text-slate-200">
-                        <span className="font-bold text-purple-400">462</span> — Levont SZJA kötelezettség
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={glMapping?.gl462 || ''}
+                            onChange={(e) => handleSelectGlAccount('gl462', e.target.value)}
+                            className="bg-slate-800 text-purple-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[220px]"
+                          >
+                            {allGlAccounts.length > 0 ? (
+                              allGlAccounts.map(a => (
+                                <option key={a.id} value={a.id}>
+                                  {a.gl_number} — {a.short_name || a.description}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="">462 — Levont SZJA kötelezettség</option>
+                            )}
+                          </select>
+                          <span className="text-slate-400 text-[11px]">Levont SZJA kötelezettség</span>
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
                       <td className="px-3 py-2 text-right text-slate-600">-</td>
@@ -309,7 +404,24 @@ export default function PayrollStep8({
                   {calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) > 0 && (
                     <tr>
                       <td className="px-3 py-2 text-slate-200">
-                        <span className="font-bold text-purple-400">464</span> — Levont TB járulék kötelezettség
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={glMapping?.gl464 || ''}
+                            onChange={(e) => handleSelectGlAccount('gl464', e.target.value)}
+                            className="bg-slate-800 text-purple-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[220px]"
+                          >
+                            {allGlAccounts.length > 0 ? (
+                              allGlAccounts.map(a => (
+                                <option key={a.id} value={a.id}>
+                                  {a.gl_number} — {a.short_name || a.description}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="">464 — Levont TB járulék kötelezettség</option>
+                            )}
+                          </select>
+                          <span className="text-slate-400 text-[11px]">Levont TB járulék kötelezettség</span>
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
                       <td className="px-3 py-2 text-right text-slate-600">-</td>
@@ -323,7 +435,24 @@ export default function PayrollStep8({
                   {calculations.reduce((s, c) => s + (c.total_deductions || 0), 0) > 0 && (
                     <tr>
                       <td className="px-3 py-2 text-slate-200">
-                        <span className="font-bold text-purple-400">479</span> — Bérből levont letiltások és előlegek
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={glMapping?.gl479 || ''}
+                            onChange={(e) => handleSelectGlAccount('gl479', e.target.value)}
+                            className="bg-slate-800 text-purple-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[220px]"
+                          >
+                            {allGlAccounts.length > 0 ? (
+                              allGlAccounts.map(a => (
+                                <option key={a.id} value={a.id}>
+                                  {a.gl_number} — {a.short_name || a.description}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="">479 — Bérből levont letiltások és előlegek</option>
+                            )}
+                          </select>
+                          <span className="text-slate-400 text-[11px]">Bérből levont letiltások és előlegek</span>
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
                       <td className="px-3 py-2 text-right text-slate-600">-</td>
@@ -336,7 +465,24 @@ export default function PayrollStep8({
                   {/* K 471 Nettó munkabér kötelezettség */}
                   <tr>
                     <td className="px-3 py-2 text-slate-200">
-                      <span className="font-bold text-purple-400">471</span> — Kifizetendő nettó munkabér kötelezettség
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={glMapping?.gl471 || ''}
+                          onChange={(e) => handleSelectGlAccount('gl471', e.target.value)}
+                          className="bg-slate-800 text-purple-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[220px]"
+                        >
+                          {allGlAccounts.length > 0 ? (
+                            allGlAccounts.map(a => (
+                              <option key={a.id} value={a.id}>
+                                {a.gl_number} — {a.short_name || a.description}
+                              </option>
+                            ))
+                          ) : (
+                            <option value="">471 — Kifizetendő nettó munkabér kötelezettség</option>
+                          )}
+                        </select>
+                        <span className="text-slate-400 text-[11px]">Kifizetendő nettó munkabér kötelezettség</span>
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
                     <td className="px-3 py-2 text-right text-slate-600">-</td>
@@ -379,7 +525,7 @@ export default function PayrollStep8({
               </table>
             </div>
             <p className="text-[11px] text-slate-400 italic">
-              * A számlatükör beállításai a Főkönyv modulban (`/general-ledger`) kezelhetők. A ciklus lezárásakor ezen tételek automatikusan bekerülnek a főkönyvi bizonylatba (`acc_journal_headers` + `acc_journal_lines`) és megjelennek a Napló modulban (`/journals`).
+              * A főkönyvi számlaszámok a legördülő menüből felülbírálhatók a cikluszárás előtt. A ciklus lezárásakor ezen tételek a kiválasztott főkönyvi számlákkal automatikusan bekerülnek a főkönyvi bizonylatba (`acc_journal_headers` + `acc_journal_lines`) és megjelennek a Napló modulban (`/journals`).
             </p>
           </div>
         </>

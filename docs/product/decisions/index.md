@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-08  
-> **Összesen:** 73 döntés | ✅ Decided: 69 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 74 döntés | ✅ Decided: 70 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -134,6 +134,7 @@
 |---|--------|---------|------|
 | P-041 | Kategóriák multi-currency összeg + arány konzisztencia + összeg kimutatás | ✅ Decided | [P-041](./P-041-categories-multicurrency-search.md) |
 | P-042 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [P-042](./P-042-categories-projects-sync.md) |
+| P-079 | Főkönyvi Számlaosztály-Alapú Rezsi-Kategorizálás & Hozzárendelési Mátrix UX | ✅ Decided | [P-079](./P-079-overhead-categories-gl-mapping.md) |
 
 ## 📋 Jegyzetek
 
