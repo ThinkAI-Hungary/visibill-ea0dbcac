@@ -3,6 +3,7 @@ import { Play, Printer, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveCompanyGlAccounts, type PayrollGlMapping } from '@/lib/payroll/payrollAutoPoster';
 
 export interface PayrollStep8Props {
   calculations: any[];
@@ -33,6 +34,7 @@ export default function PayrollStep8({
 }: PayrollStep8Props) {
   const [isKiva, setIsKiva] = React.useState(false);
   const [localCafeteriaItems, setLocalCafeteriaItems] = React.useState<any[]>([]);
+  const [glMapping, setGlMapping] = React.useState<PayrollGlMapping | null>(null);
   const cafeteriaItems = propCafeteriaItems ?? localCafeteriaItems;
 
   React.useEffect(() => {
@@ -45,6 +47,8 @@ export default function PayrollStep8({
       .then(({ data }: any) => {
         if (data?.is_kiva) setIsKiva(true);
       });
+
+    resolveCompanyGlAccounts(companyId).then(setGlMapping);
   }, [companyId]);
 
   const activeEmploymentIdsKey = React.useMemo(() => {
@@ -207,6 +211,176 @@ export default function PayrollStep8({
             >
               <Printer className="w-3.5 h-3.5" /> Összes bérjegyzék
             </Button>
+          </div>
+
+          {/* General Ledger Payroll Journal Posting Preview */}
+          <div className="bg-slate-900 text-slate-100 rounded-xl p-5 border border-slate-800 space-y-4 shadow-lg">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-semibold uppercase">
+                    Automatikus Főkönyvi Bérfeladás
+                  </span>
+                  <span className="text-xs font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-semibold">
+                    Vegyes (VE) Napló
+                  </span>
+                  {glMapping?.presetName && (
+                    <span className="text-xs font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-semibold">
+                      Aktív számlatükör: {glMapping.presetName}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-base font-bold text-white mt-1">Főkönyvi Kontírozási Előnézet (T = K Egyensúly)</h3>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-slate-400">Tett elszámolás:</span>
+                <p className="text-sm font-bold font-mono text-emerald-400">
+                  BER-{cycle?.year}-{String(cycle?.month || 1).padStart(2, '0')}
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs font-mono">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400">
+                    <th className="px-3 py-2 text-left">Főkönyvi Számlaszám & Megnevezés</th>
+                    <th className="px-3 py-2 text-center">T / K</th>
+                    <th className="px-3 py-2 text-right">Tartozik (T) Ft</th>
+                    <th className="px-3 py-2 text-right">Követel (K) Ft</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {/* T 541 Bruttó bér */}
+                  <tr>
+                    <td className="px-3 py-2 text-slate-200">
+                      <span className="font-bold text-blue-400">541</span> — Munkabér költség (bruttó bér)
+                    </td>
+                    <td className="px-3 py-2 text-center font-bold text-blue-400">T</td>
+                    <td className="px-3 py-2 text-right font-bold text-blue-400">
+                      {calculations.reduce((s, c) => s + (c.gross_salary || 0), 0).toLocaleString('hu-HU')} Ft
+                    </td>
+                    <td className="px-3 py-2 text-right text-slate-600">-</td>
+                  </tr>
+
+                  {/* T 561 SZOCHO költség */}
+                  {calculations.reduce((s, c) => s + getSzocho(c), 0) > 0 && (
+                    <tr>
+                      <td className="px-3 py-2 text-slate-200">
+                        <span className="font-bold text-blue-400">561</span> — Szociális hozzájárulási adó költség
+                      </td>
+                      <td className="px-3 py-2 text-center font-bold text-blue-400">T</td>
+                      <td className="px-3 py-2 text-right font-bold text-blue-400">
+                        {calculations.reduce((s, c) => s + getSzocho(c), 0).toLocaleString('hu-HU')} Ft
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-600">-</td>
+                    </tr>
+                  )}
+
+                  {/* K 463 SZOCHO kötelezettség */}
+                  {calculations.reduce((s, c) => s + getSzocho(c), 0) > 0 && (
+                    <tr>
+                      <td className="px-3 py-2 text-slate-200">
+                        <span className="font-bold text-purple-400">463</span> — SZOCHO fizetési kötelezettség
+                      </td>
+                      <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
+                      <td className="px-3 py-2 text-right text-slate-600">-</td>
+                      <td className="px-3 py-2 text-right font-bold text-purple-400">
+                        {calculations.reduce((s, c) => s + getSzocho(c), 0).toLocaleString('hu-HU')} Ft
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* K 462 SZJA kötelezettség */}
+                  {calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) > 0 && (
+                    <tr>
+                      <td className="px-3 py-2 text-slate-200">
+                        <span className="font-bold text-purple-400">462</span> — Levont SZJA kötelezettség
+                      </td>
+                      <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
+                      <td className="px-3 py-2 text-right text-slate-600">-</td>
+                      <td className="px-3 py-2 text-right font-bold text-purple-400">
+                        {calculations.reduce((s, c) => s + (c.szja_amount || 0), 0).toLocaleString('hu-HU')} Ft
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* K 464 TB kötelezettség */}
+                  {calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) > 0 && (
+                    <tr>
+                      <td className="px-3 py-2 text-slate-200">
+                        <span className="font-bold text-purple-400">464</span> — Levont TB járulék kötelezettség
+                      </td>
+                      <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
+                      <td className="px-3 py-2 text-right text-slate-600">-</td>
+                      <td className="px-3 py-2 text-right font-bold text-purple-400">
+                        {calculations.reduce((s, c) => s + (c.tb_amount || 0), 0).toLocaleString('hu-HU')} Ft
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* K 479 Letiltások */}
+                  {calculations.reduce((s, c) => s + (c.total_deductions || 0), 0) > 0 && (
+                    <tr>
+                      <td className="px-3 py-2 text-slate-200">
+                        <span className="font-bold text-purple-400">479</span> — Bérből levont letiltások és előlegek
+                      </td>
+                      <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
+                      <td className="px-3 py-2 text-right text-slate-600">-</td>
+                      <td className="px-3 py-2 text-right font-bold text-purple-400">
+                        {calculations.reduce((s, c) => s + (c.total_deductions || 0), 0).toLocaleString('hu-HU')} Ft
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* K 471 Nettó munkabér kötelezettség */}
+                  <tr>
+                    <td className="px-3 py-2 text-slate-200">
+                      <span className="font-bold text-purple-400">471</span> — Kifizetendő nettó munkabér kötelezettség
+                    </td>
+                    <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
+                    <td className="px-3 py-2 text-right text-slate-600">-</td>
+                    <td className="px-3 py-2 text-right font-bold text-purple-400">
+                      {(
+                        calculations.reduce((s, c) => s + (c.gross_salary || 0), 0) -
+                        calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) -
+                        calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) -
+                        calculations.reduce((s, c) => s + (c.total_deductions || 0), 0)
+                      ).toLocaleString('hu-HU')} Ft
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-slate-700 font-bold bg-slate-800/40 text-emerald-400">
+                    <td className="px-3 py-2.5">ÖSSZESEN (Könyvelési Egyensúly)</td>
+                    <td className="px-3 py-2.5 text-center">T = K</td>
+                    <td className="px-3 py-2.5 text-right font-extrabold text-blue-400">
+                      {(
+                        calculations.reduce((s, c) => s + (c.gross_salary || 0), 0) +
+                        calculations.reduce((s, c) => s + getSzocho(c), 0)
+                      ).toLocaleString('hu-HU')} Ft
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-extrabold text-purple-400">
+                      {(
+                        calculations.reduce((s, c) => s + getSzocho(c), 0) +
+                        calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) +
+                        calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) +
+                        calculations.reduce((s, c) => s + (c.total_deductions || 0), 0) +
+                        (
+                          calculations.reduce((s, c) => s + (c.gross_salary || 0), 0) -
+                          calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) -
+                          calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) -
+                          calculations.reduce((s, c) => s + (c.total_deductions || 0), 0)
+                        )
+                      ).toLocaleString('hu-HU')} Ft
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <p className="text-[11px] text-slate-400 italic">
+              * A számlatükör beállításai a Főkönyv modulban (`/general-ledger`) kezelhetők. A ciklus lezárásakor ezen tételek automatikusan bekerülnek a főkönyvi bizonylatba (`acc_journal_headers` + `acc_journal_lines`) és megjelennek a Napló modulban (`/journals`).
+            </p>
           </div>
         </>
       ) : (

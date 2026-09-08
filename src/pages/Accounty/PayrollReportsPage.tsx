@@ -108,6 +108,22 @@ export default function PayrollReportsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/general-ledger')}
+            className="flex items-center gap-1.5"
+          >
+            <FileText className="w-3.5 h-3.5 text-blue-600" /> Főkönyv (`/general-ledger`)
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/journals')}
+            className="flex items-center gap-1.5"
+          >
+            <FileText className="w-3.5 h-3.5 text-emerald-600" /> Napló (`/journals`)
+          </Button>
           <ExportButton
             filename={`berelozmeny_${company?.name || 'riport'}_${selectedYear}`}
             headers={['Hónap', 'Létszám', 'Bruttó', 'SZJA', 'TB', 'SZOCHO', 'Nettó']}

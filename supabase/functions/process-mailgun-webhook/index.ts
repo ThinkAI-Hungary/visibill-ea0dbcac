@@ -669,7 +669,19 @@ async function processBillingoAndSzamlazzLinks(
           }
 
           if (finalBytes && finalBytes.length > 500) {
-            const fileName = `szamlazz_link_${Date.now()}.pdf`;
+            let fileName: string;
+            const cd = res.headers.get('content-disposition');
+            const parsedFn = extractFilenameFromHeader(cd);
+            if (parsedFn) {
+              fileName = parsedFn;
+            } else {
+              fileName = `szamlazz_link_${Date.now()}.pdf`;
+            }
+
+            if (!fileName.toLowerCase().endsWith('.pdf')) {
+              fileName = `${fileName}.pdf`;
+            }
+
             const storagePath = `${alias.user_id}/${Date.now()}-${sanitizeFileName(fileName)}`;
 
             const { error: uploadErr } = await supabase.storage

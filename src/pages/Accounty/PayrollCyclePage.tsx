@@ -17,6 +17,7 @@ import {
 import { useAccountyClients } from '@/hooks/accounty';
 import { generatePayrollRequestEmail } from '@/lib/payroll/emailTemplates';
 import { printPayslip, printAllPayslips, type PayslipData } from '@/lib/payroll/payslipGenerator';
+import { postPayrollCycleToLedger } from '@/lib/payroll/payrollAutoPoster';
 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -102,6 +103,7 @@ export default function PayrollCyclePage() {
   const [emailSent, setEmailSent] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailTo, setEmailTo] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
 
   // Fetch all employments for this company
   const [allEmployments, setAllEmployments] = useState<any[]>([]);
@@ -879,16 +881,41 @@ export default function PayrollCyclePage() {
         ) : (
           <Button
             className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
-            disabled={updateStep.isPending}
+            disabled={updateStep.isPending || isPosting}
             onClick={async () => {
-              if (!cycle?.id) return;
-              await supabase.from('accounty_payroll_cycles').update({ status: 'closed', current_step: 8 }).eq('id', cycle.id);
-              toast({ title: ' Ciklus lezárva', description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva.` });
-              navigate(`/eaisybooks/payroll/${companyId}`);
+              if (!cycle?.id || !companyId || !user?.id) return;
+              setIsPosting(true);
+              try {
+                const postResult = await postPayrollCycleToLedger(cycle.id, companyId, user.id);
+                if (postResult.success) {
+                  toast({
+                    title: ' Ciklus lezárva és lekönyvelve!',
+                    description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva. Főkönyvi bizonylat: ${postResult.journalNumber || 'BER'}`,
+                  });
+                } else {
+                  toast({
+                    title: ' Ciklus lezárva (könyvelési figyelmeztetéssel)',
+                    description: postResult.message,
+                    variant: 'destructive',
+                  });
+                }
+                navigate(`/eaisybooks/payroll/${companyId}`);
+              } catch (err: any) {
+                toast({
+                  title: 'Hiba a lezárás során',
+                  description: err?.message || 'Váratlan hiba történt.',
+                  variant: 'destructive',
+                });
+              } finally {
+                setIsPosting(false);
+              }
             }}
           >
-            <Check className="w-4 h-4" />
-            Ciklus lezárása
+            {isPosting ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Könyvelés folyamatban...</>
+            ) : (
+              <><Check className="w-4 h-4" /> Ciklus lezárása & Főkönyvi könyvelés</>
+            )}
           </Button>
         )}
       </div>
