@@ -23,7 +23,7 @@ import {
   Users,
   FileText,
   Plus,
-  Sparkles,
+  Bot,
   PartyPopper,
   BarChart2,
   Shield,
@@ -562,7 +562,7 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mb-8 animate-in fade-in slide-in-from-bottom-3 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
         {[
           { icon: Briefcase, label: 'Portfólió', desc: 'Ügyfelek áttekintése', path: '/eaisybooks' },
-          { icon: Sparkles, label: 'AI Asszisztens', desc: 'Intelligens segítség', path: '/eaisybooks/ai-assistant' },
+          { icon: Bot, label: 'AI Asszisztens', desc: 'Intelligens segítség', path: '/eaisybooks/ai-assistant' },
           { icon: Shield, label: 'Segítség', desc: 'Dokumentáció és FAQ', path: '/eaisybooks/help' },
         ].map((link) => (
           <button

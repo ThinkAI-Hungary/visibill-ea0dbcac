@@ -181,21 +181,20 @@ Onboarding wizard az első bejelentkezéskor — cég létrehozás, kategória v
 
 ## Feedback Rendszer
 
-### Feedback FAB (Floating Action Button)
+### Feedback FAB (Floating Action Button) & AI Assistant Coexistence
 
 **Fájl:** `components/FeedbackFab.tsx`
 
+A felület jobb alsó sarkában elhelyezkedő duális lebegő gombcsoport, amely közvetlen hozzáférést biztosít mind a felhasználói hibajelzéshez/visszajelzéshez, mind az intelligens AI asszisztenshez:
+
 | Tulajdonság | Érték |
 |-------------|-------|
-| **Pozíció** | `fixed bottom-6 right-6 z-50` |
-| **Méret** | `h-14 w-14 rounded-full` |
-| **Szín** | `bg-primary text-primary-foreground` |
-| **Shadow** | `shadow-lg shadow-primary/25` |
-| **Hover** | `scale-105` + nagyobb shadow |
-| **Active** | `scale-95` |
-| **Glow** | `animate-pulse` ring |
-| **Ikon** | `MessageSquareText` — hover: `-8deg` rotáció |
-| **A11y** | `aria-label="Visszajelzés küldése"` |
+| **Pozíció** | `fixed bottom-6 right-6 z-50` (megnyitáskor sima shift: `md:right-[456px]` / `md:right-[736px]`) |
+| **Buborékok** | 1. **AI Chat FAB:** `h-13 w-13 min-h-[52px] min-w-[52px]`, zárt állapotban `teal-500` gradiens + `Bot` ikon, nyitott állapotban tokenizált bezáró gomb (`bg-card text-foreground border border-border/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary`, `X` ikon).<br>2. **Feedback FAB:** `h-12 w-12 min-h-[48px] min-w-[48px] rounded-full bg-primary text-primary-foreground`, `MessageSquareText` ikon. |
+| **Interakciós védelem** | Amikor az AI Chat Drawer megnyílik, a Feedback FAB automatikusan rejtett (`display: none`), megakadályozva a lebegő elemek halmozódását és a felületi interferenciát. |
+| **Shadow** | `shadow-lg shadow-black/5 dark:shadow-black/30` / `shadow-primary/25` |
+| **Hover / Active** | `hover:scale-105 active:scale-95 transition-all duration-200` |
+| **A11y** | `aria-label="Visszajelzés küldése"` és `aria-label="AI Asszisztens előhívása"` / `aria-label="AI Asszisztens bezárása"` |
 | **Print** | `print:hidden` |
 
 ### Feedback Dialog & Instant Képernyőkép Capture

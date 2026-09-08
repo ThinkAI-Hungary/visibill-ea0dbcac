@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Loader2, RefreshCw, Send, HelpCircle, AlertCircle } from 'lucide-react';
+import { Bot, Loader2, RefreshCw, Send, HelpCircle, AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -200,7 +200,7 @@ Az elemzés legyen tagolt, tömör, és tartalmazzon 3 konkrét adóoptimalizál
     <Card className="border border-border/60 bg-card/60 backdrop-blur-sm flex flex-col h-[350px]">
       <CardHeader className="py-3 border-b bg-muted/20 flex flex-row items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
+          <Bot className="w-4 h-4 text-primary" />
           <CardTitle className="text-sm font-semibold">AI Pénzügyi Asszisztens</CardTitle>
         </div>
         {analysis && (
@@ -213,8 +213,8 @@ Az elemzés legyen tagolt, tömör, és tartalmazzon 3 konkrét adóoptimalizál
       <CardContent className="flex-1 flex flex-col p-3 overflow-hidden">
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center space-y-3 p-4">
-            <div className="bg-indigo-500/10 text-indigo-500 p-3 rounded-2xl">
-              <Sparkles className="w-6 h-6 animate-pulse" />
+            <div className="bg-primary/10 text-primary p-3 rounded-2xl">
+              <Bot className="w-6 h-6" />
             </div>
             <div className="space-y-1">
               <p className="text-xs font-semibold text-foreground">Azonnali AI Pénzügyi Elemzés</p>
@@ -222,7 +222,7 @@ Az elemzés legyen tagolt, tömör, és tartalmazzon 3 konkrét adóoptimalizál
                 Elemezze a jelenlegi jövedelmezőségi rátákat, költségszerkezeteket és kapjon adóoptimalizálási tanácsokat.
               </p>
             </div>
-            <Button size="sm" onClick={generateReport} className="gap-1.5 font-medium text-xs bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Button size="sm" onClick={generateReport} className="gap-1.5 font-medium text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
               Elemzés indítása
             </Button>
           </div>
@@ -235,7 +235,7 @@ Az elemzés legyen tagolt, tömör, és tartalmazzon 3 konkrét adóoptimalizál
                   "flex flex-col max-w-[85%] rounded-xl p-3 leading-relaxed",
                   msg.sender === 'ai' 
                     ? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 mr-auto rounded-tl-none whitespace-pre-line"
-                    : "bg-indigo-600 text-white ml-auto rounded-tr-none"
+                    : "bg-primary text-primary-foreground ml-auto rounded-tr-none"
                 )}>
                   {msg.text.replace(/\*\*/g, '')}
                 </div>

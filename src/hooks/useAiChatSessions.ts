@@ -18,6 +18,16 @@ export interface AiChatMessage {
   role: 'user' | 'assistant';
   content: string;
   created_at: string;
+  is_helpful?: boolean | null;
+  feedback_reason?: string | null;
+  feedback_at?: string | null;
+}
+
+export interface SubmitMessageFeedbackParams {
+  messageId: string;
+  sessionId?: string;
+  isHelpful: boolean | null;
+  reason?: string | null;
 }
 
 /* ─── Query Keys ─── */
@@ -70,8 +80,25 @@ export function useAiChatSessions() {
         .delete()
         .eq('id', sessionId);
       if (error) throw error;
+      return sessionId;
     },
-    onSuccess: () => {
+    onMutate: async (sessionId: string) => {
+      await queryClient.cancelQueries({ queryKey: SESSIONS_KEY });
+      const previousSessions = queryClient.getQueryData<AiChatSession[]>(SESSIONS_KEY);
+      if (previousSessions) {
+        queryClient.setQueryData<AiChatSession[]>(
+          SESSIONS_KEY,
+          previousSessions.filter(s => s.id !== sessionId)
+        );
+      }
+      return { previousSessions };
+    },
+    onError: (_err, _sessionId, context) => {
+      if (context?.previousSessions) {
+        queryClient.setQueryData(SESSIONS_KEY, context.previousSessions);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: SESSIONS_KEY });
     },
   });
@@ -98,10 +125,64 @@ export function useAiChatSessions() {
       .select()
       .single();
     if (error) throw error;
+    // Optimistically update query cache
+    queryClient.setQueryData<AiChatMessage[]>(messagesKey(sessionId), (old) => {
+      if (!old) return [data as AiChatMessage];
+      if (old.some(m => m.id === data.id)) return old;
+      return [...old, data as AiChatMessage];
+    });
     // Invalidate messages cache for this session
     queryClient.invalidateQueries({ queryKey: messagesKey(sessionId) });
     return data as AiChatMessage;
   }, [queryClient]);
+
+  // ── Submit message feedback ──
+  const submitFeedbackMut = useMutation({
+    mutationFn: async ({ messageId, isHelpful, reason }: SubmitMessageFeedbackParams) => {
+      const now = isHelpful !== null ? new Date().toISOString() : null;
+      const { error } = await (supabase as any)
+        .from('accounty_ai_chat_messages')
+        .update({
+          is_helpful: isHelpful,
+          feedback_reason: isHelpful === false ? (reason ?? null) : null,
+          feedback_at: now,
+        })
+        .eq('id', messageId);
+      if (error) throw error;
+      return { messageId, isHelpful, reason, feedback_at: now };
+    },
+    onMutate: async ({ messageId, sessionId, isHelpful, reason }) => {
+      if (!sessionId) return;
+      await queryClient.cancelQueries({ queryKey: messagesKey(sessionId) });
+      const previousMessages = queryClient.getQueryData<AiChatMessage[]>(messagesKey(sessionId));
+      if (previousMessages) {
+        queryClient.setQueryData<AiChatMessage[]>(
+          messagesKey(sessionId),
+          previousMessages.map(m =>
+            m.id === messageId
+              ? {
+                  ...m,
+                  is_helpful: isHelpful,
+                  feedback_reason: isHelpful === false ? (reason ?? null) : null,
+                  feedback_at: isHelpful !== null ? new Date().toISOString() : null,
+                }
+              : m
+          )
+        );
+      }
+      return { previousMessages, sessionId };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousMessages && context?.sessionId) {
+        queryClient.setQueryData(messagesKey(context.sessionId), context.previousMessages);
+      }
+    },
+    onSettled: (_data, _error, vars) => {
+      if (vars.sessionId) {
+        queryClient.invalidateQueries({ queryKey: messagesKey(vars.sessionId) });
+      }
+    },
+  });
 
   return {
     sessions: sessionsQuery.data || [],
@@ -110,7 +191,60 @@ export function useAiChatSessions() {
     deleteSession: deleteSessionMut.mutateAsync,
     updateTitle: updateTitleMut.mutateAsync,
     addMessage,
+    submitFeedback: submitFeedbackMut.mutateAsync,
   };
+}
+
+/* ─── Standalone Hook for message feedback ─── */
+export function useSubmitMessageFeedback() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ messageId, isHelpful, reason }: SubmitMessageFeedbackParams) => {
+      const now = isHelpful !== null ? new Date().toISOString() : null;
+      const { error } = await (supabase as any)
+        .from('accounty_ai_chat_messages')
+        .update({
+          is_helpful: isHelpful,
+          feedback_reason: isHelpful === false ? (reason ?? null) : null,
+          feedback_at: now,
+        })
+        .eq('id', messageId);
+      if (error) throw error;
+      return { messageId, isHelpful, reason, feedback_at: now };
+    },
+    onMutate: async ({ messageId, sessionId, isHelpful, reason }) => {
+      if (!sessionId) return;
+      await queryClient.cancelQueries({ queryKey: messagesKey(sessionId) });
+      const previousMessages = queryClient.getQueryData<AiChatMessage[]>(messagesKey(sessionId));
+      if (previousMessages) {
+        queryClient.setQueryData<AiChatMessage[]>(
+          messagesKey(sessionId),
+          previousMessages.map(m =>
+            m.id === messageId
+              ? {
+                  ...m,
+                  is_helpful: isHelpful,
+                  feedback_reason: isHelpful === false ? (reason ?? null) : null,
+                  feedback_at: isHelpful !== null ? new Date().toISOString() : null,
+                }
+              : m
+          )
+        );
+      }
+      return { previousMessages, sessionId };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousMessages && context?.sessionId) {
+        queryClient.setQueryData(messagesKey(context.sessionId), context.previousMessages);
+      }
+    },
+    onSettled: (_data, _error, vars) => {
+      if (vars.sessionId) {
+        queryClient.invalidateQueries({ queryKey: messagesKey(vars.sessionId) });
+      }
+    },
+  });
 }
 
 /* ─── Hook for session messages ─── */

@@ -26,7 +26,7 @@ import {
   ShieldCheck,
   BookOpen,
   Scale,
-  Sparkles,
+  Bot,
   Rocket,
   Landmark,
   Shield,
@@ -182,7 +182,7 @@ export default function AccountySidebar({
       label: 'Támogatás & AI',
       icon: HelpCircle,
       items: [
-        { to: '/eaisybooks/ai-assistant', icon: Sparkles, label: 'AI Asszisztens' },
+        { to: '/eaisybooks/ai-assistant', icon: Bot, label: 'AI Asszisztens' },
         { to: '/eaisybooks/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
         { to: '/eaisybooks/help', icon: HelpCircle, label: 'Segítség' },
       ].filter(item => {
@@ -368,7 +368,7 @@ export default function AccountySidebar({
                 { path: '/eaisybooks/settings', name: 'Beállítások', icon: Settings },
                 { path: '/eaisybooks/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
                 { path: '/eaisybooks/help', name: 'Segítség', icon: HelpCircle },
-                { path: '/eaisybooks/ai-assistant', name: 'AI Asszisztens', icon: Sparkles },
+                { path: '/eaisybooks/ai-assistant', name: 'AI Asszisztens', icon: Bot },
                 { path: '/eaisybooks/admin/audit', name: 'Audit', icon: ShieldCheck },
               ].filter(item => {
                 if ('type' in item) return true;

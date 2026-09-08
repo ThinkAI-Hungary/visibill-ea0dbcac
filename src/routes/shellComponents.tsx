@@ -43,9 +43,13 @@ export function ScrollToTop() {
     const scrollContainers = document.querySelectorAll("main, .overflow-y-auto, .overflow-auto");
     scrollContainers.forEach((el) => {
       // Skip sidebar navigation containers (marked with data-sidebar-nav)
+      // and AI Assistant chat containers (marked with data-ai-chat or inside #ai-assistant-drawer)
       if (
         el.hasAttribute('data-sidebar-nav') ||
-        el.closest('[data-sidebar-nav]')
+        el.closest('[data-sidebar-nav]') ||
+        el.hasAttribute('data-ai-chat') ||
+        el.closest('[data-ai-chat]') ||
+        el.closest('#ai-assistant-drawer')
       ) {
         return;
       }

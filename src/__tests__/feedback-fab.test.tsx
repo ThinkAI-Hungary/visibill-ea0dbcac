@@ -43,19 +43,19 @@ describe('FeedbackFab — Dual Floating Action Bubbles', () => {
     renderWithProviders(<FeedbackFab />);
 
     // Initially closed
-    expect(screen.queryByRole('dialog', { name: /AI Asszisztens csevegés/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: /asszisztens csevegés/i })).not.toBeInTheDocument();
 
     // Click to open
     const aiButton = screen.getByRole('button', { name: /AI Asszisztens előhívása/i });
     fireEvent.click(aiButton);
 
     // Now drawer is mounted
-    expect(screen.getByRole('dialog', { name: /AI Asszisztens csevegés/i })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /asszisztens csevegés/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /AI Asszisztens bezárása/i })).toBeInTheDocument();
 
     // Click AI button again to close
     fireEvent.click(screen.getByRole('button', { name: /AI Asszisztens bezárása/i }));
-    expect(screen.queryByRole('dialog', { name: /AI Asszisztens csevegés/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: /asszisztens csevegés/i })).not.toBeInTheDocument();
   });
 
   it('opens FeedbackDialog when Feedback bubble is clicked', () => {
@@ -125,14 +125,25 @@ describe('AiAssistantDrawer', () => {
       </MemoryRouter>
     );
 
-    const drawer = screen.getByRole('dialog', { name: /AI Asszisztens csevegés/i });
+    const drawer = screen.getByRole('dialog', { name: /asszisztens csevegés/i });
     expect(drawer).toBeInTheDocument();
-    expect(screen.getByText('AI Asszisztens')).toBeInTheDocument();
-    expect(screen.getByText('eaisyBill & eaisyBooks szakértő')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Teljes nézet/i })).toHaveAttribute('href', '/eaisybooks/ai-assistant');
+    expect(screen.getByRole('heading', { level: 2, name: /eAIsy asszisztens/i })).toBeInTheDocument();
+    expect(screen.getByText('applikáció támogatás')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Teljes nézet/i })).not.toBeInTheDocument();
 
     const closeBtn = screen.getByRole('button', { name: /AI fiók bezárása/i });
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts onSidebarChange callback prop without crashing', () => {
+    const onSidebarChange = vi.fn();
+    render(
+      <MemoryRouter>
+        <AiAssistantDrawer open={true} onClose={vi.fn()} onSidebarChange={onSidebarChange} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('dialog', { name: /asszisztens csevegés/i })).toBeInTheDocument();
   });
 });

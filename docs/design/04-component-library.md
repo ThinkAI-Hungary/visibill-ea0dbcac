@@ -251,11 +251,27 @@ iOS stílusú toggle kapcsoló szöveges label-lel:
 - Interaktív SVG bezier-görbékkel összekötött mérföldkő- és fázisgráf.
 - Zoom, pan és drag képesség, kapcsolódó számlák és költségkeret vs. tény költés (burn-rate) vizuális progress barokkal.
 
-### FeedbackFab & FeedbackDialog
+### FeedbackFab & FeedbackDialog (Dual Floating Action Bubbles)
 **Fájl:** `components/FeedbackFab.tsx` + `FeedbackDialog.tsx`
-- Jobb alsó sarokba rögzített Floating Action Button (`fixed bottom-4 right-4 z-50`).
+- Jobb alsó sarokba rögzített lebegő gombcsoport (`fixed bottom-6 right-6 z-50`):
+  1. **AI Chat Asszisztens Bubble:** Zöld/teal gradiens ikon (`Bot`), megnyitáskor sima animációval balra tolódik (`md:right-[456px]` ill. nyitott sidebar esetén `md:right-[736px]`), és tokenizált bezáró gombbá alakul át (`bg-card text-foreground border border-border/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary`, `X` ikon).
+  2. **Visszajelzés FAB:** `MessageSquareText` ikon, automatikusan rejtett (`display: none`), amint az AI Chat Drawer megnyílik, elkerülve a lebegő elemek torlódását.
 - `html2canvas` integráció: instant DOM screenshot capture (jelszómezők kitakarásával).
 - 5-csillagos értékelő, kategóriaválasztó és böngésző/OS diagnosztikai metaadatok automatikus rögzítése.
+
+### AiAssistantDrawer & AiAssistantChat
+**Fájl:** `components/ai/AiAssistantDrawer.tsx` + `components/ai/AiAssistantChat.tsx`
+- 440px széles slide-over fiók (`fixed top-0 right-0 h-screen z-40 bg-background/95 backdrop-blur-md border-l border-border/80 shadow-2xl`).
+- Moduláris és dekomponált architektúra:
+  - `AiAssistantDrawer`: Slide-over konténer és animáció, collapsible session history sidebar (280px).
+  - `AiAssistantChat`: Reusable csevegőmag session váltással, skeleton loader állapotokkal, SSE streaminggel, auto-scroll ref védelemmel és dinamikus prompt pill-ekkel.
+- Helyes navigációs stabilitás: a csevegés állapota és görgetési pozíciója megmarad a háttérben történő cégadat-frissítések és route-navigáció során.
+
+### MessageFeedbackWidget
+**Fájl:** `components/ai/MessageFeedbackWidget.tsx`
+- AI asszisztens válaszok közvetlen láblécébe épített mikro-értékelő widget (Thumbs Up / Thumbs Down).
+- Negatív értékelés esetén lenyíló textarea (részletes hiba/indoklás megadása), amely az `accounty_ai_chat_messages` táblába menti a visszajelzést a `view_ai_chat_feedback_reports` RAG-tuning elemzéshez.
+
 
 ### LiveNotificationProvider
 **Fájl:** `components/LiveNotificationProvider.tsx` (38KB)
