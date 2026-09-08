@@ -561,7 +561,7 @@ export function AiAssistantChat({ fullPage = false }: AiAssistantChatProps) {
               </Button>
             )}
           </div>
-          <p className="text-[9px] text-slate-400 mt-1.5 text-center">GPT-4o mini · A válaszok tájékoztató jellegűek</p>
+          <p className="text-[9px] text-slate-400 mt-1.5 text-center">AI Asszisztens · A válaszok tájékoztató jellegűek</p>
         </div>
       </div>
     </div>

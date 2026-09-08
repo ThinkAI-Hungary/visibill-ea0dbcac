@@ -42,7 +42,6 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { useUnreadTicketCount } from '@/hooks/useTickets';
-import { AiAssistantChat as AiDrawerChat } from './AiAssistantPage';
 import CookieConsentBanner from '@/components/accounty/CookieConsentBanner';
 import { AccountyErrorBoundary } from '@/components/accounty/AccountyErrorBoundary';
 import { useAccountyRealtime } from '@/hooks/useAccountyRealtime';
@@ -533,32 +532,6 @@ function AccountyLayoutInner() {
                       Interaktív bemutató újraindítása
                     </Button>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {aiDrawerOpen && (
-              <div className="fixed inset-y-0 right-0 z-40 w-full max-w-[420px] bg-background/80 backdrop-blur-xl border-l border-border/50 shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-violet-500" />
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">AI Asszisztens</h3>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Link
-                      to="/eaisybooks/ai-assistant"
-                      onClick={() => setAiDrawerOpen(false)}
-                      className="text-xs text-primary hover:text-primary/80 px-2 py-1 rounded-md hover:bg-primary/10 transition-colors"
-                    >
-                      Teljes nézet
-                    </Link>
-                    <button onClick={() => setAiDrawerOpen(false)} className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                      <X className="w-4 h-4 text-slate-400" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <AiDrawerChat />
                 </div>
               </div>
             )}

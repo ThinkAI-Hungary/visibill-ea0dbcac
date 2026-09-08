@@ -1,7 +1,7 @@
-# Graph Report - eaisybill-prod  (2026-09-07)
+# Graph Report - eaisybill-prod  (2026-09-08)
 
 ## Corpus Check
-- 1739 files · ~2,267,626 words
+- 1739 files · ~2,267,844 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -1243,7 +1243,7 @@ Nodes (14): ALLOWED_TABLES, ApiKeyRecord, authenticateApiKey(), BLOCKED_TABLES, 
 
 ### Community 170 - "Community 170"
 Cohesion: 0.14
-Nodes (13): 1. Kontextus és Problémafelvetés, 2.1. Server-Sent Events (SSE) Token Streaming, 2.2. Dual-Provider API Routing és Automatikus Fallback, 2.3. Védelem és Kvóták (Automation Shield & In-Memory Rate Limiting), 2.4. Dinamikus Rendszerprompt és Kontextus-Injektálás, 2.5. Aszinkron Költségelszámolás (`llm_koltsegek`), 2.6. Adatbázis Séma és RLS Izoláció, 2.7. Újrafelhasználhatóság a Platformon (+5 more)
+Nodes (13): 1. Kontextus és Problémafelvetés, 2.1. Server-Sent Events (SSE) Token Streaming, 2.2. Dual-Provider API Routing, Dinamikus Modellválasztás és Automatikus Fallback, 2.3. Védelem és Kvóták (Automation Shield & In-Memory Rate Limiting), 2.4. Dinamikus Rendszerprompt és Kontextus-Injektálás, 2.5. Aszinkron Költségelszámolás (`llm_koltsegek`), 2.6. Adatbázis Séma és RLS Izoláció, 2.7. Újrafelhasználhatóság a Platformon (+5 more)
 
 ### Community 171 - "Community 171"
 Cohesion: 0.20
@@ -1447,7 +1447,7 @@ Nodes (23): 1. Portfólió Mód (`/eaisybooks/*`), 1. URL Struktúra, 1. 📊 Á
 
 ### Community 222 - "Community 222"
 Cohesion: 0.15
-Nodes (12): 14. Jövőbeli Döntések, 15. Követelmények Mátrix, 1. Összefoglaló, 6. NAV Integráció, 8. HR & Munkaidő (eaisyBill), eaisyBill követelmények, eaisyBooks követelmények, REQ-6.1: NAV Online Számla API v3 (+4 more)
+Nodes (12): 14. Jövőbeli Döntések, 15. Követelmények Mátrix, 1. Összefoglaló, 8. HR & Munkaidő (eaisyBill), 9. Előfizetés & Árazás, eaisyBill követelmények, eaisyBooks követelmények, REQ-8.1: Munkaidő nyilvántartás (+4 more)
 
 ### Community 223 - "Community 223"
 Cohesion: 0.29
@@ -2319,11 +2319,11 @@ Nodes (6): A-100: Banki Tranzakció Egyediségi Megkötés Bővítése Összegge
 
 ### Community 533 - "Community 533"
 Cohesion: 0.67
-Nodes (3): 9. Előfizetés & Árazás, REQ-9.1: Subscription tierek, REQ-9.2: Előfizetés scope
+Nodes (3): 6. NAV Integráció, REQ-6.1: NAV Online Számla API v3, REQ-6.2: Szinkronizáció stratégia
 
 ### Community 535 - "Community 535"
-Cohesion: 0.16
-Nodes (15): buildLLMCosts(), buildCompanyDetail(), buildOverview(), buildUserDetail(), fetchMultiProjectMonthlyLlm(), buildWorkerStatus(), CompanyMemberRow, CompanyRow (+7 more)
+Cohesion: 0.26
+Nodes (6): buildLLMCosts(), buildWorkerStatus(), isCompletedMessage(), roleLabel(), getClientForProject(), getProjectClients()
 
 ### Community 536 - "Community 536"
 Cohesion: 0.33
@@ -2514,8 +2514,8 @@ Cohesion: 0.22
 Nodes (8): 1. Context, 1. PostgreSQL Database Trigger Szintű Garancia (`public.on_company_created()`), 2. Decision, 2. Idempotens Backfill Migráció (`20260901_auto_sync_company_to_eaisybooks.sql`), 3. Consequences, 3. Frontend Cache Invalidation (`src/components/CompanySelector.tsx`), A-073: eaisybill ↔ eaisyBooks Cégfelviteli Automatikus Szinkronizáció, Pozitív:
 
 ### Community 589 - "Community 589"
-Cohesion: 0.22
-Nodes (8): emptyCompanyDetail, emptyErrors, emptyFiles, emptyLLMCosts, emptyOverview, emptyUserDetail, emptyWorkerStatus, ProjectClient
+Cohesion: 0.15
+Nodes (17): buildCompanyDetail(), buildOverview(), buildUserDetail(), fetchMultiProjectMonthlyLlm(), CompanyMemberRow, CompanyRow, emptyCompanyDetail, emptyErrors (+9 more)
 
 ### Community 590 - "Community 590"
 Cohesion: 0.33

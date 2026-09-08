@@ -1,21 +1,25 @@
-# P-077: [eaisyBooks] AI Asszisztens Chat és Speed Dial Lebegő Menü UX
+# P-077: [eaisyBill & eaisyBooks] Kettős Lebegő Akciógomb (Dual FAB) és AI Asszisztens Chat UX
 
-**Status:** Decided  
-**Category:** eaisyBooks & UI Workflow  
+**Status:** Decided (Updated)  
+**Category:** UI Workflow & AI Integration  
 **Kapcsolódó döntések:** [P-031: eaisyBooks Layout](./P-031-accounty-layout.md), [P-035: Ticket System](./P-035-ticket-system.md), [Decision 055](../../business/decisions/055-eaisybooks-ai-assistant-chat.md), [A-104](../../architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md)
 
-**Question:** Hogyan biztosítsuk, hogy az AI könyvelői asszisztens bármely eaisyBooks munkafolyamatból azonnal, kontextusvesztés nélkül elérhető legyen, miként integráljuk a meglévő hibabejelentő funkcióval a jobb alsó sarokban, és milyen felületi elemek támogassák a többmenetes beszélgetéseket és a szakmai gyorsműveleteket?
+**Question:** Hogyan biztosítsuk, hogy az AI könyvelői asszisztens és a hibabejelentő funkció bármely eaisyBill és eaisyBooks munkafolyamatból azonnal, közvetlenül (további kinyitó kattintások nélkül) elérhető legyen, miként helyezzük el a két különálló buborékot, és hogyan működjön a fiók megnyitásakor az elrendezés animációja?
 
 **Decision:**
 
-1. **Lebegő Akciógomb (Speed Dial FAB) Architektúra:**
-   - A jobb alsó sarokban elhelyezett [FeedbackFab.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/FeedbackFab.tsx) adaptív működésű:
-     - **eaisyBill nézetben:** Egyetlen kör alakú gomb marad (`MessageSquareText` ikon), amely közvetlenül a [FeedbackDialog.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/FeedbackDialog.tsx) hibabejelentő modalt nyitja meg.
-     - **eaisyBooks nézetben:** Ha a komponens megkapja az `onAiOpen` propot az [AccountyLayout.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/pages/Accounty/AccountyLayout.tsx) layoutból, automatikusan **Speed Dial** menüként viselkedik.
-   - **Kinyitott Speed Dial menüpontok:**
-     1. **AI Asszisztens:** Lila-fukszia gradiens háttér (`from-violet-500 to-fuchsia-600`), `Sparkles` ikonnal. Felirata zárt drawer esetén *„AI Asszisztens”*, nyitott fiók esetén *„AI bezárása”*.
-     2. **Hibabejelentés:** Borostyánsárga háttér (`bg-amber-500`), `Bug` ikonnal, amely megnyitja a hibajegybeküldő modalt.
-     3. **Bezáró gomb:** A fő `+` gomb 45 fokkal elfordulva `X` állapotba lép.
+1. **Kettős Lebegő Akciógomb (Dual FAB) Architektúra:**
+   - Mind az **eaisyBill**, mind az **eaisyBooks** felületen két önálló, közvetlenül kattintható lebegő gomb kapott helyet a jobb alsó sarokban vertikálisan elrendezve (`fixed bottom-6 z-50 flex flex-col items-end gap-3`):
+     1. **Felső buborék — AI Chat Asszisztens (`#ai-assistant-fab`):**
+        - Lila-indigó-fukszia gradiens háttér (`bg-gradient-to-br from-violet-600 via-indigo-600 to-fuchsia-600`), `Sparkles` ikonnal és pulzáló fehér fényudvarral.
+        - Kattintásra azonnal megnyitja / becsukja a slide-over [AiAssistantDrawer.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/ai/AiAssistantDrawer.tsx) fiókot.
+        - Nyitott drawer esetén az ikon forgatott bezárás `X` állapotba lép, színe sötét kiemelést kap, tooltip felirata: *„AI bezárása”*.
+     2. **Alsó buborék — Visszajelzés küldése (`#feedback-fab`):**
+        - Visibill primary kék háttér (`bg-primary text-primary-foreground`), `MessageSquareText` ikonnal.
+        - Kattintásra közvetlenül megnyitja a [FeedbackDialog.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/FeedbackDialog.tsx) hibajegybeküldő modalt.
+   - **Dinamikus animáció nyitott fiók esetén:**
+     - Amikor az AI fiók kinyílik (440 px szélesség), a két buborék asztali képernyőn zökkenőmentes animációval balra tolódik (`md:right-[456px]`), így nem takarja ki a chat beviteli mezőjét és a küldés gombot, és mindkét funkció (AI zárás, visszajelzés küldése) elérhető marad.
+     - Mobilon a fiók kitölti a képernyőt, a lebegő gombok pedig automatikusan rejtve maradnak a zavartalan csevegés érdekében.
 
 2. **Kettős Megjelenítési Mód (Drawer & Full Page):**
    - **Slide-over fiók (Drawer mód):**
@@ -51,12 +55,14 @@
    - **Kliens oldali flood védelem:** 3 másodpercen belüli ismételt küldés esetén figyelmeztető hibaüzenetet kap a felhasználó.
 
 **Current Implementation:**
-- [src/components/FeedbackFab.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/FeedbackFab.tsx) — Speed Dial FAB logika és animációk.
-- [src/pages/Accounty/AccountyLayout.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/pages/Accounty/AccountyLayout.tsx) — Slide-over Drawer konténer és állapot.
+- [src/components/FeedbackFab.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/FeedbackFab.tsx) — Kettős lebegő buborék (Dual FAB) komponens mindkét platformon.
+- [src/components/ai/AiAssistantDrawer.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/ai/AiAssistantDrawer.tsx) — Slide-over AI fiók konténer és állapot.
 - [src/pages/Accounty/AiAssistantPage.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/pages/Accounty/AiAssistantPage.tsx) — Chat komponens, streaming reader, quick actions és sidebar.
+- [src/components/ProtectedLayout.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/ProtectedLayout.tsx) — eaisyBill layout integráció.
+- [src/pages/Accounty/AccountyLayout.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/pages/Accounty/AccountyLayout.tsx) — eaisyBooks layout integráció.
 - [src/hooks/useAiChatSessions.ts](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/hooks/useAiChatSessions.ts) — React Query perzisztencia hook.
 
-**Rationale:** A könyvelők számára a kontextusvesztés a legnagyobb hatékonysággyilkos tényező. A slide-over fiók segítségével az adó- vagy bérszabályok ellenőrzése anélkül végezhető el, hogy el kellene hagyni az aktuálisan szerkesztett céget vagy bizonylatot. A Speed Dial menü pedig elegánsan, egyetlen lebegő gombban egyesíti a rendszerhibák bejelentését és az intelligens szakmai segítségkérést.
+**Rationale:** A könyvelők és vállalkozók számára a kontextusvesztés a legnagyobb hatékonysággyilkos tényező. A közvetlenül kattintható két lebegő gombnak köszönhetően nincs szükség előzetes menünyitogatásra: a felhasználó egyetlen kattintással hibát jelenthet be vagy szakmai segítséget kérhet az AI-tól. A slide-over fiók segítségével az adó- vagy bérszabályok ellenőrzése anélkül végezhető el, hogy el kellene hagyni az aktuálisan szerkesztett céget vagy bizonylatot.
 
 ---
 

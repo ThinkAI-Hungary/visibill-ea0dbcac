@@ -363,6 +363,7 @@ export function renderAccountyRoutes() {
         <Route path="payroll-portfolio" element={<Navigate to="/eaisybooks?tab=payroll" replace />} />
         <Route path="onboarding" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyOnboardingPage /></Suspense></ProtectedAccountyRoute>} />
         <Route path="ai-assistant" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAssistantPage /></Suspense>} />
+        <Route path="ai" element={<Navigate to="/eaisybooks/ai-assistant" replace />} />
         <Route path="profile/settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ProfileSettingsPage /></Suspense>} />
         {/* TAO/KIVA module */}
         <Route path="tao" element={<Navigate to="/eaisybooks?tab=tao" replace />} />

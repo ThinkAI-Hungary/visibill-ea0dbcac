@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/components/FeedbackFab.tsx": {
-    "mtime": 1781806414.7786238,
-    "ast_hash": "e9437c9186080e4a1ac91665a99b75b8",
+    "mtime": 1788844697.4345102,
+    "ast_hash": "aa831a9c95125b275694ad95dbcb857a",
     "semantic_hash": ""
   },
   "src/components/GlobalDatePicker.tsx": {
@@ -1305,8 +1305,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountyLayout.tsx": {
-    "mtime": 1788295906.865156,
-    "ast_hash": "4b425ecb941ad05ddbd186238f40a2e9",
+    "mtime": 1788844715.302064,
+    "ast_hash": "ef84fe6dbb19d081435ec960bb38879c",
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountyRoleContext.tsx": {
@@ -3940,8 +3940,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/AiAssistantPage.tsx": {
-    "mtime": 1787568622.8703353,
-    "ast_hash": "e36c80e8c421a2ec9dbd85a93e6cf49c",
+    "mtime": 1788844722.3050325,
+    "ast_hash": "5c38b4807408df6cfb49eda179bedbff",
     "semantic_hash": ""
   },
   "src/pages/Accounty/AlertsCenterPage.tsx": {
@@ -7575,8 +7575,8 @@
     "semantic_hash": ""
   },
   "src/routes/accountyRoutes.tsx": {
-    "mtime": 1788212014.2281156,
-    "ast_hash": "84039a7c4949b4b23fc8c25e2b24c5c7",
+    "mtime": 1788844730.0976944,
+    "ast_hash": "2ad36ab1dd4d00d2587557e760be9ff5",
     "semantic_hash": ""
   },
   "src/routes/authRoutes.tsx": {
@@ -9390,8 +9390,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-077-eaisybooks-ai-assistant-chat-and-speed-dial-ux.md": {
-    "mtime": 1788792235.9863255,
-    "ast_hash": "67febde4054edcf8b34d42b3774ad361",
+    "mtime": 1788845037.6962237,
+    "ast_hash": "99588e9288604fc0be179dcb6c9a4aa9",
     "semantic_hash": ""
   },
   "src/components/knowledge-base/KnowledgeArticleCard.tsx": {
@@ -9482,6 +9482,16 @@
   "supabase/migrations/20260907170155_search_knowledge_base_rpc.sql": {
     "mtime": 1788800006.7898686,
     "ast_hash": "abb328e46539b63667231a33ce196f2c",
+    "semantic_hash": ""
+  },
+  "src/__tests__/feedback-fab.test.tsx": {
+    "mtime": 1788844745.7295716,
+    "ast_hash": "e398b50cf6c85bdfce4f7b1af94ada01",
+    "semantic_hash": ""
+  },
+  "src/components/ai/AiAssistantDrawer.tsx": {
+    "mtime": 1788844689.504182,
+    "ast_hash": "4b93562372f09e19543d505c555e4a07",
     "semantic_hash": ""
   }
 }
