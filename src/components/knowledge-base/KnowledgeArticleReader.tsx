@@ -10,6 +10,8 @@ import {
   Check,
   LifeBuoy,
   BookOpen,
+  Sparkles,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,179 +20,16 @@ import { toast } from "@/hooks/use-toast";
 
 import { FALLBACK_CATEGORY_MAP } from "@/data/knowledgeBaseFallback";
 import { useCanAccessKnowledgeMenuPath } from "@/hooks/useKnowledgeBase";
+import {
+  KnowledgeArticleStructuredContent,
+  parseInlineFormatting,
+} from "./KnowledgeArticleStructuredContent";
 
 interface KnowledgeArticleReaderProps {
   article: KnowledgeArticle;
   onBack: () => void;
   onSelectArticle: (article: KnowledgeArticle) => void;
   relatedArticles?: KnowledgeArticle[];
-}
-
-/**
- * Lightweight, robust markdown renderer for knowledge base articles.
- * Renders headings, lists, inline code, bolding, and links cleanly.
- */
-function MarkdownRenderer({ content }: { content: string }) {
-  const lines = content.split("\n");
-
-  const renderedElements: React.ReactNode[] = [];
-  let currentList: { type: "ul" | "ol"; items: string[] } | null = null;
-
-  const flushList = (key: number) => {
-    if (!currentList) return null;
-    const { type, items } = currentList;
-    currentList = null;
-
-    if (type === "ul") {
-      return (
-        <ul key={`list-${key}`} className="my-3 ml-6 list-disc space-y-1.5 text-sm text-foreground/90 leading-relaxed">
-          {items.map((item, idx) => (
-            <li key={idx}>{parseInlineFormatting(item)}</li>
-          ))}
-        </ul>
-      );
-    }
-    return (
-      <ol key={`list-${key}`} className="my-3 ml-6 list-decimal space-y-1.5 text-sm text-foreground/90 leading-relaxed">
-        {items.map((item, idx) => (
-          <li key={idx}>{parseInlineFormatting(item)}</li>
-        ))}
-      </ol>
-    );
-  };
-
-  for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i];
-    const line = rawLine.trim();
-
-    if (!line) {
-      if (currentList) {
-        renderedElements.push(flushList(i));
-      }
-      continue;
-    }
-
-    // Headings
-    if (line.startsWith("# ")) {
-      if (currentList) renderedElements.push(flushList(i));
-      renderedElements.push(
-        <h1 key={i} className="mt-6 mb-3 text-2xl font-bold tracking-tight text-foreground border-b border-border/50 pb-2">
-          {parseInlineFormatting(line.replace(/^#\s+/, ""))}
-        </h1>
-      );
-      continue;
-    }
-
-    if (line.startsWith("## ")) {
-      if (currentList) renderedElements.push(flushList(i));
-      renderedElements.push(
-        <h2 key={i} className="mt-5 mb-2.5 text-xl font-bold tracking-tight text-foreground">
-          {parseInlineFormatting(line.replace(/^##\s+/, ""))}
-        </h2>
-      );
-      continue;
-    }
-
-    if (line.startsWith("### ")) {
-      if (currentList) renderedElements.push(flushList(i));
-      renderedElements.push(
-        <h3 key={i} className="mt-4 mb-2 text-base font-semibold text-foreground">
-          {parseInlineFormatting(line.replace(/^###\s+/, ""))}
-        </h3>
-      );
-      continue;
-    }
-
-    // Unordered list item
-    if (line.startsWith("- ") || line.startsWith("* ")) {
-      const itemText = line.replace(/^[-*]\s+/, "");
-      if (!currentList || currentList.type !== "ul") {
-        if (currentList) renderedElements.push(flushList(i));
-        currentList = { type: "ul", items: [itemText] };
-      } else {
-        currentList.items.push(itemText);
-      }
-      continue;
-    }
-
-    // Ordered list item (e.g. "1. ")
-    if (/^\d+\.\s+/.test(line)) {
-      const itemText = line.replace(/^\d+\.\s+/, "");
-      if (!currentList || currentList.type !== "ol") {
-        if (currentList) renderedElements.push(flushList(i));
-        currentList = { type: "ol", items: [itemText] };
-      } else {
-        currentList.items.push(itemText);
-      }
-      continue;
-    }
-
-    // Normal paragraph
-    if (currentList) {
-      renderedElements.push(flushList(i));
-    }
-
-    renderedElements.push(
-      <p key={i} className="my-2.5 text-sm leading-relaxed text-foreground/90">
-        {parseInlineFormatting(line)}
-      </p>
-    );
-  }
-
-  if (currentList) {
-    renderedElements.push(flushList(lines.length));
-  }
-
-  return <div className="space-y-1">{renderedElements}</div>;
-}
-
-/**
- * Parses inline Markdown elements: **bold**, `inline code`
- */
-function parseInlineFormatting(text: string): React.ReactNode {
-  const parts: React.ReactNode[] = [];
-  let remaining = text;
-  let keyIndex = 0;
-
-  // Regex matching `code` or **bold**
-  const regex = /(`[^`]+`|\*\*[^*]+\*\*)/;
-
-  while (remaining.length > 0) {
-    const match = remaining.match(regex);
-    if (!match || match.index === undefined) {
-      parts.push(remaining);
-      break;
-    }
-
-    const before = remaining.slice(0, match.index);
-    if (before) {
-      parts.push(before);
-    }
-
-    const matchedToken = match[0];
-    if (matchedToken.startsWith("`") && matchedToken.endsWith("`")) {
-      const codeContent = matchedToken.slice(1, -1);
-      parts.push(
-        <code
-          key={`code-${keyIndex++}`}
-          className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[12px] text-primary border border-border/50"
-        >
-          {codeContent}
-        </code>
-      );
-    } else if (matchedToken.startsWith("**") && matchedToken.endsWith("**")) {
-      const boldContent = matchedToken.slice(2, -2);
-      parts.push(
-        <strong key={`bold-${keyIndex++}`} className="font-semibold text-foreground">
-          {boldContent}
-        </strong>
-      );
-    }
-
-    remaining = remaining.slice(match.index + matchedToken.length);
-  }
-
-  return <>{parts}</>;
 }
 
 export const KnowledgeArticleReader = React.memo(function KnowledgeArticleReader({
@@ -228,7 +67,7 @@ export const KnowledgeArticleReader = React.memo(function KnowledgeArticleReader
   const categoryIcon = article.category?.icon || FALLBACK_CATEGORY_MAP.get(article.category_id)?.icon || article.icon;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="max-w-6xl mx-auto space-y-6 pb-12">
       {/* Navigation Top Bar */}
       <div className="flex items-center justify-between gap-4">
         <Button
@@ -290,9 +129,19 @@ export const KnowledgeArticleReader = React.memo(function KnowledgeArticleReader
             {article.title}
           </h1>
 
-          {/* Lead Summary */}
-          <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm leading-relaxed text-foreground/90">
-            {article.summary}
+          {/* Lead Summary with Lucide Sparkles icon and inline formatting */}
+          <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5 text-sm leading-relaxed text-foreground/90 flex items-start gap-3 shadow-2xs">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary mt-0.5">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[11px] font-bold text-primary uppercase tracking-wider block mb-1">
+                Rendszer Összefoglaló
+              </span>
+              <div className="font-medium text-foreground/90 leading-relaxed">
+                {parseInlineFormatting(article.summary)}
+              </div>
+            </div>
           </div>
 
           {/* Tags */}
@@ -301,22 +150,23 @@ export const KnowledgeArticleReader = React.memo(function KnowledgeArticleReader
               {article.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-md bg-muted/80 px-2 py-0.5 text-xs text-muted-foreground"
+                  className="inline-flex items-center gap-1 rounded-lg bg-muted/70 px-2.5 py-1 text-xs text-muted-foreground border border-border/40 font-medium"
                 >
-                  #{tag}
+                  <Tag className="h-3 w-3 text-muted-foreground/70" />
+                  <span>{tag}</span>
                 </span>
               ))}
             </div>
           )}
         </header>
 
-        {/* Content Body */}
-        <div className="pt-6">
-          <MarkdownRenderer content={article.content} />
+        {/* Structured Content Body */}
+        <div className="pt-8">
+          <KnowledgeArticleStructuredContent article={article} jumpUrl={jumpUrl} />
         </div>
 
         {/* Bottom Callout / Ticket Help Banner */}
-        <div className="mt-10 rounded-2xl border border-border/70 bg-gradient-to-r from-primary/5 via-secondary/10 to-transparent p-5 sm:p-6">
+        <div className="mt-12 rounded-2xl border border-border/70 bg-gradient-to-r from-primary/5 via-secondary/10 to-transparent p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">

@@ -147,6 +147,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-103 | eaisyBooks RLS Teljesítmény Optimalizáció és Hiba-Elhárítás | ✅ Decided | [A-103](./A-103-accounty-rls-performance-optimization-and-error-guarding.md) |
 | A-104 | eaisyBooks AI Chat Streaming, Dual-Provider API Routing és Edge Architektúra | ✅ Decided | [A-104](./A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md) |
 | A-105 | eaisyBill Tudástár Adatmodell, Full-Text Search és AI Retrieval Előkészítés | ✅ Decided | [A-105](./A-105-knowledge-base-schema-and-fts.md) |
+| A-106 | Saját Jogú Nyugdíjas Járulékmentesség, Megbízási Munkaidő Rugalmasság és Vendéglátóipari Felszolgálási Díj Adózás | ✅ Decided | [A-106](./A-106-pensioner-tax-exemption-and-service-charge-taxation.md) |
 
 ## 💳 Fizetés
 

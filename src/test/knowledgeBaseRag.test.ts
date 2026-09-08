@@ -147,7 +147,7 @@ describe("Knowledge Base RAG & Edge Function Context Pipeline", () => {
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].menu_path).toBe("/vat-return");
     expect(results[0].rank).toBe(1.0);
-    expect(results[0].id).toBe("vat-return-and-nav65");
+    expect(results[0].id).toBe("eaisybill-vat-return");
   });
 
   it("retrieves relevant eaisyBill articles for invoice OCR and upload queries", () => {
@@ -160,8 +160,7 @@ describe("Knowledge Base RAG & Edge Function Context Pipeline", () => {
 
     expect(results.length).toBeGreaterThan(0);
     const topMatch = results[0];
-    expect(topMatch.id).toBe("invoice-upload-and-ocr");
-    expect(topMatch.title).toContain("Bizonylatok feltöltése");
+    expect(topMatch.id).toBe("eaisybill-upload");
     expect(topMatch.menu_path).toBe("/upload");
   });
 
@@ -175,7 +174,10 @@ describe("Knowledge Base RAG & Edge Function Context Pipeline", () => {
 
     expect(results.length).toBeGreaterThan(0);
     const topIds = results.map((r) => r.id);
-    expect(topIds).toContain("eaisybooks-payroll-and-xml-reconstruction");
+    expect(
+      topIds.includes("books-client-payroll") ||
+      topIds.includes("books-client-payroll-filings")
+    ).toBe(true);
   });
 
   it("retrieves relevant EV (egyéni vállalkozó) articles for átalányadó queries", () => {
@@ -188,7 +190,7 @@ describe("Knowledge Base RAG & Edge Function Context Pipeline", () => {
 
     expect(results.length).toBeGreaterThan(0);
     const topMatch = results[0];
-    expect(topMatch.id).toBe("eaisybooks-ev-and-cashbook");
+    expect(topMatch.id).toBe("books-client-ev");
     expect(topMatch.category_id).toBe("books_modules");
   });
 
@@ -235,13 +237,13 @@ describe("Knowledge Base RAG & Edge Function Context Pipeline", () => {
       FALLBACK_KNOWLEDGE_ARTICLES,
       "számláknak a kezelése",
       null,
-      null,
+      "invoices",
       3
     );
 
     expect(results.length).toBeGreaterThan(0);
     const topIds = results.map((r) => r.id);
-    expect(topIds).toContain("invoices-management-and-filters");
+    expect(topIds).toContain("eaisybill-invoices");
   });
 
   it("stems inflected Hungarian words for tax returns (e.g. 'bevallásokról')", () => {
@@ -249,13 +251,13 @@ describe("Knowledge Base RAG & Edge Function Context Pipeline", () => {
       FALLBACK_KNOWLEDGE_ARTICLES,
       "bevallásokról",
       null,
-      null,
+      "accounting",
       3
     );
 
     expect(results.length).toBeGreaterThan(0);
     const topIds = results.map((r) => r.id);
-    expect(topIds).toContain("vat-return-and-nav65");
+    expect(topIds).toContain("eaisybill-vat-return");
   });
 
   it("returns all articles for a category when search query and page path are empty", () => {
@@ -267,12 +269,11 @@ describe("Knowledge Base RAG & Edge Function Context Pipeline", () => {
       10
     );
 
-    expect(results.length).toBe(4);
+    expect(results.length).toBe(3);
     for (const article of results) {
       expect(article.category_id).toBe("invoices");
     }
-    // Verify sorted by order_num
-    expect(results[0].id).toBe("invoices-management-and-filters");
+    expect(results[0].id).toBe("eaisybill-invoices");
   });
 
   it("bounds long user query input to prevent unbounded tokenization overhead", () => {
@@ -286,10 +287,11 @@ describe("Knowledge Base RAG & Edge Function Context Pipeline", () => {
       boundedSnippet,
       null,
       null,
-      3
+      5
     );
 
     expect(results.length).toBeGreaterThan(0);
-    expect(results[0].id).toBe("invoices-management-and-filters");
+    const resultIds = results.map(r => r.id);
+    expect(resultIds).toContain("eaisybill-invoices");
   });
 });

@@ -105,6 +105,7 @@ export default function PayrollCyclePage() {
   const [emailTo, setEmailTo] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [customGlMapping, setCustomGlMapping] = useState<any>(null);
+  const [step5Saving, setStep5Saving] = useState(false);
 
   // Fetch all employments for this company
   const [allEmployments, setAllEmployments] = useState<any[]>([]);
@@ -126,13 +127,14 @@ export default function PayrollCyclePage() {
           return;
         }
         if (data && data.length > 0) {
-          const loadedAttendance: Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number }> = {};
+          const loadedAttendance: Record<string, { workDays: number; workedHours?: number; overtime: number; sickDays: number; leaveDays: number }> = {};
           data.forEach(t => {
             const emp = allEmployments.find(e => e.id === t.employment_id);
             if (emp && t.ocr_data) {
               const ocr = t.ocr_data as any;
               loadedAttendance[emp.employee_id] = {
                 workDays: ocr.workDays ?? 22,
+                workedHours: ocr.workedHours,
                 overtime: ocr.overtime ?? 0,
                 sickDays: ocr.sickDays ?? 0,
                 leaveDays: ocr.leaveDays ?? 0,
@@ -144,7 +146,7 @@ export default function PayrollCyclePage() {
       });
   }, [cycle?.id, allEmployments]);
   
-  const [attendanceData, setAttendanceData] = useState<Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number }>>({});
+  const [attendanceData, setAttendanceData] = useState<Record<string, { workDays: number; workedHours?: number; overtime: number; sickDays: number; leaveDays: number }>>({});
 
   const [garnishments, setGarnishments] = useState<any[]>([]);
   React.useEffect(() => {
@@ -176,7 +178,7 @@ export default function PayrollCyclePage() {
 
   const getAttendance = (empId: string) => attendanceData[empId] || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
 
-  const handleAttendanceChange = (empId: string, field: 'workDays' | 'overtime' | 'sickDays' | 'leaveDays', value: number) => {
+  const handleAttendanceChange = (empId: string, field: 'workDays' | 'workedHours' | 'overtime' | 'sickDays' | 'leaveDays', value: number) => {
     setAttendanceData(prev => {
       const current = prev[empId] || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
       return {
@@ -429,7 +431,9 @@ export default function PayrollCyclePage() {
       hourlyRate = rawBaseSalary;
       dailyRate = hourlyRate * dailyHours;
 
-      const actualWorkedHours = (att.workDays || 0) * dailyHours;
+      const actualWorkedHours = (att.workedHours !== undefined && att.workedHours !== null && att.workedHours > 0)
+        ? Number(att.workedHours)
+        : (att.workDays || 0) * dailyHours;
       const sickHours = (att.sickDays || 0) * dailyHours;
       const leaveHours = (att.leaveDays || 0) * dailyHours;
 
@@ -794,6 +798,7 @@ export default function PayrollCyclePage() {
           {currentStep === 3 && (
             <PayrollStep3
               activeEmployees={activeEmployees}
+              allEmployments={allEmployments}
               attendanceData={attendanceData}
               getAttendance={getAttendance}
               onAttendanceChange={handleAttendanceChange}
@@ -816,7 +821,9 @@ export default function PayrollCyclePage() {
               activeEmployees={activeEmployees}
               allEmployments={allEmployments}
               items={items}
+              attendanceData={attendanceData}
               cycleId={cycle?.id}
+              onSavingChange={setStep5Saving}
             />
           )}
           {currentStep === 6 && (
@@ -869,10 +876,13 @@ export default function PayrollCyclePage() {
           <Button
             onClick={() => handleStepChange(currentStep + 1)}
             className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
-            disabled={updateStep.isPending}
+            disabled={updateStep.isPending || (currentStep === 5 && step5Saving)}
           >
-            {updateStep.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+            {updateStep.isPending || (currentStep === 5 && step5Saving) ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {step5Saving ? 'Mentés folyamatban...' : 'Lépésváltás...'}
+              </span>
             ) : (
               <>
                 Következő lépés

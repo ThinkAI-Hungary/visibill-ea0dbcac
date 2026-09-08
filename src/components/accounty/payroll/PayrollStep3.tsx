@@ -4,9 +4,10 @@ import { cn } from '@/lib/utils';
 
 interface PayrollStep3Props {
   activeEmployees: any[];
-  attendanceData: Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number }>;
-  getAttendance: (empId: string) => { workDays: number; overtime: number; sickDays: number; leaveDays: number };
-  onAttendanceChange?: (empId: string, field: 'workDays' | 'overtime' | 'sickDays' | 'leaveDays', value: number) => void;
+  allEmployments?: any[];
+  attendanceData: Record<string, { workDays: number; workedHours?: number; overtime: number; sickDays: number; leaveDays: number }>;
+  getAttendance: (empId: string) => { workDays: number; workedHours?: number; overtime: number; sickDays: number; leaveDays: number };
+  onAttendanceChange?: (empId: string, field: 'workDays' | 'workedHours' | 'overtime' | 'sickDays' | 'leaveDays', value: number) => void;
   handleCsvUpload: (file: File) => void;
   csvValidation: any;
   setCsvValidation: (val: any) => void;
@@ -14,6 +15,7 @@ interface PayrollStep3Props {
 
 export default function PayrollStep3({
   activeEmployees,
+  allEmployments = [],
   attendanceData,
   getAttendance,
   onAttendanceChange,
@@ -112,12 +114,20 @@ export default function PayrollStep3({
         </div>
       )}
 
+      <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900/30 border border-border text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+        <span className="font-semibold text-primary">💡 Tipp:</span>
+        <span>
+          Órabéres dolgozóknál a <strong>„Munkaóra (h)”</strong> oszlopban közvetlenül megadhatod a hónapban teljesített tényleges órákat. A rendszer ezt szorozza fel a dolgozó órabérével.
+        </span>
+      </div>
+
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border dark:bg-slate-900/30">
               <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Név</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Munkanapok</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Munkaóra (h)</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Túlóra (h)</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Táppénz</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Szabadság</th>
@@ -126,11 +136,21 @@ export default function PayrollStep3({
           <tbody className="divide-y divide-border/50">
             {activeEmployees.map((emp) => {
               const att = getAttendance(emp.id);
+              const empEmployment = allEmployments.find(e => e.employee_id === emp.id);
+              const isHourly = empEmployment?.salary_type === 'hourly';
+              const weeklyHours = Number(empEmployment?.weekly_hours) || 40;
+              const dailyHours = weeklyHours / 5;
+              const defaultHours = Math.round((att.workDays || 0) * dailyHours * 10) / 10;
               const fromCsv = !!attendanceData[emp.id];
               return (
                 <tr key={emp.id} className={cn('hover:bg-slate-50 dark:hover:bg-slate-800/50', fromCsv && 'bg-green-50/50 dark:bg-green-900/10')}>
                   <td className="px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100">
                     {emp.last_name} {emp.first_name}
+                    {isHourly && (
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                        Órabér
+                      </span>
+                    )}
                     {fromCsv && <CheckCircle2 className="w-3 h-3 inline ml-1.5 text-green-500" />}
                   </td>
                   <td className="px-4 py-2 text-center">
@@ -142,6 +162,25 @@ export default function PayrollStep3({
                       onChange={(e) => onAttendanceChange?.(emp.id, 'workDays', parseInt(e.target.value) || 0)}
                       className="w-16 text-center rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none"
                     />
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    {isHourly ? (
+                      <input
+                        type="number"
+                        min={0}
+                        max={744}
+                        step={0.5}
+                        placeholder={String(defaultHours)}
+                        value={att.workedHours !== undefined && att.workedHours !== null && att.workedHours > 0 ? att.workedHours : ''}
+                        onChange={(e) => onAttendanceChange?.(emp.id, 'workedHours', parseFloat(e.target.value) || 0)}
+                        className="w-20 text-center rounded border border-amber-300 dark:border-amber-600 bg-amber-50/50 dark:bg-amber-900/20 px-2 py-1 text-sm font-mono font-bold text-amber-700 dark:text-amber-300 focus:border-primary focus:outline-none"
+                        title="Órabéres dolgozó: Ténylegesen ledolgozott órák ebben a hónapban"
+                      />
+                    ) : (
+                      <span className="text-xs text-slate-400 font-mono" title="Havibéres dolgozó elméleti munkaideje">
+                        {defaultHours} h
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-center">
                     <input

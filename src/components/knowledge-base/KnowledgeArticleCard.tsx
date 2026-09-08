@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { KnowledgeArticle } from "@/types/knowledgeBase";
 import { KnowledgeIcon } from "./KnowledgeIcon";
-import { Clock, ArrowRight, ArrowUpRight } from "lucide-react";
+import { Clock, ArrowRight, ArrowUpRight, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useScopedBasePath } from "@/lib/navigation";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 import { FALLBACK_CATEGORY_MAP } from "@/data/knowledgeBaseFallback";
 import { useCanAccessKnowledgeMenuPath } from "@/hooks/useKnowledgeBase";
+import { parseInlineFormatting } from "./KnowledgeArticleStructuredContent";
 
 interface KnowledgeArticleCardProps {
   article: KnowledgeArticle;
@@ -65,10 +66,10 @@ export const KnowledgeArticleCard = React.memo(function KnowledgeArticleCard({
           {article.title}
         </h3>
 
-        {/* Summary */}
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground line-clamp-3">
-          {article.summary}
-        </p>
+        {/* Summary with parsed inline markdown */}
+        <div className="mt-2 text-xs leading-relaxed text-muted-foreground line-clamp-3">
+          {parseInlineFormatting(article.summary)}
+        </div>
 
         {/* Tags */}
         {article.tags && article.tags.length > 0 && (
@@ -76,9 +77,10 @@ export const KnowledgeArticleCard = React.memo(function KnowledgeArticleCard({
             {article.tags.slice(0, 4).map((tag) => (
               <span
                 key={tag}
-                className="inline-block rounded-md bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground"
+                className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground border border-border/30"
               >
-                #{tag}
+                <Tag className="h-2.5 w-2.5 text-muted-foreground/70" />
+                <span>{tag}</span>
               </span>
             ))}
             {article.tags.length > 4 && (

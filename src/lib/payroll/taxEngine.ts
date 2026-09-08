@@ -70,6 +70,7 @@ export interface GrossSalaryInput {
   bonus: number;
   sickLeave: number;          // betegszabadság díjazás (70%)
   otherIncome: number;
+  serviceCharge?: number;     // Felszolgálási díj (71/2005. GKM: 0% SZJA, 18.5% TB [nyugdíjasnál 0%], 0% SZOCHO)
 }
 
 export interface CafeteriaInputItem {
@@ -160,6 +161,7 @@ export interface PayrollCalculationResult {
   cafeteriaTaxEmployer?: number;
   travelReimbursementAmount?: number;
   ekhoTaxAmount?: number;
+  serviceChargeAmount?: number;
 }
 
 // ── Bruttó bér kalkuláció ──
@@ -173,6 +175,7 @@ export function calculateGross(input: GrossSalaryInput): number {
     input.holidayPremium +
     input.bonus +
     input.sickLeave +
+    (input.serviceCharge || 0) +
     input.otherIncome
   );
 }
@@ -212,7 +215,9 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
   let totalTbSaving = 0;
 
   // 2. EKHO és normál adózás szétválasztása
+  let szjaBase = 0;
   let szjaAmount = 0;
+  let tbBase = 0;
   let tbAmount = 0;
   let szochoAmount = 0;
   let ekhoTaxAmount = 0;
@@ -432,12 +437,15 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
       }
     }
 
-    // SZJA összege
-    const szjaBase = Math.max(0, grossSalary - totalBaseReduction);
+    const serviceCharge = input.grossComponents.serviceCharge || 0;
+
+    // SZJA összege (felszolgálási díj SZJA-mentes a magánszemélynél: Szja tv. 1. sz. melléklet 4.38.)
+    const szjaEligibleGross = Math.max(0, grossSalary - serviceCharge);
+    szjaBase = Math.max(0, szjaEligibleGross - totalBaseReduction);
     szjaAmount = Math.round(szjaBase * params.szja_rate);
 
-    // TB járulék (18.5%)
-    let tbBase = input.isInsured ? grossSalary : 0;
+    // TB járulék (18.5%) — saját jogú nyugdíjas nem biztosított (Tbj. 6. §)
+    tbBase = (input.isInsured && !input.isPensioner) ? grossSalary : 0;
     
     // Minimális járulékalap szabály alkalmazása
     const hasMinBaseRule = input.minimumContributionBaseRule === 'minimal_wage' || input.minimumContributionBaseRule === 'guaranteed_minimum';
@@ -447,7 +455,7 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
       !!input.isMinBasePaidElsewhere || 
       !!input.isPensioner;
 
-    if (hasMinBaseRule && !isExempt && input.isInsured) {
+    if (hasMinBaseRule && !isExempt && input.isInsured && !input.isPensioner) {
       const minBaseVal = input.minimumContributionBaseRule === 'minimal_wage' 
         ? params.minimum_wage 
         : params.guaranteed_minimum;
@@ -456,17 +464,21 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
       szochoBase = Math.max(szochoBase, minBaseVal);
     }
 
+    // Nyugdíjas munkavállaló esetén nincs fizetendő TB járulék
+    const effectiveTbSaving = input.isPensioner ? 0 : totalTbSaving;
     const tbGross = Math.round(tbBase * params.tb_rate);
-    tbAmount = Math.max(0, tbGross - totalTbSaving);
+    tbAmount = Math.max(0, tbGross - effectiveTbSaving);
 
-    // SZOCHO (13%) — KIVA adózó esetén a munkáltatói SZOCHO 0 Ft (a KIVA kiváltja)
-    if (input.isKiva) {
+    // SZOCHO (13%) — KIVA adózó esetén a munkáltatói SZOCHO 0 Ft; saját jogú nyugdíjas után 0 Ft (Szocho tv. 5. § (1) f))
+    if (input.isKiva || input.isPensioner) {
       szochoAmount = 0;
       szochoBase = 0;
     } else {
+      // Felszolgálási díj mentes a SZOCHO alól (Szocho tv. 5. § (1) m))
+      szochoBase = Math.max(0, szochoBase - serviceCharge);
       let szochoDiscount = 0;
       if (input.isSzochoDiscount && input.szochoDiscountType) {
-        const discountBase = Math.min(grossSalary, params.minimum_wage);
+        const discountBase = Math.min(szochoBase, params.minimum_wage);
         if (input.szochoDiscountType === 'agriculture') {
           // Mezőgazdasági munkakör (FEOR 9): 50% kedvezmény
           szochoDiscount = Math.round(discountBase * 0.5 * params.szocho_rate);
@@ -562,11 +574,13 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
     // Custom letiltásokat a frontendről is átadhatjuk, alapértelmezetten 0
   }
 
+  const effectiveTbSavingFinal = input.isPensioner ? 0 : totalTbSaving;
+
   return {
     grossSalary,
-    szjaBase: Math.max(0, grossSalary - totalBaseReduction),
+    szjaBase,
     szjaAmount,
-    tbBase: input.isInsured ? grossSalary : 0,
+    tbBase,
     tbAmount,
     netSalary,
     szochoBase,
@@ -574,12 +588,15 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
     totalEmployerCost: grossSalary + szochoAmount + cafeteriaTaxEmployer,
     taxCredits,
     totalTaxSaving: taxCredits.reduce((sum, c) => sum + c.taxSaving, 0),
-    totalTbSaving,
+    totalTbSaving: effectiveTbSavingFinal,
     garnishmentTotal,
     netAfterGarnishment: netSalary - garnishmentTotal,
     cafeteriaTaxEmployer,
     travelReimbursementAmount,
-    ekhoTaxAmount
+    ekhoTaxAmount,
+    serviceChargeAmount: (input.grossComponents.serviceCharge && input.grossComponents.serviceCharge > 0)
+      ? input.grossComponents.serviceCharge
+      : undefined,
   };
 }
 

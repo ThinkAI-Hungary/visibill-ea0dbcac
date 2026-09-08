@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Check, User, Briefcase, CreditCard,
   FileText, Shield, Calendar, Building2, ChevronDown, Loader2,
-  HelpCircle, AlertTriangle, Search, Plus, Trash2, Users
+  HelpCircle, AlertTriangle, Search, Plus, Trash2, Users, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -719,8 +719,21 @@ export default function EmployeeWizardPage() {
         )}
 
         {/* Step 3: Employment details */}
-        {step === 3 && (
+        {step === 3 && (() => {
+          const isMandate = ['tartos_megbizas', 'megbizas', 'megbizas_eseti', 'valasztott_tisztsegviselo'].includes(form.employment_type);
+          return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {isMandate && (
+              <div className="md:col-span-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2.5">
+                <Info className="w-4 h-4 shrink-0 text-blue-500 mt-0.5" />
+                <div>
+                  <p className="font-semibold mb-0.5">Megbízási jogviszony & Munkaidő:</p>
+                  <p>
+                    Megbízási szerződésnél (különösen vendéglátásban) a munkaidő rugalmas. Órabéres elszámolásnál a havi számfejtés a jelenléti íven rögzített tényleges ledolgozott órák alapján történik, az itt megadott heti óraszám tájékoztató jellegű.
+                  </p>
+                </div>
+              </div>
+            )}
             <FormField label="Belépés dátuma *" value={form.start_date} onChange={(v) => update('start_date', v)} error={errors.start_date} type="date" />
             <FormField label="FEOR kód" value={form.feor_code} onChange={(v) => update('feor_code', v)} error={errors.feor_code} placeholder="pl. 2411" />
             <FormField label="FEOR leírása" value={form.feor_description} onChange={(v) => update('feor_description', v)} placeholder="Szakmai megnevezés" />
@@ -742,7 +755,14 @@ export default function EmployeeWizardPage() {
                 </SelectContent>
               </Select>
             </div>
-            <FormField label="Heti munkaidő (óra)" value={form.weekly_hours} onChange={(v) => update('weekly_hours', v)} type="number" placeholder="40" error={errors.weekly_hours} />
+            <FormField 
+              label={isMandate ? "Heti munkaidő (óra) — tájékoztató jellegű" : "Heti munkaidő (óra)"} 
+              value={form.weekly_hours} 
+              onChange={(v) => update('weekly_hours', v)} 
+              type="number" 
+              placeholder={isMandate ? "40 (rugalmas)" : "40"} 
+              error={errors.weekly_hours} 
+            />
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Projekt (opcionális)</label>
               <Select value={form.project_id} onValueChange={(v) => update('project_id', v === '__none__' ? '' : v)}>
@@ -942,7 +962,8 @@ export default function EmployeeWizardPage() {
               )}
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Step 4: Financial data */}
         {step === 4 && (
@@ -977,7 +998,12 @@ export default function EmployeeWizardPage() {
             {form.job_title && <ReviewRow label="Munkakör" value={form.job_title} />}
             {form.feor_code && <ReviewRow label="FEOR" value={`${form.feor_code} - ${form.feor_description || ''}`} />}
             {form.base_salary && <ReviewRow label="Alapbér" value={`${parseInt(form.base_salary).toLocaleString('hu-HU')} Ft`} />}
-            <ReviewRow label="Munkaidő" value={`${form.weekly_hours} óra/hét`} />
+            <ReviewRow 
+              label="Munkaidő" 
+              value={['tartos_megbizas', 'megbizas', 'megbizas_eseti', 'valasztott_tisztsegviselo'].includes(form.employment_type)
+                ? `${form.weekly_hours || 40} óra/hét (rugalmas megbízás)`
+                : `${form.weekly_hours} óra/hét`} 
+            />
             {form.is_ekho && <ReviewRow label="EKHO" value={`Igen (${form.ekho_category}, fizeti: ${form.ekho_payer})`} />}
             {form.is_pensioner && <ReviewRow label="Nyugdíjas" value={`Igen (${form.pension_type})`} />}
             {form.is_szocho_discount && <ReviewRow label="SZOCHO kedvezmény" value={form.szocho_discount_type} />}

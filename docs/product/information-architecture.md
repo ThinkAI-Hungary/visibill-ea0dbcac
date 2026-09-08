@@ -463,3 +463,14 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
 
 > **Kapcsolódó döntés:** [P-043](./decisions/P-043-gl-twin-sync.md) · [P-019](./decisions/P-019-gl-suggestion.md)
 
+---
+
+## 7. Rendszer Tudásbázis és Funkciókalauz (Knowledge Base)
+
+A rendszer teljes menü- és funkcióstruktúrájának részletes, fájlonkénti leírását az alábbi tudásbázis tartalmazza:
+- **Master Index:** [docs/knowledge-base/README.md](../knowledge-base/README.md)
+- **eaisyBill menük:** [docs/knowledge-base/eaisybill/](../knowledge-base/eaisybill/) (29 külön .md fájl)
+- **eaisyBooks menük:** [docs/knowledge-base/eaisybooks/](../knowledge-base/eaisybooks/) (34 külön .md fájl)
+- Minden dokumentum maradéktalanul tartalmazza az adott menü funkcióját, elhelyezkedését és a felhasználói cselekvéseket.
+
+
