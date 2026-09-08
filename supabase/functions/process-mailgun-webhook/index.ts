@@ -107,6 +107,26 @@ function sanitizeFileName(fileName: string): string {
   return clean;
 }
 
+function extractFilenameFromHeader(dispositionHeader: string | null): string | null {
+  if (!dispositionHeader) return null;
+  const utf8Match = dispositionHeader.match(/filename\*\s*=\s*utf-8''([^;]+)/i);
+  if (utf8Match) {
+    try {
+      const decoded = decodeURIComponent(utf8Match[1]).trim();
+      if (decoded) return decoded;
+    } catch {
+      // ignore
+    }
+  }
+  const normalMatch = dispositionHeader.match(/filename\s*=\s*["']?([^"';]+)["']?/i);
+  if (normalMatch) {
+    const fn = normalMatch[1].trim();
+    if (fn) return fn;
+  }
+  return null;
+}
+
+
 // ── Archive support ────────────────────────────────────────────────────────
 // Compressed archive extensions we handle.
 // .zip is decompressed in-place via fflate.
@@ -316,6 +336,7 @@ async function processBillingoAndSzamlazzLinks(
 
     let finalBytes: Uint8Array | null = null;
     let finalUrl = cleanUrl;
+    let headerFileName: string | null = null;
 
     for (const downloadUrl of candidateUrls) {
       if (finalBytes) break;
@@ -338,6 +359,9 @@ async function processBillingoAndSzamlazzLinks(
         if (headerStr.includes('%PDF')) {
           finalBytes = bytes;
           finalUrl = downloadUrl;
+          const cd = res.headers.get('content-disposition');
+          const fn = extractFilenameFromHeader(cd);
+          if (fn) headerFileName = fn;
         } else {
           // Parse HTML landing page for embedded download link
           const htmlText = new TextDecoder().decode(bytes);
@@ -361,6 +385,9 @@ async function processBillingoAndSzamlazzLinks(
                 if (subHeader.includes('%PDF')) {
                   finalBytes = subBytes;
                   finalUrl = secondaryUrl;
+                  const subCd = subRes.headers.get('content-disposition');
+                  const subFn = extractFilenameFromHeader(subCd);
+                  if (subFn) headerFileName = subFn;
                 }
               }
             } catch (subErr) {
@@ -374,9 +401,20 @@ async function processBillingoAndSzamlazzLinks(
     }
 
     if (finalBytes && finalBytes.length > 500) {
-      const tokenMatch = finalUrl.match(/\/([a-zA-Z0-9_-]{10,})/);
-      const token = tokenMatch ? tokenMatch[1] : `billingo_${Date.now()}`;
-      const fileName = `${token}.pdf`;
+      let fileName: string;
+      if (headerFileName) {
+        fileName = headerFileName;
+      } else {
+        const tokenMatch = finalUrl.match(/document-access\/(?:default\/)?([a-zA-Z0-9_-]{10,})/i);
+        let token = tokenMatch ? tokenMatch[1] : null;
+        if (token === 'document-access') token = null;
+        fileName = token ? `billingo_${token}.pdf` : `billingo_${Date.now()}.pdf`;
+      }
+
+      if (!fileName.toLowerCase().endsWith('.pdf')) {
+        fileName = `${fileName}.pdf`;
+      }
+
       const storagePath = `${alias.user_id}/${Date.now()}-${sanitizeFileName(fileName)}`;
 
       const { error: uploadErr } = await supabase.storage
