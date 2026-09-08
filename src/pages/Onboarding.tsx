@@ -33,7 +33,34 @@ interface Category {
   description: string;
   icon: string | null;
   color: string | null;
+  gl_accounts?: string[];
 }
+
+export const STANDARD_GL_OPTIONS = [
+  { code: '511', label: '511 - Vásárolt anyagok' },
+  { code: '512', label: '512 - Nyomtatvány, irodaszer' },
+  { code: '513', label: '513 - Üzemanyag költség' },
+  { code: '521', label: '521 - Villamosenergia-költség' },
+  { code: '522', label: '522 - Gáz-, víz-, távhő-, közüzemi díjak' },
+  { code: '523', label: '523 - Bérleti díjak, szoftverlicencek, IT' },
+  { code: '524', label: '524 - Szállítási, fuvardíjak, postaköltség' },
+  { code: '525', label: '525 - Reklám-, propaganda- és marketing' },
+  { code: '526', label: '526 - Hirdetési és kiállítási költségek' },
+  { code: '527', label: '527 - Könyvelési, jogi és szakértői díjak' },
+  { code: '529', label: '529 - Egyéb igénybe vett szolgáltatások' },
+  { code: '531', label: '531 - Hatósági, igazolási díjak' },
+  { code: '532', label: '532 - Bankköltségek, tranzakciós illeték' },
+  { code: '538', label: '538 - Banki jutalékok' },
+  { code: '539', label: '539 - Egyéb egyéb szolgáltatási költség' },
+  { code: '541', label: '541 - Munkabérek (bruttó)' },
+  { code: '542', label: '542 - Munkatársi bérköltségek' },
+  { code: '551', label: '551 - Személyi jellegű egyéb kifizetések' },
+  { code: '561', label: '561 - Szociális hozzájárulási adó (SZOCHO)' },
+  { code: '562', label: '562 - Kisvállalati adó (KIVA)' },
+  { code: '563', label: '563 - Cégautóadó és egyéb adók' },
+  { code: '571', label: '571 - Értékcsökkenési leírás' },
+  { code: '579', label: '579 - Egyéb egyéb költségek' },
+];
 
 interface CategoryStats {
   invoiceCount: number;
@@ -160,6 +187,7 @@ const Onboarding = () => {
   const [editIcon, setEditIcon] = useState('FolderOpen');
   const [editColor, setEditColor] = useState(DEFAULT_CATEGORY_COLOR);
   const [editTags, setEditTags] = useState<string[]>([]);
+  const [editGlAccounts, setEditGlAccounts] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   
   // New category dialog
@@ -168,6 +196,7 @@ const Onboarding = () => {
   const [newIcon, setNewIcon] = useState('FolderOpen');
   const [newColor, setNewColor] = useState(DEFAULT_CATEGORY_COLOR);
   const [newTags, setNewTags] = useState<string[]>([]);
+  const [newGlAccounts, setNewGlAccounts] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState('');
 
   // Delete confirmation state
@@ -201,30 +230,101 @@ const Onboarding = () => {
   
   const { showDialog, confirmNavigation, cancelNavigation } = useUnsavedChanges(hasUnsavedChanges);
 
+  // Edit category dialog
+  const openEditDialog = (index: number) => {
+    const cat = categories[index];
+    setEditingCategory({ index, category: cat });
+    setEditName(cat.name);
+    setEditIcon(cat.icon || 'FolderOpen');
+    setEditColor(cat.color || DEFAULT_CATEGORY_COLOR);
+    setEditTags(cat.description ? cat.description.split(',').map(t => t.trim()).filter(Boolean) : []);
+    setEditGlAccounts(cat.gl_accounts || []);
+    setTagInput('');
+  };
+
+  const handleEditSave = async () => {
+    if (!editingCategory || !user || !selectedCompany) return;
+    
+    const updatedCategories = [...categories];
+    const newDescription = editTags.join(', ');
+    updatedCategories[editingCategory.index] = {
+      ...updatedCategories[editingCategory.index],
+      name: editName,
+      description: newDescription,
+      icon: editIcon,
+      color: editColor,
+      gl_accounts: editGlAccounts,
+    };
+    
+    // If existing, save immediately
+    const cat = updatedCategories[editingCategory.index];
+    if (cat.id) {
+      try {
+        const { error } = await supabase
+          .from('categories')
+          .update({
+            name: editName,
+            description: newDescription,
+            icon: editIcon,
+            color: editColor,
+            gl_accounts: editGlAccounts,
+          })
+          .eq('id', cat.id)
+          .eq('company_id', selectedCompany.id);
+        
+        if (error) throw error;
+        // Invalidate React Query cache so InvoicesPage badges update immediately
+        queryClient.invalidateQueries({ queryKey: ['categories', selectedCompany.id] });
+        toast({ title: 'Kategória mentve!' });
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Mentés sikertelen', description: error.message });
+        return;
+      }
+    }
+    
+    setCategories(updatedCategories);
+    setInitialCategories(updatedCategories.map(c => ({ ...c })));
+    setEditingCategory(null);
+  };
+
   // Load existing data + stats
   const loadData = useCallback(async () => {
     if (!user || !selectedCompany) return;
     
     try {
-      // Load categories
-      const { data: categoryData } = await supabase
+      // Load categories with gl_accounts
+      let { data: categoryData } = await supabase
         .from('categories')
-        .select('id, name, description, icon, color')
+        .select('id, name, description, icon, color, gl_accounts')
         .eq('company_id', selectedCompany.id)
         .order('created_at', { ascending: true });
 
+      if (!categoryData || categoryData.length === 0) {
+        try {
+          await supabase.rpc('ensure_default_categories', { p_company_id: selectedCompany.id, p_user_id: user.id });
+          const { data: reloaded } = await supabase
+            .from('categories')
+            .select('id, name, description, icon, color, gl_accounts')
+            .eq('company_id', selectedCompany.id)
+            .order('created_at', { ascending: true });
+          categoryData = reloaded || [];
+        } catch (e) {
+          console.warn('RPC ensure_default_categories failed or not present, fallback to raw load', e);
+        }
+      }
+
       let loadedCategories: Category[];
       if (categoryData && categoryData.length > 0) {
-        loadedCategories = categoryData.map(c => ({
+        loadedCategories = categoryData.map((c: any) => ({
           id: c.id,
           name: c.name,
           description: c.description || '',
           icon: c.icon || null,
           color: c.color || null,
+          gl_accounts: c.gl_accounts || [],
         }));
       } else {
         loadedCategories = [];
-
       }
       setCategories(loadedCategories);
       setInitialCategories(loadedCategories.map(c => ({ ...c })));
@@ -544,54 +644,7 @@ const Onboarding = () => {
     }
   };
 
-  // Edit category dialog
-  const openEditDialog = (index: number) => {
-    const cat = categories[index];
-    setEditingCategory({ index, category: cat });
-    setEditName(cat.name);
-    setEditIcon(cat.icon || 'FolderOpen');
-    setEditColor(cat.color || DEFAULT_CATEGORY_COLOR);
-    setEditTags(cat.description ? cat.description.split(',').map(t => t.trim()).filter(Boolean) : []);
-    setTagInput('');
-  };
 
-  const handleEditSave = async () => {
-    if (!editingCategory || !user || !selectedCompany) return;
-    
-    const updatedCategories = [...categories];
-    const newDescription = editTags.join(', ');
-    updatedCategories[editingCategory.index] = {
-      ...updatedCategories[editingCategory.index],
-      name: editName,
-      description: newDescription,
-      icon: editIcon,
-      color: editColor,
-    };
-    
-    // If existing, save immediately
-    const cat = updatedCategories[editingCategory.index];
-    if (cat.id) {
-      try {
-        const { error } = await supabase
-          .from('categories')
-          .update({ name: editName, description: newDescription, icon: editIcon, color: editColor })
-          .eq('id', cat.id)
-          .eq('company_id', selectedCompany.id);
-        
-        if (error) throw error;
-        // Invalidate React Query cache so InvoicesPage badges update immediately
-        queryClient.invalidateQueries({ queryKey: ['categories', selectedCompany.id] });
-        toast({ title: 'Kategória mentve!' });
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Mentés sikertelen', description: error.message });
-        return;
-      }
-    }
-    
-    setCategories(updatedCategories);
-    setInitialCategories(updatedCategories.map(c => ({ ...c })));
-    setEditingCategory(null);
-  };
 
   // Delete category
   const confirmDeleteCategory = (index: number) => {
@@ -656,8 +709,9 @@ const Onboarding = () => {
           description: newTags.join(', '),
           icon: newIcon,
           color: newColor,
+          gl_accounts: newGlAccounts,
         })
-        .select('id, name, description, icon, color')
+        .select('id, name, description, icon, color, gl_accounts')
         .single();
       
       if (error) throw error;
@@ -668,6 +722,7 @@ const Onboarding = () => {
         description: data.description || '',
         icon: data.icon || null,
         color: data.color || null,
+        gl_accounts: data.gl_accounts || newGlAccounts,
       };
       
       const updatedCategories = [...categories, newCat];
@@ -686,6 +741,7 @@ const Onboarding = () => {
       setNewColor(DEFAULT_CATEGORY_COLOR);
       setNewTags([]);
       setNewTagInput('');
+      setNewGlAccounts([]);
       
       toast({ title: 'Kategória létrehozva!', description: `"${data.name}" hozzáadva.` });
     } catch (error: any) {
@@ -847,6 +903,7 @@ const Onboarding = () => {
                 totalAllAmount={totalAmount}
                 totalInvoiceCount={totalInvoices}
                 currencyTotals={stats?.currencyTotals || {}}
+                glAccounts={cat.gl_accounts || []}
                 onToggle={() => toggleCategory(catId)}
                 onEdit={() => openEditDialog(index)}
                 onDelete={() => confirmDeleteCategory(index)}
@@ -936,6 +993,80 @@ const Onboarding = () => {
                 )}
               </div>
             </div>
+
+            {/* Hozzárendelési Mátrix (Főkönyvi számlaosztályok) */}
+            <div className="space-y-3 pt-3 border-t border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-semibold flex items-center gap-1.5">
+                    <span>Hozzárendelési Mátrix</span>
+                    <Badge variant="outline" className="text-[10px] font-mono text-primary bg-primary/5">Főkönyv</Badge>
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    Főkönyvi számlaosztályok és alosztályok hozzárendelése a rezsikategóriához.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => setEditGlAccounts([...editGlAccounts, '521'])}
+                >
+                  <Plus className="h-3 w-3" /> Új számlaosztály
+                </Button>
+              </div>
+
+              <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                {editGlAccounts.length > 0 ? (
+                  editGlAccounts.map((glCode, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-muted/20 p-2 rounded-md border border-border/40">
+                      <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 w-6">#{idx + 1}</span>
+                      <select
+                        value={STANDARD_GL_OPTIONS.some(opt => opt.code === glCode) ? glCode : 'custom'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val !== 'custom') {
+                            const next = [...editGlAccounts];
+                            next[idx] = val;
+                            setEditGlAccounts(next);
+                          }
+                        }}
+                        className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        {STANDARD_GL_OPTIONS.map(opt => (
+                          <option key={opt.code} value={opt.code}>{opt.label}</option>
+                        ))}
+                        <option value="custom">Egyedi számlaszám...</option>
+                      </select>
+                      <Input
+                        value={glCode}
+                        placeholder="számlaszám"
+                        onChange={(e) => {
+                          const next = [...editGlAccounts];
+                          next[idx] = e.target.value.trim();
+                          setEditGlAccounts(next);
+                        }}
+                        className="w-24 h-8 text-xs font-mono"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                        onClick={() => setEditGlAccounts(editGlAccounts.filter((_, i) => i !== idx))}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 border border-dashed rounded-md bg-muted/10 text-xs text-muted-foreground">
+                    Nincsenek főkönyvi számlaosztályok hozzárendelve. Kattints az „Új számlaosztály” gombra.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="ghost" onClick={() => setEditingCategory(null)}>Mégse</Button>
@@ -1016,6 +1147,80 @@ const Onboarding = () => {
                   ))
                 ) : (
                   <span className="text-xs text-muted-foreground italic p-1">Még nincs címke hozzáadva</span>
+                )}
+              </div>
+            </div>
+
+            {/* Hozzárendelési Mátrix (Főkönyvi számlaosztályok) */}
+            <div className="space-y-3 pt-3 border-t border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-semibold flex items-center gap-1.5">
+                    <span>Hozzárendelési Mátrix</span>
+                    <Badge variant="outline" className="text-[10px] font-mono text-primary bg-primary/5">Főkönyv</Badge>
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    Főkönyvi számlaosztályok és alosztályok hozzárendelése az új kategóriához.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => setNewGlAccounts([...newGlAccounts, '521'])}
+                >
+                  <Plus className="h-3 w-3" /> Új számlaosztály
+                </Button>
+              </div>
+
+              <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                {newGlAccounts.length > 0 ? (
+                  newGlAccounts.map((glCode, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-muted/20 p-2 rounded-md border border-border/40">
+                      <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 w-6">#{idx + 1}</span>
+                      <select
+                        value={STANDARD_GL_OPTIONS.some(opt => opt.code === glCode) ? glCode : 'custom'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val !== 'custom') {
+                            const next = [...newGlAccounts];
+                            next[idx] = val;
+                            setNewGlAccounts(next);
+                          }
+                        }}
+                        className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        {STANDARD_GL_OPTIONS.map(opt => (
+                          <option key={opt.code} value={opt.code}>{opt.label}</option>
+                        ))}
+                        <option value="custom">Egyedi számlaszám...</option>
+                      </select>
+                      <Input
+                        value={glCode}
+                        placeholder="számlaszám"
+                        onChange={(e) => {
+                          const next = [...newGlAccounts];
+                          next[idx] = e.target.value.trim();
+                          setNewGlAccounts(next);
+                        }}
+                        className="w-24 h-8 text-xs font-mono"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                        onClick={() => setNewGlAccounts(newGlAccounts.filter((_, i) => i !== idx))}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 border border-dashed rounded-md bg-muted/10 text-xs text-muted-foreground">
+                    Nincsenek főkönyvi számlaosztályok hozzárendelve. Kattints az „Új számlaosztály” gombra.
+                  </div>
                 )}
               </div>
             </div>

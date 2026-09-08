@@ -154,22 +154,22 @@ RAISE NOTICE '✅ Régi adatok törölve';
 
 RAISE NOTICE '═══ PHASE 2: KATEGÓRIÁK ═══';
 
-INSERT INTO categories (id, user_id, company_id, name, description, created_at, updated_at) VALUES
-  (c_irodaszer,    v_su, v_sc, 'Irodaszer',              'Irodai kellékek, papír, toner',           '2026-01-02'::timestamptz, now()),
-  (c_berleti,      v_su, v_sc, 'Bérleti díj',            'Irodabérleti díjak',                     '2026-01-02'::timestamptz, now()),
-  (c_kozuzemi,     v_su, v_sc, 'Közüzemi díjak',         'Víz, gáz, villany, internet',            '2026-01-02'::timestamptz, now()),
-  (c_tanacsadas,   v_su, v_sc, 'Tanácsadás',             'Jogi, pénzügyi, IT tanácsadás',          '2026-01-02'::timestamptz, now()),
-  (c_marketing,    v_su, v_sc, 'Marketing',              'Reklám, online marketing, PR',            '2026-01-02'::timestamptz, now()),
-  (c_szallitas,    v_su, v_sc, 'Szállítás / Logisztika', 'Futárszolgálat, posta',                  '2026-01-02'::timestamptz, now()),
-  (c_it,           v_su, v_sc, 'IT és szoftver',         'Szoftver licenszek, hosting, fejlesztés', '2026-01-02'::timestamptz, now()),
-  (c_bankkoltseg,  v_su, v_sc, 'Bankköltség',            'Banki díjak, tranzakciós költségek',     '2026-01-02'::timestamptz, now()),
-  (c_biztositas,   v_su, v_sc, 'Biztosítás',             'Cégbiztosítás, vagyonbiztosítás',        '2026-01-02'::timestamptz, now()),
-  (c_adok,         v_su, v_sc, 'Adók és járulékok',      'Társasági adó, iparűzési adó, járulékok','2026-01-02'::timestamptz, now()),
-  (c_berek,        v_su, v_sc, 'Bérek és juttatások',    'Bruttó bérek, cafeteria',                '2026-01-02'::timestamptz, now()),
-  (c_kepzes,       v_su, v_sc, 'Képzés / Oktatás',       'Továbbképzések, konferenciák',           '2026-01-02'::timestamptz, now()),
-  (c_utazas,       v_su, v_sc, 'Utazás / Kiküldetés',    'Üzleti utak, napidíj, szállásdíj',      '2026-01-02'::timestamptz, now()),
-  (c_karbantartas, v_su, v_sc, 'Karbantartás',           'Épület és eszköz karbantartás',          '2026-01-02'::timestamptz, now()),
-  (c_egyeb,        v_su, v_sc, 'Egyéb költség',          'Egyéb, nem besorolható tételek',         '2026-01-02'::timestamptz, now());
+INSERT INTO categories (id, user_id, company_id, name, description, gl_accounts, created_at, updated_at) VALUES
+  (c_irodaszer,    v_su, v_sc, 'Irodaszer',              'Irodai kellékek, papír, toner',           ARRAY['511', '512', '513'], '2026-01-02'::timestamptz, now()),
+  (c_berleti,      v_su, v_sc, 'Bérleti díj',            'Irodabérleti díjak',                     ARRAY['523'], '2026-01-02'::timestamptz, now()),
+  (c_kozuzemi,     v_su, v_sc, 'Közüzemi díjak',         'Víz, gáz, villany, internet',            ARRAY['521', '522'], '2026-01-02'::timestamptz, now()),
+  (c_tanacsadas,   v_su, v_sc, 'Tanácsadás',             'Jogi, pénzügyi, IT tanácsadás',          ARRAY['527'], '2026-01-02'::timestamptz, now()),
+  (c_marketing,    v_su, v_sc, 'Marketing',              'Reklám, online marketing, PR',            ARRAY['525', '526'], '2026-01-02'::timestamptz, now()),
+  (c_szallitas,    v_su, v_sc, 'Szállítás / Logisztika', 'Futárszolgálat, posta',                  ARRAY['524', '529'], '2026-01-02'::timestamptz, now()),
+  (c_it,           v_su, v_sc, 'IT és szoftver',         'Szoftver licenszek, hosting, fejlesztés', ARRAY['523'], '2026-01-02'::timestamptz, now()),
+  (c_bankkoltseg,  v_su, v_sc, 'Bankköltség',            'Banki díjak, tranzakciós költségek',     ARRAY['532', '538'], '2026-01-02'::timestamptz, now()),
+  (c_biztositas,   v_su, v_sc, 'Biztosítás',             'Cégbiztosítás, vagyonbiztosítás',        ARRAY['531'], '2026-01-02'::timestamptz, now()),
+  (c_adok,         v_su, v_sc, 'Adók és járulékok',      'Társasági adó, iparűzési adó, járulékok',ARRAY['561', '562', '563'], '2026-01-02'::timestamptz, now()),
+  (c_berek,        v_su, v_sc, 'Bérek és juttatások',    'Bruttó bérek, cafeteria',                ARRAY['541', '542', '551'], '2026-01-02'::timestamptz, now()),
+  (c_kepzes,       v_su, v_sc, 'Képzés / Oktatás',       'Továbbképzések, konferenciák',           ARRAY['529'], '2026-01-02'::timestamptz, now()),
+  (c_utazas,       v_su, v_sc, 'Utazás / Kiküldetés',    'Üzleti utak, napidíj, szállásdíj',      ARRAY['529'], '2026-01-02'::timestamptz, now()),
+  (c_karbantartas, v_su, v_sc, 'Karbantartás',           'Épület és eszköz karbantartás',          ARRAY['529'], '2026-01-02'::timestamptz, now()),
+  (c_egyeb,        v_su, v_sc, 'Egyéb költség',          'Egyéb, nem besorolható tételek',         ARRAY['531', '539', '559', '579'], '2026-01-02'::timestamptz, now());
 
 RAISE NOTICE '✅ 15 kategória létrehozva';
 

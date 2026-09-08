@@ -5,7 +5,7 @@ import { formatCurrency } from '@/lib/utils';
 import { DepreciationCards } from './DepreciationCards';
 import type { FixedAsset, AssetEvent } from '@/types/fixed-assets';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
-import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt, FolderKanban } from 'lucide-react';
+import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt, FolderKanban, RefreshCw, FileCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -16,6 +16,7 @@ import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { reportError } from '@/lib/errorReporter';
+import { generateAndAttachAssetProtocolPdf } from '@/hooks/useFixedAssets';
 
 // Lazy-load dialogs so they don't bloat the initial page chunk
 const TransferDialog = lazy(() => import('./TransferDialog').then(m => ({ default: m.TransferDialog })));
@@ -72,6 +73,23 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Protocol PDF Generation state
+  const [generatingProtocol, setGeneratingProtocol] = useState(false);
+
+  const handleGenerateProtocol = async () => {
+    setGeneratingProtocol(true);
+    try {
+      await generateAndAttachAssetProtocolPdf(asset.id, asset.company_id);
+      toast({ title: 'Aktiválási jegyzőkönyv generálva és csatolva!' });
+      queryClient.invalidateQueries({ queryKey: ['fixedAssetDetail', asset.id] });
+      queryClient.invalidateQueries({ queryKey: ['fixedAssets', asset.company_id] });
+    } catch (err: any) {
+      toast({ title: 'Hiba a generálás során', description: err?.message || 'Nem sikerült a PDF generálás', variant: 'destructive' });
+    } finally {
+      setGeneratingProtocol(false);
+    }
+  };
 
   // Performance Log States
   const [perfOpen, setPerfOpen] = useState(false);
@@ -162,7 +180,8 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
 
     setUploading(true);
     try {
-      const storagePath = `${asset.company_id}/${asset.id}/${Date.now()}-${file.name}`;
+      const userFolder = user?.id || asset.company_id;
+      const storagePath = `${userFolder}/${asset.id}/${Date.now()}-${file.name}`;
 
       const { error: uploadError } = await supabase.storage
         .from('asset-documents')
@@ -554,6 +573,42 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
         </div>
 
         <div className="space-y-4">
+          {/* ── Aktiválási Jegyzőkönyv szekció ── */}
+          <div className="space-y-1.5 rounded-lg border border-primary/20 bg-primary/5 p-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                <FileCheck className="h-4 w-4 text-primary" /> Tárgyi Eszköz Aktiválási Jegyzőkönyv
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-[11px] px-2 text-primary hover:bg-primary/10 gap-1"
+                onClick={handleGenerateProtocol}
+                disabled={generatingProtocol}
+                title="Jegyzőkönyv újra-generálása a legfrissebb adatokkal"
+              >
+                {generatingProtocol ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                {asset.documents?.some(d => d.type === 'protocol') ? 'Újra-generálás' : 'Jegyzőkönyv generálása'}
+              </Button>
+            </div>
+
+            {asset.documents?.filter(d => d.type === 'protocol').map((doc, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm rounded-md px-2 py-1 bg-background border border-primary/20 group hover:border-primary transition-colors">
+                <FileText className="h-4 w-4 flex-shrink-0 text-primary" />
+                <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate font-medium text-primary hover:underline">
+                  {doc.name}
+                </a>
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-75" />
+              </div>
+            ))}
+
+            {!asset.documents?.some(d => d.type === 'protocol') && (
+              <p className="text-xs text-muted-foreground italic px-1">
+                Kattints a "Jegyzőkönyv generálása" gombra a hivatalos aktiválási jegyzőkönyv elkészítéséhez.
+              </p>
+            )}
+          </div>
+
           {/* ── Számlák szekció ── */}
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 px-1">

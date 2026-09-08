@@ -331,5 +331,76 @@ export async function generateDraftsFallback(
     }
   }
 
+  // 5. Generate drafts for Petty Cash entries (P1 Journal)
+  const glCashId = glAccounts?.find(g => g.gl_number.startsWith('381'))?.id || glAccounts?.[0]?.id;
+  const p1JournalId = journals?.find(j => j.code === 'P1' || j.type === 'CASH')?.id || journals?.[0]?.id;
+
+  if (glCashId && p1JournalId) {
+    const { data: rawPce } = await supabase
+      .from('petty_cash_entries')
+      .select('id, entry_date, description, amount, currency, source_type')
+      .eq('company_id', companyId);
+
+    const { data: existingPostings } = await supabase
+      .from('acc_journal_headers')
+      .select('import_key')
+      .eq('company_id', companyId);
+
+    const postedKeys = new Set((existingPostings || []).map(h => h.import_key));
+
+    for (const pce of (rawPce || [])) {
+      if (postedKeys.has(pce.id)) continue;
+      if (!pce.amount || Math.abs(Number(pce.amount)) === 0) continue;
+
+      const itemDate = pce.entry_date ? pce.entry_date.substring(0, 10) : new Date().toISOString().substring(0, 10);
+      const year = Number(itemDate.substring(0, 4)) || new Date().getFullYear();
+      const currency = pce.currency || 'HUF';
+      const amount = Math.abs(Number(pce.amount));
+      const docId = `KP-${pce.id.substring(0, 8).toUpperCase()}`;
+
+      // Target expense/revenue account or default 52/91
+      const glCounterId = Number(pce.amount) >= 0 
+        ? (glAccounts?.find(g => g.gl_number.startsWith('91'))?.id || glCashId)
+        : (glAccounts?.find(g => g.gl_number.startsWith('52'))?.id || glCashId);
+
+      const { data: header, error: hErr } = await supabase
+        .from('acc_journal_headers')
+        .insert({
+          company_id: companyId,
+          journal_id: p1JournalId,
+          accounting_year: year,
+          status: 'GEPI_JAVASLAT',
+          entry_type: 'NORMAL',
+          source: 'AUTO_RENDSZER',
+          posting_date: itemDate,
+          document_date: itemDate,
+          document_id: docId,
+          description: pce.description || 'Pénztárbizonylat javaslat',
+          currency: currency,
+          exchange_rate: 1,
+          exchange_rate_date: itemDate,
+          import_key: pce.id.toString()
+        })
+        .select('id')
+        .single();
+
+      if (hErr) continue;
+
+      let line1: any;
+      let line2: any;
+      if (Number(pce.amount) >= 0) {
+        line1 = { header_id: header.id, sequence_number: 1, gl_account_id: glCashId, dc_type: 'T', amount, description: pce.description };
+        line2 = { header_id: header.id, sequence_number: 2, gl_account_id: glCounterId, dc_type: 'K', amount, description: pce.description };
+      } else {
+        line1 = { header_id: header.id, sequence_number: 1, gl_account_id: glCounterId, dc_type: 'T', amount, description: pce.description };
+        line2 = { header_id: header.id, sequence_number: 2, gl_account_id: glCashId, dc_type: 'K', amount, description: pce.description };
+      }
+
+      await supabase.from('acc_journal_lines').insert([line1, line2]);
+      createdCount++;
+    }
+  }
+
   return createdCount;
 }
+

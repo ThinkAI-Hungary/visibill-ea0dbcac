@@ -30,6 +30,7 @@ interface CategoryAccordionItemProps {
   totalInvoiceCount: number;
   /** Per-currency totals, e.g. { HUF: 12000, USD: 45.5 } */
   currencyTotals: Record<string, number>;
+  glAccounts?: string[];
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -64,6 +65,7 @@ export function CategoryAccordionItem({
   totalAllAmount,
   totalInvoiceCount,
   currencyTotals,
+  glAccounts = [],
   onToggle,
   onEdit,
   onDelete,
@@ -74,7 +76,6 @@ export function CategoryAccordionItem({
   const pct = totalInvoiceCount > 0 ? Math.round((invoiceCount / totalInvoiceCount) * 100) : 0;
 
   const amountDisplay = isEmpty ? '0 Ft' : formatCurrencyTotals(currencyTotals);
-
 
   return (
     <div className="border-b border-border last:border-b-0">
@@ -101,11 +102,22 @@ export function CategoryAccordionItem({
           <IconComponent className="h-4 w-4" />
         </span>
         
-        {/* Name + tags */}
+        {/* Name + tags + GL Accounts */}
         <div className="flex-1 min-w-0">
-          <span className={`font-semibold text-sm ${isEmpty ? 'text-muted-foreground' : 'text-foreground'}`}>
-            {name}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`font-semibold text-sm ${isEmpty ? 'text-muted-foreground' : 'text-foreground'}`}>
+              {name}
+            </span>
+            {glAccounts.length > 0 && (
+              <div className="flex items-center gap-1">
+                {glAccounts.map((gl, i) => (
+                  <Badge key={i} variant="outline" className="text-[10px] font-mono px-1.5 py-0 h-4 bg-muted/40 border-primary/20 text-primary">
+                    {gl}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
           {tags.length > 0 && (
             <div className="flex items-center gap-1 mt-1 flex-nowrap overflow-hidden">
               {tags.slice(0, 3).map((tag, i) => (

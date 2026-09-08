@@ -72,6 +72,8 @@ export function AssetActivationDialog({
   // Form state - one record per selected item
   const [forms, setForms] = useState<Array<{
     name: string;
+    description: string;
+    vtszTeszor: string;
     acquisitionValue: number;
     activationDate: string;
     usefulLifeYears: string;
@@ -93,6 +95,8 @@ export function AssetActivationDialog({
       setActiveTab(0);
       setForms(selectedItems.map(item => ({
         name: item.name,
+        description: '',
+        vtszTeszor: '',
         acquisitionValue: item.grossAmount || item.netAmount,
         activationDate: new Date().toISOString().split('T')[0],
         usefulLifeYears: '3',
@@ -142,6 +146,8 @@ export function AssetActivationDialog({
           userId: user.id,
           inventoryNumber,
           name: form.name.trim(),
+          description: form.description.trim() || undefined,
+          vtszTeszor: form.vtszTeszor.trim() || undefined,
           acquisitionValue: form.acquisitionValue,
           residualValue: parseFloat(form.residualValue) || 0,
           currency: selectedItems[i].currency || 'HUF',
@@ -260,13 +266,34 @@ export function AssetActivationDialog({
               )}
 
               <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor={`name-${index}`}>Megnevezés *</Label>
+                    <Input
+                      id={`name-${index}`}
+                      value={form.name}
+                      onChange={e => updateForm(index, 'name', e.target.value)}
+                      placeholder="Eszköz megnevezése"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`vtsz-${index}`}>VTSZ / Besorolási szám</Label>
+                    <Input
+                      id={`vtsz-${index}`}
+                      value={form.vtszTeszor}
+                      onChange={e => updateForm(index, 'vtszTeszor', e.target.value)}
+                      placeholder="pl. 8471 30 00"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor={`name-${index}`}>Megnevezés *</Label>
+                  <Label htmlFor={`desc-${index}`}>Típusa, gyártója / Leírás</Label>
                   <Input
-                    id={`name-${index}`}
-                    value={form.name}
-                    onChange={e => updateForm(index, 'name', e.target.value)}
-                    placeholder="Eszköz megnevezése"
+                    id={`desc-${index}`}
+                    value={form.description}
+                    onChange={e => updateForm(index, 'description', e.target.value)}
+                    placeholder="pl. Dell Latitude 5540, i7/16GB"
                   />
                 </div>
 

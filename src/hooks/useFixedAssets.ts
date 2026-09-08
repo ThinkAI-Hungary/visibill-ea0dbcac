@@ -2,6 +2,174 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { FixedAsset, AssetEvent, TaoTemplate } from '@/types/fixed-assets';
 import { reportError } from '@/lib/errorReporter';
+import { generateAssetActivationProtocolBlob, AssetProtocolData } from '@/lib/assetActivationProtocolPdf';
+
+export const DEPRECIATION_METHOD_LABELS: Record<string, string> = {
+  linear: 'Lineáris (Egyenletes)',
+  degressive_syd: 'Degresszív (Évek száma összege)',
+  degressive_declining: 'Degresszív (Nettó érték alapú)',
+  progressive: 'Progresszív (Növekvő)',
+  performance: 'Teljesítményarányos',
+  absolute: 'Abszolút összegű',
+  multiplier: 'Szorzószámos',
+  immediate: 'Azonnali (Kisértékű eszköz)',
+};
+
+// ── Generálja és feltölti/csatolja a Tárgyi Eszköz Aktiválási Jegyzőkönyvet ──
+export async function generateAndAttachAssetProtocolPdf(assetId: string, companyId: string, customUserId?: string) {
+  try {
+    // 1. Cég adatok lekérése
+    const { data: company } = await supabase
+      .from('companies')
+      .select('name, tax_number, address')
+      .eq('id', companyId)
+      .maybeSingle();
+
+    // 2. Eszköz részleteinek lekérése a csatolt adatokkal
+    const { data: asset, error: assetErr } = await supabase
+      .from('fixed_assets')
+      .select(`
+        *,
+        location:company_locations(id, name, address),
+        project:projects(id, name, project_code),
+        tao_template:tao_depreciation_templates(id, name, tao_rate_percent),
+        gl_account:gl_accounts(id, gl_number, short_name)
+      `)
+      .eq('id', assetId)
+      .single();
+
+    if (assetErr || !asset) throw assetErr || new Error('Asset not found');
+
+    // 3. User ID felderítése a storage RLS szabályhoz ((storage.foldername(name))[1] = auth.uid())
+    let uId = customUserId;
+    if (!uId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      uId = user?.id;
+    }
+
+    const usefulYears = (asset.useful_life_months / 12).toFixed(1).replace('.0', '');
+    const annualRate = asset.useful_life_months > 0
+      ? (12 / asset.useful_life_months * 100).toFixed(1).replace('.0', '') + '%'
+      : '-';
+
+    const protocolData: AssetProtocolData = {
+      companyName: company?.name || 'Cég neve',
+      companyAddress: company?.address || asset.location?.address || '',
+      companyTaxNumber: company?.tax_number || '',
+      protocolNumber: `JK-${asset.inventory_number}`,
+      protocolDate: asset.activation_date,
+      activatedByName: asset.activated_by_name || 'Aktiváló személy',
+      assetName: asset.name,
+      assetTypeManufacturer: asset.description || undefined,
+      serialNumber: asset.inventory_number,
+      vtszTeszor: asset.vtsz_teszor || undefined,
+      inventoryNumber: asset.inventory_number,
+      quantity: 1,
+      locationNameAddress: asset.location?.name
+        ? `${asset.location.name}${asset.location.address ? ` (${asset.location.address})` : ''}`
+        : (asset.project?.name ? `Projekt: ${asset.project.name}` : undefined),
+      supplierName: asset.supplier_name || undefined,
+      invoiceNumber: asset.source_invoice_number || undefined,
+      invoiceDate: asset.purchase_date,
+      invoiceNetAmount: asset.acquisition_value,
+      activationDate: asset.activation_date,
+      acquisitionValue: asset.acquisition_value,
+      glAccountNumber: asset.gl_account?.gl_number,
+      glAccountName: asset.gl_account?.short_name,
+      accountingVoucherNumber: asset.source_invoice_number || asset.inventory_number,
+      depreciationStartDate: asset.activation_date,
+      depreciationMethodLabel: DEPRECIATION_METHOD_LABELS[asset.depreciation_method] || asset.depreciation_method,
+      depreciationRateAnnual: annualRate,
+      usefulLifeYears: usefulYears,
+      residualValue: asset.residual_value,
+      taoRatePercent: asset.tao_template?.tao_rate_percent,
+    };
+
+    const blob = generateAssetActivationProtocolBlob(protocolData);
+    const safeInv = asset.inventory_number.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `aktivalasi_jegyzokonyv_${safeInv}.pdf`;
+    
+    // Elsődlegesen user.id mappa (hogy megfeleljen az (storage.foldername(name))[1] = auth.uid() RLS-nek)
+    const folderPrefix = uId || companyId;
+    const storagePath = `${folderPrefix}/${asset.id}/${fileName}`;
+
+    let documentUrl = '';
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('asset-documents')
+        .upload(storagePath, blob, {
+          contentType: 'application/pdf',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        // Próbálkozás a másodlagos céges mappával ha a user mapper dobna hibát
+        const fallbackPath = `${companyId}/${asset.id}/${fileName}`;
+        const { error: fallbackErr } = await supabase.storage
+          .from('asset-documents')
+          .upload(fallbackPath, blob, {
+            contentType: 'application/pdf',
+            upsert: true,
+          });
+
+        if (fallbackErr) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('asset-documents')
+          .getPublicUrl(fallbackPath);
+        documentUrl = publicUrl;
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from('asset-documents')
+          .getPublicUrl(storagePath);
+        documentUrl = publicUrl;
+      }
+    } catch (storageErr: any) {
+      reportError({
+        type: 'db_query',
+        component: 'useFixedAssets',
+        action: 'storageUploadFallback',
+        message: 'Storage upload failed, falling back to data URL',
+        error: storageErr,
+      });
+
+      // Fallback: konvertálás Data URL-re ha a storage tiltott
+      const reader = new FileReader();
+      documentUrl = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    const docItem = {
+      name: 'Tárgyi Eszköz Aktiválási Jegyzőkönyv',
+      url: documentUrl,
+      type: 'protocol',
+    };
+
+    const existingDocs = ((asset.documents as any[]) || []).filter((d: any) => d.type !== 'protocol');
+    const updatedDocs = [...existingDocs, docItem];
+
+    const { error: dbError } = await supabase
+      .from('fixed_assets')
+      .update({ documents: updatedDocs })
+      .eq('id', asset.id);
+
+    if (dbError) throw dbError;
+
+    return documentUrl;
+  } catch (err: any) {
+    reportError({
+      type: 'db_query',
+      component: 'useFixedAssets',
+      action: 'generateAndAttachAssetProtocolPdf',
+      message: err?.message || 'Failed to generate asset protocol PDF',
+      error: err,
+    });
+    throw err;
+  }
+}
 
 // ── Lista lekérés ──
 export function useFixedAssets(companyId: string | undefined) {
@@ -109,6 +277,7 @@ export function useCreateFixedAsset() {
       inventoryNumber: string;
       name: string;
       description?: string;
+      vtszTeszor?: string;
       acquisitionValue: number;
       residualValue: number;
       currency: string;
@@ -139,6 +308,7 @@ export function useCreateFixedAsset() {
           inventory_number: params.inventoryNumber,
           name: params.name,
           description: params.description || null,
+          vtsz_teszor: params.vtszTeszor || null,
           acquisition_value: params.acquisitionValue,
           residual_value: params.residualValue,
           currency: params.currency,
@@ -184,6 +354,19 @@ export function useCreateFixedAsset() {
         });
 
       if (eventError) reportError({ type: 'db_query', component: 'useFixedAssets', action: 'error', message: 'Event insert error:', error: eventError });
+
+      // 3. Automatikusan elkészíti és csatolja a Tárgyi Eszköz Aktiválási Jegyzőkönyvet
+      try {
+        await generateAndAttachAssetProtocolPdf(asset.id, params.companyId);
+      } catch (pdfErr) {
+        reportError({
+          type: 'db_query',
+          component: 'useFixedAssets',
+          action: 'useCreateFixedAsset:pdf',
+          message: 'Auto protocol generation failed',
+          error: pdfErr,
+        });
+      }
 
       return asset;
     },

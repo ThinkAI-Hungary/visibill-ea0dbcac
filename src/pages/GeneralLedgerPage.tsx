@@ -34,6 +34,11 @@ import { cn } from '@/lib/utils';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { GlDateBasis, GlPostingStatus } from '@/lib/glData';
 
+import { GlAccountCardView } from '@/components/general-ledger/GlAccountCardView';
+import { PartnerLedgerCardView } from '@/components/general-ledger/PartnerLedgerCardView';
+import { GlAnalyticReconciliationView } from '@/components/general-ledger/GlAnalyticReconciliationView';
+import { CreditCard, UserCheck, ShieldAlert } from 'lucide-react';
+
 export default function GeneralLedgerPage() {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
@@ -48,7 +53,8 @@ export default function GeneralLedgerPage() {
   const [auditXmlModalOpen, setAuditXmlModalOpen] = useState(false);
   const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
-  const [activeViewTab, setActiveViewTab] = useState<'extract' | 'journal' | 'comparison'>('extract'); // F7
+  const [activeViewTab, setActiveViewTab] = useState<'extract' | 'cards' | 'journal' | 'comparison'>('extract');
+  const [cardSubTab, setCardSubTab] = useState<'account' | 'partner' | 'reconciliation'>('account');
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
   const [printLayoutMode, setPrintLayoutMode] = useState<'synthetic' | 'analytical'>('analytical');
   const [glStats, setGlStats] = useState<{ accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number } | null>(null);
@@ -593,11 +599,14 @@ export default function GeneralLedgerPage() {
         </div>
       )}
 
-      {/* F7: View tabs — Kivonat vs Naplófőkönyv vs Összehasonlítás */}
+      {/* F7: View tabs — Kivonat vs Kartonok vs Naplófőkönyv vs Összehasonlítás */}
       <Tabs value={activeViewTab} onValueChange={v => setActiveViewTab(v as any)} className="print:hidden">
         <TabsList className="mb-0">
           <TabsTrigger value="extract" className="gap-1.5">
             <Database className="w-4 h-4" /> Kivonat
+          </TabsTrigger>
+          <TabsTrigger value="cards" className="gap-1.5 bg-primary/10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+            <CreditCard className="w-4 h-4" /> Kartonok
           </TabsTrigger>
           <TabsTrigger value="journal" className="gap-1.5">
             <BookOpen className="w-4 h-4" /> Naplófőkönyv
@@ -671,6 +680,83 @@ export default function GeneralLedgerPage() {
               onStatsChange={handleStatsChange}
               onLoadingChange={handleLoadingChange}
             />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Kartonok nézet (Főkönyvi & Analitikus Kartonok modul) ── */}
+      <div className={activeViewTab !== 'cards' ? 'hidden' : ''}>
+        <Card className="border-border/60 shadow-md content-animate">
+          <CardHeader className="py-4 border-b border-border/40 bg-muted/30">
+            <CardTitle className="text-xl font-bold flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 text-primary p-2 rounded-lg">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Főkönyvi & Analitikus Kartonok</h2>
+                  <p className="text-xs text-muted-foreground font-normal">Tételes forgalmi kimutatások, göngyölt egyenlegek és analitikai egyeztető</p>
+                </div>
+              </div>
+
+              {/* Sub-tab Switcher: Főkönyvi Karton | Partnerkarton | Egyeztető */}
+              <div className="flex items-center gap-1 bg-background border p-1 rounded-lg">
+                <Button
+                  variant={cardSubTab === 'account' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={() => setCardSubTab('account')}
+                >
+                  <CreditCard className="w-3.5 h-3.5" /> Főkönyvi Karton
+                </Button>
+                <Button
+                  variant={cardSubTab === 'partner' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={() => setCardSubTab('partner')}
+                >
+                  <UserCheck className="w-3.5 h-3.5" /> Partner Kartonok
+                </Button>
+                <Button
+                  variant={cardSubTab === 'reconciliation' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={() => setCardSubTab('reconciliation')}
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" /> Főkönyv ↔ Analitika
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            {cardSubTab === 'account' && (
+              <GlAccountCardView
+                companyId={selectedCompany?.id}
+                presetId={activePresetId}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                dateBasis={dateBasis}
+                postingStatus={postingStatus}
+                companyName={selectedCompany?.name}
+              />
+            )}
+
+            {cardSubTab === 'partner' && (
+              <PartnerLedgerCardView
+                companyId={selectedCompany?.id}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                companyName={selectedCompany?.name}
+              />
+            )}
+
+            {cardSubTab === 'reconciliation' && (
+              <GlAnalyticReconciliationView
+                companyId={selectedCompany?.id}
+                presetId={activePresetId}
+                dateTo={dateTo}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
