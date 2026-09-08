@@ -45,6 +45,7 @@ Get-ChildItem "$env:USERPROFILE\.gemini\config\skills\visibill-*" | Select-Objec
 | **visibill-doc-audit** | Dokumentáció audit | ~1.5K token |
 | **visibill-doc-sync** | Dokumentáció szinkronizálás | ~1.5K token |
 | **visibill-adr-navigator** | ADR navigáció | ~1.5K token |
+| **visibill-knowledge-base-update** | Tudástár & AI RAG frissítés | ~2K token |
 
 ## Workflow
 

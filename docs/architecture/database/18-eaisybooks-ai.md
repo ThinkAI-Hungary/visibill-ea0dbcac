@@ -38,11 +38,35 @@
 | session_id | uuid | — |  |
 | role | text | — |  |
 | content | text | — |  |
+| is_helpful | boolean | Igen | `null` |
+| feedback_reason | text | Igen | `null` |
+| feedback_at | timestamp with time zone | Igen | `null` |
 | created_at | timestamp with time zone | — | `now()` |
 
-**FK:** `session_id` → `accounty_ai_chat_sessions.id`
+**FK:** `session_id` → `accounty_ai_chat_sessions.id` (`ON DELETE CASCADE`)
 
-**Indexek:** `idx_accounty_ai_messages_session`
+**Indexek:**
+- `idx_accounty_ai_messages_session` (`session_id, created_at ASC`)
+- `idx_accounty_ai_chat_messages_feedback` (`is_helpful, feedback_at`) WHERE `is_helpful IS NOT NULL`
+
+---
+
+### `view_ai_chat_feedback_reports` (Adminisztrátori Segédnézet)
+
+> RAG Tuning és minőségbiztosítási jelentés, amely összekapcsolja az értékelt asszisztens választ az azt közvetlenül megelőző felhasználói kérdéssel. `security_invoker = true`.
+
+| Mező | Típus | Leírás |
+|---|---|---|
+| `message_id` | uuid | Az értékelt válasz azonosítója |
+| `session_id` | uuid | A beszélgetési szál azonosítója |
+| `session_title` | text | A csevegés címe |
+| `user_id` | uuid | A kérdező felhasználó |
+| `question` | text | A közvetlenül megelőző felhasználói kérdés szövege |
+| `answer` | text | Az asszisztens válasza |
+| `is_helpful` | boolean | `true` (hasznos) / `false` (nem hasznos) |
+| `feedback_reason` | text | A minősítés oka / megjegyzés |
+| `feedback_at` | timestamptz | A visszajelzés ideje |
+| `created_at` | timestamptz | A válasz generálásának ideje |
 
 ---
 

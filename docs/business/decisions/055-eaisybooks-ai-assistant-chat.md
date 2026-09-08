@@ -38,6 +38,13 @@
    - **Automatizációs pajzs (Automation Shield):** A közvetlen scriptes vagy bot alapú hívások blokkolásra kerülnek (`checkAutomationShield`).
    - **Költségelszámolás:** Minden lezárt chat válasz aszinkron rögzítésre kerül az `llm_koltsegek` táblában a felhasznált tokenek és a becsült USD költség naplózásával (`pipeline: 'accounty_ai_chat'`).
 
+5. **Minőségbiztosítás és RAG Tuning Visszajelzési Hurok:**
+   - A könyvelők minden asszisztens válasz alján egykattintásos visszajelzést adhatnak (*Hasznos / Nem volt hasznos*).
+   - Negatív értékelésnél rögzíthető az ok (*Pontatlan adat*, *Nem válaszolt a kérdésre*, *Elavult/hiányos tudástár*, stb.), ami közvetlenül a `view_ai_chat_feedback_reports` adminisztrátori nézetbe kerül a promptok és a belső tudásbázis célzott fejlesztéséhez.
+
+6. **Élő Céginformációs Döntéstámogatás (Live Context):**
+   - Az általános jogszabályi válaszokon túl a könyvelő kérdezhet az aktív cég konkrét számláiról, kintlévőségeiről és lejárt tartozásairól. Az AI nem hallucinál, hanem a `get_company_live_ai_context` adatbázis-funkció által kinyert élő tényadatokból válaszol. Több cég esetén interaktív cégválasztó gombokkal tisztázza a kontextust.
+
 **Rationale:** A könyvelőirodák munkatársai rengeteg időt töltenek törvényi hivatkozások, adókulcsok és ellenőrzési szabályok keresésével. A beépített AI asszisztens drasztikusan csökkenti az adminisztrációs terheket és a hibalehetőségeket, miközben az órás kéréslimit és a token naplózás megvédi a platformot a kiszámíthatatlan költségrobbanástól.
 
 ---

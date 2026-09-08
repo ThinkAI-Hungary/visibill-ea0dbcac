@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/components/FeedbackFab.tsx": {
-    "mtime": 1781806414.7786238,
-    "ast_hash": "e9437c9186080e4a1ac91665a99b75b8",
+    "mtime": 1788857053.4016335,
+    "ast_hash": "512763482a897afd5e3872245f624130",
     "semantic_hash": ""
   },
   "src/components/GlobalDatePicker.tsx": {
@@ -1305,8 +1305,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountyLayout.tsx": {
-    "mtime": 1788295906.865156,
-    "ast_hash": "4b425ecb941ad05ddbd186238f40a2e9",
+    "mtime": 1788846125.9990764,
+    "ast_hash": "916a061bb054a17b7fb7f9b8d1c2fcfb",
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountyRoleContext.tsx": {
@@ -1745,8 +1745,8 @@
     "semantic_hash": "2ed9bed8400139c714d50da0c2ae1269"
   },
   "supabase/functions/process-mailgun-webhook/index.ts": {
-    "mtime": 1788269432.149341,
-    "ast_hash": "a890431dcd3370dfadc9b92265b0e05a",
+    "mtime": 1788855546.081218,
+    "ast_hash": "8c2a91549eae3b6f19ed17c175da055d",
     "semantic_hash": ""
   },
   "supabase/functions/query-nav-invoices/index.ts": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788793597.4667864,
-    "ast_hash": "9170f9d58f8a1fcf17ef2aba0114b07b",
+    "mtime": 1788858899.4845896,
+    "ast_hash": "de4822863985d70125d5c7d636167570",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3325,8 +3325,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1788792271.8329475,
-    "ast_hash": "e1486e29e6adf12c35fd923260915426",
+    "mtime": 1788858909.01721,
+    "ast_hash": "784bdf6e7060d12493673a04a703b914",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3355,8 +3355,8 @@
     "semantic_hash": ""
   },
   "docs/design/04-component-library.md": {
-    "mtime": 1788555218.8143003,
-    "ast_hash": "e57b0f20f76786db94a0a7e9dfe87edd",
+    "mtime": 1788858923.0432904,
+    "ast_hash": "e7834ea4b0bc6f3b838526db80b6e8f2",
     "semantic_hash": ""
   },
   "docs/design/05-layout-navigation.md": {
@@ -3375,8 +3375,8 @@
     "semantic_hash": ""
   },
   "docs/design/09-error-handling-feedback.md": {
-    "mtime": 1788130908.3804126,
-    "ast_hash": "1e552db3cf19d6dd1fc4384ed0f94b37",
+    "mtime": 1788858934.8067453,
+    "ast_hash": "ac0367755c27244eb1facccc4f96273f",
     "semantic_hash": ""
   },
   "docs/design/10-accessibility-ux.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788793587.8847241,
-    "ast_hash": "f9d5baccfedc1a622ea186df1b7ce9dd",
+    "mtime": 1788858905.258206,
+    "ast_hash": "35cc58b104a99492b6744c358a715e9e",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -3710,8 +3710,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/AccountyWelcomeWizard.tsx": {
-    "mtime": 1787568622.8523362,
-    "ast_hash": "cd73fd5b7a8d08827fa1c58381ce4d40",
+    "mtime": 1788846142.479746,
+    "ast_hash": "da638629a3da4f5e39ed9fd95aa6af29",
     "semantic_hash": ""
   },
   "src/components/accounty/CompanySwitcher.tsx": {
@@ -3840,8 +3840,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useAiChatSessions.ts": {
-    "mtime": 1788785991.8470182,
-    "ast_hash": "cec5811a82b998297e8c453b4741767d",
+    "mtime": 1788857566.0165086,
+    "ast_hash": "b52cef5d4b47f65812987f8f09bf5455",
     "semantic_hash": ""
   },
   "src/hooks/useEaisybillPermissions.ts": {
@@ -3940,8 +3940,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/AiAssistantPage.tsx": {
-    "mtime": 1787568622.8703353,
-    "ast_hash": "e36c80e8c421a2ec9dbd85a93e6cf49c",
+    "mtime": 1788856142.771898,
+    "ast_hash": "ff11e020cb5f992932727e4d883c6c28",
     "semantic_hash": ""
   },
   "src/pages/Accounty/AlertsCenterPage.tsx": {
@@ -4320,8 +4320,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/accounty-ai-chat/index.ts": {
-    "mtime": 1788801968.775429,
-    "ast_hash": "f73277ace31fb155f73f597002996f53",
+    "mtime": 1788858131.1548882,
+    "ast_hash": "47b220cd7c921862eb30cde288f4cc4e",
     "semantic_hash": ""
   },
   "supabase/functions/fetch-legal-updates/index.ts": {
@@ -4585,8 +4585,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/layout/AccountySidebar.tsx": {
-    "mtime": 1788212014.2189372,
-    "ast_hash": "16ee2231f4521cc8c42e02d39c49d7a6",
+    "mtime": 1788846113.676546,
+    "ast_hash": "8caf12baf0b92cbb9162c63534267eb6",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep1.tsx": {
@@ -5110,8 +5110,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/18-eaisybooks-ai.md": {
-    "mtime": 1788792359.043505,
-    "ast_hash": "631fc24d5ad2840e834d1967e70834bc",
+    "mtime": 1788858635.4002483,
+    "ast_hash": "4173ff6c2cc7eda3a98aa827646b1bd3",
     "semantic_hash": ""
   },
   "docs/architecture/database/19-platform-ops.md": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788843860.0351095,
+    "mtime": 1788855595.4247746,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -6905,8 +6905,8 @@
     "semantic_hash": ""
   },
   "src/components/pnl/PnlAiAssistant.tsx": {
-    "mtime": 1787568622.8603363,
-    "ast_hash": "a52c8b5e4f04e2f84d8ae129978c8240",
+    "mtime": 1788846163.1233327,
+    "ast_hash": "e6079ad77b10a60c7768453ddfb2f8ac",
     "semantic_hash": ""
   },
   "src/components/pnl/PnlSankeyChart.tsx": {
@@ -7575,8 +7575,8 @@
     "semantic_hash": ""
   },
   "src/routes/accountyRoutes.tsx": {
-    "mtime": 1788212014.2281156,
-    "ast_hash": "84039a7c4949b4b23fc8c25e2b24c5c7",
+    "mtime": 1788844730.0976944,
+    "ast_hash": "2ad36ab1dd4d00d2587557e760be9ff5",
     "semantic_hash": ""
   },
   "src/routes/authRoutes.tsx": {
@@ -7595,8 +7595,8 @@
     "semantic_hash": ""
   },
   "src/routes/shellComponents.tsx": {
-    "mtime": 1788135060.6845694,
-    "ast_hash": "16c8dd5fc4c7dc0cbce32066603d12c3",
+    "mtime": 1788856846.488966,
+    "ast_hash": "57f724677d043dce4ccc5932f1922ae8",
     "semantic_hash": ""
   },
   "src/routes/shipmentRoutes.tsx": {
@@ -8385,8 +8385,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/errorsHandler.ts": {
-    "mtime": 1788492768.9184453,
-    "ast_hash": "91c25714f6455f090feca95f2afb7c91",
+    "mtime": 1788855546.081218,
+    "ast_hash": "0d1a5d8836878b387f14e276c4120146",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/filesHandler.ts": {
@@ -9380,18 +9380,18 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md": {
-    "mtime": 1788802023.392187,
-    "ast_hash": "1f4ab222fb9c98a74145d28a743e4e15",
+    "mtime": 1788858609.1044319,
+    "ast_hash": "ce9f703f4a19d4bc91ea268e682dd468",
     "semantic_hash": ""
   },
   "docs/business/decisions/055-eaisybooks-ai-assistant-chat.md": {
-    "mtime": 1788792219.9056127,
-    "ast_hash": "6bfeb1663a1d2cacdb7fa405ad2f3335",
+    "mtime": 1788858643.5426395,
+    "ast_hash": "8927934bf62319ab833e0d851fb7385d",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-077-eaisybooks-ai-assistant-chat-and-speed-dial-ux.md": {
-    "mtime": 1788792235.9863255,
-    "ast_hash": "67febde4054edcf8b34d42b3774ad361",
+    "mtime": 1788858627.3029418,
+    "ast_hash": "d2d1d108513344bc17c02f9f35834ba8",
     "semantic_hash": ""
   },
   "src/components/knowledge-base/KnowledgeArticleCard.tsx": {
@@ -9420,8 +9420,8 @@
     "semantic_hash": ""
   },
   "src/data/knowledgeBaseFallback.ts": {
-    "mtime": 1788797043.386951,
-    "ast_hash": "08964bd35864884129ad09c1f4e906fa",
+    "mtime": 1788853026.1012905,
+    "ast_hash": "5fa3ea3dc89309e54a3f3e9841caff59",
     "semantic_hash": ""
   },
   "src/hooks/useKnowledgeBase.ts": {
@@ -9482,6 +9482,46 @@
   "supabase/migrations/20260907170155_search_knowledge_base_rpc.sql": {
     "mtime": 1788800006.7898686,
     "ast_hash": "abb328e46539b63667231a33ce196f2c",
+    "semantic_hash": ""
+  },
+  "src/__tests__/feedback-fab.test.tsx": {
+    "mtime": 1788846390.1366389,
+    "ast_hash": "6eeb920de3f7f119e4c272a8751d8fbe",
+    "semantic_hash": ""
+  },
+  "src/components/ai/AiAssistantDrawer.tsx": {
+    "mtime": 1788856135.0610878,
+    "ast_hash": "40abf395aa235d229636013219b6c8bb",
+    "semantic_hash": ""
+  },
+  "src/__tests__/ai-assistant-feedback.test.ts": {
+    "mtime": 1788855041.1982727,
+    "ast_hash": "af4491443cc051b3a6e4e0dad7899d15",
+    "semantic_hash": ""
+  },
+  "src/__tests__/ai-assistant-live-context.test.ts": {
+    "mtime": 1788850980.8584652,
+    "ast_hash": "3f31ee1bdc55acd02c51419849f2ee07",
+    "semantic_hash": ""
+  },
+  "src/components/ai/MessageFeedbackWidget.tsx": {
+    "mtime": 1788855420.343341,
+    "ast_hash": "1b96f21469014d1f7048d301e85b905f",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260908120000_get_company_live_ai_context.sql": {
+    "mtime": 1788849958.2792642,
+    "ast_hash": "707013d63ecaf5c8d6d054af99dc73cc",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260908130000_add_ai_chat_message_feedback.sql": {
+    "mtime": 1788855840.1363456,
+    "ast_hash": "e37e242ccadd99658325147282f368d8",
+    "semantic_hash": ""
+  },
+  "src/components/ai/AiAssistantChat.tsx": {
+    "mtime": 1788857585.2193093,
+    "ast_hash": "6aa514238c3f8a3afce34ce10589f0ba",
     "semantic_hash": ""
   }
 }

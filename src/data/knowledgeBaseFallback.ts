@@ -600,8 +600,8 @@ export const FALLBACK_KNOWLEDGE_ARTICLES: KnowledgeArticle[] = [
     "id": "nav-online-szamla-sync",
     "category_id": "system",
     "title": "Rendszerintegrációk: NAV Online Számla, Számlázz.hu és email fiók",
-    "summary": "Hogyan kösd össze vállalkozásodat a NAV-val, számlázóprogramokkal és állíts be egyedi számlafogadó email címet.",
-    "content": "# Rendszerintegrációk\n\nAz **Integrációk** menüpontban konfigurálhatók a külső adatkapcsolatok a bizonylatok automatikus beérkezéséhez.\n\n### 1. NAV Online Számla szinkronizáció\n- Technikai felhasználó azonosító, jelszó, XML aláírókulcs és cserekulcs beállítása.\n- Automatikus óránkénti számlaszinkronizáció kimenő és bejövő irányban, státuszkövetéssel és hibajelzéssel.\n\n### 2. Számlázz.hu Agent integráció\n- Közvetlen API összeköttetés a Számlázz.hu rendszerrel kibocsátott számlák azonnali átvételéhez.\n\n### 3. Cégszintű számlafogadó e-mail alias\n- Minden cég egyedi számlafogadó email címet kap (pl. `cegnev@eaisybill.hu`), amelyre a partnerek közvetlenül küldhetik a számlákat, automatikus feldolgozással.\n\n### 4. Relax könyvelőprogram adatimport\n- Korábbi könyvelési adatok és partnerállományok importálása Relax XML és DMP állományokból.",
+    "summary": "Hogyan kösd össze vállalkozásodat a NAV-val, számlázóprogramokkal és állíts be saját levelezőből történő automatikus számlafogadó e-mail továbbítást az Integrációk menüpontban.",
+    "content": "# Rendszerintegrációk és Levelező Beállítása\n\nAz **Integrációk** (`/integrations`) menüpontban konfigurálhatók a külső adatkapcsolatok a bizonylatok automatikus beérkezéséhez és feldolgozásához.\n\n### 1. Saját levelező szolgáltató és számlafogadó e-mail beállítása\n- Az eaisyBill nem igényel közvetlen jelszavas IMAP/SMTP belépést a privát postafiókodba, hanem egy **dedikált, biztonságos számlafogadó e-mail aliast** biztosít cégenként (pl. `cegnev@in.visibill.hu` vagy `@eaisybill.hu`).\n- **Beállítás lépései:**\n  1. Lépj az **Integrációk** (`/integrations`) menüpontba.\n  2. Válaszd ki a céget a listából az *Email alias* kártyánál.\n  3. Ha még nincs címed, kattints az **Email alias generálása** gombra, vagy másold ki a meglévő egyedi címet.\n  4. A saját levelezőrendszeredben (Gmail / Google Workspace, Microsoft 365 / Outlook, saját szerver / cPanel):\n     - Hozz létre egy **automatikus továbbítási szabályt (szűrőt)**, amely a számlákat tartalmazó vagy beszállítóktól érkező leveleket automatikusan továbbítja erre a generált címre.\n  5. A továbbított e-mailek csatolmányait (PDF számlák) a rendszer automatikusan kinyeri, feldolgozza (OCR) és beemeli a számlák közé.\n\n### 2. NAV Online Számla szinkronizáció\n- Technikai felhasználó azonosító, jelszó, XML aláírókulcs és cserekulcs megadása.\n- Automatikus óránkénti számlaszinkronizáció bejövő és kimenő irányban.\n\n### 3. Számlázz.hu Agent integráció\n- Közvetlen összeköttetés a kibocsátott számlák azonnali átvételéhez.\n\n### 4. Relax könyvelőprogram adatimport\n- Korábbi könyvelési adatok és partnerállományok importálása XML és DMP állományokból.",
     "menu_path": "/integrations",
     "tags": [
       "nav",
@@ -609,7 +609,15 @@ export const FALLBACK_KNOWLEDGE_ARTICLES: KnowledgeArticle[] = [
       "számlázz.hu",
       "email alias",
       "relax",
-      "integráció"
+      "integráció",
+      "levelező",
+      "levelezés",
+      "email továbbítás",
+      "számlafogadó cím",
+      "gmail",
+      "outlook",
+      "imap",
+      "saját levelező"
     ],
     "icon": "Wrench",
     "estimated_read_time": "3 perc",

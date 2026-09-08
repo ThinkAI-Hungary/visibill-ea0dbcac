@@ -78,8 +78,26 @@ Az `accounty-ai-chat` Edge Function központi mikroszolgáltatásként működik
 A rendszer funkcióival kapcsolatos kérdések pontos, hallucinációmentes megválaszolására az Edge Function közvetlen RAG csatolást kapott a [knowledge_base_articles](../database/18-eaisybooks-ai.md) táblához és a `search_knowledge_base` PostgreSQL RPC-hez:
 1. **Lekérdezés elemzés:** A felhasználó legutóbbi üzenetéből és az aktív oldal útvonalából (`context.page`) az Edge Function kinyeri a keresési szándékot.
 2. **Kombinált FTS és Page Context lekérdezés:** A `search_knowledge_base(search_query, page_path, target_category, match_limit => 3)` RPC magyar nyelvi tokenizációval, stop-szavak kiszűrésével és `ts_rank` pontozással azonosítja a releváns cikkeket. Az aktív oldal cikke garantált prioritást kap (`rank: 1.0`).
-3. **Rendszerprompt injektálás:** A releváns cikkek kivonata (`summary`, `menu_path`, valamint max 1800 karakter tiszta `content`) bekerül a dinamikus rendszerprompt `HIVATALOS EAISYBILL / EAISYBOOKS TUDÁSTÁR` szekciójába.
-4. **Grounded válaszadás:** Az LLM szigorú instrukciót kap arra, hogy a tudástári leírások alapján lépésről lépésre vezesse végig a felhasználót a felületen és gombokon, navigációs tanáccsal ellátva (pl. "Ugrás a funkcióhoz: [Menüpont]").
+3. **Rendszerprompt injektálás:** A releváns cikkek kivonata (`summary`, valamint max 1800 karakter tiszta `content`) bekerül a dinamikus rendszerprompt `HIVATALOS EAISYBILL / EAISYBOOKS TUDÁSTÁR` szekciójába.
+4. **Grounded és Természetes Válaszadás:** Az LLM szigorú tiltást kapott technikai URL útvonalak (pl. `/eaisybooks/prompts`, `/invoices`) és mesterkélt *"Ugrás a funkcióhoz:"* sablonok generálására. Kizárólag a valós, felületen látható magyar menü- és modulnevekre (pl. *„a bal oldali menüben a Kategóriák menüpontban”*, *„a Bizonylatok menüpontban”*) hivatkozik természetes szövegezéssel.
+
+### 2.9. Felhasználói Visszajelzés és RAG Tuning Feedback Hurok
+A belső tudásbázis és a promptok folyamatos, adatvezérelt finomhangolása érdekében minden asszisztens válasz aljára beépült a felhasználói visszajelzési hurok:
+- **Adatbázis mezők (`accounty_ai_chat_messages`):** `is_helpful` (boolean), `feedback_reason` (text), `feedback_at` (timestamptz).
+- **Parciális index:** `idx_accounty_ai_chat_messages_feedback` a gyors adminisztrátori lekérdezésekhez.
+- **Frontend Widget ([MessageFeedbackWidget.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/ai/MessageFeedbackWidget.tsx)):** Diszkrét, mikro-interakciós komponens ("Hasznos volt ez a válasz?: Igen / Nem"). Negatív szavazat esetén gyorscímkék (pl. *Pontatlan információ*, *Nem válaszolt a kérdésre*, *Elavult vagy hiányos adat*) és opcionális megjegyzés mező segíti az ok azonosítását.
+- **RAG Tuning Nézet (`view_ai_chat_feedback_reports`):** Automatikusan összerendeli az AI választ az azt megelőző felhasználói kérdéssel, az értékeléssel és az indoklással (`security_invoker = true`), lehetővé téve a hiányzó vagy hibás tudástár cikkek azonnali azonosítását.
+
+### 2.10. Élő Cégkontextus & Pénzügyi Pillanatkép (Live Business Data Layer)
+A rendszer funkcionális kérdésein túl az asszisztens képes a kiválasztott vállalkozás valós idejű pénzügyi adatait is elemezni:
+- **`get_company_live_ai_context` RPC:** PostgreSQL függvény, amely aggregálja az adott cég nyitott és lejárt szállítói tartozásait, vevői kintlévőségeit, legfontosabb határidős tételeit és párosítatlan banki tranzakcióit.
+- **Cégválasztó Tokenek (`<<COMPANY_SELECT:id|name>>`):** Ha a felhasználó több céghez tartozik és konkrét cég megjelölése nélkül kérdez pénzügyi adatot, az asszisztens nem találgat, hanem interaktív cégválasztó gombokat fűz a válaszához, amelyekre kattintva a csevegés azonnal a célzott céggel folytatódik.
+
+### 2.11. Komponens Dekompozíció és Teljesítmény-optimalizáció
+- **Különválasztott Chat Komponens ([AiAssistantChat.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/ai/AiAssistantChat.tsx)):** A korábbi monolitikus `AiAssistantPage.tsx` szétbontásra került: a teljes állapotkezelés, a TanStack Query szinkron, az SSE stream dekódolás (`buffer` csomaghatár-védelemmel) és a csevegő UI a dedikált `AiAssistantChat` modulba került.
+- **Könnyűsúlyú Page Wrapper ([AiAssistantPage.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/pages/Accounty/AiAssistantPage.tsx)):** Letisztult, mindössze ~36 soros route komponens.
+- **Lazy Drawer import:** Az [AiAssistantDrawer.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/ai/AiAssistantDrawer.tsx) közvetlenül a chat komponenst tölti be önálló Vite chunkként (`36.79 kB`), elkerülve a teljes oldalcsomag felesleges betöltését.
+- **Görgetési pozícióvédelem:** A globális `ScrollToTop` ([src/routes/shellComponents.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/routes/shellComponents.tsx)) kizárja az AI konténereket (`[data-ai-chat="true"]`), így az oldalháttér frissítése vagy navigáció nem ugrasztja fel a csevegést a kezdőpontra.
 
 ---
 

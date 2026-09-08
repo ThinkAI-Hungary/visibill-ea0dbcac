@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { MessageSquareText, Sparkles, X } from "lucide-react";
+import { MessageSquareText, Bot, X } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -31,12 +31,14 @@ export interface FeedbackFabProps {
 export function FeedbackFab({ onAiOpen, aiDrawerOpen: controlledAiOpen, onAiClose }: FeedbackFabProps = {}) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [uncontrolledAiOpen, setUncontrolledAiOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isControlled = controlledAiOpen !== undefined;
   const isAiOpen = isControlled ? controlledAiOpen : uncontrolledAiOpen;
 
   const handleToggleAi = useCallback(() => {
     if (isAiOpen) {
+      setSidebarOpen(false);
       if (onAiClose) {
         onAiClose();
       } else {
@@ -52,12 +54,20 @@ export function FeedbackFab({ onAiOpen, aiDrawerOpen: controlledAiOpen, onAiClos
   }, [isAiOpen, onAiOpen, onAiClose]);
 
   const handleCloseAi = useCallback(() => {
+    setSidebarOpen(false);
     if (onAiClose) {
       onAiClose();
     } else {
       setUncontrolledAiOpen(false);
     }
   }, [onAiClose]);
+
+  // Reset sidebar state if drawer closes
+  useEffect(() => {
+    if (!isAiOpen) {
+      setSidebarOpen(false);
+    }
+  }, [isAiOpen]);
 
   // Close AI drawer on Escape key
   useEffect(() => {
@@ -77,7 +87,11 @@ export function FeedbackFab({ onAiOpen, aiDrawerOpen: controlledAiOpen, onAiClos
       <div
         className={cn(
           "fixed bottom-6 z-50 flex flex-col items-end gap-3 print:hidden transition-all duration-300 ease-in-out",
-          isAiOpen ? "hidden md:flex md:right-[456px]" : "flex right-6"
+          isAiOpen
+            ? sidebarOpen
+              ? "hidden md:flex md:right-[736px]"
+              : "hidden md:flex md:right-[456px]"
+            : "flex right-6"
         )}
       >
         {/* 1. AI Chat Asszisztens Bubble */}
@@ -90,17 +104,17 @@ export function FeedbackFab({ onAiOpen, aiDrawerOpen: controlledAiOpen, onAiClos
                 "flex items-center justify-center rounded-full shadow-lg transition-all duration-200 ease-out group",
                 "h-13 w-13 min-h-[52px] min-w-[52px]",
                 isAiOpen
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 ring-2 ring-violet-500/60 shadow-slate-900/30 hover:scale-105"
-                  : "bg-gradient-to-br from-violet-600 via-indigo-600 to-fuchsia-600 text-white shadow-violet-500/25 hover:shadow-violet-500/40 hover:scale-105 active:scale-95"
+                  ? "bg-card text-foreground border border-border/80 shadow-lg shadow-black/5 dark:shadow-black/30 hover:border-primary/50 hover:bg-primary/5 hover:text-primary hover:scale-105 active:scale-95"
+                  : "bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-600 text-white shadow-teal-500/25 hover:shadow-teal-500/40 hover:scale-105 active:scale-95"
               )}
               aria-label={isAiOpen ? "AI Asszisztens bezárása" : "AI Asszisztens előhívása"}
             >
               {isAiOpen ? (
-                <X className="h-5 w-5 transition-transform duration-200 group-hover:rotate-90" />
+                <X className="h-5 w-5 text-muted-foreground transition-all duration-200 group-hover:rotate-90 group-hover:text-primary" />
               ) : (
                 <div className="relative flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-6" />
-                  <span className="absolute -inset-1 rounded-full bg-white/25 animate-pulse pointer-events-none" />
+                  <Bot className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+                  <span className="absolute -inset-1 rounded-full bg-white/20 animate-pulse pointer-events-none" />
                 </div>
               )}
             </button>
@@ -116,16 +130,17 @@ export function FeedbackFab({ onAiOpen, aiDrawerOpen: controlledAiOpen, onAiClos
             <button
               id="feedback-fab"
               onClick={() => setFeedbackOpen(true)}
-              className="
-                flex items-center justify-center
-                h-12 w-12 min-h-[48px] min-w-[48px] rounded-full
-                bg-primary text-primary-foreground
-                shadow-lg shadow-primary/25
-                hover:shadow-xl hover:shadow-primary/30
-                hover:scale-105 active:scale-95
-                transition-all duration-200 ease-out
-                group
-              "
+              className={cn(
+                "flex items-center justify-center",
+                "h-12 w-12 min-h-[48px] min-w-[48px] rounded-full",
+                "bg-primary text-primary-foreground",
+                "shadow-lg shadow-primary/25",
+                "hover:shadow-xl hover:shadow-primary/30",
+                "hover:scale-105 active:scale-95",
+                "transition-all duration-200 ease-out",
+                "group",
+                isAiOpen && "hidden"
+              )}
               aria-label="Visszajelzés küldése"
             >
               <MessageSquareText className="h-5 w-5 transition-transform duration-200 group-hover:rotate-[-8deg]" />
@@ -141,7 +156,11 @@ export function FeedbackFab({ onAiOpen, aiDrawerOpen: controlledAiOpen, onAiClos
       <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
 
       {/* Slide-over AI Assistant Drawer */}
-      <AiAssistantDrawer open={isAiOpen} onClose={handleCloseAi} />
+      <AiAssistantDrawer
+        open={isAiOpen}
+        onClose={handleCloseAi}
+        onSidebarChange={setSidebarOpen}
+      />
     </>
   );
 }
