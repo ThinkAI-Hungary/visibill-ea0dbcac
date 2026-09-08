@@ -145,15 +145,17 @@ export async function buildErrors(admin: ReturnType<typeof createClient>, url: U
     for (const row of res.data || []) {
       const isAppLog = source === "app_error_logs";
 
-      // Filter warning severity: only include Számlázz.hu related warnings to avoid table flooding
+      // Filter warning severity: only include Számlázz.hu & Billingo related warnings to avoid table flooding
       if (isAppLog && row.severity === 'warning') {
-        const isSzamlazzError =
+        const isInvoiceLinkError =
           row.error_type === 'szamlazz_agent_api' ||
           row.action?.toLowerCase().includes('szamlazz') ||
+          row.action?.toLowerCase().includes('billingo') ||
           row.message?.toLowerCase().includes('számlázz') ||
-          row.message?.toLowerCase().includes('szamlazz');
+          row.message?.toLowerCase().includes('szamlazz') ||
+          row.message?.toLowerCase().includes('billingo');
 
-        if (!isSzamlazzError) {
+        if (!isInvoiceLinkError) {
           continue;
         }
       }
