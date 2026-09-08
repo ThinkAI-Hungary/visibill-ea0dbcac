@@ -1390,8 +1390,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollCyclePage.tsx": {
-    "mtime": 1788644577.3451006,
-    "ast_hash": "761823f61bf02da90f191c8abb730e77",
+    "mtime": 1788871239.686348,
+    "ast_hash": "640c03f9fe41554d0f40236f900e536c",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollDashboardPage.tsx": {
@@ -1400,8 +1400,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollReportsPage.tsx": {
-    "mtime": 1787568622.8913417,
-    "ast_hash": "eda18828b573e074ed46f7550c704dbc",
+    "mtime": 1788871239.686348,
+    "ast_hash": "7869db4070171a4fc3ac3dfbe18f1bca",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ReportsPage.tsx": {
@@ -1745,8 +1745,8 @@
     "semantic_hash": "2ed9bed8400139c714d50da0c2ae1269"
   },
   "supabase/functions/process-mailgun-webhook/index.ts": {
-    "mtime": 1788855546.081218,
-    "ast_hash": "8c2a91549eae3b6f19ed17c175da055d",
+    "mtime": 1788871239.6873958,
+    "ast_hash": "cfe291ce6b20eb551f51368390e8a084",
     "semantic_hash": ""
   },
   "supabase/functions/query-nav-invoices/index.ts": {
@@ -3840,8 +3840,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useAiChatSessions.ts": {
-    "mtime": 1788857566.0165086,
-    "ast_hash": "b52cef5d4b47f65812987f8f09bf5455",
+    "mtime": 1788871402.977556,
+    "ast_hash": "607ec744eabd74e4173f07309e1d297d",
     "semantic_hash": ""
   },
   "src/hooks/useEaisybillPermissions.ts": {
@@ -4625,8 +4625,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep8.tsx": {
-    "mtime": 1788644569.434752,
-    "ast_hash": "b89a298c9df1049b8ee124dd874f03af",
+    "mtime": 1788871239.684788,
+    "ast_hash": "7ff9ff376f8373905ff12a9a5dcf88dc",
     "semantic_hash": ""
   },
   "src/components/partners/PartnerInvoiceDetailDialog.tsx": {
@@ -5110,8 +5110,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/18-eaisybooks-ai.md": {
-    "mtime": 1788858635.4002483,
-    "ast_hash": "4173ff6c2cc7eda3a98aa827646b1bd3",
+    "mtime": 1788871492.8590589,
+    "ast_hash": "8a923a11967097e7fb140c8be0e1b970",
     "semantic_hash": ""
   },
   "docs/architecture/database/19-platform-ops.md": {
@@ -9380,8 +9380,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md": {
-    "mtime": 1788858609.1044319,
-    "ast_hash": "ce9f703f4a19d4bc91ea268e682dd468",
+    "mtime": 1788871509.8129952,
+    "ast_hash": "d084022330113120cb4a17cdadaf3bf4",
     "semantic_hash": ""
   },
   "docs/business/decisions/055-eaisybooks-ai-assistant-chat.md": {
@@ -9542,6 +9542,21 @@
   ".agents/skills/visibill-knowledge-base-update/references/rag_optimization_guide.md": {
     "mtime": 1788859109.5848417,
     "ast_hash": "d2f24f451317dd775c31729576d7fbd9",
+    "semantic_hash": ""
+  },
+  "src/__tests__/ai-assistant-soft-delete.test.ts": {
+    "mtime": 1788871415.0756526,
+    "ast_hash": "ca7b62d1f403e829b2d83cc2b43413d6",
+    "semantic_hash": ""
+  },
+  "src/lib/payroll/payrollAutoPoster.ts": {
+    "mtime": 1788871239.684788,
+    "ast_hash": "1a01ccd0d2dba0cb60ef2c0d0d270937",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260908150000_soft_delete_ai_chat_sessions.sql": {
+    "mtime": 1788871388.0150526,
+    "ast_hash": "3e1b88cdd77ab9cb2d5ce1284ad2626a",
     "semantic_hash": ""
   }
 }

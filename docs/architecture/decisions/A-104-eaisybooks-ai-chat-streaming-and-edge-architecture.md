@@ -99,6 +99,16 @@ A rendszer funkcionális kérdésein túl az asszisztens képes a kiválasztott 
 - **Lazy Drawer import:** Az [AiAssistantDrawer.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/ai/AiAssistantDrawer.tsx) közvetlenül a chat komponenst tölti be önálló Vite chunkként (`36.79 kB`), elkerülve a teljes oldalcsomag felesleges betöltését.
 - **Görgetési pozícióvédelem:** A globális `ScrollToTop` ([src/routes/shellComponents.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/routes/shellComponents.tsx)) kizárja az AI konténereket (`[data-ai-chat="true"]`), így az oldalháttér frissítése vagy navigáció nem ugrasztja fel a csevegést a kezdőpontra.
 
+### 2.12. Beszélgetés Törlés és Adatmegőrzési Stratégia (Soft Delete)
+A rendszer minőségbiztosítási céljából (RAG tuning, hibás válaszok elemzése a `view_ai_chat_feedback_reports` segítségével) elengedhetetlen, hogy a felhasználói visszajelzések és üzenetváltások ne semmisüljenek meg akkor sem, ha a felhasználó a felületen töröl egy csevegési szálat:
+- **Korábbi hard-delete kockázat:** A `accounty_ai_chat_messages.session_id` külső kulcson lévő `ON DELETE CASCADE` miatt a korábbi fizikai törlés azonnal törölte az összes kapcsolódó üzenetet és értékelést.
+- **Soft Delete architektúra:**
+  - `accounty_ai_chat_sessions` tábla kiegészítve `is_deleted` (boolean, default: `false`) és `deleted_at` (timestamptz) oszlopokkal.
+  - Parciális index az aktív beszélgetésekhez: `idx_accounty_ai_sessions_user_active` (`WHERE is_deleted = false`).
+  - **Fizikai törlés megtiltása RLS szinten:** Az `authenticated` szerepkörnek kizárólag `SELECT`, `INSERT`, `UPDATE` engedélyezett a saját rekordjaira (`auth.uid() = user_id`), míg közvetlen fizikai `DELETE` jogot kizárólag a `service_role` kap.
+  - **Frontend viselkedés:** Törléskor a kliens soft-delete mutációt futtat (`update({ is_deleted: true, deleted_at: ... })`), a lista pedig kizárólag a nem törölt elemeket kérdezi le (`.eq('is_deleted', false)`).
+  - **RAG riport integritás:** A `view_ai_chat_feedback_reports` view továbbra is tartalmazza az összes minősített üzenetet, kiegészítve az `is_session_deleted` flaggel.
+
 ---
 
 ## 3. Következmények és Értékelés
