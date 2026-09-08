@@ -236,6 +236,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `rls_auto_enable()` | DEFINER | Automatikus RLS engedélyezés új táblákon |
 | `reset_monthly_usage()` | DEFINER | Havi számlafeldolgozási kvóta nullázás (cron) |
 | `sync_sandbox_from_taxology()` | DEFINER | Sandbox adatok szinkronizálás taxology-ból |
+| `search_knowledge_base()` | DEFINER | FTS kereső és RAG retrieval motor magyar tokenizációval és oldal kontextus pontozással (ld. [A-105](./A-105-knowledge-base-schema-and-fts.md)) |
 
 ---
 

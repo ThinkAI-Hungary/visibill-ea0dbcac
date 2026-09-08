@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-07  
-> **Összesen:** 104 döntés | ✅ Decided: 102 | ⛔ Superseded: 2
+> **Összesen:** 106 döntés | ✅ Decided: 104 | ⛔ Superseded: 2
 
 ---
 
@@ -144,6 +144,9 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-094 | Bérszámfejtési Ciklus Végtelen Re-render Védelem, Stabil Függőségi Kulcsok és Kézi Jelenlét Perzisztencia | ✅ Decided | [A-094](./A-094-payroll-cycle-render-stability-and-attendance-persistence.md) |
 | A-099 | Számlakép Törlés Kettős Döntési Modell (Dual Choice), Lebegő Műveletsáv Kijelölés-kezelés és Lapozási Határeset Auto-Recovery | ✅ Decided | [A-099](./A-099-invoice-and-upload-deletion-governance.md) |
 | A-102 | eaisyBooks Kettős Működési Mód (Dual-Mode Router), Kliens Kontextus és Hibrid Szerepkör Architektúra | ✅ Decided | [A-102](./A-102-eaisybooks-dual-mode-modular-architecture.md) |
+| A-103 | eaisyBooks RLS Teljesítmény Optimalizáció és Hiba-Elhárítás | ✅ Decided | [A-103](./A-103-accounty-rls-performance-optimization-and-error-guarding.md) |
+| A-104 | eaisyBooks AI Chat Streaming, Dual-Provider API Routing és Edge Architektúra | ✅ Decided | [A-104](./A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md) |
+| A-105 | eaisyBill Tudástár Adatmodell, Full-Text Search és AI Retrieval Előkészítés | ✅ Decided | [A-105](./A-105-knowledge-base-schema-and-fts.md) |
 
 ## 💳 Fizetés
 

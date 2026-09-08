@@ -189,6 +189,7 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/notes": () => import("@/pages/NotesPage"),
   "/transfers": () => import("@/pages/TransfersPage"),
 
+  "/knowledge-base": () => import("@/pages/KnowledgeBasePage"),
   "/tickets": () => import("@/pages/TicketsPage"),
   "/shipments": () => import("@/pages/ShipmentMatchingDashboard"),
   "/shipments/import": () => import("@/pages/ShipmentImportPage"),
@@ -497,6 +498,43 @@ export const AppSidebar = React.memo(function AppSidebar() {
                     </Tooltip>
                   </SidebarMenuItem>
                 )}
+                {/* Standalone Tudástár in collapsed mode */}
+                {canAccess('knowledge_base') && (
+                  <SidebarMenuItem key="knowledge-base" data-tour="knowledge-base">
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <SidebarMenuButton
+                          isActive={isActive("/knowledge-base")}
+                          disabled={hasNoCompany}
+                          asChild={!hasNoCompany}
+                          className={cn(
+                            "w-8 h-8 p-0 flex items-center justify-center rounded-md transition-all duration-200 relative",
+                            hasNoCompany 
+                              ? 'grayscale opacity-50 cursor-not-allowed' 
+                              : 'hover:bg-primary/10 hover:text-primary'
+                          )}
+                        >
+                          {hasNoCompany ? (
+                            <BookOpen className="h-4 w-4 shrink-0" />
+                          ) : (
+                            <Link
+                              to={`${basePath}/knowledge-base`}
+                              onMouseEnter={() => handlePrefetch("/knowledge-base")}
+                              onFocus={() => handlePrefetch("/knowledge-base")}
+                              onTouchStart={() => handlePrefetch("/knowledge-base")}
+                              className="flex items-center justify-center w-full h-full"
+                            >
+                              <BookOpen className="h-4 w-4 shrink-0" />
+                            </Link>
+                          )}
+                        </SidebarMenuButton>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" align="center" className="text-xs">
+                        Tudástár
+                      </TooltipContent>
+                    </Tooltip>
+                  </SidebarMenuItem>
+                )}
                 {/* Standalone Hibajegyek in collapsed mode */}
                 {canAccess('tickets') && (
                   <SidebarMenuItem key="tickets" data-tour="tickets">
@@ -658,6 +696,46 @@ export const AppSidebar = React.memo(function AppSidebar() {
                       </span>
                       {/* Option 2 style active bar for standalone */}
                       {isActive("/upload") && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />
+                      )}
+                    </Link>
+                  )
+                )}
+                {/* Standalone Tudástár in expanded mode */}
+                {canAccess('knowledge_base') && (
+                  hasNoCompany ? (
+                    <div
+                      key="knowledge-base"
+                      className="relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none grayscale opacity-50 cursor-not-allowed"
+                    >
+                      <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
+                        Tudástár
+                      </span>
+                    </div>
+                  ) : (
+                    <Link
+                      key="knowledge-base"
+                      to={`${basePath}/knowledge-base`}
+                      onMouseEnter={() => handlePrefetch("/knowledge-base")}
+                      onFocus={() => handlePrefetch("/knowledge-base")}
+                      onTouchStart={() => handlePrefetch("/knowledge-base")}
+                      className={cn(
+                        "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                        isActive("/knowledge-base")
+                          ? "bg-primary/8 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                      )}
+                    >
+                      <BookOpen className={cn(
+                        "h-4 w-4 shrink-0 transition-colors",
+                        isActive("/knowledge-base") ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary"
+                      )} />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
+                        Tudástár
+                      </span>
+                      {/* Active bar */}
+                      {isActive("/knowledge-base") && (
                         <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />
                       )}
                     </Link>

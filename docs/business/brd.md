@@ -254,7 +254,7 @@ Riasztási központ: kritikus ügyfelek, hiányzó dokumentumok, lejárt határi
 **Státusz:** ✅ Decided
 
 ### REQ-8b.9: AI Asszisztens
-Beépített AI chat (AiAssistantPage) könyvelő irodai felhasználóknak. Drawer módban is elérhető bármely oldalon.  
+Beépített szakmai AI chat könyvelőirodai felhasználóknak (magyar munkajog, adózás, 2026-os sarokszámok). Drawer (slide-over) és dedikált teljes oldalas (`/eaisybooks/ai-assistant`) nézetben is elérhető. Részletes döntések: [Decision 055](decisions/055-eaisybooks-ai-assistant-chat.md), [PRD P-077](../product/decisions/P-077-eaisybooks-ai-assistant-chat-and-speed-dial-ux.md), [ADR A-104](../architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md).  
 **Státusz:** ✅ Decided
 
 ### REQ-8b.10: Ügyfél onboarding

@@ -29,6 +29,7 @@ export type EaisybillModule =
   | 'integrations'
   | 'exchange_rates'
   | 'upload'
+  | 'knowledge_base'
   | 'tickets'
   | 'settings'
   | 'shipments'
@@ -85,6 +86,7 @@ const ASSISTANT_MODULES: EaisybillModule[] = [
   'transactions',
   'petty_cash',
   'upload',
+  'knowledge_base',
   'tickets',
   'exchange_rates',
   'settings',
@@ -104,6 +106,7 @@ const VIEWER_MODULES: EaisybillModule[] = [
   'transactions',
   'petty_cash',
   'exchange_rates',
+  'knowledge_base',
   'tickets',
   'settings',
   'notes',
@@ -121,7 +124,7 @@ const ALL_MODULES: EaisybillModule[] = [
   'invoices', 'receivables', 'transactions', 'petty_cash',
   'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return', 'journals',
   'salaries', 'working_time', 'fixed_assets',
-  'integrations', 'exchange_rates', 'upload', 'tickets', 'settings',
+  'integrations', 'exchange_rates', 'upload', 'knowledge_base', 'tickets', 'settings',
   'shipments', 'shipment_matching', 'shipment_import', 'notes',
 ];
 
@@ -136,6 +139,7 @@ export const URL_TO_MODULE: Record<string, EaisybillModule> = {
   '/invoices': 'invoices',
   '/kintlevo': 'receivables',
   '/transactions': 'transactions',
+  '/transfers': 'transactions',
   '/petty-cash': 'petty_cash',
   '/general-ledger': 'general_ledger',
   '/profit-and-loss': 'profit_loss',
@@ -149,12 +153,14 @@ export const URL_TO_MODULE: Record<string, EaisybillModule> = {
   '/integrations': 'integrations',
   '/exchange-rates': 'exchange_rates',
   '/upload': 'upload',
+  '/knowledge-base': 'knowledge_base',
   '/tickets': 'tickets',
   '/settings': 'settings',
   '/notes': 'notes',
   '/shipments': 'shipment_matching',
   '/shipments/import': 'shipment_import',
   '/shipments/escalated': 'shipment_matching',
+  '/analytics': 'profit_loss',
   // Legacy URLs (redirect targets still need module resolution)
   '/shipment-matching': 'shipment_matching',
   '/shipment-matching/escalated': 'shipment_matching',
@@ -183,6 +189,7 @@ export const CONFIGURABLE_MODULES: { key: EaisybillModule; label: string; group:
   { key: 'fixed_assets', label: 'TENY', group: 'HR & Eszközök' },
   { key: 'exchange_rates', label: 'Árfolyamok', group: 'Rendszer' },
   { key: 'upload', label: 'Feltöltés', group: 'Rendszer' },
+  { key: 'knowledge_base', label: 'Tudástár', group: 'Rendszer' },
   { key: 'tickets', label: 'Hibajegyek', group: 'Rendszer' },
   { key: 'integrations', label: 'Integrációk', group: 'Rendszer' },
   { key: 'settings', label: 'Beállítások', group: 'Rendszer' },

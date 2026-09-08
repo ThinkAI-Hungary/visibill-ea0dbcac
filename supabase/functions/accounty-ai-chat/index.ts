@@ -1,40 +1,47 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
-import { corsHeaders, checkAutomationShield } from '../_shared/client-guard.ts'
 
-const SYSTEM_PROMPT = `Te egy magyar bérszámfejtési AI asszisztens vagy az eaisybooks rendszerben. A feladatod, hogy segítsd a könyvelőket a napi munkájukban.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-Szakterületed:
-- Magyar munkajog és adójog (Mt., Szja tv., Tbj., Szocho tv., Art., Efo tv.)
-- Bérszámfejtés és járulékszámítás
-- NAV bevallások (2608, 2658, M30, 08-as)
-- Családi kedvezmények, adókedvezmények optimalizálása
-- TB járulékok, SZOCHO, rehabilitációs hozzájárulás
-- Cafeteria szabályok és adózás
-- Munkáltatói kötelezettségek, bejelentési határidők
-- GDPR és adatvédelmi követelmények a bérszámfejtésben
+const SYSTEM_PROMPT = `Te az eaisyBill és eaisyBooks rendszerek hivatalos, intelligens szakértő AI asszisztense vagy. A feladatod, hogy támogasd a felhasználókat és a könyvelőket a mindennapi munkájukban, kérdéseik megválaszolásában és a szoftver funkcióinak hatékony használatában.
 
-Fontos szabályok:
-1. Mindig magyarul válaszolj
-2. Használj markdown formázást (félkövér, listák, táblázatok) a jobb olvashatóságért
-3. Ha jogszabályt említesz, add meg a pontos hivatkozást (törvény, paragrafus)
-4. Ha nem vagy biztos valamiben, jelezd egyértelműen
-5. A 2026-os adóév szabályait ismerd (minimálbér: 322 800 Ft, garantált bérminimum: 382 200 Ft)
-6. Családi kedvezmény 2026: 1 eltartott: 20 000 Ft, 2 eltartott: 40 000 Ft/fő, 3+: 99 000 Ft/fő (duplázott összegek)
-7. SZJA kulcs: 15%, TB járulék: 18,5%, SZOCHO: 13%
-8. Légy tömör de informatív — a könyvelők gyors választ szeretnek`;
+Szakterületed és feladataid:
+1. eaisyBill & eaisyBooks funkcionális támogatás:
+   - Bizonylatok feltöltése, mesterséges intelligencia (OCR) felismerés, számlák kezelése és szűrése
+   - Banki tranzakciók szinkronizációja, automatikus és kézi párosítás, banki egyenlegek
+   - NAV Online Számla automatikus szinkronizáció, technikai felhasználó bekötése és ellenőrzése
+   - ÁFA analitika, Pro Rata arányosítás, 65M lapok és NAV ÁNYK 2665 export
+   - Bérszámfejtési folyamat, dolgozói törzsadatok, bérpótlékok és 2608-as havi ÁNYK bevallás
+   - Egyéni vállalkozói (EV) modulok: átalányadó, tételes költség (VSZJA), KATA, tárgyi eszköz értékcsökkenés
+   - Kettős könyvelés, számlatükör, naplófőkönyv, automata könyvelési szabályok és AI promptok
+   - Pénztárkezelés (házipénztár), projektek és költséghelyek, partnertörzs, vezetői riportok és hibajegyek
+
+2. Magyar számviteli, adó- és munkajog:
+   - Mt., Szja tv., Tbj., Szocho tv., Art., Áfa tv., Kiva tv., Tao tv., Efo tv.
+   - 2026-os adóév szabályai:
+     * Minimálbér: 322 800 Ft, Garantált bérminimum: 382 200 Ft
+     * Családi kedvezmény (duplázott): 1 eltartott: 20 000 Ft, 2 eltartott: 40 000 Ft/fő, 3+: 99 000 Ft/fő
+     * Adókulcsok: SZJA 15%, TB járulék 18,5%, SZOCHO 13%, KIVA 10%, TAO 9%
+
+3. Tudástár-alapú válaszadási szabályok (RAG Grounding):
+   - A rendszer funkcióival, menüpontjaival és munkafolyamataival kapcsolatos kérdésekben ELSŐSORBAN az alább mellékelt 'HIVATALOS EAISYBILL / EAISYBOOKS TUDÁSTÁR' cikkekre támaszkodj!
+   - Ha a kérdéshez kapcsolódik tudástári cikk, vezesd végig a felhasználót a konkrét felületen, gombokon és lépéseken, és add meg a menüelérést (pl. 'Ugrás a funkcióhoz: [Menüpont neve]').
+   - Soha ne találj ki nem létező funkciókat vagy technikai URL útvonalakat! Mindig a tudástárban szereplő tiszta megnevezéseket használd.
+   - Ha a keresett témáról nincs információ a mellékelt tudástári cikkekben, de általános adózási vagy szakmai kérdés, válaszolj a szakmai ismereteid alapján a jogszabályi helyek megjelölésével. Ha rendszerspecifikus funkciót hiányolnak, jelezd udvariasan, hogy a bal oldali menü Tudástár pontjában böngészhetik a teljes dokumentációt, vagy a Hibajegyek menüpontban közvetlenül a támogatási csapathoz fordulhatnak.
+
+Formázási szabályok:
+- Mindig magyarul válaszolj, közvetlen, segítőkész és precíz szakmai hangnemben.
+- Használj áttekinthető markdown formázást (félkövér kiemelések, pontokba szedett listák, strukturált lépések).
+- Légy tömör és lényegretörő — a felhasználók gyors és egyértelmű útmutatást várnak.`;
 
 /**
- * Accounty AI Chat Edge Function
+ * Accounty & eaisyBill AI Chat Edge Function with Knowledge Base RAG
  * 
- * Receives chat messages and streams responses from OpenAI GPT-4o-mini.
- * Supports both streaming and non-streaming modes.
- * 
- * Input JSON: {
- *   messages: { role: 'user' | 'assistant', content: string }[]
- *   context?: { page?: string, clientName?: string, clientId?: string }
- * }
+ * Receives chat messages, retrieves relevant knowledge base articles via FTS & page context,
+ * and streams grounded responses from DeepSeek or OpenAI GPT-4o-mini.
  */
-// ── Per-user rate limiting: max 30 requests per hour ──
 const RATE_LIMIT = 30;
 const RATE_WINDOW_MS = 3600_000; // 1 hour
 const userRequestCounts = new Map<string, { count: number; windowStart: number }>();
@@ -54,11 +61,6 @@ function checkRateLimit(userId: string): boolean {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
-  }
-
-  const automationBlock = checkAutomationShield(req);
-  if (automationBlock) {
-    return automationBlock;
   }
 
   try {
@@ -92,6 +94,7 @@ Deno.serve(async (req) => {
 
     const deepseekKey = Deno.env.get('DEEPSEEK_API_KEY');
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const customChatModel = Deno.env.get('OPENAI_CHAT_MODEL') || Deno.env.get('AI_CHAT_MODEL');
 
     if (!deepseekKey && !openaiKey) {
       return new Response(
@@ -101,13 +104,62 @@ Deno.serve(async (req) => {
     }
 
     let apiUrl = "https://api.openai.com/v1/chat/completions";
-    let apiModel = "gpt-4o-mini";
+    let apiModel = customChatModel || "gpt-4o-mini";
     let apiKey = openaiKey || "";
 
-    if (deepseekKey) {
+    if (deepseekKey && !customChatModel) {
       apiUrl = "https://api.deepseek.com/chat/completions";
       apiModel = "deepseek-chat";
       apiKey = deepseekKey;
+    } else if (customChatModel && customChatModel.toLowerCase().includes("deepseek")) {
+      apiUrl = "https://api.deepseek.com/chat/completions";
+      apiModel = customChatModel;
+      apiKey = deepseekKey || openaiKey || "";
+    }
+
+    // ── RAG Knowledge Base Retrieval ──
+    let kbContextText = '';
+    try {
+      const lastUserMessage = [...messages].reverse().find((m: any) => m.role === 'user')?.content || '';
+      const pagePath = context?.page ? String(context.page).trim() : null;
+
+      if (lastUserMessage || pagePath) {
+        const querySnippet = lastUserMessage.trim().slice(0, 300);
+        const { data: kbArticles, error: kbError } = await supabaseClient.rpc(
+          'search_knowledge_base',
+          {
+            search_query: querySnippet || null,
+            page_path: pagePath,
+            target_category: null,
+            match_limit: 3,
+          }
+        );
+
+        if (!kbError && Array.isArray(kbArticles) && kbArticles.length > 0) {
+          // Keep active page match OR articles with sufficient relevance rank
+          const relevant = kbArticles.filter((a: any) => {
+            const isCurrentPage = pagePath && a.menu_path && (a.menu_path === pagePath || (a.menu_path !== '/' && pagePath.startsWith(a.menu_path)));
+            return isCurrentPage || (a.rank ?? 0) >= 0.15;
+          });
+
+          if (relevant.length > 0) {
+            kbContextText = '\n\n═══════════════════════════════════════════════════════════════\n' +
+              'HIVATALOS EAISYBILL / EAISYBOOKS TUDÁSTÁR (RELEVÁNS CIKKEK)\n' +
+              '═══════════════════════════════════════════════════════════════\n' +
+              relevant.map((a: any, idx: number) => {
+                const cleanContent = (a.content || '').slice(0, 1800);
+                return `[Tudástár Cikk #${idx + 1}: ${a.title}]\n` +
+                  `Menüpont / Elérés: ${a.menu_path || 'Központi Tudástár'}\n` +
+                  `Összefoglaló: ${a.summary || ''}\n` +
+                  `Leírás:\n${cleanContent}`;
+              }).join('\n\n---\n\n');
+          }
+        } else if (kbError) {
+          console.warn('[AI-CHAT] Knowledge base retrieval warning:', kbError.message);
+        }
+      }
+    } catch (kbErr) {
+      console.error('[AI-CHAT] Knowledge base retrieval exception:', kbErr);
     }
 
     // Build context-aware system prompt
@@ -116,7 +168,38 @@ Deno.serve(async (req) => {
       systemPrompt += `\n\nAz aktuális ügyfél: ${context.clientName}`;
     }
     if (context?.page) {
-      systemPrompt += `\nAz aktuális oldal: ${context.page}`;
+      systemPrompt += `\nAz aktuális felület / oldal: ${context.page}`;
+    }
+    if (kbContextText) {
+      systemPrompt += kbContextText;
+    }
+
+    // Check model type and build request payload
+    const isReasoningModel = apiModel.startsWith('o1') || apiModel.startsWith('o3');
+    const isFixedTemperatureModel = isReasoningModel || apiModel.startsWith('gpt-5');
+    const useMaxCompletionTokens = isFixedTemperatureModel || apiModel.startsWith('gpt-4.5');
+
+    const requestPayload: Record<string, any> = {
+      model: apiModel,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages.map((m: any) => ({ role: m.role, content: m.content })),
+      ],
+      stream: true,
+    };
+
+    if (!apiUrl.includes('deepseek.com')) {
+      requestPayload.stream_options = { include_usage: true };
+    }
+
+    if (useMaxCompletionTokens) {
+      requestPayload.max_completion_tokens = 2048;
+    } else {
+      requestPayload.max_tokens = 2048;
+    }
+
+    if (!isFixedTemperatureModel) {
+      requestPayload.temperature = 0.3;
     }
 
     // Call AI API with streaming
@@ -126,23 +209,13 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: apiModel,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages.map((m: any) => ({ role: m.role, content: m.content })),
-        ],
-        stream: true,
-        temperature: 0.3,
-        max_tokens: 2048,
-      }),
+      body: JSON.stringify(requestPayload),
     });
 
     if (!openaiResponse.ok) {
       const errBody = await openaiResponse.text();
-      console.error('[AI-CHAT] OpenAI error:', openaiResponse.status, errBody);
-      // Parse the error message from OpenAI for a better user-facing message
-      let errorDetail = `OpenAI API error: ${openaiResponse.status}`;
+      console.error('[AI-CHAT] AI API error:', openaiResponse.status, errBody);
+      let errorDetail = `AI API error: ${openaiResponse.status}`;
       try {
         const parsed = JSON.parse(errBody);
         errorDetail = parsed.error?.message || errorDetail;
@@ -175,7 +248,6 @@ Deno.serve(async (req) => {
               if (!trimmed || !trimmed.startsWith('data: ')) continue;
               const data = trimmed.slice(6);
               if (data === '[DONE]') {
-                // Send usage info as final event
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, usage: { input_tokens: inputTokens, output_tokens: outputTokens } })}\n\n`));
                 continue;
               }
@@ -186,7 +258,6 @@ Deno.serve(async (req) => {
                   outputTokens++;
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
                 }
-                // Capture usage if present
                 if (parsed.usage) {
                   inputTokens = parsed.usage.prompt_tokens || 0;
                   outputTokens = parsed.usage.completion_tokens || 0;
@@ -201,7 +272,17 @@ Deno.serve(async (req) => {
 
           // Log cost asynchronously (don't block response)
           try {
-            const isDs = apiModel === 'deepseek-chat';
+            const isDs = apiModel.toLowerCase().includes('deepseek');
+            let estimatedCost = 0;
+            if (isDs) {
+              estimatedCost = (inputTokens / 1_000_000) * 0.14 + (outputTokens / 1_000_000) * 0.28;
+            } else if (apiModel.includes('mini')) {
+              estimatedCost = (inputTokens / 1_000_000) * 0.15 + (outputTokens / 1_000_000) * 0.60;
+            } else {
+              // Higher-tier models (gpt-4o, gpt-5, o1, etc.)
+              estimatedCost = (inputTokens / 1_000_000) * 2.50 + (outputTokens / 1_000_000) * 10.00;
+            }
+
             supabaseClient.from('llm_koltsegek').insert({
               file_name: 'ai-chat',
               pipeline: 'accounty_ai_chat',
@@ -209,9 +290,7 @@ Deno.serve(async (req) => {
               input_tokens: inputTokens,
               output_tokens: outputTokens,
               llm_calls: 1,
-              estimated_cost_usd: isDs
-                ? (inputTokens / 1_000_000) * 0.14 + (outputTokens / 1_000_000) * 0.28
-                : (inputTokens / 1_000_000) * 0.15 + (outputTokens / 1_000_000) * 0.60,
+              estimated_cost_usd: estimatedCost,
               user_id: user.id,
             }).then(() => {}).catch(() => {});
           } catch {}
@@ -228,7 +307,7 @@ Deno.serve(async (req) => {
       },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('[AI-CHAT] Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),

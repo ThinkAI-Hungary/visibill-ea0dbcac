@@ -79,6 +79,7 @@ Visibill
 │   ├── /invoices/:tab?            Számlák
 │   ├── /kintlevo/:tab?            Kintlévőség
 │   ├── /transactions/:tab?        Tranzakciók (+ Futár riportok tab)
+│   ├── /transfers                 Szállítói utalások (GIRO / SEPA)
 │   ├── /general-ledger/:tab?      Főkönyv
 │   ├── /profit-and-loss/:tab?     Eredménykimutatás
 │   ├── /balance-sheet/:tab?       Mérleg
@@ -88,9 +89,11 @@ Visibill
 │   ├── /working-time/:tab?        Munkaidő
 │   ├── /petty-cash/:tab?          Házipénztár
 │   ├── /teny/:tab?                Tárgyi eszközök (TENY)
+│   ├── /shipments/:tab?           Fuvarok és Szállítmányozás (CMR, import, eszkaláció)
 │   ├── /integrations              Integrációk (NAV, bank)
 │   ├── /exchange-rates            Árfolyamok (MNB)
 │   ├── /notes                     Jegyzetek (osztott kétpaneles)
+│   ├── /knowledge-base/:articleId? Tudástár és Funkciókalauz (10 kategória, 40 cikk)
 │   ├── /settings/:tab?            Beállítások
 │   ├── /analytics/:tab?           Analitika
 │   └── /vat-return/:tab?          ÁFA bevallás
@@ -203,6 +206,7 @@ A sidebar 6 logikai, összecsukható (collapsible) csoportba rendezi a modulokat
 - Beállítások (`/settings`)
 - Kijelentkezés
 - Téma váltó (dark/light)
+- Tudástár (`/knowledge-base`) – 50 hierarchikus útmutató az eaisyBill és eaisyBooks teljes menürendszeréhez
 - Hibajegyek gomb (olvasatlan badge számlálóval)
 
 ---
@@ -346,7 +350,7 @@ Irodai szintű áttekintés, ahol a könyvelő az összes hozzárendelt ügyfél
 | **Jóváhagyási sor** | `/eaisybooks/approval-queue` | `MailCheck` | Jóváhagyandó számlák és bizonylatok kötegelt (batch) ellenőrzése és elfogadása |
 | **Hiányzó számlák** | `/eaisybooks/missing-invoices` | `FileWarning` | Irodai szintű konszolidált lista a hiányzó bizonylatokról, felszólító email küldéssel |
 | **Adó naptár** | `/eaisybooks/tax-calendar` | `Calendar` | Aggregált NAV és önkormányzati határidők az összes ügyfélre kiterjedően |
-| **AI Asszisztens** | `/eaisybooks/ai-assistant` | `Bot` | Könyvelési jogszabály-értelmező, kontírozási tanácsadó és adatelemző chat felület |
+| **AI Asszisztens** | `/eaisybooks/ai-assistant` | `Sparkles` | Könyvelési jogszabály-értelmező, kontírozási tanácsadó chat felület (teljes oldal és lebegő Speed Dial Drawer, [P-077](decisions/P-077-eaisybooks-ai-assistant-chat-and-speed-dial-ux.md)) |
 | **Riasztások** | `/eaisybooks/alerts` | `Bell` | Kritikus események (lejárt határidő, sikertelen NAV sync, elakadt bérszámfejtés) |
 | **Ügyfélportál** | `/eaisybooks/client-portal` | `ExternalLink` | Az ügyfelek számára generált magic-linkes bizonylatpótló felület konfigurációja és előnézete |
 

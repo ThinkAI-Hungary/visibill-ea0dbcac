@@ -4320,8 +4320,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/accounty-ai-chat/index.ts": {
-    "mtime": 1788801968.775429,
-    "ast_hash": "f73277ace31fb155f73f597002996f53",
+    "mtime": 1788799705.4008079,
+    "ast_hash": "d6dff38dd90826741d723e632b62ec44",
     "semantic_hash": ""
   },
   "supabase/functions/fetch-legal-updates/index.ts": {
@@ -5540,7 +5540,7 @@
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
-    "mtime": 1788843860.0351095,
+    "mtime": 1788783567.42269,
     "ast_hash": "b2999fa3193e9ce6a83fa7d0681b1d1b",
     "semantic_hash": ""
   },
@@ -9380,8 +9380,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md": {
-    "mtime": 1788802023.392187,
-    "ast_hash": "1f4ab222fb9c98a74145d28a743e4e15",
+    "mtime": 1788799369.384023,
+    "ast_hash": "ad1eede443b9fe2fabe6db07ced91b52",
     "semantic_hash": ""
   },
   "docs/business/decisions/055-eaisybooks-ai-assistant-chat.md": {

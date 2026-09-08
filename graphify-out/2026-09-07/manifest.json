@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "src/components/AppSidebar.tsx": {
-    "mtime": 1787931793.4499626,
-    "ast_hash": "0558c76b8ac345042cd293bcbddebd76",
+    "mtime": 1788793203.6814687,
+    "ast_hash": "53e5c66cfbf9a6e50eefce107b0ec905",
     "semantic_hash": ""
   },
   "src/components/AssetActivationDialog.tsx": {
@@ -3015,8 +3015,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1788766062.612977,
-    "ast_hash": "7ceb1b36a08b7f521acc26d6aafcf5b3",
+    "mtime": 1788792349.7300346,
+    "ast_hash": "bd2866355db6f47780b16b73e20e9454",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788765921.638966,
-    "ast_hash": "0a43b231372ac5c355a6353e0b0445d6",
+    "mtime": 1788799394.2213633,
+    "ast_hash": "5a0d92262b6fd99b2f2d42123deb611d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788786104.6791966,
-    "ast_hash": "9275cc72b4351c74ee0afdd098cc4e44",
+    "mtime": 1788793597.4667864,
+    "ast_hash": "9170f9d58f8a1fcf17ef2aba0114b07b",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3125,8 +3125,8 @@
     "semantic_hash": ""
   },
   "docs/business/brd.md": {
-    "mtime": 1788763962.4152503,
-    "ast_hash": "50ed96e5c7799669976cb390c6831c82",
+    "mtime": 1788792332.4570508,
+    "ast_hash": "ade5a6ccbdf77b5e9669859d22e1ef2e",
     "semantic_hash": ""
   },
   "docs/business/decisions/001-primary-audience.md": {
@@ -3325,8 +3325,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1788764053.2891982,
-    "ast_hash": "48a3fa897b981246cfb0e23583b51c14",
+    "mtime": 1788792271.8329475,
+    "ast_hash": "e1486e29e6adf12c35fd923260915426",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3570,13 +3570,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788764269.3928492,
-    "ast_hash": "ac0ae7820fd024dfbceb8408dacaf1f3",
+    "mtime": 1788793587.8847241,
+    "ast_hash": "f9d5baccfedc1a622ea186df1b7ce9dd",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1788763870.7291706,
-    "ast_hash": "5f9d128154cff992e0ea17f56c04dd85",
+    "mtime": 1788797151.9470499,
+    "ast_hash": "a3a4fa9b7cde096a4799fdd37dbe6bce",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -3845,8 +3845,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useEaisybillPermissions.ts": {
-    "mtime": 1787931793.4554176,
-    "ast_hash": "426f679a3a7fc86510edf6ff54f877e5",
+    "mtime": 1788796565.031021,
+    "ast_hash": "c0df01bf2572334c9c62203d2599cd8b",
     "semantic_hash": ""
   },
   "src/hooks/useHasEaisybillAccess.ts": {
@@ -4270,8 +4270,8 @@
     "semantic_hash": ""
   },
   "src/test/accounty/eaisybillPermissions.test.ts": {
-    "mtime": 1788010558.6260374,
-    "ast_hash": "cb7dc92e729e6a7aa9cc2bb37bca2756",
+    "mtime": 1788793481.9219997,
+    "ast_hash": "97a2f044a562eaccd9d11bca3012a8e9",
     "semantic_hash": ""
   },
   "src/test/accounty/emailClassifier.test.ts": {
@@ -4320,8 +4320,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/accounty-ai-chat/index.ts": {
-    "mtime": 1788712089.7124455,
-    "ast_hash": "7cb90aea824d640cd83f09d9cd37865e",
+    "mtime": 1788799705.4008079,
+    "ast_hash": "d6dff38dd90826741d723e632b62ec44",
     "semantic_hash": ""
   },
   "supabase/functions/fetch-legal-updates/index.ts": {
@@ -5110,8 +5110,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/18-eaisybooks-ai.md": {
-    "mtime": 1782621606.9393616,
-    "ast_hash": "f0569631bd32f61b8d3a6dec490c356b",
+    "mtime": 1788792359.043505,
+    "ast_hash": "631fc24d5ad2840e834d1967e70834bc",
     "semantic_hash": ""
   },
   "docs/architecture/database/19-platform-ops.md": {
@@ -7585,8 +7585,8 @@
     "semantic_hash": ""
   },
   "src/routes/eaisybillRoutes.tsx": {
-    "mtime": 1788141643.009191,
-    "ast_hash": "897cb4ad7936ae91e2a5763b3979a4c9",
+    "mtime": 1788793123.726231,
+    "ast_hash": "8477ea9cb598fabb62b470a9ffe22393",
     "semantic_hash": ""
   },
   "src/routes/redirects.tsx": {
@@ -9325,8 +9325,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1788766036.474217,
-    "ast_hash": "ce991f20277153797537aa9046bd93bc",
+    "mtime": 1788792341.427894,
+    "ast_hash": "63a8598f5edd392e0acb4f4826ef6ac3",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
@@ -9364,19 +9364,124 @@
     "ast_hash": "41671da8d381dc3cf58e0794f7d917db",
     "semantic_hash": ""
   },
-  "supabase/migrations/20260907120000_vat_pro_rata_schema.sql": {
-    "mtime": 1788773029.6096625,
-    "ast_hash": "292dc046d6addc88e170d5777a230ee5",
-    "semantic_hash": ""
-  },
-  "supabase/migrations/20260907_optimize_accounty_access_and_rls.sql": {
-    "mtime": 1788786706.9975288,
-    "ast_hash": "ee90c9fc8758ab860410e35636f711e9",
-    "semantic_hash": ""
-  },
   "docs/architecture/decisions/A-103-accounty-rls-performance-optimization-and-error-guarding.md": {
-    "mtime": 1788786826.2503774,
-    "ast_hash": "b71410c8639af00ca9beebc34ddebc99",
+    "mtime": 1788787879.3909836,
+    "ast_hash": "ddd115d03cf070d051f7da5bf669c30d",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907133041_optimize_accounty_access_and_rls.sql": {
+    "mtime": 1788787885.7124596,
+    "ast_hash": "6b9615d260eadb62c65e3d223e079b9e",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907133743_vat_pro_rata_schema.sql": {
+    "mtime": 1788788249.712193,
+    "ast_hash": "8ce62dcbf324602abc1ab01f00d0eb05",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md": {
+    "mtime": 1788799369.384023,
+    "ast_hash": "ad1eede443b9fe2fabe6db07ced91b52",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/055-eaisybooks-ai-assistant-chat.md": {
+    "mtime": 1788792219.9056127,
+    "ast_hash": "6bfeb1663a1d2cacdb7fa405ad2f3335",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-077-eaisybooks-ai-assistant-chat-and-speed-dial-ux.md": {
+    "mtime": 1788792235.9863255,
+    "ast_hash": "67febde4054edcf8b34d42b3774ad361",
+    "semantic_hash": ""
+  },
+  "src/components/knowledge-base/KnowledgeArticleCard.tsx": {
+    "mtime": 1788795219.3409505,
+    "ast_hash": "0288a6b7f673ee002c6698d9b47e6227",
+    "semantic_hash": ""
+  },
+  "src/components/knowledge-base/KnowledgeArticleReader.tsx": {
+    "mtime": 1788795232.9063337,
+    "ast_hash": "af5b9ec63412d225f8bfdda089139537",
+    "semantic_hash": ""
+  },
+  "src/components/knowledge-base/KnowledgeBaseHeader.tsx": {
+    "mtime": 1788793820.8749416,
+    "ast_hash": "d7b221326c4366089dd5a67fc81ebc21",
+    "semantic_hash": ""
+  },
+  "src/components/knowledge-base/KnowledgeCategoryPills.tsx": {
+    "mtime": 1788793830.8427205,
+    "ast_hash": "8c0666ebb464f47acd496c27a5058c6c",
+    "semantic_hash": ""
+  },
+  "src/components/knowledge-base/KnowledgeIcon.tsx": {
+    "mtime": 1788796898.9759562,
+    "ast_hash": "16a34874665912c8fb90b0df34b2c3d4",
+    "semantic_hash": ""
+  },
+  "src/data/knowledgeBaseFallback.ts": {
+    "mtime": 1788797043.386951,
+    "ast_hash": "08964bd35864884129ad09c1f4e906fa",
+    "semantic_hash": ""
+  },
+  "src/hooks/useKnowledgeBase.ts": {
+    "mtime": 1788795192.9781456,
+    "ast_hash": "c8031054ab61c30c6040007f07118e36",
+    "semantic_hash": ""
+  },
+  "src/pages/KnowledgeBasePage.tsx": {
+    "mtime": 1788795267.770565,
+    "ast_hash": "9348a0f720be65590668055e974572a4",
+    "semantic_hash": ""
+  },
+  "src/test/knowledgeBase.test.ts": {
+    "mtime": 1788797066.932816,
+    "ast_hash": "c3bc1a1b5ccb27fca5e4861ed3f5f365",
+    "semantic_hash": ""
+  },
+  "src/types/knowledgeBase.ts": {
+    "mtime": 1788793022.6089766,
+    "ast_hash": "9383f9d58ba55acd8650670e61b35c4b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907170000_create_knowledge_base.sql": {
+    "mtime": 1788794007.6756861,
+    "ast_hash": "3b967da3943a2b14d284b1e8fc60fb38",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-105-knowledge-base-schema-and-fts.md": {
+    "mtime": 1788800079.3327675,
+    "ast_hash": "f464e27844b32d2b59b0a201d05e32cb",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-078-knowledge-base-ux-and-navigation.md": {
+    "mtime": 1788797121.106221,
+    "ast_hash": "a45b2e9f8627722e4a485611db03c04e",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907180000_expand_hierarchical_knowledge_base.sql": {
+    "mtime": 1788795922.9189837,
+    "ast_hash": "2b974710ba452887fe1b02d599b71053",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907190000_audit_and_complete_knowledge_base.sql": {
+    "mtime": 1788796584.7766027,
+    "ast_hash": "edf3cceca50e8a5e68fb1abc87031df8",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907200000_audit_eaisybooks_knowledge_base.sql": {
+    "mtime": 1788796925.911693,
+    "ast_hash": "3a8328b6aaae8a23206864962835964c",
+    "semantic_hash": ""
+  },
+  "src/test/knowledgeBaseRag.test.ts": {
+    "mtime": 1788800044.4426396,
+    "ast_hash": "7b72c2fd334f4a6c4dd02b464c49020c",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260907210000_search_knowledge_base_rpc.sql": {
+    "mtime": 1788800006.7898686,
+    "ast_hash": "abb328e46539b63667231a33ce196f2c",
     "semantic_hash": ""
   }
 }

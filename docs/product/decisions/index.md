@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-07  
-> **Összesen:** 71 döntés | ✅ Decided: 67 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 72 döntés | ✅ Decided: 68 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -97,6 +97,7 @@
 | P-074 | TAO és KIVA Tervező, Zárási Ellenőrzőlista és Adókalkulátor UX | ✅ Decided | [P-074](./P-074-tao-kiva-module-ux.md) |
 | P-075 | Cégkapu / KÜNY Tárhely Szinkronizáció és EGYKE Képviseleti Nyilvántartás UX | ✅ Decided | [P-075](./P-075-cegkapu-and-representation-ux.md) |
 | P-076 | Hierarchikus Kliens Kontextus & Dual-Mode Aloldal-megőrző Company Switcher UX | ✅ Decided | [P-076](./P-076-eaisybooks-dual-mode-navigation-and-company-switcher-ux.md) |
+| P-077 | eaisyBooks AI Asszisztens Chat és Speed Dial Lebegő Menü UX | ✅ Decided | [P-077](./P-077-eaisybooks-ai-assistant-chat-and-speed-dial-ux.md) |
 
 ## 🔍 Keresés
 
@@ -110,6 +111,7 @@
 |---|--------|---------|------|
 | P-035 | Hibajegy UI és workflow | ✅ Decided | [P-035](./P-035-ticket-system.md) |
 | P-070 | Management Dashboard Hibajegy Létrehozás Felhasználó Nevében UX | ✅ Decided | [P-070](./P-070-management-impersonated-ticket-creation-ux.md) |
+| P-078 | eaisyBill Tudástár (Knowledge Base) és Funkciókalauz UX | ✅ Decided | [P-078](./P-078-knowledge-base-ux-and-navigation.md) |
 
 ## 🛠️ Platform Üzemeltetés
 

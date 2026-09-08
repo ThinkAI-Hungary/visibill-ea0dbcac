@@ -47027,7 +47027,7 @@
       "label": "start()",
       "file_type": "code",
       "source_file": "supabase/functions/accounty-ai-chat/index.ts",
-      "source_location": "L231",
+      "source_location": "L207",
       "_origin": "ast",
       "id": "accounty_ai_chat_index_start",
       "community": 359,
@@ -47850,7 +47850,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "handlers_overviewhandler",
-      "community": 589,
+      "community": 535,
       "norm_label": "overviewhandler.ts"
     },
     {
@@ -47860,7 +47860,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "handlers_overviewhandler_fetchmultiprojectmonthlyllm",
-      "community": 589,
+      "community": 535,
       "norm_label": "fetchmultiprojectmonthlyllm()"
     },
     {
@@ -47870,7 +47870,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "handlers_overviewhandler_buildoverview",
-      "community": 589,
+      "community": 535,
       "norm_label": "buildoverview()"
     },
     {
@@ -47880,7 +47880,7 @@
       "source_location": "L266",
       "_origin": "ast",
       "id": "handlers_overviewhandler_buildcompanydetail",
-      "community": 589,
+      "community": 535,
       "norm_label": "buildcompanydetail()"
     },
     {
@@ -47890,7 +47890,7 @@
       "source_location": "L420",
       "_origin": "ast",
       "id": "handlers_overviewhandler_builduserdetail",
-      "community": 589,
+      "community": 535,
       "norm_label": "builduserdetail()"
     },
     {
@@ -48200,7 +48200,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "management_stats_types_companymemberrow",
-      "community": 589,
+      "community": 535,
       "norm_label": "companymemberrow"
     },
     {
@@ -48210,7 +48210,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "management_stats_types_profilerow",
-      "community": 589,
+      "community": 535,
       "norm_label": "profilerow"
     },
     {
@@ -48220,7 +48220,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "management_stats_types_companyrow",
-      "community": 589,
+      "community": 535,
       "norm_label": "companyrow"
     },
     {
@@ -48350,7 +48350,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "utils_common_startofmonthiso",
-      "community": 589,
+      "community": 535,
       "norm_label": "startofmonthiso()"
     },
     {
@@ -48360,7 +48360,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "utils_common_listallauthusers",
-      "community": 589,
+      "community": 535,
       "norm_label": "listallauthusers()"
     },
     {
@@ -69634,20 +69634,20 @@
       "norm_label": "2.1. server-sent events (sse) token streaming"
     },
     {
-      "label": "2.2. Dual-Provider API Routing, Dinamikus Modellv\u00e1laszt\u00e1s \u00e9s Automatikus Fallback",
+      "label": "2.2. Dual-Provider API Routing \u00e9s Automatikus Fallback",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md",
       "source_location": "L30",
       "_origin": "ast",
-      "id": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_2_dual_provider_api_routing_dinamikus_modellv\u00e1laszt\u00e1s_\u00e9s_automatikus_fallback",
+      "id": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_2_dual_provider_api_routing_\u00e9s_automatikus_fallback",
       "community": 170,
-      "norm_label": "2.2. dual-provider api routing, dinamikus modellvalasztas es automatikus fallback"
+      "norm_label": "2.2. dual-provider api routing es automatikus fallback"
     },
     {
       "label": "2.3. V\u00e9delem \u00e9s Kv\u00f3t\u00e1k (Automation Shield & In-Memory Rate Limiting)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md",
-      "source_location": "L38",
+      "source_location": "L36",
       "_origin": "ast",
       "id": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_3_v\u00e9delem_\u00e9s_kv\u00f3t\u00e1k_automation_shield_in_memory_rate_limiting",
       "community": 170,
@@ -69657,7 +69657,7 @@
       "label": "2.4. Dinamikus Rendszerprompt \u00e9s Kontextus-Injekt\u00e1l\u00e1s",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md",
-      "source_location": "L48",
+      "source_location": "L46",
       "_origin": "ast",
       "id": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_4_dinamikus_rendszerprompt_\u00e9s_kontextus_injekt\u00e1l\u00e1s",
       "community": 170,
@@ -69667,7 +69667,7 @@
       "label": "2.5. Aszinkron K\u00f6lts\u00e9gelsz\u00e1mol\u00e1s (`llm_koltsegek`)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md",
-      "source_location": "L57",
+      "source_location": "L55",
       "_origin": "ast",
       "id": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_5_aszinkron_k\u00f6lts\u00e9gelsz\u00e1mol\u00e1s_llm_koltsegek",
       "community": 170,
@@ -69677,7 +69677,7 @@
       "label": "2.6. Adatb\u00e1zis S\u00e9ma \u00e9s RLS Izol\u00e1ci\u00f3",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md",
-      "source_location": "L65",
+      "source_location": "L63",
       "_origin": "ast",
       "id": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_6_adatb\u00e1zis_s\u00e9ma_\u00e9s_rls_izol\u00e1ci\u00f3",
       "community": 170,
@@ -69687,7 +69687,7 @@
       "label": "2.7. \u00dajrafelhaszn\u00e1lhat\u00f3s\u00e1g a Platformon",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md",
-      "source_location": "L71",
+      "source_location": "L69",
       "_origin": "ast",
       "id": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_7_\u00fajrafelhaszn\u00e1lhat\u00f3s\u00e1g_a_platformon",
       "community": 170,
@@ -69697,7 +69697,7 @@
       "label": "2.8. Tud\u00e1st\u00e1r RAG (Retrieval-Augmented Generation) Integr\u00e1ci\u00f3",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md",
-      "source_location": "L77",
+      "source_location": "L75",
       "_origin": "ast",
       "id": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_8_tud\u00e1st\u00e1r_rag_retrieval_augmented_generation_integr\u00e1ci\u00f3",
       "community": 170,
@@ -69707,7 +69707,7 @@
       "label": "3. K\u00f6vetkezm\u00e9nyek \u00e9s \u00c9rt\u00e9kel\u00e9s",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md",
-      "source_location": "L86",
+      "source_location": "L84",
       "_origin": "ast",
       "id": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_3_k\u00f6vetkezm\u00e9nyek_\u00e9s_\u00e9rt\u00e9kel\u00e9s",
       "community": 170,
@@ -69717,7 +69717,7 @@
       "label": "Kapcsol\u00f3d\u00f3",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md",
-      "source_location": "L99",
+      "source_location": "L97",
       "_origin": "ast",
       "id": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_kapcsol\u00f3d\u00f3",
       "community": 170,
@@ -72290,7 +72290,7 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "business_brd_6_nav_integr\u00e1ci\u00f3",
-      "community": 533,
+      "community": 222,
       "norm_label": "6. nav integracio"
     },
     {
@@ -72300,7 +72300,7 @@
       "source_location": "L149",
       "_origin": "ast",
       "id": "business_brd_req_6_1_nav_online_sz\u00e1mla_api_v3",
-      "community": 533,
+      "community": 222,
       "norm_label": "req-6.1: nav online szamla api v3"
     },
     {
@@ -72310,7 +72310,7 @@
       "source_location": "L154",
       "_origin": "ast",
       "id": "business_brd_req_6_2_szinkroniz\u00e1ci\u00f3_strat\u00e9gia",
-      "community": 533,
+      "community": 222,
       "norm_label": "req-6.2: szinkronizacio strategia"
     },
     {
@@ -72650,7 +72650,7 @@
       "source_location": "L339",
       "_origin": "ast",
       "id": "business_brd_9_el\u0151fizet\u00e9s_\u00e1raz\u00e1s",
-      "community": 222,
+      "community": 533,
       "norm_label": "9. elofizetes & arazas"
     },
     {
@@ -72660,7 +72660,7 @@
       "source_location": "L341",
       "_origin": "ast",
       "id": "business_brd_req_9_1_subscription_tierek",
-      "community": 222,
+      "community": 533,
       "norm_label": "req-9.1: subscription tierek"
     },
     {
@@ -72670,7 +72670,7 @@
       "source_location": "L346",
       "_origin": "ast",
       "id": "business_brd_req_9_2_el\u0151fizet\u00e9s_scope",
-      "community": 222,
+      "community": 533,
       "norm_label": "req-9.2: elofizetes scope"
     },
     {
@@ -299885,9 +299885,9 @@
       "source_file": "docs/architecture/decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_a_d\u00f6nt\u00e9s",
-      "target": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_2_dual_provider_api_routing_dinamikus_modellv\u00e1laszt\u00e1s_\u00e9s_automatikus_fallback",
-      "confidence_score": 1.0
+      "target": "decisions_a_104_eaisybooks_ai_chat_streaming_and_edge_architecture_2_2_dual_provider_api_routing_\u00e9s_automatikus_fallback"
     },
     {
       "relation": "contains",
@@ -299975,9 +299975,9 @@
       "source_file": "docs/architecture/decisions/A-105-knowledge-base-schema-and-fts.md",
       "source_location": "L21",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "decisions_a_105_knowledge_base_schema_and_fts_a_105_eaisybill_tud\u00e1st\u00e1r_adatmodell_full_text_search_\u00e9s_ai_retrieval_el\u0151k\u00e9sz\u00edt\u00e9s",
-      "target": "decisions_a_105_knowledge_base_schema_and_fts_2_adatb\u00e1zis_s\u00e9ma_supabase_migrations_20260907165915_create_knowledge_base_sql_supabase_migrations_20260907170045_expand_hierarchical_knowledge_base_sql_supabase_migrations_20260907170112_audit_and_complete_knowledge_base_sql_supabase_migrations_20260907170143_audit_eaisybooks_knowledge_base_sql_\u00e9s_supabase_migrations_20260907170155_search_knowledge_base_rpc_sql"
+      "target": "decisions_a_105_knowledge_base_schema_and_fts_2_adatb\u00e1zis_s\u00e9ma_supabase_migrations_20260907165915_create_knowledge_base_sql_supabase_migrations_20260907170045_expand_hierarchical_knowledge_base_sql_supabase_migrations_20260907170112_audit_and_complete_knowledge_base_sql_supabase_migrations_20260907170143_audit_eaisybooks_knowledge_base_sql_\u00e9s_supabase_migrations_20260907170155_search_knowledge_base_rpc_sql",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300015,9 +300015,9 @@
       "source_file": "docs/architecture/decisions/A-105-knowledge-base-schema-and-fts.md",
       "source_location": "L23",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "decisions_a_105_knowledge_base_schema_and_fts_2_adatb\u00e1zis_s\u00e9ma_supabase_migrations_20260907165915_create_knowledge_base_sql_supabase_migrations_20260907170045_expand_hierarchical_knowledge_base_sql_supabase_migrations_20260907170112_audit_and_complete_knowledge_base_sql_supabase_migrations_20260907170143_audit_eaisybooks_knowledge_base_sql_\u00e9s_supabase_migrations_20260907170155_search_knowledge_base_rpc_sql",
-      "target": "decisions_a_105_knowledge_base_schema_and_fts_2_1_knowledge_base_categories"
+      "target": "decisions_a_105_knowledge_base_schema_and_fts_2_1_knowledge_base_categories",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300025,9 +300025,9 @@
       "source_file": "docs/architecture/decisions/A-105-knowledge-base-schema-and-fts.md",
       "source_location": "L33",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "decisions_a_105_knowledge_base_schema_and_fts_2_adatb\u00e1zis_s\u00e9ma_supabase_migrations_20260907165915_create_knowledge_base_sql_supabase_migrations_20260907170045_expand_hierarchical_knowledge_base_sql_supabase_migrations_20260907170112_audit_and_complete_knowledge_base_sql_supabase_migrations_20260907170143_audit_eaisybooks_knowledge_base_sql_\u00e9s_supabase_migrations_20260907170155_search_knowledge_base_rpc_sql",
-      "target": "decisions_a_105_knowledge_base_schema_and_fts_2_2_knowledge_base_articles"
+      "target": "decisions_a_105_knowledge_base_schema_and_fts_2_2_knowledge_base_articles",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",

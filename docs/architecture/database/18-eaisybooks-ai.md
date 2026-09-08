@@ -46,3 +46,7 @@
 
 ---
 
+## Kapcsolódó döntések
+- **BRD:** [Decision 055: eaisyBooks AI Asszisztens Chat](../../business/decisions/055-eaisybooks-ai-assistant-chat.md)
+- **PRD:** [P-077: eaisyBooks AI Asszisztens Chat és Speed Dial UX](../../product/decisions/P-077-eaisybooks-ai-assistant-chat-and-speed-dial-ux.md)
+- **ADR:** [A-104: eaisyBooks AI Chat Streaming és Edge Architektúra](../decisions/A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md)

@@ -28,6 +28,7 @@ const SalariesPage = lazy(() => import("@/pages/SalariesPage"));
 const WorkingTimePage = lazy(() => import("@/pages/WorkingTimePage"));
 const Analytics = lazy(() => import("@/pages/Analytics"));
 const TicketsPage = lazy(() => import("@/pages/TicketsPage"));
+const KnowledgeBasePage = lazy(() => import("@/pages/KnowledgeBasePage"));
 const TransfersPage = lazy(() => import("@/pages/TransfersPage"));
 
 /**
@@ -42,6 +43,7 @@ export function renderEaisybillScopedRoutes() {
       <Route path="invoices/:tab?" element={<ProtectedPage><InvoicesPage /></ProtectedPage>} />
       <Route path="transfers" element={<ProtectedPage><TransfersPage /></ProtectedPage>} />
       <Route path="upload/:tab?" element={<ProtectedPage><ManualUpload /></ProtectedPage>} />
+      <Route path="knowledge-base/:articleId?" element={<ProtectedPage><KnowledgeBasePage /></ProtectedPage>} />
       <Route path="tickets/:ticketId?" element={<ProtectedPage><TicketsPage /></ProtectedPage>} />
       <Route path="integrations" element={<ProtectedPage><Integrations /></ProtectedPage>} />
       <Route path="settings/:tab?" element={<ProtectedPage><Settings /></ProtectedPage>} />
@@ -81,6 +83,12 @@ export function renderEaisybillLegacyAndFallbackRoutes() {
       <Route
         path="/categories"
         element={<ProtectedPage><Onboarding /></ProtectedPage>}
+      />
+
+      {/* Standalone knowledge-base route — context-free, directly linkable */}
+      <Route
+        path="/knowledge-base/:articleId?"
+        element={<ProtectedPage><KnowledgeBasePage /></ProtectedPage>}
       />
 
       {/* Standalone tickets route — context-free, directly linkable */}

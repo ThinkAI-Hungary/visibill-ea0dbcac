@@ -26,13 +26,13 @@ const MEMBER_MODULES: EaisybillModule[] = [
 
 const ASSISTANT_MODULES: EaisybillModule[] = [
   'dashboard', 'categories', 'projects', 'partners', 'invoices',
-  'receivables', 'transactions', 'petty_cash', 'upload', 'tickets',
+  'receivables', 'transactions', 'petty_cash', 'upload', 'knowledge_base', 'tickets',
   'exchange_rates', 'settings', 'notes',
 ];
 
 const VIEWER_MODULES: EaisybillModule[] = [
   'dashboard', 'categories', 'projects', 'partners', 'invoices',
-  'receivables', 'transactions', 'petty_cash', 'exchange_rates', 'tickets', 'settings', 'notes',
+  'receivables', 'transactions', 'petty_cash', 'exchange_rates', 'knowledge_base', 'tickets', 'settings', 'notes',
 ];
 
 const EMPLOYEE_MODULES: EaisybillModule[] = ['working_time'];
@@ -44,7 +44,7 @@ const ALL_MODULES: EaisybillModule[] = [
   'invoices', 'receivables', 'transactions', 'petty_cash',
   'general_ledger', 'journals', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
   'salaries', 'working_time', 'fixed_assets',
-  'integrations', 'exchange_rates', 'upload', 'tickets', 'settings',
+  'integrations', 'exchange_rates', 'upload', 'knowledge_base', 'tickets', 'settings',
   'shipments', 'shipment_matching', 'shipment_import', 'notes',
 ];
 
@@ -304,6 +304,10 @@ describe('URL_TO_MODULE mapping', () => {
 
   it('maps /upload to upload', () => {
     expect(URL_TO_MODULE['/upload']).toBe('upload');
+  });
+
+  it('maps /knowledge-base to knowledge_base', () => {
+    expect(URL_TO_MODULE['/knowledge-base']).toBe('knowledge_base');
   });
 
   it('maps /tickets to tickets', () => {

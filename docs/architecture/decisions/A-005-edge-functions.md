@@ -94,7 +94,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `accounty-check-deadlines` | ❌ | Közeledő és lejárt adóügyi határidők ellenőrzése és riasztások küldése |
 | `accounty-generate-xml` | ❌ | NAV 08/SZJA/ÁFA bevallás XML állományok generálása |
 | `accounty-ai-phone` | ❌ | AI-alapú telefonos asszisztens (hívás fogadás) |
-| `accounty-ai-chat` | ❌ | AI chat asszisztens az eaisyBooks modulhoz |
+| `accounty-ai-chat` | ❌ | AI chat asszisztens az eaisyBooks modulhoz (DeepSeek/OpenAI routing, SSE streaming, 30 req/h limit, [A-104](./A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md)) |
 | `accounty-ai-categorize` | ❌ | eaisyBooks számlák és tételek intelligens AI kategorizálása |
 | `accounty-ai-depreciation` | ❌ | Tárgyi eszközök automatikus értékcsökkenés AI számítása |
 | `send-accounty-notification` | ❌ | eaisyBooks email értesítés — dual-mode: könyvelő és ügyfél kapcsolattartó. |

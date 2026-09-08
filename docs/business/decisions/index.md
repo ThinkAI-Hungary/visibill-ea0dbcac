@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
 > **Utoljára frissítve:** 2026-09-07  
-> **Összesen:** 54 döntés | ✅ Decided: 38 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
+> **Összesen:** 55 döntés | ✅ Decided: 39 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 7
 
 ---
 
@@ -112,6 +112,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 052 | Társasági Adó (TAO) és Kisvállalati Adó (KIVA) Modul | ✅ Decided | [052-tao-kiva-module.md](./052-tao-kiva-module.md) |
 | 053 | NAV 08 ÁNYK XML Rekonstrukció és Tömeges Béradat Import | ✅ Decided | [053-nav08-xml-payroll-reconstruction.md](./053-nav08-xml-payroll-reconstruction.md) |
 | 054 | eaisyBooks Kliensközpontú Navigáció és Dual-Mode Sidebar | ✅ Decided | [054-eaisybooks-client-centric-navigation.md](./054-eaisybooks-client-centric-navigation.md) |
+| 055 | eaisyBooks AI Asszisztens Chat és Szakmai Döntéstámogatás | ✅ Decided | [055-eaisybooks-ai-assistant-chat.md](./055-eaisybooks-ai-assistant-chat.md) |
 
 ## 🎫 Ügyfélszolgálat & Support
 
