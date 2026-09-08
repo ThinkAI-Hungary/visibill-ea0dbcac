@@ -29,7 +29,7 @@ export default function PayrollStep6({
 
   const getSzocho = (calc: any) => {
     if (isKiva) return 0;
-    if (calc.szocho_amount !== undefined && calc.szocho_amount !== null && calc.szocho_amount > 0) {
+    if (calc.szocho_amount !== undefined && calc.szocho_amount !== null) {
       return calc.szocho_amount;
     }
     return Math.round((calc.gross_salary || 0) * 0.13);

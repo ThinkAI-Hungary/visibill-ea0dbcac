@@ -101,7 +101,7 @@ export default function PayrollStep8({
 
   const getSzocho = (calc: any) => {
     if (isKiva) return 0;
-    if (calc.szocho_amount !== undefined && calc.szocho_amount !== null && calc.szocho_amount > 0) {
+    if (calc.szocho_amount !== undefined && calc.szocho_amount !== null) {
       return calc.szocho_amount;
     }
     return Math.round((calc.gross_salary || 0) * 0.13);
@@ -119,7 +119,13 @@ export default function PayrollStep8({
     return b ? Number(b.amount) : 0;
   };
 
+  const getServiceCharge = (employmentId: string) => {
+    const sc = items.find(i => i.employment_id === employmentId && i.item_type === 'service_charge');
+    return sc ? Number(sc.amount) : 0;
+  };
+
   const totalHomeOffice = calculations.reduce((sum, c) => sum + getHomeOffice(c.employment_id), 0);
+  const totalServiceCharge = calculations.reduce((sum, c) => sum + getServiceCharge(c.employment_id), 0);
   const totalNetSalary = calculations.reduce((sum, c) => sum + (c.net_salary || 0), 0);
   const totalFinalPayout = totalNetSalary + totalHomeOffice;
 
@@ -156,6 +162,9 @@ export default function PayrollStep8({
                   <th className="px-3 py-2 text-left font-medium text-slate-500 uppercase">Név</th>
                   <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">Bruttó</th>
                   <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">Prémium</th>
+                  {totalServiceCharge > 0 && (
+                    <th className="px-3 py-2 text-right font-medium text-emerald-600 uppercase">Felszolgálási díj</th>
+                  )}
                   <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">SZJA</th>
                   <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">TB</th>
                   <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">SZOCHO</th>
@@ -168,6 +177,7 @@ export default function PayrollStep8({
                 {calculations.map((calc) => {
                   const hoAmount = getHomeOffice(calc.employment_id);
                   const bonusAmount = getBonus(calc.employment_id);
+                  const serviceChargeAmount = getServiceCharge(calc.employment_id);
                   const finalPayout = (calc.net_salary || 0) + hoAmount;
 
                   return (
@@ -179,6 +189,11 @@ export default function PayrollStep8({
                       <td className="px-3 py-2.5 text-right font-mono text-emerald-600 font-semibold">
                         {bonusAmount > 0 ? bonusAmount.toLocaleString('hu-HU') : '-'}
                       </td>
+                      {totalServiceCharge > 0 && (
+                        <td className="px-3 py-2.5 text-right font-mono text-emerald-600 font-semibold">
+                          {serviceChargeAmount > 0 ? serviceChargeAmount.toLocaleString('hu-HU') : '-'}
+                        </td>
+                      )}
                       <td className="px-3 py-2.5 text-right font-mono text-red-600">{(calc.szja_amount || 0).toLocaleString('hu-HU')}</td>
                       <td className="px-3 py-2.5 text-right font-mono text-blue-600">{(calc.tb_amount || 0).toLocaleString('hu-HU')}</td>
                       <td className="px-3 py-2.5 text-right font-mono text-violet-600">{getSzocho(calc).toLocaleString('hu-HU')}</td>
@@ -208,6 +223,9 @@ export default function PayrollStep8({
                   <td className="px-3 py-2.5 text-slate-900 dark:text-slate-100">ÖSSZESEN</td>
                   <td className="px-3 py-2.5 text-right font-mono">{calculations.reduce((s, c) => s + (c.gross_salary || 0), 0).toLocaleString('hu-HU')}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-emerald-600">{calculations.reduce((s, c) => s + getBonus(c.employment_id), 0).toLocaleString('hu-HU')}</td>
+                  {totalServiceCharge > 0 && (
+                    <td className="px-3 py-2.5 text-right font-mono text-emerald-600">{totalServiceCharge.toLocaleString('hu-HU')}</td>
+                  )}
                   <td className="px-3 py-2.5 text-right font-mono text-red-600">{calculations.reduce((s, c) => s + (c.szja_amount || 0), 0).toLocaleString('hu-HU')}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-blue-600">{calculations.reduce((s, c) => s + (c.tb_amount || 0), 0).toLocaleString('hu-HU')}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-violet-600">{calculations.reduce((s, c) => s + getSzocho(c), 0).toLocaleString('hu-HU')}</td>

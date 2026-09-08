@@ -465,9 +465,11 @@ export default function PayrollCyclePage() {
       || calculatedBase;
 
     const bonusAmount = Number(empItems.find(i => i.item_type === 'bonus')?.amount || 0);
+    const serviceChargeItem = empItems.find(i => i.item_type === 'service_charge');
+    const serviceChargeAmount = serviceChargeItem ? Number(serviceChargeItem.amount) : 0;
 
     const otherPremiums = empItems
-      .filter(i => !['base_salary', 'overtime', 'sick_leave', 'bonus'].includes(i.item_type))
+      .filter(i => !['base_salary', 'overtime', 'sick_leave', 'bonus', 'service_charge'].includes(i.item_type))
       .reduce((s, i) => s + (i.amount || 0), 0);
 
     // Fetch Home Office reimbursement for this employment
@@ -490,12 +492,14 @@ export default function PayrollCyclePage() {
       month: cycle?.month || new Date().getMonth() + 1,
       workDays: att.workDays ?? 22,
       workedDays: Math.max(0, (att.workDays ?? 22) - (att.sickDays || 0) - (att.leaveDays || 0)),
+      workedHours: att.workedHours ? Number(att.workedHours) : undefined,
       overtimeHours: att.overtime || 0,
       sickDays: att.sickDays || 0,
       leaveDays: att.leaveDays || 0,
       baseSalary: baseSalary,
       supplements: finalOvertime + finalSickLeave,
       bonuses: bonusAmount + otherPremiums,
+      serviceCharge: serviceChargeAmount,
       homeOffice: hoAmount,
       otherIncome: calculatedLeaveAmount,
       grossTotal: calc.gross_salary || 0,

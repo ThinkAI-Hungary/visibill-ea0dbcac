@@ -98,4 +98,18 @@ describe('generatePayslipHtml', () => {
     const html = generatePayslipHtml(basePayslip);
     expect(html).toContain('Fejlesztő');
   });
+
+  it('should show service charge row when present', () => {
+    const withServiceCharge = { ...basePayslip, serviceCharge: 45000 };
+    const html = generatePayslipHtml(withServiceCharge);
+    expect(html).toContain('Felszolgálási díj (SZJA- és SZOCHO-mentes)');
+    expect(html).toContain('45');
+  });
+
+  it('should show worked hours in attendance when present', () => {
+    const withWorkedHours = { ...basePayslip, workedHours: 160 };
+    const html = generatePayslipHtml(withWorkedHours);
+    expect(html).toContain('Ledolgozott munkaórák');
+    expect(html).toContain('160 óra');
+  });
 });

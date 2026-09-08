@@ -32,9 +32,11 @@ export interface PayslipData {
   baseSalary: number;
   supplements: number;
   bonuses: number;
+  serviceCharge?: number;
   homeOffice?: number;
   otherIncome: number;
   grossTotal: number;
+  workedHours?: number;
 
   // Adó és járulék
   szjaBase: number;
@@ -113,6 +115,7 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
     <div class="info-grid">
       <div class="info-row"><span class="label">Munkanapok (naptári)</span><span class="value">${data.workDays}</span></div>
       <div class="info-row"><span class="label">Ledolgozott napok</span><span class="value">${data.workedDays}</span></div>
+      ${data.workedHours && data.workedHours > 0 ? `<div class="info-row"><span class="label">Ledolgozott munkaórák</span><span class="value">${data.workedHours} óra</span></div>` : ''}
       <div class="info-row"><span class="label">Túlóra</span><span class="value">${data.overtimeHours} óra</span></div>
       <div class="info-row"><span class="label">Betegszabadság</span><span class="value">${data.sickDays} nap</span></div>
       <div class="info-row"><span class="label">Szabadság</span><span class="value">${data.leaveDays} nap</span></div>
@@ -129,6 +132,7 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
         <tr><td>Alapbér</td><td class="right">${fmt(data.baseSalary)}</td></tr>
         ${data.supplements > 0 ? `<tr><td>Pótlékok</td><td class="right">${fmt(data.supplements)}</td></tr>` : ''}
         ${data.bonuses > 0 ? `<tr><td>Prémium / jutalom</td><td class="right">${fmt(data.bonuses)}</td></tr>` : ''}
+        ${data.serviceCharge && data.serviceCharge > 0 ? `<tr><td>Felszolgálási díj (SZJA- és SZOCHO-mentes)</td><td class="right positive">+${fmt(data.serviceCharge)}</td></tr>` : ''}
         ${data.otherIncome > 0 ? `<tr><td>Egyéb jövedelem</td><td class="right">${fmt(data.otherIncome)}</td></tr>` : ''}
         <tr class="total"><td>Bruttó bér</td><td class="right">${fmt(data.grossTotal)}</td></tr>
         <tr><td></td><td></td></tr>
