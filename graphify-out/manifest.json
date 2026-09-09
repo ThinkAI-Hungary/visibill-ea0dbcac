@@ -1390,8 +1390,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollCyclePage.tsx": {
-    "mtime": 1788901278.7042546,
-    "ast_hash": "0f062c894b368e97c4847ea3a105c670",
+    "mtime": 1788951830.5139701,
+    "ast_hash": "32e08ce33eb0f55647e3bae887ec59c6",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollDashboardPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788900046.9752197,
-    "ast_hash": "5de68a473a20b82bffd3910e2dc809bd",
+    "mtime": 1788944820.56836,
+    "ast_hash": "3a9f8599e76eeeba37926e002bb87eb8",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -4615,8 +4615,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep6.tsx": {
-    "mtime": 1788901234.9059825,
-    "ast_hash": "dbf0e4a7f92fd1272a9ec153d13a2898",
+    "mtime": 1788951794.235829,
+    "ast_hash": "fd812d57e211192f442f01bfb01545ca",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep7.tsx": {
@@ -4625,8 +4625,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep8.tsx": {
-    "mtime": 1788901249.981041,
-    "ast_hash": "6f5e14be52b9121b564d59fed159549d",
+    "mtime": 1788951820.7432044,
+    "ast_hash": "b8e77a620961f7d6bf8c295370805f12",
     "semantic_hash": ""
   },
   "src/components/partners/PartnerInvoiceDetailDialog.tsx": {
@@ -9200,8 +9200,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-072-payroll-cycle-attendance-manual-entry-and-cafeteria-ux.md": {
-    "mtime": 1788900053.5866475,
-    "ast_hash": "31768526262c8c0ef000bb2d821bf479",
+    "mtime": 1788952651.4084826,
+    "ast_hash": "5e165b330107007d399eb8465d78679e",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-095-international-pos-clearing-currency-override-guard.md": {
@@ -9970,8 +9970,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-106-pensioner-tax-exemption-and-service-charge-taxation.md": {
-    "mtime": 1788900040.504863,
-    "ast_hash": "6423d8d24aaab004d4d491cba9970bc6",
+    "mtime": 1788952641.181631,
+    "ast_hash": "245cf5020279034476903458ecc9b1e9",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-079-overhead-categories-gl-mapping.md": {
@@ -9979,9 +9979,14 @@
     "ast_hash": "c55533db035dcd4a76e7a51f1c6fcd9c",
     "semantic_hash": ""
   },
-  "supabase/migrations/20260909_sync_vat_deductibility_to_journals_and_gl.sql": {
+  "supabase/migrations/20260909100000_sync_vat_deductibility_to_journals_and_gl.sql": {
     "mtime": 1788943688.667198,
     "ast_hash": "f2062424a9a0d322865a1f29c31ba53d",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-107-vat-deductibility-journal-and-gl-sync.md": {
+    "mtime": 1788944495.823465,
+    "ast_hash": "a993980e1490b670a56a2c7b2fa68896",
     "semantic_hash": ""
   }
 }

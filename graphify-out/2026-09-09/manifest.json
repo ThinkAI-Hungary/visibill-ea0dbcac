@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1788942740.243163,
-    "ast_hash": "6d016d7dcd8d7865cc61e52eb4c9f6fc",
+    "mtime": 1788943922.7876027,
+    "ast_hash": "6312c33c106699ad2aeb695a7573120b",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -9980,8 +9980,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260909_sync_vat_deductibility_to_journals_and_gl.sql": {
-    "mtime": 1788942568.7869577,
-    "ast_hash": "52ae9a957a472472a11024f6a0f8aed9",
+    "mtime": 1788943688.667198,
+    "ast_hash": "f2062424a9a0d322865a1f29c31ba53d",
     "semantic_hash": ""
   }
 }

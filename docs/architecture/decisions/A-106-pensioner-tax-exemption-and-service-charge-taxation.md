@@ -83,6 +83,14 @@ A megbízási szerződéseknél (`tartos_megbizas`, `megbizas`, `megbizas_nem_on
 - A bevitt összeg azonnal elmentődik az `accounty_payroll_items` táblába `item_type: 'service_charge'` típussal.
 - A számfejtési kalkuláció (`useRunBatchPayroll`) automatikusan beolvassa ezt az elemet, és beépíti a kalkulációba.
 
+### D-6: Kétlépcsős Újraszámítás (Recalculate) Integráció és Időbélyeg Kijelzés (`PayrollStep6.tsx` & `PayrollStep8.tsx`)
+
+- **Probléma:** Korábban a számfejtést indító `runBatch.mutate` gomb a 8. lépésben egy feltételes `else` ágban rejtőzött, ami azt jelentette, hogy ha egy ciklushoz már létezett elmentett kalkuláció (`calculations.length > 0`), a gomb teljesen eltűnt a felületről. A 6. lépésben (Adó + Járulék) pedig egyáltalán nem volt bekötve az újraszámítás. Így a könyvelő a jelenlét vagy juttatások módosítása után nem tudta a kalkulációt újrafuttatni, és a képernyő az elavult számokat mutatta.
+- **Megoldás:**
+  - A `PayrollStep6.tsx` fejlécébe kihelyeztünk egy mindig kattintható `<Button variant="outline"><RotateCcw /> Számfejtés újrafuttatása</Button>` gombot, és kiírtuk az utolsó számítás idejét (`calculated_at` alapján). Ha még nincs kalkuláció, üres táblázat helyett kiemelt indítógomb fogadja a felhasználót.
+  - A `PayrollStep8.tsx` fejlécébe és a zöld lezáró sávba (az *Összes bérjegyzék* mellé) egyaránt bekerült a mindig látható `Újraszámítás` gomb, animált `Loader2` töltésjelzéssel és dupla kattintás elleni védelemmel.
+  - A `PayrollCyclePage.tsx` szülő komponens átadja a `cycle`, `activeEmployees` és `runBatch` propokat a 6. lépésnek is.
+
 ---
 
 ## 3. Verifikáció és Teszteredmények
@@ -92,6 +100,7 @@ A megbízási szerződéseknél (`tartos_megbizas`, `megbizas`, `megbizas_nem_on
    - Fedve: Öregségi nyugdíjas dolgozó garantált bérminimum és 500 000 Ft fizetés mellett (0 Ft TB, 0 Ft SZOCHO, pontos nettó számítás).
    - Fedve: Felszolgálási díj normál dolgozónál (0% SZJA, 18.5% TB, 0% SZOCHO) és nyugdíjas dolgozónál (0% SZJA, 0% TB, 0% SZOCHO).
 2. **TypeScript & Rollup Production Build:**
-   - `npm run build` lefutott 17.93s alatt, 0 hiba és 0 figyelmeztetés a megváltoztatott modulokban.
-3. **Visszafelé Kompatibilitás:**
+   - `npm run build` lefutott 15.03s alatt, 0 hiba és 0 figyelmeztetés a megváltoztatott modulokban.
+3. **Visszafelé Kompatibilitás & Kódhigiénia:**
    - A meglévő havidíjas számfejtések, CSV jelenléti importok és korábbi ciklusok változatlanul működnek. Ha nincs kitöltve `workedHours`, az algoritmus automatikusan a `workDays * dailyHours` képletre esik vissza.
+   - Az újraszámítási gombok `React.useMemo` segítségével memózzák a dátumformázást, minimalizálva a felesleges re-rendereket.

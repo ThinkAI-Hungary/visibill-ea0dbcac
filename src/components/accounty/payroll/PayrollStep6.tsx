@@ -1,17 +1,26 @@
 import React from 'react';
 import { SzochoAdvisor } from './SzochoAdvisor';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { RotateCcw, Loader2, Play, Clock, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PayrollStep6Props {
   calculations: any[];
   getCalcName: (calc: any) => string;
   companyId: string;
+  cycle?: any;
+  activeEmployees?: any[];
+  runBatch?: any;
 }
 
 export default function PayrollStep6({
   calculations,
   getCalcName,
   companyId,
+  cycle,
+  activeEmployees = [],
+  runBatch,
 }: PayrollStep6Props) {
   const [isKiva, setIsKiva] = React.useState(false);
 
@@ -35,6 +44,34 @@ export default function PayrollStep6({
     return Math.round((calc.gross_salary || 0) * 0.13);
   };
 
+  const lastCalcDate = React.useMemo(() => {
+    const raw = calculations[0]?.metadata?.calculated_at;
+    if (!raw) return null;
+    try {
+      const d = new Date(raw);
+      return d.toLocaleDateString('hu-HU', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return null;
+    }
+  }, [calculations]);
+
+  const handleRecalculate = () => {
+    if (!cycle?.id || !companyId || !runBatch) return;
+    runBatch.mutate({
+      cycleId: cycle.id,
+      companyId,
+      year: cycle.year,
+      month: cycle.month,
+    });
+  };
+
+  const isCalculating = runBatch?.isPending;
+
   return (
     <div className="space-y-6">
       {companyId && <SzochoAdvisor companyId={companyId} />}
@@ -48,9 +85,42 @@ export default function PayrollStep6({
         </div>
       )}
 
-      <p className="text-sm text-slate-600 dark:text-slate-300">
-        SZJA (15%), TB Járulék (18.5%), SZOCHO (13% / KIVA esetén 0 Ft) kalkuláció az adómotor segítségével.
-      </p>
+      {/* Header bar with recalculate action */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            SZJA (15%), TB Járulék (18.5%), SZOCHO (13% / KIVA esetén 0 Ft) kalkuláció az adómotor segítségével.
+          </p>
+          {lastCalcDate && (
+            <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
+              <Clock className="w-3 h-3 inline" /> Utolsó számfejtés: <span className="font-medium text-slate-600 dark:text-slate-400">{lastCalcDate}</span>
+            </p>
+          )}
+        </div>
+
+        {runBatch && cycle && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRecalculate}
+            disabled={isCalculating}
+            className="flex items-center gap-1.5 shrink-0 hover:bg-primary/10 hover:text-primary transition-colors"
+          >
+            {isCalculating ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Számfejtés folyamatban...</span>
+              </>
+            ) : (
+              <>
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Számfejtés újrafuttatása</span>
+              </>
+            )}
+          </Button>
+        )}
+      </div>
+
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 text-center border border-red-200 dark:border-red-800">
           <p className="text-[10px] font-bold text-red-600 uppercase">SZJA</p>
@@ -65,6 +135,7 @@ export default function PayrollStep6({
           <p className="text-lg font-bold text-violet-700 dark:text-violet-400">{isKiva ? '0% (KIVA)' : '13%'}</p>
         </div>
       </div>
+
       {calculations.length > 0 ? (
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full">
@@ -103,10 +174,33 @@ export default function PayrollStep6({
           </table>
         </div>
       ) : (
-        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-          <p className="text-sm text-amber-700 dark:text-amber-300">
-            A számfejtés futtatásához lépj tovább a Számfejtés lépésre (8. lépés).
+        <div className="p-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 text-center space-y-3">
+          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+            Még nem futott le a számfejtés ebben a ciklusban.
           </p>
+          {runBatch && cycle ? (
+            <Button
+              onClick={handleRecalculate}
+              disabled={isCalculating}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center gap-2 mx-auto"
+            >
+              {isCalculating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Számfejtés folyamatban...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4" />
+                  <span>Számfejtés indítása ({activeEmployees.length} fő)</span>
+                </>
+              )}
+            </Button>
+          ) : (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              A számfejtés futtatásához lépj tovább a Számfejtés lépésre (8. lépés).
+            </p>
+          )}
         </div>
       )}
     </div>
