@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -166,20 +167,163 @@ const CategoryPageSkeleton = () => {
 };
 
 const Onboarding = () => {
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryStats, setCategoryStats] = useState<Record<string, CategoryStats>>({});
-  const [selectedCategoryForModal, setSelectedCategoryForModal] = useState<string | null>(null);
-  const [modalSearchQuery, setModalSearchQuery] = useState('');
-  const [modalCurrentPage, setModalCurrentPage] = useState(1);
-  const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('categories');
+
+  // React Query cached categories page data (parallelized queries + zero-waterfall)
+  const { data: pageData, isLoading: queryLoading } = useQuery({
+    queryKey: queryKeys.categoriesPageData(selectedCompany?.id || ''),
+    queryFn: async () => {
+      if (!selectedCompany?.id || !user?.id) {
+        return { categories: [], categoryStats: {} };
+      }
+
+      // 1. Fetch categories with gl_accounts
+      let { data: categoryData, error: catError } = await supabase
+        .from('categories')
+        .select('id, name, description, icon, color, gl_accounts')
+        .eq('company_id', selectedCompany.id)
+        .order('created_at', { ascending: true });
+
+      if (catError) throw catError;
+
+      if (!categoryData || categoryData.length === 0) {
+        try {
+          await supabase.rpc('ensure_default_categories', { p_company_id: selectedCompany.id, p_user_id: user.id });
+          const { data: reloaded } = await supabase
+            .from('categories')
+            .select('id, name, description, icon, color, gl_accounts')
+            .eq('company_id', selectedCompany.id)
+            .order('created_at', { ascending: true });
+          categoryData = reloaded || [];
+        } catch (e) {
+          console.warn('RPC ensure_default_categories failed or not present, fallback to raw load', e);
+        }
+      }
+
+      // 2. Parallel query for all categorized invoices in both tables
+      const [{ data: uploadedInvoices, error: upError }, { data: navInvoices, error: navError }] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem, image_url, melleklet_url, category_id')
+          .eq('company_id', selectedCompany.id)
+          .not('category_id', 'is', null)
+          .order('kibocsatas_datuma', { ascending: false })
+          .limit(5000),
+        supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount, category_id')
+          .eq('company_id', selectedCompany.id)
+          .not('category_id', 'is', null)
+          .order('invoice_issue_date', { ascending: false })
+          .limit(5000),
+      ]);
+
+      if (upError) throw upError;
+      if (navError) throw navError;
+
+      // Group uploaded invoices by category_id
+      const uploadedByCat = new Map<string, CategoryInvoice[]>();
+      for (const inv of (uploadedInvoices || [])) {
+        if (!inv.category_id) continue;
+        const item: CategoryInvoice = {
+          id: inv.id,
+          invoice_number: inv.bizonylatsorszam,
+          invoice_direction: inv.invoice_direction,
+          supplier_name: inv.elado_nev,
+          invoice_issue_date: inv.kibocsatas_datuma,
+          invoice_gross_amount: inv.brutto_vegosszeg,
+          penznem: inv.penznem || 'HUF',
+          source: 'invoices',
+          image_url: inv.image_url,
+          melleklet_url: inv.melleklet_url,
+        };
+        const list = uploadedByCat.get(inv.category_id);
+        if (list) list.push(item);
+        else uploadedByCat.set(inv.category_id, [item]);
+      }
+
+      // Group nav invoices by category_id
+      const navByCat = new Map<string, CategoryInvoice[]>();
+      for (const inv of (navInvoices || [])) {
+        if (!inv.category_id) continue;
+        const item: CategoryInvoice = {
+          id: inv.id,
+          invoice_number: inv.invoice_number,
+          invoice_direction: inv.invoice_direction,
+          supplier_name: inv.supplier_name,
+          invoice_issue_date: inv.invoice_issue_date,
+          invoice_gross_amount: inv.invoice_gross_amount,
+          penznem: 'HUF',
+          source: 'nav_invoices',
+        };
+        const list = navByCat.get(inv.category_id);
+        if (list) list.push(item);
+        else navByCat.set(inv.category_id, [item]);
+      }
+
+      const loadedCategories: Category[] = (categoryData || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        description: c.description || '',
+        icon: c.icon || null,
+        color: c.color || null,
+        gl_accounts: c.gl_accounts || [],
+      }));
+
+      const stats: Record<string, CategoryStats> = {};
+      for (const cat of loadedCategories) {
+        if (!cat.id) continue;
+        const fromUploaded = uploadedByCat.get(cat.id) || [];
+        const fromNav = navByCat.get(cat.id) || [];
+        const invList = [...fromUploaded, ...fromNav];
+
+        const currencyTotals: Record<string, number> = {};
+        for (const inv of invList) {
+          const cur = inv.penznem || 'HUF';
+          currencyTotals[cur] = (currencyTotals[cur] || 0) + (inv.invoice_gross_amount || 0);
+        }
+
+        stats[cat.id] = {
+          invoiceCount: invList.length,
+          totalAmount: currencyTotals['HUF'] || 0,
+          currencyTotals,
+          invoices: invList,
+        };
+      }
+
+      return {
+        categories: loadedCategories,
+        categoryStats: stats,
+      };
+    },
+    enabled: Boolean(user?.id && selectedCompany?.id),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const [categories, setCategories] = useState<Category[]>(() => pageData?.categories ?? []);
+  const [categoryStats, setCategoryStats] = useState<Record<string, CategoryStats>>(() => pageData?.categoryStats ?? {});
+  const [initialCategories, setInitialCategories] = useState<Category[] | null>(() => pageData ? pageData.categories.map(c => ({ ...c })) : null);
+
+  // Sync state when query data changes (or on first load)
+  useEffect(() => {
+    if (pageData) {
+      setCategories(pageData.categories);
+      setCategoryStats(pageData.categoryStats);
+      setInitialCategories(pageData.categories.map(c => ({ ...c })));
+    }
+  }, [pageData]);
+
+  const initialLoading = queryLoading && !pageData;
+  const [selectedCategoryForModal, setSelectedCategoryForModal] = useState<string | null>(null);
+  const [modalSearchQuery, setModalSearchQuery] = useState('');
+  const [modalCurrentPage, setModalCurrentPage] = useState(1);
+  const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
   
   // Edit dialog state
   const [editingCategory, setEditingCategory] = useState<{ index: number; category: Category } | null>(null);
@@ -213,8 +357,6 @@ const Onboarding = () => {
   const [itemsInvoice, setItemsInvoice] = useState<CategoryInvoice | null>(null);
   const [itemsOpen, setItemsOpen] = useState(false);
 
-  // Track initial state for unsaved changes detection
-  const [initialCategories, setInitialCategories] = useState<Category[] | null>(null);
   
   const hasUnsavedChanges = useMemo(() => {
     if (!initialCategories || initialLoading) return false;
@@ -273,8 +415,9 @@ const Onboarding = () => {
           .eq('company_id', selectedCompany.id);
         
         if (error) throw error;
-        // Invalidate React Query cache so InvoicesPage badges update immediately
-        queryClient.invalidateQueries({ queryKey: ['categories', selectedCompany.id] });
+        // Invalidate React Query cache so InvoicesPage badges and Categories page update immediately
+        queryClient.invalidateQueries({ queryKey: queryKeys.categories(selectedCompany.id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
         toast({ title: 'Kategória mentve!' });
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Mentés sikertelen', description: error.message });
@@ -287,123 +430,7 @@ const Onboarding = () => {
     setEditingCategory(null);
   };
 
-  // Load existing data + stats
-  const loadData = useCallback(async () => {
-    if (!user || !selectedCompany) return;
-    
-    try {
-      // Load categories with gl_accounts
-      let { data: categoryData } = await supabase
-        .from('categories')
-        .select('id, name, description, icon, color, gl_accounts')
-        .eq('company_id', selectedCompany.id)
-        .order('created_at', { ascending: true });
 
-      if (!categoryData || categoryData.length === 0) {
-        try {
-          await supabase.rpc('ensure_default_categories', { p_company_id: selectedCompany.id, p_user_id: user.id });
-          const { data: reloaded } = await supabase
-            .from('categories')
-            .select('id, name, description, icon, color, gl_accounts')
-            .eq('company_id', selectedCompany.id)
-            .order('created_at', { ascending: true });
-          categoryData = reloaded || [];
-        } catch (e) {
-          console.warn('RPC ensure_default_categories failed or not present, fallback to raw load', e);
-        }
-      }
-
-      let loadedCategories: Category[];
-      if (categoryData && categoryData.length > 0) {
-        loadedCategories = categoryData.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          description: c.description || '',
-          icon: c.icon || null,
-          color: c.color || null,
-          gl_accounts: c.gl_accounts || [],
-        }));
-      } else {
-        loadedCategories = [];
-      }
-      setCategories(loadedCategories);
-      setInitialCategories(loadedCategories.map(c => ({ ...c })));
-
-      // Load invoice stats per category — both invoices and nav_invoices
-      const stats: Record<string, CategoryStats> = {};
-      
-      for (const cat of loadedCategories) {
-        if (!cat.id) continue;
-        
-        const [{ data: uploadedInvoices }, { data: navInvoices }] = await Promise.all([
-          supabase
-            .from('invoices')
-            .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem, image_url, melleklet_url')
-            .eq('company_id', selectedCompany.id)
-            .eq('category_id', cat.id)
-            .order('kibocsatas_datuma', { ascending: false }),
-          supabase
-            .from('nav_invoices')
-            .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
-            .eq('company_id', selectedCompany.id)
-            .eq('category_id', cat.id)
-            .order('invoice_issue_date', { ascending: false }),
-        ]);
-        
-        const fromUploaded: CategoryInvoice[] = (uploadedInvoices || []).map((inv: any) => ({
-          id: inv.id,
-          invoice_number: inv.bizonylatsorszam,
-          invoice_direction: inv.invoice_direction,
-          supplier_name: inv.elado_nev,
-          invoice_issue_date: inv.kibocsatas_datuma,
-          invoice_gross_amount: inv.brutto_vegosszeg,
-          penznem: inv.penznem || 'HUF',
-          source: 'invoices' as const,
-          image_url: inv.image_url,
-          melleklet_url: inv.melleklet_url,
-        }));
-
-        const fromNav: CategoryInvoice[] = (navInvoices || []).map((inv: any) => ({
-          id: inv.id,
-          invoice_number: inv.invoice_number,
-          invoice_direction: inv.invoice_direction,
-          supplier_name: inv.supplier_name,
-          invoice_issue_date: inv.invoice_issue_date,
-          invoice_gross_amount: inv.invoice_gross_amount,
-          penznem: 'HUF',
-          source: 'nav_invoices' as const,
-        }));
-
-        const invList: CategoryInvoice[] = [...fromUploaded, ...fromNav];
-
-        // Build per-currency totals
-        const currencyTotals: Record<string, number> = {};
-        for (const inv of invList) {
-          const cur = inv.penznem || 'HUF';
-          currencyTotals[cur] = (currencyTotals[cur] || 0) + (inv.invoice_gross_amount || 0);
-        }
-
-        stats[cat.id] = {
-          invoiceCount: invList.length,
-          totalAmount: currencyTotals['HUF'] || 0,
-          currencyTotals,
-          invoices: invList,
-        };
-      }
-      
-      setCategoryStats(stats);
-    } catch (error) {
-      reportError({ type: 'db_query', component: 'Onboarding', action: 'error', message: 'Error loading data:', error });
-      setCategories([]);
-      setInitialCategories([]);
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [user, selectedCompany]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   // Computed totals
   const totalInvoices = useMemo(() => 
@@ -469,6 +496,10 @@ const Onboarding = () => {
         .eq('id', invoiceId);
       
       if (error) throw error;
+      
+      if (selectedCompany?.id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
+      }
       
       // Update local state
       setCategoryStats(prev => {
@@ -574,6 +605,10 @@ const Onboarding = () => {
 
       if (error) throw error;
 
+      if (selectedCompany?.id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
+      }
+
       if (invoice) {
         setCategoryStats(prev => {
           const stats = { ...prev };
@@ -617,6 +652,11 @@ const Onboarding = () => {
           supabase.from('nav_invoices').update({ category_id: categoryId }).eq('invoice_number', inv.invoice_number),
         ])
       );
+
+      if (selectedCompany?.id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
+      }
+
       // Update local state optimistically
       setCategoryStats(prev => {
         const stats = { ...prev };
@@ -672,6 +712,11 @@ const Onboarding = () => {
           .eq('company_id', selectedCompany.id);
         
         if (error) throw error;
+        
+        if (selectedCompany?.id) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.categories(selectedCompany.id) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
+        }
         
         toast({ title: 'Kategória törölve' });
       } catch (error: any) {
@@ -744,6 +789,11 @@ const Onboarding = () => {
       setNewGlAccounts([]);
       
       toast({ title: 'Kategória létrehozva!', description: `"${data.name}" hozzáadva.` });
+
+      if (selectedCompany?.id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.categories(selectedCompany.id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
+      }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Létrehozás sikertelen', description: error.message });
     }

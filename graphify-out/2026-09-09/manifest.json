@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1788957109.9806833,
-    "ast_hash": "0e18a469e9866483d271c16d34d1bcfc",
+    "mtime": 1788963174.6749182,
+    "ast_hash": "4872583f5066d88a038ad81d1f99ebfb",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3285,8 +3285,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/032-payroll-module.md": {
-    "mtime": 1788476737.5801125,
-    "ast_hash": "cd39ad9ff2fe3c75187e551599d356eb",
+    "mtime": 1788963198.29944,
+    "ast_hash": "724a4c0dc2279bcea3f96de0c6b39655",
     "semantic_hash": ""
   },
   "docs/business/decisions/033-vat-return-module.md": {
@@ -3570,13 +3570,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1788898296.4981196,
-    "ast_hash": "fd299110a88e42441284889d25ef1339",
+    "mtime": 1788963188.7614884,
+    "ast_hash": "d4fb3155c6e2afb225aaaa9a7dba0787",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1788898299.7836032,
-    "ast_hash": "3a15b7a95c325a0a511667054104f781",
+    "mtime": 1788963204.547091,
+    "ast_hash": "3a3c20e5fb2076c12d61640c95ff53ab",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -5085,13 +5085,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/13-eaisybooks-core.md": {
-    "mtime": 1788787050.1233146,
-    "ast_hash": "d955bfe188fb9c7a872a942ce6bf5024",
+    "mtime": 1788963218.527591,
+    "ast_hash": "6f03e1504beb93316ce2bbed606ee78a",
     "semantic_hash": ""
   },
   "docs/architecture/database/14-eaisybooks-payroll.md": {
-    "mtime": 1788130289.1715477,
-    "ast_hash": "26eadd4e318e39ca788149f27290bb6f",
+    "mtime": 1788963211.4188673,
+    "ast_hash": "30bf8068ba22866ff10300279739a568",
     "semantic_hash": ""
   },
   "docs/architecture/database/15-eaisybooks-tax-legal.md": {
@@ -10040,8 +10040,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-108-payroll-commute-reimbursement-and-employee-worksheet.md": {
-    "mtime": 1788957094.531667,
-    "ast_hash": "fbd71e3360028da716cd887f45329f87",
+    "mtime": 1788963181.427515,
+    "ast_hash": "54a981579451c8610cfb52ea79f29021",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-080-employee-worksheet-and-commute-reimbursement-ux.md": {
+    "mtime": 1788963168.2262053,
+    "ast_hash": "9bb44972d5a1e6b8f32114a75ae77450",
     "semantic_hash": ""
   }
 }

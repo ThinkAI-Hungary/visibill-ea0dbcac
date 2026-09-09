@@ -238,6 +238,7 @@ export function LiveNotificationProvider() {
               'kintlevo-manual', 'kintlevo-nav',
               'invoiceStatusPayable', 'invoiceStatusMissing',
               'recentInvoices', 'uploadHistory',
+              'categoriesPageData',
               'analyticsRaw', 'analyticsVat',
               'dashboardPettyCash', 'pettyCashEntries',
               'payment-transfers-history', 'due-transfer-invoices',
@@ -330,6 +331,7 @@ export function LiveNotificationProvider() {
               'projects', 'projectsList',
               'dashboardPettyCash',
               'payment-transfers-history', 'due-transfer-invoices',
+              'categoriesPageData',
             );
           }
         )
@@ -440,7 +442,7 @@ export function LiveNotificationProvider() {
           (payload) => {
             if (!isMyCompany(payload)) return;
             invalidate(
-              'categories', 'filteredNavInvoices', 'filteredSubmittedInvoices',
+              'categories', 'categoriesPageData', 'filteredNavInvoices', 'filteredSubmittedInvoices',
               'navInvoices', 'submittedInvoices',
             );
           }
@@ -731,7 +733,7 @@ export function LiveNotificationProvider() {
             'analyticsRaw', 'analyticsVat', 'recentInvoices',
             'partners', 'partnersFull', 'projects', 'projectsList',
             'pettyCashEntries', 'dashboardPettyCash',
-            'categories', 'dunning-sends', 'syncLogs',
+            'categories', 'categoriesPageData', 'dunning-sends', 'syncLogs',
             'invoiceItems', 'shipments-matching',
           );
           // Also recover any Realtime notifications missed during the away period

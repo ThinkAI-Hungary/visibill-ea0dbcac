@@ -5373,6 +5373,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           description: string | null
+          gl_accounts: string[] | null
           icon: string | null
           id: string
           name: string
@@ -5384,6 +5385,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           description?: string | null
+          gl_accounts?: string[] | null
           icon?: string | null
           id?: string
           name: string
@@ -5395,6 +5397,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           description?: string | null
+          gl_accounts?: string[] | null
           icon?: string | null
           id?: string
           name?: string
@@ -10652,6 +10655,13 @@ export type Database = {
       }
     }
     Functions: {
+      ensure_default_categories: {
+        Args: {
+          p_company_id: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       acc_generate_drafts_from_ledger: {
         Args: {
           p_company_id: string
