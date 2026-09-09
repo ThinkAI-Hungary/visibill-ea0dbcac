@@ -64,19 +64,27 @@ export async function generateDraftsFallback(
 
   const [invRes, navRes] = await Promise.all([
     invoiceItemIds.length > 0
-      ? supabase.from('invoice_items').select('id, vat_amount, vat_rate').in('id', invoiceItemIds)
+      ? (supabase.from('invoice_items') as any).select('id, vat_amount, vat_rate, deductible_percentage').in('id', invoiceItemIds)
       : Promise.resolve({ data: [] }),
     navItemIds.length > 0
-      ? supabase.from('nav_invoice_items').select('id, vat_amount, vat_rate').in('id', navItemIds)
+      ? (supabase.from('nav_invoice_items') as any).select('id, vat_amount, vat_rate, deductible_percentage').in('id', navItemIds)
       : Promise.resolve({ data: [] })
   ]);
 
-  const vatDetailsMap = new Map<string, { vat_amount: number; vat_rate: string }>();
+  const vatDetailsMap = new Map<string, { vat_amount: number; vat_rate: string; deductible_percentage: number }>();
   invRes.data?.forEach((i: any) => {
-    vatDetailsMap.set(i.id, { vat_amount: Number(i.vat_amount) || 0, vat_rate: i.vat_rate || '' });
+    vatDetailsMap.set(i.id, {
+      vat_amount: Number(i.vat_amount) || 0,
+      vat_rate: i.vat_rate || '',
+      deductible_percentage: i.deductible_percentage != null ? Number(i.deductible_percentage) : 100
+    });
   });
   navRes.data?.forEach((i: any) => {
-    vatDetailsMap.set(i.id, { vat_amount: Number(i.vat_amount) || 0, vat_rate: i.vat_rate || '' });
+    vatDetailsMap.set(i.id, {
+      vat_amount: Number(i.vat_amount) || 0,
+      vat_rate: i.vat_rate || '',
+      deductible_percentage: i.deductible_percentage != null ? Number(i.deductible_percentage) : 100
+    });
   });
 
   const effectiveVatDedId = glVatDedId || glAccounts?.find(g => g.gl_number.startsWith('466'))?.id;
@@ -271,7 +279,21 @@ export async function generateDraftsFallback(
           });
         }
       } else {
-        // Inbound: Line 1 (T Költség Net ALAP), Line 2 (T ÁFA 466 AFA), Line 3 (K Szállító 4541 Gross)
+        // Inbound purchase with VAT deductibility support:
+        const deductiblePct = vatDetail?.deductible_percentage ?? 100;
+        const hufVatDeductible = Math.round(hufVat * (deductiblePct / 100) * 100) / 100;
+        const hufVatNonDeductible = Math.round((hufVat - hufVatDeductible) * 100) / 100;
+        const hufExpense = Math.round((hufNet + hufVatNonDeductible) * 100) / 100;
+
+        let foreignVatDeductible: number | null = null;
+        let foreignExpense: number | null = foreignNet;
+        if (foreignVat !== null && foreignVat > 0) {
+          foreignVatDeductible = Math.round(foreignVat * (deductiblePct / 100) * 100) / 100;
+          const foreignVatNonDeductible = Math.round((foreignVat - foreignVatDeductible) * 100) / 100;
+          foreignExpense = Math.round(((foreignNet || 0) + foreignVatNonDeductible) * 100) / 100;
+        }
+
+        // Line 1: T Költség (Net + Non-deductible VAT)
         const { data: baseLine } = await supabase
           .from('acc_journal_lines')
           .insert({
@@ -279,8 +301,8 @@ export async function generateDraftsFallback(
             sequence_number: 1,
             gl_account_id: item.gl_account_id,
             dc_type: 'T',
-            amount: hufNet,
-            foreign_amount: foreignNet,
+            amount: hufExpense,
+            foreign_amount: foreignExpense,
             vat_code: itemVatRate.substring(0, 16) || null,
             vat_role: 'ALAP',
             description: item.description
@@ -288,15 +310,16 @@ export async function generateDraftsFallback(
           .select('id')
           .single();
 
-        if (hufVat > 0 && effectiveVatDedId && baseLine) {
+        if (hufVatDeductible > 0 && effectiveVatDedId && baseLine) {
+          // 3-legged entry: Expense (Net + Non-deductible), 466 (Deductible), 4541 (Gross)
           await supabase.from('acc_journal_lines').insert([
             {
               header_id: header.id,
               sequence_number: 2,
               gl_account_id: effectiveVatDedId,
               dc_type: 'T',
-              amount: hufVat,
-              foreign_amount: foreignVat,
+              amount: hufVatDeductible,
+              foreign_amount: foreignVatDeductible,
               vat_code: itemVatRate.substring(0, 16) || null,
               vat_role: 'AFA',
               parent_line_id: baseLine.id,
@@ -314,6 +337,7 @@ export async function generateDraftsFallback(
             }
           ]);
         } else {
+          // 2-legged entry: Expense (Gross), Supplier (Gross)
           await supabase.from('acc_journal_lines').insert({
             header_id: header.id,
             sequence_number: 2,

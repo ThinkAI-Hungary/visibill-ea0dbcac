@@ -4447,7 +4447,7 @@
       "label": "ItemProjectRuleButtonProps",
       "file_type": "code",
       "source_file": "src/components/InvoiceItemsDialog.tsx",
-      "source_location": "L1692",
+      "source_location": "L1634",
       "_origin": "ast",
       "id": "components_invoiceitemsdialog_itemprojectrulebuttonprops",
       "community": 529,
@@ -4457,7 +4457,7 @@
       "label": "ItemProjectRuleButton()",
       "file_type": "code",
       "source_file": "src/components/InvoiceItemsDialog.tsx",
-      "source_location": "L1699",
+      "source_location": "L1641",
       "_origin": "ast",
       "id": "components_invoiceitemsdialog_itemprojectrulebutton",
       "community": 529,
@@ -4467,7 +4467,7 @@
       "label": "ItemNoteCellProps",
       "file_type": "code",
       "source_file": "src/components/InvoiceItemsDialog.tsx",
-      "source_location": "L1786",
+      "source_location": "L1728",
       "_origin": "ast",
       "id": "components_invoiceitemsdialog_itemnotecellprops",
       "community": 529,
@@ -4477,7 +4477,7 @@
       "label": "ItemNoteCell()",
       "file_type": "code",
       "source_file": "src/components/InvoiceItemsDialog.tsx",
-      "source_location": "L1791",
+      "source_location": "L1733",
       "_origin": "ast",
       "id": "components_invoiceitemsdialog_itemnotecell",
       "community": 611,
@@ -21330,7 +21330,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "accounty_useaccountyadmin_auditlogentry",
-      "community": 72,
+      "community": 17,
       "norm_label": "auditlogentry"
     },
     {
@@ -33610,7 +33610,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_accountingredirectpage",
-      "community": 9,
+      "community": 48,
       "norm_label": "accountingredirectpage.tsx"
     },
     {
@@ -33620,7 +33620,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "accounty_accountingredirectpage_accountingredirectpage",
-      "community": 9,
+      "community": 48,
       "norm_label": "accountingredirectpage()"
     },
     {
@@ -48970,7 +48970,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "management_stats_types",
-      "community": 41,
+      "community": 249,
       "norm_label": "types.ts"
     },
     {
@@ -49010,7 +49010,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "management_stats_types_projectclient",
-      "community": 41,
+      "community": 249,
       "norm_label": "projectclient"
     },
     {
@@ -49020,7 +49020,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "management_stats_types_emptyoverview",
-      "community": 41,
+      "community": 249,
       "norm_label": "emptyoverview"
     },
     {
@@ -49030,7 +49030,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "management_stats_types_emptycompanydetail",
-      "community": 41,
+      "community": 249,
       "norm_label": "emptycompanydetail"
     },
     {
@@ -49040,7 +49040,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "management_stats_types_emptyuserdetail",
-      "community": 41,
+      "community": 249,
       "norm_label": "emptyuserdetail"
     },
     {
@@ -49050,7 +49050,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "management_stats_types_emptyerrors",
-      "community": 41,
+      "community": 249,
       "norm_label": "emptyerrors"
     },
     {
@@ -49060,7 +49060,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "management_stats_types_emptyfiles",
-      "community": 41,
+      "community": 249,
       "norm_label": "emptyfiles"
     },
     {
@@ -49070,7 +49070,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "management_stats_types_emptyworkerstatus",
-      "community": 41,
+      "community": 249,
       "norm_label": "emptyworkerstatus"
     },
     {
@@ -49080,7 +49080,7 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "management_stats_types_emptyllmcosts",
-      "community": 41,
+      "community": 249,
       "norm_label": "emptyllmcosts"
     },
     {
@@ -56440,7 +56440,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_regisztr\u00e1ci\u00f3_\u00e9s_bejelentkez\u00e9s",
-      "community": 249,
+      "community": 88,
       "norm_label": "regisztracio es bejelentkezes"
     },
     {
@@ -56450,7 +56450,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_\u00faj_fi\u00f3k_l\u00e9trehoz\u00e1sa",
-      "community": 249,
+      "community": 88,
       "norm_label": "uj fiok letrehozasa"
     },
     {
@@ -56460,7 +56460,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_bejelentkez\u00e9s",
-      "community": 249,
+      "community": 88,
       "norm_label": "bejelentkezes"
     },
     {
@@ -56470,7 +56470,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_elfelejtett_jelsz\u00f3",
-      "community": 249,
+      "community": 88,
       "norm_label": "elfelejtett jelszo"
     },
     {
@@ -56840,7 +56840,7 @@
       "source_location": "L433",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_bankkivonatok_\u00e9s_tranzakci\u00f3k",
-      "community": 88,
+      "community": 352,
       "norm_label": "bankkivonatok es tranzakciok"
     },
     {
@@ -56850,7 +56850,7 @@
       "source_location": "L444",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_tranzakci\u00f3s_f\u00e1jlok_felt\u00f6lt\u00e9se_\u00e9s_t\u00f6rl\u00e9se",
-      "community": 88,
+      "community": 352,
       "norm_label": "tranzakcios fajlok feltoltese es torlese"
     },
     {
@@ -56860,7 +56860,7 @@
       "source_location": "L452",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_tranzakci\u00f3s_feljegyz\u00e9sek_jegyzetek_k\u00e9sz\u00edt\u00e9se",
-      "community": 88,
+      "community": 352,
       "norm_label": "tranzakcios feljegyzesek (jegyzetek) keszitese"
     },
     {
@@ -56870,7 +56870,7 @@
       "source_location": "L461",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_jegyzetek_oldal_integr\u00e1ci\u00f3ja",
-      "community": 88,
+      "community": 352,
       "norm_label": "jegyzetek oldal integracioja"
     },
     {
@@ -73510,7 +73510,7 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "business_brd_6_nav_integr\u00e1ci\u00f3",
-      "community": 352,
+      "community": 222,
       "norm_label": "6. nav integracio"
     },
     {
@@ -73520,7 +73520,7 @@
       "source_location": "L149",
       "_origin": "ast",
       "id": "business_brd_req_6_1_nav_online_sz\u00e1mla_api_v3",
-      "community": 352,
+      "community": 222,
       "norm_label": "req-6.1: nav online szamla api v3"
     },
     {
@@ -73530,7 +73530,7 @@
       "source_location": "L154",
       "_origin": "ast",
       "id": "business_brd_req_6_2_szinkroniz\u00e1ci\u00f3_strat\u00e9gia",
-      "community": 352,
+      "community": 222,
       "norm_label": "req-6.2: szinkronizacio strategia"
     },
     {
@@ -73870,7 +73870,7 @@
       "source_location": "L339",
       "_origin": "ast",
       "id": "business_brd_9_el\u0151fizet\u00e9s_\u00e1raz\u00e1s",
-      "community": 222,
+      "community": 675,
       "norm_label": "9. elofizetes & arazas"
     },
     {
@@ -73880,7 +73880,7 @@
       "source_location": "L341",
       "_origin": "ast",
       "id": "business_brd_req_9_1_subscription_tierek",
-      "community": 222,
+      "community": 675,
       "norm_label": "req-9.1: subscription tierek"
     },
     {
@@ -73890,7 +73890,7 @@
       "source_location": "L346",
       "_origin": "ast",
       "id": "business_brd_req_9_2_el\u0151fizet\u00e9s_scope",
-      "community": 222,
+      "community": 675,
       "norm_label": "req-9.2: elofizetes scope"
     },
     {
@@ -123478,9 +123478,9 @@
       "source_file": "src/components/accounty/payroll/PayrollStep5.tsx",
       "source_location": "L4",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "payroll_payrollstep5",
-      "target": "hooks_use_toast"
+      "target": "hooks_use_toast",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -123489,9 +123489,9 @@
       "source_file": "src/components/accounty/payroll/PayrollStep5.tsx",
       "source_location": "L4",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "payroll_payrollstep5",
-      "target": "hooks_use_toast_toast"
+      "target": "hooks_use_toast_toast",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -123500,9 +123500,9 @@
       "source_file": "src/components/accounty/payroll/PayrollStep5.tsx",
       "source_location": "L3",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "payroll_payrollstep5",
-      "target": "hooks_usepayrolldata"
+      "target": "hooks_usepayrolldata",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -123511,9 +123511,9 @@
       "source_file": "src/components/accounty/payroll/PayrollStep5.tsx",
       "source_location": "L3",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "payroll_payrollstep5",
-      "target": "hooks_usepayrolldata_payrollquerykeys"
+      "target": "hooks_usepayrolldata_payrollquerykeys",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",

@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn } from '@/lib/utils';
-import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet } from 'lucide-react';
+import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
@@ -306,6 +306,23 @@ export function InvoiceItemsDialog({
 
   const isOutbound = invoiceDirection === 'OUTBOUND';
 
+  // Check if any items belong to already posted/finalized journals ('KONYVELT')
+  const itemIds = useMemo(() => items.map(it => it.id), [items]);
+  const { data: postedItemIds = new Set<string>() } = useQuery({
+    queryKey: ['postedJournalItems', selectedCompany?.id, itemIds],
+    queryFn: async () => {
+      if (!selectedCompany?.id || itemIds.length === 0) return new Set<string>();
+      const { data } = await supabase
+        .from('acc_journal_headers')
+        .select('import_key')
+        .eq('company_id', selectedCompany.id)
+        .eq('status', 'KONYVELT')
+        .in('import_key', itemIds);
+      return new Set<string>((data || []).map(r => r.import_key).filter(Boolean) as string[]);
+    },
+    enabled: open && !!selectedCompany?.id && itemIds.length > 0,
+  });
+
   // State & Handlers for Deductible Percentage
   const [updatingDeductibleId, setUpdatingDeductibleId] = useState<string | null>(null);
   const [isApplying7030, setIsApplying7030] = useState(false);
@@ -456,14 +473,28 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['vat_return'] });
       queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
       queryClient.invalidateQueries({ queryKey: ['nav_invoice_items_drill'] });
-      toast({
-        title: 'Levonhatóság beállítva',
-        description: `A tétel levonhatósága ${percentage}%-ra módosult.`,
-      });
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      queryClient.invalidateQueries({ queryKey: ['glJournalEntries'] });
+      queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
+
+      const isPosted = postedItemIds.has(item.id);
+      if (isPosted) {
+        toast({
+          title: 'Figyelem: lekönyvelt tétel',
+          description: `A számlatétel levonhatósága ${percentage}%-ra módosult, de a hozzá tartozó naplóbejegyzés már le van könyvelve (lezárt tétel). A zárt könyvelést a rendszer nem írja felül automatikusan; szükség esetén számviteli helyesbítés szükséges.`,
+        });
+      } else {
+        toast({
+          title: 'Levonhatóság beállítva',
+          description: `A tétel levonhatósága ${percentage}%-ra módosult, a tervezet naplóbejegyzések automatikusan frissültek.`,
+        });
+      }
     } finally {
       setUpdatingDeductibleId(null);
     }
-  }, [source, invoiceId, queryClient, toast, findTwinItems]);
+  }, [source, invoiceId, queryClient, toast, findTwinItems, postedItemIds]);
 
   // Apply 70/30 telephone rule to 27% items
   const handleApply7030TelephoneRule = useCallback(async () => {
@@ -498,14 +529,28 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['vat_return'] });
       queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
       queryClient.invalidateQueries({ queryKey: ['nav_invoice_items_drill'] });
-      toast({
-        title: '70/30 Szabály sikeresen alkalmazva',
-        description: `${ids.length} db 27%-os tétel levonhatósága 70%-ra állítva. (Az 5%-os internet tételek 100%-on maradtak).`,
-      });
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      queryClient.invalidateQueries({ queryKey: ['glJournalEntries'] });
+      queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
+
+      const hasPosted = targetItems.some(it => postedItemIds.has(it.id));
+      if (hasPosted) {
+        toast({
+          title: '70/30 Szabály alkalmazva (figyelmeztetéssel)',
+          description: `${ids.length} db tétel módosult. Figyelem: egy vagy több érintett tétel már le van könyvelve a naplóban, ezek végleges könyvelését a rendszer nem módosította automatikusan.`,
+        });
+      } else {
+        toast({
+          title: '70/30 Szabály sikeresen alkalmazva',
+          description: `${ids.length} db 27%-os tétel levonhatósága 70%-ra állítva. (Az 5%-os internet tételek 100%-on maradtak).`,
+        });
+      }
     } finally {
       setIsApplying7030(false);
     }
-  }, [items, source, invoiceId, queryClient, toast]);
+  }, [items, source, invoiceId, queryClient, toast, postedItemIds]);
 
   // Bulk update deductible percentage
   const handleBulkUpdateDeductible = useCallback(async (percentage: number) => {
@@ -531,11 +576,25 @@ export function InvoiceItemsDialog({
     queryClient.invalidateQueries({ queryKey: ['vat_return'] });
     queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
     queryClient.invalidateQueries({ queryKey: ['nav_invoice_items_drill'] });
-    toast({
-      title: 'Levonhatóság frissítve',
-      description: `${ids.length} tétel levonhatósága ${percentage}%-ra lett állítva.`,
-    });
-  }, [selectedIds, source, invoiceId, queryClient, toast]);
+    queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+    queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+    queryClient.invalidateQueries({ queryKey: ['glItems'] });
+    queryClient.invalidateQueries({ queryKey: ['glJournalEntries'] });
+    queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
+
+    const hasPosted = ids.some(id => postedItemIds.has(id));
+    if (hasPosted) {
+      toast({
+        title: 'Tömeges levonhatóság frissítve (figyelmeztetéssel)',
+        description: `${ids.length} db tétel módosult. Figyelem: a kiválasztott tételek között van már lekönyvelt tétel, amelynek végleges könyvelését a rendszer nem módosította automatikusan.`,
+      });
+    } else {
+      toast({
+        title: 'Levonhatóság frissítve',
+        description: `${ids.length} tétel levonhatósága ${percentage}%-ra lett állítva.`,
+      });
+    }
+  }, [selectedIds, source, invoiceId, queryClient, toast, postedItemIds]);
 
   // Fetch GL accounts for the picker combobox (paginated)
   const { data: glAccounts = [] } = useQuery({
@@ -1071,7 +1130,7 @@ export function InvoiceItemsDialog({
                         {renderSortableHeader('net_amount', 'Nettó', 'right', 'text-right')}
                         {renderSortableHeader('vat_rate', 'ÁFA', 'center', 'text-center w-[90px]')}
                         {renderSortableHeader('vat_amount', 'ÁFA összeg', 'right', 'text-right')}
-                        {!isOutbound && renderSortableHeader('deductible_percentage', 'Levonhatóság', 'center', 'text-center w-[130px]')}
+                        {!isOutbound && renderSortableHeader('deductible_percentage', 'Levonhatóság', 'center', 'text-center w-[140px]')}
                         {renderSortableHeader('gross_amount', 'Bruttó', 'right', 'text-right')}
                         {renderSortableHeader('gl_classifications', 'Főkönyv', 'center', 'text-center')}
                         <TableHead className="font-semibold w-[200px]">Projekt</TableHead>
@@ -1166,59 +1225,73 @@ export function InvoiceItemsDialog({
                         </TableCell>
                         {!isOutbound && (
                           <TableCell className="text-center">
-                            <Tooltip>
-                              <DropdownMenu>
-                                <TooltipTrigger asChild>
-                                  <DropdownMenuTrigger asChild>
-                                    <button
-                                      type="button"
-                                      disabled={updatingDeductibleId === item.id}
-                                      className={cn(
-                                        "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border shadow-sm",
-                                        (item.deductible_percentage === 70)
-                                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/25"
-                                          : (item.deductible_percentage === 0)
-                                          ? "bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/25"
-                                          : (item.deductible_percentage != null && item.deductible_percentage < 100)
-                                          ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/25"
-                                          : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80"
-                                      )}
-                                    >
-                                      {updatingDeductibleId === item.id ? (
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                      ) : (
-                                        <>
-                                          <span>{item.deductible_percentage != null ? `${item.deductible_percentage}%` : '100%'}</span>
-                                          {item.deductible_percentage === 70 && <span className="text-[10px] opacity-75 font-normal">(70/30)</span>}
-                                          <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
-                                        </>
-                                      )}
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="text-xs z-[120]">
-                                  ÁFA levonhatósági arány módosítása
-                                </TooltipContent>
-                                <DropdownMenuContent align="center" className="w-56 z-[110]">
-                                  <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 100)} className="cursor-pointer">
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mr-2" />
-                                    <span className="font-medium">100% — Teljes levonhatóság</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 70)} className="cursor-pointer">
-                                    <Sparkles className="h-3.5 w-3.5 text-amber-500 mr-2" />
-                                    <span className="font-medium text-amber-600 dark:text-amber-400">70% — Telefon (70/30)</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 50)} className="cursor-pointer">
-                                    <Info className="h-3.5 w-3.5 text-blue-500 mr-2" />
-                                    <span>50% — Részleges levonhatóság</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 0)} className="cursor-pointer">
-                                    <X className="h-3.5 w-3.5 text-red-500 mr-2" />
-                                    <span className="text-destructive font-medium">0% — Nem levonható</span>
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </Tooltip>
+                            <div className="inline-flex items-center justify-center gap-1.5">
+                              <Tooltip>
+                                <DropdownMenu>
+                                  <TooltipTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        type="button"
+                                        disabled={updatingDeductibleId === item.id}
+                                        className={cn(
+                                          "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border shadow-sm",
+                                          (item.deductible_percentage === 70)
+                                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/25"
+                                            : (item.deductible_percentage === 0)
+                                            ? "bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/25"
+                                            : (item.deductible_percentage != null && item.deductible_percentage < 100)
+                                            ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/25"
+                                            : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80"
+                                        )}
+                                      >
+                                        {updatingDeductibleId === item.id ? (
+                                          <Loader2 className="h-3 w-3 animate-spin" />
+                                        ) : (
+                                          <>
+                                            <span>{item.deductible_percentage != null ? `${item.deductible_percentage}%` : '100%'}</span>
+                                            {item.deductible_percentage === 70 && <span className="text-[10px] opacity-75 font-normal">(70/30)</span>}
+                                            <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
+                                          </>
+                                        )}
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs z-[120]">
+                                    ÁFA levonhatósági arány módosítása
+                                  </TooltipContent>
+                                  <DropdownMenuContent align="center" className="w-56 z-[110]">
+                                    <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 100)} className="cursor-pointer">
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mr-2" />
+                                      <span className="font-medium">100% — Teljes levonhatóság</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 70)} className="cursor-pointer">
+                                      <Sparkles className="h-3.5 w-3.5 text-amber-500 mr-2" />
+                                      <span className="font-medium text-amber-600 dark:text-amber-400">70% — Telefon (70/30)</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 50)} className="cursor-pointer">
+                                      <Info className="h-3.5 w-3.5 text-blue-500 mr-2" />
+                                      <span>50% — Részleges levonhatóság</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 0)} className="cursor-pointer">
+                                      <X className="h-3.5 w-3.5 text-red-500 mr-2" />
+                                      <span className="text-destructive font-medium">0% — Nem levonható</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </Tooltip>
+                              {postedItemIds.has(item.id) && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-flex items-center text-amber-500 hover:text-amber-600 cursor-help p-0.5">
+                                      <Lock className="h-3.5 w-3.5" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs max-w-[240px] z-[130]">
+                                    Ez a tétel már le van könyvelve a naplóban (lezárt tétel). Az áfa módosítás a számlán érvényesül, de a zárt könyvelést nem írja felül automatikusan.
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
                           </TableCell>
                         )}
                         <TableCell className="text-right font-mono font-medium">
