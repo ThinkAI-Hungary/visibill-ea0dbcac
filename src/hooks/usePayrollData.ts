@@ -1178,7 +1178,9 @@ export function useRunBatchPayroll() {
           hourlyRate = baseSalary;
           dailyRate = hourlyRate * dailyHours;
 
-          const actualWorkedHours = (attendance.workDays || 0) * dailyHours;
+          const actualWorkedHours = (attendance.workedHours !== undefined && attendance.workedHours !== null && Number(attendance.workedHours) > 0)
+            ? Number(attendance.workedHours)
+            : (attendance.workDays || 0) * dailyHours;
           const sickHours = (attendance.sickDays || 0) * dailyHours;
           const leaveHours = (attendance.leaveDays || 0) * dailyHours;
 
@@ -1213,9 +1215,10 @@ export function useRunBatchPayroll() {
         const sundayPremium = Number(empItems.find((i: any) => i.item_type === 'sunday_premium')?.amount || 0);
         const holidayPremium = Number(empItems.find((i: any) => i.item_type === 'holiday_premium')?.amount || 0);
         const bonus = Number(empItems.find((i: any) => i.item_type === 'bonus')?.amount || 0);
+        const serviceCharge = Number(empItems.find((i: any) => i.item_type === 'service_charge')?.amount || 0);
         
         const otherExtras = empItems
-          .filter((i: any) => !i.is_deduction && !['base_salary', 'overtime', 'night_shift', 'sunday_premium', 'holiday_premium', 'bonus', 'sick_leave'].includes(i.item_type))
+          .filter((i: any) => !i.is_deduction && !['base_salary', 'overtime', 'night_shift', 'sunday_premium', 'holiday_premium', 'bonus', 'sick_leave', 'service_charge'].includes(i.item_type))
           .reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
 
         // Sum deductions from items
@@ -1296,6 +1299,7 @@ export function useRunBatchPayroll() {
             holidayPremium,
             bonus,
             sickLeave: finalSickLeave,
+            serviceCharge,
             otherIncome: leaveAmount + otherExtras,
           },
           declarations,

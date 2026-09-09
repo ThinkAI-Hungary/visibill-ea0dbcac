@@ -60,4 +60,5 @@ Hogyan biztosítsuk a 8-lépéses bérszámfejtési ciklusban a kézzel bevitt j
 - [P-033: Bérszámfejtési Ciklus Workflow](./P-033-payroll-cycle.md)
 - [P-063: Bérszámfejtés Gyors Rekonstrukció és Dolgozói Tömeges Import UX](./P-063-payroll-bulk-import-and-reconstruction-ux.md)
 - [A-094: Bérszámfejtési Ciklus Végtelen Re-render Védelem és Jelenlét Perzisztencia](../../architecture/decisions/A-094-payroll-cycle-render-stability-and-attendance-persistence.md)
+- [A-106: Saját Jogú Nyugdíjas Járulékmentesség, Megbízási Munkaidő Rugalmasság és Vendéglátóipari Felszolgálási Díj Adózás](../../architecture/decisions/A-106-pensioner-tax-exemption-and-service-charge-taxation.md)
 - [A-083: Rules of Hooks Invariáns Garantálása](../../architecture/decisions/A-083-rules-of-hooks-invariance-and-test-telemetry-guard.md)

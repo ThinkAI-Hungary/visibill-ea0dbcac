@@ -333,4 +333,73 @@ describe('calculatePayroll — Minimális járulékalap és Új Cafeteria / Lakh
     // Foreign trip: 5 days * 15 EUR * 420 = 31_500
     expect(result.travelReimbursementAmount).toBe(31_500);
   });
+
+  describe('Nyugdíjas munkavállaló járulék- és adómentessége (Tbj. 6. § és Szocho tv. 5. § (1) f))', () => {
+    it('öregségi nyugdíjas normál munkaviszonyban mentes a 18.5% TB és a 13% SZOCHO alól, csak 15% SZJA terheli', () => {
+      // Zsófi / Carman-Food esete: 322 800 Ft bruttó bér
+      const result = calculatePayroll(makeInput(322_800, {
+        isPensioner: true,
+        isInsured: true,
+      }));
+
+      expect(result.grossSalary).toBe(322_800);
+      expect(result.szjaAmount).toBe(48_420); // 15% SZJA
+      expect(result.tbAmount).toBe(0); // 0% TB (nem biztosított)
+      expect(result.szochoAmount).toBe(0); // 0% SZOCHO (mentes kifizetői teher)
+      expect(result.netSalary).toBe(274_380); // 322 800 - 48 420
+      expect(result.totalEmployerCost).toBe(322_800); // 322 800 + 0 Szocho
+    });
+
+    it('nyugdíjas magasabb bérnél (500 000 Ft) is 0 Ft TB-t és 0 Ft SZOCHO-t kap', () => {
+      const result = calculatePayroll(makeInput(500_000, {
+        isPensioner: true,
+      }));
+
+      expect(result.szjaAmount).toBe(75_000); // 500k * 0.15
+      expect(result.tbAmount).toBe(0);
+      expect(result.szochoAmount).toBe(0);
+      expect(result.netSalary).toBe(425_000);
+      expect(result.totalEmployerCost).toBe(500_000);
+    });
+  });
+
+  describe('Felszolgálási díj vendéglátásban (71/2005. GKM, Szja tv. 1. sz. melléklet 4.38., Szocho tv. 5. § (1) m))', () => {
+    it('normál munkavállaló esetén: SZJA mentes (0%), SZOCHO mentes (0%), de TB járulék köteles (18.5%)', () => {
+      const input = makeInput(300_000);
+      input.grossComponents.serviceCharge = 100_000;
+
+      const result = calculatePayroll(input);
+
+      // Bruttó bér = 300 000 alapbér + 100 000 felszolgálási díj = 400 000 Ft
+      expect(result.grossSalary).toBe(400_000);
+      // SZJA adóalap csak a 300 000 Ft (felszolgálási díj 0% SZJA) -> 45 000 Ft
+      expect(result.szjaBase).toBe(300_000);
+      expect(result.szjaAmount).toBe(45_000);
+      // TB alap a teljes 400 000 Ft (18.5%) -> 74 000 Ft
+      expect(result.tbBase).toBe(400_000);
+      expect(result.tbAmount).toBe(74_000);
+      // SZOCHO alap csak a 300 000 Ft (felszolgálási díj mentes) -> 39 000 Ft
+      expect(result.szochoBase).toBe(300_000);
+      expect(result.szochoAmount).toBe(39_000);
+      // Nettó bér: 400 000 - 45 000 (SZJA) - 74 000 (TB) = 281 000 Ft
+      expect(result.netSalary).toBe(281_000);
+      // Munkáltatói összköltség: 400 000 bruttó + 39 000 szocho = 439 000 Ft
+      expect(result.totalEmployerCost).toBe(439_000);
+      expect(result.serviceChargeAmount).toBe(100_000);
+    });
+
+    it('nyugdíjas munkavállaló esetén a felszolgálási díj is teljesen TB és SZOCHO mentes', () => {
+      const input = makeInput(300_000, { isPensioner: true });
+      input.grossComponents.serviceCharge = 100_000;
+
+      const result = calculatePayroll(input);
+
+      expect(result.grossSalary).toBe(400_000);
+      expect(result.szjaAmount).toBe(45_000); // csak az alapbérre 15%
+      expect(result.tbAmount).toBe(0); // nyugdíjas mentes TB alól
+      expect(result.szochoAmount).toBe(0); // nyugdíjas mentes SZOCHO alól
+      expect(result.netSalary).toBe(355_000); // 400 000 - 45 000
+      expect(result.totalEmployerCost).toBe(400_000);
+    });
+  });
 });

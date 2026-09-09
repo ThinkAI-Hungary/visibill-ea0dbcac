@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:e2e": "playwright test",
-    "gen-db-docs": "node scripts/gen-db-docs.js"
+    "gen-db-docs": "node scripts/gen-db-docs.js",
+    "kb:sync": "node scripts/syncKnowledgeBase.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

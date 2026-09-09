@@ -54,7 +54,7 @@ export async function generateDraftsFallback(
   const glCustId = glCust1Id || glAccounts?.[0]?.id;
 
   const glVatDedId = glAccounts?.find(g => g.gl_number === '4661')?.id || glAccounts?.find(g => g.gl_number === '466')?.id;
-  const glVatProRataId = glAccounts?.find(g => g.gl_number === '4668')?.id || glVatDedId;
+  const glVatProRataId = glAccounts?.find(g => g.gl_number === '4668')?.id;
   const glVatPayId = glAccounts?.find(g => g.gl_number === '4671')?.id || glAccounts?.find(g => g.gl_number === '467')?.id;
 
   if (!glCustId || !glSuppId) return 0;
@@ -101,6 +101,7 @@ export async function generateDraftsFallback(
   ]);
 
   const parentInvMap = new Map<string, any>();
+  const parentNavMap = new Map<string, any>();
   parentInvRes.data?.forEach((inv: any) => parentInvMap.set(inv.id, inv));
   parentNavRes.data?.forEach((inv: any) => parentNavMap.set(inv.id, inv));
 
@@ -347,7 +348,12 @@ export async function generateDraftsFallback(
           });
         }
       } else {
-        // Inbound: Line 1 (T Költség Net ALAP)
+        const deductiblePct = vatDetail?.deductible_percentage ?? 100;
+        const isExpenseGross = (deductiblePct === 0 && !glVatProRataId);
+        const hufExpense = isExpenseGross ? Math.round((hufNet + hufVat) * 100) / 100 : hufNet;
+        const foreignExpense = (isExpenseGross && foreignVat !== null) ? Math.round(((foreignNet || 0) + foreignVat) * 100) / 100 : foreignNet;
+
+        // Inbound: Line 1 (T Költség Net ALAP or Gross if no 4668)
         const { data: baseLine } = await supabase
           .from('acc_journal_lines')
           .insert({
@@ -355,8 +361,8 @@ export async function generateDraftsFallback(
             sequence_number: 1,
             gl_account_id: item.gl_account_id,
             dc_type: 'T',
-            amount: hufNet,
-            foreign_amount: foreignNet,
+            amount: hufExpense,
+            foreign_amount: foreignExpense,
             vat_code: itemVatRate.substring(0, 16) || null,
             vat_role: 'ALAP',
             description: item.description
@@ -365,9 +371,8 @@ export async function generateDraftsFallback(
           .single();
 
         let seq = 2;
-        // Fakov Rule 3: Pro-rata VAT deduction (Arányosítható ÁFA 4668)
-        if (hufVat > 0 && baseLine) {
-          const deductiblePct = vatDetail?.deductible_percentage ?? 100;
+        // Pro-rata & Deductible VAT
+        if (hufVat > 0 && baseLine && !isExpenseGross) {
           if (deductiblePct < 100 && deductiblePct > 0) {
             const hufVatDed = Math.round(hufVat * (deductiblePct / 100) * 100) / 100;
             const hufVatProRata = Math.round((hufVat - hufVatDed) * 100) / 100;
@@ -519,4 +524,3 @@ export async function generateDraftsFallback(
 
   return createdCount;
 }
-

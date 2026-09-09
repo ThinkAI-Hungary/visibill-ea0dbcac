@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { Coffee, Smartphone, Home, Gift, User, Loader2, Sparkles } from 'lucide-react';
+import { Coffee, Smartphone, Home, Gift, User, Loader2, Sparkles, UtensilsCrossed } from 'lucide-react';
 
 interface PayrollStep4Props {
   activeEmployees: any[];
@@ -129,6 +129,17 @@ export default function PayrollStep4({
             <li><strong>Rekreációs keret (Aktív Magyarok)</strong>: Évi max. 120 000 Ft-ig (havi 10 000 Ft) 28%-os adózás, afelett szintén egyes meghatározott juttatásként 33.04%.</li>
             <li><strong>Lakhatási támogatás (35 év alattiaknak)</strong>: Havi max. 150 000 Ft-ig adómentes juttatás a dolgozónak, a cégnek 28% munkáltatói közteher (SZJA + SZOCHO). 35 év felett a támogatás teljes mértékben bérként adózik.</li>
           </ul>
+        </div>
+      </div>
+
+      {/* Tip for Service Charge (Felszolgálási díj) */}
+      <div className="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-xl flex items-start gap-3">
+        <UtensilsCrossed className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="text-xs text-amber-800 dark:text-amber-200">
+          <p className="font-semibold text-amber-900 dark:text-amber-100">Vendéglátóipari felszolgálási díjat rögzítenél?</p>
+          <p className="mt-0.5">
+            A felszolgálási díj törvényileg bérjellegű juttatásnak minősül (0% SZJA, 18,5% TB [nyugdíjasnál 0%], 0% SZOCHO terheli), ezért nem a Cafeteria keretben, hanem a <strong>következő (5. Bruttó bér és pótlékok) lépésben</strong> adható meg közvetlenül dolgozónként!
+          </p>
         </div>
       </div>
 

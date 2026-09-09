@@ -101,6 +101,9 @@ describe('draftFallbackGenerator', () => {
       if (table === 'acc_journal_headers') {
         return {
           delete: vi.fn().mockReturnValue({ eq: deleteEq1 }),
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: [], error: null })
+          }),
           insert: vi.fn().mockImplementation((payload) => {
             insertedHeaders.push(payload);
             return {
@@ -178,7 +181,8 @@ describe('draftFallbackGenerator', () => {
       }
       return {
         select: vi.fn().mockReturnValue({
-          in: vi.fn().mockResolvedValue({ data: [], error: null })
+          in: vi.fn().mockResolvedValue({ data: [], error: null }),
+          eq: vi.fn().mockResolvedValue({ data: [], error: null })
         })
       };
     });
@@ -205,6 +209,138 @@ describe('draftFallbackGenerator', () => {
 
     expect(suppLine).toBeDefined();
     expect(suppLine.amount).toBe(34077);
+    expect(suppLine.dc_type).toBe('K');
+  });
+
+  it('should process 0% deductible invoice items into 2-legged entries with full gross expense and no 466 line', async () => {
+    const mockItems = [
+      {
+        item_id: 'item-inv-fuel',
+        gl_account_id: 'mock-exp-5121',
+        source_table: 'invoice_items',
+        item_type: 'Bejövő (Költség)',
+        partner: 'OMV Hungária Kft.',
+        description: 'OMV Super 95',
+        amount: -18628,
+        original_amount: -18628,
+        original_currency: 'HUF',
+        item_date: '2026-07-28'
+      }
+    ];
+
+    const insertedHeaders: any[] = [];
+    const insertedLines: any[] = [];
+
+    vi.mocked(supabase.rpc).mockImplementation(async (rpcName: string) => {
+      if (rpcName === 'get_gl_categorized_items') {
+        return { data: mockItems, error: null } as any;
+      }
+      return { data: null, error: null } as any;
+    });
+
+    vi.mocked(supabase.from).mockImplementation((table: string): any => {
+      if (table === 'acc_journals') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+              data: [{ id: 'journal-sz', code: 'SZ', type: 'SUPPLIER' }],
+              error: null
+            })
+          })
+        };
+      }
+      if (table === 'gl_accounts') {
+        return {
+          select: vi.fn().mockReturnValue({
+            or: vi.fn().mockResolvedValue({
+              data: [
+                { id: 'mock-supp-4541', gl_number: '4541', short_name: 'Szállítók' },
+                { id: 'mock-vat-466', gl_number: '466', short_name: 'Levonható ÁFA' },
+                { id: 'mock-exp-5121', gl_number: '5121', short_name: 'Üzemanyagok' }
+              ],
+              error: null
+            })
+          })
+        };
+      }
+      if (table === 'acc_journal_headers') {
+        return {
+          delete: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ data: null, error: null })
+            })
+          }),
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: [], error: null })
+          }),
+          insert: vi.fn().mockImplementation((payload) => {
+            insertedHeaders.push(payload);
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: { id: 'hdr-fuel' }, error: null })
+              })
+            };
+          })
+        };
+      }
+      if (table === 'invoice_items') {
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+              data: [{ id: 'item-inv-fuel', vat_amount: 5029, vat_rate: '27%', deductible_percentage: 0 }],
+              error: null
+            })
+          })
+        };
+      }
+      if (table === 'daily_exchange_rates') {
+        return {
+          select: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: [], error: null })
+          })
+        };
+      }
+      if (table === 'acc_journal_lines') {
+        return {
+          insert: vi.fn().mockImplementation((payload) => {
+            if (Array.isArray(payload)) {
+              insertedLines.push(...payload);
+            } else {
+              insertedLines.push(payload);
+            }
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: { id: 'line-fuel' }, error: null })
+              })
+            };
+          })
+        };
+      }
+      return {
+        select: vi.fn().mockReturnValue({
+          in: vi.fn().mockResolvedValue({ data: [], error: null }),
+          eq: vi.fn().mockResolvedValue({ data: [], error: null })
+        })
+      };
+    });
+
+    const count = await generateDraftsFallback(mockCompanyId, mockPresetId);
+    expect(count).toBe(1);
+
+    // 2 legs: Gross expense (Seq 1: 18628 + 5029 = 23657), Supplier Gross (Seq 2: 23657), NO 466 line!
+    expect(insertedLines.length).toBe(2);
+    const expLine = insertedLines.find(l => l.vat_role === 'ALAP');
+    const vatLine = insertedLines.find(l => l.vat_role === 'AFA');
+    const suppLine = insertedLines.find(l => l.vat_role === 'NONE');
+
+    expect(expLine).toBeDefined();
+    expect(expLine.amount).toBe(23657);
+    expect(expLine.dc_type).toBe('T');
+
+    expect(vatLine).toBeUndefined(); // 466 line is absent!
+
+    expect(suppLine).toBeDefined();
+    expect(suppLine.amount).toBe(23657);
     expect(suppLine.dc_type).toBe('K');
   });
 });

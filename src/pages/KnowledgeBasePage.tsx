@@ -6,7 +6,10 @@ import {
 } from "@/hooks/useKnowledgeBase";
 import { KnowledgeArticle } from "@/types/knowledgeBase";
 import { KnowledgeBaseHeader } from "@/components/knowledge-base/KnowledgeBaseHeader";
-import { KnowledgeCategoryPills } from "@/components/knowledge-base/KnowledgeCategoryPills";
+import {
+  KnowledgeCategoryPills,
+  KnowledgeAppScope,
+} from "@/components/knowledge-base/KnowledgeCategoryPills";
 import { KnowledgeArticleCard } from "@/components/knowledge-base/KnowledgeArticleCard";
 import { KnowledgeArticleReader } from "@/components/knowledge-base/KnowledgeArticleReader";
 import { useScopedBasePath } from "@/lib/navigation";
@@ -24,7 +27,17 @@ export default function KnowledgeBasePage() {
 
   const initialCategory = searchParams.get("category") || null;
   const initialQuery = searchParams.get("q") || "";
+  const initialScopeParam = searchParams.get("scope");
+  const initialScope: KnowledgeAppScope =
+    initialScopeParam === "eaisybill" || initialScopeParam === "eaisybooks" || initialScopeParam === "all"
+      ? initialScopeParam
+      : initialCategory
+      ? initialCategory.startsWith("books_")
+        ? "eaisybooks"
+        : "eaisybill"
+      : "all";
 
+  const [selectedScope, setSelectedScope] = useState<KnowledgeAppScope>(initialScope);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(initialCategory);
   const [searchQuery, setSearchQuery] = useState<string>(initialQuery);
 
@@ -32,14 +45,25 @@ export default function KnowledgeBasePage() {
   useEffect(() => {
     const urlCategory = searchParams.get("category") || null;
     const urlQuery = searchParams.get("q") || "";
+    const urlScope = searchParams.get("scope");
     setSelectedCategoryId(urlCategory);
     setSearchQuery(urlQuery);
+    if (urlScope === "eaisybill" || urlScope === "eaisybooks" || urlScope === "all") {
+      setSelectedScope(urlScope);
+    } else if (urlCategory) {
+      setSelectedScope(urlCategory.startsWith("books_") ? "eaisybooks" : "eaisybill");
+    }
   }, [searchParams]);
 
   // Sync state to URL search params
   const updateQueryParams = useCallback(
-    (catId: string | null, query: string) => {
+    (scope: KnowledgeAppScope, catId: string | null, query: string) => {
       const params = new URLSearchParams(searchParams);
+      if (scope !== "all") {
+        params.set("scope", scope);
+      } else {
+        params.delete("scope");
+      }
       if (catId) {
         params.set("category", catId);
       } else {
@@ -55,26 +79,43 @@ export default function KnowledgeBasePage() {
     [searchParams, setSearchParams]
   );
 
+  const handleSelectScope = useCallback(
+    (scope: KnowledgeAppScope) => {
+      setSelectedScope(scope);
+      let nextCat = selectedCategoryId;
+      if (selectedCategoryId) {
+        const isBooks = selectedCategoryId.startsWith("books_");
+        if (scope === "eaisybill" && isBooks) nextCat = null;
+        if (scope === "eaisybooks" && !isBooks) nextCat = null;
+      }
+      setSelectedCategoryId(nextCat);
+      updateQueryParams(scope, nextCat, searchQuery);
+    },
+    [selectedCategoryId, searchQuery, updateQueryParams]
+  );
+
   const handleSelectCategory = useCallback(
     (catId: string | null) => {
       setSelectedCategoryId(catId);
-      updateQueryParams(catId, searchQuery);
+      updateQueryParams(selectedScope, catId, searchQuery);
     },
-    [searchQuery, updateQueryParams]
+    [selectedScope, searchQuery, updateQueryParams]
   );
 
   const handleSearchChange = useCallback(
     (query: string) => {
       setSearchQuery(query);
-      updateQueryParams(selectedCategoryId, query);
+      updateQueryParams(selectedScope, selectedCategoryId, query);
     },
-    [selectedCategoryId, updateQueryParams]
+    [selectedScope, selectedCategoryId, updateQueryParams]
   );
 
   const handleClearFilters = useCallback(() => {
+    setSelectedScope("all");
     setSelectedCategoryId(null);
     setSearchQuery("");
     const params = new URLSearchParams(searchParams);
+    params.delete("scope");
     params.delete("category");
     params.delete("q");
     setSearchParams(params, { replace: true });
@@ -85,30 +126,56 @@ export default function KnowledgeBasePage() {
   const { data: allArticles = [], isLoading: isLoadingArticles } = useKnowledgeArticles();
 
   // Category counts computed from full article list
-  const { categoryArticleCounts, totalArticlesCount } = useMemo(() => {
+  const {
+    categoryArticleCounts,
+    totalArticlesCount,
+    eaisybillArticlesCount,
+    eaisybooksArticlesCount,
+  } = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const cat of categories) {
       counts[cat.id] = 0;
     }
+    let eaisyBillCount = 0;
+    let eaisyBooksCount = 0;
+
     for (const art of allArticles) {
       if (counts[art.category_id] !== undefined) {
         counts[art.category_id]++;
       } else {
         counts[art.category_id] = 1;
       }
+      if (art.category_id.startsWith("books_")) {
+        eaisyBooksCount++;
+      } else {
+        eaisyBillCount++;
+      }
     }
     return {
       categoryArticleCounts: counts,
       totalArticlesCount: allArticles.length,
+      eaisybillArticlesCount: eaisyBillCount,
+      eaisybooksArticlesCount: eaisyBooksCount,
     };
   }, [categories, allArticles]);
 
-  // Filtered articles list based on selected category and search
+  // Filtered articles list based on selected scope, category and search
   const filteredArticles = useMemo(() => {
     return allArticles.filter((article) => {
+      // 1. Module scope filter
+      if (selectedScope === "eaisybill" && article.category_id.startsWith("books_")) {
+        return false;
+      }
+      if (selectedScope === "eaisybooks" && !article.category_id.startsWith("books_")) {
+        return false;
+      }
+
+      // 2. Specific category filter
       if (selectedCategoryId && article.category_id !== selectedCategoryId) {
         return false;
       }
+
+      // 3. Search query filter
       if (searchQuery.trim().length > 0) {
         const q = searchQuery.toLowerCase().trim();
         const inTitle = article.title.toLowerCase().includes(q);
@@ -119,7 +186,7 @@ export default function KnowledgeBasePage() {
       }
       return true;
     });
-  }, [allArticles, selectedCategoryId, searchQuery]);
+  }, [allArticles, selectedScope, selectedCategoryId, searchQuery]);
 
   // Current active article if articleId is in route
   const activeArticle = useMemo(() => {
@@ -194,14 +261,18 @@ export default function KnowledgeBasePage() {
             filteredArticles={filteredArticles.length}
           />
 
-          {/* Category Tabs */}
+          {/* 2-Tier Header: Module Scope (Összes, eaisyBill, eaisyBooks) + Subcategories */}
           <div className="flex items-center justify-between gap-4">
             <KnowledgeCategoryPills
               categories={categories}
+              selectedScope={selectedScope}
+              onSelectScope={handleSelectScope}
               selectedCategoryId={selectedCategoryId}
               onSelectCategory={handleSelectCategory}
               categoryArticleCounts={categoryArticleCounts}
               totalArticlesCount={totalArticlesCount}
+              eaisybillArticlesCount={eaisybillArticlesCount}
+              eaisybooksArticlesCount={eaisybooksArticlesCount}
             />
           </div>
 
