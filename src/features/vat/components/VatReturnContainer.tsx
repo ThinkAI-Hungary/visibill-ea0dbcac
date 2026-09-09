@@ -46,6 +46,9 @@ class VatReturnErrorBoundary extends React.Component<
   }
 }
 
+import { VatCollectorAnalyticsView } from './VatCollectorAnalyticsView';
+import { Layers } from 'lucide-react';
+
 export function VatReturnContainer() {
   const { selectedCompany } = useCompany();
 
@@ -62,8 +65,8 @@ export function VatReturnContainer() {
       <PageHeader
         companyName={selectedCompany?.name}
         breadcrumb="ÁFA Bevallás (2665)"
-        title="ÁFA Bevallás"
-        description="2665-ös nyomtatvány — havi, negyedéves és éves ÁFA bevallás generálás"
+        title="ÁFA Bevallás & Gyűjtőkódos Analitika"
+        description="2665-ös nyomtatvány — ÁFA bevallás generálás és NAV gyűjtőkódos analitikus kimutatások"
       />
 
       <Tabs defaultValue="return" className="space-y-4">
@@ -75,6 +78,12 @@ export function VatReturnContainer() {
             <Calculator className="w-4 h-4" /> Bevallás
           </TabsTrigger>
           <TabsTrigger
+            value="analytics"
+            className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Layers className="w-4 h-4" /> Gyűjtőkódos Analitika
+          </TabsTrigger>
+          <TabsTrigger
             value="config"
             className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
@@ -84,6 +93,11 @@ export function VatReturnContainer() {
         <TabsContent value="return">
           <VatReturnErrorBoundary>
             <VatReturnViewTab />
+          </VatReturnErrorBoundary>
+        </TabsContent>
+        <TabsContent value="analytics">
+          <VatReturnErrorBoundary>
+            <VatCollectorAnalyticsView />
           </VatReturnErrorBoundary>
         </TabsContent>
         <TabsContent value="config">

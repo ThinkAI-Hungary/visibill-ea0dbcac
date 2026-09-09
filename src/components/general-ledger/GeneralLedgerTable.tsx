@@ -200,15 +200,17 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     }
   }, [presetId]);
 
+  const DEFAULT_EXPANDED_IDS = ['1', '2', '3', '31', '311', '4', '45', '454', '46', '466', '5', '8', '9', 'UNCLASSIFIED'];
+
   // Cache tree expansion state in localStorage
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem(`visibill_gl_expanded_${presetId}_${selectedCompany?.id}`);
+      const stored = localStorage.getItem(`visibill_gl_expanded_v2_${presetId}_${selectedCompany?.id}`);
       if (stored) {
         return new Set(JSON.parse(stored));
       }
     } catch (e) {}
-    return new Set(['1', '13', '14']);
+    return new Set(DEFAULT_EXPANDED_IDS);
   });
   
   const [highlightedRowId, setHighlightedRowId] = useState<string | null>(null);
@@ -217,14 +219,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   useEffect(() => {
     if (!presetId || !selectedCompany?.id) return;
     try {
-      const stored = localStorage.getItem(`visibill_gl_expanded_${presetId}_${selectedCompany.id}`);
+      const stored = localStorage.getItem(`visibill_gl_expanded_v2_${presetId}_${selectedCompany.id}`);
       if (stored) {
         setExpandedRowIds(new Set(JSON.parse(stored)));
       } else {
-        setExpandedRowIds(new Set(['1', '13', '14']));
+        setExpandedRowIds(new Set(DEFAULT_EXPANDED_IDS));
       }
     } catch (e) {
-      setExpandedRowIds(new Set(['1', '13', '14']));
+      setExpandedRowIds(new Set(DEFAULT_EXPANDED_IDS));
     }
   }, [presetId, selectedCompany?.id]);
 
@@ -232,7 +234,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     if (!presetId || !selectedCompany?.id) return;
     try {
       localStorage.setItem(
-        `visibill_gl_expanded_${presetId}_${selectedCompany.id}`,
+        `visibill_gl_expanded_v2_${presetId}_${selectedCompany.id}`,
         JSON.stringify(Array.from(expandedRowIds))
       );
     } catch (e) {}
@@ -1176,8 +1178,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         <div className="bg-muted/80 border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none">
           <div className="grid grid-cols-12 divide-x divide-border/50">
             <div className="col-span-2 p-3 text-center text-xs text-foreground uppercase tracking-wider">Fők. szám</div>
-            <div className="col-span-7 p-3 text-xs text-foreground uppercase tracking-wider">Megnevezés</div>
-            <div className="col-span-3 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">Összesített Egyenleg</div>
+            <div className="col-span-8 p-3 text-xs text-foreground uppercase tracking-wider">Megnevezés</div>
+            <div className="col-span-2 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">Összesített Egyenleg</div>
           </div>
         </div>
         {/* Skeleton Body */}
@@ -1190,11 +1192,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                 <div className="col-span-2 flex items-center justify-center">
                   <Skeleton className="h-4 w-12 bg-muted/50 rounded" />
                 </div>
-                <div className="col-span-7 flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
+                <div className="col-span-8 flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
                   <div className="w-4 h-4 shrink-0" />
                   <Skeleton className={cn("h-4 bg-muted/50 rounded", depth === 0 ? 'w-48' : depth === 1 ? 'w-36' : 'w-24')} />
                 </div>
-                <div className="col-span-3 flex justify-end">
+                <div className="col-span-2 flex justify-end">
                   <Skeleton className="h-4 w-24 bg-muted/50 rounded" />
                 </div>
               </div>
@@ -1203,8 +1205,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         </div>
         {/* Skeleton Footer */}
         <div className="shrink-0 grid grid-cols-12 border-t border-border/60 bg-muted/95 backdrop-blur font-bold text-sm">
-          <div className="col-span-9 p-3 text-right uppercase tracking-wider text-muted-foreground text-xs">Összesen:</div>
-          <div className="col-span-3 p-3 flex items-center justify-end gap-2 pr-4">
+          <div className="col-span-10 p-3 text-right uppercase tracking-wider text-muted-foreground text-xs">Összesen:</div>
+          <div className="col-span-2 p-3 flex items-center justify-end gap-2 pr-4">
             <Skeleton className="h-4 w-24 bg-muted/50 rounded" />
             <Skeleton className="h-6 w-6 rounded-full bg-muted/50" />
           </div>
@@ -1276,8 +1278,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               <div className="bg-muted/80 backdrop-blur-md border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none shadow-sm">
                 <div className="grid grid-cols-12 divide-x divide-border/50">
                   <div className="col-span-2 p-3 text-center text-xs text-foreground uppercase tracking-wider">Fők. szám</div>
-                  <div className="col-span-7 p-3 text-xs text-foreground uppercase tracking-wider">Megnevezés</div>
-                  <div className="col-span-3 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">Összesített Egyenleg</div>
+                  <div className="col-span-8 p-3 text-xs text-foreground uppercase tracking-wider">Megnevezés</div>
+                  <div className="col-span-2 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">Összesített Egyenleg</div>
                 </div>
               </div>
 
@@ -1315,12 +1317,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                         <div className="col-span-2 p-3 flex items-center justify-center">
                           <Loader2 className="w-4 h-4 animate-spin text-primary" />
                         </div>
-                        <div className="col-span-7 py-3 pr-3 text-sm flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
+                        <div className="col-span-8 py-3 pr-3 text-sm flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
                           <span className="text-xs text-muted-foreground italic flex items-center gap-2">
                             {row.name}
                           </span>
                         </div>
-                        <div className="col-span-3 p-3 flex justify-end items-center" />
+                        <div className="col-span-2 p-3 flex justify-end items-center" />
                       </div>
                     );
                   }
@@ -1396,7 +1398,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                            )
                         )}
                       </div>
-                      <div className="col-span-7 py-3 pr-3 text-sm flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
+                      <div className="col-span-8 py-3 pr-3 text-sm flex items-center gap-2 min-w-0" style={{ paddingLeft: indentPadding }}>
                         <div className="w-4 h-4 shrink-0 flex items-center justify-center print:hidden">
                           {row.hasChildren && (
                             <div className="text-muted-foreground/70 hover:text-foreground hover:bg-muted p-0.5 rounded-sm transition-colors">
@@ -1405,7 +1407,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           )}
                         </div>
                         <CustomTooltip content={row.name} side="top">
-                          <span className={cn("truncate", isRoot ? "uppercase" : "", row.isItem ? "text-muted-foreground italic" : "")}>
+                          <span className={cn("break-words min-w-0 font-medium leading-normal", isRoot ? "uppercase font-semibold text-foreground" : "", row.isItem ? "text-muted-foreground italic" : "")}>
                             {row.name}
                           </span>
                         </CustomTooltip>
@@ -1426,7 +1428,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                         )}
                       </div>
                       
-                      <div className={cn("col-span-3 p-3 flex justify-end items-center gap-4 text-sm tabular-nums font-medium")}>
+                      <div className={cn("col-span-2 p-3 flex justify-end items-center gap-4 text-sm tabular-nums font-medium")}>
                          <div className="flex flex-col items-end">
                            {row.isItem ? (
                              row.isTemporary ? (
@@ -1554,8 +1556,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
           {/* Fixed Footer at the bottom of the table card */}
           <div className="shrink-0 grid grid-cols-12 border-t border-border/60 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bg-muted/95 backdrop-blur font-bold text-sm z-20 print:border-t-2">
-             <div className="col-span-9 p-3 text-right uppercase tracking-wider text-muted-foreground">Összesen:</div>
-             <div className="col-span-3 p-3 text-right tabular-nums text-foreground flex items-center justify-end gap-2 pr-4">
+             <div className="col-span-10 p-3 text-right uppercase tracking-wider text-muted-foreground">Összesen:</div>
+             <div className="col-span-2 p-3 text-right tabular-nums text-foreground flex items-center justify-end gap-2 pr-4">
                 {isDataLoading ? (
                   <div className="h-4 w-20 animate-pulse bg-muted rounded" />
                 ) : (

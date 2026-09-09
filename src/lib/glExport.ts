@@ -309,3 +309,125 @@ export const exportGlAnalyticalExcel = async (
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
+
+// ── NAV ÁFA Gyűjtőkódos Analitika Export (Fakov Kft. elvárás) ──
+
+export interface VatCollectorGroup {
+  code: string;
+  label: string;
+  items: {
+    id?: string;
+    invoice_number: string;
+    partner_name: string;
+    fulfillment_date: string;
+    net_amount: number;
+    vat_amount: number;
+    gross_amount: number;
+  }[];
+  total_net: number;
+  total_vat: number;
+  total_gross: number;
+}
+
+export const exportVatCollectorAnalyticsExcel = async (
+  groups: VatCollectorGroup[],
+  companyName: string = 'Vállalkozás',
+  periodLabel: string = ''
+) => {
+  const { default: ExcelJS } = await import('exceljs');
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Visibill';
+  workbook.created = new Date();
+
+  const ws = workbook.addWorksheet('ÁFA Gyűjtőkód Analitika', {
+    views: [{ showGridLines: false }],
+  });
+
+  ws.columns = [
+    { header: 'ÁFA Gyűjtőkód / Bizonylatszám', key: 'col1', width: 34 },
+    { header: 'Partner neve', key: 'col2', width: 35 },
+    { header: 'Teljesítés dátuma', key: 'col3', width: 18 },
+    { header: 'Nettó alap (HUF)', key: 'net', width: 20 },
+    { header: 'ÁFA összeg (HUF)', key: 'vat', width: 20 },
+    { header: 'Bruttó érték (HUF)', key: 'gross', width: 20 },
+  ];
+
+  const headerRow = ws.getRow(1);
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+  headerRow.height = 28;
+
+  const numFmt = '#,##0.00';
+  let grandNet = 0;
+  let grandVat = 0;
+  let grandGross = 0;
+
+  for (const group of groups) {
+    const groupHeaderRow = ws.addRow({
+      col1: `Gyűjtőkód: ${group.code} — ${group.label}`,
+      col2: '',
+      col3: '',
+      net: group.total_net,
+      vat: group.total_vat,
+      gross: group.total_gross,
+    });
+
+    groupHeaderRow.font = { bold: true, size: 11, color: { argb: 'FF1E40AF' } };
+    groupHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF6FF' } };
+    groupHeaderRow.getCell('net').numFmt = numFmt;
+    groupHeaderRow.getCell('vat').numFmt = numFmt;
+    groupHeaderRow.getCell('gross').numFmt = numFmt;
+
+    for (const item of group.items) {
+      const itemRow = ws.addRow({
+        col1: `    ${item.invoice_number}`,
+        col2: item.partner_name,
+        col3: item.fulfillment_date ? item.fulfillment_date.substring(0, 10).replace(/-/g, '.') : '-',
+        net: item.net_amount,
+        vat: item.vat_amount,
+        gross: item.gross_amount,
+      });
+
+      itemRow.font = { size: 9, color: { argb: 'FF374151' } };
+      itemRow.getCell('net').numFmt = numFmt;
+      itemRow.getCell('vat').numFmt = numFmt;
+      itemRow.getCell('gross').numFmt = numFmt;
+    }
+
+    grandNet += group.total_net;
+    grandVat += group.total_vat;
+    grandGross += group.total_gross;
+  }
+
+  // Grand Total Row
+  const totalRow = ws.addRow({
+    col1: 'ÖSSZESEN (NAV ÁFA Analitika)',
+    col2: '',
+    col3: '',
+    net: grandNet,
+    vat: grandVat,
+    gross: grandGross,
+  });
+
+  totalRow.font = { bold: true, size: 11 };
+  totalRow.getCell('net').numFmt = numFmt;
+  totalRow.getCell('vat').numFmt = numFmt;
+  totalRow.getCell('gross').numFmt = numFmt;
+  totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+
+  const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+  const filename = `AFA_Gyujtokodos_Analitika_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.xlsx`;
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};

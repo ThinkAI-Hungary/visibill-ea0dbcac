@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { SubmittedInvoice, NavInvoice, TransactionRecord } from '../../types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SubmittedInvoiceRowProps {
   invoice: SubmittedInvoice;
@@ -235,6 +236,33 @@ export function SubmittedInvoiceRow({
         </TableCell>
 
         <TableCell className="text-center">
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center justify-center p-1">
+                  <Checkbox
+                    checked={invoice.is_accountant_reviewed === true}
+                    onCheckedChange={async (checked) => {
+                      const nextVal = !!checked;
+                      await supabase
+                        .from('invoices')
+                        .update({ is_accountant_reviewed: nextVal } as any)
+                        .eq('id', invoice.id);
+                      invalidateInvoiceData?.();
+                    }}
+                    className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 cursor-pointer"
+                    aria-label="Kikontírozva statusz valtoztatasa"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-xs font-medium">Kikontírozott / Könyvelve jelölés</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </TableCell>
+
+        <TableCell className="text-center">
           <div className="flex items-center justify-center gap-1.5">
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground border border-black/10 dark:border-white/10">
               {invoice.fizetesi_mod || 'Nem megadott'}
@@ -330,7 +358,7 @@ export function SubmittedInvoiceRow({
 
       {isExpanded && matches && (
         <ExpandedInvoiceRow
-          colSpan={12}
+          colSpan={13}
           matchedSubmittedInvoices={[]}
           matchedNavInvoices={matches.matchedNav}
           matchedTransactions={matches.matchedTransactions}

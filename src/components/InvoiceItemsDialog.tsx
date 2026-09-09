@@ -1157,9 +1157,33 @@ export function InvoiceItemsDialog({
                           {formatAmount(item.net_amount)}
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                            {formatVatRate(item.vat_rate)}
-                          </span>
+                          {(() => {
+                            const getVatCollectorCode = (rate: string | null): string => {
+                              if (!rate) return '25';
+                              const upper = rate.toUpperCase();
+                              if (upper.includes('FAD')) return 'FAD';
+                              if (rate === '0.27' || rate === '27' || rate === '27.0' || rate === '27.00') return '25';
+                              if (rate === '0.05' || rate === '5' || rate === '5.0' || rate === '5.00') return '05';
+                              if (rate === '0.18' || rate === '18' || rate === '18.0' || rate === '18.00') return '18';
+                              if (upper.includes('AAM')) return 'AAM';
+                              if (upper.includes('TAM')) return 'TAM';
+                              return '25';
+                            };
+                            const code = getVatCollectorCode(item.vat_rate);
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 cursor-help">
+                                    <span className="font-mono font-bold">{code}</span>
+                                    <span className="text-[11px] opacity-80">({formatVatRate(item.vat_rate)})</span>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs z-[120]">
+                                  ÁFA Gyűjtőkód: <strong className="font-mono">{code}</strong> (Alapértelmezett kód 27%-os tételekre: 25)
+                                </TooltipContent>
+                              </Tooltip>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="text-right font-mono">
                           {formatAmount(item.vat_amount)}

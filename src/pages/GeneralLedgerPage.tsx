@@ -633,30 +633,6 @@ export default function GeneralLedgerPage() {
                   presetId={activePresetId}
                   onSelect={(result) => tableRef.current?.navigateToEntity(result)}
                 />
-                <div className="flex items-center gap-1 border-l pl-3 border-border/60">
-                  <CustomTooltip content="Összes szint kinyitása" side="bottom">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-9 px-2 text-xs gap-1 text-muted-foreground"
-                      onClick={() => tableRef.current?.expandAll()}
-                    >
-                      <Maximize2 className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Kinyit</span>
-                    </Button>
-                  </CustomTooltip>
-                  <CustomTooltip content="Összes szint összecsukása" side="bottom">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-9 px-2 text-xs gap-1 text-muted-foreground"
-                      onClick={() => tableRef.current?.collapseAll()}
-                    >
-                      <Minimize2 className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Összecsuk</span>
-                    </Button>
-                  </CustomTooltip>
-                </div>
                 {/* Dátum alap kapcsoló (Kibocsátás vs Teljesítés) */}
                 {renderDateBasisToggle()}
                 {/* Státusz szűrő kapcsoló (Összes tétel vs Csak lekönyvelt) */}

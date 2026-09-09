@@ -50,7 +50,7 @@ export function NavInvoiceTable({
   } = useInvoiceContext();
 
   const isColSpan15 = activeTab === 'INBOUND';
-  const colSpan = isColSpan15 ? 15 : 13;
+  const colSpan = isColSpan15 ? 15 : 14;
 
   return (
     <>
@@ -198,9 +198,9 @@ export function NavInvoiceTable({
                     </div>
                   </TableHead>
 
-                  {activeTab === 'INBOUND' && (
-                    <TableHead className="font-semibold text-center whitespace-nowrap">Beküldve</TableHead>
-                  )}
+                  <TableHead className="font-semibold text-center whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                    Kikontírozva
+                  </TableHead>
                   {activeTab === 'INBOUND' && (
                     <TableHead className="font-semibold text-center whitespace-nowrap">Kategória</TableHead>
                   )}

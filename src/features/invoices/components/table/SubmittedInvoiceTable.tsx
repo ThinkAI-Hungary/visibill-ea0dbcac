@@ -166,6 +166,10 @@ export function SubmittedInvoiceTable({
                     </div>
                   </TableHead>
 
+                  <TableHead className="font-semibold text-center whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                    Kikontírozva
+                  </TableHead>
+
                   <TableHead className="font-semibold text-center whitespace-nowrap">Fiz. mód</TableHead>
                   <TableHead className="font-semibold text-center whitespace-nowrap">Tételek</TableHead>
                   <TableHead className="font-semibold text-center whitespace-nowrap">Számla kép</TableHead>
@@ -175,10 +179,10 @@ export function SubmittedInvoiceTable({
 
               <TableBody>
                 {loading || tabFetching ? (
-                  <TableSkeleton rows={10} columns={12} />
+                  <TableSkeleton rows={10} columns={13} />
                 ) : paginatedSubmittedInvoices.length === 0 ? (
                   <TableEmptyState
-                    colSpan={12}
+                    colSpan={13}
                     title={
                       kpiFilter !== 'all'
                         ? 'Nincs ilyen státuszú számla ezen az oldalon'
@@ -205,7 +209,7 @@ export function SubmittedInvoiceTable({
                 <TablePlaceholderRows
                   currentCount={paginatedSubmittedInvoices.length}
                   pageSize={submittedPageSize}
-                  columns={12}
+                  columns={13}
                 />
               </TableBody>
             </Table>

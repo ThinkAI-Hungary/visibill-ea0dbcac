@@ -66,7 +66,7 @@ export function VatTrendChart({ companyId }: { companyId: string }) {
               <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} tickFormatter={(v: number) => `${v}`} />
               <RechartsTooltip
                 contentStyle={{ fontSize: '11px', borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
-                formatter={(value: number, name: string) => [fmtTooltip(value), name === 'payable' ? 'Fizetendő' : name === 'deductible' ? 'Levonható' : 'Egyenleg']}
+                formatter={(value: number, name: string) => [fmtTooltip(value), name]}
               />
               <Area type="monotone" dataKey="payable" stroke="#ef4444" strokeWidth={2} fill="url(#vatPayable)" name="Fizetendő" />
               <Area type="monotone" dataKey="deductible" stroke="#10b981" strokeWidth={2} fill="url(#vatDeductible)" name="Levonható" />

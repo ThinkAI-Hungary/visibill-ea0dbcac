@@ -329,18 +329,36 @@ export function NavInvoiceRow({
           </div>
         </TableCell>
 
-        {activeTab === 'INBOUND' && (
-          <TableCell className="text-center">
-            <Checkbox
-              checked={
-                invoice.submitted === true ||
-                (navToSubmittedMap.get(normalizeInvoiceNumber(invoice.invoice_number))?.length ?? 0) > 0
-              }
-              disabled
-              className="cursor-default opacity-70"
-            />
-          </TableCell>
-        )}
+        <TableCell className="text-center">
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center justify-center p-1">
+                  <Checkbox
+                    checked={
+                      invoice.is_accountant_reviewed === true ||
+                      invoice.submitted === true ||
+                      (navToSubmittedMap.get(normalizeInvoiceNumber(invoice.invoice_number))?.length ?? 0) > 0
+                    }
+                    onCheckedChange={async (checked) => {
+                      const nextVal = !!checked;
+                      await supabase
+                        .from('nav_invoices')
+                        .update({ is_accountant_reviewed: nextVal } as any)
+                        .eq('id', invoice.id);
+                      invalidateInvoiceData?.();
+                    }}
+                    className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 cursor-pointer"
+                    aria-label="Kikontírozva statusz valtoztatasa"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-xs font-medium">Kikontírozott / Könyvelve jelölés</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </TableCell>
 
         {activeTab === 'INBOUND' &&
           (() => {

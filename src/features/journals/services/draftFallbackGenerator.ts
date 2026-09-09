@@ -39,10 +39,23 @@ export async function generateDraftsFallback(
     .select('id, code, type, currency')
     .eq('company_id', companyId);
 
-  const glCustId = glAccounts?.find(g => g.gl_number.startsWith('311'))?.id || glAccounts?.[0]?.id;
-  const glSuppId = glAccounts?.find(g => g.gl_number.startsWith('4541'))?.id || glAccounts?.find(g => g.gl_number.startsWith('454'))?.id || glCustId;
-  const glVatDedId = glAccounts?.find(g => g.gl_number.startsWith('466'))?.id;
-  const glVatPayId = glAccounts?.find(g => g.gl_number.startsWith('467'))?.id;
+  // Fakov GL Account Resolution:
+  // Suppliers: 4541 (Belföldi), 4542 (Külföldi), 4543 (Fordított ÁFA / FAD)
+  // Customers: 3111 (Belföldi), 3112 (Külföldi), 3113 (Fordított ÁFA / FAD)
+  // VAT: 466 (Levonható), 4668 (Arányosítandó / nem levonható), 467 (Fizetendő)
+  const glSupp1Id = glAccounts?.find(g => g.gl_number === '4541')?.id || glAccounts?.find(g => g.gl_number.startsWith('454'))?.id;
+  const glSupp2Id = glAccounts?.find(g => g.gl_number === '4542')?.id || glSupp1Id;
+  const glSupp3Id = glAccounts?.find(g => g.gl_number === '4543')?.id || glSupp1Id;
+  const glSuppId = glSupp1Id || glAccounts?.[0]?.id;
+
+  const glCust1Id = glAccounts?.find(g => g.gl_number === '3111')?.id || glAccounts?.find(g => g.gl_number.startsWith('311'))?.id;
+  const glCust2Id = glAccounts?.find(g => g.gl_number === '3112')?.id || glCust1Id;
+  const glCust3Id = glAccounts?.find(g => g.gl_number === '3113')?.id || glCust1Id;
+  const glCustId = glCust1Id || glAccounts?.[0]?.id;
+
+  const glVatDedId = glAccounts?.find(g => g.gl_number === '4661')?.id || glAccounts?.find(g => g.gl_number === '466')?.id;
+  const glVatProRataId = glAccounts?.find(g => g.gl_number === '4668')?.id || glVatDedId;
+  const glVatPayId = glAccounts?.find(g => g.gl_number === '4671')?.id || glAccounts?.find(g => g.gl_number === '467')?.id;
 
   if (!glCustId || !glSuppId) return 0;
 
@@ -58,25 +71,73 @@ export async function generateDraftsFallback(
       Math.abs(item.amount) > 0
   );
 
-  // Batch-fetch item VAT details in parallel to eliminate N+1 network waterfall
+  // Batch-fetch item VAT details & parent invoice metadata (for pro-rata VAT & continuous service date & partner routing)
   const invoiceItemIds = validItems.filter((i: any) => i.source_table === 'invoice_items').map((i: any) => i.item_id);
   const navItemIds = validItems.filter((i: any) => i.source_table === 'nav_invoice_items').map((i: any) => i.item_id);
 
   const [invRes, navRes] = await Promise.all([
     invoiceItemIds.length > 0
-      ? supabase.from('invoice_items').select('id, vat_amount, vat_rate').in('id', invoiceItemIds)
+      ? supabase.from('invoice_items').select('id, invoice_id, vat_amount, vat_rate, deductible_percentage').in('id', invoiceItemIds)
       : Promise.resolve({ data: [] }),
     navItemIds.length > 0
-      ? supabase.from('nav_invoice_items').select('id, vat_amount, vat_rate').in('id', navItemIds)
+      ? supabase.from('nav_invoice_items').select('id, invoice_id, vat_amount, vat_rate, deductible_percentage').in('id', navItemIds)
       : Promise.resolve({ data: [] })
   ]);
 
-  const vatDetailsMap = new Map<string, { vat_amount: number; vat_rate: string }>();
+  const parentInvIds = Array.from(new Set([
+    ...(invRes.data || []).map((i: any) => i.invoice_id).filter(Boolean),
+  ]));
+  const parentNavIds = Array.from(new Set([
+    ...(navRes.data || []).map((i: any) => i.invoice_id).filter(Boolean)
+  ]));
+
+  const [parentInvRes, parentNavRes] = await Promise.all([
+    parentInvIds.length > 0
+      ? supabase.from('invoices').select('id, service_period_end, is_continuous, partner_tax_number, currency').in('id', parentInvIds)
+      : Promise.resolve({ data: [] }),
+    parentNavIds.length > 0
+      ? supabase.from('nav_invoices').select('id, service_period_end, is_continuous, seller_tax_number, buyer_tax_number, currency').in('id', parentNavIds)
+      : Promise.resolve({ data: [] })
+  ]);
+
+  const parentInvMap = new Map<string, any>();
+  parentInvRes.data?.forEach((inv: any) => parentInvMap.set(inv.id, inv));
+  parentNavRes.data?.forEach((inv: any) => parentNavMap.set(inv.id, inv));
+
+  const vatDetailsMap = new Map<string, { 
+    vat_amount: number; 
+    vat_rate: string; 
+    deductible_percentage: number;
+    service_period_end: string | null;
+    is_continuous: boolean;
+    partner_tax_number: string | null;
+    currency: string | null;
+  }>();
+
   invRes.data?.forEach((i: any) => {
-    vatDetailsMap.set(i.id, { vat_amount: Number(i.vat_amount) || 0, vat_rate: i.vat_rate || '' });
+    const parent = parentInvMap.get(i.invoice_id);
+    vatDetailsMap.set(i.id, {
+      vat_amount: Number(i.vat_amount) || 0,
+      vat_rate: i.vat_rate || '',
+      deductible_percentage: i.deductible_percentage !== null && i.deductible_percentage !== undefined ? Number(i.deductible_percentage) : 100,
+      service_period_end: parent?.service_period_end || null,
+      is_continuous: !!parent?.is_continuous,
+      partner_tax_number: parent?.partner_tax_number || null,
+      currency: parent?.currency || null,
+    });
   });
+
   navRes.data?.forEach((i: any) => {
-    vatDetailsMap.set(i.id, { vat_amount: Number(i.vat_amount) || 0, vat_rate: i.vat_rate || '' });
+    const parent = parentNavMap.get(i.invoice_id);
+    vatDetailsMap.set(i.id, {
+      vat_amount: Number(i.vat_amount) || 0,
+      vat_rate: i.vat_rate || '',
+      deductible_percentage: i.deductible_percentage !== null && i.deductible_percentage !== undefined ? Number(i.deductible_percentage) : 100,
+      service_period_end: parent?.service_period_end || null,
+      is_continuous: !!parent?.is_continuous,
+      partner_tax_number: parent?.seller_tax_number || parent?.buyer_tax_number || null,
+      currency: parent?.currency || null,
+    });
   });
 
   const effectiveVatDedId = glVatDedId || glAccounts?.find(g => g.gl_number.startsWith('466'))?.id;
@@ -170,22 +231,37 @@ export async function generateDraftsFallback(
       createdCount++;
     } else {
       // Invoices: 3-legged double entry
-      if (item.amount >= 0) {
-        if (!glCustId || !validGlIds.has(glCustId) || !validGlIds.has(item.gl_account_id)) {
+      const vatDetail = vatDetailsMap.get(item.item_id);
+      const itemVat = vatDetail?.vat_amount || 0;
+      const itemVatRate = vatDetail?.vat_rate || '';
+      const isOutbound = item.amount >= 0;
+
+      // Fakov Rule 4: Continuous service posting date (Számviteli tv / Ptk: elszámolási időszak utolsó napja)
+      const postingDate = (vatDetail?.is_continuous && vatDetail?.service_period_end)
+        ? vatDetail.service_period_end.substring(0, 10)
+        : itemDate;
+
+      // Fakov Rule 5: Dynamic Partner GL routing
+      // FAD check (vas/acél, építőipar, mezőgazdaság, HO, FAD)
+      const isReverseCharge = itemVatRate.toUpperCase().includes('FAD') || 
+                              itemVatRate.toUpperCase().includes('HO') || 
+                              itemVatRate.toUpperCase().includes('REVERSE');
+      const isForeignPartner = currency !== 'HUF' || 
+                               (vatDetail?.partner_tax_number ? !vatDetail.partner_tax_number.trim().toUpperCase().startsWith('HU') : false);
+
+      const targetCustId = isReverseCharge ? glCust3Id : (isForeignPartner ? glCust2Id : glCust1Id);
+      const targetSuppId = isReverseCharge ? glSupp3Id : (isForeignPartner ? glSupp2Id : glSupp1Id);
+
+      if (isOutbound) {
+        if (!targetCustId || !validGlIds.has(targetCustId) || !validGlIds.has(item.gl_account_id)) {
           continue;
         }
       } else {
-        if (!glSuppId || !validGlIds.has(glSuppId) || !validGlIds.has(item.gl_account_id)) {
+        if (!targetSuppId || !validGlIds.has(targetSuppId) || !validGlIds.has(item.gl_account_id)) {
           continue;
         }
       }
 
-      // Read item-level VAT from fast in-memory map
-      const vatDetail = vatDetailsMap.get(item.item_id);
-      const itemVat = vatDetail?.vat_amount || 0;
-      const itemVatRate = vatDetail?.vat_rate || '';
-
-      const isOutbound = item.amount >= 0;
       const targetVatAccountId = isOutbound ? effectiveVatPayId : effectiveVatDedId;
       const hufNet = amount;
       const foreignNet = foreignAmount;
@@ -213,7 +289,7 @@ export async function generateDraftsFallback(
           status: 'GEPI_JAVASLAT',
           entry_type: 'NORMAL',
           source: source,
-          posting_date: itemDate,
+          posting_date: postingDate,
           document_date: itemDate,
           document_id: docId,
           description: item.description || 'Automatikus bizonylat javaslat',
@@ -228,11 +304,11 @@ export async function generateDraftsFallback(
       if (hErr) continue;
 
       if (isOutbound) {
-        // Outbound: Line 1 (T Vevő 311 Gross), Line 2 (K Árbevétel Net ALAP), Line 3 (K ÁFA 467 AFA)
+        // Outbound: Line 1 (T Vevő 3111/3112/3113 Gross), Line 2 (K Árbevétel Net ALAP), Line 3 (K ÁFA 467 AFA)
         await supabase.from('acc_journal_lines').insert({
           header_id: header.id,
           sequence_number: 1,
-          gl_account_id: glCustId,
+          gl_account_id: targetCustId,
           dc_type: 'T',
           amount: hufGross,
           foreign_amount: foreignGross,
@@ -271,7 +347,7 @@ export async function generateDraftsFallback(
           });
         }
       } else {
-        // Inbound: Line 1 (T Költség Net ALAP), Line 2 (T ÁFA 466 AFA), Line 3 (K Szállító 4541 Gross)
+        // Inbound: Line 1 (T Költség Net ALAP)
         const { data: baseLine } = await supabase
           .from('acc_journal_lines')
           .insert({
@@ -288,11 +364,60 @@ export async function generateDraftsFallback(
           .select('id')
           .single();
 
-        if (hufVat > 0 && effectiveVatDedId && baseLine) {
-          await supabase.from('acc_journal_lines').insert([
-            {
+        let seq = 2;
+        // Fakov Rule 3: Pro-rata VAT deduction (Arányosítható ÁFA 4668)
+        if (hufVat > 0 && baseLine) {
+          const deductiblePct = vatDetail?.deductible_percentage ?? 100;
+          if (deductiblePct < 100 && deductiblePct > 0) {
+            const hufVatDed = Math.round(hufVat * (deductiblePct / 100) * 100) / 100;
+            const hufVatProRata = Math.round((hufVat - hufVatDed) * 100) / 100;
+
+            if (hufVatDed > 0 && effectiveVatDedId) {
+              await supabase.from('acc_journal_lines').insert({
+                header_id: header.id,
+                sequence_number: seq++,
+                gl_account_id: effectiveVatDedId,
+                dc_type: 'T',
+                amount: hufVatDed,
+                foreign_amount: foreignVat ? Math.round(foreignVat * (deductiblePct / 100) * 100) / 100 : null,
+                vat_code: itemVatRate.substring(0, 16) || null,
+                vat_role: 'AFA',
+                parent_line_id: baseLine.id,
+                description: `Levonható ÁFA (${deductiblePct}%)`
+              });
+            }
+
+            if (hufVatProRata > 0 && glVatProRataId) {
+              await supabase.from('acc_journal_lines').insert({
+                header_id: header.id,
+                sequence_number: seq++,
+                gl_account_id: glVatProRataId,
+                dc_type: 'T',
+                amount: hufVatProRata,
+                foreign_amount: foreignVat ? Math.round(foreignVat * ((100 - deductiblePct) / 100) * 100) / 100 : null,
+                vat_code: itemVatRate.substring(0, 16) || null,
+                vat_role: 'AFA',
+                parent_line_id: baseLine.id,
+                description: `Arányosítandó / nem levonható ÁFA (${100 - deductiblePct}%)`
+              });
+            }
+          } else if (deductiblePct === 0 && glVatProRataId) {
+            await supabase.from('acc_journal_lines').insert({
               header_id: header.id,
-              sequence_number: 2,
+              sequence_number: seq++,
+              gl_account_id: glVatProRataId,
+              dc_type: 'T',
+              amount: hufVat,
+              foreign_amount: foreignVat,
+              vat_code: itemVatRate.substring(0, 16) || null,
+              vat_role: 'AFA',
+              parent_line_id: baseLine.id,
+              description: 'Nem levonható ÁFA (100%)'
+            });
+          } else if (effectiveVatDedId) {
+            await supabase.from('acc_journal_lines').insert({
+              header_id: header.id,
+              sequence_number: seq++,
               gl_account_id: effectiveVatDedId,
               dc_type: 'T',
               amount: hufVat,
@@ -301,30 +426,21 @@ export async function generateDraftsFallback(
               vat_role: 'AFA',
               parent_line_id: baseLine.id,
               description: 'Levonható ÁFA'
-            },
-            {
-              header_id: header.id,
-              sequence_number: 3,
-              gl_account_id: glSuppId,
-              dc_type: 'K',
-              amount: hufGross,
-              foreign_amount: foreignGross,
-              vat_role: 'NONE',
-              description: item.description
-            }
-          ]);
-        } else {
-          await supabase.from('acc_journal_lines').insert({
-            header_id: header.id,
-            sequence_number: 2,
-            gl_account_id: glSuppId,
-            dc_type: 'K',
-            amount: hufGross,
-            foreign_amount: foreignGross,
-            vat_role: 'NONE',
-            description: item.description
-          });
+            });
+          }
         }
+
+        // Supplier Credit Line (K 4541/4542/4543 Gross)
+        await supabase.from('acc_journal_lines').insert({
+          header_id: header.id,
+          sequence_number: seq,
+          gl_account_id: targetSuppId,
+          dc_type: 'K',
+          amount: hufGross,
+          foreign_amount: foreignGross,
+          vat_role: 'NONE',
+          description: item.description
+        });
       }
 
       createdCount++;
