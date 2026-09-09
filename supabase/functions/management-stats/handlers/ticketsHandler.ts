@@ -99,6 +99,7 @@ export async function createTicketOnBehalf(
     .insert({
       id: ticketId,
       user_id: targetUserId,
+      created_by: adminUserId,
       user_email: targetEmail,
       user_name: targetName,
       company_id: companyId || null,
@@ -110,9 +111,9 @@ export async function createTicketOnBehalf(
       page_url: pageUrl || "/management?view=tickets",
       attachments: attachments && attachments.length > 0 ? attachments : null,
       assigned_to: assignedTo || null,
-      status: "new",
+      status: assignedTo ? "assigned" : "created",
     })
-    .select("id, ticket_number, status, priority, type, service, created_at, user_id, user_email, user_name, company_name")
+    .select("id, ticket_number, status, priority, type, service, created_at, user_id, user_email, user_name, company_name, created_by")
     .single();
 
   if (insertError) {
@@ -120,38 +121,15 @@ export async function createTicketOnBehalf(
     return { error: `Nem sikerült létrehozni a hibajegyet: ${insertError.message}` };
   }
 
-  // 5. Check admin name for internal audit event
-  let adminName = "Support Admin";
+  // 5. Mark ticket as read for the creator admin
   try {
-    const { data: adminProf } = await admin
-      .from("profiles")
-      .select("name")
-      .eq("user_id", adminUserId)
-      .maybeSingle();
-    if (adminProf?.name) {
-      adminName = adminProf.name;
-    }
-  } catch (_) {}
-
-  // 6. Insert audit trail in ticket_events (so support knows it was created on behalf by this admin)
-  try {
-    await admin.from("ticket_events").insert({
+    await admin.from("ticket_reads").insert({
       feedback_id: ticketId,
-      event_type: "created",
-      actor_id: adminUserId,
-      actor_name: adminName,
-      new_value: ticket.ticket_number,
-      metadata: {
-        created_on_behalf: true,
-        created_by_admin_id: adminUserId,
-        created_by_admin_name: adminName,
-        target_user_id: targetUserId,
-        target_user_email: targetEmail,
-        target_user_name: targetName,
-      },
+      user_id: adminUserId,
+      last_read_at: new Date().toISOString(),
     });
-  } catch (eventErr) {
-    console.warn("[MANAGEMENT-STATS create-ticket] Failed to log admin audit event:", eventErr);
+  } catch (readErr) {
+    console.warn("[MANAGEMENT-STATS create-ticket] Failed to record creator ticket_reads:", readErr);
   }
 
   return {

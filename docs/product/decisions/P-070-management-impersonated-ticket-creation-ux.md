@@ -39,10 +39,10 @@ A modál a következő komponensekből és beviteli lépésekből áll:
    - **Szolgáltatás:** `eaisybill` vagy `accounty` (eaisyBooks) választó gombok/select.
    - **Típus:** Hiba (`bug`), Visszajelzés (`feedback`), vagy Kérdés (`question`).
    - **Prioritás:** Alacsony (`low`), Normál (`medium`), Magas (`high`), vagy Kritikus (`critical`) vizuális színkódolással.
-   - **Kezdő Felelős (Assignee):** Opcionálisan azonnal hozzárendelhető a céges support csapat tagjaihoz.
-4. **Tárgy és Leírás (RichTextEditor):**
-   - **Tárgy (Title):** Kötelező egysoros beviteli mező.
-   - **Leírás (Description):** Támogatja a formázott szöveget (félkövér, dőlt, listák, idézetek, kódblokkok).
+   - **Kezdő Felelős (Assignee & Kezdő üzenet szerzője):** Alapértelmezetten az éppen bejelentkezett management felhasználóra (`user.id`) mutat, és a legördülőből módosítható.
+4. **Kezdő Üzenet az Ügyfélnek (RichTextEditor):**
+   - **Címke:** Kezdő üzenet az ügyfélnek. Támogatja a formázott szöveget (félkövér, dőlt, listák, idézetek, kódblokkok).
+   - **Szerzői attribúció (Staff-Initiated Ticket Flow):** A jegy részletes nézetében (`TicketDetailView`) az első üzenet feladójaként a hozzárendelt felelős (support munkatárs) jelenik meg Support jelvénnyel, így a kommunikációs szál tiszta párbeszédként indul.
    - **Gyorsbillentyű:** `Ctrl + Enter` (vagy `Cmd + Enter`) azonnali beküldés támogatása.
 5. **Csatolmányok (Attachments Dropzone):**
    - Húzással (drag-and-drop) vagy fájlböngészővel tallózható fájlok.
@@ -51,8 +51,9 @@ A modál a következő komponensekből és beviteli lépésekből áll:
    - Csatolmányonkénti törlési lehetőség a feladás előtt.
 
 ### C. Sikeres Beküldés Utáni UX
-- **Async Loading Állapot:** A feladás gomb töltési animációt (`Loader2`) és inaktív állapotot mutat.
-- **Siker Visszajelzés:** Zöld toast értesítés a sikeres jegynyitásról, megjelölve a generált jegyszámot (pl. `#T-1042`).
+- **Async Loading Állapot:** A feladás gomb töltési animációt (`Loader2`) és inaktív állapotot mutat (`Küldés folyamatban...`).
+- **Siker Visszajelzés:** Zöld toast értesítés: `Megkeresés sikeresen elindítva` a jegyszám és címzett megjelenítésével.
+- **Olvasatlansági Állapot:** Az ügyfélnél a jegy olvasatlanként jelenik meg (kiemelés + számláló), míg a létrehozó adminnál automatikusan rögzül a `ticket_reads` bejegyzés.
 - **Azonnali Lista Frissítés és Megnyitás:**
   - A dialógus bezáródik.
   - A TanStack Query invalidálja a jegylistát (`['tickets']`) és az olvasatlan számlálókat.

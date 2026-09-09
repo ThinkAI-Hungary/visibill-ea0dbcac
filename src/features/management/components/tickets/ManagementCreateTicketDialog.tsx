@@ -24,6 +24,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { useAuth } from "@/contexts/AuthContext";
 import { useSupportAgents } from "@/hooks/useTickets";
 import { useManagementCreateTicket } from "../../hooks/useManagementCreateTicket";
 import { uploadTicketImage, isAllowedTicketFile, MAX_FILE_SIZE } from "@/lib/upload-ticket-image";
@@ -72,9 +73,23 @@ export function ManagementCreateTicketDialog({
   users,
   onTicketCreated,
 }: ManagementCreateTicketDialogProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
   const { data: supportAgents = [] } = useSupportAgents();
   const { mutateAsync: createTicket, isPending: isSubmitting } = useManagementCreateTicket();
+
+  // Support agent options, ensuring current user is available as option
+  const agentOptions = useMemo(() => {
+    if (!user) return supportAgents;
+    const exists = supportAgents.some((a) => a.user_id === user.id);
+    if (!exists && user.id) {
+      return [
+        { user_id: user.id, name: user.user_metadata?.name || user.email || "Én (Aktuális munkatárs)" },
+        ...supportAgents,
+      ];
+    }
+    return supportAgents;
+  }, [supportAgents, user]);
 
   // Form states
   const [selectedUserId, setSelectedUserId] = useState<string>("");
@@ -85,7 +100,7 @@ export function ManagementCreateTicketDialog({
   const [service, setService] = useState<string>("eaisybill");
   const [type, setType] = useState<string>("bug");
   const [priority, setPriority] = useState<string>("medium");
-  const [assignedTo, setAssignedTo] = useState<string>("unassigned");
+  const [assignedTo, setAssignedTo] = useState<string>(user?.id || "unassigned");
   const [message, setMessage] = useState<string>("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [editorKey, setEditorKey] = useState<number>(0);
@@ -125,12 +140,12 @@ export function ManagementCreateTicketDialog({
     setService("eaisybill");
     setType("bug");
     setPriority("medium");
-    setAssignedTo("unassigned");
+    setAssignedTo(user?.id || "unassigned");
     setMessage("");
     setAttachments([]);
     setEditorKey((k) => k + 1);
     setIsDragOver(false);
-  }, []);
+  }, [user?.id]);
 
   // When dialog opens, reset form
   useEffect(() => {
@@ -252,11 +267,10 @@ export function ManagementCreateTicketDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <TicketPlus className="h-5 w-5 text-primary" />
-            Új hibajegy nyitása ügyfél nevében
+            Új megkeresés indítása ügyfél felé
           </DialogTitle>
           <DialogDescription>
-            A létrehozott hibajegy közvetlenül a kiválasztott felhasználóhoz kapcsolódik, és az ő
-            felületén fog megjelenni, mintha ő maga küldte volna be.
+            Közvetlen kapcsolatfelvétel az ügyféllel. A jegy megjelenik az ügyfél hibajegyei között, a kezdő üzenet pedig a megadott felelős (support munkatárs) nevében fog megjelenni.
           </DialogDescription>
         </DialogHeader>
 
@@ -454,7 +468,7 @@ export function ManagementCreateTicketDialog({
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
                 <Headset className="h-3.5 w-3.5" />
-                Kezdő Felelős
+                Kezdő Felelős (Szerző)
               </Label>
               <Select value={assignedTo} onValueChange={setAssignedTo}>
                 <SelectTrigger className="h-10">
@@ -462,9 +476,9 @@ export function ManagementCreateTicketDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unassigned">Kiosztatlan</SelectItem>
-                  {supportAgents.map((agent) => (
+                  {agentOptions.map((agent) => (
                     <SelectItem key={agent.user_id} value={agent.user_id}>
-                      {agent.name}
+                      {agent.name} {agent.user_id === user?.id ? " (Én)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -475,7 +489,7 @@ export function ManagementCreateTicketDialog({
           {/* ═══ 4. Szöveges Leírás (Rich Text Editor) ═══ */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
-              <span>Hibajegy leírása és részletei *</span>
+              <span>Kezdő üzenet az ügyfélnek *</span>
               <span className="text-[11px] font-normal text-muted-foreground">
                 Ctrl+Enter a beküldéshez
               </span>
@@ -484,7 +498,7 @@ export function ManagementCreateTicketDialog({
               <RichTextEditor
                 key={editorKey}
                 onChange={setMessage}
-                placeholder="Írd le a hiba vagy kérdés részleteit (mit tapasztalt az ügyfél, melyik számlánál/oldalon stb.)..."
+                placeholder="Írd meg a kezdő üzenetet az ügyfélnek (pl. Kedves Kristóf, az alábbi témában szeretnénk egyeztetni veled...)..."
                 minHeight="140px"
                 toolbarVariant="ticket"
                 onSubmit={handleSubmit}
@@ -589,12 +603,12 @@ export function ManagementCreateTicketDialog({
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Rögzítés folyamatban...</span>
+                <span>Küldés folyamatban...</span>
               </>
             ) : (
               <>
                 <TicketPlus className="h-4 w-4" />
-                <span>Hibajegy Létrehozása</span>
+                <span>Megkeresés Küldése</span>
               </>
             )}
           </Button>

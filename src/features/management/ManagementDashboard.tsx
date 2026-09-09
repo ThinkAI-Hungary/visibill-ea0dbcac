@@ -224,7 +224,7 @@ export function ManagementDashboard() {
       {/* ═══ TICKETS ═══ */}
       {view === 'tickets' && (
         <div className="flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
-          <main className="w-full max-w-7xl mx-auto px-6 py-8">
+          <main className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 py-6">
             <TicketsPage embeddedInManagement={true} managementUsers={overview?.users || []} />
           </main>
         </div>

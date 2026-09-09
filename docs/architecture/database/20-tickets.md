@@ -71,7 +71,7 @@
 
 **Event típusok:**
 - `created` — jegy létrehozva
-- `status_changed` — státusz módosítás (old_value → new_value: pl. `new` → `in_progress`)
+- `status_changed` — státusz módosítás (old_value → new_value: pl. `created` / `assigned` / `in_progress` / `resolved`)
 - `comment_added` — hozzászólás
 - `assignee_changed` — felelős módosítás (old_value → new_value: felelős neve, vagy NULL ha nincs)
 

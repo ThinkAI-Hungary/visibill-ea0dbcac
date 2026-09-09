@@ -43,10 +43,14 @@ import {
   ShieldAlert,
   Paperclip,
   Eye,
+  CircleDot,
+  UserCheck,
+  CheckCircle2,
 } from "lucide-react";
 import { uploadTicketImage, isAllowedTicketFile } from "@/lib/upload-ticket-image";
 import { TicketStatusBadge } from "./TicketStatusBadge";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
+import { ThinkAiBadge, ThinkAiIcon } from "./ThinkAiBadge";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import {
@@ -95,7 +99,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const { data, isLoading: isTicketLoading } = useTicketDetail(feedbackId);
   const ticket = data?.ticket;
   const comments = data?.comments || [];
-  const { isLoading: isEventsLoading } = useTicketEvents(feedbackId);
+  const { data: ticketEvents = [], isLoading: isEventsLoading } = useTicketEvents(feedbackId);
   const { mutate: addComment, isPending: isCommenting } = useAddComment();
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateTicketStatus();
   const { mutate: markRead } = useMarkTicketRead();
@@ -351,9 +355,9 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column: message + comments skeleton */}
-          <div className="lg:col-span-2 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Fő tartalom skeleton */}
+          <div className="lg:col-span-7 xl:col-span-8 2xl:col-span-8 space-y-4 min-w-0">
             {/* Original message card skeleton */}
             <Card>
               <CardContent className="pt-6 space-y-4">
@@ -416,8 +420,8 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
             </Card>
           </div>
 
-          {/* Right column: ticket info sidebar skeleton */}
-          <div className="space-y-4">
+          {/* Oldalsáv skeleton (Részletek + Jegy története) */}
+          <div className="lg:col-span-5 xl:col-span-4 2xl:col-span-4 space-y-4 min-w-0">
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <h3 className="text-sm font-semibold">Részletek</h3>
@@ -515,6 +519,21 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     setGalleryOpen(true);
   };
 
+  const staffEvent = ticketEvents.find(
+    (e) =>
+      e.event_type === "created" &&
+      Boolean(e.metadata?.created_by_staff || e.metadata?.created_on_behalf)
+  );
+  const isStaffInitiated = Boolean(
+    ticket.created_by_is_staff ||
+    (ticket.created_by && ticket.created_by !== ticket.user_id) ||
+    staffEvent ||
+    (ticket.service === "management" && ticket.assigned_to)
+  );
+  const initialAuthorName = isStaffInitiated
+    ? (ticket.assigned_to_name || ticket.created_by_name || staffEvent?.actor_name || "Support munkatárs")
+    : (ticket.user_name || ticket.user_email);
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-6 p-2 sm:p-0 page-animate">
@@ -593,19 +612,30 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
           </AlertDialogContent>
         </AlertDialog>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column: message + comments */}
-          <div className="lg:col-span-2 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Fő tartalom (üzenet + csatolmányok + hozzászólások + válaszíró) */}
+          <div className="lg:col-span-7 xl:col-span-8 2xl:col-span-8 space-y-4 min-w-0">
             {/* Original message */}
-            <Card>
+            <Card className={isStaffInitiated ? "border-primary/20 bg-primary/[0.02]" : ""}>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
-                    {(ticket.user_name || ticket.user_email || "?")[0]?.toUpperCase()}
+                  <div
+                    className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                      isStaffInitiated ? "bg-primary/15 text-primary" : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    {(initialAuthorName || "?")[0]?.toUpperCase()}
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{ticket.user_name || ticket.user_email}</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(ticket.created_at)}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold truncate">{initialAuthorName}</p>
+                      {isStaffInitiated && (
+                        <ThinkAiBadge size="sm" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(ticket.created_at)}
+                    </p>
                   </div>
                 </div>
                 <RichTextContent content={ticket.message} />
@@ -774,9 +804,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                                 Belső feljegyzés (kliens elől rejtve)
                               </span>
                             ) : c.is_admin ? (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                                Support
-                              </span>
+                              <ThinkAiBadge size="xs" />
                             ) : null}
                           </div>
                           <p className="text-xs text-muted-foreground">
@@ -1054,17 +1082,137 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
             )}
           </div>
 
-          {/* Right column: ticket info sidebar */}
-          <div className="space-y-4">
+          {/* Oldalsáv: Részletek + Jegy története */}
+          <div className="lg:col-span-5 xl:col-span-4 2xl:col-span-4 space-y-4 min-w-0 xl:sticky xl:top-6">
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <h3 className="text-sm font-semibold">Részletek</h3>
 
-                <div className="space-y-3 text-sm">
+                {/* Status Banner — Layout 3 */}
+                {(() => {
+                  const bannerConfig = {
+                    created: {
+                      label: "Nyitott",
+                      title: "Jegy állapota: Nyitott",
+                      sub: "Várakozik a feldolgozásra",
+                      icon: CircleDot,
+                      bgClass: "bg-gradient-to-br from-blue-500/[0.08] to-cyan-500/[0.04] border-blue-500/25",
+                      iconBubbleClass: "bg-blue-500 text-white shadow-sm shadow-blue-500/20",
+                      titleClass: "text-blue-900 dark:text-blue-200",
+                      subClass: "text-blue-600 dark:text-blue-400",
+                    },
+                    assigned: {
+                      label: "Hozzárendelt",
+                      title: "Jegy állapota: Hozzárendelt",
+                      sub: "Felelős munkatárs kijelölve",
+                      icon: UserCheck,
+                      bgClass: "bg-gradient-to-br from-purple-500/[0.08] to-indigo-500/[0.04] border-purple-500/25",
+                      iconBubbleClass: "bg-purple-500 text-white shadow-sm shadow-purple-500/20",
+                      titleClass: "text-purple-900 dark:text-purple-200",
+                      subClass: "text-purple-600 dark:text-purple-400",
+                    },
+                    in_progress: {
+                      label: "Folyamatban",
+                      title: "Jegy állapota: Folyamatban",
+                      sub: "A support csapat dolgozik rajta",
+                      icon: Loader2,
+                      bgClass: "bg-gradient-to-br from-amber-500/[0.08] to-orange-500/[0.04] border-amber-500/25",
+                      iconBubbleClass: "bg-amber-500 text-white shadow-sm shadow-amber-500/20",
+                      titleClass: "text-amber-900 dark:text-amber-200",
+                      subClass: "text-amber-600 dark:text-amber-400",
+                    },
+                    resolved: {
+                      label: "Megoldva",
+                      title: "Jegy állapota: Megoldva",
+                      sub: "A hibajegy lezárásra került",
+                      icon: CheckCircle2,
+                      bgClass: "bg-gradient-to-br from-emerald-500/[0.08] to-teal-500/[0.04] border-emerald-500/25",
+                      iconBubbleClass: "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20",
+                      titleClass: "text-emerald-900 dark:text-emerald-200",
+                      subClass: "text-emerald-600 dark:text-emerald-400",
+                    },
+                  }[ticket.status as TicketStatus] || {
+                    label: "Nyitott",
+                    title: "Jegy állapota: Nyitott",
+                    sub: "Várakozik a feldolgozásra",
+                    icon: CircleDot,
+                    bgClass: "bg-gradient-to-br from-blue-500/[0.08] to-cyan-500/[0.04] border-blue-500/25",
+                    iconBubbleClass: "bg-blue-500 text-white shadow-sm shadow-blue-500/20",
+                    titleClass: "text-blue-900 dark:text-blue-200",
+                    subClass: "text-blue-600 dark:text-blue-400",
+                  };
+
+                  const StatusIcon = bannerConfig.icon;
+
+                  return (
+                    <div className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${bannerConfig.bgClass}`}>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${bannerConfig.iconBubbleClass}`}>
+                          <StatusIcon className={`h-4 w-4 ${ticket.status === "in_progress" ? "animate-spin" : ""}`} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className={`text-xs font-bold leading-tight truncate ${bannerConfig.titleClass}`}>
+                            {bannerConfig.title}
+                          </p>
+                          <p className={`text-[11px] leading-tight truncate mt-0.5 ${bannerConfig.subClass}`}>
+                            {bannerConfig.sub}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        {isAdmin ? (
+                          <Select
+                            value={ticket.status}
+                            onValueChange={(val) =>
+                              updateStatus({
+                                feedbackId: ticket.id,
+                                status: val as TicketStatus,
+                              })
+                            }
+                            disabled={isUpdating}
+                          >
+                            <SelectTrigger className="h-7 text-xs px-2.5 bg-background/80 backdrop-blur-sm border-border/80 shadow-xs min-w-[115px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="created">Nyitott</SelectItem>
+                              <SelectItem value="assigned">Hozzárendelt</SelectItem>
+                              <SelectItem value="in_progress">Folyamatban</SelectItem>
+                              <SelectItem value="resolved">Megoldva</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <TicketStatusBadge status={ticket.status} />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="space-y-3 text-xs">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <User className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{ticket.user_email || ticket.user_name || "—"}</span>
+                    <span className="truncate">
+                      {ticket.user_name ? (
+                        <>
+                          <span className="text-foreground font-medium">{ticket.user_name}</span>{" "}
+                          <span>({ticket.user_email})</span>
+                        </>
+                      ) : (
+                        <span className="text-foreground font-medium">{ticket.user_email || "—"}</span>
+                      )}
+                    </span>
                   </div>
+                  {isStaffInitiated && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Headset className="h-4 w-4 shrink-0" />
+                      <span className="truncate flex items-center gap-1.5">
+                        <span className="text-foreground font-medium">{ticket.created_by_name || staffEvent?.actor_name || "Management"}</span>
+                        <ThinkAiBadge size="xs" iconOnly />
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4 shrink-0" />
                     <span className="truncate">{ticket.company_name || "—"}</span>
@@ -1116,156 +1264,132 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
 
                 <Separator />
 
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium">Típus</p>
-                  <div className="flex items-center gap-2">
-                    {ticket.type === "bug" ? (
-                      <>
-                        <Bug className="h-4 w-4 text-red-500" />
-                        <span className="text-sm">Hibajelentés</span>
-                      </>
-                    ) : ticket.type === "question" ? (
-                      <>
-                        <HelpCircle className="h-4 w-4 text-sky-500" />
-                        <span className="text-sm">Kérdés</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lightbulb className="h-4 w-4 text-amber-500" />
-                        <span className="text-sm">Visszajelzés</span>
-                      </>
-                    )}
+                {/* Structured Properties Card — Layout 3 */}
+                <div className="rounded-lg border border-border/60 bg-muted/15 divide-y divide-border/40 overflow-hidden text-sm">
+                  {/* Típus */}
+                  <div className="flex items-center justify-between p-2.5 px-3 gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      Típus
+                    </span>
+                    <div>
+                      {ticket.type === "bug" ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-500/20">
+                          <Bug className="h-3 w-3 text-red-500" />
+                          Hibajelentés
+                        </span>
+                      ) : ticket.type === "question" ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-600 border border-sky-500/20">
+                          <HelpCircle className="h-3 w-3 text-sky-500" />
+                          Kérdés
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                          <Lightbulb className="h-3 w-3 text-amber-500" />
+                          Visszajelzés
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Prioritás */}
+                  <div className="flex items-center justify-between p-2.5 px-3 gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                      <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
+                      Prioritás
+                    </span>
+                    <div>
+                      {isAdmin ? (
+                        <Select
+                          value={ticket.priority || "medium"}
+                          onValueChange={(val) =>
+                            updatePriority({
+                              feedbackId: ticket.id,
+                              priority: val as TicketPriority,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="h-7 text-xs px-2.5 border-border/80 bg-background">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Alacsony</SelectItem>
+                            <SelectItem value="medium">Közepes</SelectItem>
+                            <SelectItem value="high">Magas</SelectItem>
+                            <SelectItem value="critical">Kritikus</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <TicketPriorityBadge priority={ticket.priority} />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Felelős */}
+                  <div className="flex items-center justify-between p-2.5 px-3 gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                      <Headset className="h-3.5 w-3.5 text-muted-foreground" />
+                      Felelős
+                    </span>
+                    <div className="max-w-[65%]">
+                      {isAdmin ? (
+                        <Select
+                          value={(ticket as any).assigned_to || "unassigned"}
+                          onValueChange={(val) => {
+                            const newAssignee = val === "unassigned" ? null : val;
+                            updateAssignee(
+                              {
+                                feedbackId: ticket.id,
+                                assignedTo: newAssignee,
+                                force: !newAssignee,
+                              },
+                              {
+                                onError: (err: any) => {
+                                  if (err?.message === "ALREADY_ASSIGNED") {
+                                    toast({
+                                      title: "Jegy már kiosztva",
+                                      description: "Ezt a hibajegyet egy másik support munkatárs már magához rendelte.",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                },
+                              }
+                            );
+                          }}
+                        >
+                          <SelectTrigger className="h-7 text-xs px-2.5 border-border/80 bg-background truncate">
+                            <SelectValue placeholder="Nincs hozzárendelve" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="unassigned">Nincs hozzárendelve</SelectItem>
+                            {supportAgents.map((agent: any) => (
+                              <SelectItem key={agent.user_id} value={agent.user_id}>
+                                {agent.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        ticket.assigned_to_name ? (
+                          <div className="flex items-center gap-2 text-right justify-end">
+                            <ThinkAiIcon className="h-4 w-4 shrink-0" />
+                            <div className="text-left min-w-0">
+                              <p className="text-xs font-semibold truncate text-foreground">{ticket.assigned_to_name}</p>
+                              <p className="text-[10px] text-muted-foreground leading-none">ThinkAI</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">Nincs hozzárendelve</span>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                <Separator />
-
-                {/* Assigned support agent */}
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium">Felelős</p>
-                  {isAdmin ? (
-                    <Select
-                      value={(ticket as any).assigned_to || "unassigned"}
-                      onValueChange={(val) => {
-                        const newAssignee = val === "unassigned" ? null : val;
-                        updateAssignee(
-                          {
-                            feedbackId: ticket.id,
-                            assignedTo: newAssignee,
-                            force: !newAssignee, // allow unassign without lock check
-                          },
-                          {
-                            onError: (err: any) => {
-                              if (err?.message === "ALREADY_ASSIGNED") {
-                                toast({
-                                  title: "Jegy már kiosztva",
-                                  description: "Ezt a hibajegyet egy másik support munkatárs már magához rendelte.",
-                                  variant: "destructive",
-                                });
-                              }
-                            },
-                          }
-                        );
-                      }}
-                    >
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue placeholder="Nincs hozzárendelve" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unassigned">Nincs hozzárendelve</SelectItem>
-                        {supportAgents.map((agent: any) => (
-                          <SelectItem key={agent.user_id} value={agent.user_id}>
-                            {agent.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    ticket.assigned_to_name ? (
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Headset className="h-3.5 w-3.5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">{ticket.assigned_to_name}</p>
-                          <p className="text-[11px] text-muted-foreground">ThinkAI Support</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
-                          <Headset className="h-3.5 w-3.5 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Nincs hozzárendelve</p>
-                          <p className="text-[11px] text-muted-foreground">ThinkAI Support</p>
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-
-                {isAdmin && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground font-medium">Prioritás módosítása</p>
-                      <Select
-                        value={ticket.priority || "medium"}
-                        onValueChange={(val) =>
-                          updatePriority({
-                            feedbackId: ticket.id,
-                            priority: val as TicketPriority,
-                          })
-                        }
-                      >
-                        <SelectTrigger className="h-9 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Alacsony</SelectItem>
-                          <SelectItem value="medium">Közepes</SelectItem>
-                          <SelectItem value="high">Magas</SelectItem>
-                          <SelectItem value="critical">Kritikus</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                )}
-
-                {/* Admin status changer */}
-                {isAdmin && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground font-medium">Státusz módosítása</p>
-                      <Select
-                        value={ticket.status}
-                        onValueChange={(val) =>
-                          updateStatus({
-                            feedbackId: ticket.id,
-                            status: val as TicketStatus,
-                          })
-                        }
-                        disabled={isUpdating}
-                      >
-                        <SelectTrigger className="h-9 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="created">Új</SelectItem>
-                          <SelectItem value="in_progress">Folyamatban</SelectItem>
-                          <SelectItem value="resolved">Megoldva</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                )}
               </CardContent>
             </Card>
 
-            {/* Timeline */}
-            <TicketTimeline feedbackId={feedbackId} />
+            {/* Jegy története (Timeline) */}
+            <TicketTimeline feedbackId={feedbackId} isStaffInitiated={isStaffInitiated} />
           </div>
         </div>
       </div>

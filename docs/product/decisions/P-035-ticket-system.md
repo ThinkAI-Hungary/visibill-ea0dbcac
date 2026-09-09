@@ -22,12 +22,18 @@
   - `/management?view=tickets` (Management Dashboard, beágyazva)
 - Management hibajegy nyitás ügyfél nevében (`ManagementCreateTicketDialog.tsx`): a Management Dashboard felületén a sub-tabs sávból indítható `+ Új hibajegy nyitása`, amellyel a support admin célfelhasználó nevében rögzíthet jegyet auto-fill cégválasztással, formázott leírással és csatolmányokkal (részletek: [P-070](./P-070-management-impersonated-ticket-creation-ux.md), [A-089](../../architecture/decisions/A-089-management-ticket-creation-on-behalf-of-user.md))
 - Ticket típusok: Hibajelentés (bug), Visszajelzés (feedback), Kérdés (question)
+- Ticket státuszok (4 szintű életciklus):
+  - **Nyitott** (`created` / legacy `new`, `open`): beérkezett hibajegy, még nincs felelőse (kék • `CircleDot`)
+  - **Hozzárendelt** (`assigned`): felelős support munkatárs kijelölve (lila • `UserCheck`)
+  - **Folyamatban** (`in_progress`): aktív munka és megoldás folyamatban (borostyán • `Loader2` / `Clock`)
+  - **Megoldva** (`resolved`): a hibajegy sikeresen megoldva és lezárva (smaragd • `CheckCircle2`)
+  - *Automatikus státuszváltás:* Nyitott jegyhez rendelt felelős esetén automatikusan Hozzárendelt státuszra vált; felelős visszavonásakor visszatér Nyitott státuszra.
 - Ticket prioritás: alacsony/közepes/magas/kritikus — user választhatja beküldéskor
-- Ticket lista: kereshető (jegyszám, üzenet, cég, email), szűrhető (multi-status, prioritás, platform)
+- Ticket lista: kereshető (jegyszám, üzenet, cég, email), szűrhető (multi-status: Nyitott, Hozzárendelt, Folyamatban, Megoldva, prioritás, platform)
   - Keresés: a `stripHtml(t.message)` használatával a tiszta szövegben keres, kiszűrve a HTML tageket és stílusosztályokat a pontos találatokért
   - Tárgy és előnézet formázás: `getTicketSummary(ticket.message)` intelligens szóhatár-tördelést (~55 karakter) és bekezdés-összevonást alkalmaz, megszüntetve a nyers HTML tagek (`<p>`, `</p>`, `<ol>`, `<li>`, entitások) megjelenését és a szavak félbevágását a táblázatban, Kezelőkonzol oldalsávban és a Terhelés & Elosztás nézetben
 - Pagináció: 15 jegy/oldal (sima user), 25 jegy/oldal (support admin)
-- Multi-status szűrő: egyszerre több státusz szűrhető (pl. Új + Folyamatban) — Popover + Checkbox UI
+- Multi-status szűrő: egyszerre több státusz szűrhető (Nyitott, Hozzárendelt, Folyamatban, Megoldva) — Popover + Checkbox UI
 - Ticket részletek (`TicketDetailView.tsx`):
   - Üzenet és hozzászólás megjelenítés: formázott HTML renderelés (`RichTextContent`), Tailwind typography stílusokkal és plain text fallbackkel
   - Hozzászólás szerkesztő: `RichTextEditor` (félkövér, dőlt, listák, címsorok, idézet, kód, `Ctrl+Enter` gyorsbillentyűvel azonnali beküldés)
@@ -38,6 +44,8 @@
   - Fullscreen galéria: Portal-alapú overlay (z-index: 9999), teljes képernyős képnézegető billentyűzet-navigációval (Escape, Nyilak) és letöltési funkcióval
 - Unread badge: `useUnreadTicketCount` hook — olvasatlan ticketek száma a sidebar-ban
 - Felelős kijelölés: support admin hozzárendelhet support agentet, változás logolódik a timeline-ban
-- Jegy történet (Timeline): státusz változás (Új → Folyamatban), felelős változás, kommentek — actor névvel
+- Jegy történet (Timeline): státusz változás (Nyitott → Hozzárendelt → Folyamatban → Megoldva), felelős változás, kommentek — actor névvel
+- Kezelőkonzol (Console View): Support munkatársak számára optimalizált 2-hasábos osztott nézet (`TicketsPage.tsx`). Bal oldalon a szűrhető, kereshető queue (max-h korlátozott, dedikált belső scrollal `max-h-[calc(100vh-16rem)] min-h-0`), jobb oldalon a jegy tartalom (8 oszlop) és mellette a Részletek kártya alatta az Idővonallal (4 oszlop, max 50vh scrollal).
+- ThinkAI márka jelvény (`ThinkAiBadge`): A kezdeményező ThinkAI support operátorok neve mellett diszkrét, modern SVG monogram (`T`) jelenik meg `iconOnly` módban, jelezve a hivatalos support minőséget felesleges szöveges ismétlés nélkül.
 
 **Rationale:** Egy beépített ticket rendszer gyorsabb visszajelzési ciklust biztosít mint az email, és kontextust ad a fejlesztőknek (melyik oldalon, melyik cég kontextusban keletkezett a hiba).

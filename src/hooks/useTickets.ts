@@ -4,9 +4,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 // ── Types ──────────────────────────────────────────────────────
-export type TicketStatus = "created" | "in_progress" | "resolved";
+export type TicketStatus = "created" | "assigned" | "in_progress" | "resolved";
 export type TicketPriority = "low" | "medium" | "high" | "critical";
 export type TicketType = "bug" | "feedback" | "question";
+
+/**
+ * Resolves the effective ticket lifecycle status.
+ * If a ticket has an assignee and is in 'created', 'new', or 'open' state, it dynamically reflects 'assigned'.
+ * If a ticket has no assignee and is marked 'assigned', it automatically falls back to 'created' (Nyitott).
+ */
+export function resolveEffectiveTicketStatus(status: string, assignedTo?: string | null): TicketStatus {
+  const norm = status === "new" || status === "open" ? "created" : status;
+  if (assignedTo && norm === "created") {
+    return "assigned";
+  }
+  if (!assignedTo && norm === "assigned") {
+    return "created";
+  }
+  return norm as TicketStatus;
+}
 
 export interface Ticket {
   id: string;
@@ -30,6 +46,9 @@ export interface Ticket {
   has_unread: boolean;
   assigned_to?: string | null;
   assigned_to_name?: string | null;
+  created_by?: string | null;
+  created_by_name?: string | null;
+  created_by_is_staff?: boolean;
 }
 
 export interface TicketComment {
@@ -96,14 +115,18 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
     queryFn: async () => {
       if (!user) return [];
 
-      // 1. Fetch tickets with assigned profile name
+      // 1. Fetch tickets with assigned profile name and creator profile name
       let query = supabase
         .from("feedback")
-        .select("*, assigned_to_profile:profiles!feedback_assigned_to_fkey(name)")
+        .select("*, assigned_to_profile:profiles!feedback_assigned_to_fkey(name), created_by_profile:profiles!feedback_created_by_fkey(name, is_support_admin, role)")
         .order("created_at", { ascending: false });
 
       if (statusFilter && statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+        if (statusFilter === "created") {
+          query = query.in("status", ["created", "new", "open"]);
+        } else {
+          query = query.eq("status", statusFilter);
+        }
       }
 
       // Support admins can fetch all tickets they have access to;
@@ -156,6 +179,12 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
       return tickets.map((t): Ticket => {
         const lastRead = readMap.get(t.id);
         const latestOther = latestOtherMap.get(t.id) || null;
+        const isCreatedByOther = Boolean(t.created_by && t.created_by !== user.id);
+        const createdByProfile = (t as any).created_by_profile;
+        const isCreatedByStaff = Boolean(
+          createdByProfile?.is_support_admin ||
+          ['thinkai', 'management'].includes(createdByProfile?.role)
+        );
 
         return {
           id: t.id,
@@ -163,7 +192,7 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           type: t.type,
           service: (t as any).service || null,
           message: t.message,
-          status: t.status === "new" ? "created" : t.status,
+          status: resolveEffectiveTicketStatus(t.status, t.assigned_to),
           priority: t.priority,
           page_url: t.page_url,
           company_name: t.company_name,
@@ -178,9 +207,12 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           latest_comment_at: latestOther,
           has_unread: latestOther
             ? !lastRead || latestOther > lastRead
-            : false,
+            : (isCreatedByOther ? (!lastRead || t.created_at > lastRead) : false),
           assigned_to: t.assigned_to,
           assigned_to_name: (t as any).assigned_to_profile?.name || null,
+          created_by: t.created_by || null,
+          created_by_name: createdByProfile?.name || null,
+          created_by_is_staff: isCreatedByStaff,
         };
       });
     },
@@ -282,7 +314,7 @@ export function useTicketDetail(feedbackId: string | null) {
 
       const { data: ticket, error } = await supabase
         .from("feedback")
-        .select("*, assigned_to_profile:profiles!feedback_assigned_to_fkey(name)")
+        .select("*, assigned_to_profile:profiles!feedback_assigned_to_fkey(name), created_by_profile:profiles!feedback_created_by_fkey(name, is_support_admin, role)")
         .eq("id", feedbackId)
         .maybeSingle();
 
@@ -295,11 +327,19 @@ export function useTicketDetail(feedbackId: string | null) {
         .eq("feedback_id", feedbackId)
         .order("created_at", { ascending: true });
 
+      const createdByProfile = (ticket as any).created_by_profile;
+      const isCreatedByStaff = Boolean(
+        createdByProfile?.is_support_admin ||
+        ['thinkai', 'management'].includes(createdByProfile?.role)
+      );
+
       return {
         ticket: {
           ...ticket,
-          status: ticket.status === "new" ? "created" : ticket.status,
+          status: resolveEffectiveTicketStatus(ticket.status, ticket.assigned_to),
           assigned_to_name: (ticket as any).assigned_to_profile?.name || null,
+          created_by_name: createdByProfile?.name || null,
+          created_by_is_staff: isCreatedByStaff,
         },
         comments: (comments || []) as TicketComment[],
       };
@@ -357,6 +397,7 @@ export function useAddComment() {
     },
     onSuccess: (_, { feedbackId }) => {
       queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket_events", feedbackId] });
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
       queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
     },
@@ -431,25 +472,38 @@ export function useUpdateTicketAssignee() {
       assignedTo: string | null;
       force?: boolean;
     }) => {
-      // Race condition prevention: check current state before assigning
+      // Check current state before assigning for race condition prevention & status transitions
+      let currentStatus: string | null = null;
+      const { data: current, error: checkError } = await supabase
+        .from("feedback")
+        .select("assigned_to, status")
+        .eq("id", feedbackId)
+        .single();
+
+      if (checkError) throw checkError;
+
       if (assignedTo && !force) {
-        const { data: current, error: checkError } = await supabase
-          .from("feedback")
-          .select("assigned_to")
-          .eq("id", feedbackId)
-          .single();
-
-        if (checkError) throw checkError;
-
         // If already assigned to someone else, reject
         if (current?.assigned_to && current.assigned_to !== assignedTo) {
           throw new Error("ALREADY_ASSIGNED");
         }
       }
+      currentStatus = current?.status || null;
+
+      const updatePayload: Record<string, any> = { assigned_to: assignedTo };
+
+      // Auto-transition status:
+      // If currently created/new/open and getting an assignee -> transition to 'assigned' (Hozzárendelt)
+      if (assignedTo && (currentStatus === "created" || currentStatus === "new" || currentStatus === "open")) {
+        updatePayload.status = "assigned";
+      } else if (!assignedTo && currentStatus === "assigned") {
+        // If removing assignee and currently 'assigned' -> transition back to 'created' (Nyitott)
+        updatePayload.status = "created";
+      }
 
       const { error } = await supabase
         .from("feedback")
-        .update({ assigned_to: assignedTo })
+        .update(updatePayload)
         .eq("id", feedbackId);
 
       if (error) throw error;

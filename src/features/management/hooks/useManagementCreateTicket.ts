@@ -21,10 +21,10 @@ export function useManagementCreateTicket() {
       queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
       queryClient.invalidateQueries({ queryKey: ["ticket_counts"] });
       toast({
-        title: "Hibajegy sikeresen létrehozva",
+        title: "Megkeresés sikeresen elindítva",
         description: data.ticket?.ticket_number
-          ? `Jegyszám: ${data.ticket.ticket_number} (Felhasználó: ${data.ticket.user_name || data.ticket.user_email || 'Kliens'})`
-          : "A hibajegy rögzítve lett a felhasználó nevében.",
+          ? `Jegyszám: ${data.ticket.ticket_number} (Címzett: ${data.ticket.user_name || data.ticket.user_email || 'Ügyfél'})`
+          : "A megkeresés rögzítve lett az ügyfél fiókjában.",
       });
     },
     onError: (err: any) => {

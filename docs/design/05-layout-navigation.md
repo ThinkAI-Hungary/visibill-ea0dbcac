@@ -474,3 +474,15 @@ A Control Center (`ControlCenter` component) és a Tickets Page (`TicketsPage` `
 - A bal oldali lista és a jobb oldali beszélgetésfolyam egymástól függetlenül görgethető (`overflow-y-auto min-h-0`).
 - A felhasználói üzenetek jobbra igazítottak (`bg-primary/10 border-primary/20`), a support és rendszerüzenetek balra zártak (`bg-muted/50 border-border/50`).
 - Az események (státuszváltás, lezárás, prioritás emelés) a beszélgetési tengelyen középre zárt, kerek ikonnal ellátott audit badge-ként jelennek meg.
+
+### Kezelőkonzol (Support Console Layout) és Anti-Phantom Scroll Szabály
+
+A Management Dashboard és Hibajegy kezelőkonzol felületén (`TicketsPage.tsx`, `TicketDetailView.tsx`):
+1. **3-Zónás Szerkezet:**
+   - **Bal hasáb (Queue):** 380px széles, függőben lévő és szűrt jegyek listája. Magassága felülről korlátozott (`max-h-[calc(100vh-16rem)] min-h-0 flex-1 overflow-y-auto`), így hosszú lista esetén önállóan görgethető.
+   - **Középső tartalom (Üzenetfolyam):** 8 oszlopnyi szélesség a `TicketDetailView` gridjében.
+   - **Jobb oldali sáv (Részletek & Történet):** 4 oszlopnyi szélesség. Felül a `Részletek` kártya (metaadatok, cég, státusz, prioritás), alatta közvetlenül a `TicketTimeline` (max 50vh belső scrollal).
+2. **Anti-Phantom Scroll Szabály:**
+   - **Hiba:** `h-[calc(100vh-200px)] min-h-[550px]` fix magasság beállítása egy flex/grid szülőre tabok alatt. Zoom-out (pl. 75%, 50%) esetén vagy rövidebb tartalomnál a szülő magassága mesterségesen nagyobb lesz mint a tényleges tartalom, és az oldal üres fekete térbe enged lefelé görgetni.
+   - **Szabály:** Soha ne használj mesterséges fix `h-[calc(100vh-...)]` magasságot beágyazott tartalomra. Ehelyett az elrendezés `items-start` igazítású legyen, a bal oldali queue kapjon `max-h-[calc(100vh-...)]` korlátot `min-h-0`-val, a jobb oldali tartalom pedig természetesen skálázódjon. Az oldal csak és kizárólag akkor görgethető, ha a tartalom ténylegesen túlnő a viewport magasságán.
+

@@ -41,6 +41,7 @@ import {
   Sliders,
   Play,
   UserCheck,
+  CircleDot,
   Layers,
   ChevronLeft,
   ChevronRight,
@@ -162,7 +163,10 @@ export default function TicketsPage({
 
       const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
       const matchesService = serviceFilter === "all" || t.service === serviceFilter;
-      const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(t.status as TicketStatus);
+      const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.some((s) => {
+        if (s === "created") return t.status === "created" || t.status === "new" || t.status === "open";
+        return t.status === s;
+      });
 
       // Support admins default to showing only own & unassigned tickets
       const matchesOwner = !isAdmin || showAllTickets || !user ||
@@ -202,12 +206,13 @@ export default function TicketsPage({
   // KPIs
   const kpis = useMemo(() => {
     const active = tickets.filter(t => t.status !== "resolved").length;
-    const critical = tickets.filter(t => t.priority === "critical" && t.status !== "resolved").length;
+    const created = tickets.filter(t => t.status === "created" || t.status === "new" || t.status === "open").length;
+    const assigned = tickets.filter(t => t.status === "assigned").length;
     const inProgress = tickets.filter(t => t.status === "in_progress").length;
-    // Mock closed today for aesthetics
     const closed = tickets.filter(t => t.status === "resolved").length;
+    const critical = tickets.filter(t => t.priority === "critical" && t.status !== "resolved").length;
 
-    return { active, critical, inProgress, closed };
+    return { active, created, assigned, inProgress, closed, critical };
   }, [tickets]);
 
   // Support Agent Load metrics
@@ -395,45 +400,55 @@ export default function TicketsPage({
       <div className="space-y-6 content-animate">
         {/* KPI stat matrix */}
         {embeddedInManagement && isAdmin && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Összes függő */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+            {/* Nyitott */}
             <Card
               className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
-                selectedStatuses.length === 0 && priorityFilter === 'all' ? '' : 'opacity-60 hover:opacity-100'
+                selectedStatuses.length === 1 && selectedStatuses[0] === 'created' ? 'ring-1 ring-blue-500/50' : ''
               }`}
-              onClick={() => { setSelectedStatuses([]); setPriorityFilter('all'); }}
+              onClick={() => {
+                const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === 'created';
+                setSelectedStatuses(isActive ? [] : ['created']);
+                setPriorityFilter('all');
+              }}
             >
-              <CardContent className="p-5 flex items-start gap-4">
-                <div className="h-10 w-10 rounded-lg bg-info/10 flex items-center justify-center border border-info/20 text-info">
-                  <Inbox className="h-5 w-5" />
+              <CardContent className="p-4 flex items-start gap-3.5">
+                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-500">
+                  <CircleDot className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold leading-none tabular-nums text-info">{kpis.active}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Összes függő</p>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-blue-600 dark:text-blue-400">{kpis.created}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Nyitott</p>
                 </div>
               </CardContent>
             </Card>
-            {/* Kritikus SLA */}
+
+            {/* Hozzárendelt */}
             <Card
               className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
-                priorityFilter === 'critical' ? 'ring-1 ring-destructive/50' : ''
+                selectedStatuses.length === 1 && selectedStatuses[0] === 'assigned' ? 'ring-1 ring-purple-500/50' : ''
               }`}
-              onClick={() => { setSelectedStatuses([]); setPriorityFilter(priorityFilter === 'critical' ? 'all' : 'critical'); }}
+              onClick={() => {
+                const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === 'assigned';
+                setSelectedStatuses(isActive ? [] : ['assigned']);
+                setPriorityFilter('all');
+              }}
             >
-              <CardContent className="p-5 flex items-start gap-4">
-                <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center border border-destructive/20 text-destructive">
-                  <ShieldAlert className="h-5 w-5" />
+              <CardContent className="p-4 flex items-start gap-3.5">
+                <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20 text-purple-500">
+                  <UserCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold leading-none tabular-nums text-destructive">{kpis.critical}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Kritikus SLA</p>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-purple-600 dark:text-purple-400">{kpis.assigned}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Hozzárendelt</p>
                 </div>
               </CardContent>
             </Card>
+
             {/* Folyamatban */}
             <Card
               className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
-                selectedStatuses.length === 1 && selectedStatuses[0] === 'in_progress' ? 'ring-1 ring-warning/50' : ''
+                selectedStatuses.length === 1 && selectedStatuses[0] === 'in_progress' ? 'ring-1 ring-amber-500/50' : ''
               }`}
               onClick={() => {
                 const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === 'in_progress';
@@ -441,20 +456,21 @@ export default function TicketsPage({
                 setPriorityFilter('all');
               }}
             >
-              <CardContent className="p-5 flex items-start gap-4">
-                <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center border border-warning/20 text-warning">
+              <CardContent className="p-4 flex items-start gap-3.5">
+                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-amber-500">
                   <Clock className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold leading-none tabular-nums text-warning">{kpis.inProgress}</p>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-amber-600 dark:text-amber-400">{kpis.inProgress}</p>
                   <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Folyamatban</p>
                 </div>
               </CardContent>
             </Card>
-            {/* Megoldott jegyek */}
+
+            {/* Megoldva */}
             <Card
               className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
-                selectedStatuses.length === 1 && selectedStatuses[0] === 'resolved' ? 'ring-1 ring-success/50' : ''
+                selectedStatuses.length === 1 && selectedStatuses[0] === 'resolved' ? 'ring-1 ring-emerald-500/50' : ''
               }`}
               onClick={() => {
                 const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === 'resolved';
@@ -462,13 +478,31 @@ export default function TicketsPage({
                 setPriorityFilter('all');
               }}
             >
-              <CardContent className="p-5 flex items-start gap-4">
-                <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center border border-success/20 text-success">
+              <CardContent className="p-4 flex items-start gap-3.5">
+                <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-500">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold leading-none tabular-nums text-success">{kpis.closed}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Megoldott jegyek</p>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-emerald-600 dark:text-emerald-400">{kpis.closed}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Megoldva</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Kritikus SLA */}
+            <Card
+              className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
+                priorityFilter === 'critical' ? 'ring-1 ring-destructive/50' : ''
+              }`}
+              onClick={() => { setSelectedStatuses([]); setPriorityFilter(priorityFilter === 'critical' ? 'all' : 'critical'); }}
+            >
+              <CardContent className="p-4 flex items-start gap-3.5">
+                <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center border border-destructive/20 text-destructive">
+                  <ShieldAlert className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-destructive">{kpis.critical}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Kritikus SLA</p>
                 </div>
               </CardContent>
             </Card>
@@ -496,9 +530,12 @@ export default function TicketsPage({
                         {selectedStatuses.length === 0
                           ? "Összes státusz"
                           : selectedStatuses
-                              .map((s) =>
-                                s === "created" ? "Új" : s === "in_progress" ? "Folyamatban" : "Megoldva"
-                              )
+                              .map((s) => {
+                                if (s === "created") return "Nyitott";
+                                if (s === "assigned") return "Hozzárendelt";
+                                if (s === "in_progress") return "Folyamatban";
+                                return "Megoldva";
+                              })
                               .join(", ")}
                       </span>
                       <ListFilter className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -507,7 +544,8 @@ export default function TicketsPage({
                   <PopoverContent className="w-[200px] p-2" align="start">
                     <div className="space-y-1">
                       {[
-                        { value: "created" as TicketStatus, label: "Új" },
+                        { value: "created" as TicketStatus, label: "Nyitott" },
+                        { value: "assigned" as TicketStatus, label: "Hozzárendelt" },
                         { value: "in_progress" as TicketStatus, label: "Folyamatban" },
                         { value: "resolved" as TicketStatus, label: "Megoldva" },
                       ].map((opt) => (
@@ -743,10 +781,10 @@ export default function TicketsPage({
   // ────────────────────────────────────────────────────────
   const renderConsoleView = () => {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)] min-h-[500px] overflow-hidden content-animate">
+      <div className="flex flex-col lg:flex-row gap-6 items-start content-animate">
         {/* Left Column: Unresolved Active Tickets List */}
-        <div className="lg:col-span-1 min-h-0 border border-border bg-card/40 backdrop-blur-md rounded-xl overflow-hidden flex flex-col">
-          <div className="p-3 border-b border-border bg-muted/10">
+        <div className="w-full lg:w-72 xl:w-80 shrink-0 border border-border bg-card/40 backdrop-blur-md rounded-xl overflow-hidden flex flex-col lg:sticky lg:top-6 max-h-[calc(100vh-16rem)]">
+          <div className="p-3 border-b border-border bg-muted/10 shrink-0">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Függőben lévő jegyek</h3>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -758,14 +796,14 @@ export default function TicketsPage({
               />
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border/40">
             {tickets.filter(t => t.status !== 'resolved').map(t => {
               const active = t.id === ticketId;
               return (
                 <button
                   key={t.id}
                   onClick={() => updateParams({ subView: "console", id: t.id })}
-                  className={`w-full text-left p-3 flex flex-col gap-1.5 transition-colors border-l-2 border-t border-border/40 first:border-t-0 ${
+                  className={`w-full text-left p-3 flex flex-col gap-1.5 transition-colors border-l-2 first:border-t-0 ${
                     active ? 'bg-primary/10 border-l-primary' : 'border-l-transparent hover:bg-accent/40'
                   }`}
                 >
@@ -798,9 +836,9 @@ export default function TicketsPage({
         </div>
 
         {/* Right Column: Ticket Conversation Thread + Panel */}
-        <div className="lg:col-span-3 min-h-0 flex flex-col">
+        <div className="flex-1 min-w-0">
           {ticketId ? (
-            <div className="flex-1 border border-border bg-card/30 backdrop-blur-md rounded-xl overflow-hidden p-6 overflow-y-auto">
+            <div className="border border-border bg-card/30 backdrop-blur-md rounded-xl p-4 sm:p-6">
               <TicketDetailView
                 feedbackId={ticketId}
                 onBack={() => updateParams({ id: null })}
@@ -811,7 +849,7 @@ export default function TicketsPage({
               />
             </div>
           ) : (
-            <div className="flex-1 border border-border border-dashed rounded-xl flex flex-col items-center justify-center gap-3 text-muted-foreground bg-card/10">
+            <div className="min-h-[400px] border border-border border-dashed rounded-xl flex flex-col items-center justify-center gap-3 text-muted-foreground bg-card/10 p-12">
               <TicketCheck className="h-16 w-16 opacity-25 animate-pulse" />
               <div className="text-center">
                 <p className="text-sm font-semibold text-foreground">Kezelőkonzol</p>
@@ -924,7 +962,8 @@ export default function TicketsPage({
                 <SelectValue placeholder="Státusz módosítása..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="created">Új</SelectItem>
+                <SelectItem value="created">Nyitott</SelectItem>
+                <SelectItem value="assigned">Hozzárendelt</SelectItem>
                 <SelectItem value="in_progress">Folyamatban</SelectItem>
                 <SelectItem value="resolved">Megoldva</SelectItem>
               </SelectContent>

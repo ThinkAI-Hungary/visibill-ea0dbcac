@@ -17,6 +17,17 @@ vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
+// Mock useAuth
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: {
+      id: 'agent-1',
+      email: 'janos@thinkai.hu',
+      user_metadata: { full_name: 'Support Admin János' },
+    },
+  }),
+}));
+
 // Mock useSupportAgents
 vi.mock('@/hooks/useTickets', () => ({
   useSupportAgents: () => ({
@@ -89,18 +100,18 @@ describe('ManagementCreateTicketDialog', () => {
 
   it('renders dialog title and form fields correctly', () => {
     renderDialog();
-    expect(screen.getByText('Új hibajegy nyitása ügyfél nevében')).toBeDefined();
+    expect(screen.getByText('Új megkeresés indítása ügyfél felé')).toBeDefined();
     expect(screen.getByText('Érintett Felhasználó (User) *')).toBeDefined();
     expect(screen.getByText('Érintett Cég')).toBeDefined();
     expect(screen.getByText('Szolgáltatás')).toBeDefined();
     expect(screen.getByText('Típus')).toBeDefined();
     expect(screen.getByText('Prioritás')).toBeDefined();
-    expect(screen.getByText('Hibajegy Létrehozása')).toBeDefined();
+    expect(screen.getByText('Megkeresés Küldése')).toBeDefined();
   });
 
   it('keeps submit button disabled until user and message are provided', () => {
     renderDialog();
-    const submitBtn = screen.getByRole('button', { name: /Hibajegy Létrehozása/i });
+    const submitBtn = screen.getByRole('button', { name: /Megkeresés Küldése/i });
     expect(submitBtn.hasAttribute('disabled')).toBe(true);
   });
 
@@ -123,7 +134,7 @@ describe('ManagementCreateTicketDialog', () => {
     fireEvent.change(editor, { target: { value: 'Számla letöltési hiba lépett fel' } });
 
     // Submit button should now be enabled
-    const submitBtn = screen.getByRole('button', { name: /Hibajegy Létrehozása/i });
+    const submitBtn = screen.getByRole('button', { name: /Megkeresés Küldése/i });
     expect(submitBtn.hasAttribute('disabled')).toBe(false);
   });
 
@@ -149,7 +160,7 @@ describe('ManagementCreateTicketDialog', () => {
     fireEvent.change(editor, { target: { value: 'Nem érkezett meg a NAV szinkron' } });
 
     // Click submit
-    const submitBtn = screen.getByRole('button', { name: /Hibajegy Létrehozása/i });
+    const submitBtn = screen.getByRole('button', { name: /Megkeresés Küldése/i });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {

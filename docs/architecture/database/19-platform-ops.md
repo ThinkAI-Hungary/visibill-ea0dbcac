@@ -121,6 +121,13 @@
 
 **Indexek:** `idx_feedback_company_id`, `idx_feedback_status`, `idx_feedback_user_id`
 
+**Státuszok (`feedback_status_check`):**
+- `'created'` / `'new'` / `'open'`: Nyitott
+- `'assigned'`: Hozzárendelt (felelős kijelölve)
+- `'in_progress'`: Folyamatban
+- `'resolved'`: Megoldva
+*(Migráció: `20260909194500_ticket_statuses_assigned.sql`)*
+
 ---
 
 ### `daily_exchange_rates`

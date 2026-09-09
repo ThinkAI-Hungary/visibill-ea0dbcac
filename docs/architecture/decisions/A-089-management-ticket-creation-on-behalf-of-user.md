@@ -45,13 +45,16 @@ A közvetlen frontend Supabase kliens beszúrás helyett az adminisztrátori tic
 
 ### B. Adatbázis Integritás és Eseménylánc (Event Sourcing)
 
-1. **Rekord Létrehozás a Célfelhasználó Neve Alatt:**
-   - A `feedback` tábla sora a kiválasztott felhasználó `user_id`-jával, nevével (`user_name`) és emailjével (`user_email`) kerül elmentésre.
-   - Így a célfelhasználó a saját felületén (`/tickets` és értesítési központ) azonnal látja a jegyet, mintha ő maga küldte volna be.
+1. **Feedback Rekord Létrehozás és Szerzői Attribúció (`created_by`):**
+   - A `feedback` tábla sora a kiválasztott felhasználó `user_id`-jával, de a kezdeményező admin `created_by` azonosítójával kerül elmentésre (`created_by uuid REFERENCES profiles(user_id)`).
+   - A `TicketDetailView`-ban az első üzenet feladójaként a hozzárendelt felelős (support munkatárs) jelenik meg `Support` jelvénnyel, így a kommunikációs szál azonnal kétirányú párbeszédként indul.
+   - Így a célfelhasználó a saját felületén (`/tickets` és értesítési központ) azonnal látja a jegyet olvasatlanként, az adminisztrátornál viszont automatikusan rögzül a `ticket_reads` bejegyzés.
 2. **Adatbázis Trigger Automatikus Működése:**
    - A meglévő `trg_ticket_created_event` PostgreSQL trigger automatikusan lefut, és generálja a kezdeti `created` eseményt a `ticket_events` táblába.
 3. **Adminisztrátori Audit Trail:**
-   - A `ticketsHandler.ts` a jegy létrehozása után explicit módon rögzít egy audit eseményt a `ticket_events` táblában (`event_type: 'created'`, `actor_id: adminUser.id`, `metadata: { created_by_admin: true, admin_id, admin_email }`). Ez transzparens felügyeletet biztosít arról, melyik admin nyitotta a jegyet a kliens helyett.
+   - A `ticketsHandler.ts` a jegy létrehozása után explicit módon rögzít egy audit eseményt a `ticket_events` táblában (`event_type: 'created'`, `actor_id: adminUser.id`, `metadata: { created_on_behalf: true, admin_id, admin_email }`). Ez transzparens felügyeletet biztosít arról, melyik admin nyitotta a jegyet a kliens helyett.
+4. **Kezdeti Státusz és Felelős Hozzárendelés (`assigned` státusz):**
+   - Ha a jegy létrehozásakor felelős munkatárs van kijelölve (alapértelmezetten az indító adminisztrátor), a jegy kezdő státusza automatikusan `assigned` lesz. Amennyiben nincs hozzárendelt személy, a státusz `created` (Nyitott).
 
 ### C. Dinamikus Cégkezelés és Auto-Fill Szabály
 

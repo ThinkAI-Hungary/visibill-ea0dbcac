@@ -6150,6 +6150,7 @@ export type Database = {
           company_id: string | null
           company_name: string | null
           created_at: string
+          created_by: string | null
           id: string
           message: string
           page_url: string | null
@@ -6171,6 +6172,7 @@ export type Database = {
           company_id?: string | null
           company_name?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           message: string
           page_url?: string | null
@@ -6192,6 +6194,7 @@ export type Database = {
           company_id?: string | null
           company_name?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           message?: string
           page_url?: string | null
@@ -6221,6 +6224,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
