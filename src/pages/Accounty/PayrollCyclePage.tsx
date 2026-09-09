@@ -4,7 +4,7 @@ import {
   ArrowLeft, Check, ChevronRight, ChevronLeft,
   Mail, ClipboardList, Clock, Coffee, Calculator,
   Receipt, FileText, Loader2, Users, AlertTriangle,
-  CheckCircle2, Printer
+  CheckCircle2, Printer, ListFilter, UserCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
@@ -33,6 +33,7 @@ import PayrollStep5 from '@/components/accounty/payroll/PayrollStep5';
 import PayrollStep6 from '@/components/accounty/payroll/PayrollStep6';
 import PayrollStep7 from '@/components/accounty/payroll/PayrollStep7';
 import PayrollStep8 from '@/components/accounty/payroll/PayrollStep8';
+import EmployeeWorksheetView from '@/components/accounty/payroll/EmployeeWorksheetView';
 
 // ── 8 lépés definíció ──
 const CYCLE_STEPS = [
@@ -106,6 +107,7 @@ export default function PayrollCyclePage() {
   const [isPosting, setIsPosting] = useState(false);
   const [customGlMapping, setCustomGlMapping] = useState<any>(null);
   const [step5Saving, setStep5Saving] = useState(false);
+  const [viewMode, setViewMode] = useState<'stepper' | 'worksheet'>('stepper');
 
   // Fetch all employments for this company
   const [allEmployments, setAllEmployments] = useState<any[]>([]);
@@ -477,6 +479,7 @@ export default function PayrollCyclePage() {
       i => i.employment_id === employment?.id && (i.sub_type === 'home_office' || i.benefit_type === 'home_office')
     );
     const hoAmount = hoItem ? Number(hoItem.amount) : 0;
+    const commuteAmount = Number((meta as any)?.travel_reimbursement || 0);
 
     return {
       companyName: companyDetails?.name || company?.name || '–',
@@ -501,6 +504,7 @@ export default function PayrollCyclePage() {
       bonuses: bonusAmount + otherPremiums,
       serviceCharge: serviceChargeAmount,
       homeOffice: hoAmount,
+      commuteReimbursement: commuteAmount,
       otherIncome: calculatedLeaveAmount,
       grossTotal: calc.gross_salary || 0,
       szjaBase: calc.szja_base || calc.gross_salary || 0,
@@ -515,7 +519,7 @@ export default function PayrollCyclePage() {
       garnishments: garnishmentAmount,
       advances: advanceAmount,
       otherDeductions: otherDeductionsAmount,
-      netSalary: (calc.net_salary || 0) + hoAmount,
+      netSalary: (calc.net_salary || 0) + hoAmount + commuteAmount,
     };
   };
 
@@ -580,6 +584,35 @@ export default function PayrollCyclePage() {
       5: 'calculating', 6: 'calculating', 7: 'calculating', 8: 'calculated',
     };
     await updateStep.mutateAsync({ cycleId: cycle.id, step, status: statusMap[step] || 'draft' });
+  };
+
+  const handleCloseCycle = async () => {
+    if (!cycle?.id || !companyId || !user?.id) return;
+    setIsPosting(true);
+    try {
+      const postResult = await postPayrollCycleToLedger(cycle.id, companyId, user.id, customGlMapping);
+      if (postResult.success) {
+        toast({
+          title: ' Ciklus lezárva és lekönyvelve!',
+          description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva. Főkönyvi bizonylat: ${postResult.journalNumber || 'BER'}`,
+        });
+      } else {
+        toast({
+          title: ' Ciklus lezárva (könyvelési figyelmeztetéssel)',
+          description: postResult.message,
+          variant: 'destructive',
+        });
+      }
+      navigate(`/eaisybooks/payroll/${companyId}`);
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a lezárás során',
+        description: err?.message || 'Váratlan hiba történt.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   if (isNewCycle) {
@@ -667,7 +700,7 @@ export default function PayrollCyclePage() {
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(`/eaisybooks/payroll/${companyId}`)} className="h-9 w-9">
             <ArrowLeft className="w-4 h-4" />
@@ -677,14 +710,42 @@ export default function PayrollCyclePage() {
               {cycle.year}. {MONTHS[cycle.month - 1]}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {activeEmployees.length} foglalkoztatott · Lépés {currentStep}/8
+              {activeEmployees.length} foglalkoztatott · {viewMode === 'stepper' ? `Lépés ${currentStep}/8` : 'Dolgozói munkalap nézet'}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Dual View Mode Switcher */}
+          <div className="flex items-center bg-muted/60 p-1 rounded-lg border border-border">
+            <button
+              onClick={() => setViewMode('stepper')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all',
+                viewMode === 'stepper'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <ListFilter className="w-3.5 h-3.5" />
+              <span>8-lépéses folyamat</span>
+            </button>
+            <button
+              onClick={() => setViewMode('worksheet')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all',
+                viewMode === 'worksheet'
+                  ? 'bg-card text-primary shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>Dolgozói munkalap</span>
+            </button>
+          </div>
+
           <ExportButton
             filename={`berszamfejtes_${cycle.year}_${MONTHS[cycle.month - 1]}`}
-            headers={['Név', 'Bruttó (Ft)', 'SZJA (Ft)', 'TB (Ft)', 'SZOCHO (Ft)', 'Levonás (Ft)', 'Nettó (Ft)']}
+            headers={['Név', 'Bruttó (Ft)', 'SZJA (Ft)', 'TB (Ft)', 'SZOCHO (Ft)', 'Levonás (Ft)', 'Munkába járás (Ft)', 'Nettó (Ft)']}
             getRows={() => {
               const rows = calculations.map(calc => [
                 getCalcName(calc),
@@ -693,6 +754,7 @@ export default function PayrollCyclePage() {
                 calc.tb_amount || 0,
                 calc.szocho_amount || 0,
                 calc.total_deductions || 0,
+                Number((calc.metadata as any)?.travel_reimbursement || 0),
                 calc.net_salary || 0,
               ]);
               rows.push([
@@ -702,6 +764,7 @@ export default function PayrollCyclePage() {
                 calculations.reduce((s, c) => s + (c.tb_amount || 0), 0),
                 calculations.reduce((s, c) => s + (c.szocho_amount || 0), 0),
                 calculations.reduce((s, c) => s + (c.total_deductions || 0), 0),
+                calculations.reduce((s, c) => s + Number((c.metadata as any)?.travel_reimbursement || 0), 0),
                 calculations.reduce((s, c) => s + (c.net_salary || 0), 0),
               ]);
               return rows;
@@ -711,8 +774,32 @@ export default function PayrollCyclePage() {
         </div>
       </div>
 
-      {/* 8-step stepper */}
-      <div className="bg-card rounded-xl border border-border shadow-soft p-6 overflow-hidden">
+      {viewMode === 'worksheet' ? (
+        <EmployeeWorksheetView
+          companyId={companyId || ''}
+          cycle={cycle}
+          activeEmployees={activeEmployees}
+          allEmployments={allEmployments}
+          attendanceData={attendanceData}
+          onAttendanceChange={handleAttendanceChange}
+          items={items}
+          cafeteriaItems={cafeteriaItems}
+          garnishments={garnishments}
+          calculations={calculations}
+          runBatch={runBatch}
+          onSaveTimesheet={saveAttendanceData}
+          onPrintPayslip={handlePrintPayslip}
+          onSwitchToStepper={(targetStep) => {
+            if (targetStep) handleStepChange(targetStep);
+            setViewMode('stepper');
+          }}
+          onCycleClose={handleCloseCycle}
+          isPosting={isPosting}
+        />
+      ) : (
+        <>
+          {/* 8-step stepper */}
+          <div className="bg-card rounded-xl border border-border shadow-soft p-6 overflow-hidden">
         <div className="flex items-center gap-0">
           {CYCLE_STEPS.map((s, i) => {
             const isActive = s.id === currentStep;
@@ -901,34 +988,7 @@ export default function PayrollCyclePage() {
           <Button
             className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
             disabled={updateStep.isPending || isPosting}
-            onClick={async () => {
-              if (!cycle?.id || !companyId || !user?.id) return;
-              setIsPosting(true);
-              try {
-                const postResult = await postPayrollCycleToLedger(cycle.id, companyId, user.id, customGlMapping);
-                if (postResult.success) {
-                  toast({
-                    title: ' Ciklus lezárva és lekönyvelve!',
-                    description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva. Főkönyvi bizonylat: ${postResult.journalNumber || 'BER'}`,
-                  });
-                } else {
-                  toast({
-                    title: ' Ciklus lezárva (könyvelési figyelmeztetéssel)',
-                    description: postResult.message,
-                    variant: 'destructive',
-                  });
-                }
-                navigate(`/eaisybooks/payroll/${companyId}`);
-              } catch (err: any) {
-                toast({
-                  title: 'Hiba a lezárás során',
-                  description: err?.message || 'Váratlan hiba történt.',
-                  variant: 'destructive',
-                });
-              } finally {
-                setIsPosting(false);
-              }
-            }}
+            onClick={handleCloseCycle}
           >
             {isPosting ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Könyvelés folyamatban...</>
@@ -938,6 +998,8 @@ export default function PayrollCyclePage() {
           </Button>
         )}
       </div>
-    </div>
+    </>
+  )}
+</div>
   );
 }

@@ -119,6 +119,10 @@ type FormData = {
   szocho_discount_months_elapsed: string;
   insurance_relationship_code: string;
   feor_description: string;
+  commute_type: 'none' | 'car' | 'public_transit';
+  commute_distance_km: string;
+  commute_monthly_pass_cost: string;
+  commute_reimbursement_pct: string;
   // Step 5: Financial
   bank_account: string;
   minimum_contribution_base_rule: string;
@@ -168,6 +172,10 @@ const INITIAL_FORM: FormData = {
   szocho_discount_months_elapsed: '0',
   insurance_relationship_code: '',
   feor_description: '',
+  commute_type: 'none',
+  commute_distance_km: '0',
+  commute_monthly_pass_cost: '0',
+  commute_reimbursement_pct: '86',
   bank_account: '',
   minimum_contribution_base_rule: 'none',
   is_min_base_paid_elsewhere: false,
@@ -360,6 +368,10 @@ export default function EmployeeWizardPage() {
         job_valid_from: form.start_date,
         feor_description: form.feor_description || null,
         project_id: form.project_id || null,
+        commute_type: form.commute_type || 'none',
+        commute_distance_km: form.commute_type === 'car' ? (parseFloat(form.commute_distance_km) || 0) : 0,
+        commute_monthly_pass_cost: form.commute_type === 'public_transit' ? (parseFloat(form.commute_monthly_pass_cost) || 0) : 0,
+        commute_reimbursement_pct: form.commute_type === 'public_transit' ? (parseFloat(form.commute_reimbursement_pct) || 86) : 86,
       } as any);
 
       navigate(`/eaisybooks/payroll/${companyId}/employees`);
@@ -961,6 +973,71 @@ export default function EmployeeWizardPage() {
                 </div>
               )}
             </div>
+
+            <div className="md:col-span-2 border-t border-border pt-4 mt-2">
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Munkába Járás Utazási Költségtérítése</p>
+              <p className="text-xs text-slate-500 mb-3">39/2010. (II. 26.) Korm. rendelet és Szja tv. 25. § (2) szerinti adómentes költségtérítés</p>
+            </div>
+
+            <div className="flex flex-col gap-3 p-4 rounded-lg border border-border md:col-span-2 bg-slate-50/50 dark:bg-slate-900/10">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Munkába járás módja</label>
+                <Select value={form.commute_type} onValueChange={(v: any) => update('commute_type', v)}>
+                  <SelectTrigger className="bg-card border-border h-9 text-xs">
+                    <SelectValue placeholder="Válassz módot..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nincs munkába járási költségtérítés</SelectItem>
+                    <SelectItem value="car">Saját gépkocsi (km-alapon, 18–30 Ft/km)</SelectItem>
+                    <SelectItem value="public_transit">Közösségi közlekedés (helyközi bérlet / menetjegy)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {form.commute_type === 'car' && (
+                <div className="space-y-2 mt-2 border-t border-border/60 pt-3">
+                  <FormField
+                    label="Napi oda-vissza távolság (km)"
+                    value={form.commute_distance_km}
+                    onChange={(v) => update('commute_distance_km', v)}
+                    type="number"
+                    placeholder="pl. 24"
+                    className="h-9 text-xs"
+                  />
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
+                    * A havi számfejtés során a rendszer a ténylegesen ledolgozott munkanapokkal és a céges rátával (alapértelmezett: 30 Ft/km) szorozza fel automatikusan. Teljesen adómentes.
+                  </p>
+                </div>
+              )}
+
+              {form.commute_type === 'public_transit' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 border-t border-border/60 pt-3">
+                  <FormField
+                    label="Havi bérlet / menetjegy bruttó ára (Ft)"
+                    value={form.commute_monthly_pass_cost}
+                    onChange={(v) => update('commute_monthly_pass_cost', v)}
+                    type="number"
+                    placeholder="pl. 14200"
+                    className="h-9 text-xs"
+                  />
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Térítés mértéke (%)</label>
+                    <Select value={form.commute_reimbursement_pct} onValueChange={(v) => update('commute_reimbursement_pct', v)}>
+                      <SelectTrigger className="bg-card border-border h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="86">86% (törvényi kötelező minimum)</SelectItem>
+                        <SelectItem value="100">100% (teljes térítés)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 italic md:col-span-2">
+                    * A havi elszámoláskor a bérlet ára a havi munkalapon ciklusonként is felülbírálható. Teljesen adómentes.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
           );
         })()}
@@ -1007,6 +1084,12 @@ export default function EmployeeWizardPage() {
             {form.is_ekho && <ReviewRow label="EKHO" value={`Igen (${form.ekho_category}, fizeti: ${form.ekho_payer})`} />}
             {form.is_pensioner && <ReviewRow label="Nyugdíjas" value={`Igen (${form.pension_type})`} />}
             {form.is_szocho_discount && <ReviewRow label="SZOCHO kedvezmény" value={form.szocho_discount_type} />}
+            {form.commute_type === 'car' && (
+              <ReviewRow label="Munkába járás" value={`Gépkocsi (${form.commute_distance_km} km/nap)`} />
+            )}
+            {form.commute_type === 'public_transit' && (
+              <ReviewRow label="Munkába járás" value={`Bérlet (${Number(form.commute_monthly_pass_cost || 0).toLocaleString('hu-HU')} Ft, ${form.commute_reimbursement_pct}%)`} />
+            )}
             {form.bank_account && <ReviewRow label="Bankszámla" value={formatBankAccount(form.bank_account)} />}
           </div>
         )}

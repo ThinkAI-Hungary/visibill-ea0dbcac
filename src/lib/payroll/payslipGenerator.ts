@@ -34,6 +34,7 @@ export interface PayslipData {
   bonuses: number;
   serviceCharge?: number;
   homeOffice?: number;
+  commuteReimbursement?: number;
   otherIncome: number;
   grossTotal: number;
   workedHours?: number;
@@ -77,6 +78,7 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
     + data.firstMarriageCredit + data.personalDisabilityCredit;
   const totalDeductions = data.garnishments + data.advances + data.otherDeductions;
   const homeOfficeAmount = data.homeOffice || 0;
+  const commuteAmount = data.commuteReimbursement || 0;
 
   return `
 <div class="payslip"${isMultiPage ? ' style="page-break-after: always; break-after: page;"' : ''}>
@@ -149,6 +151,10 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
         ${homeOfficeAmount > 0 ? `
         <tr><td></td><td></td></tr>
         <tr><td>Home Office költségtérítés (Adómentes)</td><td class="right positive">+${fmt(homeOfficeAmount)}</td></tr>
+        ` : ''}
+        ${commuteAmount > 0 ? `
+        <tr><td></td><td></td></tr>
+        <tr><td>Munkába járás költségtérítés (Adómentes)</td><td class="right positive">+${fmt(commuteAmount)}</td></tr>
         ` : ''}
         ${totalDeductions > 0 ? `
         <tr><td></td><td></td></tr>

@@ -124,10 +124,13 @@ export default function PayrollStep8({
     return sc ? Number(sc.amount) : 0;
   };
 
+  const getCommute = (calc: any) => Number((calc?.metadata as any)?.travel_reimbursement || 0);
+
   const totalHomeOffice = calculations.reduce((sum, c) => sum + getHomeOffice(c.employment_id), 0);
+  const totalCommute = calculations.reduce((sum, c) => sum + getCommute(c), 0);
   const totalServiceCharge = calculations.reduce((sum, c) => sum + getServiceCharge(c.employment_id), 0);
   const totalNetSalary = calculations.reduce((sum, c) => sum + (c.net_salary || 0), 0);
-  const totalFinalPayout = totalNetSalary + totalHomeOffice;
+  const totalFinalPayout = totalNetSalary + totalHomeOffice + totalCommute;
 
   const lastCalcDate = React.useMemo(() => {
     const raw = calculations[0]?.metadata?.calculated_at;
@@ -189,12 +192,13 @@ export default function PayrollStep8({
       {calculations.length > 0 ? (
         <>
           {/* Summary totals */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             {[
               { label: 'Össz. bruttó', value: calculations.reduce((s, c) => s + (c.gross_salary || 0), 0), color: 'text-slate-900 dark:text-slate-100' },
               { label: 'Össz. SZJA+TB', value: calculations.reduce((s, c) => s + (c.szja_amount || 0) + (c.tb_amount || 0), 0), color: 'text-red-600' },
               { label: isKiva ? 'Össz. SZOCHO (KIVA: 0 Ft)' : 'Össz. SZOCHO', value: calculations.reduce((s, c) => s + getSzocho(c), 0), color: 'text-violet-600' },
               { label: 'Össz. Home Office', value: totalHomeOffice, color: 'text-emerald-600 dark:text-emerald-400' },
+              { label: 'Munkába járás', value: totalCommute, color: 'text-emerald-600 dark:text-emerald-400' },
               { label: 'Össz. Kifizetendő', value: totalFinalPayout, color: 'text-green-600 font-extrabold' },
             ].map((item) => (
               <div key={item.label} className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-center">
@@ -220,7 +224,8 @@ export default function PayrollStep8({
                   <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">SZJA</th>
                   <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">TB</th>
                   <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">SZOCHO</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">Home Office (Adómentes)</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">Home Office</th>
+                  <th className="px-3 py-2 text-right font-medium text-emerald-600 uppercase">Munkába járás</th>
                   <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">Kifizetendő Nettó</th>
                   <th className="px-3 py-2 text-center font-medium text-slate-500 uppercase">Bérjegyzék</th>
                 </tr>
@@ -228,9 +233,10 @@ export default function PayrollStep8({
               <tbody className="divide-y divide-border/50">
                 {calculations.map((calc) => {
                   const hoAmount = getHomeOffice(calc.employment_id);
+                  const commuteAmount = getCommute(calc);
                   const bonusAmount = getBonus(calc.employment_id);
                   const serviceChargeAmount = getServiceCharge(calc.employment_id);
-                  const finalPayout = (calc.net_salary || 0) + hoAmount;
+                  const finalPayout = (calc.net_salary || 0) + hoAmount + commuteAmount;
 
                   return (
                     <tr key={calc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
@@ -251,6 +257,9 @@ export default function PayrollStep8({
                       <td className="px-3 py-2.5 text-right font-mono text-violet-600">{getSzocho(calc).toLocaleString('hu-HU')}</td>
                       <td className="px-3 py-2.5 text-right font-mono text-emerald-600 font-semibold">
                         {hoAmount > 0 ? `${hoAmount.toLocaleString('hu-HU')} Ft` : '-'}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono text-emerald-600 font-semibold">
+                        {commuteAmount > 0 ? `${commuteAmount.toLocaleString('hu-HU')} Ft` : '-'}
                       </td>
                       <td className="px-3 py-2.5 text-right font-bold font-mono text-green-600 text-sm">
                         {finalPayout.toLocaleString('hu-HU')} Ft
@@ -282,6 +291,7 @@ export default function PayrollStep8({
                   <td className="px-3 py-2.5 text-right font-mono text-blue-600">{calculations.reduce((s, c) => s + (c.tb_amount || 0), 0).toLocaleString('hu-HU')}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-violet-600">{calculations.reduce((s, c) => s + getSzocho(c), 0).toLocaleString('hu-HU')}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-emerald-600">{totalHomeOffice.toLocaleString('hu-HU')} Ft</td>
+                  <td className="px-3 py-2.5 text-right font-mono text-emerald-600">{totalCommute.toLocaleString('hu-HU')} Ft</td>
                   <td className="px-3 py-2.5 text-right font-mono text-green-600 font-extrabold text-sm">{totalFinalPayout.toLocaleString('hu-HU')} Ft</td>
                   <td></td>
                 </tr>
@@ -429,6 +439,37 @@ export default function PayrollStep8({
                       <td className="px-3 py-2 text-center font-bold text-blue-400">T</td>
                       <td className="px-3 py-2 text-right font-bold text-blue-400">
                         {calculations.reduce((s, c) => s + getSzocho(c), 0).toLocaleString('hu-HU')} Ft
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-600">-</td>
+                    </tr>
+                  )}
+
+                  {/* T 551 Munkába járás költségtérítés (adómentes) */}
+                  {totalCommute > 0 && (
+                    <tr>
+                      <td className="px-3 py-2 text-slate-200">
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={glMapping?.gl551 || ''}
+                            onChange={(e) => handleSelectGlAccount('gl551', e.target.value)}
+                            className="bg-slate-800 text-blue-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[220px]"
+                          >
+                            {allGlAccounts.length > 0 ? (
+                              allGlAccounts.map(a => (
+                                <option key={a.id} value={a.id}>
+                                  {a.gl_number} — {a.short_name || a.description}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="">551 — Egyéb személyi jellegű kifizetések</option>
+                            )}
+                          </select>
+                          <span className="text-slate-400 text-[11px]">Munkába járás költségtérítés (adómentes)</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center font-bold text-blue-400">T</td>
+                      <td className="px-3 py-2 text-right font-bold text-blue-400">
+                        {totalCommute.toLocaleString('hu-HU')} Ft
                       </td>
                       <td className="px-3 py-2 text-right text-slate-600">-</td>
                     </tr>
@@ -587,7 +628,8 @@ export default function PayrollStep8({
                         calculations.reduce((s, c) => s + (c.gross_salary || 0), 0) -
                         calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) -
                         calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) -
-                        calculations.reduce((s, c) => s + (c.total_deductions || 0), 0)
+                        calculations.reduce((s, c) => s + (c.total_deductions || 0), 0) +
+                        totalCommute
                       ).toLocaleString('hu-HU')} Ft
                     </td>
                   </tr>
@@ -599,7 +641,8 @@ export default function PayrollStep8({
                     <td className="px-3 py-2.5 text-right font-extrabold text-blue-400">
                       {(
                         calculations.reduce((s, c) => s + (c.gross_salary || 0), 0) +
-                        calculations.reduce((s, c) => s + getSzocho(c), 0)
+                        calculations.reduce((s, c) => s + getSzocho(c), 0) +
+                        totalCommute
                       ).toLocaleString('hu-HU')} Ft
                     </td>
                     <td className="px-3 py-2.5 text-right font-extrabold text-purple-400">
@@ -612,7 +655,8 @@ export default function PayrollStep8({
                           calculations.reduce((s, c) => s + (c.gross_salary || 0), 0) -
                           calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) -
                           calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) -
-                          calculations.reduce((s, c) => s + (c.total_deductions || 0), 0)
+                          calculations.reduce((s, c) => s + (c.total_deductions || 0), 0) +
+                          totalCommute
                         )
                       ).toLocaleString('hu-HU')} Ft
                     </td>

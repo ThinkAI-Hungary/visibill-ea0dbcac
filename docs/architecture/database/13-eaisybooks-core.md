@@ -57,6 +57,7 @@
 | updated_at | timestamp with time zone | ✓ | `now()` |
 | has_payroll | boolean | ✓ | `false` |
 | payroll_settings | jsonb | ✓ | `'{}'::jsonb` |
+| commute_car_rate_per_km | numeric | ✓ | `30.00` |
 
 **FK:** `company_id` → `companies.id`
 

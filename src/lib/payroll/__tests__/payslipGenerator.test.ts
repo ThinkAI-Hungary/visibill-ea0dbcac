@@ -112,4 +112,11 @@ describe('generatePayslipHtml', () => {
     expect(html).toContain('Ledolgozott munkaórák');
     expect(html).toContain('160 óra');
   });
+
+  it('should show commute reimbursement row when present', () => {
+    const withCommute = { ...basePayslip, commuteReimbursement: 12000 };
+    const html = generatePayslipHtml(withCommute);
+    expect(html).toContain('Munkába járás költségtérítés (Adómentes)');
+    expect(html).toContain('12');
+  });
 });

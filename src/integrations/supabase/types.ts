@@ -1567,6 +1567,10 @@ export type Database = {
           szocho_discount_end: string | null
           szocho_discount_start: string | null
           szocho_discount_type: string | null
+          commute_distance_km: number | null
+          commute_monthly_pass_cost: number | null
+          commute_reimbursement_pct: number | null
+          commute_type: string | null
           updated_at: string | null
           weekly_hours: number | null
         }
@@ -1614,6 +1618,10 @@ export type Database = {
           szocho_discount_end?: string | null
           szocho_discount_start?: string | null
           szocho_discount_type?: string | null
+          commute_distance_km?: number | null
+          commute_monthly_pass_cost?: number | null
+          commute_reimbursement_pct?: number | null
+          commute_type?: string | null
           updated_at?: string | null
           weekly_hours?: number | null
         }
@@ -1661,6 +1669,10 @@ export type Database = {
           szocho_discount_end?: string | null
           szocho_discount_start?: string | null
           szocho_discount_type?: string | null
+          commute_distance_km?: number | null
+          commute_monthly_pass_cost?: number | null
+          commute_reimbursement_pct?: number | null
+          commute_type?: string | null
           updated_at?: string | null
           weekly_hours?: number | null
         }
@@ -3515,6 +3527,7 @@ export type Database = {
           szocho_credits: Json | null
           tax_credits: Json | null
           tb_amount: number | null
+          total_deductions: number | null
         }
         Insert: {
           cafeteria_tax?: Json | null
@@ -3532,6 +3545,7 @@ export type Database = {
           szocho_credits?: Json | null
           tax_credits?: Json | null
           tb_amount?: number | null
+          total_deductions?: number | null
         }
         Update: {
           cafeteria_tax?: Json | null
@@ -3549,6 +3563,7 @@ export type Database = {
           szocho_credits?: Json | null
           tax_credits?: Json | null
           tb_amount?: number | null
+          total_deductions?: number | null
         }
         Relationships: [
           {
@@ -4236,6 +4251,7 @@ export type Database = {
           tax_group: string | null
           updated_at: string | null
           vat_frequency: string | null
+          commute_car_rate_per_km: number | null
         }
         Insert: {
           company_id: string
@@ -4251,6 +4267,7 @@ export type Database = {
           tax_group?: string | null
           updated_at?: string | null
           vat_frequency?: string | null
+          commute_car_rate_per_km?: number | null
         }
         Update: {
           company_id?: string
@@ -4266,6 +4283,7 @@ export type Database = {
           tax_group?: string | null
           updated_at?: string | null
           vat_frequency?: string | null
+          commute_car_rate_per_km?: number | null
         }
         Relationships: [
           {
