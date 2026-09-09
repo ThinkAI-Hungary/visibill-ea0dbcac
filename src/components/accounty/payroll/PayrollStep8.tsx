@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Printer, Loader2, CheckCircle2 } from 'lucide-react';
+import { Play, Printer, Loader2, CheckCircle2, RotateCcw, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -129,11 +129,63 @@ export default function PayrollStep8({
   const totalNetSalary = calculations.reduce((sum, c) => sum + (c.net_salary || 0), 0);
   const totalFinalPayout = totalNetSalary + totalHomeOffice;
 
+  const lastCalcDate = React.useMemo(() => {
+    const raw = calculations[0]?.metadata?.calculated_at;
+    if (!raw) return null;
+    try {
+      const d = new Date(raw);
+      return d.toLocaleDateString('hu-HU', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return null;
+    }
+  }, [calculations]);
+
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
-        Véglegesítés: bruttó→nettó összesítő, jóváhagyás, adómentes juttatások és bérjegyzék generálása.
-      </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Véglegesítés: bruttó→nettó összesítő, jóváhagyás, adómentes juttatások és bérjegyzék generálása.
+          </p>
+          {lastCalcDate && (
+            <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
+              <Clock className="w-3 h-3 inline" /> Utolsó számfejtés: <span className="font-medium text-slate-600 dark:text-slate-400">{lastCalcDate}</span>
+            </p>
+          )}
+        </div>
+
+        {calculations.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => cycle && companyId && runBatch.mutate({
+              cycleId: cycle.id,
+              companyId,
+              year: cycle.year,
+              month: cycle.month,
+            })}
+            disabled={runBatch?.isPending}
+            className="flex items-center gap-1.5 shrink-0 hover:bg-primary/10 hover:text-primary transition-colors"
+          >
+            {runBatch?.isPending ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Számfejtés folyamatban...</span>
+              </>
+            ) : (
+              <>
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Számfejtés újrafuttatása ({activeEmployees.length} fő)</span>
+              </>
+            )}
+          </Button>
+        )}
+      </div>
       {calculations.length > 0 ? (
         <>
           {/* Summary totals */}
@@ -237,21 +289,47 @@ export default function PayrollStep8({
             </table>
           </div>
 
-          <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-            <div className="flex-1">
+          <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 flex-wrap">
+            <div className="flex-1 min-w-[240px]">
               <p className="text-sm text-green-700 dark:text-green-300">
                 <CheckCircle2 className="w-4 h-4 inline mr-1" />
                 <strong>{calculations.length}</strong> foglalkoztatott számfejtése kész. Lezáráshoz kattints a "Ciklus lezárása" gombra.
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePrintAllPayslips ? handlePrintAllPayslips() : calculations.forEach(c => handlePrintPayslip(c))}
-              className="flex items-center gap-1.5 shrink-0"
-            >
-              <Printer className="w-3.5 h-3.5" /> Összes bérjegyzék
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => cycle && companyId && runBatch.mutate({
+                  cycleId: cycle.id,
+                  companyId,
+                  year: cycle.year,
+                  month: cycle.month,
+                })}
+                disabled={runBatch?.isPending}
+                className="flex items-center gap-1.5"
+              >
+                {runBatch?.isPending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Számítás...</span>
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Újraszámítás</span>
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePrintAllPayslips ? handlePrintAllPayslips() : calculations.forEach(c => handlePrintPayslip(c))}
+                className="flex items-center gap-1.5"
+              >
+                <Printer className="w-3.5 h-3.5" /> Összes bérjegyzék
+              </Button>
+            </div>
           </div>
 
           {/* General Ledger Payroll Journal Posting Preview */}

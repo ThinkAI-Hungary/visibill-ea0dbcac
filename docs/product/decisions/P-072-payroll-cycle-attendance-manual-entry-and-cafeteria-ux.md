@@ -40,12 +40,17 @@ Hogyan biztosítsuk a 8-lépéses bérszámfejtési ciklusban a kézzel bevitt j
    - A varázsló lépéseihez explicit státusztársítás tartozik az adatbázisban (`data_collection` -> `review` -> `calculating` -> `calculated` -> `closed`), így a csapat többi tagja is látja a bérszámfejtés előrehaladását.
    - A 8. lépésben a „Ciklus lezárása” gomb megnyomásakor a státusz megbízhatóan `closed`-ra vált az `accounty_payroll_cycles` táblában.
 
+5. **Kétlépcsős Újraszámítás és Időbélyeg Kijelzés (Recalculate UX):**
+   - A 6. (Adó + Járulék) és a 8. (Számfejtés) lépésekben a felhasználó számára mindig elérhető a kézi „Számfejtés újrafuttatása” / „Újraszámítás” gomb (`RotateCcw`), így az előző lépésekben módosított jelenléti vagy juttatási adatok azonnal újraszámolhatók anélkül, hogy a felület a korábbi elavult kalkulációkat mutatná.
+   - A fejlécekben megjelenik az utolsó számfejtés pontos időpontja.
+
 ## Current Implementation
 - Varázsló keretrendszer: [src/pages/Accounty/PayrollCyclePage.tsx](../../../src/pages/Accounty/PayrollCyclePage.tsx)
 - Lépés komponensek:
   - [src/components/accounty/payroll/PayrollStep3.tsx](../../../src/components/accounty/payroll/PayrollStep3.tsx) (Kézi jelenléti rögzítés és CSV feldolgozás)
   - [src/components/accounty/payroll/PayrollStep4.tsx](../../../src/components/accounty/payroll/PayrollStep4.tsx) (Villódzásmentes cafeteria és juttatás kezelő)
-  - [src/components/accounty/payroll/PayrollStep8.tsx](../../../src/components/accounty/payroll/PayrollStep8.tsx) (Bérjegyzék export és ciklus zárás)
+  - [src/components/accounty/payroll/PayrollStep6.tsx](../../../src/components/accounty/payroll/PayrollStep6.tsx) (SZJA, TB, SZOCHO kalkuláció & Újraszámítás gomb)
+  - [src/components/accounty/payroll/PayrollStep8.tsx](../../../src/components/accounty/payroll/PayrollStep8.tsx) (Bérjegyzék export, Újraszámítás & ciklus zárás)
 - Adattáblák:
   - `accounty_payroll_cycles` (ciklus állapot és aktív lépés)
   - `accounty_timesheets` (jelenléti adatok dolgozónként és ciklusonként)

@@ -835,6 +835,9 @@ export default function PayrollCyclePage() {
               calculations={calculations}
               getCalcName={getCalcName}
               companyId={companyId || ''}
+              cycle={cycle}
+              activeEmployees={activeEmployees}
+              runBatch={runBatch}
             />
           )}
           {currentStep === 7 && (
