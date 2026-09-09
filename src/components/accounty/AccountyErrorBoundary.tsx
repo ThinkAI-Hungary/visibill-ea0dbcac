@@ -14,6 +14,8 @@ interface Props {
   children: React.ReactNode;
   /** Optional fallback component. If not provided, a default error UI is rendered. */
   fallback?: React.ReactNode;
+  /** Optional key (e.g. location.pathname) to automatically reset error state on navigation without unmounting. */
+  resetKey?: string;
 }
 
 interface State {
@@ -26,6 +28,12 @@ export class AccountyErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false, error: null, isChunkError: false };
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false, error: null, isChunkError: false });
+    }
   }
 
   static getDerivedStateFromError(error: Error): State {

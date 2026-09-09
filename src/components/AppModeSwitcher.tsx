@@ -8,6 +8,16 @@ interface AppModeSwitcherProps {
   showToggle?: boolean;
 }
 
+const prefetchEaisybooks = () => {
+  void import("@/pages/Accounty/AccountyLayout");
+  void import("@/pages/Accounty/ClientDetailsPage");
+};
+
+const prefetchEaisybill = () => {
+  void import("@/pages/Index");
+  void import("@/components/AppLayout");
+};
+
 export default function AppModeSwitcher({ activeMode, isCollapsed = false, showToggle = true }: AppModeSwitcherProps) {
   // If we shouldn't show the toggle (e.g. user has no access to the other app), just show a static logo for the active app
   if (!showToggle) {
@@ -31,6 +41,8 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
       <div className="flex flex-col items-center gap-2 p-1 bg-muted/30 dark:bg-muted/20 border border-border/40 rounded-full select-none w-9 pb-2">
         <Link
           to="/"
+          onMouseEnter={prefetchEaisybill}
+          onTouchStart={prefetchEaisybill}
           onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybill')}
           title="eaisyBill"
           className={cn(
@@ -47,6 +59,8 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
         </Link>
         <Link
           to="/eaisybooks"
+          onMouseEnter={prefetchEaisybooks}
+          onTouchStart={prefetchEaisybooks}
           onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybooks')}
           title="eaisyBooks"
           className={cn(
@@ -71,6 +85,8 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
       {/* Option 1: eaisyBill */}
       <Link
         to="/"
+        onMouseEnter={prefetchEaisybill}
+        onTouchStart={prefetchEaisybill}
         onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybill')}
         className={cn(
           "relative flex-1 py-2 text-center text-base font-semibold tracking-tight transition-all duration-200 rounded-full border",
@@ -92,6 +108,8 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
       {/* Option 2: eaisyBooks */}
       <Link
         to="/eaisybooks"
+        onMouseEnter={prefetchEaisybooks}
+        onTouchStart={prefetchEaisybooks}
         onClick={() => localStorage.setItem('visibill_switch_pending', 'eaisybooks')}
         className={cn(
           "relative flex-1 py-2 text-center text-base font-semibold tracking-tight transition-all duration-200 rounded-full border",

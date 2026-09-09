@@ -102,6 +102,21 @@ A sidebar shell-en belüli tartalom placeholder:
 
 ---
 
+## Sidebar Navigáció Átmeneti Skeleton (`AccountyNavSkeleton`)
+
+**Fájl:** `src/components/accounty/layout/AccountyNavSkeleton.tsx`
+
+Az eaisyBooks navigációban az ügyfélszintű menüpontokról (`/eaisybooks/:companyId/...`) a portfólió szintre (`/eaisybooks`) történő visszalépéskor a sidebar egy ~250ms átmeneti **Shimmer Skeleton**-ra vált, megszüntetve a menüpontok hirtelen felvillanását (snap/flash).
+
+| Tulajdonság | Leírás |
+|-------------|--------|
+| **Komponens** | `<AccountyNavSkeleton isCollapsed={isCollapsed} count={...} />` |
+| **Összezárt mód** | 8 db központosított négyzet alakú shimmer gomb (`w-8 h-8 rounded-md`) |
+| **Kinyitott mód** | Fejléc/vissza gomb skeleton + dinamikus szélességű menüsor skeleton-ok |
+| **Átmenet** | 250ms rögzített átmenet, amelyet a portfólió elemek `animate-in fade-in duration-300` megnyilvánulása követ |
+
+---
+
 ## Shimmer Animáció
 
 **Fájl:** `index.css`

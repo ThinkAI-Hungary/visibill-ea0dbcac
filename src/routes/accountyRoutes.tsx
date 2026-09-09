@@ -10,8 +10,9 @@ import {
   MissingInvoicesLegacyRedirect,
 } from "./redirects";
 
+import AccountyLayout from "@/pages/Accounty/AccountyLayout";
+
 // Lazy-loaded Accounty Shell & Layouts
-const AccountyLayout = lazy(() => import("@/pages/Accounty/AccountyLayout"));
 const AccountyScopedLayout = lazy(() => import("@/pages/Accounty/AccountyScopedLayout"));
 const NewClientPage = lazy(() => import("@/pages/Accounty/NewClientPage"));
 
@@ -143,6 +144,41 @@ const AiAssistantPage = lazy(() => import("@/pages/Accounty/AiAssistantPage"));
 const ProfileSettingsPage = lazy(() => import("@/pages/Accounty/ProfileSettingsPage"));
 const PromptsPage = lazy(() => import("@/pages/Accounty/PromptsPage"));
 
+function AccountyPageSkeleton() {
+  return (
+    <div className="w-full space-y-6 animate-pulse p-2">
+      <div className="flex items-center justify-between gap-4">
+        <div className="h-8 w-48 bg-muted/60 rounded-lg" />
+        <div className="h-8 w-32 bg-muted/40 rounded-lg" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="h-24 bg-card border border-border/50 rounded-xl p-4 space-y-2">
+          <div className="h-4 w-20 bg-muted/60 rounded" />
+          <div className="h-7 w-16 bg-muted/80 rounded" />
+        </div>
+        <div className="h-24 bg-card border border-border/50 rounded-xl p-4 space-y-2">
+          <div className="h-4 w-24 bg-muted/60 rounded" />
+          <div className="h-7 w-16 bg-muted/80 rounded" />
+        </div>
+        <div className="h-24 bg-card border border-border/50 rounded-xl p-4 space-y-2">
+          <div className="h-4 w-20 bg-muted/60 rounded" />
+          <div className="h-7 w-16 bg-muted/80 rounded" />
+        </div>
+        <div className="h-24 bg-card border border-border/50 rounded-xl p-4 space-y-2">
+          <div className="h-4 w-28 bg-muted/60 rounded" />
+          <div className="h-7 w-16 bg-muted/80 rounded" />
+        </div>
+      </div>
+      <div className="h-64 bg-card border border-border/50 rounded-xl p-4 space-y-3">
+        <div className="h-8 w-full bg-muted/40 rounded" />
+        <div className="h-10 w-full bg-muted/20 rounded" />
+        <div className="h-10 w-full bg-muted/30 rounded" />
+        <div className="h-10 w-full bg-muted/20 rounded" />
+      </div>
+    </div>
+  );
+}
+
 export function renderAccountyRoutes() {
   return (
     <>
@@ -172,9 +208,7 @@ export function renderAccountyRoutes() {
         element={
           <ProtectedPage>
             <RemoveInitialLoader />
-            <Suspense fallback={<LoadingSpinner message="eaisybooks betöltése..." />}>
-              <AccountyLayout />
-            </Suspense>
+            <AccountyLayout />
           </ProtectedPage>
         }
       >
@@ -212,168 +246,168 @@ export function renderAccountyRoutes() {
         <Route
           path=":companyId/:dateRange"
           element={
-            <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+            <Suspense fallback={<AccountyPageSkeleton />}>
               <AccountyScopedLayout />
             </Suspense>
           }
         >
           <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientDetailsPage /></Suspense>} />
-          <Route path="profile" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientDetailsPage /></Suspense>} />
-          <Route path="accounting" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountingRedirectPage /></Suspense>} />
-          <Route path="settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientDetailsPage /></Suspense>} />
+          <Route path="overview" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientDetailsPage /></Suspense>} />
+          <Route path="profile" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientDetailsPage /></Suspense>} />
+          <Route path="accounting" element={<Suspense fallback={<AccountyPageSkeleton />}><AccountingRedirectPage /></Suspense>} />
+          <Route path="settings" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientDetailsPage /></Suspense>} />
 
           {/* Client-Centric Payroll Routes */}
-          <Route path="payroll" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollDashboardPage /></Suspense>} />
-          <Route path="payroll/employees" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollEmployeesPage /></Suspense>} />
-          <Route path="payroll/employees/new" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollEmployeeWizardPage /></Suspense>} />
-          <Route path="payroll/employees/:empId" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollEmployeeDetailsPage /></Suspense>} />
-          <Route path="payroll/cycle/new" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollCyclePage /></Suspense>} />
-          <Route path="payroll/cycle/:cycleId" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollCyclePage /></Suspense>} />
-          <Route path="payroll/filings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollFilingsPage /></Suspense>} />
-          <Route path="payroll/reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollReportsPage /></Suspense>} />
-          <Route path="payroll/portal" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientPortalPage /></Suspense>} />
-          <Route path="payroll/tax-params" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollTaxParametersPage /></Suspense>} />
-          <Route path="payroll/settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CompanyPayrollSettingsPage /></Suspense>} />
+          <Route path="payroll" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollDashboardPage /></Suspense>} />
+          <Route path="payroll/employees" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollEmployeesPage /></Suspense>} />
+          <Route path="payroll/employees/new" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollEmployeeWizardPage /></Suspense>} />
+          <Route path="payroll/employees/:empId" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollEmployeeDetailsPage /></Suspense>} />
+          <Route path="payroll/cycle/new" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollCyclePage /></Suspense>} />
+          <Route path="payroll/cycle/:cycleId" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollCyclePage /></Suspense>} />
+          <Route path="payroll/filings" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollFilingsPage /></Suspense>} />
+          <Route path="payroll/reports" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollReportsPage /></Suspense>} />
+          <Route path="payroll/portal" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientPortalPage /></Suspense>} />
+          <Route path="payroll/tax-params" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollTaxParametersPage /></Suspense>} />
+          <Route path="payroll/settings" element={<Suspense fallback={<AccountyPageSkeleton />}><CompanyPayrollSettingsPage /></Suspense>} />
 
           {/* Employee extensions */}
-          <Route path="payroll/employees/import" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EmployeeImportPage /></Suspense>} />
-          <Route path="payroll/employees/:empId/modification" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><JobModificationPage /></Suspense>} />
-          <Route path="payroll/employees/:empId/multi-job" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MultiJobPage /></Suspense>} />
+          <Route path="payroll/employees/import" element={<Suspense fallback={<AccountyPageSkeleton />}><EmployeeImportPage /></Suspense>} />
+          <Route path="payroll/employees/:empId/modification" element={<Suspense fallback={<AccountyPageSkeleton />}><JobModificationPage /></Suspense>} />
+          <Route path="payroll/employees/:empId/multi-job" element={<Suspense fallback={<AccountyPageSkeleton />}><MultiJobPage /></Suspense>} />
           {/* Declarations */}
-          <Route path="payroll/declarations" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><DeclarationsOverviewPage /></Suspense>} />
-          <Route path="payroll/declarations/archive" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><DeclarationArchivePage /></Suspense>} />
-          <Route path="payroll/declarations/family" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><FamilyDeclarationPage /></Suspense>} />
-          <Route path="payroll/declarations/:type" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><GenericDeclarationPage /></Suspense>} />
+          <Route path="payroll/declarations" element={<Suspense fallback={<AccountyPageSkeleton />}><DeclarationsOverviewPage /></Suspense>} />
+          <Route path="payroll/declarations/archive" element={<Suspense fallback={<AccountyPageSkeleton />}><DeclarationArchivePage /></Suspense>} />
+          <Route path="payroll/declarations/family" element={<Suspense fallback={<AccountyPageSkeleton />}><FamilyDeclarationPage /></Suspense>} />
+          <Route path="payroll/declarations/:type" element={<Suspense fallback={<AccountyPageSkeleton />}><GenericDeclarationPage /></Suspense>} />
           {/* Documents */}
-          <Route path="payroll/documents" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><DocumentCenterPage /></Suspense>} />
-          <Route path="payroll/documents/payslips" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayslipGeneratorPage /></Suspense>} />
-          <Route path="payroll/documents/transfer" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TransferListPage /></Suspense>} />
-          <Route path="payroll/documents/e-payslip" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EPayslipPortalPage /></Suspense>} />
-          <Route path="payroll/documents/all" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OutputDocumentsPage /></Suspense>} />
-          <Route path="payroll/documents/:docType" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OutputDocumentsPage /></Suspense>} />
+          <Route path="payroll/documents" element={<Suspense fallback={<AccountyPageSkeleton />}><DocumentCenterPage /></Suspense>} />
+          <Route path="payroll/documents/payslips" element={<Suspense fallback={<AccountyPageSkeleton />}><PayslipGeneratorPage /></Suspense>} />
+          <Route path="payroll/documents/transfer" element={<Suspense fallback={<AccountyPageSkeleton />}><TransferListPage /></Suspense>} />
+          <Route path="payroll/documents/e-payslip" element={<Suspense fallback={<AccountyPageSkeleton />}><EPayslipPortalPage /></Suspense>} />
+          <Route path="payroll/documents/all" element={<Suspense fallback={<AccountyPageSkeleton />}><OutputDocumentsPage /></Suspense>} />
+          <Route path="payroll/documents/:docType" element={<Suspense fallback={<AccountyPageSkeleton />}><OutputDocumentsPage /></Suspense>} />
           {/* Exit */}
-          <Route path="payroll/employees/:empId/exit" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EmployeeExitWizardPage /></Suspense>} />
-          <Route path="payroll/employees/:empId/exit-docs" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ExitDocumentsPage /></Suspense>} />
+          <Route path="payroll/employees/:empId/exit" element={<Suspense fallback={<AccountyPageSkeleton />}><EmployeeExitWizardPage /></Suspense>} />
+          <Route path="payroll/employees/:empId/exit-docs" element={<Suspense fallback={<AccountyPageSkeleton />}><ExitDocumentsPage /></Suspense>} />
           {/* Filings */}
-          <Route path="payroll/filings/08e" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Filing08EPage /></Suspense>} />
-          <Route path="payroll/filings/2608" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Filing2608Page /></Suspense>} />
-          <Route path="payroll/filings/all" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><GenericFilingPage /></Suspense>} />
-          <Route path="payroll/filings/:filingType" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><GenericFilingPage /></Suspense>} />
-          <Route path="payroll/filings/:filingId/workflow" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><FilingWorkflowPage /></Suspense>} />
+          <Route path="payroll/filings/08e" element={<Suspense fallback={<AccountyPageSkeleton />}><Filing08EPage /></Suspense>} />
+          <Route path="payroll/filings/2608" element={<Suspense fallback={<AccountyPageSkeleton />}><Filing2608Page /></Suspense>} />
+          <Route path="payroll/filings/all" element={<Suspense fallback={<AccountyPageSkeleton />}><GenericFilingPage /></Suspense>} />
+          <Route path="payroll/filings/:filingType" element={<Suspense fallback={<AccountyPageSkeleton />}><GenericFilingPage /></Suspense>} />
+          <Route path="payroll/filings/:filingId/workflow" element={<Suspense fallback={<AccountyPageSkeleton />}><FilingWorkflowPage /></Suspense>} />
           {/* Special job forms */}
-          <Route path="payroll/employees/:empId/special" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SpecialJobFormsPage /></Suspense>} />
-          <Route path="payroll/employees/:empId/special/:jobType" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SpecialJobFormsPage /></Suspense>} />
+          <Route path="payroll/employees/:empId/special" element={<Suspense fallback={<AccountyPageSkeleton />}><SpecialJobFormsPage /></Suspense>} />
+          <Route path="payroll/employees/:empId/special/:jobType" element={<Suspense fallback={<AccountyPageSkeleton />}><SpecialJobFormsPage /></Suspense>} />
           {/* Year End & Advanced Reports */}
-          <Route path="payroll/year-end" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><YearEndDashboardPage /></Suspense>} />
-          <Route path="payroll/advanced-reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollAdvancedReportsPage /></Suspense>} />
-          <Route path="payroll/advanced-reports/anomaly" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAnomalyReportPage /></Suspense>} />
-          <Route path="payroll/advanced-reports/custom" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CustomReportBuilderPage /></Suspense>} />
+          <Route path="payroll/year-end" element={<Suspense fallback={<AccountyPageSkeleton />}><YearEndDashboardPage /></Suspense>} />
+          <Route path="payroll/advanced-reports" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollAdvancedReportsPage /></Suspense>} />
+          <Route path="payroll/advanced-reports/anomaly" element={<Suspense fallback={<AccountyPageSkeleton />}><AiAnomalyReportPage /></Suspense>} />
+          <Route path="payroll/advanced-reports/custom" element={<Suspense fallback={<AccountyPageSkeleton />}><CustomReportBuilderPage /></Suspense>} />
 
           {/* Invoices, reports and missing invoices */}
-          <Route path="missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientMissingInvoicesPage /></Suspense>} />
-          <Route path="reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientReportsPage /></Suspense>} />
-          <Route path="reports/missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientMissingInvoicesReportPage /></Suspense>} />
-          <Route path="invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientInvoicesPage /></Suspense>} />
+          <Route path="missing-invoices" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientMissingInvoicesPage /></Suspense>} />
+          <Route path="reports" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientReportsPage /></Suspense>} />
+          <Route path="reports/missing-invoices" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientMissingInvoicesReportPage /></Suspense>} />
+          <Route path="invoices" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientInvoicesPage /></Suspense>} />
 
           {/* Settings and others */}
-          <Route path="prompts" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PromptsPage /></Suspense>} />
-          <Route path="cegkapu" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CegkapuSettingsPage /></Suspense>} />
-          <Route path="representation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RepresentationPage /></Suspense>} />
-          <Route path="data-retention" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><DataRetentionPage /></Suspense>} />
-          <Route path="structure" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CompanyStructurePage /></Suspense>} />
+          <Route path="prompts" element={<Suspense fallback={<AccountyPageSkeleton />}><PromptsPage /></Suspense>} />
+          <Route path="cegkapu" element={<Suspense fallback={<AccountyPageSkeleton />}><CegkapuSettingsPage /></Suspense>} />
+          <Route path="representation" element={<Suspense fallback={<AccountyPageSkeleton />}><RepresentationPage /></Suspense>} />
+          <Route path="data-retention" element={<Suspense fallback={<AccountyPageSkeleton />}><DataRetentionPage /></Suspense>} />
+          <Route path="structure" element={<Suspense fallback={<AccountyPageSkeleton />}><CompanyStructurePage /></Suspense>} />
 
           {/* TAO client-level */}
-          <Route path="tao" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientTaoMainPage /></Suspense>} />
-          <Route path="tao/setup" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoSetupWizardPage /></Suspense>} />
-          <Route path="tao/master-data" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoMasterDataPage /></Suspense>} />
-          <Route path="tao/lifecycle" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoLifecyclePage /></Suspense>} />
-          <Route path="tao/business-year" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoBusinessYearPage /></Suspense>} />
-          <Route path="tao/accounting-regime" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoAccountingRegimePage /></Suspense>} />
-          <Route path="tao/currency" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoCurrencyPage /></Suspense>} />
-          <Route path="tao/year-end/:year" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoYearEndWizardPage /></Suspense>} />
-          <Route path="tao/kiva" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><KivaCalculatorPage /></Suspense>} />
-          <Route path="tao/compare" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoKivaComparePage /></Suspense>} />
+          <Route path="tao" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientTaoMainPage /></Suspense>} />
+          <Route path="tao/setup" element={<Suspense fallback={<AccountyPageSkeleton />}><TaoSetupWizardPage /></Suspense>} />
+          <Route path="tao/master-data" element={<Suspense fallback={<AccountyPageSkeleton />}><TaoMasterDataPage /></Suspense>} />
+          <Route path="tao/lifecycle" element={<Suspense fallback={<AccountyPageSkeleton />}><TaoLifecyclePage /></Suspense>} />
+          <Route path="tao/business-year" element={<Suspense fallback={<AccountyPageSkeleton />}><TaoBusinessYearPage /></Suspense>} />
+          <Route path="tao/accounting-regime" element={<Suspense fallback={<AccountyPageSkeleton />}><TaoAccountingRegimePage /></Suspense>} />
+          <Route path="tao/currency" element={<Suspense fallback={<AccountyPageSkeleton />}><TaoCurrencyPage /></Suspense>} />
+          <Route path="tao/year-end/:year" element={<Suspense fallback={<AccountyPageSkeleton />}><TaoYearEndWizardPage /></Suspense>} />
+          <Route path="tao/kiva" element={<Suspense fallback={<AccountyPageSkeleton />}><KivaCalculatorPage /></Suspense>} />
+          <Route path="tao/compare" element={<Suspense fallback={<AccountyPageSkeleton />}><TaoKivaComparePage /></Suspense>} />
 
           {/* EV client-level */}
-          <Route path="ev" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientEvMainPage /></Suspense>} />
-          <Route path="ev/setup" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvSetupWizardPage /></Suspense>} />
-          <Route path="ev/master-data" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvMasterDataPage /></Suspense>} />
-          <Route path="ev/lifecycle" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvLifecyclePage /></Suspense>} />
-          <Route path="ev/flat-rate" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvFlatRatePage /></Suspense>} />
-          <Route path="ev/entrepreneurial/base" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvEntrepreneurialBasePage /></Suspense>} />
-          <Route path="ev/entrepreneurial/dividend" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvEntrepreneurialDividendPage /></Suspense>} />
-          <Route path="ev/cashbook" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CashbookMainPage /></Suspense>} />
-          <Route path="ev/cashbook/ledger" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CashbookLedgerView /></Suspense>} />
-          <Route path="ev/cashbook/close" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CashbookCloseWizard /></Suspense>} />
-          <Route path="ev/cashbook/import-nav" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvCashbookImportNavPage /></Suspense>} />
-          <Route path="ev/depreciation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvDepreciationPage /></Suspense>} />
-          <Route path="ev/kata" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvKataPage /></Suspense>} />
-          <Route path="ev/thresholds" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvThresholdMonitorPage /></Suspense>} />
-          <Route path="ev/compare" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvComparePage /></Suspense>} />
-          <Route path="ev/contributions" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvContributionsPage /></Suspense>} />
-          <Route path="ev/hipa" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvHipaPage /></Suspense>} />
-          <Route path="ev/vat" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvVatPage /></Suspense>} />
-          <Route path="ev/chamber" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvChamberPage /></Suspense>} />
-          <Route path="ev/car-tax" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvCompanyCarTaxPage /></Suspense>} />
-          <Route path="ev/innovation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvInnovationLevyPage /></Suspense>} />
-          <Route path="ev/returns" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvSzjaReturnPage /></Suspense>} />
-          <Route path="ev/returns/contrib" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvContribReturnPage /></Suspense>} />
-          <Route path="ev/returns/kata" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvKataReturnPage /></Suspense>} />
-          <Route path="ev/returns/hipa" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvHipaReturnPage /></Suspense>} />
-          <Route path="ev/returns/vat-car" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvVatCarReturnPage /></Suspense>} />
-          <Route path="ev/records" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvRecordsOverviewPage /></Suspense>} />
-          <Route path="ev/records/:recordType" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvRecordDetailPage /></Suspense>} />
-          <Route path="ev/income-report" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvIncomeReportPage /></Suspense>} />
-          <Route path="ev/optimization" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvOptimizationPage /></Suspense>} />
-          <Route path="ev/org/bookkeeping" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgBookkeepingModePage /></Suspense>} />
-          <Route path="ev/org/civil" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgCivilPage /></Suspense>} />
-          <Route path="ev/org/condominium" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgCondominiumPage /></Suspense>} />
-          <Route path="ev/org/other" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgOtherPage /></Suspense>} />
-          <Route path="ev/org/simplified-report" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgSimplifiedReportPage /></Suspense>} />
+          <Route path="ev" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientEvMainPage /></Suspense>} />
+          <Route path="ev/setup" element={<Suspense fallback={<AccountyPageSkeleton />}><EvSetupWizardPage /></Suspense>} />
+          <Route path="ev/master-data" element={<Suspense fallback={<AccountyPageSkeleton />}><EvMasterDataPage /></Suspense>} />
+          <Route path="ev/lifecycle" element={<Suspense fallback={<AccountyPageSkeleton />}><EvLifecyclePage /></Suspense>} />
+          <Route path="ev/flat-rate" element={<Suspense fallback={<AccountyPageSkeleton />}><EvFlatRatePage /></Suspense>} />
+          <Route path="ev/entrepreneurial/base" element={<Suspense fallback={<AccountyPageSkeleton />}><EvEntrepreneurialBasePage /></Suspense>} />
+          <Route path="ev/entrepreneurial/dividend" element={<Suspense fallback={<AccountyPageSkeleton />}><EvEntrepreneurialDividendPage /></Suspense>} />
+          <Route path="ev/cashbook" element={<Suspense fallback={<AccountyPageSkeleton />}><CashbookMainPage /></Suspense>} />
+          <Route path="ev/cashbook/ledger" element={<Suspense fallback={<AccountyPageSkeleton />}><CashbookLedgerView /></Suspense>} />
+          <Route path="ev/cashbook/close" element={<Suspense fallback={<AccountyPageSkeleton />}><CashbookCloseWizard /></Suspense>} />
+          <Route path="ev/cashbook/import-nav" element={<Suspense fallback={<AccountyPageSkeleton />}><EvCashbookImportNavPage /></Suspense>} />
+          <Route path="ev/depreciation" element={<Suspense fallback={<AccountyPageSkeleton />}><EvDepreciationPage /></Suspense>} />
+          <Route path="ev/kata" element={<Suspense fallback={<AccountyPageSkeleton />}><EvKataPage /></Suspense>} />
+          <Route path="ev/thresholds" element={<Suspense fallback={<AccountyPageSkeleton />}><EvThresholdMonitorPage /></Suspense>} />
+          <Route path="ev/compare" element={<Suspense fallback={<AccountyPageSkeleton />}><EvComparePage /></Suspense>} />
+          <Route path="ev/contributions" element={<Suspense fallback={<AccountyPageSkeleton />}><EvContributionsPage /></Suspense>} />
+          <Route path="ev/hipa" element={<Suspense fallback={<AccountyPageSkeleton />}><EvHipaPage /></Suspense>} />
+          <Route path="ev/vat" element={<Suspense fallback={<AccountyPageSkeleton />}><EvVatPage /></Suspense>} />
+          <Route path="ev/chamber" element={<Suspense fallback={<AccountyPageSkeleton />}><EvChamberPage /></Suspense>} />
+          <Route path="ev/car-tax" element={<Suspense fallback={<AccountyPageSkeleton />}><EvCompanyCarTaxPage /></Suspense>} />
+          <Route path="ev/innovation" element={<Suspense fallback={<AccountyPageSkeleton />}><EvInnovationLevyPage /></Suspense>} />
+          <Route path="ev/returns" element={<Suspense fallback={<AccountyPageSkeleton />}><EvSzjaReturnPage /></Suspense>} />
+          <Route path="ev/returns/contrib" element={<Suspense fallback={<AccountyPageSkeleton />}><EvContribReturnPage /></Suspense>} />
+          <Route path="ev/returns/kata" element={<Suspense fallback={<AccountyPageSkeleton />}><EvKataReturnPage /></Suspense>} />
+          <Route path="ev/returns/hipa" element={<Suspense fallback={<AccountyPageSkeleton />}><EvHipaReturnPage /></Suspense>} />
+          <Route path="ev/returns/vat-car" element={<Suspense fallback={<AccountyPageSkeleton />}><EvVatCarReturnPage /></Suspense>} />
+          <Route path="ev/records" element={<Suspense fallback={<AccountyPageSkeleton />}><EvRecordsOverviewPage /></Suspense>} />
+          <Route path="ev/records/:recordType" element={<Suspense fallback={<AccountyPageSkeleton />}><EvRecordDetailPage /></Suspense>} />
+          <Route path="ev/income-report" element={<Suspense fallback={<AccountyPageSkeleton />}><EvIncomeReportPage /></Suspense>} />
+          <Route path="ev/optimization" element={<Suspense fallback={<AccountyPageSkeleton />}><EvOptimizationPage /></Suspense>} />
+          <Route path="ev/org/bookkeeping" element={<Suspense fallback={<AccountyPageSkeleton />}><OrgBookkeepingModePage /></Suspense>} />
+          <Route path="ev/org/civil" element={<Suspense fallback={<AccountyPageSkeleton />}><OrgCivilPage /></Suspense>} />
+          <Route path="ev/org/condominium" element={<Suspense fallback={<AccountyPageSkeleton />}><OrgCondominiumPage /></Suspense>} />
+          <Route path="ev/org/other" element={<Suspense fallback={<AccountyPageSkeleton />}><OrgOtherPage /></Suspense>} />
+          <Route path="ev/org/simplified-report" element={<Suspense fallback={<AccountyPageSkeleton />}><OrgSimplifiedReportPage /></Suspense>} />
         </Route>
 
         {/* Portfolio & Admin level routes */}
-        <Route path="missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesPage /></Suspense>} />
+        <Route path="missing-invoices" element={<Suspense fallback={<AccountyPageSkeleton />}><MissingInvoicesPage /></Suspense>} />
         <Route path="missing-invoices/:id" element={<MissingInvoicesLegacyRedirect />} />
-        <Route path="reports" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ReportsPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="reports/missing-invoices" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesReportPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="reports/ai-anomaly" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAnomalyReportPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="tax-calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaxCalendarPage /></Suspense>} />
-        <Route path="settings" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SettingsPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="privacy-policy" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PrivacyPolicyPage /></Suspense>} />
-        <Route path="help" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><HelpPage /></Suspense>} />
-        <Route path="tickets/:ticketId?" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TicketsPage /></Suspense>} />
-        <Route path="approval-queue" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ApprovalQueuePage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="reports" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<AccountyPageSkeleton />}><ReportsPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="reports/missing-invoices" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<AccountyPageSkeleton />}><MissingInvoicesReportPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="reports/ai-anomaly" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<AccountyPageSkeleton />}><AiAnomalyReportPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="tax-calendar" element={<Suspense fallback={<AccountyPageSkeleton />}><TaxCalendarPage /></Suspense>} />
+        <Route path="settings" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<AccountyPageSkeleton />}><SettingsPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="privacy-policy" element={<Suspense fallback={<AccountyPageSkeleton />}><PrivacyPolicyPage /></Suspense>} />
+        <Route path="help" element={<Suspense fallback={<AccountyPageSkeleton />}><HelpPage /></Suspense>} />
+        <Route path="tickets/:ticketId?" element={<Suspense fallback={<AccountyPageSkeleton />}><TicketsPage /></Suspense>} />
+        <Route path="approval-queue" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<AccountyPageSkeleton />}><ApprovalQueuePage /></Suspense></ProtectedAccountyRoute>} />
 
-        <Route path="new-client" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NewClientPage /></Suspense>} />
+        <Route path="new-client" element={<Suspense fallback={<AccountyPageSkeleton />}><NewClientPage /></Suspense>} />
         {/* Admin modules — iroda_admin only */}
-        <Route path="admin/audit" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AuditLogPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="admin/gdpr" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><GdprPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="admin/templates" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TemplatesPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="admin/job-codes" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><JobCodesPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="admin/tax-parameters" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AdminTaxParametersPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="admin/legal-updates" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><LegalUpdatesPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="admin/office-settings" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OfficeSettingsPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="admin/permissions" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PermissionMatrixPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="admin/accountants" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountantManagementPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="admin/audit" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<AccountyPageSkeleton />}><AuditLogPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="admin/gdpr" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<AccountyPageSkeleton />}><GdprPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="admin/templates" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<AccountyPageSkeleton />}><TemplatesPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="admin/job-codes" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<AccountyPageSkeleton />}><JobCodesPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="admin/tax-parameters" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<AccountyPageSkeleton />}><AdminTaxParametersPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="admin/legal-updates" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<AccountyPageSkeleton />}><LegalUpdatesPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="admin/office-settings" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<AccountyPageSkeleton />}><OfficeSettingsPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="admin/permissions" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<AccountyPageSkeleton />}><PermissionMatrixPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="admin/accountants" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<AccountyPageSkeleton />}><AccountantManagementPage /></Suspense></ProtectedAccountyRoute>} />
         {/* Portfolio pages */}
-        <Route path="alerts" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AlertsCenterPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="nav-deadlines" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NavDeadlinesPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="alerts" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<AccountyPageSkeleton />}><AlertsCenterPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="nav-deadlines" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<AccountyPageSkeleton />}><NavDeadlinesPage /></Suspense></ProtectedAccountyRoute>} />
         <Route path="payroll-portfolio" element={<Navigate to="/eaisybooks?tab=payroll" replace />} />
-        <Route path="onboarding" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyOnboardingPage /></Suspense></ProtectedAccountyRoute>} />
-        <Route path="ai-assistant" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAssistantPage /></Suspense>} />
+        <Route path="onboarding" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<AccountyPageSkeleton />}><AccountyOnboardingPage /></Suspense></ProtectedAccountyRoute>} />
+        <Route path="ai-assistant" element={<Suspense fallback={<AccountyPageSkeleton />}><AiAssistantPage /></Suspense>} />
         <Route path="ai" element={<Navigate to="/eaisybooks/ai-assistant" replace />} />
-        <Route path="profile/settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ProfileSettingsPage /></Suspense>} />
+        <Route path="profile/settings" element={<Suspense fallback={<AccountyPageSkeleton />}><ProfileSettingsPage /></Suspense>} />
         {/* TAO/KIVA module */}
         <Route path="tao" element={<Navigate to="/eaisybooks?tab=tao" replace />} />
-        <Route path="tao/calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoCalendarPage2 /></Suspense>} />
-        <Route path="tao/taxpayer-types" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoTaxpayerTypesPage /></Suspense>} />
+        <Route path="tao/calendar" element={<Suspense fallback={<AccountyPageSkeleton />}><TaoCalendarPage2 /></Suspense>} />
+        <Route path="tao/taxpayer-types" element={<Suspense fallback={<AccountyPageSkeleton />}><TaoTaxpayerTypesPage /></Suspense>} />
         {/* EV / Egyszeres könyvvitel module — portfolio */}
         <Route path="ev" element={<Navigate to="/eaisybooks?tab=ev" replace />} />
-        <Route path="ev/calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvCalendarPage /></Suspense>} />
-        <Route path="ev/forms" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvFormsOverviewPage /></Suspense>} />
-        <Route path="ev/thresholds" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvThresholdMonitorPage /></Suspense>} />
+        <Route path="ev/calendar" element={<Suspense fallback={<AccountyPageSkeleton />}><EvCalendarPage /></Suspense>} />
+        <Route path="ev/forms" element={<Suspense fallback={<AccountyPageSkeleton />}><EvFormsOverviewPage /></Suspense>} />
+        <Route path="ev/thresholds" element={<Suspense fallback={<AccountyPageSkeleton />}><EvThresholdMonitorPage /></Suspense>} />
       </Route>
     </>
   );

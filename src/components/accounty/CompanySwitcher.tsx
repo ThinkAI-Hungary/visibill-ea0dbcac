@@ -68,8 +68,15 @@ export function CompanySwitcher() {
     setSearchQuery('');
   }
 
-  // Don't show the switcher if we're on a non-company page (portfolio, etc.)
-  if (!currentCompanyId) return null;
+  // On non-company pages (portfolio, tax-calendar, etc.), render a stable placeholder to prevent layout shifts
+  if (!currentCompanyId) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/40 border border-border/50 text-xs font-medium text-muted-foreground select-none max-w-[260px]">
+        <Building2 className="w-3.5 h-3.5 shrink-0 text-muted-foreground/60" />
+        <span className="truncate">Portfólió nézet</span>
+      </div>
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

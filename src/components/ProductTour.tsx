@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ProductTourTooltip } from './ProductTourTooltip';
 import { reportError } from '@/lib/errorReporter';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useSidebar } from '@/components/ui/sidebar';
+import { useOptionalSidebar } from '@/components/ui/sidebar';
 import { useHasAccountyAccess } from '@/hooks/useHasEaisybillAccess';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,7 +24,9 @@ interface ProductTourProps {
 export function ProductTour({ run, onComplete }: ProductTourProps) {
   const { user } = useAuth();
   const { role, isEmployee } = useUserRole();
-  const { state, setOpen } = useSidebar();
+  const sidebar = useOptionalSidebar();
+  const state = sidebar?.state;
+  const setOpen = sidebar?.setOpen;
   const { hasAccess: hasAccountyAccess } = useHasAccountyAccess();
   const { canAccess } = useEaisybillPermissions();
   const queryClient = useQueryClient();
@@ -41,7 +43,7 @@ export function ProductTour({ run, onComplete }: ProductTourProps) {
 
   // Open sidebar if collapsed when tour starts
   useEffect(() => {
-    if (run && state === "collapsed") {
+    if (run && state === "collapsed" && setOpen) {
       setOpen(true);
     }
   }, [run, state, setOpen]);

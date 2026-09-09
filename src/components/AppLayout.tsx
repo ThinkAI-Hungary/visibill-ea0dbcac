@@ -1,7 +1,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet } from "react-router-dom";
-import { Suspense, memo, useEffect } from "react";
+import { Suspense, memo, useEffect, useState } from "react";
 import { GlobalDatePicker } from "@/components/GlobalDatePicker";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePdfExportNotifications } from "@/hooks/usePdfExportNotifications";
@@ -91,17 +91,19 @@ export function AppLayout({ children }: AppLayoutProps) {
   useIdleRoutePrefetch();
   usePdfExportNotifications();
 
-  const switchPending = localStorage.getItem('visibill_switch_pending');
+  const [switchPending, setSwitchPending] = useState<string | null>(() => localStorage.getItem('visibill_switch_pending'));
 
-  if (switchPending === 'eaisybill') {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background animate-in fade-in duration-500">
-        <LoadingSpinner message="eaisyBill betöltése..." />
-        <div className="hidden"><Outlet /></div>
-      </div>
-    );
-  }
-
+  useEffect(() => {
+    if (switchPending) {
+      const timer = setTimeout(() => {
+        try {
+          localStorage.removeItem('visibill_switch_pending');
+        } catch {}
+        setSwitchPending(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [switchPending]);
   return (
     <SidebarProvider
       className="h-screen w-full overflow-hidden flex !min-h-0 print:h-auto print:overflow-visible"

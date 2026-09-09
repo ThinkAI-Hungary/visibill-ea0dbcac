@@ -45,6 +45,8 @@ import { PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
 import { useAccountyTaxProfile } from '@/hooks/accounty';
 import { useEvClientSettings } from '@/hooks/useEvData';
 import { useDateRange } from '@/contexts/DateRangeContext';
+import AccountyNavSkeleton from './AccountyNavSkeleton';
+
 
 interface AccountySidebarProps {
   isCollapsed: boolean;
@@ -74,6 +76,37 @@ interface AccountySidebarProps {
   navigate: (path: string) => void;
   hoveredHelpSection?: string | null;
 }
+
+const accountyPrefetchMap: Record<string, () => Promise<unknown>> = {
+  "/eaisybooks": () => import("@/pages/Accounty/AccountyLayout"),
+  "/eaisybooks/missing-invoices": () => import("@/pages/Accounty/MissingInvoicesPage"),
+  "/eaisybooks/tax-calendar": () => import("@/pages/Accounty/TaxCalendarPage"),
+  "/eaisybooks/reports": () => import("@/pages/Accounty/ReportsPage"),
+  "/eaisybooks/approval-queue": () => import("@/pages/Accounty/ApprovalQueuePage"),
+  "/eaisybooks/alerts": () => import("@/pages/Accounty/AlertsCenterPage"),
+  "/eaisybooks/onboarding": () => import("@/pages/Accounty/OnboardingPage"),
+  "/eaisybooks/settings": () => import("@/pages/Accounty/SettingsPage"),
+  "/eaisybooks/profile/settings": () => import("@/pages/Accounty/ProfileSettingsPage"),
+  "/eaisybooks/tickets": () => import("@/pages/TicketsPage"),
+  "/eaisybooks/help": () => import("@/pages/Accounty/HelpPage"),
+  "/eaisybooks/ai-assistant": () => import("@/pages/Accounty/AiAssistantPage"),
+  "/eaisybooks/admin/permissions": () => import("@/pages/Accounty/PermissionMatrixPage"),
+  "/eaisybooks/admin/accountants": () => import("@/pages/Accounty/AccountantManagementPage"),
+  "/eaisybooks/admin/templates": () => import("@/pages/Accounty/TemplatesPage"),
+  "/eaisybooks/admin/job-codes": () => import("@/pages/Accounty/JobCodesPage"),
+  "/eaisybooks/admin/tax-parameters": () => import("@/pages/Accounty/AdminTaxParametersPage"),
+  "/eaisybooks/admin/legal-updates": () => import("@/pages/Accounty/LegalUpdatesPage"),
+  "/eaisybooks/admin/audit": () => import("@/pages/Accounty/AuditLogPage"),
+  "/eaisybooks/admin/gdpr": () => import("@/pages/Accounty/GdprPage"),
+  "overview": () => import("@/pages/Accounty/ClientDetailsPage"),
+  "profile": () => import("@/pages/Accounty/ClientDetailsPage"),
+  "invoices": () => import("@/pages/Accounty/ClientInvoicesPage"),
+  "ev": () => import("@/pages/Accounty/Ev/ClientEvMainPage"),
+  "tao": () => import("@/pages/Accounty/Tao/ClientTaoMainPage"),
+  "payroll": () => import("@/pages/Accounty/PayrollDashboardPage"),
+  "payroll/filings": () => import("@/pages/Accounty/FilingsPage"),
+  "prompts": () => import("@/pages/Accounty/PromptsPage"),
+};
 
 export default function AccountySidebar({
   isCollapsed,
@@ -106,6 +139,20 @@ export default function AccountySidebar({
   const [expandedSubSections, setExpandedSubSections] = React.useState<Set<string>>(new Set());
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const currentDateRange = `${dateFromFormatted}_${dateToFormatted}`;
+
+  const handlePrefetch = React.useCallback((to: string) => {
+    const cleanTo = to.split('?')[0].split('#')[0];
+    const loader = accountyPrefetchMap[cleanTo];
+    if (loader) {
+      void loader();
+    } else {
+      const parts = cleanTo.split('/');
+      const lastPart = parts[parts.length - 1];
+      const clientLoader = accountyPrefetchMap[lastPart];
+      if (clientLoader) void clientLoader();
+    }
+  }, []);
+
 
   const isPathActive = React.useCallback((to: string, exact?: boolean) => {
     const cleanTo = to.split('?')[0];
@@ -227,6 +274,28 @@ export default function AccountySidebar({
                  selectedClient.name.toLowerCase().includes('egyéni vállalkozó')
                ) : false);
 
+  const [isNavigatingToPortfolio, setIsNavigatingToPortfolio] = React.useState(false);
+  const prevSelectedClientIdRef = React.useRef<string | null>(selectedClientId);
+
+  React.useEffect(() => {
+    if (prevSelectedClientIdRef.current && !selectedClientId) {
+      setIsNavigatingToPortfolio(true);
+      const timer = setTimeout(() => {
+        setIsNavigatingToPortfolio(false);
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+    prevSelectedClientIdRef.current = selectedClientId;
+  }, [selectedClientId]);
+
+  const handleBackToPortfolio = React.useCallback(() => {
+    setIsNavigatingToPortfolio(true);
+    navigate('/eaisybooks');
+    const timer = setTimeout(() => {
+      setIsNavigatingToPortfolio(false);
+    }, 250);
+  }, [navigate]);
+
   return (
     <aside className={cn(
       "flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 z-50",
@@ -257,7 +326,7 @@ export default function AccountySidebar({
             value={selectedClientId || '_portfolio'}
             onValueChange={(val) => {
               if (val === '_portfolio') {
-                navigate('/eaisybooks');
+                handleBackToPortfolio();
               } else {
                 navigate(`/eaisybooks/${val}/${currentDateRange}/overview`);
               }
@@ -312,7 +381,9 @@ export default function AccountySidebar({
 
 
 
-        {isCollapsed ? (
+        {isNavigatingToPortfolio ? (
+          <AccountyNavSkeleton isCollapsed={isCollapsed} count={isCollapsed ? 8 : 6} />
+        ) : isCollapsed ? (
           selectedClientId ? (
             /* Client Context Collapsed Mode */
             <ul className="flex w-full min-w-0 flex-col gap-1 animate-in fade-in duration-300">
@@ -339,6 +410,9 @@ export default function AccountySidebar({
                       <TooltipTrigger asChild>
                         <Link
                           to={item.path}
+                          onMouseEnter={() => handlePrefetch(item.path)}
+                          onFocus={() => handlePrefetch(item.path)}
+                          onTouchStart={() => handlePrefetch(item.path)}
                           className={cn(
                             "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
                             active ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
@@ -384,6 +458,9 @@ export default function AccountySidebar({
                       <TooltipTrigger asChild>
                         <Link
                           to={navItem.path}
+                          onMouseEnter={() => handlePrefetch(navItem.path)}
+                          onFocus={() => handlePrefetch(navItem.path)}
+                          onTouchStart={() => handlePrefetch(navItem.path)}
                           className={cn(
                             "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
                             isPathActive(navItem.path) ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
@@ -409,37 +486,12 @@ export default function AccountySidebar({
           <div className="flex flex-col gap-1 px-1 animate-in fade-in duration-300">
             {/* Back to Portfolio */}
             <button
-              onClick={() => navigate('/eaisybooks')}
+              onClick={handleBackToPortfolio}
               className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm transition-all duration-150 h-8 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/70 mb-2 border border-border/40"
             >
               <ArrowLeft className="h-4 w-4 shrink-0" />
               <span className="truncate flex-1 font-semibold text-xs">Vissza a portfólióhoz</span>
             </button>
-
-            {/* Client Info Card */}
-            <div className="p-3 mb-3 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/10 flex items-start gap-2.5">
-              <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg text-primary shrink-0">
-                <Building2 className="w-4 h-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="text-xs font-bold text-sidebar-foreground truncate leading-tight">
-                  {selectedClient?.name || 'Ügyfél betöltése...'}
-                </h4>
-                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                  {selectedClient?.taxNumber || ''}
-                </p>
-                {selectedClient?.status && (
-                  <span className={cn(
-                    "inline-block text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded-full mt-1.5",
-                    selectedClient.status === 'Rendben' ? 'bg-emerald-500/10 text-emerald-500' :
-                    selectedClient.status === 'Feldolgozandó' ? 'bg-amber-500/10 text-amber-500' :
-                    'bg-rose-500/10 text-rose-500'
-                  )}>
-                    {selectedClient.status}
-                  </span>
-                )}
-              </div>
-            </div>
 
             <ul className="flex flex-col gap-1">
               {[
@@ -464,6 +516,9 @@ export default function AccountySidebar({
                   <li key={item.to}>
                     <Link
                       to={item.to}
+                      onMouseEnter={() => handlePrefetch(item.to)}
+                      onFocus={() => handlePrefetch(item.to)}
+                      onTouchStart={() => handlePrefetch(item.to)}
                       className={cn(
                         "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-all duration-200",
                         hoveredHelpSection === item.id
@@ -483,7 +538,7 @@ export default function AccountySidebar({
           </div>
         ) : (
           /* Expanded mode: Collapsible groups */
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 animate-in fade-in duration-300">
             {/* Portfólió csoport */}
             {(() => {
               const groupKey = 'portfolio';
@@ -527,6 +582,9 @@ export default function AccountySidebar({
                           <li key={item.to}>
                             <Link
                               to={item.to}
+                              onMouseEnter={() => handlePrefetch(item.to)}
+                              onFocus={() => handlePrefetch(item.to)}
+                              onTouchStart={() => handlePrefetch(item.to)}
                               className={cn(
                                 "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-all duration-200",
                                 hoveredHelpSection === item.id
@@ -602,6 +660,9 @@ export default function AccountySidebar({
                                     <li key={item.to}>
                                       <Link
                                         to={item.to}
+                                        onMouseEnter={() => handlePrefetch(item.to)}
+                                        onFocus={() => handlePrefetch(item.to)}
+                                        onTouchStart={() => handlePrefetch(item.to)}
                                         className={cn(
                                           "flex w-full items-center gap-2 rounded-md px-2 py-1 pl-10 text-left text-sm transition-all duration-200",
                                           hoveredHelpSection === (item as any).id

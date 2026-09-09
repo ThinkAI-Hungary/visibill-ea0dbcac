@@ -14,11 +14,12 @@
    - Amikor a könyvelő egy adott ügyfél modulján áll (pl. `/eaisybooks/comp-A/2026-01-01..2026-03-31/payroll`), és a fejlécben másik céget választ (`comp-B`), a navigáció célpontja automatikusan:
      `/eaisybooks/comp-B/2026-01-01..2026-03-31/payroll` lesz.
    - Nincs felesleges visszairányítás a kezdőoldalra; a könyvelő azonnal folytathatja a bérszámfejtést a másik ügyfélnél.
-3. **"← Vissza a portfólióhoz" Gomb:**
+3. **"← Vissza a portfólióhoz" Gomb & Portfólió Átmeneti Skeleton Loader:**
    - Az ügyfél menü tetején jól látható, kiemelt visszalépési gomb a központi portfólió nézetbe (`/eaisybooks`).
+   - A portfólió szintre való visszanavigáláskor a sidebar 250ms átmeneti Shimmer Skeleton Loader-t (`<AccountyNavSkeleton />`) jelenít meg a menüpontok hirtelen felvillanásának (snap/flash) megakadályozására, amit a portfólió csoportok selymes `fade-in` animációja követ.
 
 **Current Implementation:**
-- Komponensek: `AccountyLayout.tsx`, `AccountySidebar.tsx`, `AccountyCompanySwitcher.tsx`
+- Komponensek: `AccountyLayout.tsx`, `AccountySidebar.tsx`, `AccountyNavSkeleton.tsx`, `AccountyCompanySwitcher.tsx`
 - Routing: `src/routes/accountyRoutes.tsx`
 
 **Rationale:** A könyvelők gyakran kötegelten dolgoznak egy-egy részfeladaton (pl. 15 cég bérszámfejtésének jóváhagyása egymás után). A kontextus-megőrző cégváltó megszünteti a felesleges kattintásokat és a navigációs frikciót.

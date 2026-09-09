@@ -86,7 +86,32 @@ function AccountyLayoutInner() {
   const pathname = location.pathname;
   const navigate = useNavigate();
 
-  const switchPending = localStorage.getItem('visibill_switch_pending');
+  const [switchPending, setSwitchPending] = useState<string | null>(() => localStorage.getItem('visibill_switch_pending'));
+
+  useEffect(() => {
+    if (switchPending) {
+      const timer = setTimeout(() => {
+        try {
+          localStorage.removeItem('visibill_switch_pending');
+        } catch {}
+        setSwitchPending(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [switchPending]);
+
+  // Eager background prefetch of primary eaisybooks page chunks
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void import('@/pages/Accounty/MissingInvoicesPage');
+      void import('@/pages/Accounty/TaxCalendarPage');
+      void import('@/pages/Accounty/ReportsPage');
+      void import('@/pages/Accounty/ApprovalQueuePage');
+      void import('@/pages/Accounty/SettingsPage');
+      void import('@/pages/Accounty/AiAssistantPage');
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const { data: kpis } = useAccountyKpis();
   const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
@@ -222,6 +247,10 @@ function AccountyLayoutInner() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  const handleHelpClick = useCallback(() => setHelpDrawerOpen(true), []);
+  const handleSidebarOpen = useCallback((v: boolean) => setSidebarOpen(v), []);
+  const handleNotifDismissed = useCallback((v: boolean) => setNotifDismissed(v), []);
+
   // Check for active impersonation (support_admin role in company_members)
   const { data: hasImpersonation, isPending: impersonationLoading } = useQuery({
     queryKey: ['has-impersonation-accounty', user?.id],
@@ -237,10 +266,9 @@ function AccountyLayoutInner() {
     staleTime: 30_000,
   });
 
-  // Wait for impersonation check to finish before redirecting
-  if ((profileRole === 'management' || profileRole === 'thinkai')) {
-    if (impersonationLoading) return null; // wait for query
-    if (!hasImpersonation) return <Navigate to="/management" replace />;
+  // Redirect if management/thinkai role user does not have active impersonation (only after loading finishes)
+  if ((profileRole === 'management' || profileRole === 'thinkai') && !impersonationLoading && !hasImpersonation) {
+    return <Navigate to="/management" replace />;
   }
 
   const cmdPages = [
@@ -272,14 +300,7 @@ function AccountyLayoutInner() {
   const filteredPages = cmdQuery ? cmdPages.filter(p => p.name.toLowerCase().includes(cmdQuery.toLowerCase())) : cmdPages;
   const filteredClients = cmdQuery && allClients ? allClients.filter(c => c.name.toLowerCase().includes(cmdQuery.toLowerCase())).slice(0, 5) : [];
 
-  if (switchPending === 'eaisybooks') {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background animate-in fade-in duration-500">
-        <LoadingSpinner message="eaisybooks betöltése..." />
-        <div className="hidden"><Outlet /></div>
-      </div>
-    );
-  }
+  const isSwitchingModule = switchPending === 'eaisybooks';
 
   return (
     <>
@@ -292,7 +313,7 @@ function AccountyLayoutInner() {
           isCollapsed={isCollapsed}
           toggleSidebarCollapse={toggleSidebarCollapse}
           sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
+          setSidebarOpen={handleSidebarOpen}
           hasEaisybillAccess={hasEaisybillAccess || false}
           kpis={kpis}
           unreadTicketCount={unreadTicketCount}
@@ -319,15 +340,12 @@ function AccountyLayoutInner() {
 
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AccountyHeader
-            setSidebarOpen={setSidebarOpen}
+            setSidebarOpen={handleSidebarOpen}
             kpis={kpis}
             notifDismissed={notifDismissed}
-            setNotifDismissed={setNotifDismissed}
-            navigate={navigate}
-            onHelpClick={() => setHelpDrawerOpen(true)}
+            setNotifDismissed={handleNotifDismissed}
+            onHelpClick={handleHelpClick}
           />
-
-          {import.meta.env.DEV && <CrashTester />}
 
           <div id="accounty-main-scroll" className="flex-1 overflow-auto p-8 relative">
             {!isOnline && (
@@ -381,7 +399,7 @@ function AccountyLayoutInner() {
               );
             })()}
 
-            <AccountyErrorBoundary key={location.pathname}>
+            <AccountyErrorBoundary resetKey={location.pathname}>
               <Outlet />
             </AccountyErrorBoundary>
 

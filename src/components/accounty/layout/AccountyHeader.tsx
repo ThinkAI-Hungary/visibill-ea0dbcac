@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Menu, Bell, AlertTriangle, Clock, FileWarning, Calendar, HelpCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CompanySwitcher } from '@/components/accounty/CompanySwitcher';
@@ -9,18 +10,18 @@ interface AccountyHeaderProps {
   kpis: any;
   notifDismissed: boolean;
   setNotifDismissed: (v: boolean) => void;
-  navigate: (path: string) => void;
   onHelpClick: () => void;
 }
 
-export default function AccountyHeader({
+function AccountyHeaderComponent({
   setSidebarOpen,
   kpis,
   notifDismissed,
   setNotifDismissed,
-  navigate,
   onHelpClick,
 }: AccountyHeaderProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="flex items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 relative z-10">
       <button
@@ -124,3 +125,15 @@ export default function AccountyHeader({
     </div>
   );
 }
+
+function areAccountyHeaderPropsEqual(prevProps: AccountyHeaderProps, nextProps: AccountyHeaderProps) {
+  return (
+    prevProps.notifDismissed === nextProps.notifDismissed &&
+    prevProps.kpis?.criticalClients === nextProps.kpis?.criticalClients &&
+    prevProps.kpis?.missingItems === nextProps.kpis?.missingItems &&
+    prevProps.kpis?.todayDeadlines === nextProps.kpis?.todayDeadlines &&
+    prevProps.kpis?.upcomingDeadlines === nextProps.kpis?.upcomingDeadlines
+  );
+}
+
+export default React.memo(AccountyHeaderComponent, areAccountyHeaderPropsEqual);

@@ -133,6 +133,7 @@
 | **Print** | `print:hidden` |
 | **Memoizáció** | `React.memo(AppSidebar)` |
 | **Prefetch** | Hover/focus-ra lazy chunk prefetch (`prefetchMap`) |
+| **eaisyBooks átmenet** | Portfólió szintre váltáskor 250ms `<AccountyNavSkeleton />` shimmer + `fade-in` |
 
 ### Employee vs Owner Nézet
 
