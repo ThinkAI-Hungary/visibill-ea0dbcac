@@ -10,6 +10,7 @@ export interface PayrollPostingSummary {
   totalTb: number;
   totalDeductions: number;
   totalNet: number;
+  totalCommute: number;
   journalEntryId?: string;
   journalNumber?: string;
   isBalanced: boolean;
@@ -46,6 +47,7 @@ export async function getPayrollPostingSummary(cycleId: string): Promise<Payroll
   let totalTb = 0;
   let totalDeductions = 0;
   let totalNet = 0;
+  let totalCommute = 0;
 
   for (const c of calcs) {
     totalGross += Number(c.gross_salary || 0);
@@ -54,10 +56,11 @@ export async function getPayrollPostingSummary(cycleId: string): Promise<Payroll
     totalTb += Number(c.tb_amount || 0);
     totalDeductions += Number(c.total_deductions || 0);
     totalNet += Number(c.net_salary || 0);
+    totalCommute += Number((c.metadata as any)?.travel_reimbursement || 0);
   }
 
-  const totalDebit = totalGross + totalSzocho;
-  const totalCredit = totalSzocho + totalSzja + totalTb + totalDeductions + (totalGross - totalSzja - totalTb - totalDeductions);
+  const totalDebit = totalGross + totalSzocho + totalCommute;
+  const totalCredit = totalSzocho + totalSzja + totalTb + totalDeductions + (totalGross - totalSzja - totalTb - totalDeductions + totalCommute);
   const isBalanced = Math.abs(totalDebit - totalCredit) < 1;
 
   return {
@@ -70,6 +73,7 @@ export async function getPayrollPostingSummary(cycleId: string): Promise<Payroll
     totalTb,
     totalDeductions,
     totalNet,
+    totalCommute,
     isBalanced,
   };
 }
@@ -78,6 +82,7 @@ export interface PayrollGlMapping {
   activePresetId?: string;
   presetName?: string;
   gl541: string | null;
+  gl551?: string | null;
   gl561: string | null;
   gl463: string | null;
   gl462: string | null;
@@ -142,6 +147,7 @@ export async function resolveCompanyGlAccounts(companyId: string): Promise<Payro
   };
 
   const gl541 = findGlId(['541', '5410', '5411', '540'], ['munkabér', 'bruttó bér', 'alapbér', 'bérköltség'], '54');
+  const gl551 = findGlId(['551', '5510', '5511', '550'], ['személyi jellegű egyéb', 'utazási költségtérítés', 'munkába járás', 'kiküldetés'], '55');
   const gl561 = findGlId(['561', '5610', '5611', '560'], ['szocho', 'szociális hozzájárulási'], '56');
   const gl463 = findGlId(['463', '4630', '4631'], ['szocho kötelezettség', 'szocho adó'], '463');
   const gl462 = findGlId(['462', '4620', '4621'], ['szja kötelezettség', 'szja', 'személyi jövedelemadó'], '462');
@@ -153,6 +159,7 @@ export async function resolveCompanyGlAccounts(companyId: string): Promise<Payro
     activePresetId,
     presetName: activePreset?.name || 'Alapértelmezett Számlatükör',
     gl541,
+    gl551,
     gl561,
     gl463,
     gl462,
@@ -217,7 +224,7 @@ export async function postPayrollCycleToLedger(
       };
     }
 
-    const { gl541, gl561, gl463, gl462, gl464, gl479, gl471 } = coaMapping;
+    const { gl541, gl551, gl561, gl463, gl462, gl464, gl479, gl471 } = coaMapping;
 
     const lastDayOfMonth = new Date(summary.year, summary.month, 0).toISOString().slice(0, 10);
     const documentId = `BER-${summary.year}-${String(summary.month).padStart(2, '0')}`;
@@ -263,6 +270,18 @@ export async function postPayrollCycleToLedger(
       amount: summary.totalGross,
       description: 'Munkabér költség (bruttó bér)',
     });
+
+    // Line: T 551 Munkába járás utazási költségtérítés (ha van)
+    if (summary.totalCommute && summary.totalCommute > 0) {
+      linesToInsert.push({
+        header_id: newHeader.id,
+        sequence_number: seq++,
+        gl_account_id: gl551 || gl541,
+        dc_type: 'T',
+        amount: summary.totalCommute,
+        description: 'Munkába járás utazási költségtérítés (39/2010. Korm. rend.)',
+      });
+    }
 
     // Line 2: T 561 SZOCHO költség
     if (summary.totalSzocho > 0) {
@@ -324,8 +343,8 @@ export async function postPayrollCycleToLedger(
       });
     }
 
-    // Line 7: K 471 Nettó bér kötelezettség
-    const calculatedNet = summary.totalGross - summary.totalSzja - summary.totalTb - summary.totalDeductions;
+    // Line 7: K 471 Nettó bér kötelezettség (kifizetendő bér + adómentes munkába járás)
+    const calculatedNet = summary.totalGross - summary.totalSzja - summary.totalTb - summary.totalDeductions + (summary.totalCommute || 0);
     if (calculatedNet > 0) {
       linesToInsert.push({
         header_id: newHeader.id,
@@ -333,7 +352,7 @@ export async function postPayrollCycleToLedger(
         gl_account_id: gl471,
         dc_type: 'K',
         amount: calculatedNet,
-        description: 'Kifizetendő nettó munkabér kötelezettség',
+        description: 'Kifizetendő nettó munkabér és térítés kötelezettség',
       });
     }
 

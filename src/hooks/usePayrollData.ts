@@ -94,6 +94,10 @@ export interface PayrollEmployment {
   job_valid_from: string | null;
   feor_description: string | null;
   project_id?: string | null;
+  commute_type?: 'none' | 'car' | 'public_transit' | null;
+  commute_distance_km?: number | null;
+  commute_monthly_pass_cost?: number | null;
+  commute_reimbursement_pct?: number | null;
 }
 
 export interface PayrollCycle {
@@ -1111,14 +1115,17 @@ export function useRunBatchPayroll() {
         throw new Error('Nincs aktív jogviszony ehhez a céghez.');
       }
 
-      // Fetch company tax profile to check if company is KIVA taxpayer
+      // Fetch company tax profile to check if company is KIVA taxpayer and default car commute rate
       const { data: taxProfileData } = await supabase
         .from('accounty_tax_profiles')
-        .select('is_kiva')
+        .select('is_kiva, commute_car_rate_per_km')
         .eq('company_id', input.companyId)
         .maybeSingle();
 
       const isKivaCompany = !!taxProfileData?.is_kiva;
+      const companyCommuteCarRate = taxProfileData?.commute_car_rate_per_km !== null && taxProfileData?.commute_car_rate_per_km !== undefined
+        ? Number(taxProfileData.commute_car_rate_per_km)
+        : 30;
 
       // 2. Fetch tax parameters
       const { data: paramRows, error: paramErr } = await supabase
@@ -1327,6 +1334,16 @@ export function useRunBatchPayroll() {
           otherCompanyName: employment.other_company_name || undefined,
           otherCompanyTaxNumber: employment.other_company_tax_number || undefined,
           isKiva: isKivaCompany,
+          travelReimbursement: {
+            commuteType: (employment.commute_type || 'none') as 'none' | 'car' | 'public_transit',
+            commuteKm: Number(employment.commute_distance_km || 0),
+            commuteDays: Math.max(0, (attendance.workDays || 22) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)),
+            commuteCarRate: companyCommuteCarRate,
+            commuteTransitPassCost: empItems.find((i: any) => i.item_type === 'commute_reimbursement')
+              ? Number(empItems.find((i: any) => i.item_type === 'commute_reimbursement')?.amount)
+              : Number(employment.commute_monthly_pass_cost || 0),
+            commuteReimbursementPct: Number(employment.commute_reimbursement_pct || 86),
+          },
         };
 
         const result = calculatePayroll(calcInput);
@@ -1365,6 +1382,9 @@ export function useRunBatchPayroll() {
             employee_id: employee.id,
             employee_name: `${employee.last_name} ${employee.first_name}`,
             calculated_at: new Date().toISOString(),
+            travel_reimbursement: result.travelReimbursementAmount || 0,
+            commute_type: employment.commute_type || 'none',
+            commute_days: Math.max(0, (attendance.workDays || 22) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)),
           },
         });
       }

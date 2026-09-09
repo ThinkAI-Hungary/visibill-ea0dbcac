@@ -334,6 +334,67 @@ describe('calculatePayroll — Minimális járulékalap és Új Cafeteria / Lakh
     expect(result.travelReimbursementAmount).toBe(31_500);
   });
 
+  describe('Munkába járás utazási költségtérítés (39/2010. (II. 26.) Korm. rend. és Szja tv. 25. § (2))', () => {
+    it('gépkocsi költségtérítés alapértelmezett 30 Ft/km rátával és 0% adóteherrel', () => {
+      // 20 km oda-vissza, 20 ledolgozott nap -> 20 * 20 * 30 = 12 000 Ft
+      const result = calculatePayroll(makeInput(500_000, {
+        travelReimbursement: {
+          commuteType: 'car',
+          commuteKm: 20,
+          commuteDays: 20,
+        },
+      }));
+
+      expect(result.travelReimbursementAmount).toBe(12_000);
+      // Munkabér adóalapok nem változnak (adómentes térítés)
+      expect(result.grossSalary).toBe(500_000);
+      expect(result.szjaBase).toBe(500_000);
+      expect(result.tbBase).toBe(500_000);
+      expect(result.szochoBase).toBe(500_000);
+    });
+
+    it('gépkocsi költségtérítés céges minimum 18 Ft/km rátával', () => {
+      // 25 km oda-vissza, 22 ledolgozott nap, 18 Ft/km -> 25 * 22 * 18 = 9 900 Ft
+      const result = calculatePayroll(makeInput(500_000, {
+        travelReimbursement: {
+          commuteType: 'car',
+          commuteKm: 25,
+          commuteDays: 22,
+          commuteCarRate: 18,
+        },
+      }));
+
+      expect(result.travelReimbursementAmount).toBe(9_900);
+    });
+
+    it('közösségi közlekedés bérlet térítés 86%-os törvényi minimummal', () => {
+      // Volánbusz/MÁV bérlet 14 200 Ft, 86% -> Math.round(14 200 * 0.86) = 12 212 Ft
+      const result = calculatePayroll(makeInput(400_000, {
+        travelReimbursement: {
+          commuteType: 'public_transit',
+          commuteTransitPassCost: 14_200,
+          commuteReimbursementPct: 86,
+        },
+      }));
+
+      expect(result.travelReimbursementAmount).toBe(12_212);
+      expect(result.grossSalary).toBe(400_000);
+    });
+
+    it('közösségi közlekedés bérlet térítés 100%-os munkáltatói vállalással', () => {
+      // Bérlet 14 200 Ft, 100% -> 14 200 Ft
+      const result = calculatePayroll(makeInput(400_000, {
+        travelReimbursement: {
+          commuteType: 'public_transit',
+          commuteTransitPassCost: 14_200,
+          commuteReimbursementPct: 100,
+        },
+      }));
+
+      expect(result.travelReimbursementAmount).toBe(14_200);
+    });
+  });
+
   describe('Nyugdíjas munkavállaló járulék- és adómentessége (Tbj. 6. § és Szocho tv. 5. § (1) f))', () => {
     it('öregségi nyugdíjas normál munkaviszonyban mentes a 18.5% TB és a 13% SZOCHO alól, csak 15% SZJA terheli', () => {
       // Zsófi / Carman-Food esete: 322 800 Ft bruttó bér

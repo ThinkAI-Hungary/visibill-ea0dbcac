@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-08  
-> **Összesen:** 74 döntés | ✅ Decided: 70 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-09  
+> **Összesen:** 75 döntés | ✅ Decided: 71 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -98,6 +98,7 @@
 | P-075 | Cégkapu / KÜNY Tárhely Szinkronizáció és EGYKE Képviseleti Nyilvántartás UX | ✅ Decided | [P-075](./P-075-cegkapu-and-representation-ux.md) |
 | P-076 | Hierarchikus Kliens Kontextus & Dual-Mode Aloldal-megőrző Company Switcher UX | ✅ Decided | [P-076](./P-076-eaisybooks-dual-mode-navigation-and-company-switcher-ux.md) |
 | P-077 | eaisyBooks AI Asszisztens Chat és Speed Dial Lebegő Menü UX | ✅ Decided | [P-077](./P-077-eaisybooks-ai-assistant-chat-and-speed-dial-ux.md) |
+| P-080 | Dolgozó-Központú Munkalap (Worksheet View) és Munkába Járási Költségtérítés UX | ✅ Decided | [P-080](./P-080-employee-worksheet-and-commute-reimbursement-ux.md) |
 
 ## 🔍 Keresés
 

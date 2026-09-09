@@ -107,6 +107,8 @@ export const queryKeys = {
   // ── Categories ──
   categories: (companyId: string) =>
     ['categories', companyId] as const,
+  categoriesPageData: (companyId: string) =>
+    ['categoriesPageData', companyId] as const,
 
   // ── Settings ──
   settingsToken: (companyId: string) =>

@@ -179,7 +179,7 @@ interface EmploymentsTabProps {
 export function EmployeeEmploymentsTab({ employments, companyId, empId }: EmploymentsTabProps) {
   const navigate = useNavigate();
   const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [form, setForm] = React.useState<Partial<PayrollEmployment>>({});
+  const [form, setForm] = React.useState<Partial<PayrollEmployment> & { szocho_discount_months_elapsed?: number }>({});
   const updateEmployment = useUpdateEmployment();
 
   const handleEditClick = (emp: PayrollEmployment) => {
@@ -202,6 +202,10 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
       other_company_tax_number: emp.other_company_tax_number || '',
       is_min_base_exempt_gyes_gyed: !!emp.is_min_base_exempt_gyes_gyed,
       is_min_base_exempt_student: !!emp.is_min_base_exempt_student,
+      commute_type: (emp.commute_type || 'none') as any,
+      commute_distance_km: emp.commute_distance_km || 0,
+      commute_monthly_pass_cost: emp.commute_monthly_pass_cost || 0,
+      commute_reimbursement_pct: emp.commute_reimbursement_pct || 86,
     });
   };
 
@@ -241,6 +245,10 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
         other_company_tax_number: form.is_min_base_paid_elsewhere ? form.other_company_tax_number : null,
         is_min_base_exempt_gyes_gyed: form.is_min_base_exempt_gyes_gyed,
         is_min_base_exempt_student: form.is_min_base_exempt_student,
+        commute_type: form.commute_type || 'none',
+        commute_distance_km: form.commute_type === 'car' ? (Number(form.commute_distance_km) || 0) : 0,
+        commute_monthly_pass_cost: form.commute_type === 'public_transit' ? (Number(form.commute_monthly_pass_cost) || 0) : 0,
+        commute_reimbursement_pct: form.commute_type === 'public_transit' ? (Number(form.commute_reimbursement_pct) || 86) : 86,
       } as any);
       setEditingId(null);
     } catch {
@@ -331,6 +339,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                       <div>Nyugdíjas: {emp.is_pensioner ? `Igen (${emp.pension_type === 'old_age' ? 'Öregségi' : emp.pension_type === 'rehab' ? 'Rehab' : emp.pension_type === 'disability' ? 'Rokkantsági' : 'Egyéb'})` : 'Nem'}</div>
                       <div>EKHO: {emp.is_ekho ? `Igen (Fizeti: ${emp.ekho_payer === 'employee' ? 'Dolgozó' : 'Munkáltató'}, kategória: ${emp.ekho_category === 'normal' ? 'Normál' : emp.ekho_category === 'athlete' ? 'Sportoló' : 'EGT'})` : 'Nem'}</div>
                       <div>SZOCHO kedvezmény: {emp.is_szocho_discount ? `Igen (${emp.szocho_discount_type === 'agriculture' ? 'Mezőgazdasági' : emp.szocho_discount_type === 'market_entry' ? 'Piacra lépő' : emp.szocho_discount_type === 'mother_market_entry' ? 'Anya piacra lépő' : emp.szocho_discount_type === 'fiatalkoru' ? '25 év alatti' : emp.szocho_discount_type === '55_feletti' ? '55 év feletti' : emp.szocho_discount_type === 'szakkepzetlen' ? 'Szakképzetlen (FEOR 9)' : 'PhD kutató'}, eltelt: ${emp.szocho_discount_start ? Math.max(0, (new Date().getFullYear() - new Date(emp.szocho_discount_start).getFullYear()) * 12 + (new Date().getMonth() - new Date(emp.szocho_discount_start).getMonth())) : 0} hó)` : 'Nem'}</div>
+                      <div>Munkába járás: {emp.commute_type === 'car' ? `Gépkocsi (${emp.commute_distance_km || 0} km/nap)` : emp.commute_type === 'public_transit' ? `Bérlet (${Number(emp.commute_monthly_pass_cost || 0).toLocaleString('hu-HU')} Ft, ${emp.commute_reimbursement_pct || 86}%)` : 'Nincs'}</div>
                     </div>
                   </div>
                 </div>
@@ -538,6 +547,68 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                               />
                             </div>
                           </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Munkába Járás Utazási Költségtérítése */}
+                    <div className="p-3 border border-border bg-card rounded-lg space-y-3 md:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-slate-500">Munkába Járás Utazási Költségtérítése (39/2010. Korm. rend.)</label>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Adómentes</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[9px] text-slate-400 mb-1">Mód</label>
+                          <select
+                            value={form.commute_type || 'none'}
+                            onChange={e => setForm(f => ({ ...f, commute_type: e.target.value as any }))}
+                            className="w-full px-2 py-1 h-8 rounded border border-border bg-background text-xs"
+                          >
+                            <option value="none">Nincs térítés</option>
+                            <option value="car">Saját gépkocsi (km-alapon)</option>
+                            <option value="public_transit">Közösségi közlekedés (helyközi bérlet/jegy)</option>
+                          </select>
+                        </div>
+                        {form.commute_type === 'car' && (
+                          <div className="md:col-span-2">
+                            <label className="block text-[9px] text-slate-400 mb-1">Napi oda-vissza távolság (km)</label>
+                            <input
+                              type="number"
+                              value={form.commute_distance_km || 0}
+                              onChange={e => setForm(f => ({ ...f, commute_distance_km: Number(e.target.value) || 0 }))}
+                              placeholder="pl. 24"
+                              className="w-full px-2 py-1 h-8 rounded border border-border bg-background text-xs"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1 italic">
+                              * A havi számfejtéskor a ténylegesen ledolgozott munkanapok és a céges Ft/km ráta (30 Ft/km) alapján számolódik.
+                            </p>
+                          </div>
+                        )}
+                        {form.commute_type === 'public_transit' && (
+                          <>
+                            <div>
+                              <label className="block text-[9px] text-slate-400 mb-1">Havi bérlet bruttó ára (Ft)</label>
+                              <input
+                                type="number"
+                                value={form.commute_monthly_pass_cost || 0}
+                                onChange={e => setForm(f => ({ ...f, commute_monthly_pass_cost: Number(e.target.value) || 0 }))}
+                                placeholder="pl. 14200"
+                                className="w-full px-2 py-1 h-8 rounded border border-border bg-background text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[9px] text-slate-400 mb-1">Térítés mértéke</label>
+                              <select
+                                value={form.commute_reimbursement_pct || 86}
+                                onChange={e => setForm(f => ({ ...f, commute_reimbursement_pct: Number(e.target.value) || 86 }))}
+                                className="w-full px-2 py-1 h-8 rounded border border-border bg-background text-xs"
+                              >
+                                <option value={86}>86% (törvényi minimum)</option>
+                                <option value={100}>100% (teljes térítés)</option>
+                              </select>
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>

@@ -80,8 +80,12 @@ export interface CafeteriaInputItem {
 }
 
 export interface TravelReimbursementInput {
+  commuteType?: 'none' | 'car' | 'public_transit';
   commuteKm?: number;
   commuteDays?: number;
+  commuteCarRate?: number;            // Ft/km (default: 30, vagy 18-30)
+  commuteTransitPassCost?: number;    // Helyközi bérlet / jegy bruttó ár (Ft)
+  commuteReimbursementPct?: number;   // Térítési % (default: 86, vagy 100)
   businessDaysDomestic?: number;
   businessDaysForeign?: number;
   isDriver?: boolean;
@@ -543,14 +547,30 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
     cafeteriaTaxEmployer += Math.round(recTaxableHigh * 1.18 * (params.szja_rate + params.szocho_rate));
   }
 
-  // 4. Kiküldetési / Út-költségtérítési adómentes napidíjak
+  // 4. Kiküldetési / Út-költségtérítési adómentes napidíjak és munkába járás
   let travelReimbursementAmount = 0;
   if (input.travelReimbursement) {
-    const { commuteKm = 0, commuteDays = 0, businessDaysDomestic = 0, businessDaysForeign = 0, isDriver = false } = input.travelReimbursement;
+    const {
+      commuteType,
+      commuteKm = 0,
+      commuteDays = 0,
+      commuteCarRate,
+      commuteTransitPassCost = 0,
+      commuteReimbursementPct = 86,
+      businessDaysDomestic = 0,
+      businessDaysForeign = 0,
+      isDriver = false,
+    } = input.travelReimbursement;
     const eurRate = input.eurRate || 400;
     
-    // Munkába járás (30 Ft/km adómentes)
-    travelReimbursementAmount += commuteKm * commuteDays * 30;
+    // Munkába járás (39/2010. (II. 26.) Korm. rend. & Szja tv. 25. § (2))
+    if (commuteType === 'car' || (!commuteType && commuteKm > 0)) {
+      const carRate = commuteCarRate !== undefined ? commuteCarRate : 30;
+      travelReimbursementAmount += Math.round(commuteKm * commuteDays * carRate);
+    } else if (commuteType === 'public_transit') {
+      const pct = commuteReimbursementPct !== undefined ? commuteReimbursementPct : 86;
+      travelReimbursementAmount += Math.round(commuteTransitPassCost * (pct / 100));
+    }
 
     // Kiküldetés napidíj
     if (isDriver) {

@@ -74,6 +74,10 @@
 | remote_work_type | text | ✓ |  |
 | remote_work_days_per_week | integer | ✓ |  |
 | is_insured | boolean | ✓ | `true` |
+| commute_type | text | ✓ | `'none'::text` |
+| commute_distance_km | numeric | ✓ |  |
+| commute_monthly_pass_cost | numeric | ✓ |  |
+| commute_reimbursement_pct | numeric | ✓ | `86.00` |
 | status | text | ✓ | `'active'::text` |
 | metadata | jsonb | ✓ | `'{}'::jsonb` |
 | created_at | timestamp with time zone | ✓ | `now()` |
