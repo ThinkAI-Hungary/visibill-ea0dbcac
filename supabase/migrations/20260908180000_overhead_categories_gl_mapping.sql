@@ -59,7 +59,10 @@ BEGIN
   UPDATE public.categories SET gl_accounts = ARRAY['527'] WHERE company_id = p_company_id AND (lower(name) LIKE '%könyvelé%' OR lower(name) LIKE '%tanácsadás%') AND (gl_accounts IS NULL OR array_length(gl_accounts, 1) IS NULL);
   UPDATE public.categories SET gl_accounts = ARRAY['531', '539', '559', '579'] WHERE company_id = p_company_id AND lower(name) LIKE '%egyéb%' AND (gl_accounts IS NULL OR array_length(gl_accounts, 1) IS NULL);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+GRANT EXECUTE ON FUNCTION public.ensure_default_categories(UUID, UUID) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.ensure_default_categories(UUID, UUID) FROM anon;
 
 -- 3. Execute for existing companies
 DO $$
@@ -68,5 +71,5 @@ DECLARE
 BEGIN
   FOR r IN SELECT id FROM public.companies LOOP
     PERFORM public.ensure_default_categories(r.id);
-  END FOR;
+  END LOOP;
 END $$;
