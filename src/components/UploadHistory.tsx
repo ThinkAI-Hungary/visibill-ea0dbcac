@@ -256,7 +256,8 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           .from('transactions')
           .select('upload_id')
           .eq('company_id', companyId)
-          .in('upload_id', uploadIds);
+          .in('upload_id', uploadIds)
+          .range(0, 49999);
         processedIds = new Set(
           (txRows || []).map((t: any) => t.upload_id).filter(Boolean) as string[]
         );
