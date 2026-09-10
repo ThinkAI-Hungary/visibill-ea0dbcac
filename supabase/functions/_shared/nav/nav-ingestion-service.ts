@@ -88,6 +88,25 @@ export class NavIngestionService {
         if (options.fetchDetailedItems) {
           await this.fetchAndPersistDetails(navClient, invoices, options.direction, effectiveCompanyId);
         }
+
+        // 7. Automatikus tranzakció újrapárosítás indítása (ha érkeztek új számlák)
+        if (effectiveCompanyId && totalInserted > 0) {
+          try {
+            await this.supabase.rpc('pgmq_send_retry', {
+              queue_name: 'transaction_jobs',
+              msg: {
+                job_type: 'rematch',
+                company_id: effectiveCompanyId,
+                user_id: options.userId,
+                source: 'nav_sync',
+                sync_log_id: syncLogId,
+              }
+            });
+            console.log(`[NavIngestionService] Rematch job enqueued for company ${effectiveCompanyId} (${totalInserted} new invoices)`);
+          } catch (qErr) {
+            console.warn('[NavIngestionService] Failed to enqueue rematch job:', qErr);
+          }
+        }
       }
 
       // 7. Hitelesítő adatok státuszának előléptetése 'valid'-ra (ADR A-012 / A-024)

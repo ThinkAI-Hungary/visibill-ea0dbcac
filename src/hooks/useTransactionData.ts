@@ -63,6 +63,7 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
   const dateTo = overrideDateTo !== undefined ? overrideDateTo : contextDateTo;
 
   const [syncing, setSyncing] = useState(false);
+  const [rematching, setRematching] = useState(false);
   const [sortField, setSortField] = useState<string>('transaction_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [pageSize, setPageSize] = useState(50);
@@ -269,6 +270,36 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
     }
   }, [queryClient, selectedCompany?.id]);
 
+  // Rematch
+  const handleRematch = useCallback(async () => {
+    if (!selectedCompany?.id) return;
+    setRematching(true);
+    try {
+      const { error } = await supabase.rpc('enqueue_transaction_rematch', {
+        p_company_id: selectedCompany.id,
+      });
+      if (error) throw error;
+      toast({
+        title: 'Újrapárosítás elindítva',
+        description: 'A háttérfolyamat elindult. Pár másodperc múlva automatikusan frissül a felület.',
+      });
+      setTimeout(async () => {
+        if (selectedCompany?.id) {
+          await invalidateTransactionQueries(queryClient, selectedCompany.id);
+        }
+      }, 3500);
+    } catch (error: any) {
+      reportError({ type: 'db_query', component: 'useTransactionData', action: 'rematch_error', message: 'Rematch error:', error: error });
+      toast({
+        title: 'Újrapárosítás sikertelen',
+        description: error.message || 'Nem sikerült elindítani az újrapárosítást',
+        variant: 'destructive',
+      });
+    } finally {
+      setRematching(false);
+    }
+  }, [queryClient, selectedCompany?.id]);
+
   // Export
   const handleExport = useCallback(async (exportFormat: 'csv' | 'xlsx') => {
     const headers = ['Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Típus', 'Státusz', 'Pontszám', 'Indoklás'];
@@ -417,6 +448,8 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
     // Actions
     syncing,
     handleSync,
+    rematching,
+    handleRematch,
     handleExport,
     // F1: Bulk actions
     handleBulkStatusChange,

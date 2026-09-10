@@ -95,6 +95,8 @@ const TransactionsPage = () => {
     handlePageSizeChange,
     syncing,
     handleSync,
+    rematching,
+    handleRematch,
     handleExport,
     handleBulkStatusChange,
     handleBulkExport,
@@ -769,6 +771,25 @@ const TransactionsPage = () => {
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Tranzakciók szinkronizálása és feldolgozása</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRematch}
+                            disabled={rematching || !writable}
+                            className="text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                          >
+                            <Link2 className={cn("h-4 w-4 mr-2", rematching && "animate-spin")} />
+                            {rematching ? 'Párosítás...' : 'Újrapárosítás'}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Párosítatlan tranzakciók újrapárosítása a számlákkal</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
