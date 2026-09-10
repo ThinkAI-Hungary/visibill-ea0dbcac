@@ -355,10 +355,11 @@ BEGIN
   v_net_tax_balance := v_total_payable_tax - v_total_deductible_tax - v_prev_carry;
 
   IF v_net_tax_balance > 0 THEN
-    -- Line 77 / 84: Befizetendő adó
+    -- Line 83: Különbözet (36. sor - 76. sor - 82. sor)
     INSERT INTO vat_return_lines (vat_return_id, row_number, base_amount, tax_amount, base_amount_rounded, tax_amount_rounded)
-    VALUES (v_return_id, '77', 0, v_net_tax_balance, 0, ROUND(v_net_tax_balance/1000)::int);
+    VALUES (v_return_id, '83', 0, v_net_tax_balance, 0, ROUND(v_net_tax_balance/1000)::int);
 
+    -- Line 84: Befizetendő adó
     INSERT INTO vat_return_lines (vat_return_id, row_number, base_amount, tax_amount, base_amount_rounded, tax_amount_rounded)
     VALUES (v_return_id, '84', 0, v_net_tax_balance, 0, ROUND(v_net_tax_balance/1000)::int);
 
