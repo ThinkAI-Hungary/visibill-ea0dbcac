@@ -136,7 +136,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
 
   const companyId = selectedCompany?.id;
 
-  // Fetch transaction_uploads with related transaction counts
+  // Fetch transaction_uploads
   const { data: uploads = [], isLoading } = useQuery({
     queryKey: ['transaction_uploads_with_counts', companyId],
     queryFn: async () => {
@@ -149,30 +149,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
       if (uploadError) throw uploadError;
       if (!uploadData || uploadData.length === 0) return [];
 
-      const uploadIds = uploadData.map(u => u.id);
-      const { data: txData, error: txError } = await supabase
-        .from('transactions')
-        .select('upload_id')
-        .in('upload_id', uploadIds)
-        .order('created_at', { ascending: false })
-        .range(0, 49999);
-      if (txError) throw txError;
-
-      const countsByUpload = new Map<string, number>();
-      (txData || []).forEach((tx: any) => {
-        if (!tx.upload_id) return;
-        countsByUpload.set(tx.upload_id, (countsByUpload.get(tx.upload_id) || 0) + 1);
-      });
-
-      return uploadData.map(u => ({
-        id: u.id,
-        file_name: u.file_name,
-        file_url: u.file_url,
-        created_at: u.created_at,
-        user_id: u.user_id,
-        detected_bank: u.detected_bank,
-        transactionCount: countsByUpload.get(u.id) || 0,
-      })) as UploadWithTransactions[];
+      return uploadData as Omit<UploadWithTransactions, 'transactionCount'>[];
     },
     enabled: !!companyId && isOpen,
     staleTime: 0,
@@ -257,8 +234,42 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
     return { paginatedUploads: paginated, totalPages };
   }, [filteredUploads, currentPage, pageSize]);
 
+  // Visible IDs on current page
+  const visibleIds = useMemo(() => paginatedUploads.map(u => u.id), [paginatedUploads]);
+
+  // Fetch transaction counts bounded ONLY to the visible uploads on the current page
+  const { data: pageCounts = new Map<string, number>() } = useQuery({
+    queryKey: ['transaction_upload_page_counts', companyId, visibleIds],
+    queryFn: async () => {
+      if (!visibleIds || visibleIds.length === 0) return new Map<string, number>();
+
+      const { data: txData, error: txError } = await supabase
+        .from('transactions')
+        .select('upload_id')
+        .in('upload_id', visibleIds);
+      if (txError) throw txError;
+
+      const countsByUpload = new Map<string, number>();
+      (txData || []).forEach((tx: any) => {
+        if (!tx.upload_id) return;
+        countsByUpload.set(tx.upload_id, (countsByUpload.get(tx.upload_id) || 0) + 1);
+      });
+
+      return countsByUpload;
+    },
+    enabled: !!companyId && isOpen && visibleIds.length > 0,
+    staleTime: 0,
+    refetchInterval: 3000,
+  });
+
+  const paginatedUploadsWithCounts = useMemo(() => {
+    return paginatedUploads.map(u => ({
+      ...u,
+      transactionCount: pageCounts.get(u.id) || 0,
+    })) as UploadWithTransactions[];
+  }, [paginatedUploads, pageCounts]);
+
   // Selection helpers
-  const visibleIds = paginatedUploads.map(u => u.id);
   const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
   const someVisibleSelected = visibleIds.some(id => selectedIds.has(id));
 
@@ -283,7 +294,14 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
   };
 
   const selectedCount = selectedIds.size;
-  const selectedUploads = uploads.filter(u => selectedIds.has(u.id));
+  const selectedUploads = useMemo(() => {
+    return uploads
+      .filter(u => selectedIds.has(u.id))
+      .map(u => ({
+        ...u,
+        transactionCount: pageCounts.get(u.id) || 0,
+      })) as UploadWithTransactions[];
+  }, [uploads, selectedIds, pageCounts]);
 
   // Single delete functions
   const deleteUploadFileOnly = async (upload: UploadWithTransactions) => {
@@ -329,6 +347,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
       await deleteUploadFileOnly(upload);
       toast({ title: 'Sikeres törlés', description: 'A fájl törölve lett. A tranzakciók megmaradtak.', duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['transaction_uploads_with_counts', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['transaction_upload_page_counts', companyId] });
       queryClient.invalidateQueries({ queryKey: ['bank-uploads-unified', companyId] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
@@ -345,6 +364,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
       await deleteUploadWithTransactions(upload);
       toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó tranzakciók törölve lettek.', duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['transaction_uploads_with_counts', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['transaction_upload_page_counts', companyId] });
       queryClient.invalidateQueries({ queryKey: ['bank-uploads-unified', companyId] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['tx-kpis'] });
@@ -382,6 +402,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
     setBatchDeleting(false);
     setBatchDeleteOpen(false);
     queryClient.invalidateQueries({ queryKey: ['transaction_uploads_with_counts', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['transaction_upload_page_counts', companyId] });
     queryClient.invalidateQueries({ queryKey: ['bank-uploads-unified', companyId] });
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
     queryClient.invalidateQueries({ queryKey: ['tx-kpis'] });
@@ -509,7 +530,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedUploads.map((upload) => (
+                    {paginatedUploadsWithCounts.map((upload) => (
                       <TableRow
                         key={upload.id}
                         data-row-hover
