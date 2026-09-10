@@ -480,13 +480,13 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
-    "mtime": 1780952200.070983,
-    "ast_hash": "bd1c151c31c45158b336227a59eecf30",
-    "semantic_hash": "bd1c151c31c45158b336227a59eecf30"
+    "mtime": 1789010038.6466014,
+    "ast_hash": "94c4568cbb8315c7f3ca08245a5c641b",
+    "semantic_hash": ""
   },
   "src/components/tickets/TicketStatusBadge.tsx": {
-    "mtime": 1789009595.5583334,
-    "ast_hash": "1b4ca00a890c0b939c6ae8598b4e812d",
+    "mtime": 1789010033.4302404,
+    "ast_hash": "004d3ea26ee84516fa7591b586ee4582",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketTimeline.tsx": {
@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "src/pages/TicketsPage.tsx": {
-    "mtime": 1789009761.6707017,
-    "ast_hash": "95f531f65ee6740425b846d4049597f4",
+    "mtime": 1789009955.7827532,
+    "ast_hash": "f2682f60774c3366ab8b0bd67d54c357",
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {

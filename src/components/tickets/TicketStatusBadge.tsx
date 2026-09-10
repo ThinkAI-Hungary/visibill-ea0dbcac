@@ -36,7 +36,7 @@ export function TicketStatusBadge({ status, className }: TicketStatusBadgeProps)
   const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.created;
 
   return (
-    <Badge variant="outline" className={`font-medium ${config.className} ${className || ""}`}>
+    <Badge variant="outline" className={`w-[96px] justify-center text-center shrink-0 rounded-full font-medium ${config.className} ${className || ""}`}>
       {config.label}
     </Badge>
   );

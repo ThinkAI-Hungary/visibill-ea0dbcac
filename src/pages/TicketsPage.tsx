@@ -659,7 +659,7 @@ export default function TicketsPage({
                   {isAdmin && <TableHead className="w-[180px]">Bejelentő & Cég</TableHead>}
                   {isAdmin && <TableHead className="w-[180px] min-w-[170px]">Felelős</TableHead>}
                   <TableHead className="w-[120px]">Státusz</TableHead>
-                  <TableHead className="w-[100px]">Prioritás</TableHead>
+                  <TableHead className="w-[120px]">Prioritás</TableHead>
                   <TableHead className="w-[110px]">Létrehozva</TableHead>
                 </TableRow>
               </TableHeader>

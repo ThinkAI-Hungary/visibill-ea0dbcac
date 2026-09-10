@@ -28,7 +28,7 @@ export function TicketPriorityBadge({ priority, className }: TicketPriorityBadge
   const config = priorityConfig[(priority || "medium") as keyof typeof priorityConfig] || priorityConfig.medium;
 
   return (
-    <Badge variant="outline" className={`font-medium ${config.className} ${className || ""}`}>
+    <Badge variant="outline" className={`w-[96px] justify-center text-center shrink-0 rounded-full font-medium ${config.className} ${className || ""}`}>
       {config.label}
     </Badge>
   );
