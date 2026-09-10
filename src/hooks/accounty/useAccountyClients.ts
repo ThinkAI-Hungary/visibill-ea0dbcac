@@ -707,9 +707,13 @@ export function useCompanyInvoices(companyId: string) {
       if (err2) reportError({ type: 'db_query', component: 'useCompanyInvoices', action: 'nav', message: err2.message, error: err2 });
 
       const results: CompanyInvoice[] = [];
+      const uploadedNumbers = new Set<string>();
 
       // Map uploaded invoices
       for (const inv of (uploaded || [])) {
+        if (inv.bizonylatsorszam) {
+          uploadedNumbers.add(inv.bizonylatsorszam.trim().toLowerCase().replace(/\s+/g, ''));
+        }
         const isInbound = inv.invoice_direction === 'INBOUND';
         // Safe cast gl_account join
         const glAcc = inv.gl_account as any;
@@ -742,8 +746,12 @@ export function useCompanyInvoices(companyId: string) {
         });
       }
 
-      // Map NAV invoices (these have direction)
+      // Map NAV invoices (skip if already represented by an uploaded invoice)
       for (const nav of (navData || [])) {
+        const normNavNum = (nav.invoice_number || '').trim().toLowerCase().replace(/\s+/g, '');
+        if (normNavNum && uploadedNumbers.has(normNavNum)) {
+          continue;
+        }
         const isInbound = nav.invoice_direction === 'INBOUND';
         const glAcc = nav.gl_account as any;
         results.push({
