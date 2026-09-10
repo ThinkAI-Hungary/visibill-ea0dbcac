@@ -6220,7 +6220,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "ev_aamtransitionmodal_aamtransitionmodal",
-      "community": 724,
+      "community": 175,
       "norm_label": "aamtransitionmodal()"
     },
     {
@@ -9560,7 +9560,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "invoices_pdfexportbanner",
-      "community": 663,
+      "community": 67,
       "norm_label": "pdfexportbanner.tsx"
     },
     {
@@ -9570,7 +9570,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "invoices_pdfexportbanner_pdfexportbannerprops",
-      "community": 663,
+      "community": 67,
       "norm_label": "pdfexportbannerprops"
     },
     {
@@ -9580,7 +9580,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "invoices_pdfexportbanner_formatbytes",
-      "community": 663,
+      "community": 67,
       "norm_label": "formatbytes()"
     },
     {
@@ -9590,7 +9590,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "invoices_pdfexportbanner_pdfexportbanner",
-      "community": 663,
+      "community": 67,
       "norm_label": "pdfexportbanner()"
     },
     {
@@ -10540,7 +10540,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "nav_navsyncdialog_syncprogress",
-      "community": 51,
+      "community": 752,
       "norm_label": "syncprogress"
     },
     {
@@ -10610,7 +10610,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "nav_navsyncdialog_navsyncdialog",
-      "community": 752,
+      "community": 67,
       "norm_label": "navsyncdialog()"
     },
     {
@@ -12087,7 +12087,7 @@
       "label": "statusConfig",
       "file_type": "code",
       "source_file": "src/components/tickets/TicketStatusBadge.tsx",
-      "source_location": "L3",
+      "source_location": "L4",
       "_origin": "ast",
       "id": "tickets_ticketstatusbadge_statusconfig",
       "community": 772,
@@ -12097,7 +12097,7 @@
       "label": "TicketStatusBadgeProps",
       "file_type": "code",
       "source_file": "src/components/tickets/TicketStatusBadge.tsx",
-      "source_location": "L30",
+      "source_location": "L37",
       "_origin": "ast",
       "id": "tickets_ticketstatusbadge_ticketstatusbadgeprops",
       "community": 772,
@@ -12107,7 +12107,7 @@
       "label": "TicketStatusBadge()",
       "file_type": "code",
       "source_file": "src/components/tickets/TicketStatusBadge.tsx",
-      "source_location": "L35",
+      "source_location": "L42",
       "_origin": "ast",
       "id": "tickets_ticketstatusbadge_ticketstatusbadge",
       "community": 772,
@@ -14270,7 +14270,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_input_otp",
-      "community": 611,
+      "community": 770,
       "norm_label": "input-otp.tsx"
     },
     {
@@ -14280,7 +14280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "ui_input_otp_inputotp",
-      "community": 611,
+      "community": 770,
       "norm_label": "inputotp"
     },
     {
@@ -14290,7 +14290,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "ui_input_otp_inputotpgroup",
-      "community": 611,
+      "community": 770,
       "norm_label": "inputotpgroup"
     },
     {
@@ -14300,7 +14300,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "ui_input_otp_inputotpslot",
-      "community": 611,
+      "community": 770,
       "norm_label": "inputotpslot"
     },
     {
@@ -14310,7 +14310,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "ui_input_otp_inputotpseparator",
-      "community": 611,
+      "community": 770,
       "norm_label": "inputotpseparator"
     },
     {
@@ -14440,7 +14440,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_menubar",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubar.tsx"
     },
     {
@@ -14450,7 +14450,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "ui_menubar_menubar",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubar"
     },
     {
@@ -14460,7 +14460,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "ui_menubar_menubartrigger",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubartrigger"
     },
     {
@@ -14470,7 +14470,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "ui_menubar_menubarsubtrigger",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarsubtrigger"
     },
     {
@@ -14480,7 +14480,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "ui_menubar_menubarsubcontent",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarsubcontent"
     },
     {
@@ -14490,7 +14490,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "ui_menubar_menubarcontent",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarcontent"
     },
     {
@@ -14500,7 +14500,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "ui_menubar_menubaritem",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubaritem"
     },
     {
@@ -14510,7 +14510,7 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "ui_menubar_menubarcheckboxitem",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarcheckboxitem"
     },
     {
@@ -14520,7 +14520,7 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "ui_menubar_menubarradioitem",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarradioitem"
     },
     {
@@ -14530,7 +14530,7 @@
       "source_location": "L163",
       "_origin": "ast",
       "id": "ui_menubar_menubarlabel",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarlabel"
     },
     {
@@ -14540,7 +14540,7 @@
       "source_location": "L177",
       "_origin": "ast",
       "id": "ui_menubar_menubarseparator",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarseparator"
     },
     {
@@ -14550,7 +14550,7 @@
       "source_location": "L185",
       "_origin": "ast",
       "id": "ui_menubar_menubarshortcut",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarshortcut()"
     },
     {
@@ -17720,7 +17720,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_invoicecontexts_test",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoicecontexts.test.tsx"
     },
     {
@@ -17760,7 +17760,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_invoicesfeature_test",
-      "community": 710,
+      "community": 418,
       "norm_label": "invoicesfeature.test.ts"
     },
     {
@@ -18040,7 +18040,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "expanded_row_linkedinvoicessection",
-      "community": 479,
+      "community": 39,
       "norm_label": "linkedinvoicessection.tsx"
     },
     {
@@ -18050,7 +18050,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "expanded_row_linkedinvoicessection_linkedinvoicessectionprops",
-      "community": 479,
+      "community": 39,
       "norm_label": "linkedinvoicessectionprops"
     },
     {
@@ -18060,7 +18060,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "expanded_row_linkedinvoicessection_getinvoicetypelabel",
-      "community": 479,
+      "community": 39,
       "norm_label": "getinvoicetypelabel()"
     },
     {
@@ -18290,7 +18290,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "expanded_row_types_linkedinvoice",
-      "community": 479,
+      "community": 39,
       "norm_label": "linkedinvoice"
     },
     {
@@ -18340,7 +18340,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "filters_invoicefilterbar_invoicefilterbar",
-      "community": 67,
+      "community": 418,
       "norm_label": "invoicefilterbar()"
     },
     {
@@ -18410,7 +18410,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "header_navsyncbutton",
-      "community": 752,
+      "community": 67,
       "norm_label": "navsyncbutton.tsx"
     },
     {
@@ -18420,7 +18420,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "header_navsyncbutton_navsyncbutton",
-      "community": 752,
+      "community": 67,
       "norm_label": "navsyncbutton()"
     },
     {
@@ -18430,7 +18430,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "table_invoicetablecontainer",
-      "community": 67,
+      "community": 418,
       "norm_label": "invoicetablecontainer.tsx"
     },
     {
@@ -18500,7 +18500,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "table_navinvoicetable_navinvoicetable",
-      "community": 67,
+      "community": 418,
       "norm_label": "navinvoicetable()"
     },
     {
@@ -18560,7 +18560,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "table_submittedinvoicetable_submittedinvoicetable",
-      "community": 67,
+      "community": 418,
       "norm_label": "submittedinvoicetable()"
     },
     {
@@ -18570,7 +18570,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "context_invoicecontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoicecontext.tsx"
     },
     {
@@ -18590,7 +18590,7 @@
       "source_location": "L160",
       "_origin": "ast",
       "id": "context_invoicecontext_invoicecontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoicecontext"
     },
     {
@@ -18600,7 +18600,7 @@
       "source_location": "L162",
       "_origin": "ast",
       "id": "context_invoicecontext_invoiceprovider",
-      "community": 754,
+      "community": 332,
       "norm_label": "invoiceprovider()"
     },
     {
@@ -18640,7 +18640,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "context_invoicefiltercontext_useinvoicefiltercontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "useinvoicefiltercontext()"
     },
     {
@@ -18650,7 +18650,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "context_invoicefiltercontext_invoicefilterprovider",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoicefilterprovider()"
     },
     {
@@ -18680,7 +18680,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "context_invoicepaginationcontext_invoicepaginationcontext",
-      "community": 51,
+      "community": 332,
       "norm_label": "invoicepaginationcontext"
     },
     {
@@ -18690,7 +18690,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "context_invoicepaginationcontext_useinvoicepaginationcontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "useinvoicepaginationcontext()"
     },
     {
@@ -18700,7 +18700,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "context_invoicepaginationcontext_invoicepaginationprovider",
-      "community": 51,
+      "community": 332,
       "norm_label": "invoicepaginationprovider()"
     },
     {
@@ -18710,7 +18710,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "context_invoiceselectioncontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoiceselectioncontext.tsx"
     },
     {
@@ -18720,7 +18720,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "context_invoiceselectioncontext_invoiceselectioncontextvalue",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoiceselectioncontextvalue"
     },
     {
@@ -18730,7 +18730,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "context_invoiceselectioncontext_invoiceselectioncontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoiceselectioncontext"
     },
     {
@@ -18740,7 +18740,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "context_invoiceselectioncontext_useinvoiceselectioncontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "useinvoiceselectioncontext()"
     },
     {
@@ -18750,7 +18750,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "context_invoiceselectioncontext_invoiceselectionprovider",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoiceselectionprovider()"
     },
     {
@@ -18810,7 +18810,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "types_index_tab_slugs",
-      "community": 710,
+      "community": 418,
       "norm_label": "tab_slugs"
     },
     {
@@ -18840,7 +18840,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "types_index_tab_to_slug",
-      "community": 710,
+      "community": 418,
       "norm_label": "tab_to_slug"
     },
     {
@@ -18870,7 +18870,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "utils_invoicerelations_linkedinvoicewithrelation",
-      "community": 51,
+      "community": 418,
       "norm_label": "linkedinvoicewithrelation"
     },
     {
@@ -18890,7 +18890,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "utils_invoicerelations_buildnavtosubmittedmap",
-      "community": 67,
+      "community": 418,
       "norm_label": "buildnavtosubmittedmap()"
     },
     {
@@ -18900,7 +18900,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "utils_invoicerelations_buildsubmittedtonavmap",
-      "community": 67,
+      "community": 418,
       "norm_label": "buildsubmittedtonavmap()"
     },
     {
@@ -18910,7 +18910,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "utils_invoicerelations_buildnavtosuggestedsubmittedmap",
-      "community": 67,
+      "community": 418,
       "norm_label": "buildnavtosuggestedsubmittedmap()"
     },
     {
@@ -18920,7 +18920,7 @@
       "source_location": "L162",
       "_origin": "ast",
       "id": "utils_invoicerelations_buildlinkedinvoicesmap",
-      "community": 710,
+      "community": 418,
       "norm_label": "buildlinkedinvoicesmap()"
     },
     {
@@ -22680,7 +22680,7 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "accounty_useaccountypayroll_useaddjobmodification",
-      "community": 447,
+      "community": 431,
       "norm_label": "useaddjobmodification()"
     },
     {
@@ -24210,7 +24210,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "hooks_useevdata_evtaxpayerform",
-      "community": 555,
+      "community": 175,
       "norm_label": "evtaxpayerform"
     },
     {
@@ -24390,7 +24390,7 @@
       "source_location": "L283",
       "_origin": "ast",
       "id": "hooks_useevdata_usecloseperiod",
-      "community": 555,
+      "community": 714,
       "norm_label": "usecloseperiod()"
     },
     {
@@ -24480,7 +24480,7 @@
       "source_location": "L501",
       "_origin": "ast",
       "id": "hooks_useevdata_evtaxreturn",
-      "community": 175,
+      "community": 26,
       "norm_label": "evtaxreturn"
     },
     {
@@ -24550,7 +24550,7 @@
       "source_location": "L623",
       "_origin": "ast",
       "id": "hooks_useevdata_useevperiodcloses",
-      "community": 555,
+      "community": 714,
       "norm_label": "useevperiodcloses()"
     },
     {
@@ -25190,7 +25190,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_useinvoicedata",
-      "community": 710,
+      "community": 51,
       "norm_label": "useinvoicedata.ts"
     },
     {
@@ -25260,7 +25260,7 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "hooks_useinvoicedata_courierreportrecord",
-      "community": 710,
+      "community": 51,
       "norm_label": "courierreportrecord"
     },
     {
@@ -25270,7 +25270,7 @@
       "source_location": "L129",
       "_origin": "ast",
       "id": "hooks_useinvoicedata_useinvoicedata",
-      "community": 754,
+      "community": 332,
       "norm_label": "useinvoicedata()"
     },
     {
@@ -25380,7 +25380,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "hooks_useinvoicemutations_useinvoicemutations",
-      "community": 754,
+      "community": 332,
       "norm_label": "useinvoicemutations()"
     },
     {
@@ -25580,7 +25580,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usenettingdetection",
-      "community": 754,
+      "community": 51,
       "norm_label": "usenettingdetection.ts"
     },
     {
@@ -25600,7 +25600,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "hooks_usenettingdetection_normalizetaxnumber",
-      "community": 754,
+      "community": 51,
       "norm_label": "normalizetaxnumber()"
     },
     {
@@ -25610,7 +25610,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "hooks_usenettingdetection_getdeliverymonth",
-      "community": 754,
+      "community": 51,
       "norm_label": "getdeliverymonth()"
     },
     {
@@ -25620,7 +25620,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "hooks_usenettingdetection_usenettingdetection",
-      "community": 754,
+      "community": 332,
       "norm_label": "usenettingdetection()"
     },
     {
@@ -25840,7 +25840,7 @@
       "source_location": "L355",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usepayrollemployments",
-      "community": 447,
+      "community": 431,
       "norm_label": "usepayrollemployments()"
     },
     {
@@ -26180,7 +26180,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "hooks_usepdfexport_pdfexportjob",
-      "community": 663,
+      "community": 67,
       "norm_label": "pdfexportjob"
     },
     {
@@ -28960,7 +28960,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "templates_tableexporttemplate_buildtableexportdescriptor",
-      "community": 498,
+      "community": 592,
       "norm_label": "buildtableexportdescriptor()"
     },
     {
@@ -29350,7 +29350,7 @@
       "source_location": "L374",
       "_origin": "ast",
       "id": "lib_evcalculations_thresholdstatus",
-      "community": 724,
+      "community": 175,
       "norm_label": "thresholdstatus"
     },
     {
@@ -29360,7 +29360,7 @@
       "source_location": "L376",
       "_origin": "ast",
       "id": "lib_evcalculations_thresholdcheck",
-      "community": 724,
+      "community": 175,
       "norm_label": "thresholdcheck"
     },
     {
@@ -29370,7 +29370,7 @@
       "source_location": "L385",
       "_origin": "ast",
       "id": "lib_evcalculations_checkthresholdstatus",
-      "community": 724,
+      "community": 175,
       "norm_label": "checkthresholdstatus()"
     },
     {
@@ -29380,7 +29380,7 @@
       "source_location": "L396",
       "_origin": "ast",
       "id": "lib_evcalculations_getevthresholds",
-      "community": 724,
+      "community": 175,
       "norm_label": "getevthresholds()"
     },
     {
@@ -29550,7 +29550,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_exportpdf",
-      "community": 498,
+      "community": 592,
       "norm_label": "exportpdf.ts"
     },
     {
@@ -29570,7 +29570,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "lib_exportpdf_exportpdf",
-      "community": 498,
+      "community": 592,
       "norm_label": "exportpdf()"
     },
     {
@@ -29580,7 +29580,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "lib_exportpdf_getpdfbloburl",
-      "community": 498,
+      "community": 592,
       "norm_label": "getpdfbloburl()"
     },
     {
@@ -29590,7 +29590,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "lib_exportpdf_exportreceiptpdf",
-      "community": 498,
+      "community": 592,
       "norm_label": "exportreceiptpdf()"
     },
     {
@@ -31260,7 +31260,7 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "lib_navigation_useurltab",
-      "community": 754,
+      "community": 332,
       "norm_label": "useurltab()"
     },
     {
@@ -34860,7 +34860,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "accounty_employeeexitwizardpage_employeeexitwizardpage",
-      "community": 447,
+      "community": 431,
       "norm_label": "employeeexitwizardpage()"
     },
     {
@@ -35030,7 +35030,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard",
-      "community": 555,
+      "community": 714,
       "norm_label": "cashbookclosewizard.tsx"
     },
     {
@@ -35040,7 +35040,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_periodsummary",
-      "community": 555,
+      "community": 714,
       "norm_label": "periodsummary"
     },
     {
@@ -35050,7 +35050,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_wizardstep",
-      "community": 555,
+      "community": 714,
       "norm_label": "wizardstep"
     },
     {
@@ -35060,7 +35060,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_month_labels",
-      "community": 555,
+      "community": 714,
       "norm_label": "month_labels"
     },
     {
@@ -35070,7 +35070,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_closecheck",
-      "community": 555,
+      "community": 714,
       "norm_label": "closecheck"
     },
     {
@@ -35080,7 +35080,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_runclosechecks",
-      "community": 555,
+      "community": 714,
       "norm_label": "runclosechecks()"
     },
     {
@@ -35090,7 +35090,7 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_cashbookclosewizard",
-      "community": 555,
+      "community": 714,
       "norm_label": "cashbookclosewizard()"
     },
     {
@@ -35360,7 +35360,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evcalendarpage",
-      "community": 175,
+      "community": 26,
       "norm_label": "evcalendarpage.tsx"
     },
     {
@@ -35370,7 +35370,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "ev_evcalendarpage_month_names",
-      "community": 175,
+      "community": 26,
       "norm_label": "month_names"
     },
     {
@@ -35380,7 +35380,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "ev_evcalendarpage_return_type_map",
-      "community": 175,
+      "community": 26,
       "norm_label": "return_type_map"
     },
     {
@@ -35390,7 +35390,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "ev_evcalendarpage_type_labels",
-      "community": 175,
+      "community": 26,
       "norm_label": "type_labels"
     },
     {
@@ -35400,7 +35400,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "ev_evcalendarpage_type_colors",
-      "community": 175,
+      "community": 26,
       "norm_label": "type_colors"
     },
     {
@@ -35410,7 +35410,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "ev_evcalendarpage_deadlinestatus",
-      "community": 175,
+      "community": 26,
       "norm_label": "deadlinestatus"
     },
     {
@@ -35420,7 +35420,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "ev_evcalendarpage_status_icon",
-      "community": 175,
+      "community": 26,
       "norm_label": "status_icon"
     },
     {
@@ -36220,7 +36220,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_enrichedevclient",
-      "community": 555,
+      "community": 175,
       "norm_label": "enrichedevclient"
     },
     {
@@ -36630,7 +36630,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage",
-      "community": 724,
+      "community": 175,
       "norm_label": "evthresholdmonitorpage.tsx"
     },
     {
@@ -36640,7 +36640,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_projectedthresholdcheck",
-      "community": 724,
+      "community": 175,
       "norm_label": "projectedthresholdcheck"
     },
     {
@@ -36650,7 +36650,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_clientthresholdrow",
-      "community": 724,
+      "community": 175,
       "norm_label": "clientthresholdrow"
     },
     {
@@ -36660,7 +36660,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_worstof",
-      "community": 724,
+      "community": 175,
       "norm_label": "worstof()"
     },
     {
@@ -36670,7 +36670,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_status_config",
-      "community": 724,
+      "community": 175,
       "norm_label": "status_config"
     },
     {
@@ -37090,7 +37090,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage",
-      "community": 61,
+      "community": 431,
       "norm_label": "exitdocumentspage.tsx"
     },
     {
@@ -37100,7 +37100,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_hu",
-      "community": 61,
+      "community": 431,
       "norm_label": "hu()"
     },
     {
@@ -37110,7 +37110,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_fmt",
-      "community": 61,
+      "community": 431,
       "norm_label": "fmt()"
     },
     {
@@ -37120,7 +37120,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_fmtdate",
-      "community": 61,
+      "community": 431,
       "norm_label": "fmtdate()"
     },
     {
@@ -37130,7 +37130,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_exitdocument",
-      "community": 61,
+      "community": 431,
       "norm_label": "exitdocument"
     },
     {
@@ -37140,7 +37140,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_document_templates",
-      "community": 61,
+      "community": 431,
       "norm_label": "document_templates"
     },
     {
@@ -37150,7 +37150,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_status_badge",
-      "community": 61,
+      "community": 431,
       "norm_label": "status_badge"
     },
     {
@@ -37310,7 +37310,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage",
-      "community": 447,
+      "community": 431,
       "norm_label": "jobmodificationpage.tsx"
     },
     {
@@ -37320,7 +37320,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage_changetype",
-      "community": 447,
+      "community": 431,
       "norm_label": "changetype"
     },
     {
@@ -37330,7 +37330,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage_modificationdata",
-      "community": 447,
+      "community": 431,
       "norm_label": "modificationdata"
     },
     {
@@ -37340,7 +37340,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage_change_types",
-      "community": 447,
+      "community": 431,
       "norm_label": "change_types"
     },
     {
@@ -37350,7 +37350,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage_empty_per_type",
-      "community": 447,
+      "community": 431,
       "norm_label": "empty_per_type"
     },
     {
@@ -37360,7 +37360,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage_jobmodificationpage",
-      "community": 447,
+      "community": 431,
       "norm_label": "jobmodificationpage()"
     },
     {
@@ -39430,7 +39430,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_yearenddashboardpage",
-      "community": 498,
+      "community": 592,
       "norm_label": "yearenddashboardpage.tsx"
     },
     {
@@ -39440,7 +39440,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "accounty_yearenddashboardpage_icon_map",
-      "community": 498,
+      "community": 592,
       "norm_label": "icon_map"
     },
     {
@@ -39450,7 +39450,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "accounty_yearenddashboardpage_taskstatus",
-      "community": 498,
+      "community": 592,
       "norm_label": "taskstatus"
     },
     {
@@ -39460,7 +39460,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "accounty_yearenddashboardpage_status_badge",
-      "community": 498,
+      "community": 592,
       "norm_label": "status_badge"
     },
     {
@@ -40310,7 +40310,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "filings_filingworkflowpage",
-      "community": 498,
+      "community": 592,
       "norm_label": "filingworkflowpage.tsx"
     },
     {
@@ -40320,7 +40320,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_step",
-      "community": 498,
+      "community": 592,
       "norm_label": "step"
     },
     {
@@ -40330,7 +40330,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_steps",
-      "community": 498,
+      "community": 592,
       "norm_label": "steps"
     },
     {
@@ -40340,7 +40340,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_filing_type_labels",
-      "community": 498,
+      "community": 592,
       "norm_label": "filing_type_labels"
     },
     {
@@ -40350,7 +40350,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_fmt",
-      "community": 498,
+      "community": 592,
       "norm_label": "fmt()"
     },
     {
@@ -40360,7 +40360,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_filingworkflowpage",
-      "community": 498,
+      "community": 592,
       "norm_label": "filingworkflowpage()"
     },
     {
@@ -41210,7 +41210,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "new_client_integrationstep",
-      "community": 498,
+      "community": 592,
       "norm_label": "integrationstep.tsx"
     },
     {
@@ -41220,7 +41220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "new_client_integrationstep_integrationstepprops",
-      "community": 498,
+      "community": 592,
       "norm_label": "integrationstepprops"
     },
     {
@@ -41230,7 +41230,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "new_client_integrationstep_integrationstep",
-      "community": 498,
+      "community": 592,
       "norm_label": "integrationstep()"
     },
     {
@@ -41290,7 +41290,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "reports_customreportbuilderpage",
-      "community": 498,
+      "community": 61,
       "norm_label": "customreportbuilderpage.tsx"
     },
     {
@@ -41300,7 +41300,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "reports_customreportbuilderpage_columndef",
-      "community": 498,
+      "community": 61,
       "norm_label": "columndef"
     },
     {
@@ -41310,7 +41310,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "reports_customreportbuilderpage_available_columns",
-      "community": 498,
+      "community": 61,
       "norm_label": "available_columns"
     },
     {
@@ -41320,7 +41320,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "reports_customreportbuilderpage_filterdef",
-      "community": 498,
+      "community": 61,
       "norm_label": "filterdef"
     },
     {
@@ -41330,7 +41330,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "reports_customreportbuilderpage_customreportbuilderpage",
-      "community": 498,
+      "community": 61,
       "norm_label": "customreportbuilderpage()"
     },
     {
@@ -41340,7 +41340,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage",
-      "community": 498,
+      "community": 592,
       "norm_label": "payrolladvancedreportspage.tsx"
     },
     {
@@ -41350,7 +41350,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage_reporttype",
-      "community": 498,
+      "community": 592,
       "norm_label": "reporttype"
     },
     {
@@ -41360,7 +41360,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage_report_types",
-      "community": 498,
+      "community": 592,
       "norm_label": "report_types"
     },
     {
@@ -41370,7 +41370,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage_payrollreportspage2",
-      "community": 498,
+      "community": 592,
       "norm_label": "payrollreportspage2()"
     },
     {
@@ -42390,7 +42390,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "pages_invoicespage_invoicespage",
-      "community": 754,
+      "community": 332,
       "norm_label": "invoicespage()"
     },
     {
@@ -46660,7 +46660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "types_invoices_invoice_type_labels",
-      "community": 479,
+      "community": 39,
       "norm_label": "invoice_type_labels"
     },
     {
@@ -58810,7 +58810,7 @@
       "source_location": "L644",
       "_origin": "ast",
       "id": "project_documentation_api_rate_limits_quotas",
-      "community": 85,
+      "community": 663,
       "norm_label": "api rate limits & quotas"
     },
     {
@@ -58820,7 +58820,7 @@
       "source_location": "L646",
       "_origin": "ast",
       "id": "project_documentation_supabase_free_tier",
-      "community": 85,
+      "community": 663,
       "norm_label": "supabase (free tier)"
     },
     {
@@ -58830,7 +58830,7 @@
       "source_location": "L653",
       "_origin": "ast",
       "id": "project_documentation_resend_free_tier",
-      "community": 85,
+      "community": 663,
       "norm_label": "resend (free tier)"
     },
     {
@@ -58840,7 +58840,7 @@
       "source_location": "L659",
       "_origin": "ast",
       "id": "project_documentation_nav_api",
-      "community": 85,
+      "community": 663,
       "norm_label": "nav api"
     },
     {
@@ -58850,7 +58850,7 @@
       "source_location": "L665",
       "_origin": "ast",
       "id": "project_documentation_stripe",
-      "community": 85,
+      "community": 663,
       "norm_label": "stripe"
     },
     {
@@ -58910,7 +58910,7 @@
       "source_location": "L700",
       "_origin": "ast",
       "id": "project_documentation_monitoring_logging",
-      "community": 714,
+      "community": 85,
       "norm_label": "monitoring & logging"
     },
     {
@@ -58920,7 +58920,7 @@
       "source_location": "L702",
       "_origin": "ast",
       "id": "project_documentation_edge_function_logs",
-      "community": 714,
+      "community": 85,
       "norm_label": "edge function logs"
     },
     {
@@ -58930,7 +58930,7 @@
       "source_location": "L708",
       "_origin": "ast",
       "id": "project_documentation_database_logs",
-      "community": 714,
+      "community": 85,
       "norm_label": "database logs"
     },
     {
@@ -58940,7 +58940,7 @@
       "source_location": "L714",
       "_origin": "ast",
       "id": "project_documentation_error_tracking",
-      "community": 714,
+      "community": 85,
       "norm_label": "error tracking"
     },
     {
@@ -58950,7 +58950,7 @@
       "source_location": "L719",
       "_origin": "ast",
       "id": "project_documentation_usage_monitoring",
-      "community": 714,
+      "community": 85,
       "norm_label": "usage monitoring"
     },
     {
@@ -74520,7 +74520,7 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "business_brd_6_nav_integr\u00e1ci\u00f3",
-      "community": 222,
+      "community": 758,
       "norm_label": "6. nav integracio"
     },
     {
@@ -74530,7 +74530,7 @@
       "source_location": "L149",
       "_origin": "ast",
       "id": "business_brd_req_6_1_nav_online_sz\u00e1mla_api_v3",
-      "community": 222,
+      "community": 758,
       "norm_label": "req-6.1: nav online szamla api v3"
     },
     {
@@ -74540,7 +74540,7 @@
       "source_location": "L154",
       "_origin": "ast",
       "id": "business_brd_req_6_2_szinkroniz\u00e1ci\u00f3_strat\u00e9gia",
-      "community": 222,
+      "community": 758,
       "norm_label": "req-6.2: szinkronizacio strategia"
     },
     {
@@ -74880,7 +74880,7 @@
       "source_location": "L339",
       "_origin": "ast",
       "id": "business_brd_9_el\u0151fizet\u00e9s_\u00e1raz\u00e1s",
-      "community": 758,
+      "community": 222,
       "norm_label": "9. elofizetes & arazas"
     },
     {
@@ -74890,7 +74890,7 @@
       "source_location": "L341",
       "_origin": "ast",
       "id": "business_brd_req_9_1_subscription_tierek",
-      "community": 758,
+      "community": 222,
       "norm_label": "req-9.1: subscription tierek"
     },
     {
@@ -74900,7 +74900,7 @@
       "source_location": "L346",
       "_origin": "ast",
       "id": "business_brd_req_9_2_el\u0151fizet\u00e9s_scope",
-      "community": 758,
+      "community": 222,
       "norm_label": "req-9.2: elofizetes scope"
     },
     {
@@ -104536,9 +104536,9 @@
       "source_file": "src/components/AppModeSwitcher.tsx",
       "source_location": "L18",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "components_appmodeswitcher_prefetcheaisybill",
-      "target": "components_applayout"
+      "target": "components_applayout",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -104643,9 +104643,9 @@
       "source_file": "src/components/AppModeSwitcher.tsx",
       "source_location": "L16",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "components_appmodeswitcher",
-      "target": "components_appmodeswitcher_prefetcheaisybill"
+      "target": "components_appmodeswitcher_prefetcheaisybill",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -104653,9 +104653,9 @@
       "source_file": "src/components/AppModeSwitcher.tsx",
       "source_location": "L11",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "components_appmodeswitcher",
-      "target": "components_appmodeswitcher_prefetcheaisybooks"
+      "target": "components_appmodeswitcher_prefetcheaisybooks",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -104708,9 +104708,9 @@
       "source_file": "src/components/AppModeSwitcher.tsx",
       "source_location": "L12",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "components_appmodeswitcher_prefetcheaisybooks",
-      "target": "accounty_accountylayout"
+      "target": "accounty_accountylayout",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -104719,9 +104719,9 @@
       "source_file": "src/components/AppModeSwitcher.tsx",
       "source_location": "L13",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "components_appmodeswitcher_prefetcheaisybooks",
-      "target": "accounty_clientdetailspage"
+      "target": "accounty_clientdetailspage",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -104730,9 +104730,9 @@
       "source_file": "src/components/AppModeSwitcher.tsx",
       "source_location": "L17",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "components_appmodeswitcher_prefetcheaisybill",
-      "target": "pages_index"
+      "target": "pages_index",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -115103,9 +115103,9 @@
       "source_file": "src/components/ProductTour.tsx",
       "source_location": "L14",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "components_producttour",
-      "target": "ui_sidebar_useoptionalsidebar"
+      "target": "ui_sidebar_useoptionalsidebar",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -119709,9 +119709,9 @@
       "source_file": "src/components/accounty/AccountyErrorBoundary.tsx",
       "source_location": "L33",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "accounty_accountyerrorboundary_accountyerrorboundary",
-      "target": "accounty_accountyerrorboundary_accountyerrorboundary_componentdidupdate"
+      "target": "accounty_accountyerrorboundary_accountyerrorboundary_componentdidupdate",
+      "confidence_score": 1.0
     },
     {
       "relation": "method",
@@ -123664,9 +123664,9 @@
       "source_file": "src/components/accounty/layout/AccountyHeader.tsx",
       "source_location": "L16",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "layout_accountyheader",
-      "target": "layout_accountyheader_accountyheadercomponent"
+      "target": "layout_accountyheader_accountyheadercomponent",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -123684,9 +123684,9 @@
       "source_file": "src/components/accounty/layout/AccountyHeader.tsx",
       "source_location": "L129",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "layout_accountyheader",
-      "target": "layout_accountyheader_areaccountyheaderpropsequal"
+      "target": "layout_accountyheader_areaccountyheaderpropsequal",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -123716,9 +123716,9 @@
       "source_file": "src/components/accounty/layout/AccountyNavSkeleton.tsx",
       "source_location": "L9",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "layout_accountynavskeleton",
-      "target": "layout_accountynavskeleton_accountynavskeleton"
+      "target": "layout_accountynavskeleton_accountynavskeleton",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -123726,9 +123726,9 @@
       "source_file": "src/components/accounty/layout/AccountyNavSkeleton.tsx",
       "source_location": "L4",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "layout_accountynavskeleton",
-      "target": "layout_accountynavskeleton_accountynavskeletonprops"
+      "target": "layout_accountynavskeleton_accountynavskeletonprops",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -123737,9 +123737,9 @@
       "source_file": "src/components/accounty/layout/AccountyNavSkeleton.tsx",
       "source_location": "L2",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "layout_accountynavskeleton",
-      "target": "ui_skeleton"
+      "target": "ui_skeleton",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -123748,9 +123748,9 @@
       "source_file": "src/components/accounty/layout/AccountyNavSkeleton.tsx",
       "source_location": "L2",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "layout_accountynavskeleton",
-      "target": "ui_skeleton_skeleton"
+      "target": "ui_skeleton_skeleton",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -123759,9 +123759,9 @@
       "source_file": "src/components/accounty/layout/AccountySidebar.tsx",
       "source_location": "L48",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "layout_accountysidebar",
-      "target": "layout_accountynavskeleton"
+      "target": "layout_accountynavskeleton",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -123868,9 +123868,9 @@
       "source_file": "src/components/accounty/layout/AccountySidebar.tsx",
       "source_location": "L80",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "layout_accountysidebar",
-      "target": "layout_accountysidebar_accountyprefetchmap"
+      "target": "layout_accountysidebar_accountyprefetchmap",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -158475,9 +158475,9 @@
       "source_file": "src/components/tickets/ThinkAiBadge.tsx",
       "source_location": "L36",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_thinkaibadge",
-      "target": "tickets_thinkaibadge_thinkaibadge"
+      "target": "tickets_thinkaibadge_thinkaibadge",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -158485,9 +158485,9 @@
       "source_file": "src/components/tickets/ThinkAiBadge.tsx",
       "source_location": "L3",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_thinkaibadge",
-      "target": "tickets_thinkaibadge_thinkaibadgeprops"
+      "target": "tickets_thinkaibadge_thinkaibadgeprops",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -158495,9 +158495,9 @@
       "source_file": "src/components/tickets/ThinkAiBadge.tsx",
       "source_location": "L9",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_thinkaibadge",
-      "target": "tickets_thinkaibadge_thinkaiicon"
+      "target": "tickets_thinkaibadge_thinkaiicon",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -158506,9 +158506,9 @@
       "source_file": "src/components/tickets/TicketDetailView.tsx",
       "source_location": "L53",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_ticketdetailview",
-      "target": "tickets_thinkaibadge"
+      "target": "tickets_thinkaibadge",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -158517,9 +158517,9 @@
       "source_file": "src/components/tickets/TicketTimeline.tsx",
       "source_location": "L12",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_tickettimeline",
-      "target": "tickets_thinkaibadge"
+      "target": "tickets_thinkaibadge",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -158528,9 +158528,9 @@
       "source_file": "src/components/tickets/TicketDetailView.tsx",
       "source_location": "L53",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_ticketdetailview",
-      "target": "tickets_thinkaibadge_thinkaiicon"
+      "target": "tickets_thinkaibadge_thinkaiicon",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -158539,9 +158539,9 @@
       "source_file": "src/components/tickets/TicketDetailView.tsx",
       "source_location": "L53",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_ticketdetailview",
-      "target": "tickets_thinkaibadge_thinkaibadge"
+      "target": "tickets_thinkaibadge_thinkaibadge",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -158550,9 +158550,9 @@
       "source_file": "src/components/tickets/TicketTimeline.tsx",
       "source_location": "L12",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_tickettimeline",
-      "target": "tickets_thinkaibadge_thinkaibadge"
+      "target": "tickets_thinkaibadge_thinkaibadge",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -189980,9 +189980,9 @@
       "source_file": "src/components/ui/sidebar.tsx",
       "source_location": "L43",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "ui_sidebar",
-      "target": "ui_sidebar_useoptionalsidebar"
+      "target": "ui_sidebar_useoptionalsidebar",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -199459,9 +199459,9 @@
       "source_file": "src/features/management/components/tickets/ManagementCreateTicketDialog.tsx",
       "source_location": "L27",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_managementcreateticketdialog",
-      "target": "contexts_authcontext"
+      "target": "contexts_authcontext",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -201296,9 +201296,9 @@
       "source_file": "src/features/management/components/tickets/ManagementCreateTicketDialog.tsx",
       "source_location": "L27",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_managementcreateticketdialog",
-      "target": "contexts_authcontext_useauth"
+      "target": "contexts_authcontext_useauth",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -249140,9 +249140,9 @@
       "source_file": "src/hooks/useTickets.ts",
       "source_location": "L16",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "hooks_usetickets",
-      "target": "hooks_usetickets_resolveeffectiveticketstatus"
+      "target": "hooks_usetickets_resolveeffectiveticketstatus",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -249406,9 +249406,9 @@
       "source_file": "src/test/tickets/ticketStatuses.test.ts",
       "source_location": "L2",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_ticketstatuses_test",
-      "target": "hooks_usetickets"
+      "target": "hooks_usetickets",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -249428,9 +249428,9 @@
       "source_file": "src/test/tickets/ticketStatuses.test.ts",
       "source_location": "L2",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "tickets_ticketstatuses_test",
-      "target": "hooks_usetickets_ticketstatus"
+      "target": "hooks_usetickets_ticketstatus",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -276811,9 +276811,9 @@
       "source_file": "src/routes/accountyRoutes.tsx",
       "source_location": "L13",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "routes_accountyroutes",
-      "target": "accounty_accountylayout"
+      "target": "accounty_accountylayout",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -287516,9 +287516,9 @@
       "source_file": "src/routes/accountyRoutes.tsx",
       "source_location": "L147",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "routes_accountyroutes",
-      "target": "routes_accountyroutes_accountypageskeleton"
+      "target": "routes_accountyroutes_accountypageskeleton",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -299936,9 +299936,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L6",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill",
-      "target": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode"
+      "target": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -299946,9 +299946,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L332",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode",
-      "target": "morfi_implementation_review_skill_change_file_sizing_standards"
+      "target": "morfi_implementation_review_skill_change_file_sizing_standards",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -299956,9 +299956,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L72",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode",
-      "target": "morfi_implementation_review_skill_common_rationalizations_vs_reality"
+      "target": "morfi_implementation_review_skill_common_rationalizations_vs_reality",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -299966,9 +299966,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L18",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode",
-      "target": "morfi_implementation_review_skill_core_principles_review_standards"
+      "target": "morfi_implementation_review_skill_core_principles_review_standards",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -299976,9 +299976,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L357",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode",
-      "target": "morfi_implementation_review_skill_disagreement_resolution_hierarchy"
+      "target": "morfi_implementation_review_skill_disagreement_resolution_hierarchy",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -299986,9 +299986,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L518",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode",
-      "target": "morfi_implementation_review_skill_forbidden_review_behaviors_anti_patterns"
+      "target": "morfi_implementation_review_skill_forbidden_review_behaviors_anti_patterns",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -299996,9 +299996,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L370",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode",
-      "target": "morfi_implementation_review_skill_issue_calibration_presumptive_blockers"
+      "target": "morfi_implementation_review_skill_issue_calibration_presumptive_blockers",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300006,9 +300006,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L399",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode",
-      "target": "morfi_implementation_review_skill_phase_5_structured_review_report_template_delivered_in_hungarian"
+      "target": "morfi_implementation_review_skill_phase_5_structured_review_report_template_delivered_in_hungarian",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300016,9 +300016,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L126",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode",
-      "target": "morfi_implementation_review_skill_phase_by_phase_execution_guide"
+      "target": "morfi_implementation_review_skill_phase_by_phase_execution_guide",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300026,9 +300026,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L93",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_morfi_implementation_review_autonomous_goal_mode",
-      "target": "morfi_implementation_review_skill_the_5_phase_review_pipeline"
+      "target": "morfi_implementation_review_skill_the_5_phase_review_pipeline",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300036,9 +300036,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L128",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_by_phase_execution_guide",
-      "target": "morfi_implementation_review_skill_phase_1_ingest_handoff_define_review_scope"
+      "target": "morfi_implementation_review_skill_phase_1_ingest_handoff_define_review_scope",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300046,9 +300046,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L141",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_by_phase_execution_guide",
-      "target": "morfi_implementation_review_skill_phase_2_load_specs_architecture_specialized_guards"
+      "target": "morfi_implementation_review_skill_phase_2_load_specs_architecture_specialized_guards",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300056,9 +300056,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L214",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_by_phase_execution_guide",
-      "target": "morfi_implementation_review_skill_phase_3_1_universal_downstream_consumer_data_flow_pipeline_trace_anti_diff_myopia"
+      "target": "morfi_implementation_review_skill_phase_3_1_universal_downstream_consumer_data_flow_pipeline_trace_anti_diff_myopia",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300066,9 +300066,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L231",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_by_phase_execution_guide",
-      "target": "morfi_implementation_review_skill_phase_3_5_6_axis_universal_software_reliability_blind_spot_matrix"
+      "target": "morfi_implementation_review_skill_phase_3_5_6_axis_universal_software_reliability_blind_spot_matrix",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300076,9 +300076,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L176",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_by_phase_execution_guide",
-      "target": "morfi_implementation_review_skill_phase_3_exhaustive_5_axis_code_audit"
+      "target": "morfi_implementation_review_skill_phase_3_exhaustive_5_axis_code_audit",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300086,9 +300086,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L284",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_by_phase_execution_guide",
-      "target": "morfi_implementation_review_skill_phase_4_verification_surgical_auto_fix_protocol_evidence_gate"
+      "target": "morfi_implementation_review_skill_phase_4_verification_surgical_auto_fix_protocol_evidence_gate",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300096,9 +300096,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L180",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_exhaustive_5_axis_code_audit",
-      "target": "morfi_implementation_review_skill_1_correctness_behavioral_integrity"
+      "target": "morfi_implementation_review_skill_1_correctness_behavioral_integrity",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300106,9 +300106,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L185",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_exhaustive_5_axis_code_audit",
-      "target": "morfi_implementation_review_skill_2_readability_simplicity"
+      "target": "morfi_implementation_review_skill_2_readability_simplicity",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300116,9 +300116,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L191",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_exhaustive_5_axis_code_audit",
-      "target": "morfi_implementation_review_skill_3_architecture_structural_remedies"
+      "target": "morfi_implementation_review_skill_3_architecture_structural_remedies",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300126,9 +300126,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L202",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_exhaustive_5_axis_code_audit",
-      "target": "morfi_implementation_review_skill_4_database_constraints_concurrency_safety"
+      "target": "morfi_implementation_review_skill_4_database_constraints_concurrency_safety",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300136,9 +300136,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L207",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_exhaustive_5_axis_code_audit",
-      "target": "morfi_implementation_review_skill_5_frontend_lifecycle_ui_quality"
+      "target": "morfi_implementation_review_skill_5_frontend_lifecycle_ui_quality",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300146,9 +300146,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L240",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_5_6_axis_universal_software_reliability_blind_spot_matrix",
-      "target": "morfi_implementation_review_skill_1_concurrency_race_conditions_temporal_order"
+      "target": "morfi_implementation_review_skill_1_concurrency_race_conditions_temporal_order",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300156,9 +300156,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L247",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_5_6_axis_universal_software_reliability_blind_spot_matrix",
-      "target": "morfi_implementation_review_skill_2_boundary_conditions_data_extremes_nullability"
+      "target": "morfi_implementation_review_skill_2_boundary_conditions_data_extremes_nullability",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300166,9 +300166,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L255",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_5_6_axis_universal_software_reliability_blind_spot_matrix",
-      "target": "morfi_implementation_review_skill_3_failure_modes_resilience_rollback"
+      "target": "morfi_implementation_review_skill_3_failure_modes_resilience_rollback",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300176,9 +300176,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L262",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_5_6_axis_universal_software_reliability_blind_spot_matrix",
-      "target": "morfi_implementation_review_skill_4_state_lifecycle_transitions_cache_invalidation"
+      "target": "morfi_implementation_review_skill_4_state_lifecycle_transitions_cache_invalidation",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300186,9 +300186,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L269",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_5_6_axis_universal_software_reliability_blind_spot_matrix",
-      "target": "morfi_implementation_review_skill_5_data_integrity_referential_consistency_side_effects"
+      "target": "morfi_implementation_review_skill_5_data_integrity_referential_consistency_side_effects",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300196,9 +300196,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L276",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_3_5_6_axis_universal_software_reliability_blind_spot_matrix",
-      "target": "morfi_implementation_review_skill_6_security_authorization_untrusted_inputs"
+      "target": "morfi_implementation_review_skill_6_security_authorization_untrusted_inputs",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300206,9 +300206,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L304",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_4_verification_surgical_auto_fix_protocol_evidence_gate",
-      "target": "morfi_implementation_review_skill_surgical_auto_fix_protocol_mechanical_fix_on_sight"
+      "target": "morfi_implementation_review_skill_surgical_auto_fix_protocol_mechanical_fix_on_sight",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300216,9 +300216,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L322",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_phase_4_verification_surgical_auto_fix_protocol_evidence_gate",
-      "target": "morfi_implementation_review_skill_test_intent_quality_audit"
+      "target": "morfi_implementation_review_skill_test_intent_quality_audit",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300226,9 +300226,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L342",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_change_file_sizing_standards",
-      "target": "morfi_implementation_review_skill_file_size_guard_1000_total_lines"
+      "target": "morfi_implementation_review_skill_file_size_guard_1000_total_lines",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300236,9 +300236,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L347",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_change_file_sizing_standards",
-      "target": "morfi_implementation_review_skill_splitting_strategies_for_large_changesets"
+      "target": "morfi_implementation_review_skill_splitting_strategies_for_large_changesets",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300246,9 +300246,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L374",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_issue_calibration_presumptive_blockers",
-      "target": "morfi_implementation_review_skill_critical_must_fix_blocks_merge"
+      "target": "morfi_implementation_review_skill_critical_must_fix_blocks_merge",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300256,9 +300256,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L387",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_issue_calibration_presumptive_blockers",
-      "target": "morfi_implementation_review_skill_important_should_fix_required"
+      "target": "morfi_implementation_review_skill_important_should_fix_required",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300266,9 +300266,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L393",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_issue_calibration_presumptive_blockers",
-      "target": "morfi_implementation_review_skill_minor_nit_nice_to_have"
+      "target": "morfi_implementation_review_skill_minor_nit_nice_to_have",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300276,9 +300276,9 @@
       "source_file": ".agents/skills/morfi-implementation-review/SKILL.md",
       "source_location": "L379",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "morfi_implementation_review_skill_issue_calibration_presumptive_blockers",
-      "target": "morfi_implementation_review_skill_presumptive_blockers_architectural_quality_veto"
+      "target": "morfi_implementation_review_skill_presumptive_blockers_architectural_quality_veto",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300876,9 +300876,9 @@
       "source_file": ".agents/skills/visibill-create-management-user/SKILL.md",
       "source_location": "L6",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "visibill_create_management_user_skill",
-      "target": "visibill_create_management_user_skill_visibill_create_management_user_skill"
+      "target": "visibill_create_management_user_skill_visibill_create_management_user_skill",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300886,9 +300886,9 @@
       "source_file": ".agents/skills/visibill-create-management-user/SKILL.md",
       "source_location": "L17",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "visibill_create_management_user_skill_visibill_create_management_user_skill",
-      "target": "visibill_create_management_user_skill_elv\u00e1rt_bemenetek_inputs"
+      "target": "visibill_create_management_user_skill_elv\u00e1rt_bemenetek_inputs",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300896,9 +300896,9 @@
       "source_file": ".agents/skills/visibill-create-management-user/SKILL.md",
       "source_location": "L28",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "visibill_create_management_user_skill_visibill_create_management_user_skill",
-      "target": "visibill_create_management_user_skill_v\u00e9grehajt\u00e1si_folyamat_workflow"
+      "target": "visibill_create_management_user_skill_v\u00e9grehajt\u00e1si_folyamat_workflow",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300906,9 +300906,9 @@
       "source_file": ".agents/skills/visibill-create-management-user/SKILL.md",
       "source_location": "L115",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "visibill_create_management_user_skill_visibill_create_management_user_skill",
-      "target": "visibill_create_management_user_skill_\u00f6sszegz\u0151_jelent\u00e9s_form\u00e1tum"
+      "target": "visibill_create_management_user_skill_\u00f6sszegz\u0151_jelent\u00e9s_form\u00e1tum",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300916,9 +300916,9 @@
       "source_file": ".agents/skills/visibill-create-management-user/SKILL.md",
       "source_location": "L36",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "visibill_create_management_user_skill_v\u00e9grehajt\u00e1si_folyamat_workflow",
-      "target": "visibill_create_management_user_skill_1_el\u0151zetes_ellen\u0151rz\u00e9s_pre_check"
+      "target": "visibill_create_management_user_skill_1_el\u0151zetes_ellen\u0151rz\u00e9s_pre_check",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300926,9 +300926,9 @@
       "source_file": ".agents/skills/visibill-create-management-user/SKILL.md",
       "source_location": "L52",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "visibill_create_management_user_skill_v\u00e9grehajt\u00e1si_folyamat_workflow",
-      "target": "visibill_create_management_user_skill_2_felhaszn\u00e1l\u00f3_regisztr\u00e1ci\u00f3ja_auth_signup"
+      "target": "visibill_create_management_user_skill_2_felhaszn\u00e1l\u00f3_regisztr\u00e1ci\u00f3ja_auth_signup",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300936,9 +300936,9 @@
       "source_file": ".agents/skills/visibill-create-management-user/SKILL.md",
       "source_location": "L67",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "visibill_create_management_user_skill_v\u00e9grehajt\u00e1si_folyamat_workflow",
-      "target": "visibill_create_management_user_skill_3_jogosults\u00e1gok_\u00e9s_email_meger\u0151s\u00edt\u00e9s_be\u00e1ll\u00edt\u00e1sa_db_elevate"
+      "target": "visibill_create_management_user_skill_3_jogosults\u00e1gok_\u00e9s_email_meger\u0151s\u00edt\u00e9s_be\u00e1ll\u00edt\u00e1sa_db_elevate",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -300946,9 +300946,9 @@
       "source_file": ".agents/skills/visibill-create-management-user/SKILL.md",
       "source_location": "L99",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "visibill_create_management_user_skill_v\u00e9grehajt\u00e1si_folyamat_workflow",
-      "target": "visibill_create_management_user_skill_4_hiteles\u00edt\u00e9s_\u00e9s_v\u00e9gponti_ellen\u0151rz\u00e9s_smoke_test"
+      "target": "visibill_create_management_user_skill_4_hiteles\u00edt\u00e9s_\u00e9s_v\u00e9gponti_ellen\u0151rz\u00e9s_smoke_test",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -323186,9 +323186,9 @@
       "source_file": "docs/design/05-layout-navigation.md",
       "source_location": "L478",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "design_05_layout_navigation_k\u00e9toszlopos_mester_r\u00e9szlet_elrendez\u00e9s_master_detail_split_layout",
-      "target": "design_05_layout_navigation_kezel\u0151konzol_support_console_layout_\u00e9s_anti_phantom_scroll_szab\u00e1ly"
+      "target": "design_05_layout_navigation_kezel\u0151konzol_support_console_layout_\u00e9s_anti_phantom_scroll_szab\u00e1ly",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -323286,9 +323286,9 @@
       "source_file": "docs/design/07-loading-patterns.md",
       "source_location": "L105",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "design_07_loading_patterns_07_bet\u00f6lt\u00e9s_skeleton_patternek",
-      "target": "design_07_loading_patterns_sidebar_navig\u00e1ci\u00f3_\u00e1tmeneti_skeleton_accountynavskeleton"
+      "target": "design_07_loading_patterns_sidebar_navig\u00e1ci\u00f3_\u00e1tmeneti_skeleton_accountynavskeleton",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -342532,5 +342532,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "537eab4f8c356bdc328cb08750a38b51089d0e32"
+  "built_at_commit": "ca3e54b759e86a69c0f67cfb246500720b6bf288"
 }

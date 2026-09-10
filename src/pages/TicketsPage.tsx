@@ -657,7 +657,7 @@ export default function TicketsPage({
                   <TableHead className="w-[110px]">Rendszer</TableHead>
                   <TableHead>Tárgy</TableHead>
                   {isAdmin && <TableHead className="w-[180px]">Bejelentő & Cég</TableHead>}
-                  {isAdmin && <TableHead className="w-[120px]">Felelős</TableHead>}
+                  {isAdmin && <TableHead className="w-[180px] min-w-[170px]">Felelős</TableHead>}
                   <TableHead className="w-[120px]">Státusz</TableHead>
                   <TableHead className="w-[100px]">Prioritás</TableHead>
                   <TableHead className="w-[110px]">Létrehozva</TableHead>
@@ -735,8 +735,8 @@ export default function TicketsPage({
                         </TableCell>
                       )}
                       {isAdmin && (
-                        <TableCell>
-                          <span className="text-xs font-medium text-foreground/80">
+                        <TableCell className="whitespace-nowrap">
+                          <span className="text-xs font-medium text-foreground/80 whitespace-nowrap">
                             {ticket.assigned_to_name || <span className="text-muted-foreground/60 italic">Nincs</span>}
                           </span>
                         </TableCell>
@@ -1006,7 +1006,7 @@ export default function TicketsPage({
                     <TableHead className="w-[120px]">Jegyszám</TableHead>
                     <TableHead className="w-[180px]">Cég</TableHead>
                     <TableHead>Probléma tárgya</TableHead>
-                    <TableHead className="w-[150px]">Aktuális Felelős</TableHead>
+                    <TableHead className="w-[180px] min-w-[170px]">Aktuális Felelős</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1023,7 +1023,7 @@ export default function TicketsPage({
                       </TableCell>
                       <TableCell className="text-xs font-medium">{t.company_name}</TableCell>
                       <TableCell className="text-xs text-foreground/80">{truncate(stripHtml(t.message), 60)}</TableCell>
-                      <TableCell className="text-xs font-medium text-foreground/70">
+                      <TableCell className="text-xs font-medium text-foreground/70 whitespace-nowrap">
                         {t.assigned_to_name || <span className="text-muted-foreground/60 italic">Nincs hozzárendelve</span>}
                       </TableCell>
                     </TableRow>
