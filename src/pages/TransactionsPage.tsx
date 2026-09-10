@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,6 +61,7 @@ const fmtHuf = (val: number) => new Intl.NumberFormat('hu-HU').format(Math.round
 type TabValue = string;
 
 const TransactionsPage = () => {
+  const { t } = useTranslation(['transactions', 'common']);
   const { dateFrom, dateTo } = useDateRange();
 
   const [zoomFrom, setZoomFrom] = useState<Date | null>(null);
@@ -503,8 +505,8 @@ const TransactionsPage = () => {
         {/* ── Page Header (T5) ── */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-5 print:hidden">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Tranzakciók</h1>
-            <p className="text-sm text-muted-foreground mt-1">Banki tranzakciók, párosítások és futárszolgálati kimutatások</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground/90">{t('transactions:title', 'Tranzakciók')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('transactions:subtitle', 'Banki tranzakciók, párosítások és futárszolgálati kimutatások')}</p>
           </div>
         </div>
 
@@ -514,7 +516,7 @@ const TransactionsPage = () => {
             {/* Fixed tabs */}
             <TabsTrigger value="general" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Általános
+              {t('common:labels.general', 'Általános')}
             </TabsTrigger>
 
             {/* Dynamic bank tabs — emerald green tint */}

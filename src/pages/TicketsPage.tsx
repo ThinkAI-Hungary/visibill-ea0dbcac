@@ -58,6 +58,7 @@ import type { OverviewData } from "@/features/management/api/types";
 import { UnifiedPagination } from "@/components/ui/unified-pagination";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
+import { useTranslation } from "react-i18next";
 import { TicketPriorityBadge } from "@/components/tickets/TicketPriorityBadge";
 import { TicketDetailView } from "@/components/tickets/TicketDetailView";
 import {
@@ -86,6 +87,7 @@ export default function TicketsPage({
   embeddedInManagement = false,
   managementUsers,
 }: TicketsPageProps) {
+  const { t } = useTranslation(['tickets', 'common']);
   const routeParams = useParams<{ ticketId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const ticketId = embeddedInManagement ? searchParams.get('id') || undefined : routeParams.ticketId;
@@ -386,7 +388,7 @@ export default function TicketsPage({
           className="gap-2 h-9 text-xs font-semibold shadow-sm"
         >
           <TicketPlus className="h-4 w-4" />
-          <span>Új hibajegy nyitása</span>
+          <span>{t('tickets:new_ticket', 'Új hibajegy nyitása')}</span>
         </Button>
       </div>
     );
@@ -1162,11 +1164,11 @@ export default function TicketsPage({
               <TicketCheck className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Hibajegyek</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{t('tickets:title', 'Hibajegyek')}</h1>
               <p className="text-sm text-muted-foreground">
                 {isAdmin
-                  ? "Összes beérkezett hibajegy és visszajelzés"
-                  : "Az Ön által beküldött hibajegyek és visszajelzések"}
+                  ? t('tickets:subtitle_admin', "Összes beérkezett hibajegy és visszajelzés")
+                  : t('tickets:subtitle_user', "Az Ön által beküldött hibajegyek és visszajelzések")}
               </p>
             </div>
           </div>

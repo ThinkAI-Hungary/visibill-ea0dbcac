@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,6 +84,7 @@ interface CompanyBankAccount {
 }
 
 export default function TransfersPage() {
+  const { t } = useTranslation(['transfers', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
@@ -1201,8 +1203,8 @@ export default function TransfersPage() {
               <Landmark className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight">Utalások</h1>
-              <p className="text-muted-foreground text-sm mt-1">Mit kell utaljak ma? Átutalási listák generálása és letöltése egy kattintással.</p>
+              <h1 className="text-3xl font-extrabold tracking-tight">{t('transfers:title', 'Utalások')}</h1>
+              <p className="text-muted-foreground text-sm mt-1">{t('transfers:subtitle', 'Mit kell utaljak ma? Átutalási listák generálása és letöltése egy kattintással.')}</p>
             </div>
           </div>
         </div>
@@ -1216,7 +1218,7 @@ export default function TransfersPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-border/60 bg-gradient-to-br from-card to-destructive/5 hover:shadow-md transition-all duration-300">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lejárt fizetési határidejű</CardDescription>
+            <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('transfers:stats.overdue', 'Lejárt fizetési határidejű')}</CardDescription>
             <CardTitle className="text-2xl font-black text-destructive mt-1">
               {stats.overdueCount} db
             </CardTitle>
@@ -1230,7 +1232,7 @@ export default function TransfersPage() {
 
         <Card className="border-border/60 bg-gradient-to-br from-card to-amber-500/5 hover:shadow-md transition-all duration-300">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ma lejáró</CardDescription>
+            <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('transfers:stats.due_today', 'Ma lejáró')}</CardDescription>
             <CardTitle className="text-2xl font-black text-amber-600 mt-1">
               {stats.todayCount} db
             </CardTitle>
@@ -1246,7 +1248,7 @@ export default function TransfersPage() {
           {/* Glass effect */}
           <div className="absolute right-[-10px] bottom-[-10px] w-24 h-24 bg-primary/10 rounded-full blur-xl pointer-events-none" />
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-semibold uppercase tracking-wider text-primary">Kijelölve utalásra</CardDescription>
+            <CardDescription className="text-xs font-semibold uppercase tracking-wider text-primary">{t('transfers:stats.selected', 'Kijelölve utalásra')}</CardDescription>
             <CardTitle className="text-2xl font-black text-primary mt-1">
               {stats.selectedCount} db
             </CardTitle>
@@ -1257,7 +1259,7 @@ export default function TransfersPage() {
             </p>
             {selectedIds.length > 0 && (
               <Button size="sm" onClick={triggerFileExport} className="gap-1.5 shadow-md z-10">
-                Letöltés
+                {t('transfers:stats.download', 'Letöltés')}
                 <Download className="h-4 w-4" />
               </Button>
             )}
@@ -1270,10 +1272,10 @@ export default function TransfersPage() {
         <div className="flex justify-between items-center mb-2">
           <TabsList className="grid w-80 grid-cols-2">
             <TabsTrigger value="list" className="gap-1.5 text-xs font-bold">
-              <FileText className="w-4 h-4" /> Utalandó tételek
+              <FileText className="w-4 h-4" /> {t('transfers:tabs.list', 'Utalandó tételek')}
             </TabsTrigger>
             <TabsTrigger value="calendar" className="gap-1.5 text-xs font-bold">
-              <Calendar className="w-4 h-4" /> Fizetési naptár
+              <Calendar className="w-4 h-4" /> {t('transfers:tabs.calendar', 'Fizetési naptár')}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -1287,7 +1289,7 @@ export default function TransfersPage() {
                   <div className="relative w-72">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Keresés partnerre vagy számlára..."
+                      placeholder={t('transfers:search_placeholder', 'Keresés partnerre vagy számlára...')}
                       value={search}
                       onChange={e => setSearch(e.target.value)}
                       className="pl-9 bg-background/50 focus:bg-background h-9 rounded-lg"
@@ -1300,19 +1302,19 @@ export default function TransfersPage() {
                       onClick={() => setFilterTab('all')}
                       className={`px-3 py-1.5 rounded-md font-medium transition-all ${filterTab === 'all' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                     >
-                      Összes esedékes
+                      {t('transfers:filters.all', 'Összes esedékes')}
                     </button>
                     <button
                       onClick={() => setFilterTab('overdue')}
                       className={`px-3 py-1.5 rounded-md font-medium transition-all ${filterTab === 'overdue' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                     >
-                      Csak lejárt
+                      {t('transfers:filters.overdue', 'Csak lejárt')}
                     </button>
                     <button
                       onClick={() => setFilterTab('due_today')}
                       className={`px-3 py-1.5 rounded-md font-medium transition-all ${filterTab === 'due_today' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                     >
-                      Mai esedékes
+                      {t('transfers:filters.due_today', 'Mai esedékes')}
                     </button>
                   </div>
                 </div>
@@ -1328,7 +1330,7 @@ export default function TransfersPage() {
                     }}
                   />
                   <Label htmlFor="group-toggle" className="text-xs font-semibold text-muted-foreground cursor-pointer">
-                    Számlák összevonása partnerenként
+                    {t('transfers:filters.group_by_partner', 'Számlák összevonása partnerenként')}
                   </Label>
                 </div>
               </div>

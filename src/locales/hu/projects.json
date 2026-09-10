@@ -1,0 +1,16 @@
+{
+  "title": "Projektek",
+  "subtitle": "Hozz létre és kezelj projekteket az ügyfélmunkáid rendszerezéséhez. A számlákat projektekhez rendelheted.",
+  "description": "A projekt kártyán tabfülek választják szét az áttekintést és a számla-kezelést. A projektek nevére kattintva egy részletesebb nézetre lehet navigálni.",
+  "new_project": "Új projekt",
+  "no_projects": "Még nincsenek projektek",
+  "create_first": "Kezdj el új projekteket létrehozni az ügyfélmunkáid rendszerezéséhez",
+  "create_first_button": "Első projekt létrehozása",
+  "name": "Projekt neve",
+  "status": {
+    "active": "Aktív",
+    "completed": "Befejezett",
+    "on_hold": "Szünetel",
+    "cancelled": "Törölve"
+  }
+}

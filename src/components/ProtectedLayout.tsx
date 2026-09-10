@@ -60,15 +60,17 @@ export function ProtectedLayout() {
 
     const returnTo = location.pathname + location.search;
     const isEaisybooks = returnTo && (returnTo.startsWith('/eaisybooks') || returnTo.includes('/eaisybooks'));
+    const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/');
+    const baseAuth = isHr ? '/hr/auth' : '/auth';
     
-    let authUrl = '/auth';
-    if (!postSignout && returnTo && returnTo !== '/') {
-      authUrl = `/auth?returnTo=${encodeURIComponent(returnTo)}`;
+    let authUrl = baseAuth;
+    if (!postSignout && returnTo && returnTo !== '/' && returnTo !== '/hr') {
+      authUrl = `${baseAuth}?returnTo=${encodeURIComponent(returnTo)}`;
       if (isEaisybooks) {
         authUrl += '&app=eaisybooks';
       }
     } else if (isEaisybooks) {
-      authUrl = '/auth?app=eaisybooks';
+      authUrl = `${baseAuth}?app=eaisybooks`;
     }
 
     // Clean up loader if still present
@@ -81,7 +83,8 @@ export function ProtectedLayout() {
     // Email not verified — send back to auth page with the confirmation screen
     const loader = document.getElementById('initial-loader');
     if (loader) loader.remove();
-    return <Navigate to="/auth?unverified=true" replace />;
+    const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/');
+    return <Navigate to={isHr ? "/hr/auth?unverified=true" : "/auth?unverified=true"} replace />;
   }
 
   // Management/ThinkAI user → skip directly to management dashboard, no sidebar flash.

@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { FinancialPageSkeleton } from '@/components/ui/financial-skeleton';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
+import { useTranslation } from 'react-i18next';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -1366,6 +1367,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export default function ProfitAndLoss() {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1490,17 +1492,17 @@ export default function ProfitAndLoss() {
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
       <PageHeader
         companyName={selectedCompany?.name}
-        breadcrumb="Eredménykimutatás"
-        title="Eredménykimutatás"
-        description="Sztv. 'A' változat szerinti eredménykimutatás és beállítások"
+        breadcrumb={t('accounting:profit_and_loss.breadcrumb', 'Eredménykimutatás')}
+        title={t('accounting:profit_and_loss.title', 'Eredménykimutatás')}
+        description={t('accounting:profit_and_loss.description', 'Sztv. \'A\' változat szerinti eredménykimutatás és beállítások')}
         actions={
           <div className="flex items-center gap-3 bg-muted/30 p-1.5 rounded-lg border border-border/50">
-            <span className="text-sm font-medium text-muted-foreground ml-2">Időszak:</span>
+            <span className="text-sm font-medium text-muted-foreground ml-2">{t('accounting:profit_and_loss.period', 'Időszak:')}</span>
             <ToggleGroup type="single" value={activeDatePreset} onValueChange={handleDatePresetChange} className="bg-background border rounded-md p-0.5 shadow-sm">
-              <ToggleGroupItem value="year" className="h-8 px-4 text-xs font-medium">Év</ToggleGroupItem>
-              <ToggleGroupItem value="quarter" className="h-8 px-4 text-xs font-medium">Negyedév</ToggleGroupItem>
-              <ToggleGroupItem value="month" className="h-8 px-4 text-xs font-medium">Hónap</ToggleGroupItem>
-              <ToggleGroupItem value="custom" className="h-8 px-4 text-xs font-medium" disabled>Egyedi</ToggleGroupItem>
+              <ToggleGroupItem value="year" className="h-8 px-4 text-xs font-medium">{t('accounting:profit_and_loss.presets.year', 'Év')}</ToggleGroupItem>
+              <ToggleGroupItem value="quarter" className="h-8 px-4 text-xs font-medium">{t('accounting:profit_and_loss.presets.quarter', 'Negyedév')}</ToggleGroupItem>
+              <ToggleGroupItem value="month" className="h-8 px-4 text-xs font-medium">{t('accounting:profit_and_loss.presets.month', 'Hónap')}</ToggleGroupItem>
+              <ToggleGroupItem value="custom" className="h-8 px-4 text-xs font-medium" disabled>{t('accounting:profit_and_loss.presets.custom', 'Egyedi')}</ToggleGroupItem>
             </ToggleGroup>
           </div>
         }
@@ -1532,10 +1534,10 @@ export default function ProfitAndLoss() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 h-12 w-full md:w-auto p-1 bg-muted/50">
           <TabsTrigger value="view" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm px-6">
-            Eredménykimutatás
+            {t('accounting:profit_and_loss.tabs.view', 'Eredménykimutatás')}
           </TabsTrigger>
           <TabsTrigger value="mapping" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm px-6">
-            Hozzárendelési Mátrix
+            {t('accounting:profit_and_loss.tabs.mapping', 'Hozzárendelési Mátrix')}
           </TabsTrigger>
         </TabsList>
         

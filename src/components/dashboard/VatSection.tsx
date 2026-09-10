@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -34,36 +35,61 @@ const VatSection = React.memo(function VatSection({
   onVatSectionOpenChange,
   vatRegime,
 }: VatSectionProps) {
+  const { t } = useTranslation(['dashboard', 'common']);
   const outboundVatCategories = vatBreakdown?.outboundVatCategories || [];
   const inboundVatCategories = vatBreakdown?.inboundVatCategories || [];
-
-  const displayOutboundVat = useMemo(() => {
-    if (!navVatData?.outboundVat) return 0;
-    return Object.entries(navVatData.outboundVat).reduce((total, [currency, amount]) => {
-      return total + convertToSelectedCurrency(amount, currency, selectedCurrency);
-    }, 0);
-  }, [navVatData, selectedCurrency, convertToSelectedCurrency]);
-
-  const displayInboundVat = useMemo(() => {
-    if (!navVatData?.inboundVat) return 0;
-    return Object.entries(navVatData.inboundVat).reduce((total, [currency, amount]) => {
-      return total + convertToSelectedCurrency(amount, currency, selectedCurrency);
-    }, 0);
-  }, [navVatData, selectedCurrency, convertToSelectedCurrency]);
-
-  const displayVatPosition = displayOutboundVat - displayInboundVat;
-  const maxVatValue = Math.max(displayOutboundVat, displayInboundVat, Math.abs(displayVatPosition));
-
-  const vatBarData = useMemo(() => [
-    { name: "Összes ÁFA", value: displayOutboundVat, color: "#F59E0B" },
-    { name: "Levonható ÁFA", value: displayInboundVat, color: "#8B5CF6" },
-    { name: "Fizetendő ÁFA", value: displayVatPosition, color: "#A78BFA" }
-  ], [displayOutboundVat, displayInboundVat, displayVatPosition]);
 
   const outboundTotalVat = useMemo(() => outboundVatCategories.reduce((sum, c) => sum + c.vatAmount, 0), [outboundVatCategories]);
   const outboundTotalNet = useMemo(() => outboundVatCategories.reduce((sum, c) => sum + c.netAmount, 0), [outboundVatCategories]);
   const inboundTotalVat = useMemo(() => inboundVatCategories.reduce((sum, c) => sum + c.vatAmount, 0), [inboundVatCategories]);
   const inboundTotalNet = useMemo(() => inboundVatCategories.reduce((sum, c) => sum + c.netAmount, 0), [inboundVatCategories]);
+
+  const displayOutboundVat = useMemo(() => {
+    if (outboundVatCategories.length > 0) {
+      return convertToSelectedCurrency(outboundTotalVat, 'HUF', selectedCurrency);
+    }
+    if (navVatData?.outboundVat) {
+      if (typeof navVatData.outboundVat === 'number') {
+        return convertToSelectedCurrency(navVatData.outboundVat, 'HUF', selectedCurrency);
+      }
+      return Object.entries(navVatData.outboundVat).reduce((total, [currency, amount]) => {
+        return total + convertToSelectedCurrency(Number(amount) || 0, currency, selectedCurrency);
+      }, 0);
+    }
+    return 0;
+  }, [outboundVatCategories.length, outboundTotalVat, navVatData?.outboundVat, convertToSelectedCurrency, selectedCurrency]);
+
+  const displayInboundVat = useMemo(() => {
+    if (inboundVatCategories.length > 0) {
+      return convertToSelectedCurrency(inboundTotalVat, 'HUF', selectedCurrency);
+    }
+    if (navVatData?.inboundVat) {
+      if (typeof navVatData.inboundVat === 'number') {
+        return convertToSelectedCurrency(navVatData.inboundVat, 'HUF', selectedCurrency);
+      }
+      return Object.entries(navVatData.inboundVat).reduce((total, [currency, amount]) => {
+        return total + convertToSelectedCurrency(Number(amount) || 0, currency, selectedCurrency);
+      }, 0);
+    }
+    return 0;
+  }, [inboundVatCategories.length, inboundTotalVat, navVatData?.inboundVat, convertToSelectedCurrency, selectedCurrency]);
+
+  const displayVatPosition = useMemo(() => {
+    return displayOutboundVat - displayInboundVat;
+  }, [displayOutboundVat, displayInboundVat]);
+
+  const maxVatValue = Math.max(displayOutboundVat, displayInboundVat, Math.abs(displayVatPosition));
+  const isRefundable = displayVatPosition < 0;
+
+  const vatBarData = useMemo(() => [
+    { name: t('vat.total_vat', 'Összes ÁFA'), value: displayOutboundVat, color: "#F59E0B" },
+    { name: t('vat.deductible_vat', 'Levonható ÁFA'), value: displayInboundVat, color: "#8B5CF6" },
+    {
+      name: isRefundable ? t('vat.refundable_vat', 'Visszaigényelhető ÁFA') : t('vat.payable_vat', 'Fizetendő ÁFA'),
+      value: Math.abs(displayVatPosition),
+      color: isRefundable ? "#10B981" : "#A78BFA"
+    }
+  ], [displayOutboundVat, displayInboundVat, displayVatPosition, isRefundable, t]);
 
   return (
     <Collapsible open={vatSectionOpen} onOpenChange={onVatSectionOpenChange}>
@@ -71,15 +97,15 @@ const VatSection = React.memo(function VatSection({
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-lg font-medium">ÁFA kimutatás</span>
+              <span className="text-lg font-medium">{t('vat.title', 'ÁFA kimutatás')}</span>
               {vatRegime === 'penzforgalmi' && (
                 <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/20 text-xs">
-                  Pénzforgalmi
+                  {t('vat.regimes.penzforgalmi', 'Pénzforgalmi')}
                 </Badge>
               )}
               {vatRegime === 'alanyi_mentes' && (
                 <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs">
-                  Alanyi adómentes
+                  {t('vat.regimes.alanyi_mentes', 'Alanyi adómentes')}
                 </Badge>
               )}
             </div>
@@ -96,8 +122,10 @@ const VatSection = React.memo(function VatSection({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Left side - VAT bar chart */}
               <div>
-                <h3 className="text-lg font-semibold text-purple-600 mb-6">
-                  {formatCurrency(displayVatPosition, selectedCurrency)} Fizetendő ÁFA ({displayedPeriod})
+                <h3 className={`text-lg font-semibold mb-6 ${isRefundable ? 'text-emerald-600 dark:text-emerald-400' : 'text-purple-600 dark:text-purple-400'}`}>
+                  {formatCurrency(Math.abs(displayVatPosition), selectedCurrency)}{' '}
+                  {isRefundable ? t('vat.refundable_vat', 'Visszaigényelhető ÁFA') : t('vat.payable_vat', 'Fizetendő ÁFA')}{' '}
+                  ({displayedPeriod})
                 </h3>
                 <div className="space-y-6">
                   {vatBarData.map((item) => (
@@ -127,21 +155,21 @@ const VatSection = React.memo(function VatSection({
 
               {/* Right side - VAT breakdown tables */}
               <div>
-                <h3 className="text-lg font-semibold mb-6">ÁFA analitika ({displayedPeriod})</h3>
+                <h3 className="text-lg font-semibold mb-6">{t('vat.analytics', 'ÁFA analitika')} ({displayedPeriod})</h3>
 
                 {/* Outbound */}
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-1 h-5 bg-purple-600 rounded" />
-                    <h4 className="font-medium">Bevételek ÁFA tartalma</h4>
+                    <h4 className="font-medium">{t('vat.outbound_vat_content', 'Bevételek ÁFA tartalma')}</h4>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-muted-foreground">
-                          <th className="text-left py-2">ÁFA kategóriák:</th>
-                          <th className="text-right py-2">Összes ÁFA:</th>
-                          <th className="text-right py-2">Árbevétel:</th>
+                          <th className="text-left py-2">{t('vat.categories', 'ÁFA kategóriák:')}</th>
+                          <th className="text-right py-2">{t('vat.total_vat', 'Összes ÁFA:')}</th>
+                          <th className="text-right py-2">{t('vat.revenue', 'Árbevétel:')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -155,14 +183,14 @@ const VatSection = React.memo(function VatSection({
                               </tr>
                             ))}
                             <tr className="font-medium border-t">
-                              <td className="py-1">Összesen:</td>
+                              <td className="py-1">{t('vat.total', 'Összesen:')}</td>
                               <td className="text-right">{formatCurrency(convertToSelectedCurrency(outboundTotalVat, 'HUF', selectedCurrency), selectedCurrency)}</td>
                               <td className="text-right">{formatCurrency(convertToSelectedCurrency(outboundTotalNet + outboundTotalVat, 'HUF', selectedCurrency), selectedCurrency)}</td>
                             </tr>
                           </>
                         ) : (
                           <tr>
-                            <td colSpan={3} className="text-center py-4 text-muted-foreground">Nincs adat</td>
+                            <td colSpan={3} className="text-center py-4 text-muted-foreground">{t('vat.no_data', 'Nincs adat')}</td>
                           </tr>
                         )}
                       </tbody>
@@ -174,15 +202,15 @@ const VatSection = React.memo(function VatSection({
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-1 h-5 bg-purple-600 rounded" />
-                    <h4 className="font-medium">Kiadások ÁFA tartalma</h4>
+                    <h4 className="font-medium">{t('vat.inbound_vat_content', 'Kiadások ÁFA tartalma')}</h4>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-muted-foreground">
-                          <th className="text-left py-2">ÁFA kategóriák:</th>
-                          <th className="text-right py-2">Levonható ÁFA:</th>
-                          <th className="text-right py-2">Költségek:</th>
+                          <th className="text-left py-2">{t('vat.categories', 'ÁFA kategóriák:')}</th>
+                          <th className="text-right py-2">{t('vat.deductible_vat', 'Levonható ÁFA:')}</th>
+                          <th className="text-right py-2">{t('vat.costs', 'Költségek:')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -196,14 +224,14 @@ const VatSection = React.memo(function VatSection({
                               </tr>
                             ))}
                             <tr className="font-medium border-t">
-                              <td className="py-1">Összesen:</td>
+                              <td className="py-1">{t('vat.total', 'Összesen:')}</td>
                               <td className="text-right">{formatCurrency(convertToSelectedCurrency(inboundTotalVat, 'HUF', selectedCurrency), selectedCurrency)}</td>
                               <td className="text-right">{formatCurrency(convertToSelectedCurrency(inboundTotalNet + inboundTotalVat, 'HUF', selectedCurrency), selectedCurrency)}</td>
                             </tr>
                           </>
                         ) : (
                           <tr>
-                            <td colSpan={3} className="text-center py-4 text-muted-foreground">Nincs adat</td>
+                            <td colSpan={3} className="text-center py-4 text-muted-foreground">{t('vat.no_data', 'Nincs adat')}</td>
                           </tr>
                         )}
                       </tbody>

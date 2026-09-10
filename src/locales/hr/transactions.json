@@ -1,0 +1,29 @@
+{
+  "title": "Transakcije",
+  "subtitle": "Bankovne transakcije i povezivanje s računima",
+  "columns": {
+    "booking_date": "Datum knjiženja",
+    "partner": "Partner / Opis",
+    "account": "Bankovni račun",
+    "amount": "Iznos",
+    "matched_invoice": "Povezani račun",
+    "status": "Status",
+    "description": "Opis",
+    "currency": "Valuta",
+    "type": "Vrsta",
+    "gl_class": "Klasa konta",
+    "reasoning": "Obrazloženje",
+    "items": "Stavke"
+  },
+  "status": {
+    "matched": "Povezano",
+    "unmatched": "Otvoreno",
+    "manual": "Ručni unos",
+    "rule_matched": "Pravilom povezano"
+  },
+  "actions": {
+    "import_statement": "Uvoz izvoda",
+    "auto_match": "Automatsko povezivanje",
+    "match_now": "Poveži"
+  }
+}

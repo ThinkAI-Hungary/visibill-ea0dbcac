@@ -1,0 +1,66 @@
+{
+  "actions": {
+    "save": "Spremi",
+    "cancel": "Odustani",
+    "delete": "Obriši",
+    "edit": "Uredi",
+    "view": "Pregled",
+    "close": "Zatvori",
+    "filter": "Filtriraj",
+    "reset": "Poništi",
+    "search": "Traži...",
+    "export": "Izvoz",
+    "import": "Uvoz",
+    "upload": "Učitaj",
+    "refresh": "Osvježi",
+    "back": "Natrag",
+    "confirm": "Potvrdi",
+    "continue": "Nastavi",
+    "download": "Preuzmi",
+    "copy": "Kopiraj",
+    "copied": "Kopirano!"
+  },
+  "status": {
+    "loading": "Učitavanje...",
+    "success": "Uspješno",
+    "error": "Došlo je do pogreške",
+    "empty": "Nema podataka za prikaz",
+    "all": "Sve",
+    "active": "Aktivno",
+    "inactive": "Neaktivno",
+    "pending": "Na čekanju",
+    "completed": "Završeno",
+    "failed": "Neuspješno"
+  },
+  "labels": {
+    "total": "Ukupno",
+    "period": "Razdoblje",
+    "date": "Datum",
+    "amount": "Iznos",
+    "currency": "Valuta",
+    "type": "Vrsta",
+    "name": "Naziv",
+    "status": "Status",
+    "notes": "Napomena",
+    "company": "Tvrtka",
+    "actions": "Radnje",
+    "details": "Pojedinosti",
+    "general": "Općenito"
+  },
+  "date_picker": {
+    "period": "Razdoblje:",
+    "this_month": "Ovaj mjesec",
+    "previous_month": "Prošli mjesec",
+    "this_year": "Ova godina",
+    "custom": "Prilagođeno razdoblje"
+  },
+  "user": {
+    "profile": "Profil",
+    "settings": "Postavke",
+    "logout": "Odjava",
+    "light_mode": "Svijetli način",
+    "dark_mode": "Tamni način",
+    "language": "Jezik",
+    "default_name": "Korisnik"
+  }
+}

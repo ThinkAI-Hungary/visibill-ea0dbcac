@@ -13,6 +13,7 @@ import { Loader2, FileX2, ArrowDownLeft, ArrowUpRight, Unlink } from 'lucide-rea
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface UnmatchedNavInvoice {
   id: string;
@@ -58,6 +59,7 @@ const fetchAllUnmatchedNav = async (companyId: string, dateFrom: string, dateTo:
 };
 
 const UnmatchedSection = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const companyId = selectedCompany?.id || '';
@@ -282,18 +284,20 @@ const UnmatchedSection = () => {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Nem párosított tételek</CardTitle>
+        <CardTitle className="text-lg">
+          {t('dashboard:unmatched_items.title', 'Nem párosított tételek')}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'nav' | 'transactions'); }}>
           <TabsList className="grid w-full grid-cols-2 mb-4 bg-slate-100/80 dark:bg-muted border border-slate-200 dark:border-transparent">
             <TabsTrigger value="nav" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-background data-[state=active]:text-slate-900 dark:data-[state=active]:text-foreground data-[state=active]:shadow-sm text-slate-500 dark:text-muted-foreground hover:text-slate-700 dark:hover:text-foreground">
               <FileX2 className="h-4 w-4" />
-              NAV számlák ({unmatchedNav.length})
+              {t('dashboard:unmatched_items.nav_invoices', 'NAV számlák')} ({unmatchedNav.length})
             </TabsTrigger>
             <TabsTrigger value="transactions" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-background data-[state=active]:text-slate-900 dark:data-[state=active]:text-foreground data-[state=active]:shadow-sm text-slate-500 dark:text-muted-foreground hover:text-slate-700 dark:hover:text-foreground">
               <Unlink className="h-4 w-4" />
-              Tranzakciók ({unmatchedTx.length})
+              {t('dashboard:unmatched_items.transactions', 'Tranzakciók')} ({unmatchedTx.length})
             </TabsTrigger>
           </TabsList>
 

@@ -1,0 +1,21 @@
+{
+  "title": "Utalási fájlok generálása",
+  "subtitle": "Kimenő utalási csomagok (HUF GIRO / XML / SEPA) előkészítése és letöltése a netbankodhoz.",
+  "stats": {
+    "overdue": "Lejárt számlák",
+    "due_today": "Ma lejáró",
+    "selected": "Kijelölve utalásra",
+    "download": "Letöltés"
+  },
+  "tabs": {
+    "list": "Utalandó tételek",
+    "calendar": "Fizetési naptár"
+  },
+  "filters": {
+    "all": "Összes esedékes",
+    "overdue": "Csak lejárt",
+    "due_today": "Mai esedékes",
+    "group_by_partner": "Partnerenkénti összevonás"
+  },
+  "search_placeholder": "Keresés partnerre vagy számlára..."
+}

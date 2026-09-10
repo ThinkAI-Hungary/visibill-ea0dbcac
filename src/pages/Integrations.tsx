@@ -18,6 +18,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface SyncLog {
   id: string;
@@ -34,6 +35,7 @@ interface SyncLog {
 }
 
 const Integrations = () => {
+  const { t } = useTranslation(['navigation', 'common', 'settings']);
   const { toast } = useToast();
   const { user } = useAuth();
   const { selectedCompany, loading: companyLoading } = useCompany();
@@ -280,9 +282,9 @@ const Integrations = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Integrációk</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('items.integrations', { defaultValue: 'Integrációk' })}</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Csatlakoztasd szolgáltatásaidat és felületeidet a számlák automatikus szinkronizálásához
+              {t('integrations.subtitle', { defaultValue: 'Csatlakoztasd szolgáltatásaidat és felületeidet a számlák automatikus szinkronizálásához' })}
             </p>
           </div>
           <Badge variant="secondary" className="flex items-center gap-2 bg-primary/10 text-primary border-primary/20 px-3 py-1 text-xs">
@@ -333,8 +335,8 @@ const Integrations = () => {
               <CardContent className="pt-2">
                 <Tabs defaultValue="alias" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 mb-4">
-                    <TabsTrigger value="alias">Generált Alias</TabsTrigger>
-                    <TabsTrigger value="custom-mail">Saját Levelező</TabsTrigger>
+                    <TabsTrigger value="alias">{t('settings:integrations.generated_alias', 'Generált Alias')}</TabsTrigger>
+                    <TabsTrigger value="custom-mail">{t('settings:integrations.custom_mail', 'Saját Levelező')}</TabsTrigger>
                   </TabsList>
                   <TabsContent value="alias" className="mt-0">
                     <EmailAliasManager />
@@ -390,8 +392,8 @@ const Integrations = () => {
           <CardContent className="pt-2">
             <Tabs value={activeNavTab} onValueChange={setActiveNavTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4 max-w-md">
-                <TabsTrigger value="credentials">Hitelesítés</TabsTrigger>
-                <TabsTrigger value="logs">Szinkronizálási Logok</TabsTrigger>
+                <TabsTrigger value="credentials">{t('settings:integrations.credentials', 'Hitelesítés')}</TabsTrigger>
+                <TabsTrigger value="logs">{t('settings:integrations.sync_logs', 'Szinkronizálási Logok')}</TabsTrigger>
               </TabsList>
               
               <TabsContent value="credentials" className="mt-0">

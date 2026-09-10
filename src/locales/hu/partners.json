@@ -1,0 +1,38 @@
+{
+  "title": "Partnertörzs",
+  "subtitle": "Vevők és szállítók nyilvántartása",
+  "columns": {
+    "name": "Partner neve",
+    "name_address": "Név / Cím",
+    "tax_number": "Adószám",
+    "city": "Város / Székhely",
+    "invoices_count": "Számlák száma",
+    "invoices": "Számlák",
+    "total_volume": "Összes forgalom",
+    "type": "Típus"
+  },
+  "types": {
+    "all": "Összes",
+    "customer": "Vevő",
+    "supplier": "Szállító",
+    "both": "Mindkettő"
+  },
+  "actions": {
+    "new_partner": "Új partner hozzáadása",
+    "edit_partner": "Partner szerkesztése"
+  },
+  "fields": {
+    "name": "Cégnév / Név",
+    "tax_number": "Adószám",
+    "registration_number": "Cégjegyzékszám",
+    "address": "Cím",
+    "iban": "Bankszámlaszám (IBAN)",
+    "email": "E-mail cím",
+    "phone": "Telefonszám"
+  },
+  "ranking": {
+    "title": "Rangsor & Kimutatás",
+    "top_suppliers": "Top 10 beszállító",
+    "top_customers": "Top 10 vevő"
+  }
+}

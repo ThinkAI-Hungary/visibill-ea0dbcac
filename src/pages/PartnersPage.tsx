@@ -47,6 +47,8 @@ import { toast } from "@/hooks/use-toast";
 import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
+import { getDateFnsLocale } from "@/lib/locale/formatters";
 import { useDateRange } from "@/contexts/DateRangeContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PartnerRankingCard, type RankedPartner } from "@/components/partners/PartnerRankingCard";
@@ -100,6 +102,7 @@ const getInitials = (name: string): string => {
 };
 
 export default function PartnersPage() {
+  const { t, i18n } = useTranslation(['partners', 'common']);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
@@ -109,8 +112,9 @@ export default function PartnersPage() {
 
   const periodLabel = useMemo(() => {
     if (!dateFrom || !dateTo) return '';
-    return `${format(dateFrom, 'yyyy. MMM dd.', { locale: hu })} – ${format(dateTo, 'yyyy. MMM dd.', { locale: hu })}`;
-  }, [dateFrom, dateTo]);
+    const datePattern = i18n.language === 'hr' ? 'dd.MM.yyyy.' : 'yyyy. MMM dd.';
+    return `${format(dateFrom, datePattern, { locale: getDateFnsLocale() })} – ${format(dateTo, datePattern, { locale: getDateFnsLocale() })}`;
+  }, [dateFrom, dateTo, i18n.language]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -766,13 +770,13 @@ export default function PartnersPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Partnertörzs</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('partners:title', 'Partnertörzs')}</h1>
           <p className="text-muted-foreground text-sm">
-            Vevők és szállítók kezelése és pénzügyi áttekintése
+            {t('partners:subtitle', 'Vevők és szállítók kezelése és pénzügyi áttekintése')}
           </p>
         </div>
-        <Button onClick={() => handleOpenDialog()} className="gap-2" disabled={!writable} title={!writable ? 'Nincs írási jogosultságod' : undefined}>
-          <Plus className="h-4 w-4" /> Új partner hozzáadása
+        <Button onClick={() => handleOpenDialog()} className="gap-2" disabled={!writable} title={!writable ? t('common:no_permission', 'Nincs írási jogosultságod') : undefined}>
+          <Plus className="h-4 w-4" /> {t('partners:actions.new_partner', 'Új partner hozzáadása')}
         </Button>
       </div>
 
@@ -781,7 +785,7 @@ export default function PartnersPage() {
         <CollapsibleTrigger asChild>
           <button className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full group py-1">
             <BarChart3 className="h-3.5 w-3.5 text-primary" />
-            <span className="font-semibold text-foreground">Rangsor & Kimutatás</span>
+            <span className="font-semibold text-foreground">{t('partners:ranking.title', 'Rangsor & Kimutatás')}</span>
             {periodLabel && (
               <Badge variant="outline" className="h-5 text-[10px] font-normal gap-1 bg-background/50 px-2 py-0 border-primary/20 text-primary">
                 <Calendar className="h-2.5 w-2.5" />
@@ -798,7 +802,7 @@ export default function PartnersPage() {
         <CollapsibleContent className="data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
             <PartnerRankingCard
-              title="Top 10 beszállító"
+              title={t('partners:ranking.top_suppliers', 'Top 10 beszállító')}
               type="supplier"
               data={topSuppliers}
               totalAll={totalSupplier}
@@ -820,7 +824,7 @@ export default function PartnersPage() {
               }}
             />
             <PartnerRankingCard
-              title="Top 10 vevő"
+              title={t('partners:ranking.top_customers', 'Top 10 vevő')}
               type="customer"
               data={topCustomers}
               totalAll={totalCustomer}
@@ -861,7 +865,7 @@ export default function PartnersPage() {
                 <div className="relative flex-1 sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Keresés..."
+                    placeholder={t('common:actions.search', 'Keresés...')}
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     className="pl-10 bg-background/50 h-9"
@@ -876,16 +880,16 @@ export default function PartnersPage() {
                 <TableHeader className="sticky top-0 bg-background/95 backdrop-blur z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.1)]">
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[45%]">
-                      Név / Cím
+                      {t('partners:columns.name_address', 'Név / Cím')}
                     </TableHead>
                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[22%]">
-                      Adószám
+                      {t('partners:columns.tax_number', 'Adószám')}
                     </TableHead>
                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[18%]">
-                      Típus
+                      {t('partners:columns.type', 'Típus')}
                     </TableHead>
                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%] text-right">
-                      Számlák
+                      {t('partners:columns.invoices', 'Számlák')}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1305,21 +1309,21 @@ export default function PartnersPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingPartner ? "Partner szerkesztése" : "Új partner hozzáadása"}
+              {editingPartner ? t('partners:actions.edit_partner', 'Partner szerkesztése') : t('partners:actions.new_partner', 'Új partner hozzáadása')}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Név *</Label>
+              <Label htmlFor="name">{t('partners:fields.name', 'Név')} *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Partner neve"
+                placeholder={t('partners:fields.name', 'Partner neve')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tax_number">{editingPartner && isForeignPartner(editingPartner.tax_number) ? 'Adószám' : 'Adószám *'}</Label>
+              <Label htmlFor="tax_number">{editingPartner && isForeignPartner(editingPartner.tax_number) ? t('partners:fields.tax_number', 'Adószám') : `${t('partners:fields.tax_number', 'Adószám')} *`}</Label>
               <Input
                 id="tax_number"
                 value={formData.tax_number}
@@ -1330,16 +1334,16 @@ export default function PartnersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="address">Cím</Label>
+              <Label htmlFor="address">{t('partners:fields.address', 'Cím')}</Label>
               <Input
                 id="address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Partner címe"
+                placeholder={t('partners:fields.address', 'Partner címe')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email-cím <span className="text-muted-foreground text-xs">(felszólítólevélhez)</span></Label>
+              <Label htmlFor="email">{t('partners:fields.email', 'Email-cím')} <span className="text-muted-foreground text-xs">(felszólítólevélhez)</span></Label>
               <Input
                 id="email"
                 type="email"
@@ -1475,10 +1479,10 @@ export default function PartnersPage() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                Mégse
+                {t('common:actions.cancel', 'Mégse')}
               </Button>
               <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? "Mentés..." : "Mentés"}
+                {saveMutation.isPending ? `${t('common:actions.save', 'Mentés')}...` : t('common:actions.save', 'Mentés')}
               </Button>
             </DialogFooter>
           </form>

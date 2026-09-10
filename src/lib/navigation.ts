@@ -17,11 +17,13 @@ export function generateScopedPath(
   dateFrom: string,
   dateTo: string,
   page: string = '',
+  isHr: boolean = false,
 ): string {
   const dateRange = `${dateFrom}_${dateTo}`;
   const cleanPage = page.startsWith('/') ? page.slice(1) : page;
   const suffix = cleanPage ? `/${cleanPage}` : '';
-  return `/${companyId}/${dateRange}${suffix}`;
+  const prefix = isHr ? '/hr' : '';
+  return `${prefix}/${companyId}/${dateRange}${suffix}`;
 }
 
 /**
@@ -43,19 +45,20 @@ export function parseDateRange(dateRange: string): { from: Date; to: Date } | nu
  *   extractPage('/abc-123/2026-01-01_2026-12-31/invoices')
  *   → '/invoices'
  *
- *   extractPage('/abc-123/2026-01-01_2026-12-31')
- *   → '/'
+ *   extractPage('/hr/abc-123/2026-01-01_2026-12-31/invoices')
+ *   → '/invoices'
  */
 export function extractPageSegment(pathname: string): string {
-  // Strip /:companyId/:dateRange prefix  →  the remainder is the page
-  const parts = pathname.split('/').filter(Boolean); // ['companyId','dateRange','invoices']
+  // Strip /hr prefix if present, then strip /:companyId/:dateRange prefix
+  const clean = pathname.startsWith('/hr') ? pathname.replace(/^\/hr/, '') || '/' : pathname;
+  const parts = clean.split('/').filter(Boolean); // ['companyId','dateRange','invoices']
   if (parts.length >= 3) {
     return '/' + parts.slice(2).join('/');
   }
   if (parts.length === 2) {
     return '/'; // root dashboard within scoped route
   }
-  return pathname; // fallback for unscoped paths
+  return clean; // fallback for unscoped paths
 }
 
 // ─── Known page paths (the path segment AFTER /:companyId/:dateRange) ───
@@ -83,22 +86,18 @@ export const PAGE_PATHS = {
 /**
  * Hook that returns a navigate function which automatically scopes
  * paths with the current companyId + dateRange.
- *
- * Usage:
- *   const scopedNavigate = useScopedNavigate();
- *   scopedNavigate('invoices');            // → /:companyId/:dateRange/invoices
- *   scopedNavigate('invoices', { replace: true });
  */
 export function useScopedNavigate() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
 
   return useCallback(
     (page: string, options?: { replace?: boolean; state?: any }) => {
+      const isHr = location.pathname.startsWith('/hr');
       if (!selectedCompany) {
-        // Fallback: if no company selected, navigate to root
-        navigate('/', options);
+        navigate(isHr ? '/hr' : '/', options);
         return;
       }
       const path = generateScopedPath(
@@ -106,10 +105,11 @@ export function useScopedNavigate() {
         dateFromFormatted,
         dateToFormatted,
         page,
+        isHr,
       );
       navigate(path, options);
     },
-    [navigate, selectedCompany, dateFromFormatted, dateToFormatted],
+    [navigate, location.pathname, selectedCompany, dateFromFormatted, dateToFormatted],
   );
 }
 
@@ -120,8 +120,11 @@ export function useScopedNavigate() {
 export function useScopedBasePath(): string {
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  if (!selectedCompany) return '/';
-  return `/${selectedCompany.id}/${dateFromFormatted}_${dateToFormatted}`;
+  const location = useLocation();
+  const isHr = location.pathname.startsWith('/hr');
+  const prefix = isHr ? '/hr' : '';
+  if (!selectedCompany) return prefix ? `${prefix}/` : '/';
+  return `${prefix}/${selectedCompany.id}/${dateFromFormatted}_${dateToFormatted}`;
 }
 
 /**

@@ -12,6 +12,7 @@ import { Loader2, CreditCard, FileQuestion, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface NavInvoice {
   id: string;
@@ -66,6 +67,7 @@ const fetchAllInboundInvoices = async (companyId: string, mode: 'payable' | 'mis
 };
 
 const InvoiceStatusTables = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const scopedNavigate = useScopedNavigate();
   const { selectedCompany } = useCompany();
   const [activeTab, setActiveTab] = useState<'payable' | 'missing'>('payable');
@@ -188,18 +190,20 @@ const InvoiceStatusTables = () => {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Bejövő számlák állapota</CardTitle>
+        <CardTitle className="text-lg">
+          {t('dashboard:inbound_status.title', 'Bejövő számlák állapota')}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'payable' | 'missing'); setVisibleCount(20); }}>
           <TabsList className="grid w-full grid-cols-2 mb-4 bg-slate-100/80 dark:bg-muted border border-slate-200 dark:border-transparent">
             <TabsTrigger value="payable" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-background data-[state=active]:text-slate-900 dark:data-[state=active]:text-foreground data-[state=active]:shadow-sm text-slate-500 dark:text-muted-foreground hover:text-slate-700 dark:hover:text-foreground">
               <CreditCard className="h-4 w-4" />
-              Fizetendő ({payableInvoices.length})
+              {t('dashboard:inbound_status.payable', 'Fizetendő')} ({payableInvoices.length})
             </TabsTrigger>
             <TabsTrigger value="missing" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-background data-[state=active]:text-slate-900 dark:data-[state=active]:text-foreground data-[state=active]:shadow-sm text-slate-500 dark:text-muted-foreground hover:text-slate-700 dark:hover:text-foreground">
               <FileQuestion className="h-4 w-4" />
-              Hiányzó ({missingCount})
+              {t('dashboard:inbound_status.missing', 'Hiányzó')} ({missingCount})
             </TabsTrigger>
           </TabsList>
 
@@ -207,7 +211,7 @@ const InvoiceStatusTables = () => {
             {payableInvoices.length > 0 && (
               <div className="mb-4 px-4 h-12 flex items-center justify-between rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40">
                 <p className="text-sm font-medium text-red-700 dark:text-red-400">
-                  Fizetendő összeg: {formatCurrency(payableTotal, 'HUF')}
+                  {t('dashboard:inbound_status.payable_amount', 'Fizetendő összeg:')} {formatCurrency(payableTotal, 'HUF')}
                 </p>
               </div>
             )}

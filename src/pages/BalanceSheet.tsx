@@ -16,6 +16,7 @@ import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCirc
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
+import { useTranslation } from 'react-i18next';
 import { FinancialPageSkeleton } from '@/components/ui/financial-skeleton';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Switch } from '@/components/ui/switch';
@@ -1182,6 +1183,7 @@ function BsViewTab({
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export default function BalanceSheet() {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'view';
@@ -1274,9 +1276,9 @@ export default function BalanceSheet() {
 
       <PageHeader
         companyName={selectedCompany?.name}
-        breadcrumb="Mérleg"
-        title="Mérleg"
-        description="Sztv. 'A' változat szerinti mérleg és beállítások"
+        breadcrumb={t('accounting:balance_sheet.breadcrumb', 'Mérleg')}
+        title={t('accounting:balance_sheet.title', 'Mérleg')}
+        description={t('accounting:balance_sheet.description', 'Sztv. \'A\' változat szerinti mérleg és beállítások')}
       />
 
       {(!isBalanced || unassignedCount > 0 || hasReconDiscrepancy) && (
@@ -1316,7 +1318,7 @@ export default function BalanceSheet() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 h-12 w-full md:w-auto p-1 bg-muted/50">
           <TabsTrigger value="view" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 relative">
-            Mérleg
+            {t('accounting:balance_sheet.tabs.view', 'Mérleg')}
             {hasReconDiscrepancy && (
               <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -1324,7 +1326,9 @@ export default function BalanceSheet() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="mapping" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">Hozzárendelési Mátrix</TabsTrigger>
+          <TabsTrigger value="mapping" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+            {t('accounting:balance_sheet.tabs.mapping', 'Hozzárendelési Mátrix')}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="view" className="mt-0 outline-none">
           <Card className="border-border/60 shadow-md">

@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-09  
-> **Összesen:** 115 döntés | ✅ Decided: 113 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-11  
+> **Összesen:** 116 döntés | ✅ Decided: 114 | ⛔ Superseded: 2
 
 ---
 
@@ -150,6 +150,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-106 | Saját Jogú Nyugdíjas Járulékmentesség, Megbízási Munkaidő Rugalmasság és Vendéglátóipari Felszolgálási Díj Adózás | ✅ Decided | [A-106](./A-106-pensioner-tax-exemption-and-service-charge-taxation.md) |
 | A-107 | ÁFA Levonhatóság Szinkronizálása a Könyvelési Naplóval és Főkönyvvel, Valós Idejű Trigger és Zárt Tételek Védelme | ✅ Decided | [A-107](./A-107-vat-deductibility-journal-and-gl-sync.md) |
 | A-108 | Bérszámfejtési Munkába Járás Költségtérítés (39/2010 Korm. rend.) és Dolgozó-Központú Munkalap (Employee Worksheet View) | ✅ Decided | [A-108](./A-108-payroll-commute-reimbursement-and-employee-worksheet.md) |
+| A-109 | Eaisybill Horvát Lokalizáció, /hr/ Scoped Route Architektúra és Helyi Tároló Mentes Nyelvkezelés | ✅ Decided | [A-109](./A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) |
 
 ## 💳 Fizetés
 

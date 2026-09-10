@@ -1,0 +1,43 @@
+{
+  "groups": {
+    "overview": "Pregled",
+    "finance": "Financije",
+    "accounting": "Računovodstvo",
+    "hr": "Ljudski resursi i imovina",
+    "shipment": "Špedicija i prijevoz",
+    "system": "Sustav",
+    "operations": "Operacije",
+    "support": "Podrška"
+  },
+  "items": {
+    "dashboard": "Kontrolna ploča",
+    "categories": "Kategorije",
+    "projects": "Projekti",
+    "partners": "Partneri",
+    "invoices": "Računi",
+    "kintlevo": "Potraživanja",
+    "transactions": "Transakcije",
+    "petty_cash": "Blagajna",
+    "transfers": "Plaćanja",
+    "general_ledger": "Glavna knjiga",
+    "pnl": "Račun dobiti i gubitka",
+    "balance_sheet": "Bilanca",
+    "annual_report": "Godišnji izvještaj",
+    "vat_return": "PDV prijava",
+    "journals": "Temeljnica",
+    "fixed_assets": "Dugotrajna imovina",
+    "notes": "Bilješke",
+    "exchange_rates": "Tečajevi",
+    "salaries": "Plaće",
+    "working_time": "Radno vrijeme",
+    "analytics": "Analitika",
+    "integrations": "Integracije",
+    "upload": "Učitavanje računa",
+    "tickets": "Korisnička podrška",
+    "knowledge_base": "Baza znanja",
+    "settings": "Postavke",
+    "shipments": "Prijevozi",
+    "shipment_import": "Excel uvoz",
+    "shipment_escalated": "Eskalacija"
+  }
+}

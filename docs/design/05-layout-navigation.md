@@ -8,16 +8,17 @@
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ App.tsx (Root Orchestrator <65 sor)                                    │
+│ App.tsx (Root Orchestrator <70 sor)                                    │
 │  ├── bootstrap.ts (Pre-render URL hash handler & error deszerializáló) │
 │  ├── queryClient.ts (React Query kliens & globális error listenerek)   │
 │  │                                                                     │
 │  └── BrowserRouter                                                     │
-│       ├── renderAuthRoutes()        → /auth, /reset-password, /mgmt    │
+│       ├── LanguageRouteSync         → Valós idejű /hr route ↔ i18n sync│
+│       ├── renderAuthRoutes()        → /auth, /hr/auth, /reset-password │
 │       ├── renderAccountyRoutes()    → /eaisybooks/* (portfólió & client)│
 │       │                                                                │
 │       └── ProtectedLayout ◄── Auth gate (eaisybill)                   │
-│            ├── ScopedLayout (/:companyId/:dateRange)                   │
+│            ├── ScopedLayout (/:companyId/:dateRange & /hr/...)         │
 │            │    ├── renderEaisybillScopedRoutes()                      │
 │            │    └── renderShipmentScopedRoutes()                       │
 │            └── Legacy & Fallback Redirects                             │
@@ -41,6 +42,8 @@
 | **`ProtectedLayout`** | Auth gate — semmi nem renderelődik amíg auth+company+role nem kész |
 | **`AppLayout`** | Shell layout — Sidebar + TopBar + Content. Stabil, nem mount-ol újra |
 | **`ScopedLayout`** | URL ↔ Context szinkronizáció layer |
+| **`LanguageRouteSync`** | Reaktív i18n szinkronizáció: URL útvonal alapján azonnal vált `hu` és `hr` között (ADR A-109) |
+| **`LanguageRouteWrapper`** | Dedikált nyelvi környezetet biztosító route wrapper komponens |
 
 ---
 

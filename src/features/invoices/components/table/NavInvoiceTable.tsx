@@ -8,6 +8,7 @@ import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { TableEmptyState } from '@/components/ui/table-empty-state';
 import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
 import { ArrowUpDown, Info, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { NavInvoiceRow } from './NavInvoiceRow';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { SubmittedInvoice, TransactionRecord } from '../../types';
@@ -28,6 +29,7 @@ export function NavInvoiceTable({
   onRowClick,
   onToggleExclude,
 }: NavInvoiceTableProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const {
     activeTab,
     loading,
@@ -114,7 +116,7 @@ export function NavInvoiceTable({
                     onClick={() => handleSort('partner_name')}
                   >
                     <div className="flex items-center gap-1">
-                      Partner
+                      {t('invoices:columns.partner', { defaultValue: 'Partner' })}
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                     </div>
                   </TableHead>
@@ -124,7 +126,7 @@ export function NavInvoiceTable({
                     onClick={() => handleSort('invoice_issue_date')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      Kiáll.
+                      {t('invoices:columns.issue_date', { defaultValue: 'Kiáll.' })}
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                     </div>
                   </TableHead>
@@ -134,7 +136,7 @@ export function NavInvoiceTable({
                     onClick={() => handleSort('invoice_delivery_date')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      Telj.
+                      {t('invoices:columns.fulfillment_date', { defaultValue: 'Telj.' })}
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                     </div>
                   </TableHead>
@@ -144,7 +146,7 @@ export function NavInvoiceTable({
                     onClick={() => handleSort('invoice_number')}
                   >
                     <div className="flex items-center gap-1">
-                      Biz.szám
+                      {t('invoices:columns.invoice_number', { defaultValue: 'Biz.szám' })}
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                     </div>
                   </TableHead>
@@ -155,7 +157,7 @@ export function NavInvoiceTable({
                   >
                     <div className="flex items-center justify-end gap-1">
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
-                      Nettó
+                      {t('invoices:columns.net_amount', { defaultValue: 'Nettó' })}
                     </div>
                   </TableHead>
 
@@ -165,7 +167,7 @@ export function NavInvoiceTable({
                   >
                     <div className="flex items-center justify-end gap-1">
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
-                      Bruttó
+                      {t('invoices:columns.gross_amount', { defaultValue: 'Bruttó' })}
                     </div>
                   </TableHead>
 
@@ -175,13 +177,13 @@ export function NavInvoiceTable({
                   >
                     <div className="flex items-center justify-end gap-1">
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
-                      ÁFA
+                      {t('invoices:columns.vat_amount', { defaultValue: 'ÁFA' })}
                     </div>
                   </TableHead>
 
                   <TableHead className="font-semibold text-center whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1">
-                      Státusz
+                      {t('common:labels.status', { defaultValue: 'Státusz' })}
                       <TooltipProvider delayDuration={0}>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -202,10 +204,10 @@ export function NavInvoiceTable({
                     Kikontírozva
                   </TableHead>
                   {activeTab === 'INBOUND' && (
-                    <TableHead className="font-semibold text-center whitespace-nowrap">Kategória</TableHead>
+                    <TableHead className="font-semibold text-center whitespace-nowrap">{t('invoices:columns.category', { defaultValue: 'Kategória' })}</TableHead>
                   )}
 
-                  <TableHead className="font-semibold text-center whitespace-nowrap">Projekt</TableHead>
+                  <TableHead className="font-semibold text-center whitespace-nowrap">{t('navigation:items.projects', { defaultValue: 'Projekt' })}</TableHead>
                   <TableHead className="font-semibold text-center whitespace-nowrap">Fiz. mód</TableHead>
                   <TableHead className="font-semibold text-center whitespace-nowrap">Számla kép</TableHead>
                   <TableHead className="font-semibold text-center whitespace-nowrap">Tételek</TableHead>

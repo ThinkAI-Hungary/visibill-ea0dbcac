@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useKintlevoData } from '@/hooks/useKintlevoData';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,11 +15,12 @@ import { DunningDialog } from '@/components/kintlevo/DunningDialog';
 import type { AgingCategory } from '@/lib/kintlevo-helpers';
 
 function KintlevoSkeleton() {
+  const { t } = useTranslation(['receivables', 'common']);
   return (
     <div className="h-full space-y-4 px-4 pt-4 pb-6 page-animate">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Kintlévőség</h1>
-        <p className="text-muted-foreground text-sm">Kifizetetlen kimenő számlák cégenként csoportosítva</p>
+        <h1 className="text-2xl font-bold tracking-tight">{t('receivables:title', 'Kintlévőség')}</h1>
+        <p className="text-muted-foreground text-sm">{t('receivables:subtitle', 'Kifizetetlen kimenő számlák cégenként csoportosítva')}</p>
       </div>
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
@@ -77,6 +79,8 @@ export default function KintlevoPage() {
     if (actionFromUrl === 'dunning' && !dialogOpen) setDialogOpen(true);
   }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const { t } = useTranslation(['receivables', 'common']);
+
   if (isLoading) return <KintlevoSkeleton />;
 
   return (
@@ -85,14 +89,14 @@ export default function KintlevoPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Kintlévőség</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t('receivables:title', 'Kintlévőség')}</h1>
             <p className="text-muted-foreground text-sm">
-              Kifizetetlen kimenő számlák cégenként csoportosítva
+              {t('receivables:subtitle', 'Kifizetetlen kimenő számlák cégenként csoportosítva')}
             </p>
           </div>
-          <Button size="lg" className="gap-2 shrink-0" onClick={handleOpenDunning} disabled={!writable} title={!writable ? 'Nincs írási jogosultságod' : undefined}>
+          <Button size="lg" className="gap-2 shrink-0" onClick={handleOpenDunning} disabled={!writable} title={!writable ? t('receivables:no_write_permission', 'Nincs írási jogosultságod') : undefined}>
             <Mail className="h-4 w-4" />
-            Felszólítás küldése
+            {t('receivables:send_dunning', 'Felszólítás küldése')}
           </Button>
         </div>
 
@@ -120,7 +124,7 @@ export default function KintlevoPage() {
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cég neve..."
+            placeholder={t('receivables:search_placeholder', 'Cég neve...')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9"
@@ -130,12 +134,12 @@ export default function KintlevoPage() {
         {/* Active filter badge */}
         {activeBucket && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Szűrés:</span>
+            <span className="text-sm text-muted-foreground">{t('receivables:filter_label', 'Szűrés:')}</span>
             <button
               className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
               onClick={() => setActiveBucket(null)}
             >
-              {activeBucket === 'green' ? 'Nem lejárt' : activeBucket === 'yellow' ? '1–30 napos' : activeBucket === 'red' ? '31–180 napos' : '180+ napos'}
+              {activeBucket === 'green' ? t('receivables:aging.not_due', 'Nem lejárt') : activeBucket === 'yellow' ? t('receivables:aging.days_1_30', '1–30 napos') : activeBucket === 'red' ? t('receivables:aging.days_31_180', '31–180 napos') : t('receivables:aging.days_180_plus', '180+ napos')}
               <span className="ml-1">✕</span>
             </button>
           </div>

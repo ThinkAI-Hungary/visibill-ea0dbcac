@@ -1,0 +1,16 @@
+{
+  "title": "Projekti",
+  "subtitle": "Stvorite i upravljajte projektima za organizaciju rada s klijentima. Možete dodijeliti račune projektima.",
+  "description": "Kartice projekata razdvajaju pregled i upravljanje računima putem kartica. Klikom na naziv projekta možete navigirati na detaljniji prikaz.",
+  "new_project": "Novi projekt",
+  "no_projects": "Još nema projekata",
+  "create_first": "Počnite stvarati nove projekte za organizaciju rada s klijentima",
+  "create_first_button": "Stvori prvi projekt",
+  "name": "Naziv projekta",
+  "status": {
+    "active": "Aktivan",
+    "completed": "Završen",
+    "on_hold": "Na čekanju",
+    "cancelled": "Otkazan"
+  }
+}

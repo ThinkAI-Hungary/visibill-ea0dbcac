@@ -17,6 +17,7 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { reportError } from '@/lib/errorReporter';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
+import { useTranslation } from 'react-i18next';
 import { CategoryDonutChart } from '@/components/CategoryDonutChart';
 import { CategoryAmountSummary } from '@/components/CategoryAmountSummary';
 import { CategoryAccordionItem, formatCurrencyTotals, type CategoryInvoice } from '@/components/CategoryAccordionItem';
@@ -167,6 +168,7 @@ const CategoryPageSkeleton = () => {
 };
 
 const Onboarding = () => {
+  const { t } = useTranslation(['categories', 'common']);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
@@ -867,8 +869,8 @@ const Onboarding = () => {
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Exportálási hiba',
-        description: error?.message || 'Hiba történt az exportálás során.',
+        title: t('common:export_error', 'Exportálási hiba'),
+        description: error?.message || t('common:error_occurred', 'Hiba történt az exportálás során.'),
       });
     }
   };
@@ -882,14 +884,14 @@ const Onboarding = () => {
       {/* Page header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Kategóriák</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('categories:title', 'Kategóriák')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Csoportosítsd számláidat egyéni kategóriákba (pl. Marketing, IT, Rezsi) a kiadásaid átlátható követéséhez és elemzéséhez. Kattints egy kategóriára a hozzárendelt számlák megtekintéséhez, új számlák hozzáadásához vagy meglévők leválasztásához.
+            {t('categories:subtitle', 'Csoportosítsd számláidat egyéni kategóriákba (pl. Marketing, IT, Rezsi) a kiadásaid átlátható követéséhez és elemzéséhez.')}
           </p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gap-2" disabled={!writable} title={!writable ? 'Nincs írási jogosultságod' : undefined}>
+        <Button onClick={() => setShowNewDialog(true)} className="gap-2" disabled={!writable} title={!writable ? t('common:no_permission', 'Nincs írási jogosultságod') : undefined}>
           <Plus className="h-4 w-4" />
-          Új kategória
+          {t('categories:new_category', 'Új kategória')}
         </Button>
       </div>
 
@@ -918,23 +920,23 @@ const Onboarding = () => {
             <div className="w-8 flex-shrink-0" />
             {/* Name */}
             <div className="flex-1 min-w-0 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Név
+              {t('categories:col_name', 'Név')}
             </div>
             {/* Stats headers */}
             <div className="flex items-center gap-3 flex-shrink-0 w-[420px]">
               <div className="w-14 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center flex-shrink-0">
-                Arány
+                {t('categories:col_ratio', 'Arány')}
               </div>
               <div className="w-10 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right flex-shrink-0">
-                Számla
+                {t('categories:col_invoice', 'Számla')}
               </div>
               <div className="flex-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">
-                Összeg
+                {t('categories:col_amount', 'Összeg')}
               </div>
             </div>
             {/* Actions header */}
             <div className="flex-shrink-0 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider" style={{ width: '60px', textAlign: 'center' }}>
-              Műveletek
+              {t('categories:col_actions', 'Műveletek')}
             </div>
           </div>
           {categories.map((cat, index) => {
@@ -964,7 +966,7 @@ const Onboarding = () => {
       ) : (
         <div className="text-center py-16 border border-dashed border-border rounded-lg text-muted-foreground flex flex-col items-center gap-3">
           <FolderOpen className="h-8 w-8" />
-          <p className="text-sm">Nincsenek kategóriák. Kattints az „Új kategória" gombra a létrehozáshoz.</p>
+          <p className="text-sm">{t('categories:create_first', 'Nincsenek kategóriák. Kattints az „Új kategória" gombra a létrehozáshoz.')}</p>
         </div>
       )}
 
@@ -978,7 +980,7 @@ const Onboarding = () => {
           }}
         >
           <DialogHeader>
-            <DialogTitle>Kategória szerkesztése</DialogTitle>
+            <DialogTitle>{t('categories:edit_category', 'Kategória szerkesztése')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-4">
             {/* Category identity header */}

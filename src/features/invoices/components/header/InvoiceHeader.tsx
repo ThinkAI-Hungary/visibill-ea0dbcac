@@ -12,9 +12,11 @@ import {
 import { Info, FileText, Download, ChevronDown, FileSpreadsheet, FileDown } from 'lucide-react';
 import { NavSyncButton } from './NavSyncButton';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
+import { useTranslation } from 'react-i18next';
 
 export function InvoiceHeader() {
   const { setFilesDialogOpen, setInvoiceParam, openDataExportDialog } = useInvoiceContext();
+  const { t } = useTranslation(['invoices', 'common']);
 
   const handleOpenFiles = () => {
     setFilesDialogOpen(true);
@@ -26,7 +28,7 @@ export function InvoiceHeader() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <CardTitle className="text-2xl font-bold">Számlák</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('invoices:title', { defaultValue: 'Számlák' })}</CardTitle>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -49,14 +51,14 @@ export function InvoiceHeader() {
 
             <Button variant="outline" size="sm" onClick={handleOpenFiles}>
               <FileText className="h-4 w-4 mr-2" />
-              Feltöltött fájlok
+              {t('invoices:actions.uploaded_files', { defaultValue: 'Feltöltött fájlok' })}
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
-                  Export
+                  {t('common:actions.export', { defaultValue: 'Export' })}
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>

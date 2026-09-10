@@ -6,6 +6,8 @@ import { ProtectedPage, RemoveInitialLoader } from "./shellComponents";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+import { LanguageRouteWrapper } from "@/components/LanguageRouteWrapper";
+
 const Auth = lazy(() => import("@/pages/Auth"));
 const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
@@ -28,14 +30,13 @@ export function ManagementRoute() {
       const { data, error } = await supabase
         .from('profiles')
         .select('name, email_verified, role')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
       if (error) return { role: null };
-      return { role: data?.role || null };
+      return data;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
   });
 
   // Sign-out transition overlay (matching ProtectedLayout)
@@ -67,8 +68,8 @@ export function ManagementRoute() {
     return <LoadingSpinner message="Jogosultság ellenőrzése..." />;
   }
 
-  const role = profileData?.role;
-  const isAuthorized = role === 'management' || role === 'thinkai';
+  const profileRole = profileData?.role as string | null | undefined;
+  const isAuthorized = profileRole === 'management' || profileRole === 'thinkai';
 
   if (!isAuthorized) {
     return (
@@ -88,6 +89,28 @@ export function ManagementRoute() {
 export function renderAuthRoutes() {
   return (
     <>
+      {/* Croatian Auth routes – /hr/auth and /hr/auth/callback */}
+      <Route element={<LanguageRouteWrapper language="hr" />}>
+        <Route
+          path="/hr/auth"
+          element={
+            <Suspense fallback={<LoadingSpinner message="Učitavanje..." />}>
+              <RemoveInitialLoader />
+              <Auth />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/hr/auth/callback"
+          element={
+            <Suspense fallback={<LoadingSpinner message="Prijava..." />}>
+              <RemoveInitialLoader />
+              <AuthCallback />
+            </Suspense>
+          }
+        />
+      </Route>
+
       {/* Auth routes – no sidebar, own Suspense for lazy chunks */}
       <Route
         path="/auth"

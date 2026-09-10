@@ -1,0 +1,60 @@
+{
+  "title": "Kontrolna ploča",
+  "kpis": {
+    "income": "Ukupni prihodi",
+    "expenses": "Ukupni rashodi",
+    "profit": "Neto rezultat",
+    "unpaid_incoming": "Otvorene obveze prema dobavljačima",
+    "unpaid_outgoing": "Otvorena potraživanja od kupaca",
+    "cash_balance": "Stanje na računima"
+  },
+  "sections": {
+    "cashflow": "Novčani tok (Cash-flow)",
+    "quick_actions": "Brze radnje",
+    "recent_invoices": "Nedavni računi",
+    "recent_invoices_tooltip": "Popis nedavno obrađenih računa",
+    "recent_transactions": "Nedavne transakcije",
+    "monthly_comparison": "Mjesečna usporedba"
+  },
+  "welcome": {
+    "morning": "Dobro jutro",
+    "day": "Dobar dan",
+    "evening": "Dobra večer",
+    "subtitle": "Ovdje je cjeloviti pregled vašeg poslovanja",
+    "net": "Neto",
+    "gross": "Bruto",
+    "activity_log": "Dnevnik aktivnosti"
+  },
+  "vat": {
+    "title": "Pregled PDV-a",
+    "payable_vat": "PDV za platiti",
+    "refundable_vat": "Povrat PDV-a",
+    "total_vat": "Ukupni PDV",
+    "deductible_vat": "Pretporez",
+    "analytics": "Analitika PDV-a",
+    "outbound_vat_content": "Sadržaj PDV-a u prihodima",
+    "inbound_vat_content": "Sadržaj PDV-a u rashodima",
+    "categories": "Kategorije PDV-a:",
+    "revenue": "Prihodi:",
+    "costs": "Troškovi:",
+    "total": "Ukupno:",
+    "no_data": "Nema podataka",
+    "regimes": {
+      "penzforgalmi": "Prema naplaćenim naknadama",
+      "alanyi_mentes": "Mali porezni obveznik"
+    }
+  },
+  "inbound_status": {
+    "title": "Status ulaznih računa",
+    "payable": "Za plaćanje",
+    "missing": "Nedostaje",
+    "payable_amount": "Iznos za plaćanje:",
+    "missing_amount": "Iznos koji nedostaje:"
+  },
+  "unmatched_items": {
+    "title": "Nepovezane stavke",
+    "nav_invoices": "Porezni računi",
+    "transactions": "Transakcije",
+    "unmatched_nav_desc": "{{count}} računa nije povezano s transakcijom · Ukupno:"
+  }
+}

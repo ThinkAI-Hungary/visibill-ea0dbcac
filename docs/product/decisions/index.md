@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-09  
-> **Összesen:** 75 döntés | ✅ Decided: 71 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-11  
+> **Összesen:** 76 döntés | ✅ Decided: 72 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -21,6 +21,7 @@
 | P-005 | Dashboard widgetek & elrendezés | ✅ Decided | [P-005](./P-005-dashboard-layout.md) |
 | P-006 | Sidebar menüstruktúra (csoportosított) | ✅ Decided | [P-006](./P-006-sidebar-structure.md) |
 | P-009 | Dashboard testreszabhatóság | ✅ Decided | [P-009](./P-009-dashboard-customization.md) |
+| P-081 | Eaisybill Horvát Lokalizáció, /hr/ Route Prefix és Demó Navigáció UX | ✅ Decided | [P-081](./P-081-eaisybill-croatia-localization-and-demo-ux.md) |
 
 ## 📄 Számla Kezelés
 

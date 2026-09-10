@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Landmark, Plus, Trash2, Shield, CreditCard } from 'lucide-react';
 import { reportError } from '@/lib/errorReporter';
+import { useTranslation } from 'react-i18next';
 
 interface BankAccount {
   id: string;
@@ -33,6 +34,7 @@ const BANK_GRADIENTS: Record<string, string> = {
 };
 
 export function BankAccountsTab({ companyId }: Props) {
+  const { t } = useTranslation(['settings', 'common']);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -112,7 +114,7 @@ export function BankAccountsTab({ companyId }: Props) {
   };
 
   const handleDeleteAccount = async (id: string) => {
-    if (!confirm('Biztosan törölni szeretnéd ezt a bankszámlát?')) return;
+    if (!confirm(t('bank_accounts.delete_confirm', 'Biztosan törölni szeretnéd ezt a bankszámlát?'))) return;
 
     try {
       const { error } = await supabase
@@ -137,29 +139,29 @@ export function BankAccountsTab({ companyId }: Props) {
           <div>
             <CardTitle className="text-xl font-bold flex items-center gap-2">
               <Landmark className="h-5 w-5 text-primary" />
-              Céges bankszámlák
+              {t('bank_accounts.title', 'Céges bankszámlák')}
             </CardTitle>
             <CardDescription>
-              Regisztráld a cég saját bankszámláit a kimenő utalási listák generálásához.
+              {t('bank_accounts.subtitle', 'Regisztráld a cég saját bankszámláit a kimenő utalási listák generálásához.')}
             </CardDescription>
           </div>
           {!showAddForm && (
             <Button size="sm" onClick={() => setShowAddForm(true)} className="gap-1.5 shadow-md">
               <Plus className="h-4 w-4" />
-              Új bankszámla
+              {t('bank_accounts.new_account', 'Új bankszámla')}
             </Button>
           )}
         </CardHeader>
         <CardContent>
           {showAddForm && (
             <form onSubmit={handleAddAccount} className="p-5 border border-primary/20 bg-primary/5 rounded-xl mb-6 space-y-4 animate-in fade-in slide-in-from-top-3 duration-200">
-              <h3 className="font-semibold text-sm flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" /> Új bankszámla hozzáadása</h3>
+              <h3 className="font-semibold text-sm flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" /> {t('bank_accounts.add_title', 'Új bankszámla hozzáadása')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Bank neve</Label>
+                  <Label>{t('bank_accounts.bank_name', 'Bank neve')}</Label>
                   <Select value={bankName} onValueChange={setBankName}>
                     <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Válassz bankot" />
+                      <SelectValue placeholder={t('bank_accounts.select_bank', 'Válassz bankot')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="OTP Bank">OTP Bank</SelectItem>
@@ -174,12 +176,12 @@ export function BankAccountsTab({ companyId }: Props) {
 
                 {bankName === 'other' && (
                   <div className="space-y-2">
-                    <Label htmlFor="custom_bank">Egyedi bank neve *</Label>
+                    <Label htmlFor="custom_bank">{t('bank_accounts.custom_bank', 'Egyedi bank neve *')}</Label>
                     <Input
                       id="custom_bank"
                       value={customBankName}
                       onChange={e => setCustomBankName(e.target.value)}
-                      placeholder="Pl. Gránit Bank"
+                      placeholder={t('bank_accounts.custom_bank_placeholder', 'Pl. Gránit Bank')}
                       required
                       className="bg-background"
                     />
@@ -187,7 +189,7 @@ export function BankAccountsTab({ companyId }: Props) {
                 )}
 
                 <div className="space-y-2 col-span-1 md:col-span-2">
-                  <Label htmlFor="acc_num">Bankszámlaszám (magyar formátum) *</Label>
+                  <Label htmlFor="acc_num">{t('bank_accounts.account_number', 'Bankszámlaszám (magyar formátum) *')}</Label>
                   <Input
                     id="acc_num"
                     value={accountNumber}
@@ -202,7 +204,7 @@ export function BankAccountsTab({ companyId }: Props) {
 
               <div className="grid grid-cols-2 gap-4 max-w-sm">
                 <div className="space-y-2">
-                  <Label>Pénznem</Label>
+                  <Label>{t('bank_accounts.currency', 'Pénznem')}</Label>
                   <Select value={currency} onValueChange={setCurrency}>
                     <SelectTrigger className="bg-background">
                       <SelectValue />
@@ -218,21 +220,21 @@ export function BankAccountsTab({ companyId }: Props) {
 
               <div className="flex gap-2 pt-2">
                 <Button type="submit" size="sm" disabled={saving}>
-                  {saving ? 'Mentés...' : 'Bankszámla mentése'}
+                  {saving ? 'Mentés...' : t('bank_accounts.save_button', 'Bankszámla mentése')}
                 </Button>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>
-                  Mégse
+                  {t('bank_accounts.cancel', 'Mégse')}
                 </Button>
               </div>
             </form>
           )}
 
           {isLoading ? (
-            <div className="py-6 text-center text-sm text-muted-foreground animate-pulse">Számlák betöltése...</div>
+            <div className="py-6 text-center text-sm text-muted-foreground animate-pulse">{t('bank_accounts.loading', 'Számlák betöltése...')}</div>
           ) : accounts.length === 0 ? (
             <div className="py-8 text-center border border-dashed rounded-xl border-border/60">
               <Landmark className="h-8 w-8 text-muted-foreground/60 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Nincsenek még bankszámlák hozzáadva ehhez a céghez.</p>
+              <p className="text-sm text-muted-foreground">{t('bank_accounts.no_accounts', 'Nincsenek még bankszámlák hozzáadva ehhez a céghez.')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -251,7 +253,7 @@ export function BankAccountsTab({ companyId }: Props) {
                         <p className="text-xs uppercase tracking-widest opacity-80 font-medium">{acc.bank_name}</p>
                         <p className="text-lg font-bold mt-1 flex items-center gap-1.5">
                           <Landmark className="h-4 w-4" />
-                          {acc.currency} Számla
+                          {acc.currency} {t('bank_accounts.account_suffix', 'Számla')}
                         </p>
                       </div>
                       <Button
@@ -266,7 +268,7 @@ export function BankAccountsTab({ companyId }: Props) {
                     </div>
 
                     <div className="mt-4 z-10">
-                      <p className="text-xs opacity-75">Számlaszám</p>
+                      <p className="text-xs opacity-75">{t('bank_accounts.account_number_label', 'Számlaszám')}</p>
                       <p className="font-mono text-sm tracking-wider font-semibold select-all bg-black/10 px-2 py-1 rounded mt-0.5 inline-block">
                         {acc.account_number}
                       </p>
@@ -283,9 +285,9 @@ export function BankAccountsTab({ companyId }: Props) {
         <CardContent className="pt-4 flex gap-3 items-start text-xs text-muted-foreground">
           <Shield className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-foreground mb-0.5">Biztonságos adattárolás</p>
+            <p className="font-semibold text-foreground mb-0.5">{t('bank_accounts.safe_storage_title', 'Biztonságos adattárolás')}</p>
             <p>
-              A bankszámlaszámokat kizárólag a netbanki átutalási fájl generálására és a beérkező banki kivonatok automatikus párosítására használjuk. Pénzügyi tranzakciót indítani vagy a bankszámládhoz hozzáférni a Visibill nem tud.
+              {t('bank_accounts.safe_storage_desc', 'A bankszámlaszámokat kizárólag a netbanki átutalási fájl generálására és a beérkező banki kivonatok automatikus párosítására használjuk. Pénzügyi tranzakciót indítani vagy a bankszámládhoz hozzáférni a Visibill nem tud.')}
             </p>
           </div>
         </CardContent>

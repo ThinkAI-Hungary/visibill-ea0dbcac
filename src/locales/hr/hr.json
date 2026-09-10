@@ -1,0 +1,65 @@
+{
+  "salaries": {
+    "title": "Plaće i doprinosi",
+    "subtitle": "Upravljanje plaćama i doprinosima zaposlenika",
+    "uploaded_files": "Učitane datoteke",
+    "cash_payout": "Gotovinska isplata",
+    "kpi": {
+      "total_payments": "Ukupne isplate",
+      "employee_count": "Broj zaposlenika",
+      "entries_suffix": "stavaka",
+      "total_net": "Ukupni neto trošak plaća",
+      "total_gross": "Ukupni bruto trošak plaća"
+    }
+  },
+  "working_time": {
+    "title": "Radno vrijeme",
+    "subtitle_employee": "Evidencija vlastitog radnog vremena",
+    "subtitle_admin": "Evidencija radnog vremena, upravljanje djelatnicima i satnice",
+    "settings": "Postavke",
+    "add_employee": "Dodaj djelatnika",
+    "kpi": {
+      "registered": "Prijavljeni",
+      "contractors": "Podizvođači",
+      "headcount_suffix": "osoba",
+      "monthly_salary_cost": "Mjesečni trošak plaća",
+      "avg_hourly_rate": "Prosječna satnica",
+      "hour_suffix": "/sat"
+    },
+    "tabs": {
+      "timesheet": "Evidencija rada",
+      "attendance": "Evidencija prisutnosti",
+      "employees": "Djelatnici",
+      "submitted": "Predano",
+      "rates": "Satnice"
+    },
+    "legend": {
+      "draft": "Nacrt",
+      "submitted": "Predano (čeka odobrenje)",
+      "approved": "Odobreno"
+    },
+    "calendar": {
+      "monthly_summary": "Mjesečni pregled",
+      "submit_month": "Predaj mjesec",
+      "submitting": "Predaja...",
+      "vacation": "Godišnji odmor",
+      "weekdays": ["P", "U", "Sri", "Čet", "Pet", "Sub", "Ned"],
+      "months": [
+        "Siječanj", "Veljača", "Ožujak", "Travanj",
+        "Svibanj", "Lipanj", "Srpanj", "Kolovoz",
+        "Rujan", "Listopad", "Studeni", "Prosinac"
+      ]
+    },
+    "employee_tabs": {
+      "registered_employees": "Prijavljeni djelatnici",
+      "contractors": "Podizvođači",
+      "no_employees": "Nema prijavljenih djelatnika",
+      "no_employees_desc": "Automatski se pojavljuju prilikom prijenosa platnog popisa ili ih dodajte ručno."
+    }
+  },
+  "fixed_assets": {
+    "title": "Dugotrajna imovina",
+    "subtitle": "{{company}} — {{total}} stavki ({{active}} aktivno)",
+    "inventory_check": "Provjera inventure"
+  }
+}

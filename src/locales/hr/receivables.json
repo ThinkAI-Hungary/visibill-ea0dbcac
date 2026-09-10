@@ -1,0 +1,19 @@
+{
+  "title": "Potraživanja",
+  "subtitle": "Neplaćeni izlazni računi grupirani po tvrtkama",
+  "send_dunning": "Pošalji opomenu",
+  "no_write_permission": "Nemate ovlasti za uređivanje",
+  "search_placeholder": "Naziv tvrtke...",
+  "filter_label": "Filtar:",
+  "net": "Neto",
+  "gross": "Bruto",
+  "total_receivables": "Ukupna potraživanja",
+  "companies_count": "{{count}} tvrtki",
+  "invoices_count": "{{count}} računa",
+  "aging": {
+    "not_due": "Nije dospjelo",
+    "days_1_30": "1–30 dana",
+    "days_31_180": "31–180 dana",
+    "days_180_plus": "180+ dana"
+  }
+}

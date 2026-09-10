@@ -1,6 +1,7 @@
 import "./app/bootstrap";
-import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import React, { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./app/queryClient";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -19,10 +20,26 @@ import { ScrollToTop } from "./routes/shellComponents";
 import { PasswordRecoveryRedirect } from "./routes/redirects";
 import { renderAuthRoutes } from "./routes/authRoutes";
 import { renderAccountyRoutes } from "./routes/accountyRoutes";
+import { LanguageRouteWrapper } from "./components/LanguageRouteWrapper";
 import { renderEaisybillScopedRoutes, renderEaisybillLegacyAndFallbackRoutes } from "./routes/eaisybillRoutes";
 import { renderShipmentScopedRoutes, renderShipmentLegacyRoutes } from "./routes/shipmentRoutes";
 
 const NotFound = lazy(() => import("./pages/NotFound"));
+
+function LanguageRouteSync() {
+  const location = useLocation();
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/');
+    const targetLang = isHr ? 'hr' : 'hu';
+    if (i18n.language !== targetLang) {
+      i18n.changeLanguage(targetLang);
+    }
+  }, [location.pathname, i18n]);
+
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -36,6 +53,7 @@ const App = () => (
               <SupportModeBanner />
               <ErrorBoundary>
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <LanguageRouteSync />
                   <ScrollToTop />
                   <PasswordRecoveryRedirect />
                   <Routes>
@@ -47,7 +65,15 @@ const App = () => (
 
                     {/* Protected routes with persistent eaisybill sidebar */}
                     <Route element={<ProtectedLayout />}>
-                      {/* Scoped application routes: /:companyId/:dateRange/* */}
+                      {/* Croatian scoped application routes: /hr/:companyId/:dateRange/* */}
+                      <Route element={<LanguageRouteWrapper language="hr" />}>
+                        <Route path="/hr/:companyId/:dateRange" element={<ScopedLayout />}>
+                          {renderEaisybillScopedRoutes()}
+                          {renderShipmentScopedRoutes()}
+                        </Route>
+                      </Route>
+
+                      {/* Default scoped application routes: /:companyId/:dateRange/* */}
                       <Route path="/:companyId/:dateRange" element={<ScopedLayout />}>
                         {renderEaisybillScopedRoutes()}
                         {renderShipmentScopedRoutes()}

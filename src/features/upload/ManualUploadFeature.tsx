@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { useUrlTab } from '@/lib/navigation';
+import { useTranslation } from 'react-i18next';
 import { UploadHeader } from './components/header/UploadHeader';
 import { UploadChannelTab } from './components/channel/UploadChannelTab';
 import { UploadDialogManager } from './components/dialogs/UploadDialogManager';
@@ -20,6 +21,7 @@ const UPLOAD_TAB_SLUGS = [
 ] as const;
 
 export function ManualUploadFeature() {
+  const { t } = useTranslation(['upload']);
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('upload');
 
@@ -75,7 +77,7 @@ export function ManualUploadFeature() {
                 className="flex items-center gap-1.5 py-2 px-2.5 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{cfg.title}</span>
+                <span className="truncate">{t(`upload:channels.${channelId}`, cfg.title)}</span>
                 {fileCount > 0 && (
                   <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary text-primary-foreground leading-tight">
                     {fileCount}

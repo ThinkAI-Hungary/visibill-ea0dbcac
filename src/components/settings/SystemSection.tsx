@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Palette } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SystemSettings {
   theme: string;
@@ -20,42 +21,49 @@ interface Props {
 }
 
 export function SystemSection({ systemSettings, onThemeChange, onSave, loading }: Props) {
+  const { t, i18n } = useTranslation(['settings', 'common']);
+  const currentLang = i18n.language?.startsWith('hr') ? 'hr' : 'hu';
+
+  const handleLanguageChange = (val: string) => {
+    i18n.changeLanguage(val);
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Palette className="h-5 w-5" />
-          Rendszer beállítások
+          {t('system.title', { defaultValue: 'Rendszer beállítások' })}
         </CardTitle>
-        <CardDescription>Téma és megjelenítési beállítások</CardDescription>
+        <CardDescription>{t('system.subtitle', { defaultValue: 'Téma és megjelenítési beállítások' })}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="theme">Téma</Label>
+            <Label htmlFor="theme">{t('system.theme', { defaultValue: 'Téma' })}</Label>
             <Select value={systemSettings.theme} onValueChange={onThemeChange}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="light">Világos</SelectItem>
-                <SelectItem value="dark">Sötét</SelectItem>
-                <SelectItem value="system">Rendszer</SelectItem>
+                <SelectItem value="light">{t('system.theme_light', { defaultValue: 'Világos' })}</SelectItem>
+                <SelectItem value="dark">{t('system.theme_dark', { defaultValue: 'Sötét' })}</SelectItem>
+                <SelectItem value="system">{t('system.theme_system', { defaultValue: 'Rendszer' })}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="language">Nyelv</Label>
-            <Select disabled value={systemSettings.language}>
+            <Label htmlFor="language">{t('system.language', { defaultValue: 'Nyelv' })}</Label>
+            <Select value={currentLang} onValueChange={handleLanguageChange}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="hu">Magyar</SelectItem>
-                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="hu">🇭🇺 {t('system.language_hu', { defaultValue: 'Magyar (HU)' })}</SelectItem>
+                <SelectItem value="hr">🇭🇷 {t('system.language_hr', { defaultValue: 'Hrvatski (HR)' })}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="date_format">Dátum formátum</Label>
+            <Label htmlFor="date_format">{t('system.date_format', { defaultValue: 'Dátum formátum' })}</Label>
             <Select disabled value={systemSettings.date_format}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -66,7 +74,7 @@ export function SystemSection({ systemSettings, onThemeChange, onSave, loading }
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="number_format">Szám formátum</Label>
+            <Label htmlFor="number_format">{t('system.number_format', { defaultValue: 'Szám formátum' })}</Label>
             <Select disabled value={systemSettings.number_format}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -77,7 +85,7 @@ export function SystemSection({ systemSettings, onThemeChange, onSave, loading }
             </Select>
           </div>
         </div>
-        <Button onClick={onSave} disabled={loading}>Rendszer beállítások mentése</Button>
+        <Button onClick={onSave} disabled={loading}>{t('system.save_button', { defaultValue: 'Rendszer beállítások mentése' })}</Button>
       </CardContent>
     </Card>
   );

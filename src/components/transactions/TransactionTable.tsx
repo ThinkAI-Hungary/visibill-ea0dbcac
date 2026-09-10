@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TableBody, TableRow, TableCell, TableHead, TableHeader } from '@/components/ui/table';
@@ -1116,6 +1117,7 @@ const TransactionTable = React.memo(function TransactionTable({
   onBulkExport,
   onBulkDelete,
 }: TransactionTableProps) {
+  const { t } = useTranslation(['transactions', 'common']);
   const { data: exchangeRates } = useExchangeRates();
   const [expandedTxIds, setExpandedTxIds] = useState<Set<string>>(new Set());
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -1362,26 +1364,26 @@ const TransactionTable = React.memo(function TransactionTable({
                 onClick={() => onSort('transaction_date')}
               >
                 <div className="flex items-center gap-1">
-                  Dátum
+                  {t('common:labels.date', 'Dátum')}
                   <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                 </div>
               </TableHead>
-              <TableHead className="font-semibold">Leírás</TableHead>
+              <TableHead className="font-semibold">{t('transactions:columns.description', 'Leírás')}</TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50 text-right font-semibold"
                 onClick={() => onSort('amount')}
               >
                 <div className="flex items-center justify-end gap-1">
-                  Összeg
+                  {t('transactions:columns.amount', 'Összeg')}
                   <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                 </div>
               </TableHead>
-              <TableHead className="font-semibold">Pénznem</TableHead>
-              <TableHead className="font-semibold">Típus</TableHead>
-              <TableHead className="font-semibold text-center">Számlaosztály</TableHead>
-              <TableHead className="font-semibold text-center">Státusz</TableHead>
-              <TableHead className="font-semibold">Indoklás</TableHead>
-              <TableHead className="font-semibold text-center">Tételek</TableHead>
+              <TableHead className="font-semibold">{t('transactions:columns.currency', 'Pénznem')}</TableHead>
+              <TableHead className="font-semibold">{t('transactions:columns.type', 'Típus')}</TableHead>
+              <TableHead className="font-semibold text-center">{t('transactions:columns.gl_class', 'Számlaosztály')}</TableHead>
+              <TableHead className="font-semibold text-center">{t('transactions:columns.status', 'Státusz')}</TableHead>
+              <TableHead className="font-semibold">{t('transactions:columns.reasoning', 'Indoklás')}</TableHead>
+              <TableHead className="font-semibold text-center">{t('transactions:columns.items', 'Tételek')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

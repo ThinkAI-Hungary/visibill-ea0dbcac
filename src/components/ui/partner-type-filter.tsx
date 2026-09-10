@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 export type PartnerTypeFilterValue = 'all' | 'customer' | 'supplier';
 
@@ -13,10 +14,12 @@ export function PartnerTypeFilter({
   onChange,
   className,
 }: PartnerTypeFilterProps) {
+  const { t } = useTranslation(['partners', 'common']);
+
   const options: { value: PartnerTypeFilterValue; label: string }[] = [
-    { value: 'all', label: 'Összes' },
-    { value: 'customer', label: 'Vevő' },
-    { value: 'supplier', label: 'Szállító' },
+    { value: 'all', label: t('partners:types.all', 'Összes') },
+    { value: 'customer', label: t('partners:types.customer', 'Vevő') },
+    { value: 'supplier', label: t('partners:types.supplier', 'Szállító') },
   ];
 
   return (
@@ -26,7 +29,7 @@ export function PartnerTypeFilter({
         className
       )}
       role="radiogroup"
-      aria-label="Partner típus szűrő"
+      aria-label={t('partners:filter_aria', 'Partner típus szűrő')}
     >
       {options.map((option) => (
         <button

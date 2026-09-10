@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function ProfileSection({ profile, setProfile, onSave, loading, readOnlyOverrides }: Props) {
+  const { t } = useTranslation(['settings']);
   const positionOverride = readOnlyOverrides?.position;
   const companyOverride = readOnlyOverrides?.company;
 
@@ -32,19 +34,19 @@ export function ProfileSection({ profile, setProfile, onSave, loading, readOnlyO
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <User className="h-5 w-5" />
-          Felhasználói profil
+          {t('profile.title', 'Felhasználói profil')}
         </CardTitle>
-        <CardDescription>Személyes információk és avatar kezelése</CardDescription>
+        <CardDescription>{t('profile.subtitle', 'Személyes információk és avatar kezelése')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="name" className="flex items-center gap-1.5">Teljes név</Label>
+            <Label htmlFor="name" className="flex items-center gap-1.5">{t('profile.full_name', 'Teljes név')}</Label>
             <Input id="name" value={profile.name} onChange={e => setProfile(prev => ({ ...prev, name: e.target.value }))} placeholder="Kovács János" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="position" className="flex items-center gap-1.5">
-              Pozíció
+              {t('profile.position', 'Pozíció')}
               {positionOverride && <Lock className="h-3 w-3 text-muted-foreground" />}
             </Label>
             {positionOverride ? (
@@ -53,7 +55,7 @@ export function ProfileSection({ profile, setProfile, onSave, loading, readOnlyO
                 value={positionOverride}
                 disabled
                 className="bg-muted/50 cursor-not-allowed"
-                title="A pozíció a szerepkörből származik"
+                title={t('profile.position_from_role', 'A pozíció a szerepkörből származik')}
               />
             ) : (
               <Input id="position" value={profile.position} onChange={e => setProfile(prev => ({ ...prev, position: e.target.value }))} placeholder="Ügyvezető" />
@@ -62,7 +64,7 @@ export function ProfileSection({ profile, setProfile, onSave, loading, readOnlyO
         </div>
         <div className="space-y-2">
           <Label htmlFor="company" className="flex items-center gap-1.5">
-            Cég neve
+            {t('profile.company_name', 'Cég neve')}
             {companyOverride && <Lock className="h-3 w-3 text-muted-foreground" />}
           </Label>
           {companyOverride ? (
@@ -71,13 +73,13 @@ export function ProfileSection({ profile, setProfile, onSave, loading, readOnlyO
               value={companyOverride}
               disabled
               className="bg-muted/50 cursor-not-allowed"
-              title="A cég neve a kiválasztott cégből származik"
+              title={t('profile.company_from_selected', 'A cég neve a kiválasztott cégből származik')}
             />
           ) : (
             <Input id="company" value={profile.company} onChange={e => setProfile(prev => ({ ...prev, company: e.target.value }))} placeholder="Példa Kft." />
           )}
         </div>
-        <Button onClick={onSave} disabled={loading}>Profil mentése</Button>
+        <Button onClick={onSave} disabled={loading}>{t('profile.save_button', 'Profil mentése')}</Button>
       </CardContent>
     </Card>
   );

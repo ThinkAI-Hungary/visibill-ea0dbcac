@@ -1,8 +1,8 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.4 | **Dátum:** 2026-06-27  
+> **Verzió:** 1.5 | **Dátum:** 2026-09-11  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx)  
-> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md)
+> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md)
 
 ---
 
@@ -52,10 +52,18 @@ lehetővé téve linkek megosztását azonos nézettel:
 
 | Route | Oldal |
 |-------|-------|
-| `/auth` | Bejelentkezés / Regisztráció |
-| `/auth/callback` | OAuth callback |
+| `/auth` | Bejelentkezés / Regisztráció (Magyar) |
+| `/auth/callback` | OAuth callback (Magyar) |
+| `/hr/auth` | Bejelentkezés / Regisztráció (Horvát lokalizált demó) |
+| `/hr/auth/callback` | OAuth callback (Horvát) |
 | `/reset-password` | Jelszó visszaállítás |
 | `/register/:token` | Employee regisztráció (token alapú) |
+
+**Többnyelvű útvonalak (`/hr/*`):**
+A horvát demonstrációs környezet tiszta route-vezérelt működést kapott:
+- Publikus felület: `/hr/auth`, `/hr/auth/callback`
+- Védett eaisybill felület: `/hr/:companyId/:dateRange/<page>/:tab?`
+- **Zero LocalStorage Persistence:** A nyelv állapotát a `LanguageRouteSync` határozza meg a pillanatnyi URL alapján. A `/hr/` eltávolításakor az alkalmazás azonnal visszavált a magyar felületre.
 
 **Legacy redirect-ek:** A régi `/invoices`, `/settings` stb. URL-ek automatikusan a scoped URL-re redirectálnak.
 
@@ -66,12 +74,14 @@ lehetővé téve linkek megosztását azonos nézettel:
 ```
 Visibill
 ├── Publikus
-│   ├── /auth                      Bejelentkezés / Regisztráció
-│   ├── /auth/callback             OAuth callback
+│   ├── /auth                      Bejelentkezés / Regisztráció (HU)
+│   ├── /auth/callback             OAuth callback (HU)
+│   ├── /hr/auth                   Bejelentkezés / Regisztráció (HR demó)
+│   ├── /hr/auth/callback          OAuth callback (HR)
 │   ├── /reset-password            Jelszó visszaállítás
 │   └── /register/:token           Employee regisztráció
 │
-├── Védett (/:companyId/:dateRange/)
+├── Védett (/:companyId/:dateRange/ és /hr/:companyId/:dateRange/)
 │   ├── /                          Irányítópult (Dashboard)
 │   ├── /categories                Kategóriák (GL számok kezelése)
 │   ├── /projects                  Projektek

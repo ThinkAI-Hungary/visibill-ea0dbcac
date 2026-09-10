@@ -11,6 +11,7 @@ import { TrendingUp, TrendingDown, RefreshCw, Clock, ArrowRightLeft } from "luci
 import { Button } from "@/components/ui/button";
 import { ContentSkeleton } from "@/components/ui/content-skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 interface ExchangeRate {
   currency: string;
@@ -38,6 +39,7 @@ const currencyData = [
 ];
 
 export default function ExchangeRates() {
+  const { t } = useTranslation(['navigation', 'common']);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Converter state
@@ -219,9 +221,9 @@ export default function ExchangeRates() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Árfolyamok</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('items.exchange_rates', { defaultValue: 'Árfolyamok' })}</h1>
           <p className="text-muted-foreground mt-1">
-            Élő devizaárfolyamok HUF-hoz viszonyítva
+            {t('exchange_rates.subtitle', { defaultValue: 'Élő devizaárfolyamok HUF-hoz viszonyítva' })}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -231,7 +233,7 @@ export default function ExchangeRates() {
           </Badge>
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="gap-2">
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Frissítés
+            {t('common:actions.refresh', { defaultValue: 'Frissítés' })}
           </Button>
         </div>
       </div>
@@ -241,7 +243,7 @@ export default function ExchangeRates() {
         <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
           <div className="flex flex-col items-center gap-3">
             <RefreshCw className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-muted-foreground">Árfolyamok frissítése...</p>
+            <p className="text-muted-foreground">{t('exchange_rates.refreshing', { defaultValue: 'Árfolyamok frissítése...' })}</p>
           </div>
         </div>
       )}

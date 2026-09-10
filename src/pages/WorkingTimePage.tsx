@@ -42,8 +42,10 @@ import {
 } from '@/lib/payrollUtils';
 import type { SalaryCostItem } from '@/lib/payrollUtils';
 import { formatCurrency } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 export default function WorkingTimePage() {
+  const { t } = useTranslation(['hr', 'common']);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -385,12 +387,12 @@ export default function WorkingTimePage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Clock className="h-7 w-7 text-primary" />
-            Munkaidő
+            {t('hr:working_time.title', 'Munkaidő')}
           </h1>
           <p className="text-muted-foreground">
             {isEmployee
-              ? 'Saját munkaidő rögzítése'
-              : 'Munkaidő rögzítés, dolgozók kezelése és rezsióradíjak'}
+              ? t('hr:working_time.subtitle_employee', 'Saját munkaidő rögzítése')
+              : t('hr:working_time.subtitle_admin', 'Munkaidő rögzítés, dolgozók kezelése és rezsióradíjak')}
           </p>
         </div>
         {isAdmin && (
@@ -402,11 +404,11 @@ export default function WorkingTimePage() {
               disabled={!writable}
             >
               <Settings2 className="h-4 w-4 mr-2" />
-              Beállítások
+              {t('hr:working_time.settings', 'Beállítások')}
             </Button>
             <Button size="sm" onClick={handleOpenAddEmployee} disabled={!writable}>
               <UserPlus className="h-4 w-4 mr-2" />
-              Dolgozó hozzáadása
+              {t('hr:working_time.add_employee', 'Dolgozó hozzáadása')}
             </Button>
           </div>
         )}
@@ -422,13 +424,15 @@ export default function WorkingTimePage() {
                 <Users className="h-4 w-4 text-primary" />
               </div>
               <span className="text-sm text-muted-foreground">
-                Bejelentett
+                {t('hr:working_time.kpi.registered', 'Bejelentett')}
               </span>
             </div>
             <span className="text-2xl font-bold tabular-nums">
               {kpiMetrics.employeeCount}
             </span>
-            <span className="text-sm text-muted-foreground ml-1">fő</span>
+            <span className="text-sm text-muted-foreground ml-1">
+              {t('hr:working_time.kpi.headcount_suffix', 'fő')}
+            </span>
           </CardContent>
         </Card>
 
@@ -439,13 +443,15 @@ export default function WorkingTimePage() {
                 <Wallet className="h-4 w-4 text-orange-500" />
               </div>
               <span className="text-sm text-muted-foreground">
-                Alvállalkozók
+                {t('hr:working_time.kpi.contractors', 'Alvállalkozók')}
               </span>
             </div>
             <span className="text-2xl font-bold tabular-nums">
               {kpiMetrics.contractorCount}
             </span>
-            <span className="text-sm text-muted-foreground ml-1">fő</span>
+            <span className="text-sm text-muted-foreground ml-1">
+              {t('hr:working_time.kpi.headcount_suffix', 'fő')}
+            </span>
           </CardContent>
         </Card>
 
@@ -456,7 +462,7 @@ export default function WorkingTimePage() {
                 <DollarSign className="h-4 w-4 text-emerald-500" />
               </div>
               <span className="text-sm text-muted-foreground">
-                Havi bérköltség
+                {t('hr:working_time.kpi.monthly_salary_cost', 'Havi bérköltség')}
               </span>
             </div>
             <span className="text-2xl font-bold tabular-nums">
@@ -472,13 +478,15 @@ export default function WorkingTimePage() {
                 <Calculator className="h-4 w-4 text-blue-500" />
               </div>
               <span className="text-sm text-muted-foreground">
-                Átlag óradíj
+                {t('hr:working_time.kpi.avg_hourly_rate', 'Átlag óradíj')}
               </span>
             </div>
             <span className="text-2xl font-bold tabular-nums text-primary">
               {formatHourlyRate(Math.round(kpiMetrics.avgHourlyRate))}
             </span>
-            <span className="text-sm text-muted-foreground ml-1">/óra</span>
+            <span className="text-sm text-muted-foreground ml-1">
+              {t('hr:working_time.kpi.hour_suffix', '/óra')}
+            </span>
           </CardContent>
         </Card>
         </div>
@@ -489,21 +497,21 @@ export default function WorkingTimePage() {
         <TabsList>
           <TabsTrigger value="timesheet" className="gap-2">
             <CalendarPlus className="h-4 w-4" />
-            Időrögzítés
+            {t('hr:working_time.tabs.timesheet', 'Időrögzítés')}
           </TabsTrigger>
           <TabsTrigger value="attendance" className="gap-2">
             <ClipboardList className="h-4 w-4" />
-            Jelenléti ív
+            {t('hr:working_time.tabs.attendance', 'Jelenléti ív')}
           </TabsTrigger>
           {isAdmin && (
             <>
               <TabsTrigger value="employees" className="gap-2">
                 <Users className="h-4 w-4" />
-                Dolgozók
+                {t('hr:working_time.tabs.employees', 'Dolgozók')}
               </TabsTrigger>
               <TabsTrigger value="submitted" className="gap-2 relative">
                 <ClipboardCheck className="h-4 w-4" />
-                Leadott
+                {t('hr:working_time.tabs.submitted', 'Leadott')}
                 {submittedCount > 0 && (
                   <span className="ml-1 inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-primary text-primary-foreground text-xs font-bold px-1.5">
                     {submittedCount}
@@ -512,7 +520,7 @@ export default function WorkingTimePage() {
               </TabsTrigger>
               <TabsTrigger value="rates" className="gap-2">
                 <Calculator className="h-4 w-4" />
-                Óradíjak
+                {t('hr:working_time.tabs.rates', 'Óradíjak')}
               </TabsTrigger>
             </>
           )}
@@ -537,15 +545,15 @@ export default function WorkingTimePage() {
           <div className="flex items-center gap-4 text-[11px] text-muted-foreground px-1">
             <span className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded border-2 border-gray-400 bg-gray-200 dark:border-gray-500 dark:bg-gray-600" />
-              Piszkozat
+              {t('hr:working_time.legend.draft', 'Piszkozat')}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded border-2 border-blue-500 bg-blue-200 dark:border-blue-400 dark:bg-blue-500/40" />
-              Leadva (jóváhagyásra vár)
+              {t('hr:working_time.legend.submitted', 'Leadva (jóváhagyásra vár)')}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded border-2 border-emerald-500 bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-500/40" />
-              Jóváhagyva
+              {t('hr:working_time.legend.approved', 'Jóváhagyva')}
             </span>
           </div>
 

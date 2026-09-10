@@ -33,6 +33,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { cn } from '@/lib/utils';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { GlDateBasis, GlPostingStatus } from '@/lib/glData';
+import { useTranslation } from 'react-i18next';
 
 import { GlAccountCardView } from '@/components/general-ledger/GlAccountCardView';
 import { PartnerLedgerCardView } from '@/components/general-ledger/PartnerLedgerCardView';
@@ -40,6 +41,7 @@ import { GlAnalyticReconciliationView } from '@/components/general-ledger/GlAnal
 import { CreditCard, UserCheck, ShieldAlert } from 'lucide-react';
 
 export default function GeneralLedgerPage() {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -365,9 +367,9 @@ export default function GeneralLedgerPage() {
 
       <PageHeader
         companyName={selectedCompany?.name}
-        breadcrumb="Főkönyv"
-        title="Főkönyv"
-        description="Hierarchikus főkönyvi kivonat és kategóriák"
+        breadcrumb={t('accounting:general_ledger.breadcrumb', 'Főkönyv')}
+        title={t('accounting:general_ledger.title', 'Főkönyv')}
+        description={t('accounting:general_ledger.description', 'Hierarchikus főkönyvi kivonat és kategóriák')}
       />
 
       {/* U6: Onboarding empty state */}
@@ -603,16 +605,16 @@ export default function GeneralLedgerPage() {
       <Tabs value={activeViewTab} onValueChange={v => setActiveViewTab(v as any)} className="print:hidden">
         <TabsList className="mb-0">
           <TabsTrigger value="extract" className="gap-1.5">
-            <Database className="w-4 h-4" /> Kivonat
+            <Database className="w-4 h-4" /> {t('accounting:general_ledger.tabs.extract', 'Kivonat')}
           </TabsTrigger>
           <TabsTrigger value="cards" className="gap-1.5 bg-primary/10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
-            <CreditCard className="w-4 h-4" /> Kartonok
+            <CreditCard className="w-4 h-4" /> {t('accounting:general_ledger.tabs.cards', 'Kartonok')}
           </TabsTrigger>
           <TabsTrigger value="journal" className="gap-1.5">
-            <BookOpen className="w-4 h-4" /> Naplófőkönyv
+            <BookOpen className="w-4 h-4" /> {t('accounting:general_ledger.tabs.journal', 'Naplófőkönyv')}
           </TabsTrigger>
           <TabsTrigger value="comparison" className="gap-1.5">
-            <Table2 className="w-4 h-4" /> Összehasonlítás
+            <Table2 className="w-4 h-4" /> {t('accounting:general_ledger.tabs.comparison', 'Összehasonlítás')}
           </TabsTrigger>
         </TabsList>
       </Tabs>

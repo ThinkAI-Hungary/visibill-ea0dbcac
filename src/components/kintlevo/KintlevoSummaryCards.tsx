@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -16,8 +17,18 @@ interface Props {
 }
 
 export function KintlevoSummaryCards({ totals, grandTotal, netTotals, netGrandTotal, companyGroups, allInvoices, showBrutto, onShowBruttoChange }: Props) {
+  const { t } = useTranslation(['receivables', 'common']);
   const displayTotals = showBrutto ? totals : netTotals;
   const displayGrand = showBrutto ? grandTotal : netGrandTotal;
+
+  const getAgingLabel = (cat: AgingCategory) => {
+    switch (cat) {
+      case 'green': return t('receivables:aging.not_due', 'Nem lejárt');
+      case 'yellow': return t('receivables:aging.days_1_30', '1–30 napos');
+      case 'red': return t('receivables:aging.days_31_180', '31–180 napos');
+      case 'purple': return t('receivables:aging.days_180_plus', '180+ napos');
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -33,7 +44,7 @@ export function KintlevoSummaryCards({ totals, grandTotal, netTotals, netGrandTo
               : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
           )}
         >
-          Nettó
+          {t('receivables:net', 'Nettó')}
         </button>
         <Switch checked={showBrutto} onCheckedChange={onShowBruttoChange} />
         <button
@@ -46,7 +57,7 @@ export function KintlevoSummaryCards({ totals, grandTotal, netTotals, netGrandTo
               : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
           )}
         >
-          Bruttó
+          {t('receivables:gross', 'Bruttó')}
         </button>
       </div>
 
@@ -54,10 +65,12 @@ export function KintlevoSummaryCards({ totals, grandTotal, netTotals, netGrandTo
         <Card className="col-span-2 lg:col-span-1">
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">
-              Összes kintlévőség ({showBrutto ? 'bruttó' : 'nettó'})
+              {t('receivables:total_receivables', 'Összes kintlévőség')} ({showBrutto ? t('receivables:gross', 'bruttó').toLowerCase() : t('receivables:net', 'nettó').toLowerCase()})
             </p>
             <p className="text-xl font-bold">{fmt(displayGrand)}</p>
-            <p className="text-xs text-muted-foreground">{companyGroups.length} cég · {allInvoices.length} számla</p>
+            <p className="text-xs text-muted-foreground">
+              {t('receivables:companies_count', '{{count}} cég', { count: companyGroups.length })} · {t('receivables:invoices_count', '{{count}} számla', { count: allInvoices.length })}
+            </p>
           </CardContent>
         </Card>
         {(Object.keys(CAT) as AgingCategory[]).map(cat => {
@@ -69,10 +82,10 @@ export function KintlevoSummaryCards({ totals, grandTotal, netTotals, netGrandTo
               <CardContent className="pt-4 pb-3">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <Icon className={cn('h-3.5 w-3.5', c.text)} />
-                  <p className={cn('text-xs font-medium uppercase tracking-wide', c.text)}>{c.label}</p>
+                  <p className={cn('text-xs font-medium uppercase tracking-wide', c.text)}>{getAgingLabel(cat)}</p>
                 </div>
                 <p className={cn('text-xl font-bold', c.text)}>{fmt(displayTotals[cat])}</p>
-                <p className="text-xs text-muted-foreground">{invCount} számla</p>
+                <p className="text-xs text-muted-foreground">{t('receivables:invoices_count', '{{count}} számla', { count: invCount })}</p>
               </CardContent>
             </Card>
           );

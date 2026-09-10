@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ActivityLogSheet } from './ActivityLogSheet';
@@ -23,11 +24,11 @@ const getFirstName = (fullName: string | undefined): string => {
   return nameParts[nameParts.length - 1];
 };
 
-const getGreeting = (): string => {
+const getGreeting = (t: (key: string, fallback: string) => string): string => {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return 'Jó reggelt';
-  if (hour >= 12 && hour < 18) return 'Szép napot';
-  return 'Jó estét';
+  if (hour >= 5 && hour < 12) return t('welcome.morning', 'Jó reggelt');
+  if (hour >= 12 && hour < 18) return t('welcome.day', 'Szép napot');
+  return t('welcome.evening', 'Jó estét');
 };
 
 interface DashboardWelcomeProps {
@@ -45,12 +46,14 @@ const DashboardWelcome = React.memo(function DashboardWelcome({
   showBrutto,
   onShowBruttoChange,
 }: DashboardWelcomeProps) {
+  const { t } = useTranslation(['dashboard']);
+
   return (
     <>
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold">{getGreeting()}, {getFirstName(profileName)}!</h2>
-          <p className="text-muted-foreground">Itt van a vállalkozásod teljes áttekintése</p>
+          <h2 className="text-3xl font-bold">{getGreeting(t)}, {getFirstName(profileName)}!</h2>
+          <p className="text-muted-foreground">{t('welcome.subtitle', 'Itt van a vállalkozásod teljes áttekintése')}</p>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
           <ActivityLogSheet />
@@ -82,7 +85,7 @@ const DashboardWelcome = React.memo(function DashboardWelcome({
               : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
           )}
         >
-          Nettó
+          {t('welcome.net', 'Nettó')}
         </button>
         <Switch checked={showBrutto} onCheckedChange={onShowBruttoChange} />
         <button
@@ -95,7 +98,7 @@ const DashboardWelcome = React.memo(function DashboardWelcome({
               : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
           )}
         >
-          Bruttó
+          {t('welcome.gross', 'Bruttó')}
         </button>
       </div>
     </>

@@ -21,12 +21,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  MAIN PAGE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 const PettyCashPage = () => {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const companyId = selectedCompany?.id || '';
@@ -123,7 +125,7 @@ const PettyCashPage = () => {
             <Banknote className="h-7 w-7 text-primary" />
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">Házipénztár</h1>
+                <h1 className="text-2xl font-bold">{t('pettyCash:title', 'Házipénztár')}</h1>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
@@ -132,8 +134,8 @@ const PettyCashPage = () => {
                   </PopoverTrigger>
                   <PopoverContent className="w-80">
                     <div className="space-y-4">
-                      <h4 className="font-medium leading-none">Házipénztár Beállítások</h4>
-                      <p className="text-xs text-muted-foreground">Készpénzállomány limit értékének testreszabása cég szinten.</p>
+                      <h4 className="font-medium leading-none">{t('pettyCash:settings_title', 'Házipénztár Beállítások')}</h4>
+                      <p className="text-xs text-muted-foreground">{t('pettyCash:settings_desc', 'Készpénzállomány limit értékének testreszabása cég szinten.')}</p>
                       <div className="space-y-2">
                         <Label htmlFor="custom-limit-input">HUF készpénz limit figyelmeztetés (Ft)</Label>
                         <Input
@@ -148,7 +150,7 @@ const PettyCashPage = () => {
                   </PopoverContent>
                 </Popover>
               </div>
-              <p className="text-muted-foreground text-sm">Többpénztáras készpénzforgalom nyilvántartás</p>
+              <p className="text-muted-foreground text-sm">{t('pettyCash:subtitle', 'Többpénztáras készpénzforgalom nyilvántartás')}</p>
             </div>
           </div>
         </div>
@@ -157,7 +159,7 @@ const PettyCashPage = () => {
           <div className="bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 p-3.5 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300 print:hidden">
             <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-sm text-amber-900 dark:text-amber-300">Pénztári limit figyelmeztetés</p>
+              <p className="font-semibold text-sm text-amber-900 dark:text-amber-300">{t('pettyCash:limit_warning_title', 'Pénztári limit figyelmeztetés')}</p>
               <div className="text-xs opacity-90 mt-1 space-y-1">
                 <p>Az alábbi házipénztárak egyenlege meghaladja a megengedett {fmtBalance(customLimit, 'HUF')} napi készpénzállományt:</p>
                 {registersExceedingLimit.map(r => (
@@ -175,7 +177,7 @@ const PettyCashPage = () => {
           {/* Total card */}
           <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="p-4">
-              <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">Összesítés</div>
+              <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">{t('pettyCash:total_summary', 'Összesítés')}</div>
               {totalByCurrency.length === 0 ? (
                 <div className="text-lg font-bold text-muted-foreground">—</div>
               ) : (
@@ -204,7 +206,7 @@ const PettyCashPage = () => {
                   </div>
                   {reg.is_default && (
                     <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-primary/20 text-primary bg-primary/5 font-semibold shrink-0">
-                      Alapértelmezett
+                      {t('pettyCash:default_badge', 'Alapértelmezett')}
                     </Badge>
                   )}
                 </div>
@@ -253,7 +255,7 @@ const PettyCashPage = () => {
                       onClick={() => handleOpenCalc(regId, reg.name, c.balance, c.currency)}
                     >
                       <Calculator className="h-3 w-3" />
-                      Címletszámoló ({c.currency})
+                      {t('pettyCash:denomination_calc', 'Címletszámoló')} ({c.currency})
                     </Button>
                   ))}
                 </div>
@@ -266,13 +268,13 @@ const PettyCashPage = () => {
         <Tabs defaultValue="entries" className="w-full">
           <TabsList>
             <TabsTrigger value="entries" className="gap-1.5">
-              <Banknote className="w-4 h-4" /> Tételek
+              <Banknote className="w-4 h-4" /> {t('pettyCash:tabs.entries', 'Tételek')}
             </TabsTrigger>
             <TabsTrigger value="registers" className="gap-1.5">
-              <Settings2 className="w-4 h-4" /> Pénztárak
+              <Settings2 className="w-4 h-4" /> {t('pettyCash:tabs.registers', 'Pénztárak')}
             </TabsTrigger>
             <TabsTrigger value="rules" className="gap-1.5">
-              <Zap className="w-4 h-4" /> Routing szabályok
+              <Zap className="w-4 h-4" /> {t('pettyCash:tabs.rules', 'Routing szabályok')}
             </TabsTrigger>
           </TabsList>
 

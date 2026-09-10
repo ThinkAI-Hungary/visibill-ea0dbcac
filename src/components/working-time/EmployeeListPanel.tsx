@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useProjectList } from '@/hooks/useProjectList';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -420,6 +421,7 @@ export function EmployeeListPanel({
   autoEditEmployeeId,
   onEditOpenChange,
 }: EmployeeListPanelProps) {
+  const { t } = useTranslation(['hr', 'common']);
   const employees = employeeRates.filter((r) => r.employee_type === 'employee');
   const contractors = employeeRates.filter((r) => r.employee_type === 'contractor');
 
@@ -430,14 +432,14 @@ export function EmployeeListPanel({
           <TabsList className="mb-4">
             <TabsTrigger value="employees" className="gap-2">
               <Users className="h-4 w-4" />
-              Bejelentett dolgozók
+              {t('hr:working_time.employee_tabs.registered_employees', 'Bejelentett dolgozók')}
               <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                 {employees.length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="contractors" className="gap-2">
               <Briefcase className="h-4 w-4" />
-              Alvállalkozók
+              {t('hr:working_time.employee_tabs.contractors', 'Alvállalkozók')}
               <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                 {contractors.length}
               </Badge>
@@ -448,9 +450,9 @@ export function EmployeeListPanel({
             {employees.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p className="font-medium">Nincsenek bejelentett dolgozók</p>
+                <p className="font-medium">{t('hr:working_time.employee_tabs.no_employees', 'Nincsenek bejelentett dolgozók')}</p>
                 <p className="text-sm mt-1">
-                  A bérlista feltöltésekor automatikusan megjelennek itt, vagy adj hozzá manuálisan.
+                  {t('hr:working_time.employee_tabs.no_employees_desc', 'A bérlista feltöltésekor automatikusan megjelennek itt, vagy adj hozzá manuálisan.')}
                 </p>
               </div>
             ) : (

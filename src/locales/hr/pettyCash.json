@@ -1,0 +1,15 @@
+{
+  "title": "Blagajna",
+  "subtitle": "Evidencija gotovinskog prometa u više blagajni",
+  "tabs": {
+    "entries": "Stavke",
+    "registers": "Blagajne",
+    "rules": "Pravila usmjeravanja"
+  },
+  "total_summary": "Ukupno",
+  "default_badge": "Zadano",
+  "denomination_calc": "Kalkulator apoena",
+  "limit_warning_title": "Upozorenje o limitu blagajne",
+  "settings_title": "Postavke blagajne",
+  "settings_desc": "Prilagodba limita gotovine na razini tvrtke."
+}

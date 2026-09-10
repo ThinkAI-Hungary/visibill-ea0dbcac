@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-quer
 import { queryKeys } from '@/lib/queryKeys';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { useScopedBasePath } from '@/lib/navigation';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -152,6 +153,7 @@ interface ProjectFinancials {
 }
 
 const Projects = () => {
+  const { t } = useTranslation(['projects', 'common']);
   const [loading, setLoading] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [assigningProject, setAssigningProject] = useState<Project | null>(null);
@@ -766,19 +768,19 @@ const Projects = () => {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold">Projektek</h1>
+              <h1 className="text-3xl font-bold">{t('projects:title', 'Projektek')}</h1>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Info className="h-5 w-5 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Hozz létre és kezelj projekteket az ügyfélmunkáid rendszerezéséhez. A számlákat projektekhez rendelheted.</p>
+                    <p>{t('projects:subtitle', 'Hozz létre és kezelj projekteket az ügyfélmunkáid rendszerezéséhez. A számlákat projektekhez rendelheted.')}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <p className="text-muted-foreground font-medium text-sm">A projekt kártyán tabfülek választják szét az áttekintést és a számla-kezelést. A projektek nevére kattintva egy részletesebb nézetre lehet navigálni.</p>
+            <p className="text-muted-foreground font-medium text-sm">{t('projects:description', 'A projekt kártyán tabfülek választják szét az áttekintést és a számla-kezelést. A projektek nevére kattintva egy részletesebb nézetre lehet navigálni.')}</p>
           </div>
           <Button
             onClick={() => {
@@ -786,14 +788,12 @@ const Projects = () => {
               setIsCreating(true);
             }}
             disabled={!writable}
-            title={!writable ? 'Nincs írási jogosultságod' : undefined}
+            title={!writable ? t('common:no_permission', 'Nincs írási jogosultságod') : undefined}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Új projekt
+            {t('projects:new_project', 'Új projekt')}
           </Button>
         </div>
-
-
 
         {/* Projects List with Concept 3 tabs styling */}
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
@@ -801,9 +801,9 @@ const Projects = () => {
             <Card className="col-span-full">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FolderOpen className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Még nincsenek projektek</h3>
+                <h3 className="text-lg font-semibold mb-2">{t('projects:no_projects', 'Még nincsenek projektek')}</h3>
                 <p className="text-muted-foreground text-center mb-4 font-medium text-sm">
-                  Kezdj el új projekteket létrehozni az ügyfélmunkáid rendszerezéséhez
+                  {t('projects:create_first', 'Kezdj el új projekteket létrehozni az ügyfélmunkáid rendszerezéséhez')}
                 </p>
                 <Button
                   onClick={() => {
@@ -813,7 +813,7 @@ const Projects = () => {
                   disabled={!writable}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Első projekt létrehozása
+                  {t('projects:create_first_button', 'Első projekt létrehozása')}
                 </Button>
               </CardContent>
             </Card>

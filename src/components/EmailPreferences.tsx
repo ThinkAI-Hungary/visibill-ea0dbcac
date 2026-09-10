@@ -1,4 +1,5 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,7 @@ interface EmailPreferences {
 }
 
 export function EmailPreferences() {
+  const { t } = useTranslation(['settings', 'common']);
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -106,18 +108,18 @@ export function EmailPreferences() {
       <CardHeader>
         <div className="flex items-center gap-2">
           <Mail className="h-5 w-5 text-primary" />
-          <CardTitle>Email Értesítések</CardTitle>
+          <CardTitle>{t('notifications.email_title', 'Email Értesítések')}</CardTitle>
         </div>
         <CardDescription>
-          Válaszd ki, mely email értesítéseket szeretnéd fogadni
+          {t('notifications.email_subtitle', 'Válaszd ki, mely email értesítéseket szeretnéd fogadni')}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="weekly_summary">Heti összesítők</Label>
+            <Label htmlFor="weekly_summary">{t('notifications.weekly_summary', 'Heti összesítők')}</Label>
             <p className="text-sm text-muted-foreground">
-              Heti összesítő a pénzügyi helyzetedről, teendőkről és aktivitásról
+              {t('notifications.weekly_summary_desc', 'Heti összesítő a pénzügyi helyzetedről, teendőkről és aktivitásról')}
             </p>
           </div>
           <Switch

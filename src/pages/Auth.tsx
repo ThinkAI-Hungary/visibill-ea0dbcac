@@ -1,6 +1,7 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
@@ -24,32 +25,32 @@ if (!document.head.querySelector('[data-carousel-anim]')) { carouselStyle.setAtt
 const PASSWORD_RESET_REDIRECT_URL = `${window.location.origin}/reset-password`;
 interface CarouselSlide { text: string; visual: ReactNode; }
 
-const carouselSlides: CarouselSlide[] = [
+const getCarouselSlides = (t: any, isHr: boolean): CarouselSlide[] => [
   {
-    text: 'Valós idejű pénzügyi dashboard és automatizált elemzések.',
+    text: t('showcase.slide_realtime_desc', 'Valós idejű pénzügyi dashboard és automatizált elemzések.'),
     visual: (
       <div className="space-y-4">
         <div className="flex gap-4">
           <div className="bg-background/90 backdrop-blur-md rounded-xl p-4 flex-1 shadow-xl border border-border/50">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">Bevétel</span>
+              <span className="text-xs text-muted-foreground">{t('showcase.slide_revenue', 'Bevétel')}</span>
               <ArrowUpRight className="h-4 w-4 text-emerald-500" />
             </div>
-            <p className="text-2xl font-bold text-foreground">2,4M Ft</p>
+            <p className="text-2xl font-bold text-foreground">{isHr ? '2,4M €' : '2,4M Ft'}</p>
             <p className="text-xs text-emerald-500">+12.5%</p>
           </div>
           <div className="bg-background/90 backdrop-blur-md rounded-xl p-4 flex-1 shadow-xl border border-border/50">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">Kiadás</span>
+              <span className="text-xs text-muted-foreground">{t('showcase.slide_expense', 'Kiadás')}</span>
               <ArrowDownRight className="h-4 w-4 text-rose-500" />
             </div>
-            <p className="text-2xl font-bold text-foreground">890K Ft</p>
+            <p className="text-2xl font-bold text-foreground">{isHr ? '890K €' : '890K Ft'}</p>
             <p className="text-xs text-rose-500">-3.2%</p>
           </div>
         </div>
         <div className="bg-background/90 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-border/50">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-foreground">Havi áttekintés</span>
+            <span className="text-sm font-medium text-foreground">{t('showcase.slide_monthly', 'Havi áttekintés')}</span>
             <div className="flex gap-2">
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
               <TrendingUp className="h-4 w-4 text-primary" />
@@ -61,22 +62,31 @@ const carouselSlides: CarouselSlide[] = [
             ))}
           </div>
           <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-            <span>Jan</span><span>Márc</span><span>Máj</span><span>Júl</span><span>Szept</span><span>Nov</span>
+            {isHr ? (
+              <><span>Sij</span><span>Ožu</span><span>Svi</span><span>Srp</span><span>Ruj</span><span>Stu</span></>
+            ) : (
+              <><span>Jan</span><span>Márc</span><span>Máj</span><span>Júl</span><span>Szept</span><span>Nov</span></>
+            )}
           </div>
         </div>
       </div>
     ),
   },
   {
-    text: 'Automata számlaletöltés a NAV-tól és intelligens státuszkezelés.',
+    text: t('showcase.slide_invoices_desc', 'Automata számlaletöltés a NAV-tól és intelligens státuszkezelés.'),
     visual: (
       <div className="space-y-3">
-        {[
-          { name: 'INV-2026-0142', partner: 'TechCorp Kft.', amount: '1 250 000 Ft', status: 'Fizetve', color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
-          { name: 'INV-2026-0143', partner: 'Design Studio Bt.', amount: '480 000 Ft', status: 'Függőben', color: 'text-amber-500', icon: Clock, bg: 'bg-amber-500/10' },
-          { name: 'INV-2026-0144', partner: 'Global Trade Zrt.', amount: '2 100 000 Ft', status: 'Lejárt', color: 'text-rose-500', icon: AlertTriangle, bg: 'bg-rose-500/10' },
-          { name: 'INV-2026-0145', partner: 'NetSolutions Kft.', amount: '720 000 Ft', status: 'Fizetve', color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
-        ].map((inv) => (
+        {(isHr ? [
+          { name: 'INV-2026-0142', partner: 'TechCorp d.o.o.', amount: '3 250 €', status: t('showcase.slide_paid', 'Plaćeno'), color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
+          { name: 'INV-2026-0143', partner: 'Design Studio obrt', amount: '1 280 €', status: t('showcase.slide_pending', 'Na čekanju'), color: 'text-amber-500', icon: Clock, bg: 'bg-amber-500/10' },
+          { name: 'INV-2026-0144', partner: 'Global Trade d.d.', amount: '5 600 €', status: t('showcase.slide_overdue', 'Dospjelo'), color: 'text-rose-500', icon: AlertTriangle, bg: 'bg-rose-500/10' },
+          { name: 'INV-2026-0145', partner: 'NetSolutions d.o.o.', amount: '1 920 €', status: t('showcase.slide_paid', 'Plaćeno'), color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
+        ] : [
+          { name: 'INV-2026-0142', partner: 'TechCorp Kft.', amount: '1 250 000 Ft', status: t('showcase.slide_paid', 'Fizetve'), color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
+          { name: 'INV-2026-0143', partner: 'Design Studio Bt.', amount: '480 000 Ft', status: t('showcase.slide_pending', 'Függőben'), color: 'text-amber-500', icon: Clock, bg: 'bg-amber-500/10' },
+          { name: 'INV-2026-0144', partner: 'Global Trade Zrt.', amount: '2 100 000 Ft', status: t('showcase.slide_overdue', 'Lejárt'), color: 'text-rose-500', icon: AlertTriangle, bg: 'bg-rose-500/10' },
+          { name: 'INV-2026-0145', partner: 'NetSolutions Kft.', amount: '720 000 Ft', status: t('showcase.slide_paid', 'Fizetve'), color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
+        ]).map((inv) => (
           <div key={inv.name} className="bg-background/90 backdrop-blur-md rounded-xl p-4 shadow-lg border border-border/50 flex items-center gap-4">
             <div className={`p-2 rounded-lg ${inv.bg}`}>
               <FileText className={`h-5 w-5 ${inv.color}`} />
@@ -98,50 +108,59 @@ const carouselSlides: CarouselSlide[] = [
     ),
   },
   {
-    text: 'Átlátható bérszámfejtési riportok és adókötelezettség figyelés.',
+    text: t('showcase.slide_payroll_desc', 'Átlátható bérszámfejtési riportok és adókötelezettség figyelés.'),
     visual: (
       <div className="space-y-3">
         <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
           <div className="flex items-center gap-2 mb-4">
             <Wallet className="h-5 w-5 text-primary" />
-            <span className="text-sm font-semibold text-foreground">Bérösszesítő — 2026. Március</span>
+            <span className="text-sm font-semibold text-foreground">{t('showcase.slide_payroll_header', 'Bérösszesítő — 2026. Március')}</span>
           </div>
           <div className="space-y-3">
-            {[
-              { name: 'Kovács Anna', gross: '650 000', net: '432 000' },
-              { name: 'Nagy Péter', gross: '520 000', net: '348 000' },
-              { name: 'Szabó Éva', gross: '780 000', net: '512 000' },
-              { name: 'Tóth Balázs', gross: '420 000', net: '285 000' },
-            ].map((emp) => (
+            {(isHr ? [
+              { name: 'Ana Kovač', gross: '1 720 €', net: '1 150 €' },
+              { name: 'Petar Horvat', gross: '1 380 €', net: '920 €' },
+              { name: 'Lucija Babić', gross: '2 070 €', net: '1 360 €' },
+              { name: 'Marko Marić', gross: '1 130 €', net: '760 €' },
+            ] : [
+              { name: 'Kovács Anna', gross: '650 000', net: '432 000 Ft' },
+              { name: 'Nagy Péter', gross: '520 000', net: '348 000 Ft' },
+              { name: 'Szabó Éva', gross: '780 000', net: '512 000 Ft' },
+              { name: 'Tóth Balázs', gross: '420 000', net: '285 000 Ft' },
+            ]).map((emp) => (
               <div key={emp.name} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                   <Users className="h-4 w-4 text-primary" />
                 </div>
                 <span className="text-sm font-medium text-foreground flex-1">{emp.name}</span>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-foreground">{emp.net} Ft</p>
-                  <p className="text-xs text-muted-foreground">bruttó {emp.gross}</p>
+                  <p className="text-sm font-semibold text-foreground">{emp.net}</p>
+                  <p className="text-xs text-muted-foreground">{t('showcase.slide_gross', 'bruttó')} {emp.gross}</p>
                 </div>
               </div>
             ))}
           </div>
           <div className="mt-4 pt-3 border-t border-border/50 flex justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Összesen (nettó)</span>
-            <span className="text-sm font-bold text-primary">1 577 000 Ft</span>
+            <span className="text-sm font-medium text-muted-foreground">{t('showcase.slide_net_total', 'Összesen (nettó)')}</span>
+            <span className="text-sm font-bold text-primary">{isHr ? '4 190 €' : '1 577 000 Ft'}</span>
           </div>
         </div>
       </div>
     ),
   },
   {
-    text: 'Intelligens tranzakció-szinkron és automatikus kifizetés-azonosítás.',
+    text: t('showcase.slide_sync_desc', 'Intelligens tranzakció-szinkron és automatikus kifizetés-azonosítás.'),
     visual: (
       <div className="space-y-3">
-        {[
+        {(isHr ? [
+          { bank: 'ZABA HR2123600001234567890', amount: '-1 280 €', invoice: 'INV-2026-0143', matched: true },
+          { bank: 'PBZ HR1223400098765432101', amount: '-3 250 €', invoice: 'INV-2026-0142', matched: true },
+          { bank: 'Wise EUR 2 800.00', amount: '+2 800 €', invoice: '—', matched: false },
+        ] : [
           { bank: 'K&H 10200812-32145698', amount: '-480 000 Ft', invoice: 'INV-2026-0143', matched: true },
           { bank: 'OTP 11773312-01234567', amount: '-1 250 000 Ft', invoice: 'INV-2026-0142', matched: true },
           { bank: 'Wise EUR 2 800.00', amount: '+1 120 000 Ft', invoice: '—', matched: false },
-        ].map((tx, i) => (
+        ]).map((tx, i) => (
           <div key={i} className="bg-background/90 backdrop-blur-md rounded-xl p-4 shadow-lg border border-border/50">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-primary/10">
@@ -155,7 +174,7 @@ const carouselSlides: CarouselSlide[] = [
             <div className={`flex items-center gap-2 rounded-lg p-2 ${tx.matched ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
               <ArrowLeftRight className={`h-4 w-4 ${tx.matched ? 'text-emerald-500' : 'text-amber-500'}`} />
               <span className={`text-xs font-medium ${tx.matched ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                {tx.matched ? `Párosítva → ${tx.invoice}` : 'Párosítás szükséges'}
+                {tx.matched ? t('showcase.slide_matched', { invoice: tx.invoice, defaultValue: `Párosítva → ${tx.invoice}` }) : t('showcase.slide_match_needed', 'Párosítás szükséges')}
               </span>
             </div>
           </div>
@@ -164,46 +183,46 @@ const carouselSlides: CarouselSlide[] = [
     ),
   },
   {
-    text: 'Kintlévőség-kezelés és automatikus fizetési felszólítások.',
+    text: t('showcase.slide_receivables_desc', 'Kintlévőség-kezelés és automatikus fizetési felszólítások.'),
     visual: (
       <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-rose-500/30">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-semibold text-foreground">Lejárt kintlévőségek</span>
-          <span className="text-xs text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full">Figyelmeztetés</span>
+          <span className="text-sm font-semibold text-foreground">{t('showcase.slide_overdue_title', 'Lejárt kintlévőségek')}</span>
+          <span className="text-xs text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full">{t('showcase.slide_warning', 'Figyelmeztetés')}</span>
         </div>
         <div className="space-y-3">
           <div className="bg-secondary/40 rounded-lg p-3 border border-border/30 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-foreground">INV-2026-0034</p>
-              <p className="text-[10px] text-muted-foreground">Vevő Partner • 14 napja lejárt</p>
+              <p className="text-[10px] text-muted-foreground">{t('showcase.slide_overdue_partner', 'Vevő Partner • 14 napja lejárt')}</p>
             </div>
-            <p className="text-xs font-bold text-rose-500">450 000 Ft</p>
+            <p className="text-xs font-bold text-rose-500">{isHr ? '1 200 €' : '450 000 Ft'}</p>
           </div>
           <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-500 px-3 py-2 rounded-lg">
             <CheckCircle2 className="h-4 w-4" />
-            <span className="text-xs font-medium">1. Fizetési felszólító email elküldve</span>
+            <span className="text-xs font-medium">{t('showcase.slide_reminder_sent', '1. Fizetési felszólító email elküldve')}</span>
           </div>
         </div>
       </div>
     ),
   },
   {
-    text: 'Automatikus partneradat-lekérdezés adószám alapján.',
+    text: t('showcase.slide_partner_lookup_desc', 'Automatikus partneradat-lekérdezés adószám alapján.'),
     visual: (
       <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
-        <span className="text-sm font-semibold text-foreground block mb-3">Gyors számlázás partnereknek</span>
+        <span className="text-sm font-semibold text-foreground block mb-3">{t('showcase.slide_fast_invoicing', 'Gyors számlázás partnereknek')}</span>
         <div className="space-y-3">
           <div>
-            <label className="text-[10px] text-muted-foreground block mb-1">Adószám</label>
+            <label className="text-[10px] text-muted-foreground block mb-1">{t('showcase.slide_tax_number', 'Adószám')}</label>
             <div className="bg-secondary/40 rounded-lg px-3 py-1.5 border border-border/30 text-xs font-semibold text-foreground">
-              12345678-2-41
+              {isHr ? '12345678901' : '12345678-2-41'}
             </div>
           </div>
           <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 space-y-1">
-            <p className="text-xs font-bold text-primary">Alfa Kereskedelmi Kft.</p>
-            <p className="text-[10px] text-muted-foreground">1051 Budapest, Fő utca 12.</p>
+            <p className="text-xs font-bold text-primary">{isHr ? 'Alfa Trgovina d.o.o.' : 'Alfa Kereskedelmi Kft.'}</p>
+            <p className="text-[10px] text-muted-foreground">{isHr ? 'Ilica 10, 10000 Zagreb' : '1051 Budapest, Fő utca 12.'}</p>
             <p className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3" /> Partner adatai lekérve a hivatalos cégadatbázisból
+              <CheckCircle2 className="h-3 w-3" /> {t('showcase.slide_official_data', 'Partner adatai lekérve a hivatalos cégadatbázisból')}
             </p>
           </div>
         </div>
@@ -212,9 +231,9 @@ const carouselSlides: CarouselSlide[] = [
   },
 ];
 
-const booksCarouselSlides: CarouselSlide[] = [
+const getBooksCarouselSlides = (t: any, isHr: boolean): CarouselSlide[] => [
   {
-    text: 'AI-alapú anomália-detekció és intelligens számladuplikáció-szűrés.',
+    text: t('showcase.books_anomaly_desc', 'AI-alapú anomália-detekció és intelligens számladuplikáció-szűrés.'),
     visual: (
       <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-rose-500/30">
         <div className="flex items-center gap-2 mb-3">
@@ -222,70 +241,74 @@ const booksCarouselSlides: CarouselSlide[] = [
             <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse" />
           </div>
           <div>
-            <span className="text-sm font-semibold text-foreground block">AI Anomália Észlelés</span>
-            <span className="text-xs text-rose-500 font-medium">98% egyezési valószínűség</span>
+            <span className="text-sm font-semibold text-foreground block">{t('showcase.books_anomaly_title', 'AI Anomália Észlelés')}</span>
+            <span className="text-xs text-rose-500 font-medium">{t('showcase.books_anomaly_prob', '98% egyezési valószínűség')}</span>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mb-4">Gyanús számladuplikáció azonosítva a NAV Online Számla adatai alapján.</p>
+        <p className="text-xs text-muted-foreground mb-4">{t('showcase.books_anomaly_notice', 'Gyanús számladuplikáció azonosítva a NAV Online Számla adatai alapján.')}</p>
         <div className="space-y-2">
           <div className="bg-secondary/40 rounded-lg p-3 border border-border/30 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-foreground">D-2026-0042</p>
-              <p className="text-[10px] text-muted-foreground">Logisztikai Szolgáltató • 2026.06.10</p>
+              <p className="text-[10px] text-muted-foreground">{t('showcase.books_logistics', 'Logisztikai Szolgáltató')} • 2026.06.10</p>
             </div>
-            <p className="text-xs font-bold text-foreground">142 500 Ft</p>
+            <p className="text-xs font-bold text-foreground">{isHr ? '380 €' : '142 500 Ft'}</p>
           </div>
           <div className="bg-secondary/40 rounded-lg p-3 border border-border/30 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-foreground">D-2026-0045</p>
-              <p className="text-[10px] text-muted-foreground">Logisztikai Szolgáltató • 2026.06.10</p>
+              <p className="text-[10px] text-muted-foreground">{t('showcase.books_logistics', 'Logisztikai Szolgáltató')} • 2026.06.10</p>
             </div>
-            <p className="text-xs font-bold text-foreground">142 500 Ft</p>
+            <p className="text-xs font-bold text-foreground">{isHr ? '380 €' : '142 500 Ft'}</p>
           </div>
         </div>
       </div>
     ),
   },
   {
-    text: 'Valós idejű főkönyvi kivonat és automatikus mérlegegyensúly ellenőrzés.',
+    text: t('showcase.books_ledger_desc', 'Valós idejű főkönyvi kivonat és automatikus mérlegegyensúly ellenőrzés.'),
     visual: (
       <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <PieChart className="h-5 w-5 text-teal-500" />
-            <span className="text-sm font-semibold text-foreground">Főkönyv & Mérleg</span>
+            <span className="text-sm font-semibold text-foreground">{t('showcase.books_ledger_title', 'Főkönyv & Mérleg')}</span>
           </div>
           <div className="flex items-center gap-1 bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full">
             <CheckCircle2 className="h-3 w-3" />
-            <span className="text-[10px] font-bold">Egyensúlyban</span>
+            <span className="text-[10px] font-bold">{t('showcase.books_in_balance', 'Egyensúlyban')}</span>
           </div>
         </div>
         <div className="space-y-3">
           <div className="flex justify-between items-center text-xs py-1.5 border-b border-border/30">
-            <span className="text-muted-foreground">Eszközök összesen (Assets)</span>
-            <span className="font-semibold text-foreground">42 850 000 Ft</span>
+            <span className="text-muted-foreground">{t('showcase.books_assets', 'Eszközök összesen (Assets)')}</span>
+            <span className="font-semibold text-foreground">{isHr ? '114 000 €' : '42 850 000 Ft'}</span>
           </div>
           <div className="flex justify-between items-center text-xs py-1.5 border-b border-border/30">
-            <span className="text-muted-foreground">Források összesen (Equity & Liab.)</span>
-            <span className="font-semibold text-foreground">42 850 000 Ft</span>
+            <span className="text-muted-foreground">{t('showcase.books_equity', 'Források összesen (Equity & Liab.)')}</span>
+            <span className="font-semibold text-foreground">{isHr ? '114 000 €' : '42 850 000 Ft'}</span>
           </div>
           <div className="flex justify-between items-center text-xs py-1.5">
-            <span className="text-muted-foreground">Aktuális tárgyévi eredmény</span>
-            <span className="font-semibold text-emerald-500">+6 420 000 Ft</span>
+            <span className="text-muted-foreground">{t('showcase.books_profit', 'Aktuális tárgyévi eredmény')}</span>
+            <span className="font-semibold text-emerald-500">{isHr ? '+17 100 €' : '+6 420 000 Ft'}</span>
           </div>
         </div>
       </div>
     ),
   },
   {
-    text: 'Intelligens adónaptár, járulékbevallások és áfa-tervezés nyomon követése.',
+    text: t('showcase.books_tax_cal_desc', 'Intelligens adónaptár, járulékbevallások és áfa-tervezés nyomon követése.'),
     visual: (
       <div className="space-y-3">
-        {[
-          { filing: '2608 Járulékbevallás', deadline: 'Esedékes: 12 nap múlva', status: 'Beküldve', color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
-          { filing: '2665 ÁFA bevallás', deadline: 'Esedékes: 8 nap múlva', status: 'Egyeztetés alatt', color: 'text-amber-500', icon: Clock, bg: 'bg-amber-500/10' },
-          { filing: 'KIVA / KATA elszámolás', deadline: 'Esedékes: 15 nap múlva', status: 'Elkészítve', color: 'text-teal-500', icon: FileText, bg: 'bg-teal-500/10' },
-        ].map((f, i) => (
+        {(isHr ? [
+          { filing: 'JOPPD obrazac', deadline: t('showcase.books_due_in', { days: 12, defaultValue: 'Dospijeva za: 12 dana' }), status: t('showcase.books_submitted', 'Poslano'), color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
+          { filing: 'PDV prijava', deadline: t('showcase.books_due_in', { days: 8, defaultValue: 'Dospijeva za: 8 dana' }), status: t('showcase.books_in_review', 'U usklađivanju'), color: 'text-amber-500', icon: Clock, bg: 'bg-amber-500/10' },
+          { filing: 'Porezni obračun dohotka', deadline: t('showcase.books_due_in', { days: 15, defaultValue: 'Dospijeva za: 15 dana' }), status: t('showcase.books_prepared', 'Pripremljeno'), color: 'text-teal-500', icon: FileText, bg: 'bg-teal-500/10' },
+        ] : [
+          { filing: '2608 Járulékbevallás', deadline: t('showcase.books_due_in', { days: 12, defaultValue: 'Esedékes: 12 nap múlva' }), status: t('showcase.books_submitted', 'Beküldve'), color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
+          { filing: '2665 ÁFA bevallás', deadline: t('showcase.books_due_in', { days: 8, defaultValue: 'Esedékes: 8 nap múlva' }), status: t('showcase.books_in_review', 'Egyeztetés alatt'), color: 'text-amber-500', icon: Clock, bg: 'bg-amber-500/10' },
+          { filing: 'KIVA / KATA elszámolás', deadline: t('showcase.books_due_in', { days: 15, defaultValue: 'Esedékes: 15 nap múlva' }), status: t('showcase.books_prepared', 'Elkészítve'), color: 'text-teal-500', icon: FileText, bg: 'bg-teal-500/10' },
+        ]).map((f, i) => (
           <div key={i} className="bg-background/90 backdrop-blur-md rounded-xl p-4 shadow-lg border border-border/50 flex items-center gap-4">
             <div className={`p-2 rounded-lg ${f.bg}`}>
               <f.icon className={`h-5 w-5 ${f.color}`} />
@@ -301,13 +324,16 @@ const booksCarouselSlides: CarouselSlide[] = [
     ),
   },
   {
-    text: 'Hivatalos levelek letöltése és automatikus archiválása a Cégkapuból.',
+    text: t('showcase.books_official_docs_desc', 'Hivatalos levelek letöltése és automatikus archiválása a Cégkapuból.'),
     visual: (
       <div className="space-y-3">
-        {[
-          { sender: 'NAV_KAVIG', doc: 'Folyószámla kivonat', time: '1 órája', status: 'Letöltve', color: 'text-emerald-500', icon: FileText, bg: 'bg-emerald-500/10' },
-          { sender: 'ÖNKORMÁNYZAT', doc: 'Helyi iparűzési adó értesítő', time: 'Tegnap', status: 'Letöltve', color: 'text-emerald-500', icon: FileText, bg: 'bg-emerald-500/10' },
-        ].map((d, i) => (
+        {(isHr ? [
+          { sender: 'Porezna uprava', doc: 'Izvod porezne kartice', time: t('showcase.books_time_1h', 'Prije 1 sat'), status: t('showcase.books_downloaded', 'Preuzeto'), color: 'text-emerald-500', icon: FileText, bg: 'bg-emerald-500/10' },
+          { sender: 'Grad Zagreb', doc: 'Obavijest o komunalnoj naknadi', time: t('showcase.books_yesterday', 'Jučer'), status: t('showcase.books_downloaded', 'Preuzeto'), color: 'text-emerald-500', icon: FileText, bg: 'bg-emerald-500/10' },
+        ] : [
+          { sender: 'NAV_KAVIG', doc: 'Folyószámla kivonat', time: t('showcase.books_time_1h', '1 órája'), status: t('showcase.books_downloaded', 'Letöltve'), color: 'text-emerald-500', icon: FileText, bg: 'bg-emerald-500/10' },
+          { sender: 'ÖNKORMÁNYZAT', doc: 'Helyi iparűzési adó értesítő', time: t('showcase.books_yesterday', 'Tegnap'), status: t('showcase.books_downloaded', 'Letöltve'), color: 'text-emerald-500', icon: FileText, bg: 'bg-emerald-500/10' },
+        ]).map((d, i) => (
           <div key={i} className="bg-background/90 backdrop-blur-md rounded-xl p-4 shadow-lg border border-border/50 flex items-center gap-4">
             <div className={`p-2 rounded-lg ${d.bg}`}>
               <d.icon className={`h-5 w-5 ${d.color}`} />
@@ -323,48 +349,52 @@ const booksCarouselSlides: CarouselSlide[] = [
     ),
   },
   {
-    text: 'Átlátható bérszámfejtési összesítők és kifizetési jegyzékek.',
+    text: t('showcase.books_payroll_summary_desc', 'Átlátható bérszámfejtési összesítők és kifizetési jegyzékek.'),
     visual: (
-      <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
-        <div className="flex items-center gap-2 mb-4">
-          <Wallet className="h-5 w-5 text-teal-500" />
-          <span className="text-sm font-semibold text-foreground">Bérszámfejtési jelentés</span>
-        </div>
-        <div className="space-y-2 text-xs">
-          <div className="flex justify-between py-1 border-b border-border/30">
-            <span className="text-muted-foreground">Aktív munkavállalók száma</span>
-            <span className="font-semibold text-foreground">12 fő</span>
+      <div className="space-y-3">
+        <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
+          <div className="flex items-center gap-2 mb-4">
+            <Wallet className="h-5 w-5 text-teal-500" />
+            <span className="text-sm font-semibold text-foreground">{t('showcase.books_payroll_report', 'Bérszámfejtési jelentés')}</span>
           </div>
-          <div className="flex justify-between py-1 border-b border-border/30">
-            <span className="text-muted-foreground">Bruttó bérköltség összesen</span>
-            <span className="font-semibold text-foreground">6 890 000 Ft</span>
-          </div>
-          <div className="flex justify-between py-1">
-            <span className="text-muted-foreground">Nettó utalandó munkabérek</span>
-            <span className="font-semibold text-teal-500">4 580 000 Ft</span>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between py-1 border-b border-border/30">
+              <span className="text-muted-foreground">{t('showcase.books_active_employees', 'Aktív munkavállalók száma')}</span>
+              <span className="font-semibold text-foreground">{t('showcase.books_employees_count', '12 fő')}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-border/30">
+              <span className="text-muted-foreground">{t('showcase.books_gross_payroll', 'Bruttó bérköltség összesen')}</span>
+              <span className="font-semibold text-foreground">{isHr ? '18 400 €' : '6 890 000 Ft'}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-muted-foreground">{t('showcase.books_net_payroll', 'Nettó utalandó munkabérek')}</span>
+              <span className="font-semibold text-teal-500">{isHr ? '12 200 €' : '4 580 000 Ft'}</span>
+            </div>
           </div>
         </div>
       </div>
     ),
   },
   {
-    text: 'Könyvelőirodai munkafolyamatok és cég-hozzárendelések nyomon követése.',
+    text: t('showcase.books_clients_desc', 'Könyvelőirodai munkafolyamatok és cég-hozzárendelések nyomon követése.'),
     visual: (
-      <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="h-5 w-5 text-teal-500" />
-          <span className="text-sm font-semibold text-foreground">Hozzárendelt cégek</span>
-        </div>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-teal-500/10 flex items-center justify-center">
-              <Users className="h-4 w-4 text-teal-500" />
+      <div className="space-y-3">
+        <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="h-5 w-5 text-teal-500" />
+            <span className="text-sm font-semibold text-foreground">{t('showcase.books_assigned_companies', 'Hozzárendelt cégek')}</span>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-full bg-teal-500/10 flex items-center justify-center">
+                <Users className="h-4 w-4 text-teal-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-foreground">{t('showcase.books_partner_title', 'Könyvelő Partner')}</p>
+                <p className="text-[10px] text-muted-foreground">{t('showcase.books_manager_desc', 'Felelős: Minta János (Irodavezető)')}</p>
+              </div>
+              <span className="text-[10px] bg-teal-500/10 text-teal-500 px-2 py-0.5 rounded-full font-medium">{t('showcase.books_primary', 'Elsődleges')}</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-foreground">Könyvelő Partner</p>
-              <p className="text-[10px] text-muted-foreground">Felelős: Minta János (Irodavezető)</p>
-            </div>
-            <span className="text-[10px] bg-teal-500/10 text-teal-500 px-2 py-0.5 rounded-full font-medium">Elsődleges</span>
           </div>
         </div>
       </div>
@@ -374,6 +404,8 @@ const booksCarouselSlides: CarouselSlide[] = [
 
 
 const Auth = () => {
+  const { t, i18n } = useTranslation('auth');
+  const isHr = (i18n.language || '').startsWith('hr');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -396,7 +428,9 @@ const Auth = () => {
     return (authSearchParams.get('app') === 'eaisybooks') ? 'eaisybooks' : 'eaisybill';
   });
   const isEaisybooks = appMode === 'eaisybooks';
-  const activeSlides = isEaisybooks ? booksCarouselSlides : carouselSlides;
+  const activeSlides = useMemo(() => {
+    return isEaisybooks ? getBooksCarouselSlides(t, isHr) : getCarouselSlides(t, isHr);
+  }, [isEaisybooks, t, isHr]);
 
   const queryClient = useQueryClient();
 
@@ -440,11 +474,11 @@ const Auth = () => {
           setVerificationSuccess(true);
         } else {
           reportAuthError('Auth', 'email_verification', 'Verification failed', undefined, { response: data });
-          toast({ title: 'Megerősítés sikertelen', description: 'Érvénytelen vagy lejárt link.', variant: 'destructive' });
+          toast({ title: t('toasts.verification_failed_title', 'Megerősítés sikertelen'), description: t('toasts.verification_failed_desc', 'Érvénytelen vagy lejárt link.'), variant: 'destructive' });
         }
       } catch (err: any) {
         reportAuthError('Auth', 'email_verification', err.message || 'Verification error', err);
-        toast({ title: 'Hiba a megerősítéskor', description: err.message, variant: 'destructive' });
+        toast({ title: t('toasts.verification_error_title', 'Hiba a megerősítéskor'), description: err.message, variant: 'destructive' });
       } finally {
         setIsVerifying(false);
         setAuthSearchParams(prev => {
@@ -495,14 +529,14 @@ const Auth = () => {
         const errBody = await res.text();
         throw new Error(errBody);
       }
-      toast({ title: 'Megerősítő email újraküldve!', description: 'Ellenőrizd a postaládádat.' });
+      toast({ title: t('toasts.email_resent_title', 'Megerősítő email újraküldve!'), description: t('toasts.email_resent_desc', 'Ellenőrizd a postaládádat.') });
     } catch (err: any) {
       reportAuthError('Auth', 'resend_verification', err.message || 'Resend verification error', err);
-      toast({ title: 'Hiba az email küldésekor', description: err.message, variant: 'destructive' });
+      toast({ title: t('toasts.send_error_title', 'Hiba az email küldésekor'), description: err.message, variant: 'destructive' });
     } finally {
       setResending(false);
     }
-  }, [user]);
+  }, [user, isEaisybooks, t]);
   const returnTo = authSearchParams.get('returnTo') || '/';
 
   // Show "signed out" toast queued by AuthContext.signOut() — only fires
@@ -512,10 +546,10 @@ const Auth = () => {
     try {
       if (sessionStorage.getItem('visibill_pending_signout_toast') === '1') {
         sessionStorage.removeItem('visibill_pending_signout_toast');
-        toast({ title: 'Kijelentkezve', description: 'Sikeresen kijelentkeztél.' });
+        toast({ title: t('toasts.signed_out_title', 'Kijelentkezve'), description: t('toasts.signed_out_desc', 'Sikeresen kijelentkeztél.') });
       }
     } catch {}
-  }, []);
+  }, [t]);
 
   // Handle expired/invalid recovery links that redirect to root with error hash
   useEffect(() => {
@@ -527,8 +561,8 @@ const Auth = () => {
 
       if (errorCode === 'otp_expired' || errorDescription?.includes('expired')) {
         toast({
-          title: 'A jelszó-visszaállító link lejárt',
-          description: 'Kérj új linket az email címedre.',
+          title: t('toasts.reset_link_expired_title', 'A jelszó-visszaállító link lejárt'),
+          description: t('toasts.reset_link_expired_desc', 'Kérj új linket az email címedre.'),
           variant: 'destructive',
         });
         setShowForgotPassword(true);
@@ -872,11 +906,11 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
-      toast({ title: 'Kérlek add meg az email címed', variant: 'destructive' });
+      toast({ title: t('toasts.enter_email', 'Kérlek add meg az email címed'), variant: 'destructive' });
       return;
     }
     if (!password) {
-      toast({ title: 'Kérlek add meg a jelszavad', variant: 'destructive' });
+      toast({ title: t('toasts.enter_password', 'Kérlek add meg a jelszavad'), variant: 'destructive' });
       return;
     }
     setLoading(true);
@@ -899,7 +933,7 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      toast({ title: 'A jelszavak nem egyeznek', description: 'Kérlek ellenőrizd a megadott jelszavakat.', variant: 'destructive' });
+      toast({ title: t('toasts.password_mismatch_title', 'A jelszavak nem egyeznek'), description: t('toasts.password_mismatch_desc', 'Kérlek ellenőrizd a megadott jelszavakat.'), variant: 'destructive' });
       return;
     }
     setLoading(true);
@@ -923,7 +957,7 @@ const Auth = () => {
     });
 
     if (error) {
-      toast({ title: 'Google bejelentkezés sikertelen', variant: 'destructive' });
+      toast({ title: t('toasts.google_error', 'Google bejelentkezés sikertelen'), variant: 'destructive' });
       reportAuthError('Auth', 'google_signin', 'Google sign in error', error);
     }
   };
@@ -931,7 +965,7 @@ const Auth = () => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) {
-      toast({ title: 'Kérlek add meg az email címed', variant: 'destructive' });
+      toast({ title: t('toasts.enter_email', 'Kérlek add meg az email címed'), variant: 'destructive' });
       return;
     }
     setForgotLoading(true);
@@ -941,7 +975,7 @@ const Auth = () => {
       });
       if (error) throw error;
       if (forgotStep === 'otp') {
-        toast({ title: 'A kódot újra elküldtük!' });
+        toast({ title: t('toasts.code_resent', 'A kódot újra elküldtük!') });
       } else {
         setForgotStep('otp');
       }
@@ -956,7 +990,7 @@ const Auth = () => {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotOtp || forgotOtp.length !== 6) {
-      toast({ title: 'Kérlek add meg a 6 számjegyű kódot', variant: 'destructive' });
+      toast({ title: t('toasts.enter_otp', 'Kérlek add meg a 6 számjegyű kódot'), variant: 'destructive' });
       return;
     }
     setForgotLoading(true);
@@ -972,7 +1006,7 @@ const Auth = () => {
       // Persist the state in sessionStorage so that ResetPassword.tsx verifies it.
       sessionStorage.setItem('visibill_reset_pw_state', 'recovery');
 
-      toast({ title: 'Kód sikeresen ellenőrizve!' });
+      toast({ title: t('toasts.code_verified', 'Kód sikeresen ellenőrizve!') });
       setShowForgotPassword(false);
       setForgotStep('email');
       setForgotOtp('');
@@ -980,8 +1014,8 @@ const Auth = () => {
     } catch (error: any) {
       reportAuthError('Auth', 'verify_otp', error.message || 'OTP verification error', error);
       toast({
-        title: 'Érvénytelen vagy lejárt kód',
-        description: 'Kérlek ellenőrizd a beírt kódot, vagy kérj újat.',
+        title: t('toasts.invalid_code_title', 'Érvénytelen vagy lejárt kód'),
+        description: t('toasts.invalid_code_desc', 'Kérlek ellenőrizd a beírt kódot, vagy kérj újat.'),
         variant: 'destructive',
       });
     } finally {
@@ -1038,10 +1072,10 @@ const Auth = () => {
                 </div>
               </div>
               <h1 className="text-2xl font-bold text-foreground mb-2">
-                Email megerősítése...
+                {t('verification.in_progress_title', 'Email megerősítése...')}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Kérjük várj, amíg ellenőrizzük a linket.
+                {t('verification.in_progress_desc', 'Kérjük várj, amíg ellenőrizzük a linket.')}
               </p>
             </div>
           ) : verificationSuccess ? (
@@ -1058,10 +1092,10 @@ const Auth = () => {
               </div>
 
               <h1 className="text-2xl font-bold text-foreground mb-2">
-                Email sikeresen megerősítve! 🎉
+                {t('verification.success_title', 'Email sikeresen megerősítve! 🎉')}
               </h1>
               <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-                Köszönjük, hogy megerősítetted az email címedet. Mostantól beléphetsz az eaisybill/eaisybooks fiókodba.
+                {t('verification.success_desc', 'Köszönjük, hogy megerősítetted az email címedet. Mostantól beléphetsz az eaisybill/eaisybooks fiókodba.')}
               </p>
 
               <Button
@@ -1072,7 +1106,7 @@ const Auth = () => {
                   setActiveTab('signin');
                 }}
               >
-                Bejelentkezés
+                {t('buttons.signin', 'Bejelentkezés')}
               </Button>
             </div>
           ) : (signUpSuccess || isUnverified) ? (
@@ -1087,12 +1121,12 @@ const Auth = () => {
               </div>
 
               <h1 className="text-2xl font-bold text-foreground mb-2">
-                {isUnverified ? 'Email megerősítés szükséges' : 'Ellenőrizd az email-ed!'}
+                {isUnverified ? t('verification.unverified_title', 'Email megerősítés szükséges') : t('verification.check_email_title', 'Ellenőrizd az email-ed!')}
               </h1>
               <p className="text-sm text-muted-foreground mb-2">
                 {isUnverified
-                  ? 'A fiókod még nincs megerősítve. Kattints az emailben kapott linkre.'
-                  : 'Küldtünk egy megerősítő linket a következő címre:'}
+                  ? t('verification.unverified_desc', 'A fiókod még nincs megerősítve. Kattints az emailben kapott linkre.')
+                  : t('verification.sent_link_desc', 'Küldtünk egy megerősítő linket a következő címre:')}
               </p>
               {signedUpEmail && (
                 <p className="text-sm font-semibold text-foreground mb-4 bg-primary/5 px-4 py-2 rounded-lg">
@@ -1105,7 +1139,7 @@ const Auth = () => {
                 </p>
               )}
               <p className="text-xs text-muted-foreground mb-6 max-w-xs">
-                Kattints az emailben kapott linkre a fiókod aktiválásához. Ha nem találod, nézd meg a spam mappát is.
+                {t('verification.spam_notice', 'Kattints az emailben kapott linkre a fiókod aktiválásához. Ha nem találod, nézd meg a spam mappát is.')}
               </p>
 
               {/* Resend verification email */}
@@ -1115,7 +1149,7 @@ const Auth = () => {
                 onClick={handleResendVerification}
                 disabled={resending}
               >
-                {resending ? 'Küldés...' : 'Megerősítő email újraküldése'}
+                {resending ? t('buttons.sending', 'Küldés...') : t('buttons.resend_email', 'Megerősítő email újraküldése')}
               </Button>
 
               <Button
@@ -1135,7 +1169,7 @@ const Auth = () => {
                   setAuthSearchParams({}, { replace: true });
                 }}
               >
-                Vissza a bejelentkezéshez
+                {t('buttons.back_to_signin', 'Vissza a bejelentkezéshez')}
               </Button>
             </div>
           ) : (
@@ -1190,12 +1224,12 @@ const Auth = () => {
           {/* Welcome Text – min-h reserves space for 2-line subtitle, preventing layout shifts */}
           <div className="mb-4 min-h-[4.5rem]">
             <h1 className="text-2xl font-bold text-foreground mb-1">
-              {activeTab === 'signin' ? (isFirstVisit ? 'Üdv!' : 'Üdv újra!') : 'Kezdjük el!'}
+              {activeTab === 'signin' ? (isFirstVisit ? t('welcome.first_visit', 'Üdv!') : t('welcome.return_visit', 'Üdv újra!')) : t('welcome.signup_title', 'Kezdjük el!')}
             </h1>
             <p className="text-sm text-muted-foreground">
               {activeTab === 'signin'
-                ? (isEaisybooks ? 'Lépj be a könyvelő fiókodba a folytatáshoz.' : 'Jelentkezz be a fiókodba a folytatáshoz.')
-                : 'Hozd létre a fiókodat néhány egyszerű lépésben'}
+                ? (isEaisybooks ? t('welcome.signin_subtitle_books', 'Lépj be a könyvelő fiókodba a folytatáshoz.') : t('welcome.signin_subtitle', 'Jelentkezz be a fiókodba a folytatáshoz.'))
+                : t('welcome.signup_subtitle', 'Hozd létre a fiókodat néhány egyszerű lépésben')}
             </p>
           </div>
 
@@ -1211,7 +1245,7 @@ const Auth = () => {
                     : "text-slate-500 dark:text-muted-foreground hover:text-slate-700 dark:hover:text-foreground"
                 )}
               >
-                Bejelentkezés
+                {t('tabs.signin', 'Bejelentkezés')}
               </button>
               <button
                 onClick={() => { setActiveTab('signup'); setEmail(''); setPassword(''); setConfirmPassword(''); setName(''); }}
@@ -1222,7 +1256,7 @@ const Auth = () => {
                     : "text-slate-500 dark:text-muted-foreground hover:text-slate-700 dark:hover:text-foreground"
                 )}
               >
-                Regisztráció
+                {t('tabs.signup', 'Regisztráció')}
               </button>
             </div>
           </div>
@@ -1241,14 +1275,14 @@ const Auth = () => {
             <form onSubmit={handleSignIn} noValidate className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="signin-email" className="text-sm font-medium text-foreground">
-                  Email cím
+                  {t('fields.email', 'Email cím')}
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="signin-email"
                     type="email"
-                    placeholder="pelda@email.com"
+                    placeholder={t('fields.email_placeholder', 'pelda@email.com')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 bg-white/80 dark:bg-[#111214] border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
@@ -1259,7 +1293,7 @@ const Auth = () => {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="signin-password" className="text-sm font-medium text-foreground">
-                    Jelszó
+                    {t('fields.password', 'Jelszó')}
                   </Label>
                   <button
                     type="button"
@@ -1269,7 +1303,7 @@ const Auth = () => {
                       setShowForgotPassword(true);
                     }}
                   >
-                    Elfelejtett jelszó?
+                    {t('fields.forgot_password', 'Elfelejtett jelszó?')}
                   </button>
                 </div>
                 <div className="relative">
@@ -1290,7 +1324,7 @@ const Auth = () => {
                 className="w-full h-10 font-medium"
                 disabled={loading}
               >
-                {loading ? 'Bejelentkezés...' : 'Bejelentkezés'}
+                {loading ? t('buttons.signing_in', 'Bejelentkezés...') : t('buttons.signin', 'Bejelentkezés')}
               </Button>
             </form>
             </motion.div>
@@ -1305,14 +1339,14 @@ const Auth = () => {
             <form onSubmit={handleSignUp} noValidate className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="signup-name" className="text-sm font-medium text-foreground">
-                  Teljes név
+                  {t('fields.name', 'Teljes név')}
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="signup-name"
                     type="text"
-                    placeholder="Kovács János"
+                    placeholder={t('fields.name_placeholder', 'Kovács János')}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
@@ -1322,14 +1356,14 @@ const Auth = () => {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="signup-email" className="text-sm font-medium text-foreground">
-                  Email cím
+                  {t('fields.email', 'Email cím')}
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="pelda@email.com"
+                    placeholder={t('fields.email_placeholder', 'pelda@email.com')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
@@ -1339,14 +1373,14 @@ const Auth = () => {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="signup-password" className="text-sm font-medium text-foreground">
-                  Jelszó
+                  {t('fields.password', 'Jelszó')}
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="signup-password"
                     type="password"
-                    placeholder="Erős jelszó"
+                    placeholder={t('fields.password_placeholder', 'Erős jelszó')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className={cn(
@@ -1362,10 +1396,10 @@ const Auth = () => {
                 {password.length > 0 && (
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1">
                     {[
-                      { label: 'Nagybetű (A-Z)', valid: /[A-Z]/.test(password) },
-                      { label: 'Kisbetű (a-z)', valid: /[a-z]/.test(password) },
-                      { label: 'Szám (0-9)', valid: /\d/.test(password) },
-                      { label: 'Speciális (._?@>!#$~%^&*()+-=)', valid: /[._?@>!#$~%^&*()\-+=]/.test(password) },
+                      { label: t('strength.uppercase', 'Nagybetű (A-Z)'), valid: /[A-Z]/.test(password) },
+                      { label: t('strength.lowercase', 'Kisbetű (a-z)'), valid: /[a-z]/.test(password) },
+                      { label: t('strength.number', 'Szám (0-9)'), valid: /\d/.test(password) },
+                      { label: t('strength.special', 'Speciális (._?@>!#$~%^&*()+-=)'), valid: /[._?@>!#$~%^&*()\-+=]/.test(password) },
                     ].map((rule) => (
                       <div key={rule.label} className="flex items-center gap-1.5">
                         <div className={cn(
@@ -1385,14 +1419,14 @@ const Auth = () => {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="signup-confirm-password" className="text-sm font-medium text-foreground">
-                  Jelszó mégegyszer
+                  {t('fields.confirm_password', 'Jelszó mégegyszer')}
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="signup-confirm-password"
                     type="password"
-                    placeholder="Jelszó újra"
+                    placeholder={t('fields.confirm_password_placeholder', 'Jelszó újra')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className={cn(
@@ -1405,7 +1439,7 @@ const Auth = () => {
                   />
                 </div>
                 {confirmPassword.length > 0 && password !== confirmPassword && (
-                  <p className="text-xs text-rose-500">A két jelszó nem egyezik</p>
+                  <p className="text-xs text-rose-500">{t('strength.mismatch', 'A két jelszó nem egyezik')}</p>
                 )}
               </div>
               <Button
@@ -1422,7 +1456,7 @@ const Auth = () => {
                   password === confirmPassword
                 )}
               >
-                {loading ? 'Fiók létrehozása...' : 'Regisztráció'}
+                {loading ? t('buttons.signing_up', 'Fiók létrehozása...') : t('buttons.signup', 'Regisztráció')}
               </Button>
             </form>
             </motion.div>
@@ -1479,9 +1513,12 @@ const Auth = () => {
         >
           <div ref={wrapperRef} className="relative w-full max-w-[480px]">
 
-            {/* Title — static */}
+            {/* Title — localized */}
             <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground dark:text-white mb-4 xl:mb-8">
-              T<span className={cn(isEaisybooks ? "text-teal-500" : "text-primary")}>a</span>rtsd kézben a pénzügye<span className={cn(isEaisybooks ? "text-teal-500" : "text-primary")}>i</span>det
+              {t('showcase.tagline_prefix', 'Tartsd kézben a')}{' '}
+              <span className={cn(isEaisybooks ? "text-teal-500" : "text-primary")}>
+                {t('showcase.tagline_highlight', 'pénzügyeidet')}
+              </span>
             </h2>
 
             {/* Waterfall tape window */}
@@ -1593,20 +1630,20 @@ const Auth = () => {
               <>
                 <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
                   <KeyRound className="h-6 w-6 text-primary animate-pulse" />
-                  Elfelejtett jelszó
+                  {t('forgot.title', 'Elfelejtett jelszó')}
                 </h2>
                 <p className="text-sm text-muted-foreground mb-6">
-                  Add meg a fiókodhoz tartozó email címet, és küldünk egy jelszó visszaállító kódot és linket.
+                  {t('forgot.description', 'Add meg a fiókodhoz tartozó email címet, és küldünk egy jelszó visszaállító kódot és linket.')}
                 </p>
                 <form onSubmit={handleForgotPassword} noValidate className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="forgot-email">Email cím</Label>
+                    <Label htmlFor="forgot-email">{t('fields.email', 'Email cím')}</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="forgot-email"
                         type="email"
-                        placeholder="pelda@email.com"
+                        placeholder={t('fields.email_placeholder', 'pelda@email.com')}
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
                         className="pl-10 h-11 bg-white/80 dark:bg-[#0a1512] border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors rounded-xl"
@@ -1625,14 +1662,14 @@ const Auth = () => {
                         setForgotEmail('');
                       }}
                     >
-                      Mégse
+                      {t('buttons.cancel', 'Mégse')}
                     </Button>
                     <Button
                       type="submit"
                       className="flex-1 h-11 rounded-xl font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 dark:bg-[#0d2321] dark:text-primary dark:border dark:border-primary/30 dark:hover:bg-[#112d2a] dark:shadow-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
                       disabled={forgotLoading}
                     >
-                      {forgotLoading ? 'Küldés...' : 'Kód küldése'}
+                      {forgotLoading ? t('buttons.sending', 'Küldés...') : t('buttons.send_code', 'Kód küldése')}
                     </Button>
                   </div>
                 </form>
@@ -1652,21 +1689,21 @@ const Auth = () => {
                         </svg>
                       </div>
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-1">Kód ellenőrzése...</h3>
-                    <p className="text-xs text-muted-foreground">Kérjük, várj, amíg hitelesítjük a kódodat.</p>
+                    <h3 className="text-lg font-semibold text-foreground mb-1">{t('forgot.verifying_title', 'Kód ellenőrzése...')}</h3>
+                    <p className="text-xs text-muted-foreground">{t('forgot.verifying_desc', 'Kérjük, várj, amíg hitelesítjük a kódodat.')}</p>
                   </div>
                 ) : (
                   <>
                     <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
                       <Lock className="h-6 w-6 text-primary" />
-                      Kód ellenőrzése
+                      {t('forgot.verify_title', 'Kód ellenőrzése')}
                     </h2>
                     <p className="text-sm text-muted-foreground mb-6">
-                      Küldtünk egy egyszer használatos biztonsági kódot az email címedre (<span className="font-semibold text-foreground">{forgotEmail}</span>). Kérjük, másold be alább.
+                      {t('forgot.verify_description', { email: forgotEmail, defaultValue: `Küldtünk egy egyszer használatos biztonsági kódot az email címedre (${forgotEmail}). Kérjük, másold be alább.` })}
                     </p>
                     <form onSubmit={handleVerifyOtp} noValidate className="space-y-6">
                       <div className="space-y-2">
-                        <Label htmlFor="forgot-otp" className="text-center block">Egyszer használatos kód (OTP)</Label>
+                        <Label htmlFor="forgot-otp" className="text-center block">{t('fields.otp', 'Egyszer használatos kód (OTP)')}</Label>
                         <div className="relative flex justify-center">
                           <Input
                             id="forgot-otp"
@@ -1688,18 +1725,18 @@ const Auth = () => {
                       
                       <div className="text-center text-xs space-y-2 text-muted-foreground pt-1">
                         <p>
-                          Nem kaptad meg a kódot?{' '}
+                          {t('forgot.not_received', 'Nem kaptad meg a kódot?')}{' '}
                           <button
                             type="button"
                             onClick={handleForgotPassword}
                             disabled={forgotLoading}
                             className="text-primary hover:underline font-medium focus:outline-none disabled:opacity-50"
                           >
-                            Újraküldés
+                            {t('forgot.resend', 'Újraküldés')}
                           </button>
                         </p>
                         <p className="text-[10px] text-muted-foreground/80 leading-relaxed border-t border-border/40 pt-2 px-4">
-                          Ha a kód beírása nem működik, az emailben kapott <strong>"Új jelszó beállítása"</strong> gombra kattintva is közvetlenül beállíthatod az új jelszavad.
+                          {t('forgot.link_fallback', 'Ha a kód beírása nem működik, az emailben kapott "Új jelszó beállítása" gombra kattintva is közvetlenül beállíthatod az új jelszavad.')}
                         </p>
                       </div>
 
@@ -1713,14 +1750,14 @@ const Auth = () => {
                             setForgotOtp('');
                           }}
                         >
-                          Vissza
+                          {t('buttons.back', 'Vissza')}
                         </Button>
                         <Button
                           type="submit"
                           className="flex-1 h-11 rounded-xl font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 dark:bg-[#0d2321] dark:text-primary dark:border dark:border-primary/30 dark:hover:bg-[#112d2a] dark:shadow-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
                           disabled={forgotLoading || forgotOtp.length !== 6}
                         >
-                          {forgotLoading ? 'Ellenőrzés...' : 'Megerősítés'}
+                          {forgotLoading ? t('buttons.checking', 'Ellenőrzés...') : t('buttons.confirm', 'Megerősítés')}
                         </Button>
                       </div>
                     </form>

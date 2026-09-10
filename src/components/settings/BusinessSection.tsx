@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,7 @@ export function BusinessSection({
   isGeneratingDescription, onGenerateDescription,
   savingCompany, onSave, companies, setSelectedCompany, children,
 }: Props) {
+  const { t } = useTranslation(['settings']);
   const isOwner = selectedCompany?.owner_id === userId;
   const { toast } = useToast();
   const { locations, isLoading: locationsLoading, addLocation, deleteLocation } = useCompanyLocations(selectedCompany?.id);
@@ -121,51 +123,51 @@ export function BusinessSection({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Kiválasztott cég adatai
+            {t('business.selected_company_title', 'Kiválasztott cég adatai')}
           </CardTitle>
           <CardDescription>
             {selectedCompany ? (
-              <>Az aktuálisan kiválasztott cég: <strong>{selectedCompany.name}</strong></>
-            ) : 'Válassz céget a felső menüből'}
+              <>{t('business.selected_company_prefix', 'Az aktuálisan kiválasztott cég:')} <strong>{selectedCompany.name}</strong></>
+            ) : t('business.select_company_hint', 'Válassz céget a felső menüből')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {!selectedCompany ? (
             <Alert>
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>Nincs kiválasztott cég. A cég adatainak szerkesztéséhez válassz egy céget a felső menüből.</AlertDescription>
+              <AlertDescription>{t('business.no_selected_company', 'Nincs kiválasztott cég. A cég adatainak szerkesztéséhez válassz egy céget a felső menüből.')}</AlertDescription>
             </Alert>
           ) : (
             <>
               {!isOwner && (
                 <Alert className="mb-4">
                   <Info className="h-4 w-4" />
-                  <AlertDescription>Csak a tulajdonos szerkesztheti a cég adatait.</AlertDescription>
+                  <AlertDescription>{t('business.owner_only_edit', 'Csak a tulajdonos szerkesztheti a cég adatait.')}</AlertDescription>
                 </Alert>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="company_name">Cég neve *</Label>
+                  <Label htmlFor="company_name">{t('business.company_name', 'Cég neve')} *</Label>
                   <Input id="company_name" value={companyName || ''} onChange={e => setCompanyName(e.target.value)} placeholder="Pl. Példa Kft." disabled={!isOwner} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tax_number">Adószám</Label>
+                  <Label htmlFor="tax_number">{t('business.tax_number', 'Adószám')}</Label>
                   <Input id="tax_number" value={companyTaxNumber || ''} onChange={e => setCompanyTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" disabled={!isOwner} />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="company_address">Székhely</Label>
+                <Label htmlFor="company_address">{t('business.address', 'Székhely')}</Label>
                 <Textarea id="company_address" value={companyAddress || ''} onChange={e => setCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." rows={3} disabled={!isOwner} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="company_teaor">Elsődleges TEÁOR kód</Label>
+                  <Label htmlFor="company_teaor">{t('business.primary_teaor', 'Elsődleges TEÁOR kód')}</Label>
                   <Input id="company_teaor" value={companyPrimaryTeaor} onChange={e => setCompanyPrimaryTeaor(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Pl. 6201" maxLength={4} disabled={!isOwner} />
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="company_description">Cég tevékenységének bemutatása (AI alapú kontírozáshoz)</Label>
+                  <Label htmlFor="company_description">{t('business.description', 'Cég tevékenységének bemutatása')}</Label>
                   {isOwner && (
                     <Button
                       type="button"
@@ -176,7 +178,7 @@ export function BusinessSection({
                       disabled={isGeneratingDescription || !companyPrimaryTeaor.trim()}
                     >
                       <Sparkles className={`h-3.5 w-3.5 ${isGeneratingDescription ? 'animate-spin' : ''}`} />
-                      {isGeneratingDescription ? 'Generálás...' : 'Generálás AI-al'}
+                      {isGeneratingDescription ? 'Generálás...' : t('business.generate_ai', 'Generálás AI-al')}
                     </Button>
                   )}
                 </div>
@@ -185,7 +187,7 @@ export function BusinessSection({
               <div className="flex items-center gap-4 pt-2">
                 {isOwner && (
                   <Button onClick={onSave} disabled={!companyName?.trim() || savingCompany}>
-                    {savingCompany ? 'Mentés...' : 'Cég adatainak mentése'}
+                    {savingCompany ? 'Mentés...' : t('business.save_button', 'Cég adatainak mentése')}
                   </Button>
                 )}
                 <p className="text-sm text-muted-foreground">
@@ -205,9 +207,9 @@ export function BusinessSection({
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
-                  Telephelyek
+                  {t('business.locations_title', 'Telephelyek')}
                 </CardTitle>
-                <CardDescription>A céghez tartozó telephelyek és fióktelepek kezelése</CardDescription>
+                <CardDescription>{t('business.locations_subtitle', 'A céghez tartozó telephelyek és fióktelepek kezelése')}</CardDescription>
               </div>
               {isOwner && (
                 <Button
@@ -217,7 +219,7 @@ export function BusinessSection({
                   onClick={() => setShowNewLocation(!showNewLocation)}
                 >
                   <Plus className="h-4 w-4" />
-                  Új telephely
+                  {t('business.new_location', 'Új telephely')}
                 </Button>
               )}
             </div>
@@ -321,7 +323,7 @@ export function BusinessSection({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary" />
-              Főkönyvi és Könyvelési beállítások
+              {t('business.accounting_settings_title', 'Főkönyvi és Könyvelési beállítások')}
             </CardTitle>
             <CardDescription>
               A cég főkönyvi kimutatásaiban és egyenlegkivonataiban alkalmazott alapértelmezett beállítások
@@ -402,7 +404,7 @@ export function BusinessSection({
       {companies.length > 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>Összes cég áttekintése</CardTitle>
+            <CardTitle>{t('business.all_companies_title', 'Összes cég áttekintése')}</CardTitle>
             <CardDescription>A fiókodhoz tartozó összes cég</CardDescription>
           </CardHeader>
           <CardContent>

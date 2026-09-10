@@ -1,0 +1,42 @@
+{
+  "title": "Számlák",
+  "subtitle": "Bejövő és kimenő bizonylatok nyilvántartása",
+  "tabs": {
+    "incoming": "Bejövő számlák",
+    "outgoing": "Kimenő számlák",
+    "submitted_incoming": "Beküldött (Bejövő)",
+    "submitted_outgoing": "Beküldött (Kimenő)",
+    "proforma": "Díjbekérők",
+    "receipts": "Nyugták"
+  },
+  "columns": {
+    "invoice_number": "Bizonylatszám",
+    "partner": "Partner",
+    "issue_date": "Kelt",
+    "due_date": "Esedékesség",
+    "fulfillment_date": "Teljesítés",
+    "net_amount": "Nettó összeg",
+    "vat_amount": "ÁFA",
+    "gross_amount": "Bruttó összeg",
+    "currency": "Pénznem",
+    "payment_status": "Fizetési státusz",
+    "category": "Kategória"
+  },
+  "status": {
+    "paid": "Fizetve",
+    "unpaid": "Nyitott",
+    "partial": "Részben fizetve",
+    "overdue": "Késedelmes"
+  },
+  "actions": {
+    "new_invoice": "Új számla rögzítése",
+    "upload_invoice": "Számla feltöltése",
+    "uploaded_files": "Feltöltött fájlok",
+    "export_list": "Lista exportálása",
+    "export_excel": "Excel exportálása",
+    "export_csv": "CSV exportálása",
+    "mark_paid": "Fizetettnek jelölés",
+    "details": "Részletek"
+  },
+  "search_placeholder": "Keresés partner, bizonylatszám vagy megjegyzés szerint..."
+}

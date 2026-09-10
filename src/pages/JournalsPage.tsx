@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
   BookOpen,
@@ -137,6 +138,7 @@ const formatCurrency = (val: number, currency: string = 'HUF') => {
 };
 
 export default function JournalsPage() {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -607,15 +609,15 @@ export default function JournalsPage() {
       <div className="flex flex-col space-y-4 p-6 min-h-[calc(100vh-4rem)] bg-background">
       <PageHeader
         companyName={selectedCompany?.name}
-        breadcrumb="Könyvelési Naplók"
-        title="Könyvelési Naplók"
-        description="A vállalkozás kettős könyvvitelének naplónemenkénti, idősoros és zárt nyilvántartása."
+        breadcrumb={t('accounting:journals.breadcrumb', 'Könyvelési Naplók')}
+        title={t('accounting:journals.title', 'Könyvelési Naplók')}
+        description={t('accounting:journals.description', 'A vállalkozás kettős könyvvitelének naplónemenkénti, idősoros és zárt nyilvántartása.')}
         actions={
           <div className="flex gap-2">
             <Tooltip delayDuration={200}>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPeriodClosingOpen(true)}>
-                  <Lock className="w-4 h-4" /> Időszakzárás
+                  <Lock className="w-4 h-4" /> {t('accounting:journals.period_closing', 'Időszakzárás')}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs text-xs">

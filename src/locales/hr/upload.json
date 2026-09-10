@@ -1,0 +1,19 @@
+{
+  "title": "Učitavanje dokumenata",
+  "subtitle": "Učitajte račune, blagajničke primitke, podatke o plaćama, transakcije ili izvještaje na automatsku obradu.",
+  "dropzone": {
+    "title": "Povucite datoteke ovdje ili kliknite za odabir",
+    "subtitle": "Možete odabrati više datoteka odjednom ili ih učitati pojedinačno",
+    "drag_active": "Ispustite datoteke za učitavanje",
+    "button": "Pregledaj datoteke"
+  },
+  "uploading": "Učitavanje u tijeku...",
+  "history": "Povijest učitavanja",
+  "channels": {
+    "invoices": "Računi",
+    "vouchers": "Blagajnički dokumenti",
+    "transactions": "Transakcije",
+    "salaries": "Podaci o plaćama",
+    "reports": "Izvještaji dostavljača"
+  }
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function SecuritySection({ onChangePassword, onChangeEmail, onExportData, exportLoading, showAvdh = false }: Props) {
+  const { t } = useTranslation(['settings', 'common']);
   const [avdhStatus, setAvdhStatus] = useState<'none' | 'active' | 'expiring' | 'expired'>('none');
   const [avdhName, setAvdhName] = useState<string | null>(null);
   const [avdhExpiry, setAvdhExpiry] = useState<string | null>(null);
@@ -44,23 +46,23 @@ export function SecuritySection({ onChangePassword, onChangeEmail, onExportData,
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Biztonsági beállítások
+            {t('security.title', 'Biztonsági beállítások')}
           </CardTitle>
-          <CardDescription>Jelszó és biztonsági opciók</CardDescription>
+          <CardDescription>{t('security.subtitle', 'Jelszó és biztonsági opciók')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-4">
             <Button variant="outline" className="w-full justify-start" onClick={onChangePassword}>
-              Jelszó megváltoztatása
+              {t('security.change_password', 'Jelszó megváltoztatása')}
             </Button>
             <Button variant="outline" className="w-full justify-start" onClick={onChangeEmail}>
-              Email cím megváltoztatása
+              {t('security.change_email', 'Email cím megváltoztatása')}
             </Button>
             <Button variant="outline" className="w-full justify-start opacity-50" disabled>
-              Kétfaktoros hitelesítés beállítása (hamarosan)
+              {t('security.two_factor', 'Kétfaktoros hitelesítés beállítása (hamarosan)')}
             </Button>
             <Button variant="outline" className="w-full justify-start opacity-50" disabled>
-              Aktív munkamenetek megtekintése (hamarosan)
+              {t('security.active_sessions', 'Aktív munkamenetek megtekintése (hamarosan)')}
             </Button>
           </div>
         </CardContent>
@@ -157,18 +159,18 @@ export function SecuritySection({ onChangePassword, onChangeEmail, onExportData,
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Adatok kezelése
+            {t('security.data_management', 'Adatok kezelése')}
           </CardTitle>
-          <CardDescription>Export és törlési opciók</CardDescription>
+          <CardDescription>{t('security.data_management_desc', 'Export és törlési opciók')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-4">
             <Button variant="outline" className="w-full justify-start" onClick={onExportData} disabled={exportLoading}>
               <Download className="mr-2 h-4 w-4" />
-              {exportLoading ? 'Exportálás...' : 'Adatok exportálása'}
+              {exportLoading ? t('security.exporting', 'Exportálás...') : t('security.export_data', 'Adatok exportálása')}
             </Button>
             <Button variant="destructive" className="w-full justify-start opacity-50" disabled>
-              Fiók törlése (hamarosan)
+              {t('security.delete_account', 'Fiók törlése (hamarosan)')}
             </Button>
           </div>
         </CardContent>

@@ -1,0 +1,66 @@
+{
+  "general_ledger": {
+    "breadcrumb": "Főkönyv",
+    "title": "Főkönyv",
+    "description": "Hierarchikus főkönyvi kivonat és kategóriák",
+    "tax_year": "Adóév",
+    "period": "Időszak",
+    "tabs": {
+      "extract": "Kivonat",
+      "cards": "Kartonok",
+      "journal": "Naplófőkönyv",
+      "comparison": "Összehasonlítás"
+    }
+  },
+  "profit_and_loss": {
+    "breadcrumb": "Eredménykimutatás",
+    "title": "Eredménykimutatás",
+    "description": "Sztv. 'A' változat szerinti eredménykimutatás és beállítások",
+    "period": "Időszak:",
+    "tabs": {
+      "view": "Eredménykimutatás",
+      "mapping": "Hozzárendelési Mátrix"
+    },
+    "presets": {
+      "year": "Év",
+      "quarter": "Negyedév",
+      "month": "Hónap",
+      "custom": "Egyedi"
+    }
+  },
+  "balance_sheet": {
+    "breadcrumb": "Mérleg",
+    "title": "Mérleg",
+    "description": "Sztv. 'A' változat szerinti mérleg és beállítások",
+    "reporting_date": "Fordulónap",
+    "tabs": {
+      "view": "Mérleg",
+      "mapping": "Hozzárendelési Mátrix"
+    }
+  },
+  "journals": {
+    "breadcrumb": "Könyvelési Naplók",
+    "title": "Könyvelési Naplók",
+    "description": "A vállalkozás kettős könyvvitelének naplónemenkénti, idősoros és zárt nyilvántartása.",
+    "period_closing": "Időszakzárás"
+  },
+  "vat_return": {
+    "breadcrumb": "ÁFA Bevallás",
+    "title": "ÁFA Bevallás & Gyűjtőkódos Analitika",
+    "description": "ÁFA bevallás generálás és NAV gyűjtőkódos analitikus kimutatások",
+    "tabs": {
+      "return": "Bevallás",
+      "analytics": "Gyűjtőkódos Analitika",
+      "config": "Beállítás"
+    }
+  },
+  "annual_report": {
+    "title": "Éves Beszámoló",
+    "subtitle": "6 lépéses beszámoló varázsló",
+    "status": {
+      "finalized": "Véglegesítve",
+      "draft": "Vázlat"
+    },
+    "preview": "Előnézet"
+  }
+}

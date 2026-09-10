@@ -45,6 +45,7 @@ import {
 import { hu } from 'date-fns/locale';
 import type { TimeEntry } from '@/lib/payrollUtils';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface MonthlyTimesheetViewProps {
   timeEntries: TimeEntry[];
@@ -61,20 +62,15 @@ interface MonthlyTimesheetViewProps {
 
 const STATUS_CONFIG = {
   draft: {
-    label: 'Piszkozat',
     className: 'bg-muted text-muted-foreground',
   },
   submitted: {
-    label: 'Leadva',
     className: 'bg-blue-500/15 text-blue-500 border-blue-500/20',
   },
   approved: {
-    label: 'Jóváhagyva',
     className: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20',
   },
 } as const;
-
-const WEEKDAY_HEADERS = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'];
 
 export function MonthlyTimesheetView({
   timeEntries,
@@ -88,7 +84,30 @@ export function MonthlyTimesheetView({
   onSubmitMonth,
   isSubmitting,
 }: MonthlyTimesheetViewProps) {
+  const { t } = useTranslation(['hr', 'common']);
   const [popupDate, setPopupDate] = useState<string | null>(null);
+
+  const rawWeekdays = t('hr:working_time.calendar.weekdays', { returnObjects: true, defaultValue: ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'] });
+  const weekdayHeaders: string[] = Array.isArray(rawWeekdays) ? rawWeekdays : ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'];
+
+  const rawMonths = t('hr:working_time.calendar.months', { returnObjects: true, defaultValue: [
+    'Január', 'Február', 'Március', 'Április',
+    'Május', 'Június', 'Július', 'Augusztus',
+    'Szeptember', 'Október', 'November', 'December'
+  ] });
+  const monthNames: string[] = Array.isArray(rawMonths) ? rawMonths : [
+    'Január', 'Február', 'Március', 'Április',
+    'Május', 'Június', 'Július', 'Augusztus',
+    'Szeptember', 'Október', 'November', 'December'
+  ];
+
+  const getStatusLabel = (status: 'draft' | 'submitted' | 'approved') => {
+    switch (status) {
+      case 'draft': return t('hr:working_time.legend.draft', 'Piszkozat');
+      case 'submitted': return t('hr:working_time.legend.submitted', 'Leadva');
+      case 'approved': return t('hr:working_time.legend.approved', 'Jóváhagyva');
+    }
+  };
 
   const monthStart = startOfMonth(monthDate);
   const monthEnd = endOfMonth(monthDate);
@@ -176,7 +195,7 @@ export function MonthlyTimesheetView({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold">Havi összesítő</h2>
+              <h2 className="text-lg font-semibold">{t('hr:working_time.calendar.monthly_summary', 'Havi összesítő')}</h2>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -210,11 +229,7 @@ export function MonthlyTimesheetView({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[
-                    'Január', 'Február', 'Március', 'Április',
-                    'Május', 'Június', 'Július', 'Augusztus',
-                    'Szeptember', 'Október', 'November', 'December',
-                  ].map((name, idx) => (
+                  {monthNames.map((name, idx) => (
                     <SelectItem key={idx} value={String(idx)}>
                       {name}
                     </SelectItem>
@@ -239,7 +254,7 @@ export function MonthlyTimesheetView({
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   <Send className="h-3.5 w-3.5 mr-1.5" />
-                  {isSubmitting ? 'Leadás...' : 'Hónap leadása'}
+                  {isSubmitting ? t('hr:working_time.calendar.submitting', 'Leadás...') : t('hr:working_time.calendar.submit_month', 'Hónap leadása')}
                 </Button>
               )}
             </div>
@@ -248,7 +263,7 @@ export function MonthlyTimesheetView({
           {/* Weekday headers + Calendar grid in fixed-height container */}
           <div style={{ minHeight: 564 }}>
           <div className="grid grid-cols-7 gap-1 mb-1">
-            {WEEKDAY_HEADERS.map((name, idx) => (
+            {weekdayHeaders.map((name, idx) => (
               <div
                 key={name}
                 className={cn(
@@ -471,7 +486,7 @@ export function MonthlyTimesheetView({
                             variant="outline"
                             className="text-xs bg-amber-500/15 text-amber-500 border-amber-500/20"
                           >
-                            Szabadság
+                            {t('hr:working_time.calendar.vacation', 'Szabadság')}
                           </Badge>
                         )}
                       </div>
@@ -480,7 +495,7 @@ export function MonthlyTimesheetView({
                           variant="outline"
                           className={cn('text-xs', statusCfg.className)}
                         >
-                          {statusCfg.label}
+                          {getStatusLabel(entry.status as 'draft' | 'submitted' | 'approved')}
                         </Badge>
                         <Button
                           variant="ghost"

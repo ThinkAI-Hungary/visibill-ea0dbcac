@@ -26,7 +26,8 @@ import ProfileSummary from '@/components/dashboard/ProfileSummary';
 import QuickActions from '@/components/dashboard/QuickActions';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import type { Invoice } from '@/hooks/useDashboardData';
 
 /**
@@ -63,6 +64,7 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { role } = useUserRole();
+  const { t } = useTranslation(['dashboard', 'common']);
 
   const {
     selectedCompany, companies, companyLoading,
@@ -133,10 +135,11 @@ const Index = () => {
   // Invoice image dialog state is now isolated in RecentInvoicesWithDialog (P0-3)
 
   // Computed
-  const displayedPeriod = useMemo(
-    () => `${format(dateFrom, 'yyyy. MMM dd.', { locale: hu })} - ${format(dateTo, 'yyyy. MMM dd.', { locale: hu })}`,
-    [dateFrom, dateTo]
-  );
+  const displayedPeriod = useMemo(() => {
+    const isHr = getActiveLocale() === 'hr';
+    const pattern = isHr ? 'dd.MM.yyyy.' : 'yyyy. MMM dd.';
+    return `${format(dateFrom, pattern, { locale: getDateFnsLocale() })} - ${format(dateTo, pattern, { locale: getDateFnsLocale() })}`;
+  }, [dateFrom, dateTo]);
 
   const monthlyData = useMemo(
     () => buildMonthlyData(prefs.showBrutto),
@@ -224,7 +227,7 @@ const Index = () => {
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p>A legutóbb feldolgozott számlák listája</p>
+                <p>{t('dashboard:sections.recent_invoices_tooltip', 'A legutóbb feldolgozott számlák listája')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -1,0 +1,29 @@
+{
+  "title": "Tranzakciók",
+  "subtitle": "Banki tranzakciók és számlapárosítás",
+  "columns": {
+    "booking_date": "Könyvelés dátuma",
+    "partner": "Partner / Leírás",
+    "account": "Bankszámla",
+    "amount": "Összeg",
+    "matched_invoice": "Párosított számla",
+    "status": "Státusz",
+    "description": "Leírás",
+    "currency": "Pénznem",
+    "type": "Típus",
+    "gl_class": "Számlaosztály",
+    "reasoning": "Indoklás",
+    "items": "Tételek"
+  },
+  "status": {
+    "matched": "Párosítva",
+    "unmatched": "Nyitott",
+    "manual": "Kézi rögzítés",
+    "rule_matched": "Szabály alapján"
+  },
+  "actions": {
+    "import_statement": "Kivonat importálása",
+    "auto_match": "Automatikus párosítás",
+    "match_now": "Párosítás"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "title": "Házipénztár",
+  "subtitle": "Többpénztáras készpénzforgalom nyilvántartás",
+  "tabs": {
+    "entries": "Tételek",
+    "registers": "Pénztárak",
+    "rules": "Routing szabályok"
+  },
+  "total_summary": "Összesítés",
+  "default_badge": "Alapértelmezett",
+  "denomination_calc": "Címletszámoló",
+  "limit_warning_title": "Pénztári limit figyelmeztetés",
+  "settings_title": "Házipénztár Beállítások",
+  "settings_desc": "Készpénzállomány limit értékének testreszabása cég szinten."
+}

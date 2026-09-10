@@ -1,0 +1,43 @@
+{
+  "groups": {
+    "overview": "Áttekintés",
+    "finance": "Pénzügyek",
+    "accounting": "Könyvelés",
+    "hr": "HR & Eszközök",
+    "shipment": "Szállítmányozás",
+    "system": "Rendszer",
+    "operations": "Operáció",
+    "support": "Támogatás"
+  },
+  "items": {
+    "dashboard": "Irányítópult",
+    "categories": "Kategóriák",
+    "projects": "Projektek",
+    "partners": "Partnertörzs",
+    "invoices": "Számlák",
+    "kintlevo": "Kintlévőség",
+    "transactions": "Tranzakciók",
+    "petty_cash": "Házipénztár",
+    "transfers": "Utalások",
+    "general_ledger": "Főkönyvi karton",
+    "pnl": "Eredménykimutatás",
+    "balance_sheet": "Mérleg",
+    "annual_report": "Éves beszámoló",
+    "vat_return": "ÁFA bevallás",
+    "journals": "Vegyes könyvelés",
+    "fixed_assets": "Tárgyi eszközök",
+    "notes": "Jegyzetek",
+    "exchange_rates": "Árfolyamok",
+    "salaries": "Bérek",
+    "working_time": "Munkaidő",
+    "analytics": "Kimutatások",
+    "integrations": "Integrációk",
+    "upload": "Bizonylatfeltöltés",
+    "tickets": "Hibajegyek",
+    "knowledge_base": "Tudásbázis",
+    "settings": "Beállítások",
+    "shipments": "Fuvarok",
+    "shipment_import": "Excel Import",
+    "shipment_escalated": "Eszkaláció"
+  }
+}

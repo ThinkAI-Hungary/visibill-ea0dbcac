@@ -1,0 +1,65 @@
+{
+  "salaries": {
+    "title": "Bérek / járulékok",
+    "subtitle": "Alkalmazottak bérének és járulékainak kezelése",
+    "uploaded_files": "Feltöltött fájlok",
+    "cash_payout": "KP kifizetés",
+    "kpi": {
+      "total_payments": "Összes kifizetés",
+      "employee_count": "Alkalmazottak száma",
+      "entries_suffix": "bejegyzés",
+      "total_net": "Összes nettó bérköltség",
+      "total_gross": "Összes bruttó bérköltség"
+    }
+  },
+  "working_time": {
+    "title": "Munkaidő",
+    "subtitle_employee": "Saját munkaidő rögzítése",
+    "subtitle_admin": "Munkaidő rögzítés, dolgozók kezelése és rezsióradíjak",
+    "settings": "Beállítások",
+    "add_employee": "Dolgozó hozzáadása",
+    "kpi": {
+      "registered": "Bejelentett",
+      "contractors": "Alvállalkozók",
+      "headcount_suffix": "fő",
+      "monthly_salary_cost": "Havi bérköltség",
+      "avg_hourly_rate": "Átlag óradíj",
+      "hour_suffix": "/óra"
+    },
+    "tabs": {
+      "timesheet": "Időrögzítés",
+      "attendance": "Jelenléti ív",
+      "employees": "Dolgozók",
+      "submitted": "Leadott",
+      "rates": "Óradíjak"
+    },
+    "legend": {
+      "draft": "Piszkozat",
+      "submitted": "Leadva (jóváhagyásra vár)",
+      "approved": "Jóváhagyva"
+    },
+    "calendar": {
+      "monthly_summary": "Havi összesítő",
+      "submit_month": "Hónap leadása",
+      "submitting": "Leadás...",
+      "vacation": "Szabadság",
+      "weekdays": ["H", "K", "Sze", "Cs", "P", "Szo", "V"],
+      "months": [
+        "Január", "Február", "Március", "Április",
+        "Május", "Június", "Július", "Augusztus",
+        "Szeptember", "Október", "November", "December"
+      ]
+    },
+    "employee_tabs": {
+      "registered_employees": "Bejelentett dolgozók",
+      "contractors": "Alvállalkozók",
+      "no_employees": "Nincsenek bejelentett dolgozók",
+      "no_employees_desc": "A bérlista feltöltésekor automatikusan megjelennek itt, vagy adj hozzá manuálisan."
+    }
+  },
+  "fixed_assets": {
+    "title": "Tárgyi Eszköz Nyilvántartó",
+    "subtitle": "{{company}} — {{total}} eszköz ({{active}} aktív)",
+    "inventory_check": "Leltár ellenőrzés"
+  }
+}

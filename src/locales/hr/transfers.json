@@ -1,0 +1,21 @@
+{
+  "title": "Generiranje naloga za plaćanje",
+  "subtitle": "Priprema i preuzimanje paketa naloga za plaćanje (SEPA / XML / CSV) za vaše internet bankarstvo.",
+  "stats": {
+    "overdue": "Dospjeli računi",
+    "due_today": "Dospijeva danas",
+    "selected": "Označeno za plaćanje",
+    "download": "Preuzmi"
+  },
+  "tabs": {
+    "list": "Stavke za plaćanje",
+    "calendar": "Kalendar plaćanja"
+  },
+  "filters": {
+    "all": "Sve dospjelo",
+    "overdue": "Samo dospjelo",
+    "due_today": "Dospijeva danas",
+    "group_by_partner": "Grupiraj po partnerima"
+  },
+  "search_placeholder": "Traži partnera ili račun..."
+}

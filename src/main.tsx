@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import "./lib/i18n.ts";
 import App from "./App.tsx";
 import "./index.css";
 import { reportError } from "./lib/errorReporter.ts";

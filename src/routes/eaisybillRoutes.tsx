@@ -129,6 +129,7 @@ export function renderEaisybillLegacyAndFallbackRoutes() {
 
       {/* Root → scoped dashboard */}
       <Route path="/" element={<RootRedirect />} />
+      <Route path="/hr" element={<RootRedirect />} />
     </>
   );
 }

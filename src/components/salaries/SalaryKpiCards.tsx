@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { Wallet, Users, Banknote, TrendingUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   totalPayments: number;
@@ -11,13 +12,17 @@ interface Props {
 }
 
 export function SalaryKpiCards({ totalPayments, employeeCount, netSalary, grossSalary, totalItems }: Props) {
+  const { t } = useTranslation(['hr', 'common']);
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card className="bg-card/50 backdrop-blur-sm border-border/50">
         <CardContent className="p-5">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Összes kifizetés</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {t('hr:salaries.kpi.total_payments', 'Összes kifizetés')}
+              </p>
               <p className="text-2xl font-bold">{formatCurrency(totalPayments)}</p>
             </div>
             <div className="p-3 rounded-full bg-primary/10">
@@ -31,9 +36,13 @@ export function SalaryKpiCards({ totalPayments, employeeCount, netSalary, grossS
         <CardContent className="p-5">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Alkalmazottak száma</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {t('hr:salaries.kpi.employee_count', 'Alkalmazottak száma')}
+              </p>
               <p className="text-2xl font-bold">{employeeCount}</p>
-              <p className="text-xs text-muted-foreground">{totalItems} bejegyzés</p>
+              <p className="text-xs text-muted-foreground">
+                {totalItems} {t('hr:salaries.kpi.entries_suffix', 'bejegyzés')}
+              </p>
             </div>
             <div className="p-3 rounded-full bg-blue-500/10">
               <Users className="h-5 w-5 text-blue-500" />
@@ -46,7 +55,9 @@ export function SalaryKpiCards({ totalPayments, employeeCount, netSalary, grossS
         <CardContent className="p-5">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Összes nettó bérköltség</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {t('hr:salaries.kpi.total_net', 'Összes nettó bérköltség')}
+              </p>
               <p className="text-2xl font-bold">{formatCurrency(netSalary)}</p>
             </div>
             <div className="p-3 rounded-full bg-emerald-500/10">
@@ -60,7 +71,9 @@ export function SalaryKpiCards({ totalPayments, employeeCount, netSalary, grossS
         <CardContent className="p-5">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Összes bruttó bérköltség</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {t('hr:salaries.kpi.total_gross', 'Összes bruttó bérköltség')}
+              </p>
               <p className="text-2xl font-bold">{formatCurrency(grossSalary)}</p>
             </div>
             <div className="p-3 rounded-full bg-purple-500/10">

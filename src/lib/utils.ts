@@ -5,17 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number, currency: string = 'HUF', compact?: boolean): string {
-  if (compact && Math.abs(amount) >= 1000000) {
-    return `${(amount / 1000000).toFixed(2).replace('.', ',')} M Ft`;
-  }
-  const isHUF = currency.toUpperCase() === 'HUF';
-  return new Intl.NumberFormat('hu-HU', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: isHUF ? 0 : 2,
-    maximumFractionDigits: isHUF ? 0 : 2,
-  }).format(amount);
+import { formatCurrencyLocale } from "@/lib/locale/formatters";
+
+export function formatCurrency(amount: number, currency?: string, compact?: boolean): string {
+  return formatCurrencyLocale(amount, currency, compact);
 }
 
 /** Format a byte count into a human-readable string (e.g. 1.2 KB, 3.4 MB). */

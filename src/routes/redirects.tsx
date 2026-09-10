@@ -16,7 +16,10 @@ const AccountyApp = lazy(() => import("@/pages/Accounty/AccountyApp"));
  * RootRedirect — sends `/` to `/:companyId/:dateRange/` (scoped dashboard).
  * Uses the currently selected company and date range from context.
  */
+import i18n from "@/lib/i18n";
+
 export function RootRedirect() {
+  const location = useLocation();
   const { selectedCompany, companies, setSelectedCompany, isInitialLoading } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const { user } = useAuth();
@@ -136,7 +139,12 @@ export function RootRedirect() {
     }
   }
 
-  const target = generateScopedPath(activeCompany.id, dateFromFormatted, dateToFormatted, '');
+  const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/');
+  if (isHr && i18n.language !== 'hr') {
+    i18n.changeLanguage('hr');
+  }
+
+  const target = generateScopedPath(activeCompany.id, dateFromFormatted, dateToFormatted, '', isHr);
   return <Navigate to={target} replace />;
 }
 

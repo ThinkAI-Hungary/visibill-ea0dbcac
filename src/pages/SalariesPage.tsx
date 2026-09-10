@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { useSalaryData } from '@/hooks/useSalaryData';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -15,8 +15,10 @@ import { NavSummaryTable } from '@/components/salaries/NavSummaryTable';
 import { SalaryAddDialog, SalaryEditDialog } from '@/components/salaries/SalaryDialogs';
 import { SalaryFilesDialog } from '@/components/salaries/SalaryFilesTable';
 import type { SalaryItem } from '@/lib/salary-helpers';
+import { useTranslation } from 'react-i18next';
 
 export default function SalariesPage() {
+  const { t } = useTranslation(['hr', 'common']);
   const {
     salaryItems, loading, employeeGroups, navItems,
     metrics, addMutation, editMutation,
@@ -26,11 +28,12 @@ export default function SalariesPage() {
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('salaries');
   const [searchParams, setSearchParams] = useSearchParams();
+  const dateFnsLocale = getDateFnsLocale();
   const isSingleMonth = dateFrom.getFullYear() === dateTo.getFullYear()
     && dateFrom.getMonth() === dateTo.getMonth();
   const periodLabel = isSingleMonth
-    ? format(dateFrom, 'yyyy. MMM', { locale: hu })
-    : `${format(dateFrom, 'yyyy. MMM d.', { locale: hu })} – ${format(dateTo, 'yyyy. MMM d.', { locale: hu })}`;
+    ? format(dateFrom, 'yyyy. MMM', { locale: dateFnsLocale })
+    : `${format(dateFrom, 'yyyy. MMM d.', { locale: dateFnsLocale })} – ${format(dateTo, 'yyyy. MMM d.', { locale: dateFnsLocale })}`;
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -102,18 +105,18 @@ export default function SalariesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Bérek / járulékok</h1>
-          <p className="text-muted-foreground">Alkalmazottak bérének és járulékainak kezelése</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t('hr:salaries.title', 'Bérek / járulékok')}</h1>
+          <p className="text-muted-foreground">{t('hr:salaries.subtitle', 'Alkalmazottak bérének és járulékainak kezelése')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={openFilesDialog}>
             <FileText className="mr-2 h-4 w-4" />
-            Feltöltött fájlok
+            {t('hr:salaries.uploaded_files', 'Feltöltött fájlok')}
           </Button>
           <SalaryFilesDialog open={filesDialogOpen} onOpenChange={handleCloseFiles} />
-          <Button onClick={openAddDialog} disabled={!writable} title={!writable ? 'Nincs írási jogosultságod' : undefined}>
+          <Button onClick={openAddDialog} disabled={!writable} title={!writable ? t('common:no_permission', 'Nincs írási jogosultságod') : undefined}>
             <Plus className="mr-2 h-4 w-4" />
-            KP kifizetés
+            {t('hr:salaries.cash_payout', 'KP kifizetés')}
           </Button>
         </div>
       </div>

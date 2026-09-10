@@ -1,0 +1,66 @@
+{
+  "general_ledger": {
+    "breadcrumb": "Glavna knjiga",
+    "title": "Glavna knjiga",
+    "description": "Hijerarhijski izvadak glavne knjige i konta",
+    "tax_year": "Porezna godina",
+    "period": "Razdoblje",
+    "tabs": {
+      "extract": "Izvadak",
+      "cards": "Kartice",
+      "journal": "Dnevnik knjiženja",
+      "comparison": "Usporedba"
+    }
+  },
+  "profit_and_loss": {
+    "breadcrumb": "Račun dobiti i gubitka",
+    "title": "Račun dobiti i gubitka",
+    "description": "Račun dobiti i gubitka prema propisanoj shemi i postavke",
+    "period": "Razdoblje:",
+    "tabs": {
+      "view": "Račun dobiti i gubitka",
+      "mapping": "Matrica mapiranja"
+    },
+    "presets": {
+      "year": "Godina",
+      "quarter": "Kvartal",
+      "month": "Mjesec",
+      "custom": "Prilagođeno"
+    }
+  },
+  "balance_sheet": {
+    "breadcrumb": "Bilanca",
+    "title": "Bilanca",
+    "description": "Bilanca stanja prema propisanoj shemi i postavke",
+    "reporting_date": "Datum bilance",
+    "tabs": {
+      "view": "Bilanca",
+      "mapping": "Matrica mapiranja"
+    }
+  },
+  "journals": {
+    "breadcrumb": "Temeljnica",
+    "title": "Dnevnici knjiženja",
+    "description": "Kronološka i analitička evidencija knjiženja dvojnog knjigovodstva.",
+    "period_closing": "Zaključavanje razdoblja"
+  },
+  "vat_return": {
+    "breadcrumb": "PDV prijava",
+    "title": "PDV prijava & Analitika",
+    "description": "Generiranje PDV obrasca i analitički izvještaji",
+    "tabs": {
+      "return": "Prijava",
+      "analytics": "Analitika",
+      "config": "Postavke"
+    }
+  },
+  "annual_report": {
+    "title": "Godišnji financijski izvještaj",
+    "subtitle": "Čarobnjak za izradu godišnjeg izvještaja u 6 koraka",
+    "status": {
+      "finalized": "Zaključano",
+      "draft": "Nacrt"
+    },
+    "preview": "Pretpregled"
+  }
+}

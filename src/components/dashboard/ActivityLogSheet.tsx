@@ -1,6 +1,7 @@
-﻿import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -251,6 +252,7 @@ function LocalSelect({
 
 
 export function ActivityLogSheet() {
+  const { t } = useTranslation(['dashboard']);
   const { selectedCompany } = useCompany();
   const companyId = selectedCompany?.id;
 
@@ -626,12 +628,12 @@ export function ActivityLogSheet() {
         <SheetTrigger asChild>
           <Button variant="outline" size="sm" className="h-9">
             <History className="mr-2 h-4 w-4" />
-            Műveleti napló
+            {t('welcome.activity_log', 'Műveleti napló')}
           </Button>
         </SheetTrigger>
         <SheetContent className="w-full sm:max-w-[720px] flex flex-col overflow-hidden p-0" onCloseAutoFocus={(e) => e.preventDefault()}>
           <SheetHeader className="px-12 pt-6 pb-0">
-            <SheetTitle>Műveleti napló</SheetTitle>
+            <SheetTitle>{t('welcome.activity_log', 'Műveleti napló')}</SheetTitle>
             <SheetDescription>Az aktuális cég eseményeinek idővonala.</SheetDescription>
           </SheetHeader>
 

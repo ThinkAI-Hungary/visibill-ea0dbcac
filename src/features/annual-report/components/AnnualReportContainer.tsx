@@ -29,6 +29,7 @@ import { Step4KiegMelleklet } from './steps/Step4KiegMelleklet';
 import { Step5Osztalek } from './steps/Step5Osztalek';
 import { Step6Export } from './steps/Step6Export';
 import type { AnnualReportStep } from '../types';
+import { useTranslation } from 'react-i18next';
 
 const STEPS: AnnualReportStep[] = [
   { id: 1, title: 'Alapadatok', icon: FileText, description: 'Cég és képviselő adatai' },
@@ -40,6 +41,7 @@ const STEPS: AnnualReportStep[] = [
 ];
 
 export function AnnualReportContainer() {
+  const { t } = useTranslation(['accounting', 'common']);
   const { toast } = useToast();
   const [headerPreviewUrl, setHeaderPreviewUrl] = useState<string | null>(null);
 
@@ -89,7 +91,7 @@ export function AnnualReportContainer() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted/20 p-5 rounded-2xl border border-border/40 backdrop-blur-sm">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black tracking-tight text-foreground">Éves Beszámoló</h1>
+            <h1 className="text-2xl font-black tracking-tight text-foreground">{t('accounting:annual_report.title', 'Éves Beszámoló')}</h1>
             {report && (
               <Badge
                 variant="outline"
@@ -102,16 +104,16 @@ export function AnnualReportContainer() {
               >
                 {report.status === 'finalized' ? (
                   <span className="flex items-center gap-1">
-                    <Lock className="w-3 h-3" /> Véglegesítve
+                    <Lock className="w-3 h-3" /> {t('accounting:annual_report.status.finalized', 'Véglegesítve')}
                   </span>
                 ) : (
-                  'Vázlat'
+                  t('accounting:annual_report.status.draft', 'Vázlat')
                 )}
               </Badge>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {selectedCompany?.name || 'Válassz céget'} • 6 lépéses beszámoló varázsló
+            {selectedCompany?.name || 'Válassz céget'} • {t('accounting:annual_report.subtitle', '6 lépéses beszámoló varázsló')}
           </p>
         </div>
 
@@ -164,7 +166,7 @@ export function AnnualReportContainer() {
               }}
             >
               <Eye className="w-3.5 h-3.5" />
-              Előnézet
+              {t('accounting:annual_report.preview', 'Előnézet')}
             </Button>
           )}
         </div>

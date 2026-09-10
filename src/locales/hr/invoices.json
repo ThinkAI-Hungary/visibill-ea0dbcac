@@ -1,0 +1,42 @@
+{
+  "title": "Računi",
+  "subtitle": "Evidencija ulaznih i izlaznih računa",
+  "tabs": {
+    "incoming": "Ulazni računi",
+    "outgoing": "Izlazni računi",
+    "submitted_incoming": "Učitano (Ulazni)",
+    "submitted_outgoing": "Poslano (Izlazni)",
+    "proforma": "Predračuni",
+    "receipts": "Priznanice"
+  },
+  "columns": {
+    "invoice_number": "Broj računa",
+    "partner": "Partner",
+    "issue_date": "Datum izdavanja",
+    "due_date": "Dospijeće",
+    "fulfillment_date": "Datum isporuke",
+    "net_amount": "Neto iznos",
+    "vat_amount": "PDV",
+    "gross_amount": "Bruto iznos",
+    "currency": "Valuta",
+    "payment_status": "Status plaćanja",
+    "category": "Kategorija"
+  },
+  "status": {
+    "paid": "Plaćeno",
+    "unpaid": "Otvoreno",
+    "partial": "Djelomično plaćeno",
+    "overdue": "Dospjelo"
+  },
+  "actions": {
+    "new_invoice": "Unos novog računa",
+    "upload_invoice": "Učitaj račun",
+    "uploaded_files": "Učitane datoteke",
+    "export_list": "Izvoz popisa",
+    "export_excel": "Izvoz u Excel",
+    "export_csv": "Izvoz u CSV",
+    "mark_paid": "Označi kao plaćeno",
+    "details": "Pojedinosti"
+  },
+  "search_placeholder": "Traži po partneru, broju računa ili napomeni..."
+}

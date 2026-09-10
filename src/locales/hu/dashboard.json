@@ -1,0 +1,60 @@
+{
+  "title": "Irányítópult",
+  "kpis": {
+    "income": "Összes bevétel",
+    "expenses": "Összes kiadás",
+    "profit": "Eredmény",
+    "unpaid_incoming": "Nyitott szállítói kötelezettség",
+    "unpaid_outgoing": "Nyitott vevői követelés",
+    "cash_balance": "Banki egyenleg"
+  },
+  "sections": {
+    "cashflow": "Pénzforgalom (Cash-flow)",
+    "quick_actions": "Gyorsműveletek",
+    "recent_invoices": "Legutóbbi számlák",
+    "recent_invoices_tooltip": "A legutóbb feldolgozott számlák listája",
+    "recent_transactions": "Legutóbbi tranzakciók",
+    "monthly_comparison": "Havi összehasonlítás"
+  },
+  "welcome": {
+    "morning": "Jó reggelt",
+    "day": "Szép napot",
+    "evening": "Jó estét",
+    "subtitle": "Itt van a vállalkozásod teljes áttekintése",
+    "net": "Nettó",
+    "gross": "Bruttó",
+    "activity_log": "Műveleti napló"
+  },
+  "vat": {
+    "title": "ÁFA kimutatás",
+    "payable_vat": "Fizetendő ÁFA",
+    "refundable_vat": "Visszaigényelhető ÁFA",
+    "total_vat": "Összes ÁFA",
+    "deductible_vat": "Levonható ÁFA",
+    "analytics": "ÁFA analitika",
+    "outbound_vat_content": "Bevételek ÁFA tartalma",
+    "inbound_vat_content": "Kiadások ÁFA tartalma",
+    "categories": "ÁFA kategóriák:",
+    "revenue": "Árbevétel:",
+    "costs": "Költségek:",
+    "total": "Összesen:",
+    "no_data": "Nincs adat",
+    "regimes": {
+      "penzforgalmi": "Pénzforgalmi",
+      "alanyi_mentes": "Alanyi adómentes"
+    }
+  },
+  "inbound_status": {
+    "title": "Bejövő számlák állapota",
+    "payable": "Fizetendő",
+    "missing": "Hiányzó",
+    "payable_amount": "Fizetendő összeg:",
+    "missing_amount": "Hiányzó összeg:"
+  },
+  "unmatched_items": {
+    "title": "Nem párosított tételek",
+    "nav_invoices": "NAV számlák",
+    "transactions": "Tranzakciók",
+    "unmatched_nav_desc": "{{count}} számla nincs tranzakcióhoz párosítva · Összesen:"
+  }
+}

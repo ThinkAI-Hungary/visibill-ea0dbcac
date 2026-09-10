@@ -74,6 +74,7 @@ import {
 import { useUnreadTicketCount } from "@/hooks/useTickets";
 import CompanySelector from "./CompanySelector";
 import AppModeSwitcher from "./AppModeSwitcher";
+import { useTranslation } from "react-i18next";
 
 interface NavItem {
   title: string;
@@ -227,6 +228,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const { canAccess } = useEaisybillPermissions();
   const { hasAccess: hasAccountyAccess } = useHasAccountyAccess();
   const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
+  const { t } = useTranslation(['navigation', 'common']);
 
   const currentPath = location.pathname;
   const basePath = useScopedBasePath();
@@ -301,23 +303,55 @@ export const AppSidebar = React.memo(function AppSidebar() {
 
   // Permission-based filtering: filter items by canAccess() from useEaisybillPermissions
   const visibleGroups = useMemo(() => {
+    const keyMap: Record<string, string> = {
+      "/": "dashboard",
+      "/categories": "categories",
+      "/projects": "projects",
+      "/partners": "partners",
+      "/invoices": "invoices",
+      "/kintlevo": "kintlevo",
+      "/transactions": "transactions",
+      "/petty-cash": "petty_cash",
+      "/transfers": "transfers",
+      "/general-ledger": "general_ledger",
+      "/profit-and-loss": "pnl",
+      "/balance-sheet": "balance_sheet",
+      "/annual-report": "annual_report",
+      "/vat-return": "vat_return",
+      "/journals": "journals",
+      "/salaries": "salaries",
+      "/working-time": "working_time",
+      "/teny": "fixed_assets",
+      "/integrations": "integrations",
+      "/exchange-rates": "exchange_rates",
+      "/notes": "notes",
+      "/shipments": "shipments",
+      "/shipments/import": "shipment_import",
+      "/shipments/escalated": "shipment_escalated",
+    };
+
     return navigationGroups
       .map(group => {
         const items = group.items.filter(item => {
           if (!item.moduleKey) return true; // no module key → always visible
           return canAccess(item.moduleKey);
         });
-        return { ...group, items };
+        return {
+          ...group,
+          label: t(`groups.${group.key}`, { defaultValue: group.label }),
+          items: items.map(item => {
+            const itemKey = keyMap[item.url];
+            const localizedTitle = itemKey ? t(`items.${itemKey}`, { defaultValue: item.title }) : item.title;
+            return {
+              ...item,
+              title: localizedTitle,
+              to: item.url === "/" ? basePath : `${basePath}${item.url}`,
+            };
+          }),
+        };
       })
-      .filter(group => group.items.length > 0)
-      .map(group => ({
-        ...group,
-        items: group.items.map(item => ({
-          ...item,
-          to: item.url === "/" ? basePath : `${basePath}${item.url}`,
-        })),
-      }));
-  }, [canAccess, basePath]);
+      .filter(group => group.items.length > 0);
+  }, [canAccess, basePath, t]);
 
   const handlePrefetch = useCallback((url: string) => {
     const loader = prefetchMap[url];
@@ -493,7 +527,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                         </SidebarMenuButton>
                       </TooltipTrigger>
                       <TooltipContent side="right" align="center" className="text-xs">
-                        Feltöltés
+                        {t('items.upload', { defaultValue: 'Feltöltés' })}
                       </TooltipContent>
                     </Tooltip>
                   </SidebarMenuItem>
@@ -530,7 +564,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                         </SidebarMenuButton>
                       </TooltipTrigger>
                       <TooltipContent side="right" align="center" className="text-xs">
-                        Tudástár
+                        {t('items.knowledge_base', { defaultValue: 'Tudástár' })}
                       </TooltipContent>
                     </Tooltip>
                   </SidebarMenuItem>
@@ -572,7 +606,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                         </SidebarMenuButton>
                       </TooltipTrigger>
                       <TooltipContent side="right" align="center" className="text-xs">
-                        Hibajegyek{unreadTicketCount > 0 ? ` (${unreadTicketCount})` : ''}
+                        {t('items.tickets', { defaultValue: 'Hibajegyek' })}{unreadTicketCount > 0 ? ` (${unreadTicketCount})` : ''}
                       </TooltipContent>
                     </Tooltip>
                   </SidebarMenuItem>
@@ -670,7 +704,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                     >
                       <Upload className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
-                        Feltöltés
+                        {t('items.upload', { defaultValue: 'Feltöltés' })}
                       </span>
                     </div>
                   ) : (
@@ -692,7 +726,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                         isActive("/upload") ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary"
                       )} />
                       <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
-                        Feltöltés
+                        {t('items.upload', { defaultValue: 'Feltöltés' })}
                       </span>
                       {/* Option 2 style active bar for standalone */}
                       {isActive("/upload") && (
@@ -710,7 +744,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                     >
                       <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
-                        Tudástár
+                        {t('items.knowledge_base', { defaultValue: 'Tudástár' })}
                       </span>
                     </div>
                   ) : (
@@ -732,7 +766,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                         isActive("/knowledge-base") ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary"
                       )} />
                       <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
-                        Tudástár
+                        {t('items.knowledge_base', { defaultValue: 'Tudástár' })}
                       </span>
                       {/* Active bar */}
                       {isActive("/knowledge-base") && (
@@ -750,7 +784,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                     >
                       <TicketCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
-                        Hibajegyek
+                        {t('items.tickets', { defaultValue: 'Hibajegyek' })}
                       </span>
                     </div>
                   ) : (
@@ -772,7 +806,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                         isActive("/tickets") ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary"
                       )} />
                       <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
-                        Hibajegyek
+                        {t('items.tickets', { defaultValue: 'Hibajegyek' })}
                       </span>
                       {unreadTicketCount > 0 && (
                         <span className="h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground animate-pulse shadow-[0_0_8px_rgba(20,212,184,0.5)]">
@@ -802,33 +836,36 @@ export const AppSidebar = React.memo(function AppSidebar() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {user?.user_metadata?.name || 'Felhasználó'}
+                    {user?.user_metadata?.name || t('common:user.default_name', { defaultValue: 'Felhasználó' })}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleTheme}
-                  className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                >
-                  <div className="relative h-4 w-4">
-                    <Sun className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
-                    <Moon className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
-                  </div>
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleTheme}
+                    className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                    title={isDark ? t('common:user.light_mode') : t('common:user.dark_mode')}
+                  >
+                    <div className="relative h-4 w-4">
+                      <Sun className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
+                      <Moon className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
+                    </div>
+                  </Button>
+                </div>
               </div>
               <div className={`grid ${isEmployee ? 'grid-cols-1' : 'grid-cols-2'} gap-2 w-full`}>
                 {!isEmployee && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button data-tour="settings" variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
-                        <Link to="/settings">
+                        <Link to={`${basePath}/settings`}>
                           <Settings className="h-5 w-5" />
                         </Link>
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Beállítások</TooltipContent>
+                    <TooltipContent side="top">{t('common:user.settings')}</TooltipContent>
                   </Tooltip>
                 )}
                 <Tooltip>
@@ -837,7 +874,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                       <LogOut className="h-5 w-5" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">Kilépés</TooltipContent>
+                  <TooltipContent side="top">{t('common:user.logout')}</TooltipContent>
                 </Tooltip>
               </div>
             </div>
@@ -856,19 +893,19 @@ export const AppSidebar = React.memo(function AppSidebar() {
                     </div>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right">{isDark ? 'Világos mód' : 'Sötét mód'}</TooltipContent>
+                <TooltipContent side="right">{isDark ? t('common:user.light_mode') : t('common:user.dark_mode')}</TooltipContent>
               </Tooltip>
 
               {!isEmployee && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button data-tour="settings" variant="outline" asChild className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
-                      <Link to="/settings">
+                      <Link to={`${basePath}/settings`}>
                         <Settings className="h-4 w-4" />
                       </Link>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right">Beállítások</TooltipContent>
+                  <TooltipContent side="right">{t('common:user.settings')}</TooltipContent>
                 </Tooltip>
               )}
               <Tooltip>
@@ -877,7 +914,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                     <LogOut className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right">Kilépés</TooltipContent>
+                <TooltipContent side="right">{t('common:user.logout')}</TooltipContent>
               </Tooltip>
             </div>
           )}

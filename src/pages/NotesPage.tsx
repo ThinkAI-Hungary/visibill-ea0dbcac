@@ -26,8 +26,10 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export default function NotesPage() {
+  const { t } = useTranslation(['navigation', 'common']);
   const { companyId } = useParams<{ companyId: string }>();
   const { notes, isLoading, addNote, updateNote, deleteNote } = useNotesData(companyId);
   const { toast } = useToast();
@@ -155,14 +157,14 @@ export default function NotesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border-b border-border/30 gap-4 bg-muted/20">
         <div className="flex items-center gap-2">
           <ClipboardEdit className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-semibold text-foreground">Jegyzetek & Feljegyzések</h2>
+          <h2 className="text-base font-semibold text-foreground">{t('navigation:items.notes', { defaultValue: 'Jegyzetek' })}</h2>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative w-64">
             <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Keresés a jegyzetekben..."
+              placeholder={t('common:actions.search', { defaultValue: 'Keresés...' })}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 text-xs bg-background/50 focus:bg-background transition-colors"
@@ -170,7 +172,7 @@ export default function NotesPage() {
           </div>
           <Button onClick={handleCreateNote} size="sm" className="h-9 gap-1">
             <Plus className="h-4 w-4" />
-            Új jegyzet
+            {t('common:actions.edit', { defaultValue: 'Új jegyzet' })}
           </Button>
         </div>
       </div>
@@ -189,7 +191,7 @@ export default function NotesPage() {
                   : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
               }`}
             >
-              Összes
+              {t('common:status.all', { defaultValue: 'Összes' })}
             </button>
             <button
               onClick={() => { setActiveTab('private'); setSelectedNoteId(null); }}

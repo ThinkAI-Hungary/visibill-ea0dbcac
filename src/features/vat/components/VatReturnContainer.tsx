@@ -48,8 +48,10 @@ class VatReturnErrorBoundary extends React.Component<
 
 import { VatCollectorAnalyticsView } from './VatCollectorAnalyticsView';
 import { Layers } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export function VatReturnContainer() {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
 
   if (!selectedCompany) {
@@ -64,9 +66,9 @@ export function VatReturnContainer() {
     <div className="container max-w-7xl py-6 space-y-6 print:py-0 page-animate">
       <PageHeader
         companyName={selectedCompany?.name}
-        breadcrumb="ÁFA Bevallás (2665)"
-        title="ÁFA Bevallás & Gyűjtőkódos Analitika"
-        description="2665-ös nyomtatvány — ÁFA bevallás generálás és NAV gyűjtőkódos analitikus kimutatások"
+        breadcrumb={t('accounting:vat_return.breadcrumb', 'ÁFA Bevallás (2665)')}
+        title={t('accounting:vat_return.title', 'ÁFA Bevallás & Gyűjtőkódos Analitika')}
+        description={t('accounting:vat_return.description', '2665-ös nyomtatvány — ÁFA bevallás generálás és NAV gyűjtőkódos analitikus kimutatások')}
       />
 
       <Tabs defaultValue="return" className="space-y-4">
@@ -75,19 +77,19 @@ export function VatReturnContainer() {
             value="return"
             className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <Calculator className="w-4 h-4" /> Bevallás
+            <Calculator className="w-4 h-4" /> {t('accounting:vat_return.tabs.return', 'Bevallás')}
           </TabsTrigger>
           <TabsTrigger
             value="analytics"
             className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <Layers className="w-4 h-4" /> Gyűjtőkódos Analitika
+            <Layers className="w-4 h-4" /> {t('accounting:vat_return.tabs.analytics', 'Gyűjtőkódos Analitika')}
           </TabsTrigger>
           <TabsTrigger
             value="config"
             className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <Settings2 className="w-4 h-4" /> Beállítás
+            <Settings2 className="w-4 h-4" /> {t('accounting:vat_return.tabs.config', 'Beállítás')}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="return">

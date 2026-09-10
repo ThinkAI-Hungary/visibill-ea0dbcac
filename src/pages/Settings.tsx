@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/contexts/AuthContext";
@@ -510,6 +511,7 @@ interface SystemSettings { theme: string; language: string; date_format: string;
 // ── Main ──
 
 export default function Settings() {
+  const { t } = useTranslation(['settings', 'common']);
   const { user } = useAuth();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -789,25 +791,25 @@ export default function Settings() {
     <div className="container mx-auto py-8 px-6 page-animate">
       <div className="mb-8">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold">Beállítások</h1>
+          <h1 className="text-3xl font-bold">{t('settings:title', 'Beállítások')}</h1>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild><Info className="h-5 w-5 text-muted-foreground cursor-help" /></TooltipTrigger>
-              <TooltipContent className="max-w-xs"><p>Itt kezelheted a profil adataid, cég információid, értesítési beállításokat, témát és biztonságot.</p></TooltipContent>
+              <TooltipContent className="max-w-xs"><p>{t('settings:tooltip', 'Itt kezelheted a profil adataid, cég információid, értesítési beállításokat, témát és biztonságot.')}</p></TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
-        <p className="text-muted-foreground mt-2">Rendszer és üzleti beállítások kezelése</p>
+        <p className="text-muted-foreground mt-2">{t('settings:subtitle', 'Rendszer és üzleti beállítások kezelése')}</p>
       </div>
 
       <Tabs value={activeSettingsTab} onValueChange={(v) => setActiveSettingsTab(v as typeof SETTINGS_TABS[number])} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-2 bg-transparent h-auto">
-          <TabsTrigger value="profile" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><User className="h-4 w-4" />Profil</TabsTrigger>
-          <TabsTrigger value="business" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building2 className="h-4 w-4" />Cég</TabsTrigger>
-          <TabsTrigger value="bank-accounts" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Landmark className="h-4 w-4" />Bankszámlák</TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Bell className="h-4 w-4" />Értesítések</TabsTrigger>
-          <TabsTrigger value="system" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Palette className="h-4 w-4" />Rendszer</TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Shield className="h-4 w-4" />Biztonság</TabsTrigger>
+          <TabsTrigger value="profile" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><User className="h-4 w-4" />{t('settings:tabs.profile', 'Profil')}</TabsTrigger>
+          <TabsTrigger value="business" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building2 className="h-4 w-4" />{t('settings:tabs.business', 'Cég')}</TabsTrigger>
+          <TabsTrigger value="bank-accounts" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Landmark className="h-4 w-4" />{t('settings:tabs.bank_accounts', 'Bankszámlák')}</TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Bell className="h-4 w-4" />{t('settings:tabs.notifications', 'Értesítések')}</TabsTrigger>
+          <TabsTrigger value="system" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Palette className="h-4 w-4" />{t('settings:tabs.system', 'Rendszer')}</TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center gap-2 border border-border/40 bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Shield className="h-4 w-4" />{t('settings:tabs.security', 'Biztonság')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">

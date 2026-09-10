@@ -1,0 +1,19 @@
+{
+  "title": "Kintlévőség",
+  "subtitle": "Kifizetetlen kimenő számlák cégenként csoportosítva",
+  "send_dunning": "Felszólítás küldése",
+  "no_write_permission": "Nincs írási jogosultságod",
+  "search_placeholder": "Cég neve...",
+  "filter_label": "Szűrés:",
+  "net": "Nettó",
+  "gross": "Bruttó",
+  "total_receivables": "Összes kintlévőség",
+  "companies_count": "{{count}} cég",
+  "invoices_count": "{{count}} számla",
+  "aging": {
+    "not_due": "Nem lejárt",
+    "days_1_30": "1–30 napos",
+    "days_31_180": "31–180 napos",
+    "days_180_plus": "180+ napos"
+  }
+}

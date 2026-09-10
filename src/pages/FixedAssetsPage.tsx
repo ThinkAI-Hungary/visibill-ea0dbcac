@@ -9,6 +9,7 @@ import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Package2, ShieldCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // Lazy-load heavy dialog to keep initial chunk small
 const InventoryCheckDialog = lazy(() =>
@@ -16,6 +17,7 @@ const InventoryCheckDialog = lazy(() =>
 );
 
 export default function FixedAssetsPage() {
+  const { t } = useTranslation(['hr', 'common']);
   const { selectedCompany } = useCompany();
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [inventoryCheckOpen, setInventoryCheckOpen] = useState(false);
@@ -92,9 +94,9 @@ export default function FixedAssetsPage() {
               <Package2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Tárgyi Eszköz Nyilvántartó</h1>
+              <h1 className="text-2xl font-bold">{t('hr:fixed_assets.title', 'Tárgyi Eszköz Nyilvántartó')}</h1>
               <p className="text-sm text-muted-foreground">
-                {selectedCompany.name} — {assets.length} eszköz ({activeCount} aktív)
+                {t('hr:fixed_assets.subtitle', { company: selectedCompany.name, total: assets.length, active: activeCount, defaultValue: `${selectedCompany.name} — ${assets.length} eszköz (${activeCount} aktív)` })}
               </p>
             </div>
           </div>
@@ -109,7 +111,7 @@ export default function FixedAssetsPage() {
               disabled={activeCount === 0 || !writable}
             >
               <ShieldCheck className="h-4 w-4" />
-              Leltár ellenőrzés
+              {t('hr:fixed_assets.inventory_check', 'Leltár ellenőrzés')}
             </Button>
           </div>
         </div>

@@ -1,0 +1,19 @@
+{
+  "title": "Dokumentumok feltöltése",
+  "subtitle": "Tölts fel számlákat, pénztárbizonylatokat, béradatokat, tranzakciókat vagy futár riportokat automatikus feldolgozásra.",
+  "dropzone": {
+    "title": "Húzd ide a fájlokat vagy kattints a feltöltéshez",
+    "subtitle": "Több fájlt is kiválaszthatsz egyszerre vagy egyenként is feltöltheted",
+    "drag_active": "Engedd el a fájlokat a feltöltéshez",
+    "button": "Fájlok tallózása"
+  },
+  "uploading": "Feltöltés folyamatban...",
+  "history": "Feltöltési előzmények",
+  "channels": {
+    "invoices": "Számlák",
+    "vouchers": "Pénztárbizonylat",
+    "transactions": "Tranzakciók",
+    "salaries": "Béradatok",
+    "reports": "Futár riportok"
+  }
+}

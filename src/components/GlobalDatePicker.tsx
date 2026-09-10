@@ -1,16 +1,18 @@
 import { CalendarIcon } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, isSameDay, addDays } from 'date-fns';
-import { hu } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
 
 const MAX_RANGE_DAYS = 365;
 
 export function GlobalDatePicker() {
+  const { t } = useTranslation('common');
   const { dateFrom, dateTo, setDateFrom, setDateTo, setThisMonth, setPreviousMonth, setThisYear } = useDateRange();
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
@@ -20,10 +22,12 @@ export function GlobalDatePicker() {
   const isThisYear = isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date()));
 
   const isCustom = !isThisMonth && !isPreviousMonth && !isThisYear;
+  const isHr = getActiveLocale() === 'hr';
+  const dateFormatPattern = isHr ? 'dd.MM.yyyy.' : 'yyyy. MMM dd.';
 
   return (
     <div className="flex items-center gap-2 flex-wrap px-6 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <span className="text-sm font-medium text-muted-foreground mr-1">Időszak:</span>
+      <span className="text-sm font-medium text-muted-foreground mr-1">{t('date_picker.period', { defaultValue: 'Időszak:' })}</span>
       
       {/* Preset buttons */}
       <div className="flex gap-1">
@@ -33,7 +37,7 @@ export function GlobalDatePicker() {
           className={cn("h-7 text-xs px-3", !isThisMonth && "text-muted-foreground")}
           onClick={setThisMonth}
         >
-          Ez a hónap
+          {t('date_picker.this_month', { defaultValue: 'Ez a hónap' })}
         </Button>
         <Button
           variant={isPreviousMonth ? "default" : "outline"}
@@ -41,7 +45,7 @@ export function GlobalDatePicker() {
           className={cn("h-7 text-xs px-3", !isPreviousMonth && "text-muted-foreground")}
           onClick={setPreviousMonth}
         >
-          Előző hónap
+          {t('date_picker.previous_month', { defaultValue: 'Előző hónap' })}
         </Button>
         <Button
           variant={isThisYear ? "default" : "outline"}
@@ -49,7 +53,7 @@ export function GlobalDatePicker() {
           className={cn("h-7 text-xs px-3", !isThisYear && "text-muted-foreground")}
           onClick={setThisYear}
         >
-          Ez az év
+          {t('date_picker.this_year', { defaultValue: 'Ez az év' })}
         </Button>
       </div>
 
@@ -68,7 +72,7 @@ export function GlobalDatePicker() {
               )}
             >
               <CalendarIcon className={cn("mr-1.5 h-3 w-3", isCustom ? "text-primary-foreground dark:text-primary" : "text-muted-foreground")} />
-              {format(dateFrom, "yyyy. MMM dd.", { locale: hu })}
+              {format(dateFrom, dateFormatPattern, { locale: getDateFnsLocale() })}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -101,7 +105,7 @@ export function GlobalDatePicker() {
               )}
             >
               <CalendarIcon className={cn("mr-1.5 h-3 w-3", isCustom ? "text-primary-foreground dark:text-primary" : "text-muted-foreground")} />
-              {format(dateTo, "yyyy. MMM dd.", { locale: hu })}
+              {format(dateTo, dateFormatPattern, { locale: getDateFnsLocale() })}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">

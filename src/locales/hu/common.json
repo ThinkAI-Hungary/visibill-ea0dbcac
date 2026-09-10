@@ -1,0 +1,66 @@
+{
+  "actions": {
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "delete": "Törlés",
+    "edit": "Szerkesztés",
+    "view": "Megtekintés",
+    "close": "Bezárás",
+    "filter": "Szűrés",
+    "reset": "Visszaállítás",
+    "search": "Keresés...",
+    "export": "Exportálás",
+    "import": "Importálás",
+    "upload": "Feltöltés",
+    "refresh": "Frissítés",
+    "back": "Vissza",
+    "confirm": "Megerősítés",
+    "continue": "Folytatás",
+    "download": "Letöltés",
+    "copy": "Másolás",
+    "copied": "Másolva!"
+  },
+  "status": {
+    "loading": "Betöltés...",
+    "success": "Sikeres művelet",
+    "error": "Hiba történt",
+    "empty": "Nincs megjeleníthető adat",
+    "all": "Összes",
+    "active": "Aktív",
+    "inactive": "Inaktív",
+    "pending": "Függőben",
+    "completed": "Befejezve",
+    "failed": "Sikertelen"
+  },
+  "labels": {
+    "total": "Összesen",
+    "period": "Időszak",
+    "date": "Dátum",
+    "amount": "Összeg",
+    "currency": "Pénznem",
+    "type": "Típus",
+    "name": "Név",
+    "status": "Státusz",
+    "notes": "Megjegyzés",
+    "company": "Cég",
+    "actions": "Műveletek",
+    "details": "Részletek",
+    "general": "Általános"
+  },
+  "date_picker": {
+    "period": "Időszak:",
+    "this_month": "Ez a hónap",
+    "previous_month": "Előző hónap",
+    "this_year": "Ez az év",
+    "custom": "Egyéni időszak"
+  },
+  "user": {
+    "profile": "Profil",
+    "settings": "Beállítások",
+    "logout": "Kilépés",
+    "light_mode": "Világos mód",
+    "dark_mode": "Sötét mód",
+    "language": "Nyelv",
+    "default_name": "Felhasználó"
+  }
+}

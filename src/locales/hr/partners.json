@@ -1,0 +1,38 @@
+{
+  "title": "Partneri",
+  "subtitle": "Evidencija kupaca i dobavljača",
+  "columns": {
+    "name": "Naziv partnera",
+    "name_address": "Naziv / Adresa",
+    "tax_number": "OIB / Porezni broj",
+    "city": "Grad / Sjedište",
+    "invoices_count": "Broj računa",
+    "invoices": "Računi",
+    "total_volume": "Ukupni promet",
+    "type": "Vrsta"
+  },
+  "types": {
+    "all": "Svi",
+    "customer": "Kupac",
+    "supplier": "Dobavljač",
+    "both": "Kupac i dobavljač"
+  },
+  "actions": {
+    "new_partner": "Dodaj novog partnera",
+    "edit_partner": "Uredi partnera"
+  },
+  "fields": {
+    "name": "Naziv tvrtke / Ime",
+    "tax_number": "OIB / Porezni broj",
+    "registration_number": "MBS (Matični broj)",
+    "address": "Adresa",
+    "iban": "IBAN račun",
+    "email": "E-pošta",
+    "phone": "Broj telefona"
+  },
+  "ranking": {
+    "title": "Rangiranje i izvještaji",
+    "top_suppliers": "Top 10 dobavljača",
+    "top_customers": "Top 10 kupaca"
+  }
+}

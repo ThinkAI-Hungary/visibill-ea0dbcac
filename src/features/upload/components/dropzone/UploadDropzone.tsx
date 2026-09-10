@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import type { ChannelConfig } from '../../types';
 
 interface UploadDropzoneProps {
@@ -19,6 +20,7 @@ export function UploadDropzone({
   onFilesAdded,
   writable,
 }: UploadDropzoneProps) {
+  const { t } = useTranslation(['upload']);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const Icon = config.icon;
 
@@ -83,11 +85,11 @@ export function UploadDropzone({
       <div className="space-y-2">
         <p className="text-sm font-medium">
           {dragOver
-            ? 'Engedd el a fájlokat a feltöltéshez'
-            : config.dragPrompt}
+            ? t('upload:dropzone.drag_active', 'Engedd el a fájlokat a feltöltéshez')
+            : t('upload:dropzone.title', config.dragPrompt)}
         </p>
         <p className="text-xs text-muted-foreground">
-          Több fájlt is kiválaszthatsz egyszerre vagy egyenként is feltöltheted
+          {t('upload:dropzone.subtitle', 'Több fájlt is kiválaszthatsz egyszerre vagy egyenként is feltöltheted')}
         </p>
       </div>
       <Button
@@ -96,7 +98,7 @@ export function UploadDropzone({
         disabled={!writable}
       >
         <Upload className="h-4 w-4 mr-2" />
-        Fájlok tallózása
+        {t('upload:dropzone.button', 'Fájlok tallózása')}
       </Button>
       <input
         ref={inputRef}
