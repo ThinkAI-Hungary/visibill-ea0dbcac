@@ -42,7 +42,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import AppModeSwitcher from '@/components/AppModeSwitcher';
 import { PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
-import { useAccountyTaxProfile } from '@/hooks/accounty';
 import { useEvClientSettings } from '@/hooks/useEvData';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import AccountyNavSkeleton from './AccountyNavSkeleton';
@@ -262,7 +261,7 @@ export default function AccountySidebar({
     return user?.email?.substring(0, 2).toUpperCase() || 'U';
   };
 
-  const clientMatch = pathname.match(/\/eaisybooks\/([a-f0-9-]{36})/i);
+  const clientMatch = pathname.match(/\/eaisybooks\/(?:(?:client|payroll|missing-invoices)\/)?([a-f0-9-]{36})/i);
   const selectedClientId = clientMatch ? clientMatch[1] : null;
   const selectedClient = allClients?.find(c => c.companyId === selectedClientId);
   const { data: evSettings } = useEvClientSettings(selectedClientId || undefined);
@@ -278,7 +277,10 @@ export default function AccountySidebar({
   const prevSelectedClientIdRef = React.useRef<string | null>(selectedClientId);
 
   React.useEffect(() => {
-    if (prevSelectedClientIdRef.current && !selectedClientId) {
+    if (selectedClientId) {
+      // If on a client route, never get stuck in portfolio navigating state
+      setIsNavigatingToPortfolio(false);
+    } else if (prevSelectedClientIdRef.current && !selectedClientId) {
       setIsNavigatingToPortfolio(true);
       const timer = setTimeout(() => {
         setIsNavigatingToPortfolio(false);
@@ -381,7 +383,7 @@ export default function AccountySidebar({
 
 
 
-        {isNavigatingToPortfolio ? (
+        {isNavigatingToPortfolio && !selectedClientId ? (
           <AccountyNavSkeleton isCollapsed={isCollapsed} count={isCollapsed ? 8 : 6} />
         ) : isCollapsed ? (
           selectedClientId ? (

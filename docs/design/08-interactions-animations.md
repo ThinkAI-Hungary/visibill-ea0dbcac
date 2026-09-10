@@ -605,3 +605,75 @@ className={`border rounded-lg ${
 ```
 
 **Szabály:** Ha egy gomb-keretnek van saját `border` osztálya, a kijelölt állapot jelzéséhez **elegendő a border szín változtatása**. A `ring-*` csak akkor szükséges, ha nincs saját border (pl. egy `rounded-full` szín-gombnál).
+
+---
+
+## ⚠️ Oldal-szintű Animációk & GPU ClearType Homályosodás Megelőzése (2026-09-11)
+
+### A Probléma: GPU Compositor Layer Text Antialiasing Blur & 1px Subpixel Snap
+
+Amikor egy oldal vagy nagyméretű konténer `tailwindcss-animate` osztályokat használ (pl. `animate-in fade-in slide-in-from-bottom-4 duration-500`), a plugin `@keyframes enter` motorja belsőleg egy 3D transzformációt futtat:
+```css
+transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(...) rotate(...);
+```
+
+#### Mi történik Windows / Chromium (Chrome, Edge) alatt?
+1. **ClearType kikapcsolása:** A böngésző a 3D transzformáció miatt a teljes tartalomkonténert kiemeli egy hardveres GPU textúra rétegre (GPU compositor layer). Ezen a rétegen a böngésző kikapcsolja a natív Windows ClearType (LCD subpixel) élsimítást, és átvált fekete-fehér (grayscale) mintavételezésre.
+2. **Homályosodás:** Az animáció 300–500 ms-a alatt a betűk és az 1 pixeles finom keretek mosottnak, fókuszálatlannak tűnnek.
+3. **1 pixeles ugrás és kiélesedés:** Amikor az animáció lejár, a böngésző megszünteti a GPU réteget és visszakapcsolja a ClearType-ot. Mivel a subpixel rács máshová illeszti a betűszéleket, a szöveg hirtelen 0.5–1 pixelt ugrik a fizikai pixelrácson és pillanatszerűen "kiélesedik".
+
+---
+
+### Alapszabályok (Design & Kódolási Irányelvek)
+
+| Elem típusa | Megengedett animáció | Tiltott animáció | Miért? |
+|---|---|---|---|
+| **Teljes oldal gyökér konténer** (`w-full space-y-6 ...`) | `animate-in fade-in duration-500` vagy instant | ❌ `slide-in-from-*`<br>❌ `zoom-in-*` | A nagyméretű, sűrű táblázatok/kártyák eltolása motion sicknesst, GPU thrashinget és szöveghomályosodást okoz. |
+| **Lebegő panelek / modálok** (`fixed`, `absolute`, Radix Dialog) | `animate-in zoom-in-95 duration-200` | — | Elkülönített, kis felületű rétegek, ahol a zoom/slide természetes és fókuszált. |
+| **Alsó akciósávok** (Bulk action bar, pl. `fixed bottom-6`) | `animate-in fade-in slide-in-from-bottom-4 duration-300` | — | Fix pozíciójú UI widget, nem mozdítja el a mögötte lévő oldal tartalmát. |
+| **Inline dropdown / popover menük** | `animate-in fade-in slide-in-from-top-1 duration-150` | — | Kis méretű popup elem. |
+
+---
+
+### Kétlépcsős Technikai Védelem a Rendszerben
+
+#### 1. Globális CSS Felülbírálás (`src/index.css`)
+A tiszta `fade-in` animációk esetén kizárólag az `opacity` változik, transzformáció nélkül:
+```css
+@keyframes enterOpacityOnly {
+  from { opacity: var(--tw-enter-opacity, 0); }
+  to { opacity: 1; }
+}
+
+.animate-in.fade-in:not([class*="slide-in"]):not([class*="zoom-in"]):not([class*="spin-in"]) {
+  animation-name: enterOpacityOnly !important;
+}
+
+#accounty-main-scroll > .animate-in,
+#accounty-main-scroll > div > .animate-in,
+#accounty-main-scroll > div > div > .animate-in {
+  --tw-enter-translate-x: 0 !important;
+  --tw-enter-translate-y: 0 !important;
+  --tw-enter-scale: 1 !important;
+  animation-name: enterOpacityOnly !important;
+}
+```
+
+#### 2. Page Konténer Konvenció
+Új oldal (`*Page.tsx`) létrehozásakor a visszatérési gyökér mindig tiszta fade-in legyen:
+```tsx
+// ✅ HELYES — Finom, tiszta fade-in, ClearType megmarad, nincs ugrás
+return (
+  <div className="w-full space-y-6 pb-24 animate-in fade-in duration-500">
+    ...
+  </div>
+);
+
+// ❌ TILOS — Oldal-szintű slide-in: blur és pixel snap Windows alatt!
+return (
+  <div className="w-full space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    ...
+  </div>
+);
+```
+

@@ -12,7 +12,7 @@ interface IntegrationStepProps {
 
 export default function IntegrationStep({ integrationType, setIntegrationType, handleNext }: IntegrationStepProps) {
   return (
-    <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+    <div className="animate-in fade-in duration-500">
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Könyvelőprogram integráció</h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Automatizáld az adatátvitelt a könyvelőprogramod és a Visibill között</p>

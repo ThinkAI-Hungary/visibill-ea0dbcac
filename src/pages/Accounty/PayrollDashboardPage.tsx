@@ -123,7 +123,8 @@ export default function PayrollDashboardPage() {
   const { data: employees = [], isLoading: empLoading, isError: empError } = usePayrollEmployees(companyId || '');
   const { data: cycles = [], isLoading: cyclesLoading, isError: cyclesError } = usePayrollCycles(companyId || '');
   const { data: filings = [], isLoading: filingsLoading, isError: filingsError } = usePayrollFilings(companyId || '');
-  const { dateFrom } = useDateRange();
+  const { dateFrom, dateFromFormatted, dateToFormatted } = useDateRange();
+  const effectiveDateRange = dateRange || `${dateFromFormatted}_${dateToFormatted}`;
   const taxYear = dateFrom.getFullYear();
   const { data: taxParams } = useTaxParameters(taxYear);
   const { data: allClients, isLoading: clientLoading } = useAccountyClients();
@@ -220,7 +221,7 @@ export default function PayrollDashboardPage() {
             Számfejtés Rekonstrukció
           </Button>
           <Button
-            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/import`)}
+            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/import`)}
             variant="outline"
             className="flex items-center gap-2"
           >
@@ -228,7 +229,7 @@ export default function PayrollDashboardPage() {
             Importálás
           </Button>
           <Button
-            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/settings`)}
+            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/settings`)}
             variant="outline"
             className="flex items-center gap-2"
           >
@@ -236,7 +237,7 @@ export default function PayrollDashboardPage() {
             Beállítások
           </Button>
           <Button
-            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/new`)}
+            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/new`)}
             variant="outline"
             className="flex items-center gap-2"
           >
@@ -244,7 +245,7 @@ export default function PayrollDashboardPage() {
             Új dolgozó
           </Button>
           <Button
-            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/cycle/new`)}
+            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/new`)}
             className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
@@ -272,7 +273,7 @@ export default function PayrollDashboardPage() {
           <div className="flex items-center gap-2 shrink-0">
             <Button
               size="sm"
-              onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/import`)}
+              onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/import`)}
               variant="outline"
               className="text-xs"
             >
@@ -329,7 +330,7 @@ export default function PayrollDashboardPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees`)}
+              onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees`)}
               className="text-xs text-primary font-semibold flex items-center gap-1"
             >
               Összes <ArrowUpRight className="w-3.5 h-3.5" />
@@ -358,7 +359,7 @@ export default function PayrollDashboardPage() {
               filteredEmployees.map((emp) => (
                 <div
                   key={emp.id}
-                  onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/${emp.id}`)}
+                  onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}`)}
                   className="px-5 py-3.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors group"
                 >
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-sm font-bold text-primary">
@@ -394,7 +395,7 @@ export default function PayrollDashboardPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(`/eaisybooks/payroll/${companyId}/cycle/new`)}
+              onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/new`)}
               className="text-xs text-primary font-semibold flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" /> Új ciklus
@@ -411,7 +412,7 @@ export default function PayrollDashboardPage() {
               recentCycles.map((cycle) => (
                 <div
                   key={cycle.id}
-                  onClick={() => navigate(`/eaisybooks/payroll/${companyId}/cycle/${cycle.id}`)}
+                  onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/${cycle.id}`)}
                   className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors group"
                 >
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 flex flex-col items-center justify-center">
@@ -460,7 +461,7 @@ export default function PayrollDashboardPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings`)}
+            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/filings`)}
             className="text-xs text-primary font-semibold flex items-center gap-1"
           >
             Összes <ArrowUpRight className="w-3.5 h-3.5" />
@@ -566,7 +567,7 @@ export default function PayrollDashboardPage() {
           return (
             <div
               key={card.path}
-              onClick={() => navigate(`/eaisybooks/payroll/${companyId}/${card.path}`)}
+              onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/${card.path}`)}
               className="bg-card rounded-xl border border-border shadow-soft p-5 hover:shadow-lg hover:border-primary/30 cursor-pointer transition-all group"
             >
               <div className="flex items-center gap-3 mb-2">

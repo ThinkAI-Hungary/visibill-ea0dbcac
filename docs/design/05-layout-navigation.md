@@ -355,9 +355,11 @@ A Control Center (`ControlCenter` component) és a Tickets Page (`TicketsPage` `
 ```
 
 **Érintett helyek:**
+- `src/components/AppLayout.tsx` — `ContentArea` fő eaisybill tartalomterület
+- `src/pages/Accounty/AccountyLayout.tsx` — `#accounty-main-scroll` eaisyBooks tartalomterület
 - `ManagementDashboard.tsx` — tickets scroll container
 - `ManagementDashboard.tsx` — többi view scroll container
-- Bármely panel/sidebar ahol a tartalom változhat tab váltáskor
+- Bármely panel/sidebar ahol a tartalom változhat tab váltáskor vagy adatok aszinkron betöltődésekor
 
 ### 2. CSS Grid gyerekek — `min-h-0` kötelező
 
@@ -447,7 +449,7 @@ A Control Center (`ControlCenter` component) és a Tickets Page (`TicketsPage` `
 
 | # | Ellenőrzés | Hol |
 |---|---|---|
-| 1 | Scroll container kap `scrollbar-gutter: stable`-t? | Minden `overflow-y-auto` div |
+| 1 | Scroll container kap `scrollbar-gutter: stable`-t és `overflow-y-auto`-t? | Minden fő app shell (`AppLayout`, `AccountyLayout`) és görgethető panel |
 | 2 | Grid gyerekek kapnak `min-h-0`-t? | Fix magasságú grid layout-ok |
 | 3 | `divide-y` nincs kombinálva egyedi `border-l-*`-gal? | Lista elemek saját border logikával |
 | 4 | Aktív border mindig foglal helyet (transparent)? | Kiválasztható lista elemek |

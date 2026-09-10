@@ -422,7 +422,7 @@ export default function ClientDetailsPage() {
         const isOverview = pathname.endsWith('/overview') || (!pathname.endsWith('/settings') && !pathname.endsWith('/profile'));
         if (isOverview) {
           return (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-6 animate-in fade-in duration-500">
           {/* KPI Cards */}
           <div className="grid grid-cols-4 gap-4">
             <div 

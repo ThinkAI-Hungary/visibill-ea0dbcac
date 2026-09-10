@@ -89,7 +89,7 @@ export default function HelpPage() {
 
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-3">

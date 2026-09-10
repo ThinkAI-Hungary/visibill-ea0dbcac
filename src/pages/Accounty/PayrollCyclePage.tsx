@@ -22,6 +22,7 @@ import { postPayrollCycleToLedger } from '@/lib/payroll/payrollAutoPoster';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { reportError } from '@/lib/errorReporter';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
@@ -85,8 +86,10 @@ const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function PayrollCyclePage() {
-  const { companyId, cycleId } = useParams<{ companyId: string; cycleId: string }>();
+  const { companyId, cycleId, dateRange } = useParams<{ companyId: string; cycleId: string; dateRange?: string }>();
   const navigate = useNavigate();
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
+  const effectiveDateRange = dateRange || `${dateFromFormatted}_${dateToFormatted}`;
 
   const isNewCycle = !cycleId || cycleId === 'new';
   const { data: cycle, isLoading: cycleLoading, isError: cycleError, refetch: refetchCycle } = usePayrollCycle(isNewCycle ? '' : cycleId || '');
@@ -542,7 +545,7 @@ export default function PayrollCyclePage() {
     if (!companyId) return;
     try {
       const result = await createCycle.mutateAsync({ company_id: companyId, year: newYear, month: newMonth });
-      navigate(`/eaisybooks/payroll/${companyId}/cycle/${result.id}`, { replace: true });
+      navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/${result.id}`, { replace: true });
     } catch {
       // Error handled by mutation
     }
@@ -603,7 +606,7 @@ export default function PayrollCyclePage() {
           variant: 'destructive',
         });
       }
-      navigate(`/eaisybooks/payroll/${companyId}`);
+      navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll`);
     } catch (err: any) {
       toast({
         title: 'Hiba a lezárás során',
@@ -702,7 +705,7 @@ export default function PayrollCyclePage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/eaisybooks/payroll/${companyId}`)} className="h-9 w-9">
+          <Button variant="ghost" size="icon" onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll`)} className="h-9 w-9">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
@@ -958,7 +961,7 @@ export default function PayrollCyclePage() {
       <div className="flex items-center justify-between">
         <Button
           variant="outline"
-          onClick={() => currentStep > 1 ? handleStepChange(currentStep - 1) : navigate(`/eaisybooks/payroll/${companyId}`)}
+          onClick={() => currentStep > 1 ? handleStepChange(currentStep - 1) : navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll`)}
           className="flex items-center gap-2"
           disabled={updateStep.isPending}
         >

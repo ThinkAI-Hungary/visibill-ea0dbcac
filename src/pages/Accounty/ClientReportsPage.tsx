@@ -49,7 +49,7 @@ export default function ClientReportsPage() {
   };
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in slide-in-from-right-8 duration-500 relative pb-24">
+    <div className="w-full space-y-8 animate-in fade-in duration-500 relative pb-24">
       {/* Header */}
       <div className="flex items-start gap-4">
         <button 

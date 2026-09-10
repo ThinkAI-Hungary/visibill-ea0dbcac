@@ -368,7 +368,7 @@ export default function ClientMissingInvoicesPage() {
     );
   }
   return (
-    <div className="w-full space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full space-y-6 pb-24 animate-in fade-in duration-500">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

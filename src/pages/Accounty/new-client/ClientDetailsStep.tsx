@@ -73,7 +73,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
   } = props;
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="animate-in fade-in duration-500">
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Add hozzá az első ügyfeledet</h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Később bármikor hozzáadhatsz többet</p>

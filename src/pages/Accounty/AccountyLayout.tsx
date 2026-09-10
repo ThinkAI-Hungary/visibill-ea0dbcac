@@ -347,7 +347,7 @@ function AccountyLayoutInner() {
             onHelpClick={handleHelpClick}
           />
 
-          <div id="accounty-main-scroll" className="flex-1 overflow-auto p-8 relative">
+          <div id="accounty-main-scroll" className="flex-1 overflow-y-auto p-8 relative" style={{ scrollbarGutter: 'stable' }}>
             {!isOnline && (
               <div className="mb-5 flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-900/15 border border-red-200 dark:border-red-800/40 rounded-xl text-sm animate-in fade-in slide-in-from-top-2 duration-300">
                 <WifiOff className="w-4 h-4 text-red-500 shrink-0" />

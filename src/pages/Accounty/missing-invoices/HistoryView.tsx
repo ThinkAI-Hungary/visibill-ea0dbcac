@@ -25,7 +25,7 @@ export default function HistoryView({
   const filteredHistory: { id: number; date: string; channel: string; vendor: string; responseTime: string; status: string; statusColor: string; icon: any; iconColor: string }[] = [];
 
   return (
-    <div className="w-full space-y-6 pb-24 animate-in fade-in slide-in-from-right-8 duration-500">
+    <div className="w-full space-y-6 pb-24 animate-in fade-in duration-500">
       
       {/* Header */}
       <div className="flex flex-col gap-1">
