@@ -153,7 +153,8 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
       const { data: txData, error: txError } = await supabase
         .from('transactions')
         .select('upload_id')
-        .in('upload_id', uploadIds);
+        .in('upload_id', uploadIds)
+        .range(0, 49999);
       if (txError) throw txError;
 
       const countsByUpload = new Map<string, number>();
@@ -174,6 +175,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
     },
     enabled: !!companyId && isOpen,
     staleTime: 0,
+    refetchInterval: 3000,
   });
 
   // Fetch company members with profile names

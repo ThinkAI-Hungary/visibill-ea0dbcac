@@ -1069,7 +1069,8 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
         .from('transactions')
         .select('amount, currency')
         .eq('company_id', companyId)
-        .in('upload_id', uploadIds);
+        .in('upload_id', uploadIds)
+        .range(0, 49999);
 
       if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
       if (dateToStr) query = query.lte('transaction_date', dateToStr);
