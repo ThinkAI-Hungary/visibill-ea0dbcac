@@ -22,14 +22,18 @@
   - `/management?view=tickets` (Management Dashboard, beágyazva)
 - Management hibajegy nyitás ügyfél nevében (`ManagementCreateTicketDialog.tsx`): a Management Dashboard felületén a sub-tabs sávból indítható `+ Új hibajegy nyitása`, amellyel a support admin célfelhasználó nevében rögzíthet jegyet auto-fill cégválasztással, formázott leírással és csatolmányokkal (részletek: [P-070](./P-070-management-impersonated-ticket-creation-ux.md), [A-089](../../architecture/decisions/A-089-management-ticket-creation-on-behalf-of-user.md))
 - Ticket típusok: Hibajelentés (bug), Visszajelzés (feedback), Kérdés (question)
-- Ticket státuszok (4 szintű életciklus):
-  - **Nyitott** (`created` / legacy `new`, `open`): beérkezett hibajegy, még nincs felelőse (kék • `CircleDot`)
-  - **Hozzárendelt** (`assigned`): felelős support munkatárs kijelölve (lila • `UserCheck`)
-  - **Folyamatban** (`in_progress`): aktív munka és megoldás folyamatban (borostyán • `Loader2` / `Clock`)
-  - **Megoldva** (`resolved`): a hibajegy sikeresen megoldva és lezárva (smaragd • `CheckCircle2`)
+- Ticket státuszok (4 szintű életciklus — új színpaletta & kapszula badge-ek):
+  - **Nyitott** (`created` / legacy `new`, `open`): beérkezett hibajegy, még nincs felelőse (égszínkék • Sky Blue, `bg-sky-500/10 text-sky-600 border-sky-500/25`)
+  - **Hozzárendelt** (`assigned`): felelős support munkatárs kijelölve (királykék / kobalt • Royal Cobalt Blue, `bg-blue-600/15 text-blue-600 border-blue-500/30`)
+  - **Folyamatban** (`in_progress`): aktív munka és megoldás folyamatban (pávakék / zöldeskék • Teal, `bg-teal-500/10 text-teal-600 border-teal-500/30`)
+  - **Megoldva** (`resolved`): a hibajegy sikeresen megoldva és lezárva (smaragdzöld • Emerald, `bg-emerald-500/10 text-emerald-600 border-emerald-500/25`)
   - *Automatikus státuszváltás:* Nyitott jegyhez rendelt felelős esetén automatikusan Hozzárendelt státuszra vált; felelős visszavonásakor visszatér Nyitott státuszra.
+  - *Státusz és Prioritás badge-ek kialakítása:* Egységes, fix szélességű (`w-[96px]`), letisztult ikon nélküli kapszula (`rounded-full`) forma, tökéletesen összehangolt színvilággal.
+  - *Szekciók & Táblázat forma:* Felhasználói oldalon a táblázat és a jegy részletes nézetének (`TicketDetailView`) kártyái, szekciói éles, szögletes (`rounded-none shadow-none`) formavilágot követnek.
 - Ticket prioritás: alacsony/közepes/magas/kritikus — user választhatja beküldéskor
 - Ticket lista: kereshető (jegyszám, üzenet, cég, email), szűrhető (multi-status: Nyitott, Hozzárendelt, Folyamatban, Megoldva, prioritás, platform)
+  - Olvasatlan jegyek vizuális kiemelése: az olvasatlan sorok finom elsődleges színkiemelést (`bg-primary/[0.06] hover:bg-primary/[0.12]`) kapnak.
+  - Felelős oszlop: fix szélességű (`w-[180px] min-w-[170px]`), megtiltva a nevek sortörését (`whitespace-nowrap`).
   - Keresés: a `stripHtml(t.message)` használatával a tiszta szövegben keres, kiszűrve a HTML tageket és stílusosztályokat a pontos találatokért
   - Tárgy és előnézet formázás: `getTicketSummary(ticket.message)` intelligens szóhatár-tördelést (~55 karakter) és bekezdés-összevonást alkalmaz, megszüntetve a nyers HTML tagek (`<p>`, `</p>`, `<ol>`, `<li>`, entitások) megjelenését és a szavak félbevágását a táblázatban, Kezelőkonzol oldalsávban és a Terhelés & Elosztás nézetben
 - Pagináció: 15 jegy/oldal (sima user), 25 jegy/oldal (support admin)

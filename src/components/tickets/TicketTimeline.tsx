@@ -32,36 +32,35 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function EventIcon({ type, isStaff }: { type: TicketEvent["event_type"]; isStaff?: boolean }) {
+  let icon: React.ReactNode;
+  let colorClasses = "";
+
   switch (type) {
     case "created":
-      return (
-        <div className="h-8 w-8 rounded-full bg-primary/15 flex items-center justify-center ring-4 ring-background">
-          {isStaff ? (
-            <Headset className="h-4 w-4 text-primary" />
-          ) : (
-            <PlusCircle className="h-4 w-4 text-primary" />
-          )}
-        </div>
-      );
+      icon = isStaff ? <Headset className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />;
+      colorClasses = "bg-primary/10 border-primary/30 text-primary";
+      break;
     case "status_changed":
-      return (
-        <div className="h-8 w-8 rounded-full bg-amber-500/15 flex items-center justify-center ring-4 ring-background">
-          <ArrowRight className="h-4 w-4 text-amber-500" />
-        </div>
-      );
+      icon = <ArrowRight className="h-4 w-4" />;
+      colorClasses = "bg-amber-500/10 border-amber-500/30 text-amber-500";
+      break;
     case "comment_added":
-      return (
-        <div className="h-8 w-8 rounded-full bg-blue-500/15 flex items-center justify-center ring-4 ring-background">
-          <MessageSquare className="h-4 w-4 text-blue-500" />
-        </div>
-      );
+      icon = <MessageSquare className="h-4 w-4" />;
+      colorClasses = "bg-blue-500/10 border-blue-500/30 text-blue-500";
+      break;
     case "assignee_changed":
-      return (
-        <div className="h-8 w-8 rounded-full bg-blue-500/15 flex items-center justify-center ring-4 ring-background">
-          <Headset className="h-4 w-4 text-blue-500" />
-        </div>
-      );
+      icon = <Headset className="h-4 w-4" />;
+      colorClasses = "bg-blue-600/10 border-blue-600/30 text-blue-600";
+      break;
   }
+
+  return (
+    <div className="h-8 w-8 rounded-full bg-card flex items-center justify-center ring-4 ring-card shrink-0 shadow-xs">
+      <div className={`h-full w-full rounded-full border flex items-center justify-center ${colorClasses}`}>
+        {icon}
+      </div>
+    </div>
+  );
 }
 
 function EventContent({
@@ -193,7 +192,7 @@ export function TicketTimeline({ feedbackId, isStaffInitiated }: TicketTimelineP
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="rounded-none shadow-none">
         <CardContent className="pt-6">
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -210,7 +209,7 @@ export function TicketTimeline({ feedbackId, isStaffInitiated }: TicketTimelineP
   };
 
   return (
-    <Card>
+    <Card className="rounded-none shadow-none">
       <CardContent className="pt-6">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="h-4 w-4 text-muted-foreground" />

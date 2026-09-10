@@ -3770,7 +3770,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_emailaliasmanager",
-      "community": 572,
+      "community": 29,
       "norm_label": "emailaliasmanager.tsx"
     },
     {
@@ -3780,7 +3780,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "components_emailaliasmanager_emailalias",
-      "community": 572,
+      "community": 29,
       "norm_label": "emailalias"
     },
     {
@@ -4130,7 +4130,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_invoicedetailpopup",
-      "community": 58,
+      "community": 242,
       "norm_label": "invoicedetailpopup.tsx"
     },
     {
@@ -4140,7 +4140,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "components_invoicedetailpopup_invoicedetailpopupprops",
-      "community": 58,
+      "community": 242,
       "norm_label": "invoicedetailpopupprops"
     },
     {
@@ -4150,7 +4150,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_invoicedetailpopup_fullinvoice",
-      "community": 58,
+      "community": 242,
       "norm_label": "fullinvoice"
     },
     {
@@ -4160,7 +4160,7 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "components_invoicedetailpopup_statuslabels",
-      "community": 58,
+      "community": 242,
       "norm_label": "statuslabels"
     },
     {
@@ -4170,7 +4170,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "components_invoicedetailpopup_formatdate",
-      "community": 58,
+      "community": 242,
       "norm_label": "formatdate()"
     },
     {
@@ -4180,7 +4180,7 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "components_invoicedetailpopup_formatdatetime",
-      "community": 58,
+      "community": 242,
       "norm_label": "formatdatetime()"
     },
     {
@@ -4190,7 +4190,7 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "components_invoicedetailpopup_detailrow",
-      "community": 58,
+      "community": 242,
       "norm_label": "detailrow()"
     },
     {
@@ -4200,7 +4200,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "components_invoicedetailpopup_invoicedetailpopup",
-      "community": 58,
+      "community": 242,
       "norm_label": "invoicedetailpopup()"
     },
     {
@@ -4720,7 +4720,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_projectflowchart",
-      "community": 131,
+      "community": 23,
       "norm_label": "projectflowchart.tsx"
     },
     {
@@ -4730,7 +4730,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "components_projectflowchart_project",
-      "community": 131,
+      "community": 23,
       "norm_label": "project"
     },
     {
@@ -4740,7 +4740,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "components_projectflowchart_projectflowchartprops",
-      "community": 131,
+      "community": 23,
       "norm_label": "projectflowchartprops"
     },
     {
@@ -4890,7 +4890,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_supplierinvoiceassignment",
-      "community": 455,
+      "community": 29,
       "norm_label": "supplierinvoiceassignment.tsx"
     },
     {
@@ -4900,7 +4900,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "components_supplierinvoiceassignment_invoice",
-      "community": 455,
+      "community": 29,
       "norm_label": "invoice"
     },
     {
@@ -4910,7 +4910,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_supplierinvoiceassignment_supplierinvoiceassignmentprops",
-      "community": 455,
+      "community": 29,
       "norm_label": "supplierinvoiceassignmentprops"
     },
     {
@@ -5440,7 +5440,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_accountyerrorstate",
-      "community": 431,
+      "community": 53,
       "norm_label": "accountyerrorstate.tsx"
     },
     {
@@ -5450,7 +5450,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "accounty_accountyerrorstate_accountyerrorstateprops",
-      "community": 431,
+      "community": 53,
       "norm_label": "accountyerrorstateprops"
     },
     {
@@ -5460,7 +5460,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "accounty_accountyerrorstate_accountyerrorstate",
-      "community": 431,
+      "community": 53,
       "norm_label": "accountyerrorstate()"
     },
     {
@@ -6220,7 +6220,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "ev_aamtransitionmodal_aamtransitionmodal",
-      "community": 724,
+      "community": 175,
       "norm_label": "aamtransitionmodal()"
     },
     {
@@ -6430,7 +6430,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "payroll_employeeworksheetview",
-      "community": 613,
+      "community": 22,
       "norm_label": "employeeworksheetview.tsx"
     },
     {
@@ -6440,7 +6440,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "payroll_employeeworksheetview_employeeworksheetviewprops",
-      "community": 613,
+      "community": 22,
       "norm_label": "employeeworksheetviewprops"
     },
     {
@@ -6450,7 +6450,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "payroll_employeeworksheetview_employeeworksheetview",
-      "community": 613,
+      "community": 22,
       "norm_label": "employeeworksheetview()"
     },
     {
@@ -6630,7 +6630,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "payroll_payrollstep5",
-      "community": 613,
+      "community": 18,
       "norm_label": "payrollstep5.tsx"
     },
     {
@@ -6640,7 +6640,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "payroll_payrollstep5_payrollstep5props",
-      "community": 613,
+      "community": 18,
       "norm_label": "payrollstep5props"
     },
     {
@@ -6650,7 +6650,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "payroll_payrollstep5_payrollstep5",
-      "community": 613,
+      "community": 18,
       "norm_label": "payrollstep5()"
     },
     {
@@ -6660,7 +6660,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "payroll_payrollstep6",
-      "community": 572,
+      "community": 29,
       "norm_label": "payrollstep6.tsx"
     },
     {
@@ -6670,7 +6670,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "payroll_payrollstep6_payrollstep6props",
-      "community": 572,
+      "community": 29,
       "norm_label": "payrollstep6props"
     },
     {
@@ -6680,7 +6680,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "payroll_payrollstep6_payrollstep6",
-      "community": 572,
+      "community": 29,
       "norm_label": "payrollstep6()"
     },
     {
@@ -6760,7 +6760,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "payroll_sickleaveformdialog_sickleaveformdialogprops",
-      "community": 613,
+      "community": 18,
       "norm_label": "sickleaveformdialogprops"
     },
     {
@@ -6780,7 +6780,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "payroll_szochoadvisor",
-      "community": 572,
+      "community": 29,
       "norm_label": "szochoadvisor.tsx"
     },
     {
@@ -6790,7 +6790,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "payroll_szochoadvisor_szochoadvisorprops",
-      "community": 572,
+      "community": 29,
       "norm_label": "szochoadvisorprops"
     },
     {
@@ -6800,7 +6800,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "payroll_szochoadvisor_szochoadvisor",
-      "community": 572,
+      "community": 29,
       "norm_label": "szochoadvisor()"
     },
     {
@@ -6840,7 +6840,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "worksheet_worksheetlivepayslip",
-      "community": 613,
+      "community": 22,
       "norm_label": "worksheetlivepayslip.tsx"
     },
     {
@@ -6850,7 +6850,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "worksheet_worksheetlivepayslip_worksheetlivepayslipprops",
-      "community": 613,
+      "community": 22,
       "norm_label": "worksheetlivepayslipprops"
     },
     {
@@ -6860,7 +6860,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "worksheet_worksheetlivepayslip_worksheetlivepayslip",
-      "community": 613,
+      "community": 22,
       "norm_label": "worksheetlivepayslip()"
     },
     {
@@ -6870,7 +6870,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "worksheet_worksheetsidebar",
-      "community": 58,
+      "community": 580,
       "norm_label": "worksheetsidebar.tsx"
     },
     {
@@ -6880,7 +6880,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "worksheet_worksheetsidebar_worksheetsidebarprops",
-      "community": 58,
+      "community": 580,
       "norm_label": "worksheetsidebarprops"
     },
     {
@@ -6890,7 +6890,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "worksheet_worksheetsidebar_worksheetsidebar",
-      "community": 58,
+      "community": 580,
       "norm_label": "worksheetsidebar()"
     },
     {
@@ -7770,7 +7770,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "dashboard_faddashboardcard_faddashboardcard",
-      "community": 53,
+      "community": 131,
       "norm_label": "faddashboardcard()"
     },
     {
@@ -7780,7 +7780,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection",
-      "community": 131,
+      "community": 613,
       "norm_label": "fxdifferencessection.tsx"
     },
     {
@@ -7790,7 +7790,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_fxmonthlysummary",
-      "community": 131,
+      "community": 613,
       "norm_label": "fxmonthlysummary"
     },
     {
@@ -7800,7 +7800,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_fxdifferencerow",
-      "community": 131,
+      "community": 613,
       "norm_label": "fxdifferencerow"
     },
     {
@@ -7810,7 +7810,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_glaccount",
-      "community": 131,
+      "community": 613,
       "norm_label": "glaccount"
     },
     {
@@ -7820,7 +7820,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_fxglsettings",
-      "community": 131,
+      "community": 613,
       "norm_label": "fxglsettings"
     },
     {
@@ -7830,7 +7830,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_fxdifferencessectionprops",
-      "community": 131,
+      "community": 613,
       "norm_label": "fxdifferencessectionprops"
     },
     {
@@ -7840,7 +7840,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_monthlabels",
-      "community": 131,
+      "community": 613,
       "norm_label": "monthlabels"
     },
     {
@@ -7850,7 +7850,7 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_fmtmonth",
-      "community": 131,
+      "community": 613,
       "norm_label": "fmtmonth()"
     },
     {
@@ -7860,7 +7860,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_fmthuf",
-      "community": 131,
+      "community": 613,
       "norm_label": "fmthuf()"
     },
     {
@@ -7870,7 +7870,7 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_fmtrate",
-      "community": 131,
+      "community": 613,
       "norm_label": "fmtrate()"
     },
     {
@@ -7880,7 +7880,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_customtooltip",
-      "community": 131,
+      "community": 613,
       "norm_label": "customtooltip()"
     },
     {
@@ -7890,7 +7890,7 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_monthdetail",
-      "community": 131,
+      "community": 613,
       "norm_label": "monthdetail()"
     },
     {
@@ -7900,7 +7900,7 @@
       "source_location": "L181",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_fxglmappingblock",
-      "community": 131,
+      "community": 613,
       "norm_label": "fxglmappingblock()"
     },
     {
@@ -7910,7 +7910,7 @@
       "source_location": "L352",
       "_origin": "ast",
       "id": "dashboard_fxdifferencessection_fxdifferencessection",
-      "community": 131,
+      "community": 613,
       "norm_label": "fxdifferencessection"
     },
     {
@@ -8680,7 +8680,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "general_ledger_addmanualjournalentrymodal_addmanualjournalentrymodal",
-      "community": 242,
+      "community": 572,
       "norm_label": "addmanualjournalentrymodal()"
     },
     {
@@ -8880,7 +8880,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "general_ledger_glanalyticreconciliationview",
-      "community": 572,
+      "community": 23,
       "norm_label": "glanalyticreconciliationview.tsx"
     },
     {
@@ -8890,7 +8890,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "general_ledger_glanalyticreconciliationview_glanalyticreconciliationviewprops",
-      "community": 572,
+      "community": 23,
       "norm_label": "glanalyticreconciliationviewprops"
     },
     {
@@ -9050,7 +9050,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "general_ledger_managepresetsmodal_managepresetsmodal",
-      "community": 572,
+      "community": 29,
       "norm_label": "managepresetsmodal()"
     },
     {
@@ -9200,7 +9200,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_managepresetsmodal_test",
-      "community": 572,
+      "community": 29,
       "norm_label": "managepresetsmodal.test.tsx"
     },
     {
@@ -9230,7 +9230,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "integrations_emailaccountcard",
-      "community": 23,
+      "community": 580,
       "norm_label": "emailaccountcard.tsx"
     },
     {
@@ -9470,7 +9470,7 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "invoices_invoicedataexportdialog_invoicedataexportdialog",
-      "community": 131,
+      "community": 58,
       "norm_label": "invoicedataexportdialog()"
     },
     {
@@ -9560,7 +9560,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "invoices_pdfexportbanner",
-      "community": 663,
+      "community": 67,
       "norm_label": "pdfexportbanner.tsx"
     },
     {
@@ -9570,7 +9570,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "invoices_pdfexportbanner_pdfexportbannerprops",
-      "community": 663,
+      "community": 67,
       "norm_label": "pdfexportbannerprops"
     },
     {
@@ -9580,7 +9580,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "invoices_pdfexportbanner_formatbytes",
-      "community": 663,
+      "community": 67,
       "norm_label": "formatbytes()"
     },
     {
@@ -9590,7 +9590,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "invoices_pdfexportbanner_pdfexportbanner",
-      "community": 663,
+      "community": 67,
       "norm_label": "pdfexportbanner()"
     },
     {
@@ -10540,7 +10540,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "nav_navsyncdialog_syncprogress",
-      "community": 51,
+      "community": 752,
       "norm_label": "syncprogress"
     },
     {
@@ -10610,7 +10610,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "nav_navsyncdialog_navsyncdialog",
-      "community": 752,
+      "community": 67,
       "norm_label": "navsyncdialog()"
     },
     {
@@ -10670,7 +10670,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "notes_notemodal_notemodalprops",
-      "community": 58,
+      "community": 184,
       "norm_label": "notemodalprops"
     },
     {
@@ -10680,7 +10680,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "notes_notemodal_notemodal",
-      "community": 58,
+      "community": 184,
       "norm_label": "notemodal()"
     },
     {
@@ -10840,7 +10840,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "petty_cash_cashclosingdialog",
-      "community": 53,
+      "community": 131,
       "norm_label": "cashclosingdialog.tsx"
     },
     {
@@ -10850,7 +10850,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "petty_cash_cashclosingdialog_cashclosingdialogprops",
-      "community": 53,
+      "community": 131,
       "norm_label": "cashclosingdialogprops"
     },
     {
@@ -10910,7 +10910,7 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "petty_cash_denominationcalculatordialog_denominationcalculatordialog",
-      "community": 53,
+      "community": 131,
       "norm_label": "denominationcalculatordialog()"
     },
     {
@@ -10920,7 +10920,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "petty_cash_entriestab",
-      "community": 53,
+      "community": 131,
       "norm_label": "entriestab.tsx"
     },
     {
@@ -10930,7 +10930,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "petty_cash_entriestab_display_source_labels",
-      "community": 53,
+      "community": 131,
       "norm_label": "display_source_labels"
     },
     {
@@ -10950,7 +10950,7 @@
       "source_location": "L1037",
       "_origin": "ast",
       "id": "petty_cash_entriestab_expandedentryrow",
-      "community": 53,
+      "community": 131,
       "norm_label": "expandedentryrow()"
     },
     {
@@ -10960,7 +10960,7 @@
       "source_location": "L1195",
       "_origin": "ast",
       "id": "petty_cash_entriestab_manualentrydialog",
-      "community": 53,
+      "community": 131,
       "norm_label": "manualentrydialog()"
     },
     {
@@ -10970,7 +10970,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "petty_cash_registerstab",
-      "community": 53,
+      "community": 58,
       "norm_label": "registerstab.tsx"
     },
     {
@@ -10990,7 +10990,7 @@
       "source_location": "L247",
       "_origin": "ast",
       "id": "petty_cash_registerstab_registerdialog",
-      "community": 53,
+      "community": 58,
       "norm_label": "registerdialog()"
     },
     {
@@ -11000,7 +11000,7 @@
       "source_location": "L324",
       "_origin": "ast",
       "id": "petty_cash_registerstab_openingbalanceseditor",
-      "community": 53,
+      "community": 58,
       "norm_label": "openingbalanceseditor()"
     },
     {
@@ -11010,7 +11010,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "petty_cash_routingrulestab",
-      "community": 53,
+      "community": 131,
       "norm_label": "routingrulestab.tsx"
     },
     {
@@ -11030,7 +11030,7 @@
       "source_location": "L193",
       "_origin": "ast",
       "id": "petty_cash_routingrulestab_routingruledialog",
-      "community": 53,
+      "community": 131,
       "norm_label": "routingruledialog()"
     },
     {
@@ -11070,7 +11070,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "petty_cash_types",
-      "community": 53,
+      "community": 131,
       "norm_label": "types.ts"
     },
     {
@@ -11080,7 +11080,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "petty_cash_types_pettycashregister",
-      "community": 53,
+      "community": 131,
       "norm_label": "pettycashregister"
     },
     {
@@ -11090,7 +11090,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "petty_cash_types_openingbalance",
-      "community": 53,
+      "community": 131,
       "norm_label": "openingbalance"
     },
     {
@@ -11100,7 +11100,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "petty_cash_types_pettycashentry",
-      "community": 53,
+      "community": 131,
       "norm_label": "pettycashentry"
     },
     {
@@ -11110,7 +11110,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "petty_cash_types_openoutboundinvoice",
-      "community": 53,
+      "community": 131,
       "norm_label": "openoutboundinvoice"
     },
     {
@@ -11120,7 +11120,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "petty_cash_types_routingrule",
-      "community": 53,
+      "community": 131,
       "norm_label": "routingrule"
     },
     {
@@ -11130,7 +11130,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "petty_cash_types_summaryrow",
-      "community": 53,
+      "community": 131,
       "norm_label": "summaryrow"
     },
     {
@@ -11140,7 +11140,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "petty_cash_types_common_currencies",
-      "community": 53,
+      "community": 131,
       "norm_label": "common_currencies"
     },
     {
@@ -11150,7 +11150,7 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "petty_cash_types_source_labels",
-      "community": 53,
+      "community": 131,
       "norm_label": "source_labels"
     },
     {
@@ -11160,7 +11160,7 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "petty_cash_types_source_colors",
-      "community": 53,
+      "community": 131,
       "norm_label": "source_colors"
     },
     {
@@ -11170,7 +11170,7 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "petty_cash_types_roundhuf",
-      "community": 53,
+      "community": 131,
       "norm_label": "roundhuf()"
     },
     {
@@ -11180,7 +11180,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "petty_cash_types_fmtamount",
-      "community": 53,
+      "community": 131,
       "norm_label": "fmtamount()"
     },
     {
@@ -11190,7 +11190,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "petty_cash_types_fmtbalance",
-      "community": 53,
+      "community": 131,
       "norm_label": "fmtbalance()"
     },
     {
@@ -11530,7 +11530,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "settings_accountynotificationpreferences",
-      "community": 572,
+      "community": 29,
       "norm_label": "accountynotificationpreferences.tsx"
     },
     {
@@ -11540,7 +11540,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "settings_accountynotificationpreferences_emailnotifprefs",
-      "community": 572,
+      "community": 29,
       "norm_label": "emailnotifprefs"
     },
     {
@@ -11550,7 +11550,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "settings_accountynotificationpreferences_pushnotifprefs",
-      "community": 572,
+      "community": 29,
       "norm_label": "pushnotifprefs"
     },
     {
@@ -11560,7 +11560,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "settings_accountynotificationpreferences_digestprefs",
-      "community": 572,
+      "community": 29,
       "norm_label": "digestprefs"
     },
     {
@@ -11570,7 +11570,7 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "settings_accountynotificationpreferences_notiftoggle",
-      "community": 572,
+      "community": 29,
       "norm_label": "notiftoggle()"
     },
     {
@@ -11580,7 +11580,7 @@
       "source_location": "L104",
       "_origin": "ast",
       "id": "settings_accountynotificationpreferences_accountynotificationpreferences",
-      "community": 572,
+      "community": 29,
       "norm_label": "accountynotificationpreferences()"
     },
     {
@@ -11770,7 +11770,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "settings_inviteuserdialog",
-      "community": 580,
+      "community": 58,
       "norm_label": "inviteuserdialog.tsx"
     },
     {
@@ -11780,7 +11780,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "settings_inviteuserdialog_inviteuserdialogprops",
-      "community": 580,
+      "community": 58,
       "norm_label": "inviteuserdialogprops"
     },
     {
@@ -11790,7 +11790,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "settings_inviteuserdialog_passwordstrength",
-      "community": 580,
+      "community": 58,
       "norm_label": "passwordstrength"
     },
     {
@@ -11800,7 +11800,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "settings_inviteuserdialog_evaluatepassword",
-      "community": 580,
+      "community": 58,
       "norm_label": "evaluatepassword()"
     },
     {
@@ -11810,7 +11810,7 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "settings_inviteuserdialog_invitemode",
-      "community": 580,
+      "community": 58,
       "norm_label": "invitemode"
     },
     {
@@ -12157,7 +12157,7 @@
       "label": "EventContent()",
       "file_type": "code",
       "source_file": "src/components/tickets/TicketTimeline.tsx",
-      "source_location": "L67",
+      "source_location": "L66",
       "_origin": "ast",
       "id": "tickets_tickettimeline_eventcontent",
       "community": 659,
@@ -12167,7 +12167,7 @@
       "label": "TicketTimelineProps",
       "file_type": "code",
       "source_file": "src/components/tickets/TicketTimeline.tsx",
-      "source_location": "L159",
+      "source_location": "L158",
       "_origin": "ast",
       "id": "tickets_tickettimeline_tickettimelineprops",
       "community": 659,
@@ -12177,7 +12177,7 @@
       "label": "TicketTimeline()",
       "file_type": "code",
       "source_file": "src/components/tickets/TicketTimeline.tsx",
-      "source_location": "L164",
+      "source_location": "L163",
       "_origin": "ast",
       "id": "tickets_tickettimeline_tickettimeline",
       "community": 659,
@@ -12500,7 +12500,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "transactions_transactionfilters",
-      "community": 580,
+      "community": 58,
       "norm_label": "transactionfilters.tsx"
     },
     {
@@ -12520,7 +12520,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "transactions_transactionfilters_transactionfilters",
-      "community": 580,
+      "community": 58,
       "norm_label": "transactionfilters"
     },
     {
@@ -13650,7 +13650,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_content_skeleton",
-      "community": 23,
+      "community": 580,
       "norm_label": "content-skeleton.tsx"
     },
     {
@@ -14270,7 +14270,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_input_otp",
-      "community": 611,
+      "community": 770,
       "norm_label": "input-otp.tsx"
     },
     {
@@ -14280,7 +14280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "ui_input_otp_inputotp",
-      "community": 611,
+      "community": 770,
       "norm_label": "inputotp"
     },
     {
@@ -14290,7 +14290,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "ui_input_otp_inputotpgroup",
-      "community": 611,
+      "community": 770,
       "norm_label": "inputotpgroup"
     },
     {
@@ -14300,7 +14300,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "ui_input_otp_inputotpslot",
-      "community": 611,
+      "community": 770,
       "norm_label": "inputotpslot"
     },
     {
@@ -14310,7 +14310,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "ui_input_otp_inputotpseparator",
-      "community": 611,
+      "community": 770,
       "norm_label": "inputotpseparator"
     },
     {
@@ -14400,7 +14400,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_loading_spinner",
-      "community": 131,
+      "community": 242,
       "norm_label": "loading-spinner.tsx"
     },
     {
@@ -14410,7 +14410,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "ui_loading_spinner_loadingspinnerprops",
-      "community": 131,
+      "community": 242,
       "norm_label": "loadingspinnerprops"
     },
     {
@@ -14420,7 +14420,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "ui_loading_spinner_removeinitialloader",
-      "community": 131,
+      "community": 242,
       "norm_label": "removeinitialloader()"
     },
     {
@@ -14430,7 +14430,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "ui_loading_spinner_loadingspinner",
-      "community": 131,
+      "community": 242,
       "norm_label": "loadingspinner()"
     },
     {
@@ -14440,7 +14440,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_menubar",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubar.tsx"
     },
     {
@@ -14450,7 +14450,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "ui_menubar_menubar",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubar"
     },
     {
@@ -14460,7 +14460,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "ui_menubar_menubartrigger",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubartrigger"
     },
     {
@@ -14470,7 +14470,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "ui_menubar_menubarsubtrigger",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarsubtrigger"
     },
     {
@@ -14480,7 +14480,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "ui_menubar_menubarsubcontent",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarsubcontent"
     },
     {
@@ -14490,7 +14490,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "ui_menubar_menubarcontent",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarcontent"
     },
     {
@@ -14500,7 +14500,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "ui_menubar_menubaritem",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubaritem"
     },
     {
@@ -14510,7 +14510,7 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "ui_menubar_menubarcheckboxitem",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarcheckboxitem"
     },
     {
@@ -14520,7 +14520,7 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "ui_menubar_menubarradioitem",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarradioitem"
     },
     {
@@ -14530,7 +14530,7 @@
       "source_location": "L163",
       "_origin": "ast",
       "id": "ui_menubar_menubarlabel",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarlabel"
     },
     {
@@ -14540,7 +14540,7 @@
       "source_location": "L177",
       "_origin": "ast",
       "id": "ui_menubar_menubarseparator",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarseparator"
     },
     {
@@ -14550,7 +14550,7 @@
       "source_location": "L185",
       "_origin": "ast",
       "id": "ui_menubar_menubarshortcut",
-      "community": 332,
+      "community": 611,
       "norm_label": "menubarshortcut()"
     },
     {
@@ -15080,7 +15080,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_select",
-      "community": 580,
+      "community": 58,
       "norm_label": "select.tsx"
     },
     {
@@ -15090,7 +15090,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "ui_select_selecttrigger",
-      "community": 580,
+      "community": 58,
       "norm_label": "selecttrigger"
     },
     {
@@ -15100,7 +15100,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "ui_select_selectscrollupbutton",
-      "community": 580,
+      "community": 58,
       "norm_label": "selectscrollupbutton"
     },
     {
@@ -15110,7 +15110,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "ui_select_selectscrolldownbutton",
-      "community": 580,
+      "community": 58,
       "norm_label": "selectscrolldownbutton"
     },
     {
@@ -15120,7 +15120,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "ui_select_selectcontent",
-      "community": 580,
+      "community": 58,
       "norm_label": "selectcontent"
     },
     {
@@ -15130,7 +15130,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "ui_select_selectlabel",
-      "community": 580,
+      "community": 58,
       "norm_label": "selectlabel"
     },
     {
@@ -15140,7 +15140,7 @@
       "source_location": "L102",
       "_origin": "ast",
       "id": "ui_select_selectitem",
-      "community": 580,
+      "community": 58,
       "norm_label": "selectitem"
     },
     {
@@ -15150,7 +15150,7 @@
       "source_location": "L125",
       "_origin": "ast",
       "id": "ui_select_selectseparator",
-      "community": 580,
+      "community": 58,
       "norm_label": "selectseparator"
     },
     {
@@ -15590,7 +15590,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_switch",
-      "community": 53,
+      "community": 58,
       "norm_label": "switch.tsx"
     },
     {
@@ -15600,7 +15600,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "ui_switch_switch",
-      "community": 53,
+      "community": 58,
       "norm_label": "switch"
     },
     {
@@ -16610,7 +16610,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "working_time_submittedentriespanel",
-      "community": 572,
+      "community": 23,
       "norm_label": "submittedentriespanel.tsx"
     },
     {
@@ -16620,7 +16620,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "working_time_submittedentriespanel_submittedentry",
-      "community": 572,
+      "community": 23,
       "norm_label": "submittedentry"
     },
     {
@@ -16840,7 +16840,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "contexts_authcontext",
-      "community": 572,
+      "community": 29,
       "norm_label": "authcontext.tsx"
     },
     {
@@ -16880,7 +16880,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "contexts_authcontext_issessionexpired",
-      "community": 572,
+      "community": 29,
       "norm_label": "issessionexpired()"
     },
     {
@@ -17160,7 +17160,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_annualreportcontainer",
-      "community": 23,
+      "community": 58,
       "norm_label": "annualreportcontainer.tsx"
     },
     {
@@ -17170,7 +17170,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "components_annualreportcontainer_steps",
-      "community": 23,
+      "community": 58,
       "norm_label": "steps"
     },
     {
@@ -17720,7 +17720,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_invoicecontexts_test",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoicecontexts.test.tsx"
     },
     {
@@ -17760,7 +17760,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_invoicesfeature_test",
-      "community": 710,
+      "community": 418,
       "norm_label": "invoicesfeature.test.ts"
     },
     {
@@ -17770,7 +17770,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "actions_invoicebulkactionsbar",
-      "community": 580,
+      "community": 58,
       "norm_label": "invoicebulkactionsbar.tsx"
     },
     {
@@ -18040,7 +18040,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "expanded_row_linkedinvoicessection",
-      "community": 479,
+      "community": 39,
       "norm_label": "linkedinvoicessection.tsx"
     },
     {
@@ -18050,7 +18050,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "expanded_row_linkedinvoicessection_linkedinvoicessectionprops",
-      "community": 479,
+      "community": 39,
       "norm_label": "linkedinvoicessectionprops"
     },
     {
@@ -18060,7 +18060,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "expanded_row_linkedinvoicessection_getinvoicetypelabel",
-      "community": 479,
+      "community": 39,
       "norm_label": "getinvoicetypelabel()"
     },
     {
@@ -18290,7 +18290,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "expanded_row_types_linkedinvoice",
-      "community": 479,
+      "community": 39,
       "norm_label": "linkedinvoice"
     },
     {
@@ -18330,7 +18330,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "filters_invoicefilterbar",
-      "community": 580,
+      "community": 58,
       "norm_label": "invoicefilterbar.tsx"
     },
     {
@@ -18340,7 +18340,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "filters_invoicefilterbar_invoicefilterbar",
-      "community": 67,
+      "community": 418,
       "norm_label": "invoicefilterbar()"
     },
     {
@@ -18410,7 +18410,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "header_navsyncbutton",
-      "community": 752,
+      "community": 67,
       "norm_label": "navsyncbutton.tsx"
     },
     {
@@ -18420,7 +18420,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "header_navsyncbutton_navsyncbutton",
-      "community": 752,
+      "community": 67,
       "norm_label": "navsyncbutton()"
     },
     {
@@ -18430,7 +18430,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "table_invoicetablecontainer",
-      "community": 67,
+      "community": 418,
       "norm_label": "invoicetablecontainer.tsx"
     },
     {
@@ -18500,7 +18500,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "table_navinvoicetable_navinvoicetable",
-      "community": 67,
+      "community": 418,
       "norm_label": "navinvoicetable()"
     },
     {
@@ -18560,7 +18560,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "table_submittedinvoicetable_submittedinvoicetable",
-      "community": 67,
+      "community": 418,
       "norm_label": "submittedinvoicetable()"
     },
     {
@@ -18570,7 +18570,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "context_invoicecontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoicecontext.tsx"
     },
     {
@@ -18590,7 +18590,7 @@
       "source_location": "L160",
       "_origin": "ast",
       "id": "context_invoicecontext_invoicecontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoicecontext"
     },
     {
@@ -18600,7 +18600,7 @@
       "source_location": "L162",
       "_origin": "ast",
       "id": "context_invoicecontext_invoiceprovider",
-      "community": 754,
+      "community": 332,
       "norm_label": "invoiceprovider()"
     },
     {
@@ -18640,7 +18640,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "context_invoicefiltercontext_useinvoicefiltercontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "useinvoicefiltercontext()"
     },
     {
@@ -18650,7 +18650,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "context_invoicefiltercontext_invoicefilterprovider",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoicefilterprovider()"
     },
     {
@@ -18680,7 +18680,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "context_invoicepaginationcontext_invoicepaginationcontext",
-      "community": 51,
+      "community": 332,
       "norm_label": "invoicepaginationcontext"
     },
     {
@@ -18690,7 +18690,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "context_invoicepaginationcontext_useinvoicepaginationcontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "useinvoicepaginationcontext()"
     },
     {
@@ -18700,7 +18700,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "context_invoicepaginationcontext_invoicepaginationprovider",
-      "community": 51,
+      "community": 332,
       "norm_label": "invoicepaginationprovider()"
     },
     {
@@ -18710,7 +18710,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "context_invoiceselectioncontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoiceselectioncontext.tsx"
     },
     {
@@ -18720,7 +18720,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "context_invoiceselectioncontext_invoiceselectioncontextvalue",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoiceselectioncontextvalue"
     },
     {
@@ -18730,7 +18730,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "context_invoiceselectioncontext_invoiceselectioncontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoiceselectioncontext"
     },
     {
@@ -18740,7 +18740,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "context_invoiceselectioncontext_useinvoiceselectioncontext",
-      "community": 710,
+      "community": 332,
       "norm_label": "useinvoiceselectioncontext()"
     },
     {
@@ -18750,7 +18750,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "context_invoiceselectioncontext_invoiceselectionprovider",
-      "community": 710,
+      "community": 332,
       "norm_label": "invoiceselectionprovider()"
     },
     {
@@ -18810,7 +18810,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "types_index_tab_slugs",
-      "community": 710,
+      "community": 418,
       "norm_label": "tab_slugs"
     },
     {
@@ -18840,7 +18840,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "types_index_tab_to_slug",
-      "community": 710,
+      "community": 418,
       "norm_label": "tab_to_slug"
     },
     {
@@ -18870,7 +18870,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "utils_invoicerelations_linkedinvoicewithrelation",
-      "community": 51,
+      "community": 418,
       "norm_label": "linkedinvoicewithrelation"
     },
     {
@@ -18890,7 +18890,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "utils_invoicerelations_buildnavtosubmittedmap",
-      "community": 67,
+      "community": 418,
       "norm_label": "buildnavtosubmittedmap()"
     },
     {
@@ -18900,7 +18900,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "utils_invoicerelations_buildsubmittedtonavmap",
-      "community": 67,
+      "community": 418,
       "norm_label": "buildsubmittedtonavmap()"
     },
     {
@@ -18910,7 +18910,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "utils_invoicerelations_buildnavtosuggestedsubmittedmap",
-      "community": 67,
+      "community": 418,
       "norm_label": "buildnavtosuggestedsubmittedmap()"
     },
     {
@@ -18920,7 +18920,7 @@
       "source_location": "L162",
       "_origin": "ast",
       "id": "utils_invoicerelations_buildlinkedinvoicesmap",
-      "community": 710,
+      "community": 418,
       "norm_label": "buildlinkedinvoicesmap()"
     },
     {
@@ -18940,7 +18940,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_draftfallbackgenerator_test",
-      "community": 572,
+      "community": 29,
       "norm_label": "draftfallbackgenerator.test.ts"
     },
     {
@@ -18960,7 +18960,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_draftfallbackgenerator",
-      "community": 572,
+      "community": 29,
       "norm_label": "draftfallbackgenerator.ts"
     },
     {
@@ -18970,7 +18970,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "services_draftfallbackgenerator_generatedraftsfallback",
-      "community": 572,
+      "community": 29,
       "norm_label": "generatedraftsfallback()"
     },
     {
@@ -21590,7 +21590,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_usepdfexport_test",
-      "community": 572,
+      "community": 29,
       "norm_label": "usepdfexport.test.ts"
     },
     {
@@ -22680,7 +22680,7 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "accounty_useaccountypayroll_useaddjobmodification",
-      "community": 447,
+      "community": 53,
       "norm_label": "useaddjobmodification()"
     },
     {
@@ -22870,7 +22870,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_use_toast",
-      "community": 58,
+      "community": 184,
       "norm_label": "use-toast.ts"
     },
     {
@@ -22880,7 +22880,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "hooks_use_toast_toastertoast",
-      "community": 58,
+      "community": 184,
       "norm_label": "toastertoast"
     },
     {
@@ -22890,7 +22890,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "hooks_use_toast_actiontypes",
-      "community": 58,
+      "community": 184,
       "norm_label": "actiontypes"
     },
     {
@@ -22910,7 +22910,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "hooks_use_toast_actiontype",
-      "community": 58,
+      "community": 184,
       "norm_label": "actiontype"
     },
     {
@@ -22920,7 +22920,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "hooks_use_toast_action",
-      "community": 58,
+      "community": 184,
       "norm_label": "action"
     },
     {
@@ -22930,7 +22930,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "hooks_use_toast_state",
-      "community": 58,
+      "community": 184,
       "norm_label": "state"
     },
     {
@@ -22940,7 +22940,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "hooks_use_toast_toasttimeouts",
-      "community": 58,
+      "community": 184,
       "norm_label": "toasttimeouts"
     },
     {
@@ -22950,7 +22950,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "hooks_use_toast_addtoremovequeue",
-      "community": 58,
+      "community": 184,
       "norm_label": "addtoremovequeue()"
     },
     {
@@ -22960,7 +22960,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "hooks_use_toast_reducer",
-      "community": 58,
+      "community": 184,
       "norm_label": "reducer()"
     },
     {
@@ -22970,7 +22970,7 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "hooks_use_toast_listeners",
-      "community": 58,
+      "community": 184,
       "norm_label": "listeners"
     },
     {
@@ -22980,7 +22980,7 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "hooks_use_toast_memorystate",
-      "community": 58,
+      "community": 184,
       "norm_label": "memorystate"
     },
     {
@@ -22990,7 +22990,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "hooks_use_toast_dispatch",
-      "community": 58,
+      "community": 184,
       "norm_label": "dispatch()"
     },
     {
@@ -23140,7 +23140,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_useaccountyrealtime",
-      "community": 572,
+      "community": 29,
       "norm_label": "useaccountyrealtime.ts"
     },
     {
@@ -24210,7 +24210,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "hooks_useevdata_evtaxpayerform",
-      "community": 555,
+      "community": 175,
       "norm_label": "evtaxpayerform"
     },
     {
@@ -24390,7 +24390,7 @@
       "source_location": "L283",
       "_origin": "ast",
       "id": "hooks_useevdata_usecloseperiod",
-      "community": 555,
+      "community": 663,
       "norm_label": "usecloseperiod()"
     },
     {
@@ -24480,7 +24480,7 @@
       "source_location": "L501",
       "_origin": "ast",
       "id": "hooks_useevdata_evtaxreturn",
-      "community": 175,
+      "community": 26,
       "norm_label": "evtaxreturn"
     },
     {
@@ -24550,7 +24550,7 @@
       "source_location": "L623",
       "_origin": "ast",
       "id": "hooks_useevdata_useevperiodcloses",
-      "community": 555,
+      "community": 663,
       "norm_label": "useevperiodcloses()"
     },
     {
@@ -25190,7 +25190,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_useinvoicedata",
-      "community": 710,
+      "community": 51,
       "norm_label": "useinvoicedata.ts"
     },
     {
@@ -25260,7 +25260,7 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "hooks_useinvoicedata_courierreportrecord",
-      "community": 710,
+      "community": 51,
       "norm_label": "courierreportrecord"
     },
     {
@@ -25270,7 +25270,7 @@
       "source_location": "L129",
       "_origin": "ast",
       "id": "hooks_useinvoicedata_useinvoicedata",
-      "community": 754,
+      "community": 332,
       "norm_label": "useinvoicedata()"
     },
     {
@@ -25380,7 +25380,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "hooks_useinvoicemutations_useinvoicemutations",
-      "community": 754,
+      "community": 332,
       "norm_label": "useinvoicemutations()"
     },
     {
@@ -25580,7 +25580,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usenettingdetection",
-      "community": 754,
+      "community": 51,
       "norm_label": "usenettingdetection.ts"
     },
     {
@@ -25600,7 +25600,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "hooks_usenettingdetection_normalizetaxnumber",
-      "community": 754,
+      "community": 51,
       "norm_label": "normalizetaxnumber()"
     },
     {
@@ -25610,7 +25610,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "hooks_usenettingdetection_getdeliverymonth",
-      "community": 754,
+      "community": 51,
       "norm_label": "getdeliverymonth()"
     },
     {
@@ -25620,7 +25620,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "hooks_usenettingdetection_usenettingdetection",
-      "community": 754,
+      "community": 332,
       "norm_label": "usenettingdetection()"
     },
     {
@@ -25630,7 +25630,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usenotesdata",
-      "community": 58,
+      "community": 184,
       "norm_label": "usenotesdata.ts"
     },
     {
@@ -25640,7 +25640,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "hooks_usenotesdata_usenotesdata",
-      "community": 58,
+      "community": 184,
       "norm_label": "usenotesdata()"
     },
     {
@@ -25670,7 +25670,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usepayrolldata",
-      "community": 613,
+      "community": 18,
       "norm_label": "usepayrolldata.ts"
     },
     {
@@ -25710,7 +25710,7 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollitem",
-      "community": 613,
+      "community": 18,
       "norm_label": "payrollitem"
     },
     {
@@ -25720,7 +25720,7 @@
       "source_location": "L131",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollcalculation",
-      "community": 613,
+      "community": 22,
       "norm_label": "payrollcalculation"
     },
     {
@@ -25750,7 +25750,7 @@
       "source_location": "L184",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrolljobcode",
-      "community": 613,
+      "community": 18,
       "norm_label": "payrolljobcode"
     },
     {
@@ -25760,7 +25760,7 @@
       "source_location": "L194",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollleave",
-      "community": 613,
+      "community": 18,
       "norm_label": "payrollleave"
     },
     {
@@ -25770,7 +25770,7 @@
       "source_location": "L208",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollcafeteriaitem",
-      "community": 613,
+      "community": 18,
       "norm_label": "payrollcafeteriaitem"
     },
     {
@@ -25780,7 +25780,7 @@
       "source_location": "L223",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollgarnishment",
-      "community": 613,
+      "community": 18,
       "norm_label": "payrollgarnishment"
     },
     {
@@ -25790,7 +25790,7 @@
       "source_location": "L244",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_payrollquerykeys",
-      "community": 613,
+      "community": 18,
       "norm_label": "payrollquerykeys"
     },
     {
@@ -25840,7 +25840,7 @@
       "source_location": "L355",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usepayrollemployments",
-      "community": 447,
+      "community": 53,
       "norm_label": "usepayrollemployments()"
     },
     {
@@ -25940,7 +25940,7 @@
       "source_location": "L602",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_salaryhistoryentry",
-      "community": 613,
+      "community": 18,
       "norm_label": "salaryhistoryentry"
     },
     {
@@ -26000,7 +26000,7 @@
       "source_location": "L781",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usepayrolldependents",
-      "community": 613,
+      "community": 18,
       "norm_label": "usepayrolldependents()"
     },
     {
@@ -26020,7 +26020,7 @@
       "source_location": "L822",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_useupdatedependent",
-      "community": 613,
+      "community": 18,
       "norm_label": "useupdatedependent()"
     },
     {
@@ -26030,7 +26030,7 @@
       "source_location": "L847",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usedeletedependent",
-      "community": 613,
+      "community": 18,
       "norm_label": "usedeletedependent()"
     },
     {
@@ -26050,7 +26050,7 @@
       "source_location": "L895",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usetaxparameters",
-      "community": 613,
+      "community": 33,
       "norm_label": "usetaxparameters()"
     },
     {
@@ -26060,7 +26060,7 @@
       "source_location": "L919",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_useupdatetaxparameter",
-      "community": 613,
+      "community": 33,
       "norm_label": "useupdatetaxparameter()"
     },
     {
@@ -26100,7 +26100,7 @@
       "source_location": "L995",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usepayrollcafeteria",
-      "community": 613,
+      "community": 18,
       "norm_label": "usepayrollcafeteria()"
     },
     {
@@ -26110,7 +26110,7 @@
       "source_location": "L1017",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usecreatecafeteriaitem",
-      "community": 613,
+      "community": 18,
       "norm_label": "usecreatecafeteriaitem()"
     },
     {
@@ -26120,7 +26120,7 @@
       "source_location": "L1037",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_usedeletecafeteriaitem",
-      "community": 613,
+      "community": 18,
       "norm_label": "usedeletecafeteriaitem()"
     },
     {
@@ -26140,7 +26140,7 @@
       "source_location": "L1084",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_batchpayrollinput",
-      "community": 613,
+      "community": 18,
       "norm_label": "batchpayrollinput"
     },
     {
@@ -26150,7 +26150,7 @@
       "source_location": "L1091",
       "_origin": "ast",
       "id": "hooks_usepayrolldata_batchpayrollresult",
-      "community": 613,
+      "community": 18,
       "norm_label": "batchpayrollresult"
     },
     {
@@ -26180,7 +26180,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "hooks_usepdfexport_pdfexportjob",
-      "community": 663,
+      "community": 67,
       "norm_label": "pdfexportjob"
     },
     {
@@ -26300,7 +26300,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_useprojectlabordetails",
-      "community": 572,
+      "community": 29,
       "norm_label": "useprojectlabordetails.ts"
     },
     {
@@ -26310,7 +26310,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "hooks_useprojectlabordetails_labordetailrow",
-      "community": 572,
+      "community": 29,
       "norm_label": "labordetailrow"
     },
     {
@@ -26330,7 +26330,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_useprojectlist",
-      "community": 572,
+      "community": 29,
       "norm_label": "useprojectlist.ts"
     },
     {
@@ -26340,7 +26340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "hooks_useprojectlist_simpleproject",
-      "community": 572,
+      "community": 29,
       "norm_label": "simpleproject"
     },
     {
@@ -26360,7 +26360,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usepushnotifications",
-      "community": 572,
+      "community": 29,
       "norm_label": "usepushnotifications.ts"
     },
     {
@@ -26370,7 +26370,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "hooks_usepushnotifications_urlbase64touint8array",
-      "community": 572,
+      "community": 29,
       "norm_label": "urlbase64touint8array()"
     },
     {
@@ -26380,7 +26380,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "hooks_usepushnotifications_usepushnotifications",
-      "community": 572,
+      "community": 29,
       "norm_label": "usepushnotifications()"
     },
     {
@@ -26390,7 +26390,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "hooks_usepushnotifications_unsubscribefrompush",
-      "community": 572,
+      "community": 29,
       "norm_label": "unsubscribefrompush()"
     },
     {
@@ -26990,7 +26990,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "supabase_client",
-      "community": 572,
+      "community": 29,
       "norm_label": "client.ts"
     },
     {
@@ -27000,7 +27000,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "supabase_client_supabase",
-      "community": 572,
+      "community": 29,
       "norm_label": "supabase"
     },
     {
@@ -27120,7 +27120,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_striphtml_test",
-      "community": 455,
+      "community": 242,
       "norm_label": "striphtml.test.ts"
     },
     {
@@ -27850,7 +27850,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_coapdfparser_test",
-      "community": 455,
+      "community": 572,
       "norm_label": "coapdfparser.test.ts"
     },
     {
@@ -27860,7 +27860,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "lib_coapdfparser_test_matchcoaline",
-      "community": 455,
+      "community": 572,
       "norm_label": "matchcoaline()"
     },
     {
@@ -28960,7 +28960,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "templates_tableexporttemplate_buildtableexportdescriptor",
-      "community": 498,
+      "community": 431,
       "norm_label": "buildtableexportdescriptor()"
     },
     {
@@ -29350,7 +29350,7 @@
       "source_location": "L374",
       "_origin": "ast",
       "id": "lib_evcalculations_thresholdstatus",
-      "community": 724,
+      "community": 175,
       "norm_label": "thresholdstatus"
     },
     {
@@ -29360,7 +29360,7 @@
       "source_location": "L376",
       "_origin": "ast",
       "id": "lib_evcalculations_thresholdcheck",
-      "community": 724,
+      "community": 175,
       "norm_label": "thresholdcheck"
     },
     {
@@ -29370,7 +29370,7 @@
       "source_location": "L385",
       "_origin": "ast",
       "id": "lib_evcalculations_checkthresholdstatus",
-      "community": 724,
+      "community": 175,
       "norm_label": "checkthresholdstatus()"
     },
     {
@@ -29380,7 +29380,7 @@
       "source_location": "L396",
       "_origin": "ast",
       "id": "lib_evcalculations_getevthresholds",
-      "community": 724,
+      "community": 175,
       "norm_label": "getevthresholds()"
     },
     {
@@ -29550,7 +29550,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_exportpdf",
-      "community": 498,
+      "community": 431,
       "norm_label": "exportpdf.ts"
     },
     {
@@ -29570,7 +29570,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "lib_exportpdf_exportpdf",
-      "community": 498,
+      "community": 431,
       "norm_label": "exportpdf()"
     },
     {
@@ -29580,7 +29580,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "lib_exportpdf_getpdfbloburl",
-      "community": 498,
+      "community": 431,
       "norm_label": "getpdfbloburl()"
     },
     {
@@ -29590,7 +29590,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "lib_exportpdf_exportreceiptpdf",
-      "community": 498,
+      "community": 431,
       "norm_label": "exportreceiptpdf()"
     },
     {
@@ -31260,7 +31260,7 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "lib_navigation_useurltab",
-      "community": 754,
+      "community": 332,
       "norm_label": "useurltab()"
     },
     {
@@ -31500,7 +31500,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_taxengine_test",
-      "community": 613,
+      "community": 22,
       "norm_label": "taxengine.test.ts"
     },
     {
@@ -31510,7 +31510,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "tests_taxengine_test_makegross",
-      "community": 613,
+      "community": 22,
       "norm_label": "makegross()"
     },
     {
@@ -31520,7 +31520,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "tests_taxengine_test_makeinput",
-      "community": 613,
+      "community": 22,
       "norm_label": "makeinput()"
     },
     {
@@ -32770,7 +32770,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "payroll_taxengine",
-      "community": 613,
+      "community": 22,
       "norm_label": "taxengine.ts"
     },
     {
@@ -32780,7 +32780,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "payroll_taxengine_taxparameters",
-      "community": 613,
+      "community": 22,
       "norm_label": "taxparameters"
     },
     {
@@ -32790,7 +32790,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "payroll_taxengine_employeedeclarations",
-      "community": 613,
+      "community": 22,
       "norm_label": "employeedeclarations"
     },
     {
@@ -32800,7 +32800,7 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "payroll_taxengine_grosssalaryinput",
-      "community": 613,
+      "community": 22,
       "norm_label": "grosssalaryinput"
     },
     {
@@ -32810,7 +32810,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "payroll_taxengine_cafeteriainputitem",
-      "community": 613,
+      "community": 22,
       "norm_label": "cafeteriainputitem"
     },
     {
@@ -32820,7 +32820,7 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "payroll_taxengine_travelreimbursementinput",
-      "community": 613,
+      "community": 22,
       "norm_label": "travelreimbursementinput"
     },
     {
@@ -32830,7 +32830,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "payroll_taxengine_payrollcalculationinput",
-      "community": 613,
+      "community": 22,
       "norm_label": "payrollcalculationinput"
     },
     {
@@ -32840,7 +32840,7 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "payroll_taxengine_taxcreditdetail",
-      "community": 613,
+      "community": 22,
       "norm_label": "taxcreditdetail"
     },
     {
@@ -32850,7 +32850,7 @@
       "source_location": "L135",
       "_origin": "ast",
       "id": "payroll_taxengine_payrollcalculationresult",
-      "community": 613,
+      "community": 22,
       "norm_label": "payrollcalculationresult"
     },
     {
@@ -32860,7 +32860,7 @@
       "source_location": "L173",
       "_origin": "ast",
       "id": "payroll_taxengine_calculategross",
-      "community": 613,
+      "community": 22,
       "norm_label": "calculategross()"
     },
     {
@@ -32870,7 +32870,7 @@
       "source_location": "L189",
       "_origin": "ast",
       "id": "payroll_taxengine_calculatepayroll",
-      "community": 613,
+      "community": 22,
       "norm_label": "calculatepayroll()"
     },
     {
@@ -32880,7 +32880,7 @@
       "source_location": "L625",
       "_origin": "ast",
       "id": "payroll_taxengine_garnishment",
-      "community": 613,
+      "community": 22,
       "norm_label": "garnishment"
     },
     {
@@ -32890,7 +32890,7 @@
       "source_location": "L641",
       "_origin": "ast",
       "id": "payroll_taxengine_calculategarnishments",
-      "community": 613,
+      "community": 22,
       "norm_label": "calculategarnishments()"
     },
     {
@@ -32900,7 +32900,7 @@
       "source_location": "L670",
       "_origin": "ast",
       "id": "payroll_taxengine_default_2026_params",
-      "community": 613,
+      "community": 22,
       "norm_label": "default_2026_params"
     },
     {
@@ -33070,7 +33070,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "payroll_xmlgenerator",
-      "community": 18,
+      "community": 714,
       "norm_label": "xmlgenerator.ts"
     },
     {
@@ -33080,7 +33080,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "payroll_xmlgenerator_xmlexportemployeedata",
-      "community": 18,
+      "community": 714,
       "norm_label": "xmlexportemployeedata"
     },
     {
@@ -33090,7 +33090,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "payroll_xmlgenerator_xmlexportcompanydata",
-      "community": 18,
+      "community": 714,
       "norm_label": "xmlexportcompanydata"
     },
     {
@@ -33100,7 +33100,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "payroll_xmlgenerator_xmlexportfilingdata",
-      "community": 18,
+      "community": 714,
       "norm_label": "xmlexportfilingdata"
     },
     {
@@ -33110,7 +33110,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "payroll_xmlgenerator_downloadxmlfile",
-      "community": 18,
+      "community": 714,
       "norm_label": "downloadxmlfile()"
     },
     {
@@ -33120,7 +33120,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "payroll_xmlgenerator_generate2608xml",
-      "community": 18,
+      "community": 714,
       "norm_label": "generate2608xml()"
     },
     {
@@ -33130,7 +33130,7 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "payroll_xmlgenerator_generate2658xml",
-      "community": 18,
+      "community": 714,
       "norm_label": "generate2658xml()"
     },
     {
@@ -33140,7 +33140,7 @@
       "source_location": "L150",
       "_origin": "ast",
       "id": "payroll_xmlgenerator_generatet1041xml",
-      "community": 18,
+      "community": 714,
       "norm_label": "generatet1041xml()"
     },
     {
@@ -33150,7 +33150,7 @@
       "source_location": "L186",
       "_origin": "ast",
       "id": "payroll_xmlgenerator_generatet1042exml",
-      "community": 18,
+      "community": 714,
       "norm_label": "generatet1042exml()"
     },
     {
@@ -33480,7 +33480,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_utils",
-      "community": 455,
+      "community": 242,
       "norm_label": "utils.ts"
     },
     {
@@ -33540,7 +33540,7 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "lib_utils_striphtml",
-      "community": 455,
+      "community": 242,
       "norm_label": "striphtml()"
     },
     {
@@ -33550,7 +33550,7 @@
       "source_location": "L138",
       "_origin": "ast",
       "id": "lib_utils_findwordbreak",
-      "community": 455,
+      "community": 242,
       "norm_label": "findwordbreak()"
     },
     {
@@ -33560,7 +33560,7 @@
       "source_location": "L151",
       "_origin": "ast",
       "id": "lib_utils_getticketsummary",
-      "community": 455,
+      "community": 242,
       "norm_label": "getticketsummary()"
     },
     {
@@ -33930,7 +33930,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_accountingredirectpage",
-      "community": 131,
+      "community": 242,
       "norm_label": "accountingredirectpage.tsx"
     },
     {
@@ -33940,7 +33940,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "accounty_accountingredirectpage_accountingredirectpage",
-      "community": 131,
+      "community": 242,
       "norm_label": "accountingredirectpage()"
     },
     {
@@ -34830,7 +34830,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_employeeexitwizardpage",
-      "community": 572,
+      "community": 29,
       "norm_label": "employeeexitwizardpage.tsx"
     },
     {
@@ -34840,7 +34840,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "accounty_employeeexitwizardpage_reasons",
-      "community": 572,
+      "community": 29,
       "norm_label": "reasons"
     },
     {
@@ -34850,7 +34850,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "accounty_employeeexitwizardpage_exit_docs",
-      "community": 572,
+      "community": 29,
       "norm_label": "exit_docs"
     },
     {
@@ -34860,7 +34860,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "accounty_employeeexitwizardpage_employeeexitwizardpage",
-      "community": 447,
+      "community": 53,
       "norm_label": "employeeexitwizardpage()"
     },
     {
@@ -35010,7 +35010,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_employeespage",
-      "community": 572,
+      "community": 58,
       "norm_label": "employeespage.tsx"
     },
     {
@@ -35030,7 +35030,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard",
-      "community": 555,
+      "community": 663,
       "norm_label": "cashbookclosewizard.tsx"
     },
     {
@@ -35040,7 +35040,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_periodsummary",
-      "community": 555,
+      "community": 663,
       "norm_label": "periodsummary"
     },
     {
@@ -35050,7 +35050,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_wizardstep",
-      "community": 555,
+      "community": 663,
       "norm_label": "wizardstep"
     },
     {
@@ -35060,7 +35060,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_month_labels",
-      "community": 555,
+      "community": 663,
       "norm_label": "month_labels"
     },
     {
@@ -35070,7 +35070,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_closecheck",
-      "community": 555,
+      "community": 663,
       "norm_label": "closecheck"
     },
     {
@@ -35080,7 +35080,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_runclosechecks",
-      "community": 555,
+      "community": 663,
       "norm_label": "runclosechecks()"
     },
     {
@@ -35090,7 +35090,7 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "ev_cashbookclosewizard_cashbookclosewizard",
-      "community": 555,
+      "community": 663,
       "norm_label": "cashbookclosewizard()"
     },
     {
@@ -35360,7 +35360,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evcalendarpage",
-      "community": 175,
+      "community": 26,
       "norm_label": "evcalendarpage.tsx"
     },
     {
@@ -35370,7 +35370,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "ev_evcalendarpage_month_names",
-      "community": 175,
+      "community": 26,
       "norm_label": "month_names"
     },
     {
@@ -35380,7 +35380,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "ev_evcalendarpage_return_type_map",
-      "community": 175,
+      "community": 26,
       "norm_label": "return_type_map"
     },
     {
@@ -35390,7 +35390,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "ev_evcalendarpage_type_labels",
-      "community": 175,
+      "community": 26,
       "norm_label": "type_labels"
     },
     {
@@ -35400,7 +35400,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "ev_evcalendarpage_type_colors",
-      "community": 175,
+      "community": 26,
       "norm_label": "type_colors"
     },
     {
@@ -35410,7 +35410,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "ev_evcalendarpage_deadlinestatus",
-      "community": 175,
+      "community": 26,
       "norm_label": "deadlinestatus"
     },
     {
@@ -35420,7 +35420,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "ev_evcalendarpage_status_icon",
-      "community": 175,
+      "community": 26,
       "norm_label": "status_icon"
     },
     {
@@ -36220,7 +36220,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "ev_evportfoliodashboard_enrichedevclient",
-      "community": 555,
+      "community": 175,
       "norm_label": "enrichedevclient"
     },
     {
@@ -36630,7 +36630,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage",
-      "community": 724,
+      "community": 175,
       "norm_label": "evthresholdmonitorpage.tsx"
     },
     {
@@ -36640,7 +36640,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_projectedthresholdcheck",
-      "community": 724,
+      "community": 175,
       "norm_label": "projectedthresholdcheck"
     },
     {
@@ -36650,7 +36650,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_clientthresholdrow",
-      "community": 724,
+      "community": 175,
       "norm_label": "clientthresholdrow"
     },
     {
@@ -36660,7 +36660,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_worstof",
-      "community": 724,
+      "community": 175,
       "norm_label": "worstof()"
     },
     {
@@ -36670,7 +36670,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "ev_evthresholdmonitorpage_status_config",
-      "community": 724,
+      "community": 175,
       "norm_label": "status_config"
     },
     {
@@ -37090,7 +37090,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage",
-      "community": 61,
+      "community": 53,
       "norm_label": "exitdocumentspage.tsx"
     },
     {
@@ -37100,7 +37100,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_hu",
-      "community": 61,
+      "community": 53,
       "norm_label": "hu()"
     },
     {
@@ -37110,7 +37110,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_fmt",
-      "community": 61,
+      "community": 53,
       "norm_label": "fmt()"
     },
     {
@@ -37120,7 +37120,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_fmtdate",
-      "community": 61,
+      "community": 53,
       "norm_label": "fmtdate()"
     },
     {
@@ -37130,7 +37130,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_exitdocument",
-      "community": 61,
+      "community": 53,
       "norm_label": "exitdocument"
     },
     {
@@ -37140,7 +37140,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_document_templates",
-      "community": 61,
+      "community": 53,
       "norm_label": "document_templates"
     },
     {
@@ -37150,7 +37150,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "accounty_exitdocumentspage_status_badge",
-      "community": 61,
+      "community": 53,
       "norm_label": "status_badge"
     },
     {
@@ -37310,7 +37310,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage",
-      "community": 447,
+      "community": 53,
       "norm_label": "jobmodificationpage.tsx"
     },
     {
@@ -37320,7 +37320,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage_changetype",
-      "community": 447,
+      "community": 53,
       "norm_label": "changetype"
     },
     {
@@ -37330,7 +37330,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage_modificationdata",
-      "community": 447,
+      "community": 53,
       "norm_label": "modificationdata"
     },
     {
@@ -37340,7 +37340,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage_change_types",
-      "community": 447,
+      "community": 53,
       "norm_label": "change_types"
     },
     {
@@ -37350,7 +37350,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage_empty_per_type",
-      "community": 447,
+      "community": 53,
       "norm_label": "empty_per_type"
     },
     {
@@ -37360,7 +37360,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "accounty_jobmodificationpage_jobmodificationpage",
-      "community": 447,
+      "community": 53,
       "norm_label": "jobmodificationpage()"
     },
     {
@@ -37420,7 +37420,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_missinginvoicespage",
-      "community": 455,
+      "community": 58,
       "norm_label": "missinginvoicespage.tsx"
     },
     {
@@ -37430,7 +37430,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "accounty_missinginvoicespage_animatednumber",
-      "community": 455,
+      "community": 58,
       "norm_label": "animatednumber()"
     },
     {
@@ -37440,7 +37440,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "accounty_missinginvoicespage_kpimodaltype",
-      "community": 455,
+      "community": 58,
       "norm_label": "kpimodaltype"
     },
     {
@@ -37460,7 +37460,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_missinginvoicesreportpage",
-      "community": 580,
+      "community": 58,
       "norm_label": "missinginvoicesreportpage.tsx"
     },
     {
@@ -37470,7 +37470,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "accounty_missinginvoicesreportpage_colors",
-      "community": 580,
+      "community": 58,
       "norm_label": "colors"
     },
     {
@@ -37480,7 +37480,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "accounty_missinginvoicesreportpage_month_names_hu",
-      "community": 580,
+      "community": 58,
       "norm_label": "month_names_hu"
     },
     {
@@ -37590,7 +37590,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_newclientpage",
-      "community": 58,
+      "community": 29,
       "norm_label": "newclientpage.tsx"
     },
     {
@@ -37750,7 +37750,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_payrollportfoliopage",
-      "community": 431,
+      "community": 53,
       "norm_label": "payrollportfoliopage.tsx"
     },
     {
@@ -37760,7 +37760,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "accounty_payrollportfoliopage_cyclestatus",
-      "community": 431,
+      "community": 53,
       "norm_label": "cyclestatus"
     },
     {
@@ -37770,7 +37770,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "accounty_payrollportfoliopage_cycle_status_config",
-      "community": 431,
+      "community": 53,
       "norm_label": "cycle_status_config"
     },
     {
@@ -37780,7 +37780,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "accounty_payrollportfoliopage_filing_status_map",
-      "community": 431,
+      "community": 53,
       "norm_label": "filing_status_map"
     },
     {
@@ -37790,7 +37790,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "accounty_payrollportfoliopage_payrollrow",
-      "community": 431,
+      "community": 53,
       "norm_label": "payrollrow"
     },
     {
@@ -37800,7 +37800,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "accounty_payrollportfoliopage_usepayrollportfoliodata",
-      "community": 431,
+      "community": 53,
       "norm_label": "usepayrollportfoliodata()"
     },
     {
@@ -37810,7 +37810,7 @@
       "source_location": "L155",
       "_origin": "ast",
       "id": "accounty_payrollportfoliopage_filtermode",
-      "community": 431,
+      "community": 53,
       "norm_label": "filtermode"
     },
     {
@@ -37820,7 +37820,7 @@
       "source_location": "L157",
       "_origin": "ast",
       "id": "accounty_payrollportfoliopage_payrollportfoliopage",
-      "community": 431,
+      "community": 53,
       "norm_label": "payrollportfoliopage()"
     },
     {
@@ -39340,7 +39340,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_taxparameterspage",
-      "community": 613,
+      "community": 33,
       "norm_label": "taxparameterspage.tsx"
     },
     {
@@ -39350,7 +39350,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "accounty_taxparameterspage_categories",
-      "community": 613,
+      "community": 33,
       "norm_label": "categories"
     },
     {
@@ -39360,7 +39360,7 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "accounty_taxparameterspage_param_labels",
-      "community": 613,
+      "community": 33,
       "norm_label": "param_labels"
     },
     {
@@ -39370,7 +39370,7 @@
       "source_location": "L255",
       "_origin": "ast",
       "id": "accounty_taxparameterspage_formatparamvalue",
-      "community": 613,
+      "community": 33,
       "norm_label": "formatparamvalue()"
     },
     {
@@ -39380,7 +39380,7 @@
       "source_location": "L280",
       "_origin": "ast",
       "id": "accounty_taxparameterspage_taxparameterspage",
-      "community": 613,
+      "community": 33,
       "norm_label": "taxparameterspage()"
     },
     {
@@ -39430,7 +39430,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_yearenddashboardpage",
-      "community": 498,
+      "community": 431,
       "norm_label": "yearenddashboardpage.tsx"
     },
     {
@@ -39440,7 +39440,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "accounty_yearenddashboardpage_icon_map",
-      "community": 498,
+      "community": 431,
       "norm_label": "icon_map"
     },
     {
@@ -39450,7 +39450,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "accounty_yearenddashboardpage_taskstatus",
-      "community": 498,
+      "community": 431,
       "norm_label": "taskstatus"
     },
     {
@@ -39460,7 +39460,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "accounty_yearenddashboardpage_status_badge",
-      "community": 498,
+      "community": 431,
       "norm_label": "status_badge"
     },
     {
@@ -39940,7 +39940,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "employee_details_employeecafeteriatab",
-      "community": 613,
+      "community": 18,
       "norm_label": "employeecafeteriatab.tsx"
     },
     {
@@ -39950,7 +39950,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "employee_details_employeecafeteriatab_employeecafeteriatabprops",
-      "community": 613,
+      "community": 18,
       "norm_label": "employeecafeteriatabprops"
     },
     {
@@ -39960,7 +39960,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "employee_details_employeecafeteriatab_employeecafeteriatab",
-      "community": 613,
+      "community": 18,
       "norm_label": "employeecafeteriatab()"
     },
     {
@@ -40000,7 +40000,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "employee_details_employeegarnishmentstab",
-      "community": 58,
+      "community": 29,
       "norm_label": "employeegarnishmentstab.tsx"
     },
     {
@@ -40010,7 +40010,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "employee_details_employeegarnishmentstab_garnishment",
-      "community": 58,
+      "community": 29,
       "norm_label": "garnishment"
     },
     {
@@ -40020,7 +40020,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "employee_details_employeegarnishmentstab_employeegarnishmentstabprops",
-      "community": 58,
+      "community": 29,
       "norm_label": "employeegarnishmentstabprops"
     },
     {
@@ -40310,7 +40310,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "filings_filingworkflowpage",
-      "community": 498,
+      "community": 431,
       "norm_label": "filingworkflowpage.tsx"
     },
     {
@@ -40320,7 +40320,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_step",
-      "community": 498,
+      "community": 431,
       "norm_label": "step"
     },
     {
@@ -40330,7 +40330,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_steps",
-      "community": 498,
+      "community": 431,
       "norm_label": "steps"
     },
     {
@@ -40340,7 +40340,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_filing_type_labels",
-      "community": 498,
+      "community": 431,
       "norm_label": "filing_type_labels"
     },
     {
@@ -40350,7 +40350,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_fmt",
-      "community": 498,
+      "community": 431,
       "norm_label": "fmt()"
     },
     {
@@ -40360,7 +40360,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "filings_filingworkflowpage_filingworkflowpage",
-      "community": 498,
+      "community": 431,
       "norm_label": "filingworkflowpage()"
     },
     {
@@ -41210,7 +41210,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "new_client_integrationstep",
-      "community": 498,
+      "community": 431,
       "norm_label": "integrationstep.tsx"
     },
     {
@@ -41220,7 +41220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "new_client_integrationstep_integrationstepprops",
-      "community": 498,
+      "community": 431,
       "norm_label": "integrationstepprops"
     },
     {
@@ -41230,7 +41230,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "new_client_integrationstep_integrationstep",
-      "community": 498,
+      "community": 431,
       "norm_label": "integrationstep()"
     },
     {
@@ -41290,7 +41290,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "reports_customreportbuilderpage",
-      "community": 498,
+      "community": 61,
       "norm_label": "customreportbuilderpage.tsx"
     },
     {
@@ -41300,7 +41300,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "reports_customreportbuilderpage_columndef",
-      "community": 498,
+      "community": 61,
       "norm_label": "columndef"
     },
     {
@@ -41310,7 +41310,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "reports_customreportbuilderpage_available_columns",
-      "community": 498,
+      "community": 61,
       "norm_label": "available_columns"
     },
     {
@@ -41320,7 +41320,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "reports_customreportbuilderpage_filterdef",
-      "community": 498,
+      "community": 61,
       "norm_label": "filterdef"
     },
     {
@@ -41330,7 +41330,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "reports_customreportbuilderpage_customreportbuilderpage",
-      "community": 498,
+      "community": 61,
       "norm_label": "customreportbuilderpage()"
     },
     {
@@ -41340,7 +41340,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage",
-      "community": 498,
+      "community": 431,
       "norm_label": "payrolladvancedreportspage.tsx"
     },
     {
@@ -41350,7 +41350,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage_reporttype",
-      "community": 498,
+      "community": 431,
       "norm_label": "reporttype"
     },
     {
@@ -41360,7 +41360,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage_report_types",
-      "community": 498,
+      "community": 431,
       "norm_label": "report_types"
     },
     {
@@ -41370,7 +41370,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "reports_payrolladvancedreportspage_payrollreportspage2",
-      "community": 498,
+      "community": 431,
       "norm_label": "payrollreportspage2()"
     },
     {
@@ -41870,7 +41870,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_analytics",
-      "community": 572,
+      "community": 29,
       "norm_label": "analytics.tsx"
     },
     {
@@ -41880,7 +41880,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "pages_analytics_monthlydata",
-      "community": 572,
+      "community": 29,
       "norm_label": "monthlydata"
     },
     {
@@ -41890,7 +41890,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "pages_analytics_rawinvoice",
-      "community": 572,
+      "community": 29,
       "norm_label": "rawinvoice"
     },
     {
@@ -41900,7 +41900,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "pages_analytics_rawsalary",
-      "community": 572,
+      "community": 29,
       "norm_label": "rawsalary"
     },
     {
@@ -41910,7 +41910,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "pages_analytics_vatcategorydata",
-      "community": 572,
+      "community": 29,
       "norm_label": "vatcategorydata"
     },
     {
@@ -41920,7 +41920,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "pages_analytics_month_names",
-      "community": 572,
+      "community": 29,
       "norm_label": "month_names"
     },
     {
@@ -42090,7 +42090,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_employeeregister",
-      "community": 58,
+      "community": 23,
       "norm_label": "employeeregister.tsx"
     },
     {
@@ -42100,7 +42100,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "pages_employeeregister_tokendata",
-      "community": 58,
+      "community": 23,
       "norm_label": "tokendata"
     },
     {
@@ -42110,7 +42110,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "pages_employeeregister_pagestate",
-      "community": 58,
+      "community": 23,
       "norm_label": "pagestate"
     },
     {
@@ -42390,7 +42390,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "pages_invoicespage_invoicespage",
-      "community": 754,
+      "community": 332,
       "norm_label": "invoicespage()"
     },
     {
@@ -42560,7 +42560,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_notespage",
-      "community": 58,
+      "community": 184,
       "norm_label": "notespage.tsx"
     },
     {
@@ -42570,7 +42570,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "pages_notespage_notespage",
-      "community": 58,
+      "community": 184,
       "norm_label": "notespage()"
     },
     {
@@ -42700,7 +42700,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_pettycashpage",
-      "community": 23,
+      "community": 131,
       "norm_label": "pettycashpage.tsx"
     },
     {
@@ -42840,7 +42840,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_resetpassword",
-      "community": 58,
+      "community": 29,
       "norm_label": "resetpassword.tsx"
     },
     {
@@ -42850,7 +42850,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "pages_resetpassword_consumeresetpwstate",
-      "community": 58,
+      "community": 29,
       "norm_label": "consumeresetpwstate()"
     },
     {
@@ -43250,7 +43250,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_vatreturnpage",
-      "community": 580,
+      "community": 455,
       "norm_label": "vatreturnpage.tsx"
     },
     {
@@ -45190,7 +45190,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_accountyerrorstate_test",
-      "community": 431,
+      "community": 53,
       "norm_label": "accountyerrorstate.test.tsx"
     },
     {
@@ -45200,7 +45200,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_rulesofhooksregression_test",
-      "community": 431,
+      "community": 53,
       "norm_label": "rulesofhooksregression.test.tsx"
     },
     {
@@ -45210,7 +45210,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "tests_rulesofhooksregression_test_createtestqueryclient",
-      "community": 431,
+      "community": 53,
       "norm_label": "createtestqueryclient()"
     },
     {
@@ -46660,7 +46660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "types_invoices_invoice_type_labels",
-      "community": 479,
+      "community": 39,
       "norm_label": "invoice_type_labels"
     },
     {
@@ -46790,7 +46790,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "types_notes",
-      "community": 58,
+      "community": 184,
       "norm_label": "notes.ts"
     },
     {
@@ -46800,7 +46800,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "types_notes_note",
-      "community": 58,
+      "community": 184,
       "norm_label": "note"
     },
     {
@@ -58810,7 +58810,7 @@
       "source_location": "L644",
       "_origin": "ast",
       "id": "project_documentation_api_rate_limits_quotas",
-      "community": 85,
+      "community": 758,
       "norm_label": "api rate limits & quotas"
     },
     {
@@ -58820,7 +58820,7 @@
       "source_location": "L646",
       "_origin": "ast",
       "id": "project_documentation_supabase_free_tier",
-      "community": 85,
+      "community": 758,
       "norm_label": "supabase (free tier)"
     },
     {
@@ -58830,7 +58830,7 @@
       "source_location": "L653",
       "_origin": "ast",
       "id": "project_documentation_resend_free_tier",
-      "community": 85,
+      "community": 758,
       "norm_label": "resend (free tier)"
     },
     {
@@ -58840,7 +58840,7 @@
       "source_location": "L659",
       "_origin": "ast",
       "id": "project_documentation_nav_api",
-      "community": 85,
+      "community": 758,
       "norm_label": "nav api"
     },
     {
@@ -58850,7 +58850,7 @@
       "source_location": "L665",
       "_origin": "ast",
       "id": "project_documentation_stripe",
-      "community": 85,
+      "community": 758,
       "norm_label": "stripe"
     },
     {
@@ -58910,7 +58910,7 @@
       "source_location": "L700",
       "_origin": "ast",
       "id": "project_documentation_monitoring_logging",
-      "community": 714,
+      "community": 85,
       "norm_label": "monitoring & logging"
     },
     {
@@ -58920,7 +58920,7 @@
       "source_location": "L702",
       "_origin": "ast",
       "id": "project_documentation_edge_function_logs",
-      "community": 714,
+      "community": 85,
       "norm_label": "edge function logs"
     },
     {
@@ -58930,7 +58930,7 @@
       "source_location": "L708",
       "_origin": "ast",
       "id": "project_documentation_database_logs",
-      "community": 714,
+      "community": 85,
       "norm_label": "database logs"
     },
     {
@@ -58940,7 +58940,7 @@
       "source_location": "L714",
       "_origin": "ast",
       "id": "project_documentation_error_tracking",
-      "community": 714,
+      "community": 85,
       "norm_label": "error tracking"
     },
     {
@@ -58950,7 +58950,7 @@
       "source_location": "L719",
       "_origin": "ast",
       "id": "project_documentation_usage_monitoring",
-      "community": 714,
+      "community": 85,
       "norm_label": "usage monitoring"
     },
     {
@@ -74520,7 +74520,7 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "business_brd_6_nav_integr\u00e1ci\u00f3",
-      "community": 222,
+      "community": 775,
       "norm_label": "6. nav integracio"
     },
     {
@@ -74530,7 +74530,7 @@
       "source_location": "L149",
       "_origin": "ast",
       "id": "business_brd_req_6_1_nav_online_sz\u00e1mla_api_v3",
-      "community": 222,
+      "community": 775,
       "norm_label": "req-6.1: nav online szamla api v3"
     },
     {
@@ -74540,7 +74540,7 @@
       "source_location": "L154",
       "_origin": "ast",
       "id": "business_brd_req_6_2_szinkroniz\u00e1ci\u00f3_strat\u00e9gia",
-      "community": 222,
+      "community": 775,
       "norm_label": "req-6.2: szinkronizacio strategia"
     },
     {
@@ -74880,7 +74880,7 @@
       "source_location": "L339",
       "_origin": "ast",
       "id": "business_brd_9_el\u0151fizet\u00e9s_\u00e1raz\u00e1s",
-      "community": 758,
+      "community": 222,
       "norm_label": "9. elofizetes & arazas"
     },
     {
@@ -74890,7 +74890,7 @@
       "source_location": "L341",
       "_origin": "ast",
       "id": "business_brd_req_9_1_subscription_tierek",
-      "community": 758,
+      "community": 222,
       "norm_label": "req-9.1: subscription tierek"
     },
     {
@@ -74900,7 +74900,7 @@
       "source_location": "L346",
       "_origin": "ast",
       "id": "business_brd_req_9_2_el\u0151fizet\u00e9s_scope",
-      "community": 758,
+      "community": 222,
       "norm_label": "req-9.2: elofizetes scope"
     },
     {
@@ -342532,5 +342532,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "537eab4f8c356bdc328cb08750a38b51089d0e32"
+  "built_at_commit": "ecc36b07a6e388b7b6153e9863e9b9454bd06a8d"
 }

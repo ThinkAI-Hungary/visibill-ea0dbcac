@@ -404,7 +404,7 @@ export default function TicketsPage({
             {/* Nyitott */}
             <Card
               className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
-                selectedStatuses.length === 1 && selectedStatuses[0] === 'created' ? 'ring-1 ring-blue-500/50' : ''
+                selectedStatuses.length === 1 && selectedStatuses[0] === 'created' ? 'ring-1 ring-sky-500/50' : ''
               }`}
               onClick={() => {
                 const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === 'created';
@@ -413,11 +413,11 @@ export default function TicketsPage({
               }}
             >
               <CardContent className="p-4 flex items-start gap-3.5">
-                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-500">
+                <div className="h-10 w-10 rounded-lg bg-sky-500/10 flex items-center justify-center border border-sky-500/20 text-sky-500">
                   <CircleDot className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold leading-none tabular-nums text-blue-600 dark:text-blue-400">{kpis.created}</p>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-sky-600 dark:text-sky-400">{kpis.created}</p>
                   <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Nyitott</p>
                 </div>
               </CardContent>
@@ -426,7 +426,7 @@ export default function TicketsPage({
             {/* Hozzárendelt */}
             <Card
               className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
-                selectedStatuses.length === 1 && selectedStatuses[0] === 'assigned' ? 'ring-1 ring-purple-500/50' : ''
+                selectedStatuses.length === 1 && selectedStatuses[0] === 'assigned' ? 'ring-1 ring-blue-500/50' : ''
               }`}
               onClick={() => {
                 const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === 'assigned';
@@ -435,11 +435,11 @@ export default function TicketsPage({
               }}
             >
               <CardContent className="p-4 flex items-start gap-3.5">
-                <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20 text-purple-500">
+                <div className="h-10 w-10 rounded-lg bg-blue-600/15 flex items-center justify-center border border-blue-500/25 text-blue-500">
                   <UserCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold leading-none tabular-nums text-purple-600 dark:text-purple-400">{kpis.assigned}</p>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-blue-600 dark:text-blue-400">{kpis.assigned}</p>
                   <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Hozzárendelt</p>
                 </div>
               </CardContent>
@@ -448,7 +448,7 @@ export default function TicketsPage({
             {/* Folyamatban */}
             <Card
               className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
-                selectedStatuses.length === 1 && selectedStatuses[0] === 'in_progress' ? 'ring-1 ring-amber-500/50' : ''
+                selectedStatuses.length === 1 && selectedStatuses[0] === 'in_progress' ? 'ring-1 ring-teal-500/50' : ''
               }`}
               onClick={() => {
                 const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === 'in_progress';
@@ -457,11 +457,11 @@ export default function TicketsPage({
               }}
             >
               <CardContent className="p-4 flex items-start gap-3.5">
-                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-amber-500">
+                <div className="h-10 w-10 rounded-lg bg-teal-500/10 flex items-center justify-center border border-teal-500/20 text-teal-500">
                   <Clock className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold leading-none tabular-nums text-amber-600 dark:text-amber-400">{kpis.inProgress}</p>
+                  <p className="text-2xl font-bold leading-none tabular-nums text-teal-600 dark:text-teal-400">{kpis.inProgress}</p>
                   <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Folyamatban</p>
                 </div>
               </CardContent>
@@ -647,7 +647,7 @@ export default function TicketsPage({
         </div>
 
         {/* Table of tickets */}
-        <Card className="border border-border/80 bg-card/50 backdrop-blur-md overflow-hidden">
+        <Card className={`border border-border/80 bg-card/50 backdrop-blur-md overflow-hidden ${!embeddedInManagement ? 'rounded-none shadow-none' : ''}`}>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -679,7 +679,11 @@ export default function TicketsPage({
                   paginatedTickets.map((ticket) => (
                     <TableRow
                       key={ticket.id}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      className={`cursor-pointer transition-colors ${
+                        ticket.has_unread
+                          ? "bg-primary/[0.06] hover:bg-primary/[0.12] dark:bg-primary/[0.08] dark:hover:bg-primary/[0.14]"
+                          : "hover:bg-muted/50"
+                      }`}
                       onClick={() => openTicket(ticket.id)}
                     >
                       <TableCell>
@@ -804,13 +808,25 @@ export default function TicketsPage({
                   key={t.id}
                   onClick={() => updateParams({ subView: "console", id: t.id })}
                   className={`w-full text-left p-3 flex flex-col gap-1.5 transition-colors border-l-2 first:border-t-0 ${
-                    active ? 'bg-primary/10 border-l-primary' : 'border-l-transparent hover:bg-accent/40'
+                    active
+                      ? 'bg-primary/10 border-l-primary'
+                      : t.has_unread
+                        ? 'bg-primary/[0.06] border-l-primary/60 hover:bg-primary/[0.10]'
+                        : 'border-l-transparent hover:bg-accent/40'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-1.5 w-full">
-                    <span className="font-mono text-[10px] font-bold text-primary">
-                      #{t.ticket_number || t.id.slice(0, 8)}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {t.has_unread && (
+                        <span className="relative flex h-1.5 w-1.5 shrink-0">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/85 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+                        </span>
+                      )}
+                      <span className="font-mono text-[10px] font-bold text-primary">
+                        #{t.ticket_number || t.id.slice(0, 8)}
+                      </span>
+                    </div>
                     <span className="text-[10px] text-muted-foreground">
                       {formatDate(t.created_at)}
                     </span>

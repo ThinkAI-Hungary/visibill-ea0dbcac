@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketDetailView.tsx": {
-    "mtime": 1788977957.6455343,
-    "ast_hash": "0d11cfbbf04b435c6461929570e3a5f8",
+    "mtime": 1789011543.7213676,
+    "ast_hash": "48828ee55ae10edd4f26ca40ff4f944e",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
@@ -485,13 +485,13 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketStatusBadge.tsx": {
-    "mtime": 1789010033.4302404,
-    "ast_hash": "004d3ea26ee84516fa7591b586ee4582",
+    "mtime": 1789010538.8007727,
+    "ast_hash": "417e9dda63fb60d4446b718ecba63ae0",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketTimeline.tsx": {
-    "mtime": 1788977927.569987,
-    "ast_hash": "6ce44064afc8f95739be9bb0d2990a47",
+    "mtime": 1789011826.63656,
+    "ast_hash": "89ddabaaa4af636f15b95f91ba1ea1cd",
     "semantic_hash": ""
   },
   "src/components/transactions/TransactionFilters.tsx": {
@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "src/pages/TicketsPage.tsx": {
-    "mtime": 1789009955.7827532,
-    "ast_hash": "f2682f60774c3366ab8b0bd67d54c357",
+    "mtime": 1789011185.418084,
+    "ast_hash": "143991e18d20b21d8616f720fa2c6718",
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {
@@ -10112,6 +10112,11 @@
   "public/thinkai-logo.png": {
     "mtime": 1788974337.092745,
     "ast_hash": "e44d9c5660cc1e1199a192b89e7d03c7",
+    "semantic_hash": ""
+  },
+  "public/timeline-icon-mockup.html": {
+    "mtime": 1789011776.3060994,
+    "ast_hash": "81340500fea35f4958b15928baaabd7a",
     "semantic_hash": ""
   }
 }

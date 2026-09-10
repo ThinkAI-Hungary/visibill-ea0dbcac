@@ -359,7 +359,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
           {/* Fő tartalom skeleton */}
           <div className="lg:col-span-7 xl:col-span-8 2xl:col-span-8 space-y-4 min-w-0">
             {/* Original message card skeleton */}
-            <Card>
+            <Card className="rounded-none shadow-none">
               <CardContent className="pt-6 space-y-4">
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-8 w-8 rounded-full shrink-0" />
@@ -392,7 +392,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
             </div>
 
             {/* Comment card skeleton */}
-            <Card>
+            <Card className="rounded-none shadow-none">
               <CardContent className="pt-4 pb-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-8 w-8 rounded-full shrink-0" />
@@ -409,7 +409,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
             </Card>
 
             {/* Comment input card skeleton */}
-            <Card>
+            <Card className="rounded-none shadow-none">
               <CardContent className="pt-4 pb-4 space-y-3">
                 <Skeleton className="h-[80px] w-full rounded-md" />
                 <div className="flex items-center justify-between">
@@ -422,7 +422,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
 
           {/* Oldalsáv skeleton (Részletek + Jegy története) */}
           <div className="lg:col-span-5 xl:col-span-4 2xl:col-span-4 space-y-4 min-w-0">
-            <Card>
+            <Card className="rounded-none shadow-none">
               <CardContent className="pt-6 space-y-4">
                 <h3 className="text-sm font-semibold">Részletek</h3>
                 <div className="space-y-3 pt-2">
@@ -479,7 +479,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
             </Card>
 
             {/* Timeline skeleton */}
-            <Card>
+            <Card className="rounded-none shadow-none">
               <CardContent className="pt-6 space-y-4">
                 <div className="flex items-center gap-2">
                   <Skeleton className="h-4 w-4 rounded-full shrink-0" />
@@ -616,7 +616,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
           {/* Fő tartalom (üzenet + csatolmányok + hozzászólások + válaszíró) */}
           <div className="lg:col-span-7 xl:col-span-8 2xl:col-span-8 space-y-4 min-w-0">
             {/* Original message */}
-            <Card className={isStaffInitiated ? "border-primary/20 bg-primary/[0.02]" : ""}>
+            <Card className={`rounded-none shadow-none ${isStaffInitiated ? "border-primary/20 bg-primary/[0.02]" : ""}`}>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-3">
                   <div
@@ -773,13 +773,13 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                 {comments.map((c) => (
                   <Card
                     key={c.id}
-                    className={
+                    className={`rounded-none shadow-none ${
                       c.is_internal
                         ? "border-amber-500/30 bg-amber-500/[0.03]"
                         : c.is_admin
                         ? "border-primary/20 bg-primary/[0.02]"
                         : ""
-                    }
+                    }`}
                   >
                     <CardContent className="pt-4 pb-4">
                       <div className="flex items-center gap-3 mb-2">
@@ -866,7 +866,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
 
             {/* Comment input */}
             {ticket.status === "resolved" ? (
-              <Card className="border-dashed opacity-70">
+              <Card className="border-dashed opacity-70 rounded-none shadow-none">
                 <CardContent className="py-5">
                   <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
                     <MessageSquare className="h-5 w-5" />
@@ -898,11 +898,11 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                 </CardContent>
               </Card>
             ) : (
-              <Card>
+              <Card className="rounded-none shadow-none">
                 <CardContent className="pt-4 pb-4">
                   <div className="space-y-3">
                     {ticket && !ticket.assigned_to && (
-                      <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-md text-xs font-medium leading-relaxed">
+                      <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-none text-xs font-medium leading-relaxed">
                         <ShieldAlert className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                         <div>
                           A hozzászóláshoz a hibajegynek rendelkeznie kell felelőssel.
@@ -1084,7 +1084,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
 
           {/* Oldalsáv: Részletek + Jegy története */}
           <div className="lg:col-span-5 xl:col-span-4 2xl:col-span-4 space-y-4 min-w-0 xl:sticky xl:top-6">
-            <Card>
+            <Card className="rounded-none shadow-none">
               <CardContent className="pt-6 space-y-4">
                 <h3 className="text-sm font-semibold">Részletek</h3>
 
@@ -1096,30 +1096,33 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       title: "Jegy állapota: Nyitott",
                       sub: "Várakozik a feldolgozásra",
                       icon: CircleDot,
-                      bgClass: "bg-gradient-to-br from-blue-500/[0.08] to-cyan-500/[0.04] border-blue-500/25",
-                      iconBubbleClass: "bg-blue-500 text-white shadow-sm shadow-blue-500/20",
-                      titleClass: "text-blue-900 dark:text-blue-200",
-                      subClass: "text-blue-600 dark:text-blue-400",
+                      bgClass: "bg-gradient-to-br from-sky-500/[0.08] to-cyan-500/[0.04] border-sky-500/25",
+                      iconBubbleClass: "bg-sky-500 text-white shadow-sm shadow-sky-500/20",
+                      titleClass: "text-sky-900 dark:text-sky-200",
+                      subClass: "text-sky-600 dark:text-sky-400",
+                      triggerClass: "border-sky-500/30 text-sky-600 dark:text-sky-400 bg-sky-500/10",
                     },
                     assigned: {
                       label: "Hozzárendelt",
                       title: "Jegy állapota: Hozzárendelt",
                       sub: "Felelős munkatárs kijelölve",
                       icon: UserCheck,
-                      bgClass: "bg-gradient-to-br from-purple-500/[0.08] to-indigo-500/[0.04] border-purple-500/25",
-                      iconBubbleClass: "bg-purple-500 text-white shadow-sm shadow-purple-500/20",
-                      titleClass: "text-purple-900 dark:text-purple-200",
-                      subClass: "text-purple-600 dark:text-purple-400",
+                      bgClass: "bg-gradient-to-br from-blue-600/[0.12] to-indigo-600/[0.05] border-blue-500/30",
+                      iconBubbleClass: "bg-blue-600 text-white shadow-sm shadow-blue-600/20",
+                      titleClass: "text-blue-900 dark:text-blue-200",
+                      subClass: "text-blue-600 dark:text-blue-400",
+                      triggerClass: "border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-600/15",
                     },
                     in_progress: {
                       label: "Folyamatban",
                       title: "Jegy állapota: Folyamatban",
                       sub: "A support csapat dolgozik rajta",
                       icon: Loader2,
-                      bgClass: "bg-gradient-to-br from-amber-500/[0.08] to-orange-500/[0.04] border-amber-500/25",
-                      iconBubbleClass: "bg-amber-500 text-white shadow-sm shadow-amber-500/20",
-                      titleClass: "text-amber-900 dark:text-amber-200",
-                      subClass: "text-amber-600 dark:text-amber-400",
+                      bgClass: "bg-gradient-to-br from-teal-500/[0.08] to-emerald-500/[0.04] border-teal-500/25",
+                      iconBubbleClass: "bg-teal-500 text-white shadow-sm shadow-teal-500/20",
+                      titleClass: "text-teal-900 dark:text-teal-200",
+                      subClass: "text-teal-600 dark:text-teal-400",
+                      triggerClass: "border-teal-500/30 text-teal-600 dark:text-teal-400 bg-teal-500/10",
                     },
                     resolved: {
                       label: "Megoldva",
@@ -1130,22 +1133,24 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       iconBubbleClass: "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20",
                       titleClass: "text-emerald-900 dark:text-emerald-200",
                       subClass: "text-emerald-600 dark:text-emerald-400",
+                      triggerClass: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
                     },
                   }[ticket.status as TicketStatus] || {
                     label: "Nyitott",
                     title: "Jegy állapota: Nyitott",
                     sub: "Várakozik a feldolgozásra",
                     icon: CircleDot,
-                    bgClass: "bg-gradient-to-br from-blue-500/[0.08] to-cyan-500/[0.04] border-blue-500/25",
-                    iconBubbleClass: "bg-blue-500 text-white shadow-sm shadow-blue-500/20",
-                    titleClass: "text-blue-900 dark:text-blue-200",
-                    subClass: "text-blue-600 dark:text-blue-400",
+                    bgClass: "bg-gradient-to-br from-sky-500/[0.08] to-cyan-500/[0.04] border-sky-500/25",
+                    iconBubbleClass: "bg-sky-500 text-white shadow-sm shadow-sky-500/20",
+                    titleClass: "text-sky-900 dark:text-sky-200",
+                    subClass: "text-sky-600 dark:text-sky-400",
+                    triggerClass: "border-sky-500/30 text-sky-600 dark:text-sky-400 bg-sky-500/10",
                   };
 
                   const StatusIcon = bannerConfig.icon;
 
                   return (
-                    <div className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${bannerConfig.bgClass}`}>
+                    <div className={`p-3 rounded-none border flex items-center justify-between gap-3 ${bannerConfig.bgClass}`}>
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${bannerConfig.iconBubbleClass}`}>
                           <StatusIcon className={`h-4 w-4 ${ticket.status === "in_progress" ? "animate-spin" : ""}`} />
@@ -1172,7 +1177,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                             }
                             disabled={isUpdating}
                           >
-                            <SelectTrigger className="h-7 text-xs px-2.5 bg-background/80 backdrop-blur-sm border-border/80 shadow-xs min-w-[115px]">
+                            <SelectTrigger className={`h-7 text-xs px-2.5 rounded-full font-medium backdrop-blur-sm shadow-xs min-w-[115px] ${bannerConfig.triggerClass}`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -1265,7 +1270,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                 <Separator />
 
                 {/* Structured Properties Card — Layout 3 */}
-                <div className="rounded-lg border border-border/60 bg-muted/15 divide-y divide-border/40 overflow-hidden text-sm">
+                <div className="rounded-none border border-border/60 bg-muted/15 divide-y divide-border/40 overflow-hidden text-sm">
                   {/* Típus */}
                   <div className="flex items-center justify-between p-2.5 px-3 gap-2">
                     <span className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
