@@ -237,16 +237,23 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
   // Visible IDs on current page
   const visibleIds = useMemo(() => paginatedUploads.map(u => u.id), [paginatedUploads]);
 
-  // Fetch transaction counts bounded ONLY to the visible uploads on the current page
+  // Target IDs for count lookup: visible uploads on current page + any selected uploads across other pages
+  const targetCountIds = useMemo(() => {
+    const idSet = new Set(visibleIds);
+    selectedIds.forEach(id => idSet.add(id));
+    return Array.from(idSet);
+  }, [visibleIds, selectedIds]);
+
+  // Fetch transaction counts bounded to visible uploads and selected uploads
   const { data: pageCounts = new Map<string, number>() } = useQuery({
-    queryKey: ['transaction_upload_page_counts', companyId, visibleIds],
+    queryKey: ['transaction_upload_page_counts', companyId, targetCountIds],
     queryFn: async () => {
-      if (!visibleIds || visibleIds.length === 0) return new Map<string, number>();
+      if (!targetCountIds || targetCountIds.length === 0) return new Map<string, number>();
 
       const { data: txData, error: txError } = await supabase
         .from('transactions')
         .select('upload_id')
-        .in('upload_id', visibleIds);
+        .in('upload_id', targetCountIds);
       if (txError) throw txError;
 
       const countsByUpload = new Map<string, number>();
@@ -257,7 +264,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
 
       return countsByUpload;
     },
-    enabled: !!companyId && isOpen && visibleIds.length > 0,
+    enabled: !!companyId && isOpen && targetCountIds.length > 0,
     staleTime: 0,
     refetchInterval: 3000,
   });
