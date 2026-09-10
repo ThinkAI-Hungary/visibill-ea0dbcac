@@ -678,12 +678,14 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                             </div>
                             <div
                               className={cn(
-                                'text-xs leading-snug truncate flex items-center gap-1.5',
-                                hasPrevData ? 'col-span-3' : 'col-span-7'
+                                'text-xs leading-relaxed whitespace-normal break-words flex items-center gap-1.5 min-w-0 py-0.5',
+                                hasPrevData
+                                  ? (row.has_base ? 'col-span-3' : 'col-span-5')
+                                  : (row.has_base ? 'col-span-7' : 'col-span-9')
                               )}
                               title={row.label}
                             >
-                              {row.label}
+                              <span className="break-words">{row.label}</span>
                               {isEditable && line && !isSummary && (
                                 line.is_calculated ? (
                                   <span className="shrink-0 inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-muted/50 text-muted-foreground/60">
@@ -696,27 +698,29 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                                 )
                               )}
                             </div>
-                            <div className="col-span-2 text-right tabular-nums text-xs">
-                              {isEditable && row.has_base && !isSummary ? (
-                                <input
-                                  type="number"
-                                  className="w-full text-right bg-muted/40 border border-border/80 rounded px-2 py-1 text-xs tabular-nums focus:bg-muted/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                  placeholder="0"
-                                  value={
-                                    editDrafts[row.row_number]?.base ??
-                                    (line?.base_amount_rounded || '')
-                                  }
-                                  onChange={(e) =>
-                                    handleDetailEdit(row.row_number, 'base', e.target.value)
-                                  }
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              ) : row.has_base && line ? (
-                                fmtEft(line.base_amount_rounded)
-                              ) : (
-                                ''
-                              )}
-                            </div>
+                            {row.has_base && (
+                              <div className="col-span-2 text-right tabular-nums text-xs">
+                                {isEditable && !isSummary ? (
+                                  <input
+                                    type="number"
+                                    className="w-full text-right bg-muted/40 border border-border/80 rounded px-2 py-1 text-xs tabular-nums focus:bg-muted/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    placeholder="0"
+                                    value={
+                                      editDrafts[row.row_number]?.base ??
+                                      (line?.base_amount_rounded || '')
+                                    }
+                                    onChange={(e) =>
+                                      handleDetailEdit(row.row_number, 'base', e.target.value)
+                                    }
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                ) : line ? (
+                                  fmtEft(line.base_amount_rounded)
+                                ) : (
+                                  ''
+                                )}
+                              </div>
+                            )}
                             <div className="col-span-2 text-right tabular-nums text-xs font-medium">
                               {isEditable && row.has_tax && !isSummary ? (
                                 <input
