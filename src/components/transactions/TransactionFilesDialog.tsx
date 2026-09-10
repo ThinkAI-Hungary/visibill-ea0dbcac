@@ -154,6 +154,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
         .from('transactions')
         .select('upload_id')
         .in('upload_id', uploadIds)
+        .order('created_at', { ascending: false })
         .range(0, 49999);
       if (txError) throw txError;
 
