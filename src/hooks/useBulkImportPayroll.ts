@@ -72,8 +72,8 @@ export function useBulkImportPayroll() {
 
       if (emplErr) throw emplErr;
 
-      const localEmps = [...(existingEmps || [])];
-      const localEmployments = [...(existingEmployments || [])];
+      const localEmps: any[] = [...(existingEmps || [])];
+      const localEmployments: any[] = [...(existingEmployments || [])];
 
       let employeesCreated = 0;
       let employeesUpdated = 0;
@@ -134,39 +134,42 @@ export function useBulkImportPayroll() {
 
             if (insertEmpErr) throw insertEmpErr;
             employeeId = newEmp.id;
-            localEmps.push(newEmp as PayrollEmployee);
+            localEmps.push(newEmp as any);
             employeesCreated++;
           }
 
           // Jogviszony ellenőrzése és létrehozása
-          const hasActiveEmployment = localEmployments.some(
-            empl => empl.employee_id === employeeId && (empl.status === 'active' || !empl.status)
+          // Ha az adott dolgozónak ehhez a kódhoz/típushoz még nincs jogviszonya, létrehozzuk
+          const matchingEmployment = localEmployments.find(
+            empl => empl.employee_id === employeeId && 
+                    (empl.job_code === (emp.jobCode || '1101') || empl.employment_type === (emp.employmentType || 'munkaviszony'))
           );
 
-          if (!hasActiveEmployment) {
+          if (!matchingEmployment) {
+            const isEfo = emp.employmentType === 'efo_alkalmi';
             const { data: newEmpl, error: insertEmplErr } = await supabase
               .from('accounty_employments')
               .insert({
                 employee_id: employeeId,
                 company_id: companyId,
                 job_code: emp.jobCode || '1101',
-                job_serial_number: 1,
+                job_serial_number: localEmployments.filter(e => e.employee_id === employeeId).length + 1,
                 employment_type: emp.employmentType || 'munkaviszony',
                 start_date: emp.startDate || new Date().toISOString().slice(0, 10),
-                end_date: emp.endDate || null,
+                end_date: isEfo ? (emp.endDate || null) : null,
                 weekly_hours: emp.weeklyHours || 40,
                 feor_code: emp.feorCode || null,
                 job_title: emp.jobTitle || null,
                 base_salary: emp.baseSalary || emp.grossSalary || null,
                 salary_type: 'monthly',
-                is_insured: true,
+                is_insured: !isEfo,
                 status: 'active',
               })
               .select()
               .single();
 
             if (insertEmplErr) throw insertEmplErr;
-            if (newEmpl) localEmployments.push(newEmpl as PayrollEmployment);
+            if (newEmpl) localEmployments.push(newEmpl as any);
             employmentsCreated++;
           }
         } catch (err: any) {
@@ -225,13 +228,16 @@ export function useBulkImportPayroll() {
       let cyclesUpdated = 0;
       let totalCalculationsCreated = 0;
 
-      // 1. Összegyűjtjük az egyedi dolgozókat az összes havi XML-ből a duplikált import és toast-özön elkerülésére
+      // 1. Összegyűjtjük az egyedi dolgozókat és jogviszonyaikat az összes havi XML-ből
+      // Figyelembe vesszük az év közbeni jogviszony-váltást is (pl. EFO -> munkaviszony)
       const uniqueEmployeesMap = new Map<string, Parsed08Employee>();
       for (const doc of documents) {
         for (const emp of doc.employees) {
-          const key = (emp.taxId || emp.tajNumber || `${emp.lastName}_${emp.firstName}`).trim();
-          if (key && !uniqueEmployeesMap.has(key)) {
-            uniqueEmployeesMap.set(key, emp);
+          const empKey = (emp.taxId || emp.tajNumber || `${emp.lastName}_${emp.firstName}`).trim();
+          const jobKey = `${emp.jobCode || '1101'}_${emp.employmentType || 'munkaviszony'}`;
+          const compositeKey = `${empKey}_${jobKey}`;
+          if (empKey && !uniqueEmployeesMap.has(compositeKey)) {
+            uniqueEmployeesMap.set(compositeKey, emp);
           }
         }
       }
@@ -242,6 +248,14 @@ export function useBulkImportPayroll() {
           employees: Array.from(uniqueEmployeesMap.values()),
         });
       }
+
+      // 1.5 Lekérjük a cég adóprofilját (KIVA státusz ellenőrzése SZOCHO mentességhez)
+      const { data: taxProfile } = await supabase
+        .from('accounty_tax_profiles')
+        .select('is_kiva')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      const isKiva = !!taxProfile?.is_kiva;
 
       // 2. Frissítjük a lekérdezett dolgozókat és jogviszonyokat
       const { data: allEmployees } = await supabase
@@ -327,6 +341,10 @@ export function useBulkImportPayroll() {
             if (!matchedEmp) continue;
 
             const matchedEmployment = (allEmployments || []).find(
+              empl => empl.employee_id === matchedEmp.id &&
+                      empl.job_code === (emp.jobCode || '1101') &&
+                      (empl.status === 'active' || !empl.status)
+            ) || (allEmployments || []).find(
               empl => empl.employee_id === matchedEmp.id && (empl.status === 'active' || !empl.status)
             ) || (allEmployments || []).find(
               empl => empl.employee_id === matchedEmp.id
@@ -335,7 +353,7 @@ export function useBulkImportPayroll() {
             if (!matchedEmployment) continue;
 
             calcRecords.push(
-              preparePayrollCalculationRecord(cycleId, matchedEmployment.id, emp)
+              preparePayrollCalculationRecord(cycleId, matchedEmployment.id, emp, { isKiva })
             );
           }
 

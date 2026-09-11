@@ -7820,8 +7820,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-063-unified-document-engine-architecture.md": {
-    "mtime": 1788137890.616633,
-    "ast_hash": "68925108f11d256973eff31cdd350d19",
+    "mtime": 1789103287.5933318,
+    "ast_hash": "0413f1809c2f583da09a57a749d8f7b1",
     "semantic_hash": ""
   },
   "docs/business/decisions/045-invoices-feature-slice.md": {
@@ -7840,8 +7840,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-058-unified-document-engine-ux.md": {
-    "mtime": 1788137896.402312,
-    "ast_hash": "4f5113118b13ff0a6ee94bff5d78fd8f",
+    "mtime": 1789103297.6937811,
+    "ast_hash": "a704da5a16b930cd7d2cb17d00442dd6",
     "semantic_hash": ""
   },
   "src/features/upload/ManualUploadFeature.tsx": {

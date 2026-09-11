@@ -44,7 +44,8 @@ export function buildReconstructionPlan(
   doc: Parsed08Document,
   existingEmployees: PayrollEmployee[],
   existingEmployments: PayrollEmployment[],
-  existingCycles: PayrollCycle[]
+  existingCycles: PayrollCycle[],
+  options?: { isKiva?: boolean }
 ): ReconstructionPlan {
   const existingCycle = existingCycles.find(c => c.year === doc.year && c.month === doc.month);
 
@@ -58,11 +59,14 @@ export function buildReconstructionPlan(
 
     let matchedEmployment: PayrollEmployment | undefined;
     if (matchedEmployee) {
-      // Keresünk aktív jogviszonyt a dolgozóhoz
+      // Keresünk aktív jogviszonyt a dolgozóhoz (ugyanolyan job_code vagy egyetlen aktív jogviszony)
       matchedEmployment = existingEmployments.find(emp => 
         emp.employee_id === matchedEmployee.id && 
         (emp.status === 'active' || !emp.status) &&
         (emp.job_code === parsed.jobCode || !parsed.jobCode)
+      ) || existingEmployments.find(emp =>
+        emp.employee_id === matchedEmployee.id &&
+        (emp.status === 'active' || !emp.status)
       );
     }
 
@@ -81,7 +85,7 @@ export function buildReconstructionPlan(
   const totalGross = doc.totalGrossSalary;
   const totalSzja = doc.totalSzja;
   const totalTb = doc.totalTb;
-  const totalSzocho = doc.totalSzocho;
+  const totalSzocho = options?.isKiva ? 0 : doc.totalSzocho;
   const totalNet = doc.totalNetSalary;
   const totalEmployerCost = totalGross + totalSzocho;
 
@@ -109,7 +113,8 @@ export function buildReconstructionPlan(
 export function preparePayrollCalculationRecord(
   cycleId: string,
   employmentId: string,
-  parsed: Parsed08Employee
+  parsed: Parsed08Employee,
+  options?: { isKiva?: boolean }
 ) {
   return {
     cycle_id: cycleId,
@@ -118,7 +123,7 @@ export function preparePayrollCalculationRecord(
     szja_base: parsed.taxBase,
     szja_amount: parsed.szjaAmount,
     tb_amount: parsed.tbAmount,
-    szocho_amount: parsed.szochoAmount,
+    szocho_amount: options?.isKiva ? 0 : parsed.szochoAmount,
     net_salary: parsed.netSalary,
     tax_credits: {
       family_credit: parsed.familyCreditUsed || 0,

@@ -71,6 +71,28 @@ export interface Parsed08Document {
   parseErrors: string[];
 }
 
+export interface Parse08Options {
+  isKiva?: boolean;
+}
+
+/**
+ * Egyszerűsített foglalkoztatás (EFO) jogviszony kódok ellenőrzése
+ * ÁNYK 08 kódok: 81 (mezőgazdasági idénymunka), 82 (turisztikai idénymunka), 83 (alkalmi munka)
+ * T1041 / eaisyBooks kódok: 1181, 1138, 1139, EFO
+ */
+export function isEfoJobCode(code: string | null | undefined): boolean {
+  if (!code) return false;
+  const clean = code.trim().toUpperCase();
+  return ['81', '82', '83', '1181', '1138', '1139', 'EFO'].includes(clean);
+}
+
+export function determineEmploymentType(jobCode: string): string {
+  if (isEfoJobCode(jobCode)) {
+    return 'efo_alkalmi';
+  }
+  return 'munkaviszony';
+}
+
 /**
  * Normalizálja a TAJ számot (szóközök, kötőjelek eltávolítása, 9 számjegy ellenőrzés)
  */
@@ -241,7 +263,7 @@ function extractAnykFields(formElem: Element): Map<string, string> {
 /**
  * Szemantikus XML parse-olása (<Filing08>, <Tetelsor>, <Bevallas>, stb.)
  */
-function parseSemanticXml(doc: Document): Parsed08Document | null {
+function parseSemanticXml(doc: Document, options?: Parse08Options): Parsed08Document | null {
   const root = doc.documentElement;
   const isFiling = root.tagName.toLowerCase().includes('filing') ||
                    root.tagName.toLowerCase().includes('bevallas') ||
@@ -298,8 +320,8 @@ function parseSemanticXml(doc: Document): Parsed08Document | null {
     const szjaAmount = parseNumber(getRowTxt('SZJAOsszeg, szjaAmount, SZJA'));
     const tbBase = parseNumber(getRowTxt('TBAlap, tbBase')) || grossSalary;
     const tbAmount = parseNumber(getRowTxt('TBJarulekOsszeg, tbAmount, TB'));
-    const szochoBase = parseNumber(getRowTxt('SZOCHOAlap, szochoBase')) || grossSalary;
-    const szochoAmount = parseNumber(getRowTxt('SZOCHOOsszeg, szochoAmount, SZOCHO'));
+    const szochoBase = options?.isKiva ? 0 : (parseNumber(getRowTxt('SZOCHOAlap, szochoBase')) || grossSalary);
+    const szochoAmount = options?.isKiva ? 0 : parseNumber(getRowTxt('SZOCHOOsszeg, szochoAmount, SZOCHO'));
     const familyCredit = parseNumber(getRowTxt('familyCreditUsed, CsaladiKedvezmeny'));
     const under25Credit = parseNumber(getRowTxt('under25CreditUsed, IfjusagiKedvezmeny'));
 
@@ -325,7 +347,7 @@ function parseSemanticXml(doc: Document): Parsed08Document | null {
       tajNumber,
       taxId,
       jobCode,
-      employmentType: 'munkaviszony',
+      employmentType: determineEmploymentType(jobCode),
       startDate,
       endDate,
       weeklyHours,
@@ -397,7 +419,7 @@ function findTagText(parent: Element | Document | null | undefined, tagNames: st
 /**
  * NAV ÁNYK Nyomtatvány XML parse-olása (2608, 2508, 2408)
  */
-function parseAnykXml(doc: Document): Parsed08Document | null {
+function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document | null {
   // Névtér-függetlenül keressük a nyomtatvany tageket
   let nyomtatvanyok = Array.from(doc.getElementsByTagName('nyomtatvany'));
   if (nyomtatvanyok.length === 0) {
@@ -560,6 +582,7 @@ function parseAnykXml(doc: Document): Parsed08Document | null {
                          '1101';
       // ÁNYK 08 kód '20' = heti 36 órát elérő munkaviszony (T1041-ben 1101)
       const jobCode = rawJobCode === '20' ? '1101' : rawJobCode;
+      const employmentType = determineEmploymentType(jobCode);
 
       const feorCode = fields.get('0F0001D0520AA') || fields.get('M0402') || fields.get('FEOR') || '';
       const weeklyHours = parseNumber(fields.get('0F0001D0524AA') || fields.get('M0403') || fields.get('HETI_ORA') || 40);
@@ -626,20 +649,22 @@ function parseAnykXml(doc: Document): Parsed08Document | null {
         tbAmount = Math.round(tbBase * 0.185);
       }
 
-      const szochoBase = parseNumber(
+      const szochoBase = options?.isKiva ? 0 : (parseNumber(
         fields.get('0I0001D0634CA') ||
         fields.get('M0701') ||
         fields.get('SZOCHO_ALAP') ||
         grossSalary
-      );
+      ));
 
-      let szochoAmount = parseNumber(
+      let szochoAmount = options?.isKiva ? 0 : parseNumber(
         fields.get('M0702') ||
         fields.get('SZOCHO_OSSZEG') ||
         fields.get('SZOCHO')
       );
-      if (!szochoAmount && szochoBase > 0) {
-        // 13% SZOCHO kalkuláció
+      if (options?.isKiva) {
+        szochoAmount = 0;
+      } else if (!szochoAmount && szochoBase > 0) {
+        // 13% SZOCHO kalkuláció kizárólag normál (nem KIVA) adózóknál
         szochoAmount = Math.round(szochoBase * 0.13);
       }
 
@@ -668,7 +693,7 @@ function parseAnykXml(doc: Document): Parsed08Document | null {
         tajNumber,
         taxId,
         jobCode,
-        employmentType: 'munkaviszony',
+        employmentType,
         startDate,
         endDate,
         weeklyHours: weeklyHours || 40,
@@ -721,7 +746,7 @@ function parseAnykXml(doc: Document): Parsed08Document | null {
 /**
  * Fő belépési pont: XML szöveg feldolgozása
  */
-export function parseFiling08Xml(xmlContent: string): Parsed08Document {
+export function parseFiling08Xml(xmlContent: string, options?: Parse08Options): Parsed08Document {
   const clean = xmlContent.trim().replace(/^\uFEFF/, '');
   const parser = new DOMParser();
   const doc = parser.parseFromString(clean, 'text/xml');
@@ -747,14 +772,14 @@ export function parseFiling08Xml(xmlContent: string): Parsed08Document {
   }
 
   // 1. Próbáljuk ÁNYK nyomtatványként
-  const anykResult = parseAnykXml(doc);
+  const anykResult = parseAnykXml(doc, options);
   if (anykResult && anykResult.employees.length > 0) {
     anykResult.rawXml = clean;
     return anykResult;
   }
 
   // 2. Próbáljuk szemantikus XML formátumként
-  const semanticResult = parseSemanticXml(doc);
+  const semanticResult = parseSemanticXml(doc, options);
   if (semanticResult && semanticResult.employees.length > 0) {
     semanticResult.rawXml = clean;
     return semanticResult;

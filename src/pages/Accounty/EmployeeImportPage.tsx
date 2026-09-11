@@ -6,14 +6,17 @@ import {
   FileText, Table, FileCode, CheckSquare, Calendar, Building2, Sparkles, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useBulkImportPayroll } from '@/hooks/useBulkImportPayroll';
-import { parseFiling08Xml, normalizeDate, readTextFileWithEncoding, type Parsed08Document, type Parsed08Employee } from '@/lib/payroll/nav08XmlParser';
+import { parseFiling08Xml, normalizeDate, readTextFileWithEncoding, determineEmploymentType, type Parsed08Document, type Parsed08Employee } from '@/lib/payroll/nav08XmlParser';
 import { buildReconstructionPlan } from '@/lib/payroll/payrollReconstructionEngine';
 import { usePayrollEmployees, useCompanyEmployments, usePayrollCycles } from '@/hooks/usePayrollData';
 import { PayrollReconstructionDialog } from '@/components/accounty/payroll/PayrollReconstructionDialog';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const TEMPLATE_HEADERS = ['Vezetéknév', 'Keresztnév', 'Születési dátum', 'TAJ-szám', 'Adóazonosító jel', 'Jogviszonykód', 'Belépés dátuma', 'FEOR', 'Heti óraszám', 'Alapbér (Ft)'];
 
@@ -49,6 +52,21 @@ export default function EmployeeImportPage() {
   const [parsed08Doc, setParsed08Doc] = useState<Parsed08Document | null>(null);
   const [createCycleOption, setCreateCycleOption] = useState(true);
 
+  const { data: taxProfile } = useQuery({
+    queryKey: ['tax-profile-kiva', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data } = await supabase
+        .from('accounty_tax_profiles')
+        .select('is_kiva')
+        .eq('company_id', id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!id,
+  });
+  const isKiva = !!taxProfile?.is_kiva;
+
   const { data: existingEmployees = [] } = usePayrollEmployees(id);
   const { data: existingEmployments = [] } = useCompanyEmployments(id);
   const { data: existingCycles = [] } = usePayrollCycles(id);
@@ -61,8 +79,8 @@ export default function EmployeeImportPage() {
   // Reconstruction plan summary if NAV 08 doc is available
   const plan = useMemo(() => {
     if (!parsed08Doc) return null;
-    return buildReconstructionPlan(parsed08Doc, existingEmployees, existingEmployments, existingCycles);
-  }, [parsed08Doc, existingEmployees, existingEmployments, existingCycles]);
+    return buildReconstructionPlan(parsed08Doc, existingEmployees, existingEmployments, existingCycles, { isKiva });
+  }, [parsed08Doc, existingEmployees, existingEmployments, existingCycles, isKiva]);
 
   // CSV parsing
   const parseCSVContent = useCallback((text: string): Parsed08Employee[] => {
@@ -121,7 +139,7 @@ export default function EmployeeImportPage() {
         tajNumber,
         taxId,
         jobCode,
-        employmentType: 'munkaviszony',
+        employmentType: determineEmploymentType(jobCode),
         startDate,
         feorCode: feor,
         weeklyHours,
@@ -131,8 +149,8 @@ export default function EmployeeImportPage() {
         szjaAmount: Math.round(baseSalary * 0.15),
         tbBase: baseSalary,
         tbAmount: Math.round(baseSalary * 0.185),
-        szochoBase: baseSalary,
-        szochoAmount: Math.round(baseSalary * 0.13),
+        szochoBase: isKiva ? 0 : baseSalary,
+        szochoAmount: isKiva ? 0 : Math.round(baseSalary * 0.13),
         totalDeductions: Math.round(baseSalary * 0.335),
         netSalary: Math.max(0, Math.round(baseSalary * 0.665)),
         valid: errors.length === 0,
@@ -202,7 +220,7 @@ export default function EmployeeImportPage() {
         tajNumber,
         taxId,
         jobCode,
-        employmentType: 'munkaviszony',
+        employmentType: determineEmploymentType(jobCode),
         startDate,
         feorCode: feor,
         weeklyHours,
@@ -212,8 +230,8 @@ export default function EmployeeImportPage() {
         szjaAmount: Math.round(baseSalary * 0.15),
         tbBase: baseSalary,
         tbAmount: Math.round(baseSalary * 0.185),
-        szochoBase: baseSalary,
-        szochoAmount: Math.round(baseSalary * 0.13),
+        szochoBase: isKiva ? 0 : baseSalary,
+        szochoAmount: isKiva ? 0 : Math.round(baseSalary * 0.13),
         totalDeductions: Math.round(baseSalary * 0.335),
         netSalary: Math.max(0, Math.round(baseSalary * 0.665)),
         valid: errors.length === 0,
@@ -256,7 +274,7 @@ export default function EmployeeImportPage() {
       const text = await readTextFileWithEncoding(file);
       if (!text) return;
 
-      const doc = parseFiling08Xml(text);
+      const doc = parseFiling08Xml(text, { isKiva });
       if (doc.parseErrors.length > 0 && doc.employees.length === 0) {
         toast({
           variant: 'destructive',
@@ -394,7 +412,14 @@ export default function EmployeeImportPage() {
             <FileSpreadsheet className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Dolgozói Tömeges Import Központ</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Dolgozói Tömeges Import Központ</h1>
+              {isKiva && (
+                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 text-xs py-0.5">
+                  KIVA adózó (0 Ft SZOCHO)
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-slate-500">Munkavállalók, jogviszonyok és havi bérszámfejtések betöltése</p>
           </div>
         </div>

@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 import { parseFiling08Xml, readTextFileWithEncoding, type Parsed08Document } from '@/lib/payroll/nav08XmlParser';
 import { useBulkImportPayroll } from '@/hooks/useBulkImportPayroll';
 import { usePayrollCycles } from '@/hooks/usePayrollData';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PayrollReconstructionDialogProps {
   companyId: string;
@@ -41,6 +43,21 @@ export function PayrollReconstructionDialog({
   const [dragging, setDragging] = useState(false);
   const [overwriteExisting, setOverwriteExisting] = useState(true);
 
+  const { data: taxProfile } = useQuery({
+    queryKey: ['tax-profile-kiva', companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const { data } = await supabase
+        .from('accounty_tax_profiles')
+        .select('is_kiva')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!companyId,
+  });
+  const isKiva = !!taxProfile?.is_kiva;
+
   const { data: existingCycles = [] } = usePayrollCycles(companyId);
   const { reconstructCycles, isProcessing, progress } = useBulkImportPayroll();
 
@@ -67,7 +84,7 @@ export function PayrollReconstructionDialog({
       try {
         const text = await readTextFileWithEncoding(file);
         if (text) {
-          const parsed = parseFiling08Xml(text);
+          const parsed = parseFiling08Xml(text, { isKiva });
           if (parsed.employees.length > 0) {
             newDocs.push(parsed);
           }
@@ -92,7 +109,7 @@ export function PayrollReconstructionDialog({
       });
       return combined;
     });
-  }, []);
+  }, [isKiva]);
 
   React.useEffect(() => {
     if (open && initialFiles && initialFiles.length > 0) {
@@ -109,12 +126,12 @@ export function PayrollReconstructionDialog({
     [handleFiles]
   );
 
-  const removeDoc = (idx: number) => {
-    setDocuments((prev) => prev.filter((_, i) => i !== idx));
+  const removeDoc = (index: number) => {
+    setDocuments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleExecute = async () => {
-    if (documents.length === 0) return;
+  const handleStartReconstruction = async () => {
+    if (sortedDocs.length === 0 || !companyId) return;
 
     try {
       await reconstructCycles({
@@ -122,11 +139,11 @@ export function PayrollReconstructionDialog({
         documents: sortedDocs,
         overwriteExisting,
       });
+      onSuccess?.();
       onOpenChange(false);
       setDocuments([]);
-      onSuccess?.();
     } catch {
-      // Hiba a hookban már toast-olva van
+      // Hiba a hookban toastolva van
     }
   };
 
@@ -139,9 +156,16 @@ export function PayrollReconstructionDialog({
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold">
-                Bérszámfejtés Gyors Rekonstrukció (NAV 08 XML)
-              </DialogTitle>
+              <div className="flex items-center gap-2 flex-wrap">
+                <DialogTitle className="text-xl font-bold">
+                  Bérszámfejtés Gyors Rekonstrukció (NAV 08 XML)
+                </DialogTitle>
+                {isKiva && (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 text-[11px] py-0.5">
+                    KIVA adózó (0 Ft SZOCHO)
+                  </Badge>
+                )}
+              </div>
               <DialogDescription className="text-xs text-slate-500">
                 Korábban beadott NAV 08 (2608 / 2508 / 2408) ÁNYK XML fájlok tömeges beolvasása és havi bérszámfejtési ciklusok felépítése
               </DialogDescription>
@@ -334,7 +358,7 @@ export function PayrollReconstructionDialog({
             Mégse
           </Button>
           <Button
-            onClick={handleExecute}
+            onClick={handleStartReconstruction}
             disabled={sortedDocs.length === 0 || isProcessing}
             className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-md shadow-blue-600/20"
           >
