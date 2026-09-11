@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, Trash2, TrendingUp } from 'lucide-react';
+import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, Trash2, TrendingUp, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -110,6 +110,8 @@ function CourierInvoiceDialog({
   const [loadingAvailable, setLoadingAvailable] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedNavId, setSelectedNavId] = useState<string | null>(null);
+  const [serverSearchResults, setServerSearchResults] = useState<any[]>([]);
+  const [isSearchingServer, setIsSearchingServer] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -118,6 +120,8 @@ function CourierInvoiceDialog({
       setShowManualMatch(false);
       setSearch('');
       setSelectedNavId(null);
+      setServerSearchResults([]);
+      setIsSearchingServer(false);
       return;
     }
 
@@ -160,18 +164,19 @@ function CourierInvoiceDialog({
     if (!report) return;
     setLoadingAvailable(true);
     try {
-      // Search NAV invoices in a ±7 day range around delivery date
+      // Search NAV invoices in a ±21 day range around delivery date, prioritizing OUTBOUND (customer sales)
       let query = supabase
         .from('nav_invoices')
         .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, invoice_direction')
         .eq('company_id', report.company_id)
+        .eq('invoice_direction', 'OUTBOUND')
         .order('invoice_issue_date', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (report.delivery_date) {
         const d = new Date(report.delivery_date);
-        const from = new Date(d); from.setDate(from.getDate() - 14);
-        const to = new Date(d); to.setDate(to.getDate() + 7);
+        const from = new Date(d); from.setDate(from.getDate() - 21);
+        const to = new Date(d); to.setDate(to.getDate() + 14);
         query = query.gte('invoice_issue_date', from.toISOString().slice(0, 10))
                      .lte('invoice_issue_date', to.toISOString().slice(0, 10));
       }
@@ -185,6 +190,40 @@ function CourierInvoiceDialog({
       setLoadingAvailable(false);
     }
   };
+
+  // Debounced server-side search for invoices by invoice number or partner name
+  useEffect(() => {
+    if (!report?.company_id) return;
+    const term = search.trim();
+    if (term.length < 2) {
+      setServerSearchResults([]);
+      setIsSearchingServer(false);
+      return;
+    }
+
+    setIsSearchingServer(true);
+    const timer = setTimeout(async () => {
+      try {
+        const cleanTerm = term.replace(/[%_]/g, '\\$&');
+        const { data, error } = await supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, invoice_direction')
+          .eq('company_id', report.company_id)
+          .or(`invoice_number.ilike.%${cleanTerm}%,customer_name.ilike.%${cleanTerm}%,supplier_name.ilike.%${cleanTerm}%`)
+          .order('invoice_issue_date', { ascending: false })
+          .limit(50);
+        if (!error && data) {
+          setServerSearchResults(data);
+        }
+      } catch (err) {
+        console.error('Server search error in CourierInvoiceDialog:', err);
+      } finally {
+        setIsSearchingServer(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [search, report?.company_id]);
 
   const handleSaveMatch = async () => {
     if (!report || !selectedNavId) return;
@@ -248,15 +287,38 @@ function CourierInvoiceDialog({
   const [showUnmatchOptions, setShowUnmatchOptions] = useState(false);
 
   const filteredInvoices = useMemo(() => {
-    if (!search) return availableInvoices;
-    const s = search.toLowerCase();
-    return availableInvoices.filter(inv =>
-      inv.invoice_number?.toLowerCase().includes(s) ||
-      inv.supplier_name?.toLowerCase().includes(s) ||
-      inv.customer_name?.toLowerCase().includes(s) ||
-      inv.invoice_gross_amount?.toString().includes(search)
-    );
-  }, [availableInvoices, search]);
+    const combined: any[] = [];
+    const seen = new Set<string>();
+
+    serverSearchResults.forEach(inv => {
+      if (!seen.has(inv.id)) {
+        seen.add(inv.id);
+        combined.push(inv);
+      }
+    });
+
+    const s = search.toLowerCase().trim();
+    availableInvoices.forEach(inv => {
+      if (!seen.has(inv.id)) {
+        if (!s) {
+          seen.add(inv.id);
+          combined.push(inv);
+        } else {
+          const matches =
+            inv.invoice_number?.toLowerCase().includes(s) ||
+            inv.supplier_name?.toLowerCase().includes(s) ||
+            inv.customer_name?.toLowerCase().includes(s) ||
+            inv.invoice_gross_amount?.toString().includes(s);
+          if (matches) {
+            seen.add(inv.id);
+            combined.push(inv);
+          }
+        }
+      }
+    });
+
+    return combined;
+  }, [availableInvoices, serverSearchResults, search]);
 
   const formatAmount = (amount: number | null, currency?: string) => {
     if (amount == null) return '-';
@@ -407,13 +469,18 @@ function CourierInvoiceDialog({
                 )}
               </div>
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder="Keresés számlaszám, partner, összeg..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="pl-8 h-8 text-xs"
+                  className="pl-8 pr-8 h-8 text-xs"
                 />
+                {isSearchingServer && (
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  </div>
+                )}
               </div>
               <div className="max-h-[180px] overflow-y-auto border rounded-md">
                 {loadingAvailable ? (
@@ -423,13 +490,13 @@ function CourierInvoiceDialog({
                 ) : filteredInvoices.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-16 text-muted-foreground">
                     <FileText className="h-4 w-4 mb-1" />
-                    <p className="text-xs">Nincs elérhető számla a dátumtartományban</p>
+                    <p className="text-xs">Nincs elérhető számla a megadott keresésre vagy időszakban</p>
                   </div>
                 ) : (
                   <div className="p-1.5 space-y-1">
                     {filteredInvoices.map(inv => {
                       const isSelected = selectedNavId === inv.id;
-                      const isExact = Math.abs((inv.invoice_gross_amount ?? 0) - codAmount) < 1;
+                      const isExact = Math.abs((inv.invoice_gross_amount ?? 0) - codAmount) <= 2.5;
                       const partner = inv.invoice_direction === 'INBOUND' ? inv.supplier_name : inv.customer_name;
                       return (
                         <div
@@ -457,12 +524,17 @@ function CourierInvoiceDialog({
                   </div>
                 )}
               </div>
-              {selectedNavId && (
-                <Button size="sm" className="w-full text-xs h-8" disabled={saving} onClick={handleSaveMatch}>
+              <div className="pt-2">
+                <Button
+                  size="sm"
+                  className="w-full text-xs h-8"
+                  disabled={!selectedNavId || saving}
+                  onClick={handleSaveMatch}
+                >
                   <Check className="h-3.5 w-3.5 mr-1.5" />
-                  {saving ? 'Mentés...' : 'Párosítás mentése'}
+                  {saving ? 'Mentés...' : selectedNavId ? 'Párosítás mentése' : 'Válassz ki egy számlát a párosításhoz'}
                 </Button>
-              )}
+              </div>
             </div>
           )}
 

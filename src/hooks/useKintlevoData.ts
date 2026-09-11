@@ -36,10 +36,11 @@ export function useKintlevoData() {
         const to = from + PAGE_SIZE - 1;
         const { data, error } = await supabase
           .from('nav_invoices')
-          .select('id,invoice_number,invoice_issue_date,payment_date,customer_name,customer_tax_number,invoice_gross_amount,invoice_net_amount,currency,transaction_id')
+          .select('id,invoice_number,invoice_issue_date,payment_date,customer_name,customer_tax_number,invoice_gross_amount,invoice_net_amount,currency,transaction_id,paid,payment_method,is_manual_payment')
           .eq('company_id', selectedCompany.id)
           .eq('invoice_direction', 'OUTBOUND')
           .is('transaction_id', null)
+          .or('paid.is.null,paid.eq.false')
           .range(from, to);
         if (error) throw error;
         if (data && data.length > 0) {
@@ -69,10 +70,11 @@ export function useKintlevoData() {
         const to = from + PAGE_SIZE - 1;
         const { data, error } = await supabase
           .from('invoices')
-          .select('id,bizonylatsorszam,kibocsatas_datuma,fizetesi_hatarido,vevo_nev,vevo_vat_id,brutto_vegosszeg,adoalap_osszesen,penznem,transaction_id,melleklet_url')
+          .select('id,bizonylatsorszam,kibocsatas_datuma,fizetesi_hatarido,vevo_nev,vevo_vat_id,brutto_vegosszeg,adoalap_osszesen,penznem,transaction_id,melleklet_url,fizetve,fizetesi_mod,is_manual_payment')
           .eq('company_id', selectedCompany.id)
           .eq('invoice_direction', 'OUTBOUND')
           .is('transaction_id', null)
+          .or('fizetve.is.null,fizetve.eq.false')
           .range(from, to);
         if (error) throw error;
         if (data && data.length > 0) {
@@ -84,6 +86,35 @@ export function useKintlevoData() {
         page++;
       }
       return allData;
+    },
+    enabled: !!user?.id && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
+  });
+
+  const { data: settledInvoiceIds = new Set<string>(), isLoading: loadingSettled } = useQuery({
+    queryKey: queryKeys.kintlevoSettled(selectedCompany?.id || ''),
+    queryFn: async () => {
+      if (!selectedCompany?.id) return new Set<string>();
+      const ids = new Set<string>();
+      const [{ data: courierReports }, { data: multiMatches }] = await Promise.all([
+        supabase
+          .from('courier_reports')
+          .select('matched_nav_invoice_id')
+          .eq('company_id', selectedCompany.id)
+          .not('matched_nav_invoice_id', 'is', null)
+          .not('matched_transaction_id', 'is', null),
+        supabase
+          .from('transaction_invoice_matches')
+          .select('invoice_id, transactions!inner(company_id)')
+          .eq('transactions.company_id', selectedCompany.id),
+      ]);
+      (courierReports || []).forEach(r => {
+        if (r.matched_nav_invoice_id) ids.add(r.matched_nav_invoice_id);
+      });
+      (multiMatches || []).forEach((m: any) => {
+        if (m.invoice_id) ids.add(m.invoice_id);
+      });
+      return ids;
     },
     enabled: !!user?.id && !!selectedCompany?.id,
     placeholderData: keepPreviousData,
@@ -140,6 +171,11 @@ export function useKintlevoData() {
     const result: UnifiedInvoice[] = [];
 
     for (const inv of navInvoices) {
+      if (inv.paid === true) continue;
+      if (inv.payment_method === 'CASH') continue;
+      if (inv.is_manual_payment === true) continue;
+      if (settledInvoiceIds.has(inv.id)) continue;
+
       let dueDate: Date;
       if (inv.payment_date) {
         dueDate = parseISO(inv.payment_date);
@@ -162,6 +198,15 @@ export function useKintlevoData() {
     }
 
     for (const inv of manualInvoices) {
+      if (inv.fizetve === true) continue;
+      const isCash = inv.fizetesi_mod && (
+        inv.fizetesi_mod.toLowerCase().includes('készpénz') ||
+        inv.fizetesi_mod.toLowerCase() === 'cash'
+      );
+      if (isCash) continue;
+      if (inv.is_manual_payment === true) continue;
+      if (settledInvoiceIds.has(inv.id)) continue;
+
       let dueDate: Date;
       if (inv.fizetesi_hatarido) {
         dueDate = parseISO(inv.fizetesi_hatarido);
@@ -184,7 +229,7 @@ export function useKintlevoData() {
     }
 
     return result;
-  }, [navInvoices, manualInvoices, today]);
+  }, [navInvoices, manualInvoices, today, settledInvoiceIds]);
 
   const allInvoices = useMemo((): UnifiedInvoice[] => {
     return filterInvoicesByDate(rawInvoices, dateFilterBasis, dateFromFormatted, dateToFormatted);
@@ -244,7 +289,7 @@ export function useKintlevoData() {
   return {
     user, selectedCompany, queryClient,
     search, setSearch, expanded, setExpanded,
-    loadingNav, loadingManual, isLoading: loadingNav || loadingManual,
+    loadingNav, loadingManual, loadingSettled, isLoading: loadingNav || loadingManual || loadingSettled,
     allInvoices, companyGroups, filteredGroups, totals, grandTotal,
     netTotals, netGrandTotal,
     partners, updatePartnerEmail,

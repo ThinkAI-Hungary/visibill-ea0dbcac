@@ -29,7 +29,11 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-  CalendarDays
+  CalendarDays,
+  Eye,
+  Package,
+  Loader2,
+  Banknote
 } from 'lucide-react';
 import {
   Dialog,
@@ -48,6 +52,13 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -62,6 +73,8 @@ import {
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
+import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 
 
 interface TransferInvoice {
@@ -74,6 +87,8 @@ interface TransferInvoice {
   amount: number;
   currency: string;
   partner_bank_account: string;
+  image_url?: string;
+  melleklet_url?: string;
 }
 
 interface CompanyBankAccount {
@@ -146,6 +161,38 @@ export default function TransfersPage() {
   const [exporting, setExporting] = useState(false);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
 
+  // Line items dialog state
+  const [itemsDialogOpen, setItemsDialogOpen] = useState(false);
+  const [viewingInvoice, setViewingInvoice] = useState<TransferInvoice | null>(null);
+
+  // Invoice image preview dialog state
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imageInvoice, setImageInvoice] = useState<{
+    id: string;
+    elado_nev: string;
+    vevo_nev: string;
+    bizonylatsorszam?: string;
+    image_url?: string;
+    melleklet_url?: string;
+    amount?: number;
+    currency?: string;
+    date?: string;
+  } | null>(null);
+
+  // Manual settlement dialog state
+  const [settleDialogOpen, setSettleDialogOpen] = useState(false);
+  const [settleItem, setSettleItem] = useState<{
+    key: string;
+    partner_name: string;
+    amount: number;
+    currency: string;
+    original_invoices: TransferInvoice[];
+  } | null>(null);
+  const [settlePaymentType, setSettlePaymentType] = useState<string>('cash');
+  const [settlePaymentDate, setSettlePaymentDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [settleNote, setSettleNote] = useState<string>('');
+  const [settling, setSettling] = useState(false);
+
   // Pagination State
   const [activePage, setActivePage] = useState(1);
   const [activePageSize, setActivePageSize] = useState(50);
@@ -186,10 +233,16 @@ export default function TransfersPage() {
 
       const today = new Date().toISOString().split('T')[0];
 
+      // Fetch partner records for bank account lookup
+      const { data: partnersData } = await supabase
+        .from('partners')
+        .select('id, name, tax_number, bank_account_number')
+        .eq('company_id', selectedCompany.id);
+
       // Fetch manual inbound invoices
       const { data: manualData, error: manualErr } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, elado_nev, elado_vat_id, fizetesi_hatarido, brutto_vegosszeg, penznem, bankszamlaszam_iban, fizetesi_mod, reference_number, elolegszamla_hivatkozas')
+        .select('id, bizonylatsorszam, elado_nev, elado_vat_id, fizetesi_hatarido, brutto_vegosszeg, penznem, bankszamlaszam_iban, fizetesi_mod, reference_number, elolegszamla_hivatkozas, is_manual_payment, image_url, melleklet_url')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'INBOUND')
         .is('transaction_id', null)
@@ -200,7 +253,7 @@ export default function TransfersPage() {
       // Fetch NAV inbound invoices
       const { data: navData, error: navErr } = await supabase
         .from('nav_invoices')
-        .select('id, invoice_number, supplier_name, supplier_tax_number, payment_date, invoice_gross_amount, currency, transaction_id, paid, payment_method')
+        .select('id, invoice_number, supplier_name, supplier_tax_number, payment_date, invoice_gross_amount, currency, transaction_id, paid, payment_method, is_manual_payment')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'INBOUND')
         .is('transaction_id', null)
@@ -211,14 +264,14 @@ export default function TransfersPage() {
       // Fetch all historic manual invoices for this company
       const { data: historicInvoices } = await supabase
         .from('invoices')
-        .select('id, elado_nev, elado_vat_id, bankszamlaszam_iban, bizonylatsorszam, fizetve, transaction_id, fizetesi_mod, reference_number, elolegszamla_hivatkozas')
+        .select('id, elado_nev, elado_vat_id, bankszamlaszam_iban, bizonylatsorszam, fizetve, transaction_id, fizetesi_mod, reference_number, elolegszamla_hivatkozas, is_manual_payment, image_url, melleklet_url')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'INBOUND');
 
       // Fetch all historic NAV invoices for this company
       const { data: historicNavInvoices } = await supabase
         .from('nav_invoices')
-        .select('id, supplier_name, supplier_tax_number, invoice_number, paid, payment_method, transaction_id')
+        .select('id, supplier_name, supplier_tax_number, invoice_number, paid, payment_method, transaction_id, is_manual_payment')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'INBOUND');
 
@@ -246,14 +299,26 @@ export default function TransfersPage() {
         };
       });
 
-      // Build lookup map from historic invoices first
+      // Build lookup map from saved partner master records FIRST
       const bankAccountLookupMap: Record<string, string> = {};
+      (partnersData || []).forEach(p => {
+        if (p.bank_account_number) {
+          if (p.tax_number) {
+            bankAccountLookupMap[p.tax_number] = p.bank_account_number;
+          }
+          if (p.name) {
+            bankAccountLookupMap[p.name.toLowerCase()] = p.bank_account_number;
+          }
+        }
+      });
+
+      // Then supplement from historic invoices
       (historicInvoices || []).forEach(inv => {
         if (inv.bankszamlaszam_iban) {
-          if (inv.elado_vat_id) {
+          if (inv.elado_vat_id && !bankAccountLookupMap[inv.elado_vat_id]) {
             bankAccountLookupMap[inv.elado_vat_id] = inv.bankszamlaszam_iban;
           }
-          if (inv.elado_nev) {
+          if (inv.elado_nev && !bankAccountLookupMap[inv.elado_nev.toLowerCase()]) {
             bankAccountLookupMap[inv.elado_nev.toLowerCase()] = inv.bankszamlaszam_iban;
           }
         }
@@ -399,23 +464,24 @@ export default function TransfersPage() {
 
       // Helper to check if a specific manual/NAV invoice is paid
       const isInvoicePaid = (inv: any, isNav: boolean): boolean => {
+        if (inv.is_manual_payment === true) return true;
         if (isNav) {
           const directlyMatched = matchedInvoiceIds.has(inv.id);
           const submittedMatches = manualByNumber.get(normalizeInvNum(inv.invoice_number)) || [];
-          const indirectlyMatched = submittedMatches.some(sub => submittedIdToTransactionsMap.has(sub.id));
+          const indirectlyMatched = submittedMatches.some(sub => submittedIdToTransactionsMap.has(sub.id) || sub.is_manual_payment === true);
           const linkedChainMatched = !indirectlyMatched && submittedMatches.some(sub => {
             const linked = getLinkedInvoices(sub);
-            return linked.some(l => submittedIdToTransactionsMap.has(l.id));
+            return linked.some(l => submittedIdToTransactionsMap.has(l.id) || l.is_manual_payment === true);
           });
           return inv.paid === true || !!inv.transaction_id || directlyMatched || indirectlyMatched || linkedChainMatched;
         } else {
           // Manual invoice
           const directlyMatched = matchedInvoiceIds.has(inv.id);
-          const hasLinkedTx = getLinkedInvoices(inv).some(l => submittedIdToTransactionsMap.has(l.id));
+          const hasLinkedTx = getLinkedInvoices(inv).some(l => submittedIdToTransactionsMap.has(l.id) || l.is_manual_payment === true);
           let hasPaidNav = false;
           if (inv.bizonylatsorszam) {
             const navMatches = navByNumber.get(normalizeInvNum(inv.bizonylatsorszam)) || [];
-            hasPaidNav = navMatches.some(nav => nav.paid === true || !!nav.transaction_id || matchedInvoiceIds.has(nav.id));
+            hasPaidNav = navMatches.some(nav => nav.paid === true || !!nav.transaction_id || matchedInvoiceIds.has(nav.id) || nav.is_manual_payment === true);
           }
           return inv.fizetve === true || !!inv.transaction_id || directlyMatched || hasLinkedTx || hasPaidNav;
         }
@@ -464,7 +530,9 @@ export default function TransfersPage() {
           due_date: inv.fizetesi_hatarido ? new Date(inv.fizetesi_hatarido).toISOString().split('T')[0] : today,
           amount: inv.brutto_vegosszeg || 0,
           currency: inv.penznem || 'HUF',
-          partner_bank_account: resolvedAccount
+          partner_bank_account: resolvedAccount,
+          image_url: inv.image_url || undefined,
+          melleklet_url: inv.melleklet_url || undefined
         };
       });
 
@@ -472,6 +540,8 @@ export default function TransfersPage() {
         const taxNumber = inv.supplier_tax_number || '';
         const resolvedAccount = (taxNumber ? bankAccountLookupMap[taxNumber] : '') || 
           (inv.supplier_name ? bankAccountLookupMap[inv.supplier_name.toLowerCase()] : '') || '';
+
+        const matchedManual = manualByNumber.get(normalizeInvNum(inv.invoice_number))?.[0];
 
         return {
           id: inv.id,
@@ -482,7 +552,9 @@ export default function TransfersPage() {
           due_date: inv.payment_date ? new Date(inv.payment_date).toISOString().split('T')[0] : today,
           amount: inv.invoice_gross_amount || 0,
           currency: inv.currency || 'HUF',
-          partner_bank_account: resolvedAccount
+          partner_bank_account: resolvedAccount,
+          image_url: matchedManual?.image_url || undefined,
+          melleklet_url: matchedManual?.melleklet_url || undefined
         };
       });
 
@@ -668,20 +740,41 @@ export default function TransfersPage() {
       formatted = `${clean.slice(0, 8)}-${clean.slice(8, 16)}-${clean.slice(16)}`;
     }
 
-    // Save back if it's a manual invoice
-    if (invoice.source === 'manual') {
-      try {
+    try {
+      // 1. Persist to partners table if company is selected
+      if (selectedCompany?.id) {
+        if (invoice.partner_tax_number) {
+          const { error: partnerErr } = await supabase
+            .from('partners')
+            .update({ bank_account_number: formatted })
+            .eq('company_id', selectedCompany.id)
+            .eq('tax_number', invoice.partner_tax_number);
+          if (partnerErr) console.warn("Failed to update partner by tax_number:", partnerErr);
+        } else if (invoice.partner_name) {
+          const { error: partnerErr } = await supabase
+            .from('partners')
+            .update({ bank_account_number: formatted })
+            .eq('company_id', selectedCompany.id)
+            .ilike('name', invoice.partner_name);
+          if (partnerErr) console.warn("Failed to update partner by name:", partnerErr);
+        }
+      }
+
+      // 2. Save back to manual invoice if it's manual
+      if (invoice.source === 'manual') {
         await supabase
           .from('invoices')
           .update({ bankszamlaszam_iban: formatted })
           .eq('id', invoice.id);
-        toast({ title: 'Mentve', description: 'Bankszámlaszám sikeresen frissítve.' });
-      } catch (err) {
-        reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleBankBlur', message: 'Failed to update manual invoice bank account', error: err });
       }
-    } else {
-      // Just visually save for now in state
-      toast({ title: 'Ideiglenesen frissítve', description: 'Bankszámlaszám frissítve a generáláshoz.' });
+
+      toast({
+        title: 'Mentve',
+        description: `Bankszámlaszám rögzítve a(z) ${invoice.partner_name} partnerhez.`
+      });
+    } catch (err) {
+      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleBankBlur', message: 'Failed to update partner bank account', error: err });
+      toast({ title: 'Hiba', description: 'Nem sikerült elmenteni a bankszámlaszámot.', variant: 'destructive' });
     }
 
     // Update query cache inline so we don't have to trigger a full refresh
@@ -692,10 +785,66 @@ export default function TransfersPage() {
     });
 
     if (invoices) {
-      const idx = invoices.findIndex(inv => inv.id === id);
-      if (idx !== -1) {
-        invoices[idx].partner_bank_account = formatted;
+      invoices.forEach(inv => {
+        if (
+          (invoice.partner_tax_number && inv.partner_tax_number === invoice.partner_tax_number) ||
+          inv.partner_name.toLowerCase() === invoice.partner_name.toLowerCase()
+        ) {
+          inv.partner_bank_account = formatted;
+        }
+      });
+    }
+  };
+
+  const handleConfirmSettle = async () => {
+    if (!settleItem || settleItem.original_invoices.length === 0) return;
+    try {
+      setSettling(true);
+      const invoicesToSettle = settleItem.original_invoices;
+
+      for (const inv of invoicesToSettle) {
+        // Try calling RPC record_manual_invoice_payment
+        const { error: rpcErr } = await supabase.rpc('record_manual_invoice_payment', {
+          p_invoice_id: inv.id,
+          p_payment_date: settlePaymentDate,
+          p_payment_type: settlePaymentType,
+          p_note: settleNote.trim() || `TransfersPage rendezés (${inv.partner_name})`
+        });
+
+        if (rpcErr) {
+          console.warn('RPC record_manual_invoice_payment failed, applying direct update fallback:', rpcErr);
+          // Direct update fallback
+          const targetTable = inv.source === 'nav' ? 'nav_invoices' : 'invoices';
+          await supabase
+            .from(targetTable)
+            .update({
+              is_manual_payment: true,
+              manual_payment_date: settlePaymentDate,
+              manual_payment_type: settlePaymentType,
+              manual_payment_note: settleNote.trim() || 'TransfersPage kézi rendezés'
+            })
+            .eq('id', inv.id);
+        }
       }
+
+      toast({
+        title: 'Sikeres rendezés',
+        description: `${invoicesToSettle.length} számla sikeresen rendezve lett (Kp / Magánszámla). Lekerült az átutalandó listáról.`
+      });
+
+      setSettleDialogOpen(false);
+      setSettleItem(null);
+      setSettleNote('');
+      refetchInvoices();
+    } catch (err: any) {
+      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleConfirmSettle', message: 'Failed to settle invoices manually', error: err });
+      toast({
+        title: 'Hiba',
+        description: 'Nem sikerült a számla rendezése.',
+        variant: 'destructive'
+      });
+    } finally {
+      setSettling(false);
     }
   };
 
@@ -1343,14 +1492,15 @@ export default function TransfersPage() {
                       <TableRow className="bg-muted/40 text-muted-foreground font-medium text-xs select-none hover:bg-muted/40">
                         <TableHead className="w-12 text-center" />
                         <TableHead>Partner</TableHead>
-                        <TableHead className="min-w-[200px] whitespace-nowrap">Számlaszám(ok)</TableHead>
+                        <TableHead className="min-w-[220px] whitespace-nowrap">Számlaszám(ok)</TableHead>
                         <TableHead className="w-32 whitespace-nowrap">Határidő</TableHead>
                         <TableHead className="w-40 text-right whitespace-nowrap">Összeg</TableHead>
                         <TableHead className="w-72">Partner Bankszámlaszáma</TableHead>
+                        <TableHead className="w-28 text-center whitespace-nowrap">Művelet</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <TableSkeleton rows={8} columns={6} />
+                      <TableSkeleton rows={8} columns={7} />
                     </TableBody>
                   </Table>
                 </div>
@@ -1373,10 +1523,11 @@ export default function TransfersPage() {
                             />
                           </TableHead>
                           <TableHead>Partner</TableHead>
-                          <TableHead className="min-w-[200px] whitespace-nowrap">Számlaszám(ok)</TableHead>
+                          <TableHead className="min-w-[220px] whitespace-nowrap">Számlaszám(ok)</TableHead>
                           <TableHead className="w-32 whitespace-nowrap">Határidő</TableHead>
                           <TableHead className="w-40 text-right whitespace-nowrap">Összeg</TableHead>
                           <TableHead className="w-72">Partner Bankszámlaszáma</TableHead>
+                          <TableHead className="w-28 text-center whitespace-nowrap">Művelet</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1412,15 +1563,74 @@ export default function TransfersPage() {
                                   Közlemény: {`Szamlak: ${item.invoice_numbers.join(', ')}`.slice(0, 140)}
                                 </div>
                               </TableCell>
-                              <TableCell className="min-w-[200px] whitespace-nowrap">
-                                <div className="flex flex-wrap gap-1 max-w-xs">
-                                  {item.invoice_numbers.map((num, i) => (
-                                    <span key={i} className="inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded text-xs text-muted-foreground font-mono">
-                                      <FileText className="h-3 w-3" />
-                                      {num || 'Sorszám nélkül'}
-                                    </span>
-                                  ))}
-                                </div>
+                              <TableCell className="min-w-[220px] whitespace-nowrap">
+                                <TooltipProvider>
+                                  <div className="flex flex-wrap gap-1.5 max-w-sm">
+                                    {item.original_invoices.map((inv, i) => (
+                                      <span 
+                                        key={inv.id || i} 
+                                        className="inline-flex items-center gap-1.5 bg-muted/80 hover:bg-muted border border-border/50 px-2 py-1 rounded-md text-xs text-foreground font-mono transition-colors shadow-xs"
+                                      >
+                                        <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                                        <span className="font-semibold">{inv.invoice_number || 'Sorszám nélkül'}</span>
+                                        
+                                        <div className="flex items-center gap-0.5 ml-1 pl-1 border-l border-border/60">
+                                          {/* View Items */}
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setViewingInvoice(inv);
+                                                  setItemsDialogOpen(true);
+                                                }}
+                                                className="p-1 hover:text-primary hover:bg-primary/10 rounded transition-colors text-muted-foreground cursor-pointer"
+                                                aria-label="Tételek megtekintése"
+                                              >
+                                                <Package className="h-3 w-3" />
+                                              </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="text-xs">
+                                              Tételek megtekintése
+                                            </TooltipContent>
+                                          </Tooltip>
+
+                                          {/* View Invoice Image / PDF */}
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setImageInvoice({
+                                                    id: inv.id,
+                                                    elado_nev: inv.partner_name,
+                                                    vevo_nev: selectedCompany?.name || '',
+                                                    bizonylatsorszam: inv.invoice_number,
+                                                    image_url: inv.image_url,
+                                                    melleklet_url: inv.melleklet_url,
+                                                    amount: inv.amount,
+                                                    currency: inv.currency,
+                                                    date: inv.due_date
+                                                  });
+                                                  setImageDialogOpen(true);
+                                                }}
+                                                className="p-1 hover:text-primary hover:bg-primary/10 rounded transition-colors text-muted-foreground cursor-pointer"
+                                                aria-label="Számlakép megtekintése"
+                                              >
+                                                <Eye className="h-3 w-3" />
+                                              </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="text-xs">
+                                              Számlakép / Előnézet
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </div>
+                                      </span>
+                                    ))}
+                                  </div>
+                                </TooltipProvider>
                               </TableCell>
                               <TableCell className="whitespace-nowrap">
                                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold ${isOverdue ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700'}`}>
@@ -1455,6 +1665,32 @@ export default function TransfersPage() {
                                     );
                                   })()}
                                 </div>
+                              </TableCell>
+                              <TableCell className="text-center whitespace-nowrap">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 px-2.5 text-xs gap-1.5 border-emerald-600/30 hover:border-emerald-600 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium transition-all"
+                                        onClick={() => {
+                                          setSettleItem(item);
+                                          setSettlePaymentType('cash');
+                                          setSettlePaymentDate(new Date().toISOString().split('T')[0]);
+                                          setSettleNote('');
+                                          setSettleDialogOpen(true);
+                                        }}
+                                      >
+                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                        Rendezve
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="text-xs">
+                                      Készpénz / Magánszámla / Pénztári kifizetés rögzítése
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               </TableCell>
                             </TableRow>
                           );
@@ -1904,6 +2140,158 @@ export default function TransfersPage() {
         </div>,
         document.body
       )}
+
+      {/* Invoice Items Dialog */}
+      {viewingInvoice && (
+        <InvoiceItemsDialog
+          open={itemsDialogOpen}
+          onOpenChange={(open) => {
+            setItemsDialogOpen(open);
+            if (!open) setViewingInvoice(null);
+          }}
+          invoiceId={viewingInvoice.id}
+          invoiceNumber={viewingInvoice.invoice_number}
+          currency={viewingInvoice.currency}
+          source={viewingInvoice.source === 'manual' ? 'submitted' : 'nav'}
+          supplierName={viewingInvoice.partner_name}
+          invoiceDate={viewingInvoice.due_date}
+        />
+      )}
+
+      {/* Invoice Image Preview Dialog */}
+      <InvoiceImageDialog
+        open={imageDialogOpen}
+        onClose={() => {
+          setImageDialogOpen(false);
+          setImageInvoice(null);
+        }}
+        invoice={imageInvoice}
+      />
+
+      {/* Manual Settle Dialog */}
+      <Dialog open={settleDialogOpen} onOpenChange={(open) => {
+        setSettleDialogOpen(open);
+        if (!open) {
+          setSettleItem(null);
+          setSettleNote('');
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              Számla rendezése (Készpénz / Magánszámla)
+            </DialogTitle>
+            <DialogDescription>
+              Jelöld meg a számlát rendezettként, ha az készpénzből vagy magánszámláról lett kifizetve. A tétel lekerül az átutalandó listáról.
+            </DialogDescription>
+          </DialogHeader>
+
+          {settleItem && (
+            <div className="space-y-4 py-2">
+              <div className="p-3 bg-muted/60 rounded-xl border border-border/60 space-y-1">
+                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <span>Partner:</span>
+                  <span className="font-semibold text-foreground">{settleItem.partner_name}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <span>Számlák ({settleItem.original_invoices.length} db):</span>
+                  <span className="font-mono font-medium text-foreground">
+                    {settleItem.original_invoices.map(i => i.invoice_number).join(', ')}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm font-bold pt-1 border-t border-border/40">
+                  <span>Összesen:</span>
+                  <span className="font-mono text-emerald-600 dark:text-emerald-400">
+                    {settleItem.amount.toLocaleString('hu-HU')} {settleItem.currency}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Fizetés jellege</Label>
+                <Select value={settlePaymentType} onValueChange={setSettlePaymentType}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Válassz fizetési módot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">
+                      <div className="flex items-center gap-2">
+                        <Banknote className="h-4 w-4 text-emerald-600" />
+                        <span>Készpénz / Házipénztár (381)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="private_card">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-blue-500" />
+                        <span>Privát számla / Tagi kölcsön</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="other">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-amber-500" />
+                        <span>Egyéb manuális rendezés</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Kifizetés dátuma</Label>
+                <Input
+                  type="date"
+                  value={settlePaymentDate}
+                  onChange={(e) => setSettlePaymentDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Megjegyzés (opcionális)</Label>
+                <Textarea
+                  value={settleNote}
+                  onChange={(e) => setSettleNote(e.target.value)}
+                  placeholder="Pl. Joó Kristóf privát számlájáról fizetve, pénztárból elszámolva"
+                  rows={2}
+                  className="text-xs resize-none"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSettleDialogOpen(false);
+                setSettleItem(null);
+                setSettleNote('');
+              }}
+              disabled={settling}
+            >
+              Mégse
+            </Button>
+            <Button
+              onClick={handleConfirmSettle}
+              disabled={settling}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+            >
+              {settling ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Rendezés mentése...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  Rendezés megerősítése
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

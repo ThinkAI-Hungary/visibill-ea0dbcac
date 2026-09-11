@@ -161,6 +161,8 @@ export const queryKeys = {
     ['kintlevo-nav', companyId] as const,
   kintlevoManual: (companyId: string) =>
     ['kintlevo-manual', companyId] as const,
+  kintlevoSettled: (companyId: string) =>
+    ['kintlevo-settled', companyId] as const,
   dunningSends: (companyId: string) =>
     ['dunning-sends', companyId] as const,
 
