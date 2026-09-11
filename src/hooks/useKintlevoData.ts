@@ -2,19 +2,23 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { differenceInDays, parseISO, format } from 'date-fns';
-import { getCategory, worstOf } from '@/lib/kintlevo-helpers';
-import type { AgingCategory, UnifiedInvoice, CompanyGroup } from '@/lib/kintlevo-helpers';
+import { getCategory, worstOf, filterInvoicesByDate } from '@/lib/kintlevo-helpers';
+import type { AgingCategory, UnifiedInvoice, CompanyGroup, DateFilterBasis } from '@/lib/kintlevo-helpers';
+
+export type { DateFilterBasis };
 
 export function useKintlevoData() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
-  
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
 
+  const [dateFilterBasis, setDateFilterBasis] = useState<DateFilterBasis>('due_date');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -132,7 +136,7 @@ export function useKintlevoData() {
     return d;
   }, []);
 
-  const allInvoices = useMemo((): UnifiedInvoice[] => {
+  const rawInvoices = useMemo((): UnifiedInvoice[] => {
     const result: UnifiedInvoice[] = [];
 
     for (const inv of navInvoices) {
@@ -181,6 +185,10 @@ export function useKintlevoData() {
 
     return result;
   }, [navInvoices, manualInvoices, today]);
+
+  const allInvoices = useMemo((): UnifiedInvoice[] => {
+    return filterInvoicesByDate(rawInvoices, dateFilterBasis, dateFromFormatted, dateToFormatted);
+  }, [rawInvoices, dateFilterBasis, dateFromFormatted, dateToFormatted]);
 
   const companyGroups = useMemo((): CompanyGroup[] => {
     const map = new Map<string, UnifiedInvoice[]>();
@@ -240,5 +248,8 @@ export function useKintlevoData() {
     allInvoices, companyGroups, filteredGroups, totals, grandTotal,
     netTotals, netGrandTotal,
     partners, updatePartnerEmail,
+    dateFilterBasis, setDateFilterBasis,
+    dateFromFormatted, dateToFormatted,
+    rawInvoicesCount: rawInvoices.length,
   };
 }

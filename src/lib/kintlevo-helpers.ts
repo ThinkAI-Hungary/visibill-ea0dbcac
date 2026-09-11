@@ -99,3 +99,26 @@ export function fmt(n: number): string {
 export function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
+
+export type DateFilterBasis = 'due_date' | 'issue_date' | 'all';
+
+export function filterInvoicesByDate(
+  invoices: UnifiedInvoice[],
+  basis: DateFilterBasis,
+  dateFrom: string,
+  dateTo: string
+): UnifiedInvoice[] {
+  if (basis === 'all') return invoices;
+
+  return invoices.filter(inv => {
+    if (basis === 'due_date') {
+      const due = inv.dueDate.slice(0, 10);
+      return due >= dateFrom && due <= dateTo;
+    }
+    if (basis === 'issue_date') {
+      const issue = inv.issueDate ? inv.issueDate.slice(0, 10) : inv.dueDate.slice(0, 10);
+      return issue >= dateFrom && issue <= dateTo;
+    }
+    return true;
+  });
+}

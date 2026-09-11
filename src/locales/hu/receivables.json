@@ -15,5 +15,12 @@
     "days_1_30": "1–30 napos",
     "days_31_180": "31–180 napos",
     "days_180_plus": "180+ napos"
-  }
+  },
+  "filter_by_due_date": "Esedékesség szerint",
+  "filter_by_issue_date": "Kibocsátás szerint",
+  "filter_all": "Teljes állomány (szűretlen)",
+  "date_filter_basis": "Időszak szűrés alapja",
+  "filtered_period": "Szűrve: {{period}}",
+  "view_all_open": "Teljes nyitott állomány megtekintése",
+  "no_open_in_period": "Nincs nyitott számla a kiválasztott időszakban"
 }

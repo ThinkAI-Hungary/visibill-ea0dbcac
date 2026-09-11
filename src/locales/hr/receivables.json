@@ -15,5 +15,12 @@
     "days_1_30": "1–30 dana",
     "days_31_180": "31–180 dana",
     "days_180_plus": "180+ dana"
-  }
+  },
+  "filter_by_due_date": "Po dospijeću",
+  "filter_by_issue_date": "Po izdavanju",
+  "filter_all": "Sva potraživanja (nefiltrirano)",
+  "date_filter_basis": "Osnova filtriranja razdoblja",
+  "filtered_period": "Filtrirano: {{period}}",
+  "view_all_open": "Prikaži sva otvorena potraživanja",
+  "no_open_in_period": "Nema otvorenih računa u odabranom razdoblju"
 }

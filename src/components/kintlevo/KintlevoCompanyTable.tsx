@@ -1,9 +1,11 @@
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Mail, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { Mail, ChevronDown, ChevronUp, CheckCircle2, Clock } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { CAT, fmt } from '@/lib/kintlevo-helpers';
 import type { CompanyGroup } from '@/lib/kintlevo-helpers';
@@ -12,10 +14,41 @@ interface Props {
   filteredGroups: CompanyGroup[];
   expanded: Set<string>;
   setExpanded: React.Dispatch<React.SetStateAction<Set<string>>>;
+  isPeriodFiltered?: boolean;
+  rawInvoicesCount?: number;
+  onResetPeriodFilter?: () => void;
 }
 
-export function KintlevoCompanyTable({ filteredGroups, expanded, setExpanded }: Props) {
+export function KintlevoCompanyTable({
+  filteredGroups,
+  expanded,
+  setExpanded,
+  isPeriodFiltered = false,
+  rawInvoicesCount = 0,
+  onResetPeriodFilter,
+}: Props) {
+  const { t } = useTranslation(['receivables', 'common']);
+
   if (filteredGroups.length === 0) {
+    if (isPeriodFiltered && rawInvoicesCount > 0) {
+      return (
+        <div className="text-center py-16 text-muted-foreground border rounded-xl bg-card">
+          <Clock className="h-10 w-10 mx-auto mb-3 text-amber-500/60" />
+          <p className="text-base font-semibold text-foreground">
+            {t('receivables:no_open_in_period', 'Nincs nyitott számla a kiválasztott időszakban')}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1 mb-4">
+            A választott időszakon kívül {rawInvoicesCount} db nyitott számla található.
+          </p>
+          {onResetPeriodFilter && (
+            <Button variant="outline" size="sm" onClick={onResetPeriodFilter}>
+              {t('receivables:view_all_open', 'Teljes nyitott állomány megtekintése')} ({rawInvoicesCount} db)
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="text-center py-20 text-muted-foreground">
         <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-emerald-500/30" />

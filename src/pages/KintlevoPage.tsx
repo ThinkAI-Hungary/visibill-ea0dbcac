@@ -43,7 +43,10 @@ export default function KintlevoPage() {
     search, setSearch, expanded, setExpanded,
     isLoading, allInvoices, companyGroups, filteredGroups, totals, grandTotal,
     netTotals, netGrandTotal,
-    updatePartnerEmail,
+    partners, updatePartnerEmail,
+    dateFilterBasis, setDateFilterBasis,
+    dateFromFormatted, dateToFormatted,
+    rawInvoicesCount,
   } = useKintlevoData();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -110,6 +113,11 @@ export default function KintlevoPage() {
           allInvoices={allInvoices}
           showBrutto={showBrutto}
           onShowBruttoChange={setShowBrutto}
+          dateFilterBasis={dateFilterBasis}
+          onDateFilterBasisChange={setDateFilterBasis}
+          dateFromFormatted={dateFromFormatted}
+          dateToFormatted={dateToFormatted}
+          rawInvoicesCount={rawInvoicesCount}
         />
 
         {/* Aging chart (korfa) */}
@@ -158,6 +166,9 @@ export default function KintlevoPage() {
           }
           expanded={expanded}
           setExpanded={setExpanded}
+          isPeriodFiltered={dateFilterBasis !== 'all'}
+          rawInvoicesCount={rawInvoicesCount}
+          onResetPeriodFilter={() => setDateFilterBasis('all')}
         />
       </div>
 

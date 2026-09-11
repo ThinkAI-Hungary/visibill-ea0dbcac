@@ -1,9 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CAT, fmt } from '@/lib/kintlevo-helpers';
-import type { AgingCategory, UnifiedInvoice, CompanyGroup } from '@/lib/kintlevo-helpers';
+import type { AgingCategory, UnifiedInvoice, CompanyGroup, DateFilterBasis } from '@/lib/kintlevo-helpers';
 
 interface Props {
   totals: Record<AgingCategory, number>;
@@ -14,9 +16,28 @@ interface Props {
   allInvoices: UnifiedInvoice[];
   showBrutto: boolean;
   onShowBruttoChange: (v: boolean) => void;
+  dateFilterBasis?: DateFilterBasis;
+  onDateFilterBasisChange?: (v: DateFilterBasis) => void;
+  dateFromFormatted?: string;
+  dateToFormatted?: string;
+  rawInvoicesCount?: number;
 }
 
-export function KintlevoSummaryCards({ totals, grandTotal, netTotals, netGrandTotal, companyGroups, allInvoices, showBrutto, onShowBruttoChange }: Props) {
+export function KintlevoSummaryCards({
+  totals,
+  grandTotal,
+  netTotals,
+  netGrandTotal,
+  companyGroups,
+  allInvoices,
+  showBrutto,
+  onShowBruttoChange,
+  dateFilterBasis = 'due_date',
+  onDateFilterBasisChange,
+  dateFromFormatted,
+  dateToFormatted,
+  rawInvoicesCount,
+}: Props) {
   const { t } = useTranslation(['receivables', 'common']);
   const displayTotals = showBrutto ? totals : netTotals;
   const displayGrand = showBrutto ? grandTotal : netGrandTotal;
@@ -32,33 +53,95 @@ export function KintlevoSummaryCards({ totals, grandTotal, netTotals, netGrandTo
 
   return (
     <div className="space-y-3">
-      {/* Bruttó / Nettó toggle — same style as dashboard */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => onShowBruttoChange(false)}
-          className={cn(
-            "text-base pb-1 border-b-2 transition-all duration-200 cursor-pointer",
-            !showBrutto
-              ? "text-slate-900 dark:text-white font-semibold border-primary"
-              : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
-          )}
-        >
-          {t('receivables:net', 'Nettó')}
-        </button>
-        <Switch checked={showBrutto} onCheckedChange={onShowBruttoChange} />
-        <button
-          type="button"
-          onClick={() => onShowBruttoChange(true)}
-          className={cn(
-            "text-base pb-1 border-b-2 transition-all duration-200 cursor-pointer",
-            showBrutto
-              ? "text-slate-900 dark:text-white font-semibold border-primary"
-              : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
-          )}
-        >
-          {t('receivables:gross', 'Bruttó')}
-        </button>
+      {/* Top bar: Bruttó / Nettó toggle & Date filter basis selector */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* Bruttó / Nettó toggle */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onShowBruttoChange(false)}
+            className={cn(
+              "text-base pb-1 border-b-2 transition-all duration-200 cursor-pointer",
+              !showBrutto
+                ? "text-slate-900 dark:text-white font-semibold border-primary"
+                : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
+            )}
+          >
+            {t('receivables:net', 'Nettó')}
+          </button>
+          <Switch checked={showBrutto} onCheckedChange={onShowBruttoChange} />
+          <button
+            type="button"
+            onClick={() => onShowBruttoChange(true)}
+            className={cn(
+              "text-base pb-1 border-b-2 transition-all duration-200 cursor-pointer",
+              showBrutto
+                ? "text-slate-900 dark:text-white font-semibold border-primary"
+                : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
+            )}
+          >
+            {t('receivables:gross', 'Bruttó')}
+          </button>
+        </div>
+
+        {/* Date Filter Basis Selector */}
+        {onDateFilterBasisChange && (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">
+              {t('receivables:date_filter_basis', 'Időszak szűrés alapja')}:
+            </span>
+            <div className="inline-flex items-center p-0.5 bg-muted/60 dark:bg-muted/30 rounded-lg border border-border/50 text-xs">
+              <button
+                type="button"
+                onClick={() => onDateFilterBasisChange('due_date')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer",
+                  dateFilterBasis === 'due_date'
+                    ? "bg-background text-foreground shadow-sm font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t('receivables:filter_by_due_date', 'Esedékesség szerint')}
+              </button>
+              <button
+                type="button"
+                onClick={() => onDateFilterBasisChange('issue_date')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer",
+                  dateFilterBasis === 'issue_date'
+                    ? "bg-background text-foreground shadow-sm font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t('receivables:filter_by_issue_date', 'Kibocsátás szerint')}
+              </button>
+              <button
+                type="button"
+                onClick={() => onDateFilterBasisChange('all')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer",
+                  dateFilterBasis === 'all'
+                    ? "bg-background text-foreground shadow-sm font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t('receivables:filter_all', 'Mind')}
+              </button>
+            </div>
+
+            {dateFilterBasis !== 'all' && dateFromFormatted && dateToFormatted && (
+              <Badge variant="outline" className="text-xs text-muted-foreground font-normal gap-1 py-1">
+                <Calendar className="h-3 w-3 text-muted-foreground" />
+                <span>{dateFromFormatted} – {dateToFormatted}</span>
+                {rawInvoicesCount !== undefined && (
+                  <span className="text-muted-foreground/80 font-mono ml-0.5">
+                    ({allInvoices.length}/{rawInvoicesCount})
+                  </span>
+                )}
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
