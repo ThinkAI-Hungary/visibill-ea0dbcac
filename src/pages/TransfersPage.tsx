@@ -242,7 +242,7 @@ export default function TransfersPage() {
       // Fetch manual inbound invoices
       const { data: manualData, error: manualErr } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, elado_nev, elado_vat_id, fizetesi_hatarido, brutto_vegosszeg, penznem, bankszamlaszam_iban, fizetesi_mod, reference_number, elolegszamla_hivatkozas, is_manual_payment, image_url, melleklet_url')
+        .select('id, bizonylatsorszam, elado_nev, elado_vat_id, fizetesi_hatarido, kibocsatas_datuma, teljesites_datuma, brutto_vegosszeg, penznem, bankszamlaszam_iban, fizetesi_mod, reference_number, elolegszamla_hivatkozas, is_manual_payment, image_url, melleklet_url')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'INBOUND')
         .is('transaction_id', null)
@@ -253,7 +253,7 @@ export default function TransfersPage() {
       // Fetch NAV inbound invoices
       const { data: navData, error: navErr } = await supabase
         .from('nav_invoices')
-        .select('id, invoice_number, supplier_name, supplier_tax_number, payment_date, invoice_gross_amount, currency, transaction_id, paid, payment_method, is_manual_payment')
+        .select('id, invoice_number, supplier_name, supplier_tax_number, payment_date, invoice_issue_date, fulfillment_date, invoice_gross_amount, currency, transaction_id, paid, payment_method, is_manual_payment')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'INBOUND')
         .is('transaction_id', null)
@@ -527,7 +527,11 @@ export default function TransfersPage() {
           invoice_number: inv.bizonylatsorszam || '',
           partner_name: inv.elado_nev || 'Ismeretlen partner',
           partner_tax_number: inv.elado_vat_id || undefined,
-          due_date: inv.fizetesi_hatarido ? new Date(inv.fizetesi_hatarido).toISOString().split('T')[0] : today,
+          due_date: inv.fizetesi_hatarido
+            ? new Date(inv.fizetesi_hatarido).toISOString().split('T')[0]
+            : (inv.kibocsatas_datuma
+              ? new Date(inv.kibocsatas_datuma).toISOString().split('T')[0]
+              : (inv.teljesites_datuma ? new Date(inv.teljesites_datuma).toISOString().split('T')[0] : today)),
           amount: inv.brutto_vegosszeg || 0,
           currency: inv.penznem || 'HUF',
           partner_bank_account: resolvedAccount,
@@ -549,7 +553,11 @@ export default function TransfersPage() {
           invoice_number: inv.invoice_number || '',
           partner_name: inv.supplier_name || 'Ismeretlen partner',
           partner_tax_number: taxNumber || undefined,
-          due_date: inv.payment_date ? new Date(inv.payment_date).toISOString().split('T')[0] : today,
+          due_date: inv.payment_date
+            ? new Date(inv.payment_date).toISOString().split('T')[0]
+            : (inv.invoice_issue_date
+              ? new Date(inv.invoice_issue_date).toISOString().split('T')[0]
+              : (inv.fulfillment_date ? new Date(inv.fulfillment_date).toISOString().split('T')[0] : today)),
           amount: inv.invoice_gross_amount || 0,
           currency: inv.currency || 'HUF',
           partner_bank_account: resolvedAccount,
