@@ -49,6 +49,17 @@ src/lib/documents/
 ### Visszafelé Kompatibilitás (Facade Pattern)
 A meglévő `src/lib/*Pdf.ts`, `src/lib/*Xml.ts` és `src/lib/exportUtils.ts` fájlok vékony facade réteggé alakultak, amelyek a `src/lib/documents/`-re delegálnak, garantálva a 100%-os regressziómentességet.
 
+### Előnézeti és Letöltési Szerződések (Preview & Download Contracts)
+1. **Szinkron HTML Előnézet (`getPayslipPreviewUrl`):**
+   - Az in-app modális előnézetek (pl. `PayslipGeneratorPage`, `EPayslipPortalPage`) a `DocumentEngine.createPreviewUrl(descriptor)` szinkron HTML előnézetét használják (`blob:text/html`).
+   - Ezzel elkerülhető, hogy az iframe `src` attribútuma feloldatlan `Promise` objektumot kapjon (`[object Promise]`), ami relatív útvonalként véletlen SPA útvonal-visszahívást okozna.
+   - Igény esetén a bináris PDF Blob URL külön aszinkron metódussal érhető el (`getPayslipPdfPreviewUrl`).
+2. **Polimorf Letöltési Támogatás (`downloadPayslipPdf`):**
+   - A facade és sablon szintjén mindkét hívási konvenció támogatott: egyparaméteres `(data: PayslipData)` és kétparaméteres `(filename: string, data: PayslipData)`.
+3. **Memóriatisztítás (`revokeObjectURL`):**
+   - Az előnézeti modális ablak bezárásakor a komponensek expliciten meghívják az `URL.revokeObjectURL(previewUrl)`-t, megelőzve az elárvult Blob URL-ek felhalmozódását.
+
+
 ---
 
 ## Következmények és Előnyök

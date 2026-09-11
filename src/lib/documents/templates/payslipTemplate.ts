@@ -73,14 +73,25 @@ export async function generatePayslipPdf(data: PayslipData): Promise<void> {
   await DocumentEngine.export(descriptor, 'pdf');
 }
 
-export const downloadPayslipPdf = generatePayslipPdf;
+export async function downloadPayslipPdf(arg1: string | PayslipData, arg2?: PayslipData): Promise<void> {
+  const data = (typeof arg1 === 'string' ? arg2 : arg1) as PayslipData;
+  const customFilename = typeof arg1 === 'string' ? arg1 : undefined;
+  const descriptor = buildPayslipDescriptor(data);
+  await DocumentEngine.export(descriptor, 'pdf', customFilename);
+}
 
 export async function generatePayslipBlob(data: PayslipData): Promise<Blob> {
   const descriptor = buildPayslipDescriptor(data);
   return PdfDocumentAdapter.renderToBlob(descriptor);
 }
 
-export async function getPayslipPreviewUrl(data: PayslipData): Promise<string> {
+export async function getPayslipPdfPreviewUrl(data: PayslipData): Promise<string> {
   const blob = await generatePayslipBlob(data);
   return URL.createObjectURL(blob);
 }
+
+export function getPayslipPreviewUrl(data: PayslipData): string {
+  const descriptor = buildPayslipDescriptor(data);
+  return DocumentEngine.createPreviewUrl(descriptor);
+}
+

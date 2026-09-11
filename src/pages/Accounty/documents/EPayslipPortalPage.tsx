@@ -68,14 +68,19 @@ export default function EPayslipPortalPage() {
 
   // Build payslip data from calculation for a given document
   const getPayslipData = (slip: AccountyDocument): PayslipPdfData | null => {
+    const cleanName = slip.title.replace(' - Bérjegyzék', '').replace(' - E-bérjegyzék', '').trim();
     const calc = calculations.find(c => {
       const meta = c.metadata as any;
-      return meta?.employee_id === slip.employeeId || c.employment_id === slip.employeeId;
+      return (
+        meta?.employee_id === slip.employeeId ||
+        c.employment_id === slip.employeeId ||
+        (meta?.employee_name && meta.employee_name.trim().toLowerCase() === cleanName.toLowerCase())
+      );
     });
 
     if (!calc) {
       return {
-        employeeName: slip.title.replace(' - Bérjegyzék', ''),
+        employeeName: cleanName,
         period: slip.period,
         grossSalary: 0, szjaAmount: 0, tbAmount: 0, szochoAmount: 0,
         netSalary: 0, totalDeductions: 0,
@@ -85,7 +90,7 @@ export default function EPayslipPortalPage() {
 
     const meta = calc.metadata as any;
     return {
-      employeeName: meta?.employee_name || slip.title.replace(' - Bérjegyzék', ''),
+      employeeName: meta?.employee_name || cleanName,
       period: slip.period,
       grossSalary: calc.gross_salary || 0,
       szjaAmount: calc.szja_amount || 0,
@@ -180,10 +185,10 @@ export default function EPayslipPortalPage() {
                          <Clock className="w-4 h-4 text-slate-300 mx-auto" />}
                       </td>
                       <td className="px-3 py-2.5">
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => {
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Megtekintés" onClick={async () => {
                           if (!payslipData) return;
-                          const url = getPayslipPreviewUrl(payslipData);
                           setPreviewTitle(slip.title);
+                          const url = await getPayslipPreviewUrl(payslipData);
                           setPreviewUrl(url);
                         }}><Eye className="w-3 h-3" /></Button>
                       </td>
@@ -209,7 +214,14 @@ export default function EPayslipPortalPage() {
         </>
       )}
 
-      <Dialog open={!!previewUrl} onOpenChange={(open) => !open && setPreviewUrl(null)}>
+      <Dialog open={!!previewUrl} onOpenChange={(open) => {
+        if (!open) {
+          if (previewUrl && previewUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(previewUrl);
+          }
+          setPreviewUrl(null);
+        }
+      }}>
         <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 gap-0">
           <DialogHeader className="px-6 py-4 border-b border-border">
             <DialogTitle className="flex items-center gap-2">

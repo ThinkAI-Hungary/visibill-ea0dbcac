@@ -209,12 +209,17 @@ export default function TicketsPage({
     });
   }, [tickets, search, priorityFilter, serviceFilter, selectedStatuses, isAdmin, showAllTickets, user]);
 
-  // Tickets for Console View (Unresolved tickets filtered by search)
+  // Tickets for Console View (Unresolved tickets filtered by search and owner)
   const consoleTickets = useMemo(() => {
     return tickets
       .filter((t) => t.status !== "resolved")
+      .filter((t) => {
+        const matchesOwner = !isAdmin || showAllTickets || !user ||
+          t.assigned_to === user.id || t.assigned_to === null;
+        return matchesOwner;
+      })
       .filter((t) => matchTicketSearch(t, search));
-  }, [tickets, search]);
+  }, [tickets, search, isAdmin, showAllTickets, user]);
 
   const [page, setPage] = useState(1);
   const pageSize = embeddedInManagement && isAdmin ? 25 : 15;
@@ -853,7 +858,24 @@ export default function TicketsPage({
         {/* Left Column: Unresolved Active Tickets List */}
         <div className="w-full lg:w-72 xl:w-80 shrink-0 border border-border bg-card/40 backdrop-blur-md rounded-xl overflow-hidden flex flex-col lg:sticky lg:top-[3.75rem] max-h-[calc(100vh-12rem)]">
           <div className="p-3 border-b border-border bg-muted/10 shrink-0">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Függőben lévő jegyek</h3>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Függőben lévő jegyek</h3>
+              {isAdmin && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Checkbox
+                    id="console-show-all-tickets"
+                    checked={showAllTickets}
+                    onCheckedChange={(checked) => setShowAllTickets(!!checked)}
+                  />
+                  <label
+                    htmlFor="console-show-all-tickets"
+                    className="text-[11px] font-medium leading-none cursor-pointer select-none text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Összes jegy
+                  </label>
+                </div>
+              )}
+            </div>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
@@ -924,7 +946,11 @@ export default function TicketsPage({
             })}
             {consoleTickets.length === 0 && (
               <div className="p-6 text-center text-xs text-muted-foreground italic">
-                {search.trim() ? `Nincs találat a(z) "${search}" keresésre` : "Nincs aktív függőben lévő hibajegy"}
+                {search.trim()
+                  ? `Nincs találat a(z) "${search}" keresésre`
+                  : !showAllTickets
+                    ? "Nincs saját vagy nyitott függőben lévő hibajegy"
+                    : "Nincs aktív függőben lévő hibajegy"}
               </div>
             )}
           </div>

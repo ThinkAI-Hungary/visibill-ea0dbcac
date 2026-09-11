@@ -9,5 +9,7 @@ export {
   downloadPayslipPdf,
   generatePayslipBlob,
   getPayslipPreviewUrl,
+  getPayslipPdfPreviewUrl,
   buildPayslipDescriptor,
 } from './documents/templates/payslipTemplate';
+

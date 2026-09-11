@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketDetailView.tsx": {
-    "mtime": 1789097455.5595412,
-    "ast_hash": "79fa414e7a8d505acd8861464d43dc8a",
+    "mtime": 1789099088.5399191,
+    "ast_hash": "f466a399060b1e6b39ecb04fa3e370d9",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "src/pages/TicketsPage.tsx": {
-    "mtime": 1789098477.6266718,
-    "ast_hash": "96c9ffd07ecab209444837b09a85f94a",
+    "mtime": 1789100262.308195,
+    "ast_hash": "9d75aa2a01ced5f085ee13febf339066",
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {
@@ -3080,8 +3080,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-018-ticket-system.md": {
-    "mtime": 1789098697.385608,
-    "ast_hash": "e4bdfb857cafffec004fe5d817712339",
+    "mtime": 1789099244.3530524,
+    "ast_hash": "187750e201162c56d7324ec1e572cfe6",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
@@ -3555,8 +3555,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1789098718.7273862,
-    "ast_hash": "8b968abc36447baaa2fdc80960d97c8d",
+    "mtime": 1789099238.0021136,
+    "ast_hash": "faa99a54b779eb6774a23e4b36fc05ef",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
@@ -3925,8 +3925,8 @@
     "semantic_hash": ""
   },
   "src/lib/payslipPdf.ts": {
-    "mtime": 1788137838.9489434,
-    "ast_hash": "bc249d1cf334e5f6f841e908972a492d",
+    "mtime": 1789102850.163945,
+    "ast_hash": "9176c2e96eb34387bd558d9e07c224e4",
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountantManagementPage.tsx": {
@@ -4165,8 +4165,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/documents/EPayslipPortalPage.tsx": {
-    "mtime": 1787753315.8404994,
-    "ast_hash": "1985f262f10c821885420b5305f38d70",
+    "mtime": 1789102909.2809565,
+    "ast_hash": "759d20013601d3491e779419a0a7ef12",
     "semantic_hash": ""
   },
   "src/pages/Accounty/documents/OutputDocumentsPage.tsx": {
@@ -4175,8 +4175,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/documents/PayslipGeneratorPage.tsx": {
-    "mtime": 1786277283.0906508,
-    "ast_hash": "822385658aa0f3fc3f90e0aaa9020505",
+    "mtime": 1789102888.4420288,
+    "ast_hash": "748c08bf4372baf54868c56b7461160b",
     "semantic_hash": ""
   },
   "src/pages/Accounty/documents/TransferListPage.tsx": {
@@ -7795,8 +7795,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/templates/payslipTemplate.ts": {
-    "mtime": 1788137834.725759,
-    "ast_hash": "f142b8b1c49f34d1360fe17eb5058c4e",
+    "mtime": 1789102845.0169222,
+    "ast_hash": "b9fa58fb056c12af98c9bbe65016d6a2",
     "semantic_hash": ""
   },
   "src/lib/documents/templates/tableExportTemplate.ts": {
@@ -10415,13 +10415,28 @@
     "semantic_hash": ""
   },
   "src/test/tickets/ticketsConsoleSearch.test.tsx": {
-    "mtime": 1789097864.9346852,
-    "ast_hash": "2427b07e7428c99a7d3532a293d3d693",
+    "mtime": 1789100020.1910832,
+    "ast_hash": "f5f6df85c32ff9b15776642993f85f39",
     "semantic_hash": ""
   },
   "src/test/tickets/ticketResolutionUnread.test.tsx": {
     "mtime": 1789098312.2091565,
     "ast_hash": "6a9b1ed776b9ed8e6c327c35e784960a",
+    "semantic_hash": ""
+  },
+  "src/components/tickets/TicketNotFoundView.tsx": {
+    "mtime": 1789099140.7581155,
+    "ast_hash": "ebb80f3edf45becbcf4cd28d0f80aef2",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketNotFound.test.tsx": {
+    "mtime": 1789099164.2194579,
+    "ast_hash": "c0e8a56389e70fc7d76a093851e3f724",
+    "semantic_hash": ""
+  },
+  "src/lib/documents/__tests__/payslipPreviewAndDownload.test.ts": {
+    "mtime": 1789102925.3647034,
+    "ast_hash": "85d66d87cbaec5f6b097515f96318c33",
     "semantic_hash": ""
   }
 }

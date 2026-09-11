@@ -102,6 +102,48 @@ const mockTickets: Ticket[] = [
     has_unread: false,
     assigned_to: 'admin-1',
   },
+  {
+    id: 't-4',
+    ticket_number: 'EB-0092',
+    type: 'bug',
+    service: 'eaisybill',
+    message: 'Másik admin által kezelt folyamatban lévő jegy',
+    status: 'in_progress',
+    priority: 'medium',
+    company_name: 'Other Admin Kft.',
+    company_id: 'c-4',
+    user_email: 'other@admin.hu',
+    user_name: 'Kovács Péter',
+    user_id: 'u-4',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    attachments: null,
+    comment_count: 0,
+    latest_comment_at: null,
+    has_unread: false,
+    assigned_to: 'admin-2',
+  },
+  {
+    id: 't-5',
+    ticket_number: 'EB-0091',
+    type: 'question',
+    service: 'eaisybill',
+    message: 'Gazdátlan nyitott jegy',
+    status: 'created',
+    priority: 'low',
+    company_name: 'New Client Kft.',
+    company_id: 'c-5',
+    user_email: 'new@client.hu',
+    user_name: 'Nagy Anna',
+    user_id: 'u-5',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    attachments: null,
+    comment_count: 0,
+    latest_comment_at: null,
+    has_unread: false,
+    assigned_to: null,
+  },
 ];
 
 describe('matchTicketSearch helper function', () => {
@@ -212,5 +254,35 @@ describe('TicketsPage Console View Search', () => {
     // Both unresolved tickets are restored
     expect(screen.getByText('#EB-0095')).toBeInTheDocument();
     expect(screen.getByText('#EB-0094')).toBeInTheDocument();
+  });
+
+  it('filters console tickets to only own and unassigned by default, and reveals other agents tickets when "Összes jegy" is checked', () => {
+    renderConsole();
+
+    // Default: own (EB-0095, EB-0094) and unassigned (EB-0091) must be visible
+    expect(screen.getByText('#EB-0095')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0094')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0091')).toBeInTheDocument();
+
+    // EB-0092 is assigned to admin-2, so it should be hidden by default
+    expect(screen.queryByText('#EB-0092')).not.toBeInTheDocument();
+
+    // Find the "Összes jegy" checkbox in the console view
+    const allCheckbox = screen.getByLabelText('Összes jegy');
+    expect(allCheckbox).toBeInTheDocument();
+    expect(allCheckbox).not.toBeChecked();
+
+    // Check "Összes jegy"
+    fireEvent.click(allCheckbox);
+
+    // Now EB-0092 (assigned to admin-2) should also be visible!
+    expect(screen.getByText('#EB-0092')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0095')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0094')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0091')).toBeInTheDocument();
+
+    // Uncheck "Összes jegy" again
+    fireEvent.click(allCheckbox);
+    expect(screen.queryByText('#EB-0092')).not.toBeInTheDocument();
   });
 });

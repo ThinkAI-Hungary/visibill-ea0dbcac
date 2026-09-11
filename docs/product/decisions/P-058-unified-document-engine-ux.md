@@ -21,7 +21,10 @@ A felhasználók rendszeresen exportálnak adatokat különböző formátumokban
 2. **Magyar Excel Kompatibilitás (UTF-8 BOM):**
    - Minden CSV export automatikusan megkapja az `\uFEFF` Byte Order Mark (BOM) előtagot, így a Microsoft Excel dupla kattintásra is hibátlanul, helyes magyar ékezetekkel nyitja meg a táblázatokat.
 3. **Azonnali Előnézet és Nyomtatás:**
-   - A bérjegyzékek, kifizetési jegyzékek, ÁFA bevallások és éves beszámolók esetén elérhető a megtekintés / nyomtatás új böngészőfülön vagy beágyazott modális ablakban.
+   - A bérjegyzékek (Mt. 155. §), kifizetési jegyzékek, ÁFA bevallások és éves beszámolók esetén elérhető a közvetlen megtekintés és nyomtatás új böngészőfülön vagy beágyazott modális ablakban.
+   - Bérjegyzékeknél az előnézet azonnal a generált HTML sablon tartalmát jeleníti meg a modális ablakban, elkerülve a késleltetett vagy befejezetlen Promise-alapú iframe hivatkozásokat.
+   - Az ablak bezárásakor a rendszer automatikusan felszabadítja az ideiglenes Blob URL-t a böngésző memóriájából.
+
 
 ---
 
