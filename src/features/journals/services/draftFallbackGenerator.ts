@@ -36,7 +36,7 @@ export async function generateDraftsFallback(
 
   const { data: journals } = await supabase
     .from('acc_journals')
-    .select('id, code, type, currency')
+    .select('id, code, name, type, connected_gl_account, currency')
     .eq('company_id', companyId);
 
   // Fakov GL Account Resolution:
@@ -178,7 +178,25 @@ export async function generateDraftsFallback(
     if (item.source_table === 'transactions') {
       source = 'AUTO_BANK';
       docId = `TR-${item.item_id.substring(0, 8).toUpperCase()}`;
-      journalId = journals?.find(j => j.type === 'BANK' && j.currency === currency)?.id || journals?.find(j => j.code === 'B1')?.id || journalId;
+
+      // Match specific BANK journal by keyword if multiple bank journals exist for this currency
+      const descLower = (item.description || '').toLowerCase();
+      const bankKeywords = ['otp', 'kh', 'k&h', 'erste', 'revolut', 'cib', 'raiffeisen', 'mbh', 'unicredit', 'binx', 'wise', 'oberbank', 'paypal'];
+      const specificJournal = journals?.find(j => {
+        if (j.type !== 'BANK' || j.currency !== currency) return false;
+        const nameLower = (j.name || '').toLowerCase();
+        const codeLower = (j.code || '').toLowerCase();
+        return bankKeywords.some(kw => 
+          (descLower.includes(kw) || (kw === 'kh' && descLower.includes('k&h'))) && 
+          (nameLower.includes(kw) || codeLower.includes(kw) || (kw === 'kh' && nameLower.includes('k&h')))
+        );
+      });
+
+      journalId = specificJournal?.id
+               || journals?.find(j => j.type === 'BANK' && j.currency === currency && (currency === 'HUF' ? j.code === 'B1' : (currency === 'EUR' ? j.code === 'B2' : true)))?.id
+               || journals?.find(j => j.type === 'BANK' && j.currency === currency)?.id
+               || journals?.find(j => j.code === 'B1')?.id
+               || journalId;
     } else if (['invoice_items', 'nav_invoice_items'].includes(item.source_table)) {
       source = 'AUTO_SZAMLA';
       docId = `INV-${item.item_id.substring(0, 8).toUpperCase()}`;
@@ -190,7 +208,24 @@ export async function generateDraftsFallback(
     }
 
     if (item.source_table === 'transactions') {
-      const glBankId = glAccounts?.find(g => g.gl_number.startsWith('384'))?.id || glAccounts?.[0]?.id;
+      const selectedJournal = journals?.find(j => j.id === journalId);
+      let glBankId: string | undefined;
+      if (selectedJournal?.connected_gl_account) {
+        glBankId = glAccounts?.find(g => g.gl_number === selectedJournal.connected_gl_account)?.id;
+      }
+      if (!glBankId) {
+        if (currency === 'HUF') {
+          glBankId = glAccounts?.find(g => g.gl_number.startsWith('384') && g.gl_number !== '384')?.id
+                  || glAccounts?.find(g => g.gl_number.startsWith('384'))?.id;
+        } else {
+          glBankId = glAccounts?.find(g => g.gl_number.startsWith('386') && g.gl_number !== '386')?.id
+                  || glAccounts?.find(g => g.gl_number.startsWith('386'))?.id;
+        }
+      }
+      if (!glBankId) {
+        glBankId = glAccounts?.[0]?.id;
+      }
+
       if (!glBankId || !validGlIds.has(glBankId) || !validGlIds.has(item.gl_account_id)) {
         continue;
       }
@@ -453,8 +488,18 @@ export async function generateDraftsFallback(
   }
 
   // 5. Generate drafts for Petty Cash entries (P1 Journal)
-  const glCashId = glAccounts?.find(g => g.gl_number.startsWith('381'))?.id || glAccounts?.[0]?.id;
-  const p1JournalId = journals?.find(j => j.code === 'P1' || j.type === 'CASH')?.id || journals?.[0]?.id;
+  const p1Journal = journals?.find(j => j.code === 'P1' || j.type === 'PETTY_CASH' || j.type === 'CASH') || journals?.[0];
+  const p1JournalId = p1Journal?.id;
+
+  let glCashId: string | undefined;
+  if (p1Journal?.connected_gl_account) {
+    glCashId = glAccounts?.find(g => g.gl_number === p1Journal.connected_gl_account)?.id;
+  }
+  if (!glCashId) {
+    glCashId = glAccounts?.find(g => g.gl_number.startsWith('381') && g.gl_number !== '381')?.id
+            || glAccounts?.find(g => g.gl_number.startsWith('381'))?.id
+            || glAccounts?.[0]?.id;
+  }
 
   if (glCashId && p1JournalId) {
     const { data: rawPce } = await supabase

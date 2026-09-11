@@ -87,16 +87,16 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     }
   }, [journals, journalId, entryId]);
 
-  // Automatically launch Opening Wizard if NY journal is selected or active
+  // Automatically launch Opening Wizard only when creating a NEW entry in NY journal (not when editing existing entryId)
   useEffect(() => {
-    if (open && journalId && journals.length > 0) {
+    if (!entryId && open && journalId && journals.length > 0) {
       const selectedJ = journals.find((j: any) => j.id === journalId);
       if (selectedJ?.code === 'NY' && onOpenOpeningWizard) {
         onOpenChange(false);
         onOpenOpeningWizard();
       }
     }
-  }, [open, journalId, journals, onOpenOpeningWizard, onOpenChange]);
+  }, [open, journalId, journals, onOpenOpeningWizard, onOpenChange, entryId]);
 
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['gl-accounts-lookup', activePresetId],
@@ -298,7 +298,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
           .eq('id', entryId)
           .maybeSingle();
         if (checkErr) throw checkErr;
-        if (currentHeader && (currentHeader.status === 'POSTED' || currentHeader.status === 'LEKONYVELVE')) {
+        if (currentHeader && (currentHeader.status === 'POSTED' || currentHeader.status === 'LEKONYVELVE' || currentHeader.status === 'KONYVELT')) {
           throw new Error(t('accounting:dialogs.manual_journal.validation.already_posted_error'));
         }
 

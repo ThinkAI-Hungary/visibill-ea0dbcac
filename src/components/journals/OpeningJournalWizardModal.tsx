@@ -215,10 +215,12 @@ export default function OpeningJournalWizardModal({
   // Imbalance of double-entry
   const totalImbalance = totalDebit - totalCredit;
 
+  const hasValidLines = lines.some(l => Boolean(l.gl_account_id) && Number(l.amount) > 0);
+
   // 491 Account balance calculation:
   // Eszköz nyitás: T Eszköz - K 491 (adds Credit to 491)
   // Forrás nyitás: T 491 - K Forrás (adds Debit to 491)
-  const is491Balanced = totalImbalance === 0;
+  const is491Balanced = hasValidLines && totalImbalance === 0;
 
   // Save / Post Opening Mutation
   const saveAndPostMutation = useMutation({
@@ -229,6 +231,11 @@ export default function OpeningJournalWizardModal({
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Bejelentkezés szükséges.');
+
+      const validLines = lines.filter(line => line.gl_account_id && Number(line.amount) > 0);
+      if (validLines.length === 0) {
+        throw new Error(t('dialogs.opening_wizard.validation.at_least_one_valid_line', { defaultValue: 'Legalább egy érvényes, kitöltött nyitó tételsor szükséges a könyveléshez.' }));
+      }
 
       // 1. Create Header
       const { data: header, error: headerErr } = await supabase
@@ -622,12 +629,17 @@ export default function OpeningJournalWizardModal({
                     <div>{t('dialogs.opening_wizard.step2.total_credit', { defaultValue: 'Össz K:' })} <span className="font-bold tabular-nums text-emerald-600">{formatCurrency(totalCredit)}</span></div>
                     <div className={cn(
                       "px-3 py-1 rounded-full font-bold border flex items-center gap-1.5 tabular-nums transition-colors",
-                      is491Balanced 
-                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
-                        : "bg-rose-500/10 text-rose-600 border-rose-500/30"
+                      !hasValidLines
+                        ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                        : is491Balanced 
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                          : "bg-rose-500/10 text-rose-600 border-rose-500/30"
                     )}>
-                      {is491Balanced ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
-                      <span>{t('dialogs.opening_wizard.step2.imbalance_label', { defaultValue: '491 Nyitómérleg Eltérés:' })} {formatCurrency(totalImbalance)}</span>
+                      {!hasValidLines ? <AlertTriangle className="w-3.5 h-3.5" /> : is491Balanced ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                      <span>
+                        {t('dialogs.opening_wizard.step2.imbalance_label', { defaultValue: '491 Nyitómérleg Eltérés:' })} {formatCurrency(totalImbalance)}
+                        {!hasValidLines && ` (${t('dialogs.opening_wizard.step2.no_lines_warning', { defaultValue: 'Nincsenek nyitó összegek' })})`}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -913,7 +925,7 @@ export default function OpeningJournalWizardModal({
               )}
 
               {step === 3 && (
-                <Button size="sm" onClick={() => saveAndPostMutation.mutate()} disabled={saveAndPostMutation.isPending} className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button size="sm" onClick={() => saveAndPostMutation.mutate()} disabled={saveAndPostMutation.isPending || !hasValidLines} className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white">
                   {saveAndPostMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{t('dialogs.opening_wizard.step3.post_opening_action', { defaultValue: 'Nyitó Bizonylat Lekönyvelése' })}</span>
                 </Button>
