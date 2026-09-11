@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ErrorControlPanel } from './errors/ErrorControlPanel';
-import { PermissionsPanel } from './permissions/PermissionsPanel';
-import { FilesPanel } from './files/FilesPanel';
-import { WorkerPanel } from './worker/WorkerPanel';
-import { UsersControlPanel } from './user/UsersControlPanel';
 import { ControlCenterUser } from '../api/types';
+import { Skeleton } from './common/ManagementSkeleton';
 import { AlertTriangle, FolderOpen, Server, Users, ShieldCheck } from 'lucide-react';
+
+const ErrorControlPanel = lazy(() => import('./errors/ErrorControlPanel').then(m => ({ default: m.ErrorControlPanel })));
+const PermissionsPanel = lazy(() => import('./permissions/PermissionsPanel').then(m => ({ default: m.PermissionsPanel })));
+const FilesPanel = lazy(() => import('./files/FilesPanel').then(m => ({ default: m.FilesPanel })));
+const WorkerPanel = lazy(() => import('./worker/WorkerPanel').then(m => ({ default: m.WorkerPanel })));
+const UsersControlPanel = lazy(() => import('./user/UsersControlPanel').then(m => ({ default: m.UsersControlPanel })));
 
 export type ControlCenterTab = 'errors' | 'permissions' | 'files' | 'worker' | 'users';
 
@@ -18,7 +20,7 @@ interface ControlCenterProps {
   companyCostMap: Map<string, any>;
 }
 
-export function ControlCenter({
+function ControlCenterComponent({
   initialTab,
   onOpenCompany,
   allUsers,
@@ -34,8 +36,8 @@ export function ControlCenter({
 
   return (
     <div className="space-y-4 page-animate">
-      {/* Tab bar (sticky) */}
-      <div className="sticky top-0 z-30 -mx-6 px-6 -mt-2.5 pt-2.5 pb-2 bg-background/95 backdrop-blur-md border-b border-border/50">
+      {/* Tab bar (sticky, hardware-accelerated with minimal blur radius) */}
+      <div className="sticky top-0 z-30 -mx-6 px-6 -mt-2.5 pt-2.5 pb-2 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 w-fit gap-1 overflow-x-auto max-w-full">
           <button
             onClick={() => setTab('errors')}
@@ -98,20 +100,29 @@ export function ControlCenter({
       {/* Tab content */}
       <div className="w-full overflow-hidden">
         <div className="w-full" style={{ minWidth: 900 }}>
-          {tab === 'errors' && <ErrorControlPanel onOpenCompany={onOpenCompany} allUsers={allUsers} />}
-          {tab === 'permissions' && <PermissionsPanel allUsers={allUsers} />}
-          {tab === 'files' && <FilesPanel allUsers={allUsers} />}
-          {tab === 'worker' && <WorkerPanel />}
-          {tab === 'users' && (
-            <UsersControlPanel
-              allUsers={allUsers}
-              overviewLoading={overviewLoading}
-              companyCostMap={companyCostMap}
-              onOpenCompany={onOpenCompany}
-            />
-          )}
+          <Suspense fallback={
+            <div className="space-y-4 p-4">
+              <Skeleton className="h-10 w-64 rounded-md" />
+              <Skeleton className="h-96 w-full rounded-xl" />
+            </div>
+          }>
+            {tab === 'errors' && <ErrorControlPanel onOpenCompany={onOpenCompany} allUsers={allUsers} />}
+            {tab === 'permissions' && <PermissionsPanel allUsers={allUsers} />}
+            {tab === 'files' && <FilesPanel allUsers={allUsers} />}
+            {tab === 'worker' && <WorkerPanel />}
+            {tab === 'users' && (
+              <UsersControlPanel
+                allUsers={allUsers}
+                overviewLoading={overviewLoading}
+                companyCostMap={companyCostMap}
+                onOpenCompany={onOpenCompany}
+              />
+            )}
+          </Suspense>
         </div>
       </div>
     </div>
   );
 }
+
+export const ControlCenter = React.memo(ControlCenterComponent);

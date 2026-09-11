@@ -82,22 +82,28 @@ export function UsersControlPanel({
   const [search, setSearch] = useState(searchUser);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
-  // Helper to update search parameters atomically
+  // Helper to update search parameters atomically without recreation churn
   const updateParams = useCallback((updates: Record<string, string | number | null>) => {
-    const next = new URLSearchParams(searchParams);
-    Object.entries(updates).forEach(([key, val]) => {
-      if (val !== null && val !== '') {
-        next.set(key, String(val));
-      } else {
-        next.delete(key);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      let changed = false;
+      Object.entries(updates).forEach(([key, val]) => {
+        const current = next.get(key);
+        const newVal = val !== null && val !== '' ? String(val) : null;
+        if (current !== newVal) {
+          if (newVal !== null) next.set(key, newVal);
+          else next.delete(key);
+          changed = true;
+        }
+      });
+      // Reset page to 0 on query update
+      if (!('usr_page' in updates) && next.get('usr_page') !== '0') {
+        next.set('usr_page', '0');
+        changed = true;
       }
+      return changed ? next : prev;
     });
-    // Reset page to 0 on query update
-    if (!('usr_page' in updates)) {
-      next.set('usr_page', '0');
-    }
-    setSearchParams(next);
-  }, [searchParams, setSearchParams]);
+  }, [setSearchParams]);
 
   // Debounce sync local input search to URL search parameter
   useEffect(() => {

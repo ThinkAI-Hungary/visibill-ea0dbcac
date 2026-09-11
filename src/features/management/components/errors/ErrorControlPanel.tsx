@@ -65,21 +65,27 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
     setLastSelectedIndex(null);
   }, [page, sortCol, sortDir, debouncedSearch, filterCompanyId, filterSource, filterCategory, filterUserId, dateFrom, dateTo]);
 
-  // Helper function to update search parameters atomically
+  // Helper function to update search parameters atomically without recreation churn
   const updateParams = useCallback((updates: Record<string, string | number | null>) => {
-    const next = new URLSearchParams(searchParams);
-    Object.entries(updates).forEach(([key, val]) => {
-      if (val !== null && val !== '') {
-        next.set(key, String(val));
-      } else {
-        next.delete(key);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      let changed = false;
+      Object.entries(updates).forEach(([key, val]) => {
+        const current = next.get(key);
+        const newVal = val !== null && val !== '' ? String(val) : null;
+        if (current !== newVal) {
+          if (newVal !== null) next.set(key, newVal);
+          else next.delete(key);
+          changed = true;
+        }
+      });
+      if (!('err_page' in updates) && next.has('err_page')) {
+        next.delete('err_page');
+        changed = true;
       }
+      return changed ? next : prev;
     });
-    if (!('err_page' in updates)) {
-      next.delete('err_page');
-    }
-    setSearchParams(next);
-  }, [searchParams, setSearchParams]);
+  }, [setSearchParams]);
 
   // Sync local search input value when URL changes externally
   useEffect(() => {
@@ -138,6 +144,7 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
     }),
     staleTime: 15_000,
     refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
     placeholderData: keepPreviousData,
   });
 

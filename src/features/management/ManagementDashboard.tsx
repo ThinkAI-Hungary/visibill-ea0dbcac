@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams, Navigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { FilePreviewModal, useFilePreview } from '@/components/ui/FilePreviewModal';
@@ -10,9 +10,11 @@ import { OverviewData, CompanyDetail, UserDetail } from './api/types';
 import { ManagementOverview } from './components/overview/ManagementOverview';
 import { CompanyDetailView } from './components/company/CompanyDetailView';
 import { UserDetailView } from './components/user/UserDetailView';
-import { ControlCenter } from './components/ControlCenter';
-import { SuperadminPanel } from './components/superadmin/SuperadminPanel';
-import TicketsPage from '@/pages/TicketsPage';
+import { Skeleton } from './components/common/ManagementSkeleton';
+
+const ControlCenter = React.lazy(() => import('./components/ControlCenter').then(m => ({ default: m.ControlCenter })));
+const SuperadminPanel = React.lazy(() => import('./components/superadmin/SuperadminPanel').then(m => ({ default: m.SuperadminPanel })));
+const TicketsPage = React.lazy(() => import('@/pages/TicketsPage'));
 import { ThinkAiIcon } from '@/components/tickets/ThinkAiBadge';
 import {
   ArrowLeft, Sun, Moon, LogOut, BarChart3, ShieldCheck, Zap, TicketCheck
@@ -40,26 +42,32 @@ export function ManagementDashboard() {
     queryKey: ['management-overview'],
     queryFn: () => fetchManagementData('overview'),
     enabled: !!user,
-    staleTime: 30_000,
+    staleTime: 60_000,
     refetchInterval: 60_000,
     retry: false,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   const { data: companyDetail, isLoading: companyLoading } = useQuery<CompanyDetail>({
     queryKey: ['management-company', selectedCompanyId],
     queryFn: () => fetchManagementData('company-detail', { companyId: selectedCompanyId! }),
     enabled: !!user && !!selectedCompanyId && view === 'company',
-    staleTime: 15_000,
+    staleTime: 30_000,
     refetchInterval: 30_000,
     retry: false,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   const { data: userDetail, isLoading: userLoading } = useQuery<UserDetail>({
     queryKey: ['management-user', selectedUserId],
     queryFn: () => fetchManagementData('user-detail', { userId: selectedUserId! }),
     enabled: !!user && !!selectedUserId && view === 'user',
-    staleTime: 15_000,
+    staleTime: 30_000,
     retry: false,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   // ── Company cost lookup (for expandable user rows) ──
@@ -125,8 +133,8 @@ export function ManagementDashboard() {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
-      {/* ── Header (single consolidated bar: sticky, backdrop-blur, border-b) ── */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border">
+      {/* ── Header (single consolidated bar: sticky, hardware-accelerated, border-b) ── */}
+      <header className="sticky top-0 z-50 bg-background/95 border-b border-border shadow-xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-1.5 relative gap-4">
           {/* Left: Brand or Detail view breadcrumb */}
           <div className="flex items-center gap-3 shrink-0">
@@ -229,7 +237,9 @@ export function ManagementDashboard() {
       {/* ═══ SUPERADMIN — full-height ═══ */}
       {view === 'superadmin' && (
         <div className="flex-1 overflow-hidden flex flex-col min-h-0 animate-in fade-in duration-300">
-          <SuperadminPanel overview={overview} />
+          <React.Suspense fallback={<div className="p-8"><Skeleton className="h-64 w-full rounded-xl" /></div>}>
+            <SuperadminPanel overview={overview} />
+          </React.Suspense>
         </div>
       )}
 
@@ -237,7 +247,9 @@ export function ManagementDashboard() {
       {view === 'tickets' && (
         <div className="flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
           <main className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 py-6">
-            <TicketsPage embeddedInManagement={true} managementUsers={overview?.users || []} />
+            <React.Suspense fallback={<div className="space-y-4"><Skeleton className="h-10 w-48 rounded-md" /><Skeleton className="h-96 w-full rounded-xl" /></div>}>
+              <TicketsPage embeddedInManagement={true} managementUsers={overview?.users || []} />
+            </React.Suspense>
           </main>
         </div>
       )}
@@ -280,13 +292,15 @@ export function ManagementDashboard() {
 
             {/* ═══ CONTROL CENTER ═══ */}
             {(view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker' || view === 'users') && (
-              <ControlCenter
-                initialTab={view as any}
-                onOpenCompany={openCompany}
-                allUsers={overview?.users || []}
-                overviewLoading={overviewLoading}
-                companyCostMap={companyCostMap}
-              />
+              <React.Suspense fallback={<div className="space-y-4 pt-4"><Skeleton className="h-10 w-96 rounded-md" /><Skeleton className="h-80 w-full rounded-xl" /></div>}>
+                <ControlCenter
+                  initialTab={view as any}
+                  onOpenCompany={openCompany}
+                  allUsers={overview?.users || []}
+                  overviewLoading={overviewLoading}
+                  companyCostMap={companyCostMap}
+                />
+              </React.Suspense>
             )}
           </main>
         </div>

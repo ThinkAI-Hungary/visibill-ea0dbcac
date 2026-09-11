@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useFilePreview } from '@/components/ui/FilePreviewModal';
 import { fetchManagementData, postManagementData } from '../api/managementApi';
 import { reportError } from '@/lib/errorReporter';
@@ -39,17 +39,22 @@ export function useWorkerTelemetry() {
 
   const updateParams = useCallback(
     (updates: Record<string, string | number | null>) => {
-      const next = new URLSearchParams(searchParams);
-      Object.entries(updates).forEach(([key, val]) => {
-        if (val !== null && val !== '') {
-          next.set(key, String(val));
-        } else {
-          next.delete(key);
-        }
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        let changed = false;
+        Object.entries(updates).forEach(([key, val]) => {
+          const current = next.get(key);
+          const newVal = val !== null && val !== '' ? String(val) : null;
+          if (current !== newVal) {
+            if (newVal !== null) next.set(key, newVal);
+            else next.delete(key);
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
       });
-      setSearchParams(next);
     },
-    [searchParams, setSearchParams]
+    [setSearchParams]
   );
 
   const [selectedContainer, setSelectedContainer] = useState<string | null>(null);
@@ -74,8 +79,10 @@ export function useWorkerTelemetry() {
   const { data, isLoading } = useQuery({
     queryKey: ['worker-status', workerPeriod],
     queryFn: () => fetchManagementData('worker-status', { period: workerPeriod }),
-    refetchInterval: 5_000,
-    staleTime: 2_500,
+    refetchInterval: 15_000,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   const recent_jobs = data?.recent_jobs || [];

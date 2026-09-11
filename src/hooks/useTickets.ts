@@ -257,6 +257,8 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
       });
     },
     enabled: !!user,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   });
 }
 

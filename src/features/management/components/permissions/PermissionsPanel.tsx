@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,18 +35,23 @@ export function PermissionsPanel({ allUsers }: PermissionsPanelProps) {
     setSearchParams(nextParams);
   }, [searchParams, setSearchParams]);
 
-  // Helper to update parameter atomically
+  // Helper to update parameter atomically without recreation churn
   const updateParams = useCallback((updates: Record<string, string | null>) => {
-    const next = new URLSearchParams(searchParams);
-    Object.entries(updates).forEach(([key, val]) => {
-      if (val !== null && val !== '') {
-        next.set(key, val);
-      } else {
-        next.delete(key);
-      }
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      let changed = false;
+      Object.entries(updates).forEach(([key, val]) => {
+        const current = next.get(key);
+        const newVal = val !== null && val !== '' ? val : null;
+        if (current !== newVal) {
+          if (newVal !== null) next.set(key, newVal);
+          else next.delete(key);
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
     });
-    setSearchParams(next);
-  }, [searchParams, setSearchParams]);
+  }, [setSearchParams]);
 
   // Debounce sync local input value to URL search parameter
   useEffect(() => {
@@ -95,6 +100,8 @@ export function PermissionsPanel({ allUsers }: PermissionsPanelProps) {
     queryFn: () => fetchManagementData('user-permissions', { userId: selectedUserId! }),
     enabled: !!selectedUserId,
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   useEffect(() => {

@@ -206,6 +206,7 @@ export function FilesPanel({ allUsers }: FilesPanelProps) {
       dateTo,
     }),
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
     placeholderData: keepPreviousData,
   });
 
@@ -264,21 +265,27 @@ export function FilesPanel({ allUsers }: FilesPanelProps) {
     });
   }, [fileRows, lastSelectedIndex]);
 
-  // Helper function to update search parameters atomically
+  // Helper function to update search parameters atomically without recreation churn
   const updateParams = useCallback((updates: Record<string, string | number | null>) => {
-    const next = new URLSearchParams(searchParams);
-    Object.entries(updates).forEach(([key, val]) => {
-      if (val !== null && val !== '') {
-        next.set(key, String(val));
-      } else {
-        next.delete(key);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      let changed = false;
+      Object.entries(updates).forEach(([key, val]) => {
+        const current = next.get(key);
+        const newVal = val !== null && val !== '' ? String(val) : null;
+        if (current !== newVal) {
+          if (newVal !== null) next.set(key, newVal);
+          else next.delete(key);
+          changed = true;
+        }
+      });
+      if (!('file_page' in updates) && next.get('file_page') !== '1') {
+        next.set('file_page', '1');
+        changed = true;
       }
+      return changed ? next : prev;
     });
-    if (!('file_page' in updates)) {
-      next.set('file_page', '1');
-    }
-    setSearchParams(next);
-  }, [searchParams, setSearchParams]);
+  }, [setSearchParams]);
 
   // Sync local search input value when URL changes externally
   useEffect(() => {

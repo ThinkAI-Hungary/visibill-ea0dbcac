@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatCard } from '../common/ManagementStatCard';
 import { Skeleton } from '../common/ManagementSkeleton';
@@ -137,6 +137,19 @@ function normalizeStatus(status: string | null, errorMessage?: string | null): '
   }
 }
 
+function calculateProportionalTokenCosts(inputTokens: number, outputTokens: number, totalCost: number) {
+  if (totalCost <= 0) return { inputCost: 0, outputCost: 0 };
+  const r = 4.0;
+  const inputWeight = inputTokens;
+  const outputWeight = outputTokens * r;
+  const totalWeight = inputWeight + outputWeight;
+  if (totalWeight <= 0) return { inputCost: 0, outputCost: 0 };
+
+  const inputCost = totalCost * (inputWeight / totalWeight);
+  const outputCost = totalCost * (outputWeight / totalWeight);
+  return { inputCost, outputCost };
+}
+
 interface ManagementOverviewProps {
   overview: OverviewData | undefined;
   overviewLoading: boolean;
@@ -145,6 +158,22 @@ interface ManagementOverviewProps {
   onOpenTickets: () => void;
   onOpenErrors: () => void;
   onOpenFilePreview: (file: { url: string; name: string }) => void;
+}
+
+interface BentoChartItem {
+  key: string;
+  cost: number;
+  label: string;
+}
+
+interface ContainerMetricItem {
+  cpu_usage?: number;
+  ram_usage?: number;
+  is_healthy?: boolean;
+}
+
+interface QueueMetricItem {
+  queue_length?: number;
 }
 
 export function ManagementOverview({
@@ -161,20 +190,26 @@ export function ManagementOverview({
   const { data: bentoLlmCostsData, isLoading: bentoLlmCostsLoading } = useQuery({
     queryKey: ['llm-costs-trend', bentoLlmPeriod],
     queryFn: () => fetchManagementData('llm-costs', { period: bentoLlmPeriod }),
-    staleTime: 30_000,
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   const { data: bentoLlmCostsAllTime } = useQuery({
     queryKey: ['llm-costs-all-time'],
     queryFn: () => fetchManagementData('llm-costs', { period: 'all' }),
-    staleTime: 60_000,
+    staleTime: 300_000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   const { data: workerStatusData, isLoading: workerStatusLoading } = useQuery({
     queryKey: ['worker-status', '24h'],
     queryFn: () => fetchManagementData('worker-status', { period: '24h' }),
-    refetchInterval: 5_000,
-    staleTime: 2_500,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   const { data: ticketsData, isLoading: ticketsLoading } = useTickets('all');
@@ -203,8 +238,130 @@ export function ManagementOverview({
       dateFrom: '',
       dateTo: '',
     }),
-    staleTime: 10_000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
+
+  const monthlyTokenCosts = useMemo(() => calculateProportionalTokenCosts(
+    overview?.llmOverview.totalMonthlyInputTokens || 0,
+    overview?.llmOverview.totalMonthlyOutputTokens || 0,
+    overview?.llmOverview.totalMonthlyCostUsd || 0
+  ), [overview?.llmOverview]);
+
+  const allTimeTokenCosts = useMemo(() => calculateProportionalTokenCosts(
+    bentoLlmCostsAllTime?.kpi?.total_input_tokens || 0,
+    bentoLlmCostsAllTime?.kpi?.total_output_tokens || 0,
+    bentoLlmCostsAllTime?.kpi?.total_cost || 0
+  ), [bentoLlmCostsAllTime?.kpi]);
+
+  const rawModels = useMemo(() => bentoLlmCostsData?.by_model || [], [bentoLlmCostsData?.by_model]);
+
+  const modelList = useMemo(() => {
+    if (rawModels.length === 0) return [];
+
+    const aggregated: Record<string, { name: string; cost: number; colorClass: string }> = {};
+    let totalCost = 0;
+
+    for (const m of rawModels) {
+      const low = (m.model || '').toLowerCase();
+      let normName = m.model || '';
+      let colorClass = 'bg-zinc-500';
+
+      if (low.includes('deepseek')) {
+        if (low.includes('flash')) {
+          normName = 'deepseek-v4-flash';
+          colorClass = 'bg-teal-500';
+        } else {
+          normName = 'deepseek-chat';
+          colorClass = 'bg-teal-500/80';
+        }
+      } else if (low.includes('gpt-4') || low.includes('openai')) {
+        normName = 'gpt-4o';
+        colorClass = 'bg-amber-500';
+      } else if (low.includes('gemini') || low.includes('google')) {
+        normName = 'gemini-1.5-flash';
+        colorClass = 'bg-purple-500';
+      } else {
+        normName = m.model?.split('/')?.pop() || m.model;
+      }
+
+      const cost = Number(m.cost) || 0;
+      totalCost += cost;
+
+      if (!aggregated[normName]) {
+        aggregated[normName] = { name: normName, cost: 0, colorClass };
+      }
+      aggregated[normName].cost += cost;
+    }
+
+    return Object.values(aggregated)
+      .sort((a, b) => b.cost - a.cost)
+      .map((item) => ({
+        ...item,
+        pct: totalCost > 0 ? ((item.cost / totalCost) * 100).toFixed(1) : '0.0',
+      }));
+  }, [rawModels]);
+
+  const { chartData, maxBentoCost } = useMemo(() => {
+    const rawTrend = bentoLlmCostsData?.daily_trend || [];
+    if (rawTrend.length === 0) {
+      return { chartData: [], maxBentoCost: 0.001 };
+    }
+
+    let calculatedData: BentoChartItem[] = [];
+    if (bentoLlmPeriod === '7d') {
+      calculatedData = rawTrend.slice(-7).map((d: { date: string; cost: number }) => ({
+        key: d.date,
+        cost: d.cost,
+        label: d.date.slice(5),
+      }));
+    } else {
+      const last28 = rawTrend.slice(-28);
+      const weeks: BentoChartItem[] = [];
+      for (let i = 0; i < last28.length; i += 7) {
+        const chunk = last28.slice(i, i + 7);
+        if (chunk.length === 0) continue;
+        const costSum = chunk.reduce((sum: number, day: { cost: number }) => sum + (day.cost || 0), 0);
+        const start = chunk[0].date.slice(5);
+        const end = chunk[chunk.length - 1].date.slice(5);
+        weeks.push({
+          key: `week_${i}`,
+          cost: costSum,
+          label: `${start}–${end}`,
+        });
+      }
+      calculatedData = weeks;
+    }
+
+    const max = calculatedData.length > 0 ? Math.max(...calculatedData.map((x) => x.cost), 0.001) : 0.001;
+    return { chartData: calculatedData, maxBentoCost: max };
+  }, [bentoLlmCostsData?.daily_trend, bentoLlmPeriod]);
+
+  const workerMetrics = useMemo(() => {
+    const containers: ContainerMetricItem[] = workerStatusData?.containers || [];
+    const count = containers.length || 1;
+    const cpuSum = containers.reduce((acc: number, c: ContainerMetricItem) => acc + (c.cpu_usage || 0), 0);
+    const ramSum = containers.reduce((acc: number, c: ContainerMetricItem) => acc + (c.ram_usage || 0), 0);
+    const isHealthy = containers.length > 0 ? containers.every((c: ContainerMetricItem) => c.is_healthy) : true;
+    const healthyCount = workerStatusData?.summary?.healthy_containers ?? 0;
+    const totalCount = workerStatusData?.summary?.total_containers ?? 0;
+    const totalProcessing = workerStatusData?.summary?.total_processing ?? workerStatusData?.active_processing?.length ?? 0;
+    const totalQueuePending = workerStatusData?.summary?.total_queue_pending ?? workerStatusData?.queues?.reduce((acc: number, q: QueueMetricItem) => acc + (q.queue_length || 0), 0) ?? 0;
+    const totalActiveOrPending = totalProcessing + totalQueuePending;
+    return {
+      avgCpu: (cpuSum / count).toFixed(0),
+      avgCpuNum: cpuSum / count,
+      avgRam: ((ramSum / count) * 0.04).toFixed(1),
+      avgRamNum: ramSum / count,
+      isHealthy,
+      healthyCount,
+      totalCount,
+      totalProcessing,
+      totalQueuePending,
+      totalActiveOrPending,
+    };
+  }, [workerStatusData]);
 
   const recentFilesList = useMemo(() => {
     const rawFiles = recentFilesData?.files || [];
@@ -292,164 +449,83 @@ export function ManagementOverview({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Bento Col 1: LLM Pénzügyi Áttekintés */}
         <Card className="flex flex-col justify-between p-5 space-y-4 h-full">
-          {(() => {
-            const calculateProportionalTokenCosts = (inputTokens: number, outputTokens: number, totalCost: number) => {
-              if (totalCost <= 0) return { inputCost: 0, outputCost: 0 };
-              const r = 4.0;
-              const inputWeight = inputTokens;
-              const outputWeight = outputTokens * r;
-              const totalWeight = inputWeight + outputWeight;
-              if (totalWeight <= 0) return { inputCost: 0, outputCost: 0 };
-              
-              const inputCost = totalCost * (inputWeight / totalWeight);
-              const outputCost = totalCost * (outputWeight / totalWeight);
-              return { inputCost, outputCost };
-            };
-
-            const monthlyTokenCosts = calculateProportionalTokenCosts(
-              overview?.llmOverview.totalMonthlyInputTokens || 0,
-              overview?.llmOverview.totalMonthlyOutputTokens || 0,
-              overview?.llmOverview.totalMonthlyCostUsd || 0
-            );
-
-            const allTimeTokenCosts = calculateProportionalTokenCosts(
-              bentoLlmCostsAllTime?.kpi?.total_input_tokens || 0,
-              bentoLlmCostsAllTime?.kpi?.total_output_tokens || 0,
-              bentoLlmCostsAllTime?.kpi?.total_cost || 0
-            );
-
-            const rawModels = bentoLlmCostsData?.by_model || [];
-
-            return (
-              <>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Coins className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-                    <span className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wide">LLM Pénzügyi Áttekintés</span>
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Coins className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+              <span className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wide">LLM Pénzügyi Áttekintés</span>
+            </div>
+            <div className="space-y-4 mt-2">
+              <div>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Havi összköltség ({capitalizedMonth})</h3>
+                  <span className="text-[9px] px-1.5 py-0.5 font-semibold uppercase bg-teal-500/10 text-teal-600 dark:text-teal-400 rounded">Tárgyhó</span>
+                </div>
+                <span className="text-3xl font-extrabold text-foreground block mt-0.5 tracking-tight">
+                  {overview ? `$${overview.llmOverview.totalMonthlyCostUsd.toFixed(4)}` : '$0.0000'}
+                </span>
+                <div className="mt-2 p-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 rounded-lg border border-zinc-200 dark:border-zinc-800/50 space-y-1 text-xs text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>Input token:</span>
+                    <span className="font-medium text-foreground">
+                      {overview ? `${(overview.llmOverview.totalMonthlyInputTokens / 1000).toFixed(1)}k ($${monthlyTokenCosts.inputCost.toFixed(4)})` : '—'}
+                    </span>
                   </div>
-                  <div className="space-y-4 mt-2">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Havi összköltség ({capitalizedMonth})</h3>
-                        <span className="text-[9px] px-1.5 py-0.5 font-semibold uppercase bg-teal-500/10 text-teal-600 dark:text-teal-400 rounded">Tárgyhó</span>
-                      </div>
-                      <span className="text-3xl font-extrabold text-foreground block mt-0.5 tracking-tight">
-                        {overview ? `$${overview.llmOverview.totalMonthlyCostUsd.toFixed(4)}` : '$0.0000'}
-                      </span>
-                      <div className="mt-2 p-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 rounded-lg border border-zinc-200 dark:border-zinc-800/50 space-y-1 text-xs text-muted-foreground">
-                        <div className="flex justify-between">
-                          <span>Input token:</span>
-                          <span className="font-medium text-foreground">
-                            {overview ? `${(overview.llmOverview.totalMonthlyInputTokens / 1000).toFixed(1)}k ($${monthlyTokenCosts.inputCost.toFixed(4)})` : '—'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Output token:</span>
-                          <span className="font-medium text-foreground">
-                            {overview ? `${(overview.llmOverview.totalMonthlyOutputTokens / 1000).toFixed(1)}k ($${monthlyTokenCosts.outputCost.toFixed(4)})` : '—'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-zinc-200 dark:border-zinc-900/60">
-                      <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Összes költség</h3>
-                      <span className="text-xl font-extrabold text-teal-600 dark:text-teal-400 block mt-0.5 tracking-tight">
-                        {bentoLlmCostsAllTime ? `$${(bentoLlmCostsAllTime.kpi?.total_cost || 0).toFixed(4)}` : '$0.0000'}
-                      </span>
-                      <div className="mt-2 p-2.5 bg-zinc-100/40 dark:bg-zinc-900/40 rounded-lg border border-zinc-200/60 dark:border-zinc-800/30 space-y-1 text-xs text-muted-foreground">
-                        <div className="flex justify-between">
-                          <span>Input token:</span>
-                          <span className="font-medium text-foreground">
-                            {bentoLlmCostsAllTime?.kpi ? `${(bentoLlmCostsAllTime.kpi.total_input_tokens / 1000).toFixed(1)}k ($${allTimeTokenCosts.inputCost.toFixed(4)})` : '—'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Output token:</span>
-                          <span className="font-medium text-foreground">
-                            {bentoLlmCostsAllTime?.kpi ? `${(bentoLlmCostsAllTime.kpi.total_output_tokens / 1000).toFixed(1)}k ($${allTimeTokenCosts.outputCost.toFixed(4)})` : '—'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex justify-between">
+                    <span>Output token:</span>
+                    <span className="font-medium text-foreground">
+                      {overview ? `${(overview.llmOverview.totalMonthlyOutputTokens / 1000).toFixed(1)}k ($${monthlyTokenCosts.outputCost.toFixed(4)})` : '—'}
+                    </span>
                   </div>
                 </div>
+              </div>
 
-                <div className="pt-4 border-t border-zinc-200 dark:border-zinc-900 space-y-2">
-                  <span className="text-xs font-semibold text-muted-foreground block">Költség Megoszlás (Modellek)</span>
-                  <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
-                    {(() => {
-                      if (bentoLlmCostsLoading && rawModels.length === 0) {
-                        return (
-                          <div className="space-y-2 py-1 animate-pulse">
-                            <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
-                            <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-4/5"></div>
-                            <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-2/3"></div>
-                          </div>
-                        );
-                      }
-
-                      if (rawModels.length === 0) {
-                        return <div className="text-center text-muted-foreground/60 text-[10px] py-2">Nincs modell adat</div>;
-                      }
-
-                      const aggregated: Record<string, { name: string; cost: number; colorClass: string }> = {};
-                      let totalCost = 0;
-
-                      for (const m of rawModels) {
-                        const low = (m.model || '').toLowerCase();
-                        let normName = m.model || '';
-                        let colorClass = 'bg-zinc-500';
-
-                        if (low.includes('deepseek')) {
-                          if (low.includes('flash')) {
-                            normName = 'deepseek-v4-flash';
-                            colorClass = 'bg-teal-500';
-                          } else {
-                            normName = 'deepseek-chat';
-                            colorClass = 'bg-teal-500/80';
-                          }
-                        } else if (low.includes('gpt-4') || low.includes('openai')) {
-                          normName = 'gpt-4o';
-                          colorClass = 'bg-amber-500';
-                        } else if (low.includes('gemini') || low.includes('google')) {
-                          normName = 'gemini-1.5-flash';
-                          colorClass = 'bg-purple-500';
-                        } else {
-                          normName = m.model?.split('/')?.pop() || m.model;
-                        }
-
-                        const cost = Number(m.cost) || 0;
-                        totalCost += cost;
-
-                        if (!aggregated[normName]) {
-                          aggregated[normName] = { name: normName, cost: 0, colorClass };
-                        }
-                        aggregated[normName].cost += cost;
-                      }
-
-                      const modelList = Object.values(aggregated)
-                        .sort((a, b) => b.cost - a.cost)
-                        .map((item) => ({
-                          ...item,
-                          pct: totalCost > 0 ? ((item.cost / totalCost) * 100).toFixed(1) : '0.0',
-                        }));
-
-                      return modelList.map((m, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs">
-                          <span className="flex items-center gap-1.5">
-                            <span className={`w-2 h-2 rounded-sm ${m.colorClass}`}></span>
-                            {m.name}
-                          </span>
-                          <span className="font-bold text-zinc-800 dark:text-zinc-200">{m.pct}%</span>
-                        </div>
-                      ));
-                    })()}
+              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-900/60">
+                <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Összes költség</h3>
+                <span className="text-xl font-extrabold text-teal-600 dark:text-teal-400 block mt-0.5 tracking-tight">
+                  {bentoLlmCostsAllTime ? `$${(bentoLlmCostsAllTime.kpi?.total_cost || 0).toFixed(4)}` : '$0.0000'}
+                </span>
+                <div className="mt-2 p-2.5 bg-zinc-100/40 dark:bg-zinc-900/40 rounded-lg border border-zinc-200/60 dark:border-zinc-800/30 space-y-1 text-xs text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>Input token:</span>
+                    <span className="font-medium text-foreground">
+                      {bentoLlmCostsAllTime?.kpi ? `${(bentoLlmCostsAllTime.kpi.total_input_tokens / 1000).toFixed(1)}k ($${allTimeTokenCosts.inputCost.toFixed(4)})` : '—'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Output token:</span>
+                    <span className="font-medium text-foreground">
+                      {bentoLlmCostsAllTime?.kpi ? `${(bentoLlmCostsAllTime.kpi.total_output_tokens / 1000).toFixed(1)}k ($${allTimeTokenCosts.outputCost.toFixed(4)})` : '—'}
+                    </span>
                   </div>
                 </div>
-              </>
-            );
-          })()}
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-zinc-200 dark:border-zinc-900 space-y-2">
+            <span className="text-xs font-semibold text-muted-foreground block">Költség Megoszlás (Modellek)</span>
+            <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
+              {bentoLlmCostsLoading && rawModels.length === 0 ? (
+                <div className="space-y-2 py-1 animate-pulse">
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-4/5"></div>
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-2/3"></div>
+                </div>
+              ) : modelList.length === 0 ? (
+                <div className="text-center text-muted-foreground/60 text-[10px] py-2">Nincs modell adat</div>
+              ) : (
+                modelList.map((m, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-sm ${m.colorClass}`}></span>
+                      {m.name}
+                    </span>
+                    <span className="font-bold text-zinc-800 dark:text-zinc-200">{m.pct}%</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </Card>
 
         {/* Bento Col 2: Worker Status & Feldolgozási hibák */}
@@ -480,33 +556,23 @@ export function ManagementOverview({
                   <div className="h-10 bg-zinc-200/60 dark:bg-zinc-900 rounded"></div>
                 </div>
               </div>
-            ) : (() => {
-              const isHealthy = workerStatusData?.containers?.length > 0 
-                ? workerStatusData.containers.every((c: any) => c.is_healthy) 
-                : true;
-              const healthyCount = workerStatusData?.summary?.healthy_containers ?? 0;
-              const totalCount = workerStatusData?.summary?.total_containers ?? 0;
-              const totalProcessing = workerStatusData?.summary?.total_processing ?? workerStatusData?.active_processing?.length ?? 0;
-              const totalQueuePending = workerStatusData?.summary?.total_queue_pending ?? workerStatusData?.queues?.reduce((acc: number, q: any) => acc + (q.queue_length || 0), 0) ?? 0;
-              const totalActiveOrPending = totalProcessing + totalQueuePending;
-
-              return (
+            ) : (
                 <>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Server className="h-4 w-4 text-teal-400" />
                       <h4 className="text-sm font-semibold">Worker Status</h4>
                     </div>
-                    <span className={`text-xs font-bold flex items-center gap-2 ${isHealthy ? 'text-emerald-400' : 'text-red-400'}`}>
+                    <span className={`text-xs font-bold flex items-center gap-2 ${workerMetrics.isHealthy ? 'text-emerald-400' : 'text-red-400'}`}>
                       <span className="relative flex h-2.5 w-2.5">
                         <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                          isHealthy ? 'bg-emerald-400' : 'bg-red-400'
+                          workerMetrics.isHealthy ? 'bg-emerald-400' : 'bg-red-400'
                         }`}></span>
                         <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                          isHealthy ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'
+                          workerMetrics.isHealthy ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'
                         }`}></span>
                       </span>
-                      {healthyCount}/{totalCount} Konténer fut
+                      {workerMetrics.healthyCount}/{workerMetrics.totalCount} Konténer fut
                     </span>
                   </div>
 
@@ -514,8 +580,8 @@ export function ManagementOverview({
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="p-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40">
                         <span className="text-[9px] text-muted-foreground block">Státusz</span>
-                        <span className={`font-bold mt-0.5 block ${isHealthy ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
-                          {isHealthy ? 'Fut (Egészséges)' : 'Hiba (Unhealthy)'}
+                        <span className={`font-bold mt-0.5 block ${workerMetrics.isHealthy ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                          {workerMetrics.isHealthy ? 'Fut (Egészséges)' : 'Hiba (Unhealthy)'}
                         </span>
                       </div>
                       <div 
@@ -523,13 +589,13 @@ export function ManagementOverview({
                         className="p-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 rounded border border-zinc-200 dark:border-zinc-800/40 cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-900 transition-colors"
                       >
                         <span className="text-[9px] text-muted-foreground block">Feldolgozás alatt</span>
-                        <span className={`font-bold mt-0.5 block ${totalActiveOrPending > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-teal-600 dark:text-teal-400'}`}>
-                          {totalActiveOrPending > 0
-                            ? (totalProcessing > 0 && totalQueuePending > 0
-                                ? `${totalProcessing} aktív (+${totalQueuePending} sorban)`
-                                : totalProcessing > 0
-                                  ? `${totalProcessing} aktív`
-                                  : `${totalQueuePending} sorban`)
+                        <span className={`font-bold mt-0.5 block ${workerMetrics.totalActiveOrPending > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-teal-600 dark:text-teal-400'}`}>
+                          {workerMetrics.totalActiveOrPending > 0
+                            ? (workerMetrics.totalProcessing > 0 && workerMetrics.totalQueuePending > 0
+                                ? `${workerMetrics.totalProcessing} aktív (+${workerMetrics.totalQueuePending} sorban)`
+                                : workerMetrics.totalProcessing > 0
+                                  ? `${workerMetrics.totalProcessing} aktív`
+                                  : `${workerMetrics.totalQueuePending} sorban`)
                             : '0 elem'}
                         </span>
                       </div>
@@ -541,13 +607,13 @@ export function ManagementOverview({
                         <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
                           <span>CPU Terheltség</span>
                           <span className="font-mono text-zinc-800 dark:text-zinc-200">
-                            {(workerStatusData?.containers?.reduce((acc: number, c: any) => acc + (c.cpu_usage || 0), 0) / (workerStatusData?.containers?.length || 1)).toFixed(0)}%
+                            {workerMetrics.avgCpu}%
                           </span>
                         </div>
                         <div className="w-full bg-zinc-100 dark:bg-zinc-900 h-1.5 rounded overflow-hidden">
                           <div
                             className="bg-teal-500 h-full transition-all duration-300"
-                            style={{ width: `${Math.min(100, Math.max(10, (workerStatusData?.containers?.reduce((acc: number, c: any) => acc + (c.cpu_usage || 0), 0) / (workerStatusData?.containers?.length || 1))))}%` }}
+                            style={{ width: `${Math.min(100, Math.max(10, workerMetrics.avgCpuNum))}%` }}
                           ></div>
                         </div>
                       </div>
@@ -555,13 +621,13 @@ export function ManagementOverview({
                         <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
                           <span>RAM Használat</span>
                           <span className="font-mono text-zinc-800 dark:text-zinc-200">
-                            {((workerStatusData?.containers?.reduce((acc: number, c: any) => acc + (c.ram_usage || 0), 0) / (workerStatusData?.containers?.length || 1)) * 0.04).toFixed(1)} GB / 4.0 GB
+                            {workerMetrics.avgRam} GB / 4.0 GB
                           </span>
                         </div>
                         <div className="w-full bg-zinc-100 dark:bg-zinc-900 h-1.5 rounded overflow-hidden">
                           <div
                             className="bg-teal-500 h-full transition-all duration-300"
-                            style={{ width: `${Math.min(100, Math.max(10, (workerStatusData?.containers?.reduce((acc: number, c: any) => acc + (c.ram_usage || 0), 0) / (workerStatusData?.containers?.length || 1))))}%` }}
+                            style={{ width: `${Math.min(100, Math.max(10, workerMetrics.avgRamNum))}%` }}
                           ></div>
                         </div>
                       </div>
@@ -604,98 +670,65 @@ export function ManagementOverview({
                     </div>
                   </div>
                 </>
-              );
-            })()}
+            )}
           </Card>
 
           {/* LLM Costs Chart Panel */}
-          {(() => {
-            const chartData = (bentoLlmCostsData?.daily_trend || []).length > 0
-              ? bentoLlmPeriod === '7d'
-                ? (bentoLlmCostsData.daily_trend).slice(-7).map((d: any) => ({
-                    key: d.date,
-                    cost: d.cost,
-                    label: d.date.slice(5),
-                  }))
-                : (() => {
-                    const last28 = (bentoLlmCostsData.daily_trend).slice(-28);
-                    const weeks = [];
-                    for (let i = 0; i < last28.length; i += 7) {
-                      const chunk = last28.slice(i, i + 7);
-                      if (chunk.length === 0) continue;
-                      const costSum = chunk.reduce((sum: number, day: any) => sum + (day.cost || 0), 0);
-                      const start = chunk[0].date.slice(5);
-                      const end = chunk[chunk.length - 1].date.slice(5);
-                      weeks.push({
-                        key: `week_${i}`,
-                        cost: costSum,
-                        label: `${start}–${end}`,
-                      });
-                    }
-                    return weeks;
-                  })()
-              : [];
-
-            const maxBentoCost = chartData.length > 0 ? Math.max(...chartData.map((x: any) => x.cost), 0.001) : 0.001;
-
-            return (
-              <Card className="p-5 flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-semibold">
-                    {bentoLlmPeriod === '7d' ? 'LLM Napi Költségek (7 nap)' : 'LLM Heti Költségek (4 hét)'}
-                  </span>
-                  <div className="flex gap-1.5 text-[9px] bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded border border-zinc-200 dark:border-zinc-800">
-                    <span 
-                      onClick={() => setBentoLlmPeriod('7d')}
-                      className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                        bentoLlmPeriod === '7d' ? 'bg-white dark:bg-zinc-800 text-teal-600 dark:text-teal-400 font-bold shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      Napi
-                    </span>
-                    <span 
-                      onClick={() => setBentoLlmPeriod('30d')}
-                      className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                        bentoLlmPeriod === '30d' ? 'bg-white dark:bg-zinc-800 text-teal-600 dark:text-teal-400 font-bold shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      Heti
-                    </span>
-                  </div>
+          <Card className="p-5 flex-1 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-semibold">
+                {bentoLlmPeriod === '7d' ? 'LLM Napi Költségek (7 nap)' : 'LLM Heti Költségek (4 hét)'}
+              </span>
+              <div className="flex gap-1.5 text-[9px] bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded border border-zinc-200 dark:border-zinc-800">
+                <span 
+                  onClick={() => setBentoLlmPeriod('7d')}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                    bentoLlmPeriod === '7d' ? 'bg-white dark:bg-zinc-800 text-teal-600 dark:text-teal-400 font-bold shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Napi
+                </span>
+                <span 
+                  onClick={() => setBentoLlmPeriod('30d')}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                    bentoLlmPeriod === '30d' ? 'bg-white dark:bg-zinc-800 text-teal-600 dark:text-teal-400 font-bold shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Heti
+                </span>
+              </div>
+            </div>
+            <div className="h-20 w-full flex items-end justify-between gap-4 pt-5 px-2">
+              {bentoLlmCostsLoading && chartData.length === 0 ? (
+                <div className="h-full w-full flex items-end justify-between gap-3 animate-pulse">
+                  <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+                  <div className="h-14 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+                  <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+                  <div className="h-16 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
                 </div>
-                <div className="h-20 w-full flex items-end justify-between gap-4 pt-5 px-2">
-                  {bentoLlmCostsLoading && chartData.length === 0 ? (
-                    <div className="h-full w-full flex items-end justify-between gap-3 animate-pulse">
-                      <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
-                      <div className="h-14 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
-                      <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
-                      <div className="h-16 bg-zinc-200 dark:bg-zinc-800 rounded flex-1"></div>
+              ) : chartData.length > 0 ? (
+                chartData.map((d: BentoChartItem, i: number, arr: BentoChartItem[]) => (
+                  <div
+                    key={d.key}
+                    className="flex-1 rounded-t-sm min-h-[2px] relative group cursor-default"
+                    style={{
+                      height: `${Math.max((d.cost / maxBentoCost) * 100, 4)}%`,
+                      background: i === arr.length - 1
+                        ? 'linear-gradient(180deg, #14b8a6, #14b8a650)'
+                        : 'linear-gradient(180deg, #6366f1, #6366f150)',
+                    }}
+                  >
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 font-mono text-[8.5px] text-muted-foreground text-center whitespace-nowrap">
+                      <span className="font-bold text-foreground">${d.cost.toFixed(4)}</span>
+                      <span className="block text-[7px] text-muted-foreground/50 mt-0.5">{d.label}</span>
                     </div>
-                  ) : chartData.length > 0 ? (
-                    chartData.map((d: any, i: number, arr: any[]) => (
-                      <div
-                        key={d.key}
-                        className="flex-1 rounded-t-sm min-h-[2px] relative group cursor-default"
-                        style={{
-                          height: `${Math.max((d.cost / maxBentoCost) * 100, 4)}%`,
-                          background: i === arr.length - 1
-                            ? 'linear-gradient(180deg, #14b8a6, #14b8a650)'
-                            : 'linear-gradient(180deg, #6366f1, #6366f150)',
-                        }}
-                      >
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 font-mono text-[8.5px] text-muted-foreground text-center whitespace-nowrap">
-                          <span className="font-bold text-foreground">${d.cost.toFixed(4)}</span>
-                          <span className="block text-[7px] text-muted-foreground/50 mt-0.5">{d.label}</span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-muted-foreground text-xs py-6 w-full">Nincs elérhető trend adat</div>
-                  )}
-                </div>
-              </Card>
-            );
-          })()}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground text-xs py-6 w-full">Nincs elérhető trend adat</div>
+              )}
+            </div>
+          </Card>
         </div>
 
         {/* Bento Col 3: Tickets & Files */}
