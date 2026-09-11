@@ -33,7 +33,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { cn } from '@/lib/utils';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
-import { GlDateBasis, GlPostingStatus } from '@/lib/glData';
+import { GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
 import { useTranslation } from 'react-i18next';
 
 import { GlAccountCardView } from '@/components/general-ledger/GlAccountCardView';
@@ -63,6 +63,8 @@ export default function GeneralLedgerPage() {
   const [printLayoutMode, setPrintLayoutMode] = useState<'synthetic' | 'analytical'>('analytical');
   const [glStats, setGlStats] = useState<{ accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number } | null>(null);
   const [isTableLoading, setIsTableLoading] = useState(true);
+  const [glSearchQuery, setGlSearchQuery] = useState('');
+  const [glSearchResults, setGlSearchResults] = useState<GlSearchResult[]>([]);
   const tableRef = useRef<GeneralLedgerTableRef>(null);
   const handleStatsChange = useCallback((stats: typeof glStats) => setGlStats(stats), []);
   const handleLoadingChange = useCallback((loading: boolean) => setIsTableLoading(loading), []);
@@ -639,7 +641,17 @@ export default function GeneralLedgerPage() {
                 <GlSearchAutocomplete
                   companyId={selectedCompany?.id}
                   presetId={activePresetId}
-                  onSelect={(result) => tableRef.current?.navigateToEntity(result)}
+                  onQueryChange={setGlSearchQuery}
+                  onSearchResultsChange={setGlSearchResults}
+                  onSelect={(result) => {
+                    const term = result.entity_type === 'account' ? result.gl_number : (result.title || result.target_gl_number);
+                    setGlSearchQuery(term);
+                    tableRef.current?.navigateToEntity(result);
+                  }}
+                  onClear={() => {
+                    setGlSearchQuery('');
+                    setGlSearchResults([]);
+                  }}
                 />
                 {/* Dátum alap kapcsoló (Kibocsátás vs Teljesítés) */}
                 {renderDateBasisToggle()}
@@ -660,6 +672,8 @@ export default function GeneralLedgerPage() {
               dateTo={dateTo}
               dateBasis={dateBasis}
               postingStatus={postingStatus}
+              searchQuery={glSearchQuery}
+              searchResults={glSearchResults}
               isPolling={isAIRunning}
               onStatsChange={handleStatsChange}
               onLoadingChange={handleLoadingChange}

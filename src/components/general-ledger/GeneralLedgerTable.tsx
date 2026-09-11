@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
-import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText } from 'lucide-react';
+import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, Search } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -107,6 +107,8 @@ interface GeneralLedgerTableProps {
   dateBasis?: GlDateBasis;
   postingStatus?: GlPostingStatus;
   globalSearch?: string;
+  searchQuery?: string;
+  searchResults?: GlSearchResult[];
   isPolling?: boolean; // P4: only poll when AI/import is running
   onStatsChange?: (stats: { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number }) => void;
   onLoadingChange?: (isLoading: boolean) => void;
@@ -169,7 +171,19 @@ function LoadMoreSentinelRow({ row, hiddenClass, indentPadding, onLoadMore }: Lo
 }
 
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
-  const { presetId, dateFrom, dateTo, dateBasis = 'kibocsatas', postingStatus = 'all', isPolling, onStatsChange, onLoadingChange, printLayoutMode = 'analytical' } = props;
+  const {
+    presetId,
+    dateFrom,
+    dateTo,
+    dateBasis = 'kibocsatas',
+    postingStatus = 'all',
+    searchQuery = '',
+    searchResults = [],
+    isPolling,
+    onStatsChange,
+    onLoadingChange,
+    printLayoutMode = 'analytical',
+  } = props;
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
   const { toast } = useToast();
@@ -178,7 +192,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const [editingItem, setEditingItem] = useState<LedgerItem | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [dialogSearchQuery, setDialogSearchQuery] = useState('');
   const [selectedNewGL, setSelectedNewGL] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAiReclassifying, setIsAiReclassifying] = useState(false);
@@ -398,6 +412,13 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     });
   };
 
+  const normalizeText = useCallback((text: string) =>
+    (text || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''),
+  []);
+
   // Calculate actual table data
   const tableData = useMemo(() => {
     const cleanId = cleanIdVal;
@@ -456,6 +477,88 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         }
       });
 
+      // ── Hierarchical search filter computation ──
+      const isSearchActive = !!searchQuery && searchQuery.trim().length > 0;
+      let visibleAccountCids: Set<string> | null = null;
+      const directMatchAccountCids = new Set<string>();
+      const itemMatchAccountCids = new Set<string>();
+
+      if (isSearchActive) {
+        const normQ = normalizeText(searchQuery.trim());
+        const cleanQ = cleanId(searchQuery);
+
+        // 1. Check account numbers and names
+        rolledUpData.forEach(node => {
+          const normName = normalizeText(node.name);
+          const normNum = normalizeText(node.id);
+          const cid = node.cid;
+          if (
+            (cleanQ && (cid === cleanQ || cid.startsWith(cleanQ) || cid.includes(cleanQ))) ||
+            normNum.includes(normQ) ||
+            normName.includes(normQ)
+          ) {
+            directMatchAccountCids.add(cid);
+          }
+        });
+
+        // 2. Check searchResults (from backend DB search)
+        searchResults.forEach(res => {
+          const targetGl = res.target_gl_number || res.gl_number;
+          if (targetGl) {
+            const cid = targetGl === 'UNCLASSIFIED' ? 'UNCLASSIFIED' : cleanId(targetGl);
+            if (cid) {
+              if (res.entity_type === 'account') {
+                directMatchAccountCids.add(cid);
+              } else {
+                itemMatchAccountCids.add(cid);
+              }
+            }
+          }
+        });
+
+        // 3. Check loadedAccountItems
+        loadedAccountItems.forEach((items, cid) => {
+          const hasMatchingItem = items.some(it => {
+            const normItemName = normalizeText(it.name);
+            const normPartner = normalizeText(it.partner || '');
+            const normType = normalizeText(it.itemType || '');
+            const dateStr = it.date || '';
+            const amountStr = String(it.balance || '');
+            return normItemName.includes(normQ) ||
+                   normPartner.includes(normQ) ||
+                   normType.includes(normQ) ||
+                   dateStr.includes(normQ) ||
+                   amountStr.includes(normQ);
+          });
+          if (hasMatchingItem) {
+            itemMatchAccountCids.add(cid);
+          }
+        });
+
+        // All matched account CIDs
+        const allMatched = new Set<string>([...directMatchAccountCids, ...itemMatchAccountCids]);
+
+        // If an account is directly matched, all of its descendant accounts are also visible
+        directMatchAccountCids.forEach(matchedCid => {
+          rolledUpData.forEach(d => {
+            if (d.cid.startsWith(matchedCid)) {
+              allMatched.add(d.cid);
+            }
+          });
+        });
+
+        // Build visible set including all ancestor paths
+        visibleAccountCids = new Set<string>();
+        allMatched.forEach(cid => {
+          visibleAccountCids!.add(cid);
+          rolledUpData.forEach(candidate => {
+            if (candidate.cid !== cid && cid.startsWith(candidate.cid)) {
+              visibleAccountCids!.add(candidate.cid);
+            }
+          });
+        });
+      }
+
       // ── Build hierarchical tree and flatten in depth-first order ──
       const compareGlAccounts = (a: LedgerItem, b: LedgerItem) => {
         if (a.cid === 'UNCLASSIFIED') return 1;
@@ -497,11 +600,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const combinedData: LedgerItem[] = [];
 
       const traverseTree = (node: LedgerItem) => {
+        // If search is active and this node is not in visibleAccountCids, skip it!
+        if (visibleAccountCids && !visibleAccountCids.has(node.cid)) {
+          return;
+        }
+
         // 1. Emit the account node itself
         combinedData.push(node);
 
-        // 2. Emit direct transaction items booked to this account (if expanded)
-        if (expandedRowIds.has(node.id)) {
+        // 2. Emit direct transaction items booked to this account
+        const shouldExpandItems = isSearchActive 
+          ? (itemMatchAccountCids.has(node.cid) || (directMatchAccountCids.has(node.cid) && node.hasItemChildren) || expandedRowIds.has(node.id))
+          : expandedRowIds.has(node.id);
+
+        if (shouldExpandItems) {
           if (loadingAccountCids.has(node.cid)) {
             combinedData.push({
               id: `loading_${node.cid}`,
@@ -513,12 +625,77 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               isLoadingRow: true
             });
           } else {
-            const directItems = loadedAccountItems.get(node.cid);
-            if (directItems && directItems.length > 0) {
-              combinedData.push(...directItems);
+            let directItems = loadedAccountItems.get(node.cid) || [];
 
-              // If there are more items to load for this account, emit sentinel load-more row
-              if (hasMoreAccountCids.has(node.cid)) {
+            // If search is active, inject any searchResults for this account that might not yet be in directItems
+            if (isSearchActive && searchResults.length > 0) {
+              const matchingSearchResults = searchResults.filter(r => {
+                if (r.entity_type !== 'item') return false;
+                const targetGl = r.target_gl_number || r.gl_number;
+                const targetCid = targetGl === 'UNCLASSIFIED' ? 'UNCLASSIFIED' : cleanId(targetGl);
+                return targetCid === node.cid;
+              });
+
+              if (matchingSearchResults.length > 0) {
+                const existingIds = new Set(directItems.map(it => it.id));
+                const injected: LedgerItem[] = [];
+                matchingSearchResults.forEach(r => {
+                  const itemId = `item_${r.entity_id.replace('item_', '')}`;
+                  if (!existingIds.has(itemId)) {
+                    let displayDesc = r.title || 'Névtelen tétel';
+                    if (r.subtitle && !displayDesc.includes(r.subtitle)) {
+                      displayDesc = `${displayDesc} - ${r.subtitle}`;
+                    }
+                    injected.push({
+                      id: itemId,
+                      name: fixCharacterEncoding(displayDesc),
+                      balance: Number(r.amount) || 0,
+                      hasChildren: false,
+                      cid: `${node.cid}_${r.entity_id}`,
+                      isItem: true,
+                      itemType: fixCharacterEncoding(r.item_type || ''),
+                      partner: fixCharacterEncoding(r.title),
+                      date: r.item_date || null,
+                      sourceTable: r.source_table || null,
+                      originalGlId: null,
+                      originalAmount: Number(r.amount) || 0,
+                      originalCurrency: r.currency || 'HUF',
+                      isTemporary: node.cid === 'UNCLASSIFIED',
+                    });
+                  }
+                });
+                if (injected.length > 0) {
+                  directItems = [...injected, ...directItems];
+                }
+              }
+            }
+
+            // Filter directItems if search is active and account was not a direct name/number match
+            let displayedItems = directItems;
+            if (isSearchActive) {
+              const normQ = normalizeText(searchQuery.trim());
+              const isDirectAcc = directMatchAccountCids.has(node.cid);
+              if (!isDirectAcc) {
+                displayedItems = directItems.filter(it => {
+                  const normItemName = normalizeText(it.name);
+                  const normPartner = normalizeText(it.partner || '');
+                  const normType = normalizeText(it.itemType || '');
+                  const dateStr = it.date || '';
+                  const amountStr = String(it.balance || '');
+                  return normItemName.includes(normQ) ||
+                         normPartner.includes(normQ) ||
+                         normType.includes(normQ) ||
+                         dateStr.includes(normQ) ||
+                         amountStr.includes(normQ);
+                });
+              }
+            }
+
+            if (displayedItems.length > 0) {
+              combinedData.push(...displayedItems);
+
+              // If there are more items to load for this account, emit sentinel load-more row (only when not searching)
+              if (!isSearchActive && hasMoreAccountCids.has(node.cid)) {
                 const totalItemCount = node.directItemCount || 0;
                 combinedData.push({
                   id: `loadmore_${node.cid}`,
@@ -550,7 +727,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return combinedData;
     }
     return [];
-  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds]);
+  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, normalizeText]);
 
   const orphanItem = dbData?.find(d => d.gl_number === 'UNCLASSIFIED');
   const orphanCount = orphanItem ? Number(orphanItem.item_count || 0) : 0;
@@ -1106,6 +1283,21 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     });
   }, [expandedRowIds, tableData, dbData, selectedCompany?.id, presetId, fetchAccountItemsOnDemand]);
 
+  // When searchResults contains item matches for accounts that haven't loaded items yet, fetch them
+  useEffect(() => {
+    if (!searchQuery.trim() || searchResults.length === 0 || !dbData || !selectedCompany?.id || !presetId) return;
+
+    searchResults.forEach(res => {
+      if (res.entity_type === 'item') {
+        const targetGl = res.target_gl_number || res.gl_number;
+        const targetCid = targetGl === 'UNCLASSIFIED' ? 'UNCLASSIFIED' : cleanIdVal(targetGl);
+        if (targetCid && !loadedAccountItems.has(targetCid) && !loadingAccountCids.has(targetCid)) {
+          fetchAccountItemsOnDemand(targetCid);
+        }
+      }
+    });
+  }, [searchQuery, searchResults, dbData, selectedCompany?.id, presetId, loadedAccountItems, loadingAccountCids, fetchAccountItemsOnDemand]);
+
 
 
 
@@ -1128,6 +1320,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   // Determine if a row should be visible based on expanded state of its ancestors
   const processedRows = useMemo(() => {
     const nonItemNodes = tableData.filter(d => !d.isItem);
+    const isSearchActive = !!searchQuery && searchQuery.trim().length > 0;
 
     return tableData.map(item => {
       // Find all ancestors (only searching through the ~100 category nodes, not all 10,000 items)
@@ -1136,7 +1329,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const isRoot = ancestors.length === 0 && !item.isItem;
       const depth = ancestors.length;
       
-      const isVisibleOnScreen = isRoot || ancestors.every(a => expandedRowIds.has(a.id));
+      const isVisibleOnScreen = isRoot || isSearchActive || ancestors.every(a => expandedRowIds.has(a.id));
       let isVisibleDuringPrint = isRoot || ancestors.every(a => {
         if (printLayoutMode === 'synthetic') return true;
         return categoriesWithItems.has(a.id);
@@ -1148,7 +1341,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       
       return { ...item, isVisibleOnScreen, isVisibleDuringPrint, isRoot, depth };
     });
-  }, [expandedRowIds, tableData, categoriesWithItems, printLayoutMode]);
+  }, [expandedRowIds, tableData, categoriesWithItems, printLayoutMode, searchQuery]);
 
   // Calculate generic footer totals by summing root level items
   const footerTotals = useMemo(() => {
@@ -1260,7 +1453,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                 <Button onClick={() => {
                   setEditingItem(null);
                   setSelectedNewGL('UNCLASSIFIED'); // Default fallback
-                  setSearchQuery('');
+                  setDialogSearchQuery('');
                   setIsEditOpen(true);
                 }} size="sm">
                   Kijelöltek átsorolása
@@ -1286,7 +1479,19 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               {/* Body */}
               <div className="flex-1 divide-y divide-border/30">
                 {processedRows.length === 0 ? (
-                   <div className="p-8 text-center text-muted-foreground">Nem találhatók adatok ehhez a könyvelési sablonhoz.</div>
+                   searchQuery.trim() ? (
+                     <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+                       <Search className="w-8 h-8 opacity-40 text-muted-foreground" />
+                       <div>
+                         <p className="text-sm font-medium text-foreground">
+                           Nincs találat a(z) &ldquo;<span className="font-semibold text-primary">{searchQuery}</span>&rdquo; keresési kifejezésre a főkönyvben.
+                         </p>
+                         <p className="text-xs text-muted-foreground mt-1">Próbálj más számlaszámra, névre vagy partnerre keresni.</p>
+                       </div>
+                     </div>
+                   ) : (
+                     <div className="p-8 text-center text-muted-foreground">Nem találhatók adatok ehhez a könyvelési sablonhoz.</div>
+                   )
                 ) : processedRows.map((row) => {
                   const shouldRender = isPrinting ? (row as any).isVisibleDuringPrint : row.isVisibleOnScreen;
                   if (!shouldRender) return null;
@@ -1491,7 +1696,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                                 setEditingItem(row);
                                 // We use originalGlId to pre-fill the form, or UNCLASSIFIED if not mapped
                                 setSelectedNewGL(row.originalGlId || 'UNCLASSIFIED');
-                                setSearchQuery('');
+                                setDialogSearchQuery('');
                                 setIsEditOpen(true);
                               }}
                             >
@@ -1623,8 +1828,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[350px]" shouldFilter={false}>
               <CommandInput 
                 placeholder="Keresés főkönyvi szám vagy név alapján..." 
-                value={searchQuery}
-                onValueChange={setSearchQuery}
+                value={dialogSearchQuery}
+                onValueChange={setDialogSearchQuery}
                 className="w-full"
               />
               <CommandList className="h-[300px] max-h-[300px] overflow-y-auto w-full overflow-x-hidden">
@@ -1647,7 +1852,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                     </span>
                   </CommandItem>
                   {dbData
-                    ?.filter(gl => !searchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(searchQuery.toLowerCase()))
+                    ?.filter(gl => !dialogSearchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(dialogSearchQuery.toLowerCase()))
                     .slice()
                     .sort((a,b) => cleanIdVal(a.gl_number).localeCompare(cleanIdVal(b.gl_number)))
                     .map(gl => {

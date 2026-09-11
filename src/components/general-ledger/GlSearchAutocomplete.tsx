@@ -12,6 +12,8 @@ export interface GlSearchAutocompleteProps {
   presetId?: string | null;
   onSelect: (result: GlSearchResult) => void;
   onClear?: () => void;
+  onQueryChange?: (query: string) => void;
+  onSearchResultsChange?: (results: GlSearchResult[]) => void;
   className?: string;
   placeholder?: string;
 }
@@ -21,6 +23,8 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
   presetId,
   onSelect,
   onClear,
+  onQueryChange,
+  onSearchResultsChange,
   className,
   placeholder = 'Keresés a főkönyvben (szám, név, partner)...',
 }) => {
@@ -50,6 +54,7 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
       const cleanTerm = searchTerm.trim();
       if (!cleanTerm || cleanTerm.length < 2 || !companyId || !presetId) {
         setResults([]);
+        onSearchResultsChange?.([]);
         setIsLoading(false);
         setIsOpen(false);
         return;
@@ -64,21 +69,24 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
           limit: 14,
         });
         setResults(data);
+        onSearchResultsChange?.(data);
         setIsOpen(true);
         setSelectedIndex(-1);
       } catch (err) {
         console.error('GlSearchAutocomplete query error:', err);
         setResults([]);
+        onSearchResultsChange?.([]);
       } finally {
         setIsLoading(false);
       }
     },
-    [companyId, presetId]
+    [companyId, presetId, onSearchResultsChange]
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
+    onQueryChange?.(val);
 
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -86,6 +94,7 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
 
     if (val.trim().length < 2) {
       setResults([]);
+      onSearchResultsChange?.([]);
       setIsLoading(false);
       setIsOpen(false);
       return;
@@ -104,6 +113,8 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
+    onQueryChange?.('');
+    onSearchResultsChange?.([]);
     if (onClear) {
       onClear();
     }
@@ -113,6 +124,7 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
     onSelect(item);
     setIsOpen(false);
     setQuery(item.title);
+    onQueryChange?.(item.entity_type === 'account' ? item.gl_number : item.title);
   };
 
   // Keyboard navigation
@@ -120,6 +132,8 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
     if (!isOpen || flatResults.length === 0) {
       if (e.key === 'ArrowDown' && results.length > 0) {
         setIsOpen(true);
+      } else if (e.key === 'Enter') {
+        setIsOpen(false);
       }
       return;
     }
@@ -134,6 +148,8 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
       e.preventDefault();
       if (selectedIndex >= 0 && selectedIndex < flatResults.length) {
         handleSelectItem(flatResults[selectedIndex]);
+      } else {
+        setIsOpen(false);
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();

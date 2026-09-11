@@ -118,4 +118,41 @@ describe('GlSearchAutocomplete', () => {
     expect(input.value).toBe('');
     expect(onClearMock).toHaveBeenCalled();
   });
+
+  it('notifies onQueryChange and onSearchResultsChange on input and results', async () => {
+    const onQueryChangeMock = vi.fn();
+    const onSearchResultsChangeMock = vi.fn();
+    const mockResults: glData.GlSearchResult[] = [
+      {
+        entity_type: 'account',
+        entity_id: '467',
+        gl_number: '467',
+        title: '467 - Fizetendő áfa',
+        subtitle: 'Főkönyvi számla',
+        account_id: 'acc-467',
+        target_gl_number: '467',
+        amount: null,
+      },
+    ];
+    (glData.searchGlEntities as any).mockResolvedValue(mockResults);
+
+    render(
+      <GlSearchAutocomplete
+        companyId="comp-1"
+        presetId="preset-1"
+        onSelect={vi.fn()}
+        onQueryChange={onQueryChangeMock}
+        onSearchResultsChange={onSearchResultsChangeMock}
+      />
+    );
+
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '467' } });
+
+    expect(onQueryChangeMock).toHaveBeenCalledWith('467');
+
+    await waitFor(() => {
+      expect(onSearchResultsChangeMock).toHaveBeenCalledWith(mockResults);
+    });
+  });
 });
