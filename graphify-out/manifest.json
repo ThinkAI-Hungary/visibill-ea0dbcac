@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1788972837.8332536,
-    "ast_hash": "bba1726f2265fcc790d51f2aa0ab3fdd",
+    "mtime": 1789106886.6129994,
+    "ast_hash": "d8bb56b587af2f3b20e22b81db9ef630",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1788799394.2213633,
-    "ast_hash": "5a0d92262b6fd99b2f2d42123deb611d",
+    "mtime": 1789108983.6984065,
+    "ast_hash": "038e9a3ff9c1ee6002317502f9e878f8",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1789088255.4637141,
-    "ast_hash": "d7e7ae4a02f576a7b0b75af1644d9889",
+    "mtime": 1789108964.1237974,
+    "ast_hash": "26d0c04509b08deaf9a74465eae94784",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1789080097.869218,
-    "ast_hash": "e5102f6449ab60eef4e2703de742ae90",
+    "mtime": 1789107812.1486416,
+    "ast_hash": "91078fde3be1ea82f64b2653329daf1d",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -7290,8 +7290,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-055-accounting-journals-ux.md": {
-    "mtime": 1788555158.5969462,
-    "ast_hash": "cd0a0758c5f767fd4a0b974fcca72c4b",
+    "mtime": 1789108999.1275542,
+    "ast_hash": "de3e80ca596accbc78e0a7757ccde745",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-056-bank-transfers-export-ux.md": {
@@ -10447,6 +10447,21 @@
   "src/test/tickets/useMarkTicketRead.test.tsx": {
     "mtime": 1789105241.815835,
     "ast_hash": "9c7e8e60869ea20f2b039470a68fe88e",
+    "semantic_hash": ""
+  },
+  "src/components/journals/__tests__/JournalsUnpostStorno.test.tsx": {
+    "mtime": 1789107822.096566,
+    "ast_hash": "65fd915575b271268718041bd0f7dff0",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260911100000_fix_gl_storno_and_enable_unpost.sql": {
+    "mtime": 1789107769.47544,
+    "ast_hash": "90f0187bb7ffae4d1e22055e493316d2",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-111-accounting-journal-unpost-gl-storno-and-numbering-integrity.md": {
+    "mtime": 1789108946.5849836,
+    "ast_hash": "c081116b84336ab2795dfdfced24455f",
     "semantic_hash": ""
   }
 }

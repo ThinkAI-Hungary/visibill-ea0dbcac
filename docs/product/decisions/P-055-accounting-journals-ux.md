@@ -62,22 +62,35 @@ Hogyan jelenjen meg a Könyvelési Napló (Accounting Journals) felülete az eai
      - **Reset on Close/Finish:** A modál bezárásakor vagy a „Kész / Befejezés” gombra kattintva a varázsló teljesen visszaáll az 1. lépésre tiszta alapállapotba.
      - **Évnyitási Duplikáció-védelem:** Az 1. lépés automatikusan ellenőrzi a kiválasztott év lekönyvelt nyitó bizonylatait (`acc_journal_headers`), és létező nyitás esetén sárga figyelmeztető panellel (`AlertTriangle`) tájékoztatja a könyvelőt a duplikált egyenlegek elkerülése érdekében.
 
+7. **Kétfázisú Helyesbítési Dialógus, Zárlati Retesz és Sorszámfolytonossági Védelem (2026-09-11):**
+   - **Kétfázisú Javítási Dialógus (`JournalsPage.tsx`):**
+     - A sorvégi "Javítás / Helyesbítés" műveletre kattintva a rendszer intelligens, kontextusfüggő dialógust jelenít meg.
+     - **Nyitott időszakban:** Kiemelt zöld kártyaként a **Közvetlen visszanyitás és javítás (Ajánlott)** opciót ajánlja fel, amellyel a tétel visszanyílik szerkeszthető piszkozattá az eredeti naplósorszám megőrzésével és azonnal megnyílik a szerkesztő modál. Alternatívaként a könyvelő választhatja a formális ellentétes előjelű sztornó bizonylatpár készítését is.
+   - **Zárlati Retesz Vizuális Visszajelzése:**
+     - Ha az érintett időszak számvitelileg lezárt (`acc_accounting_periods.is_closed = true`) vagy az ÁFA bevallás véglegesített (`vat_returns.status = 'finalized'`), a sor eleji lakat ikon borostyánsárgára vált (`Lezárt számviteli időszak` / `Véglegesített ÁFA időszak` tooltip-pel).
+     - Lezárt időszakban a közvetlen visszanyitás opció automatikusan rejtve marad; a rendszer kizárólag kötelező indoklással ellátott számviteli sztornózást és javító bizonylat generálását engedélyezi.
+   - **Sorszámfolytonossági Védelem (Sztv. 166. §):**
+     - Amennyiben egy visszanyitott piszkozat rendelkezik már korábban kiosztott `journal_number`-rel, a sorvégi piros törlés gomb helyett egy inaktív, védett állapotot jelző ikon jelenik meg: *"A tétel hivatalos bizonylatszámmal rendelkezik (V/9), a bizonylati fegyelem és sorszámfolytonosság védelme miatt nem törölhető. Kérjük könyvelje le vagy sztornózza!"*
+     - A tömeges törlési művelet (`bulkDeleteMutation`) automatikusan megvédi a számozott tételeket a törléstől, és tájékoztató toast üzenetet jelenít meg.
+
 ## Current Implementation
 
 - Oldal: `src/pages/JournalsPage.tsx`
 - Komponensek: `src/components/journals/*` (`OpeningJournalWizardModal.tsx`, `AddManualJournalEntryModal.tsx`, `OpeningCSVImportModal.tsx`)
 - Beviteli Komponensek: `src/components/ui/number-input.tsx`, `src/components/ui/date-picker.tsx`
 - Szolgáltatások: `src/features/journals/services/draftFallbackGenerator.ts`
-- Hook & State: `useQuery` `.limit(10000)` a naplófejek és sorok lekérdezéséhez, optimista frissítések a könyvelési állapotokhoz.
+- Hook & State: `useQuery` `.limit(10000)` a naplófejek és sorok lekérdezéséhez, `acc-accounting-periods-lock` és `acc-finalized-vat-returns-lock` a dinamikus zárásvizsgálathoz, optimista frissítések a könyvelési állapotokhoz.
 
 ## Rationale
 
 - A könyvelők számára a naplózás a legfontosabb ellenőrzési felület: elengedhetetlen, hogy a bizonylatok sorszám szerint, naplónként rendezve és egyensúly-ellenőrzéssel legyenek elérhetők.
 - A fix és rázkódásmentes táblázatos megjelenítés növeli a felhasználói hatékonyságot többszáz tételes listák lapozásakor és auditálásakor.
 - Az automatikus állapot-reset és duplikáció-védelem meggátolja a véletlen többszörös nyitást és az Sztv. mérlegfolytonossági sérüléseit.
+- A közvetlen visszanyitási flow megszünteti a felesleges sztornó bizonylatpárok tömegét nyitott időszakban, miközben a sorszámvédelem kizárja a jogszabálysértő sorszámhézagok kialakulását.
 
 ## Kapcsolódó
 - **ADR:** [A-057: Könyvelési Napló Architektúra](../../architecture/decisions/A-057-accounting-journals-architecture.md)
+- **ADR:** [A-111: Közvetlen Bizonylat-visszanyitás, Főkönyvi Sztornó Kioltás és Sorszámvédelem](../../architecture/decisions/A-111-accounting-journal-unpost-gl-storno-and-numbering-integrity.md)
 - **BRD:** [043: Könyvelési Naplók](../../business/decisions/043-accounting-journals.md)
 - **DB Schema:** [22-accounting-journals.md](../../architecture/database/22-accounting-journals.md)
 - **Design:** [11-data-display-tables.md](../../design/11-data-display-tables.md), [12-dialogs-modals.md](../../design/12-dialogs-modals.md), [04-component-library.md](../../design/04-component-library.md)

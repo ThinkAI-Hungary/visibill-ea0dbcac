@@ -34,7 +34,8 @@ import {
   CheckCircle2,
   XCircle,
   Sparkles,
-  RotateCcw
+  RotateCcw,
+  Undo2
 } from 'lucide-react';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
@@ -190,7 +191,7 @@ export default function JournalsPage() {
 
   // Storno / Correction dialog state
   const [stornoOpen, setStornoOpen] = useState(false);
-  const [stornoTarget, setStornoTarget] = useState<{ headerId: string; correct: boolean } | null>(null);
+  const [stornoTarget, setStornoTarget] = useState<{ headerId: string; correct: boolean; entry?: any } | null>(null);
   const [stornoReason, setStornoReason] = useState('');
 
   // Delete confirmation dialogs state
@@ -285,6 +286,65 @@ export default function JournalsPage() {
     const fallback = dailyExchangeRates.find(r => r.currency === currency);
     return fallback?.rate ? Number(fallback.rate) : 1;
   }, [dailyExchangeRates]);
+
+  // Fetch closed accounting periods for the company
+  const { data: closedPeriods = [] } = useQuery({
+    queryKey: ['acc-accounting-periods-lock', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('acc_accounting_periods')
+        .select('year, month, is_closed')
+        .eq('company_id', selectedCompany.id)
+        .eq('is_closed', true);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCompany?.id,
+  });
+
+  // Fetch finalized VAT returns for the company
+  const { data: finalizedVatReturns = [] } = useQuery({
+    queryKey: ['acc-finalized-vat-returns-lock', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('vat_returns')
+        .select('period_year, period_month, period_quarter, frequency, status')
+        .eq('company_id', selectedCompany.id)
+        .eq('status', 'finalized');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCompany?.id,
+  });
+
+  // Check if an entry is locked due to closed period or finalized VAT
+  const checkEntryLock = useCallback((entry: any): { locked: boolean; reason?: string } => {
+    if (!entry?.posting_date) return { locked: false };
+    const pDate = new Date(entry.posting_date);
+    const year = pDate.getFullYear();
+    const month = pDate.getMonth() + 1;
+    const quarter = Math.ceil(month / 3);
+
+    const isPeriodClosed = closedPeriods.some((p: any) => p.year === year && p.month === month && p.is_closed);
+    if (isPeriodClosed) {
+      return { locked: true, reason: `Lezárt számviteli időszak (${year}/${month}. hó)` };
+    }
+
+    const isVatFinalized = finalizedVatReturns.some((v: any) => {
+      if (v.period_year !== year) return false;
+      if (v.frequency === 'monthly' && v.period_month === month) return true;
+      if (v.frequency === 'quarterly' && v.period_quarter === quarter) return true;
+      if (v.frequency === 'annual') return true;
+      return false;
+    });
+    if (isVatFinalized) {
+      return { locked: true, reason: `Véglegesített ÁFA időszak (${year}/${month}. hó)` };
+    }
+
+    return { locked: false };
+  }, [closedPeriods, finalizedVatReturns]);
 
   // Fetch entries
   const { data: entries = [], isLoading: loadingEntries } = useQuery({
@@ -456,9 +516,42 @@ export default function JournalsPage() {
     }
   });
 
+  // Unpost entry mutation (direct edit in open period)
+  const unpostMutation = useMutation({
+    mutationFn: async ({ headerId, reason }: { headerId: string; reason?: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Bejelentkezés szükséges");
+
+      const { error } = await supabase.rpc('acc_unpost_journal_entry', {
+        p_header_id: headerId,
+        p_user_id: user.id,
+        p_reason: reason || 'Tétel visszanyitva közvetlen javításra'
+      });
+      if (error) throw error;
+      return headerId;
+    },
+    onSuccess: (headerId) => {
+      invalidateGlAndJournalQueries();
+      toast({
+        title: "Tétel visszanyitva piszkozattá",
+        description: "A tétel sikeresen visszanyílt kézi piszkozattá. Az eredeti naplósorszám megmaradt, most közvetlenül szerkesztheti."
+      });
+      setEditingEntryId(headerId);
+      setManualEntryOpen(true);
+    },
+    onError: (err: any) => {
+      toast({ title: "Visszanyitási hiba", description: err.message, variant: "destructive" });
+    }
+  });
+
   // Delete draft mutation
   const deleteMutation = useMutation({
     mutationFn: async (headerId: string) => {
+      const target = entriesById.get(headerId);
+      if (target?.journal_number) {
+        throw new Error(`A(z) ${target.journal?.code || ''}/${target.journal_number} számozott bizonylat a sorszámfolytonosság védelme miatt nem törölhető!`);
+      }
+
       const { error: linesErr } = await supabase.from('acc_journal_lines').delete().eq('header_id', headerId);
       if (linesErr) throw linesErr;
 
@@ -484,7 +577,7 @@ export default function JournalsPage() {
       invalidateGlAndJournalQueries();
       toast({ title: "Piszkozat törölve" });
     },
-    onError: (err) => {
+    onError: (err: any) => {
       toast({ title: "Törlési hiba", description: err.message, variant: "destructive" });
     }
   });
@@ -492,15 +585,23 @@ export default function JournalsPage() {
   // Bulk delete mutation
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error: linesErr } = await supabase.from('acc_journal_lines').delete().in('header_id', ids);
+      // Filter out any entries with assigned journal numbers to protect gapless numbering
+      const validDeletableIds = ids.filter(id => !entriesById.get(id)?.journal_number);
+      const skippedCount = ids.length - validDeletableIds.length;
+
+      if (validDeletableIds.length === 0) {
+        throw new Error("A kijelölt tételek mindegyike rendelkezik hivatalos naplósorszámmal, így a sorszámfolytonosság védelme miatt nem törölhetőek.");
+      }
+
+      const { error: linesErr } = await supabase.from('acc_journal_lines').delete().in('header_id', validDeletableIds);
       if (linesErr) throw linesErr;
 
-      const { error: headerErr } = await supabase.from('acc_journal_headers').delete().in('id', ids);
+      const { error: headerErr } = await supabase.from('acc_journal_headers').delete().in('id', validDeletableIds);
       if (headerErr) throw headerErr;
 
-      return ids;
+      return { deletedIds: validDeletableIds, skippedCount };
     },
-    onSuccess: (deletedIds) => {
+    onSuccess: ({ deletedIds, skippedCount }) => {
       const deletedSet = new Set(deletedIds);
       // Optimistically remove deleted items from query cache
       queryClient.setQueriesData({ queryKey: ['acc-journal-entries'] }, (oldData: any) => {
@@ -512,19 +613,26 @@ export default function JournalsPage() {
         setSelectedEntry(null);
       }
       invalidateGlAndJournalQueries();
-      toast({ title: "Kijelölt piszkozatok sikeresen törölve" });
+      if (skippedCount > 0) {
+        toast({
+          title: `${deletedIds.length} piszkozat törölve`,
+          description: `${skippedCount} db tétel megőrzésre került, mivel hivatalos naplósorszámmal rendelkezik (sorszámfolytonosság védelme).`
+        });
+      } else {
+        toast({ title: "Kijelölt piszkozatok sikeresen törölve" });
+      }
     },
-    onError: (err) => {
+    onError: (err: any) => {
       toast({ title: "Törlési hiba", description: err.message, variant: "destructive" });
     }
   });
 
   // Handle storno prompt
-  const handleStorno = (headerId: string, correct: boolean) => {
-    setStornoTarget({ headerId, correct });
+  const handleStorno = useCallback((entry: any, correct: boolean) => {
+    setStornoTarget({ headerId: entry.id, correct, entry });
     setStornoReason('');
     setStornoOpen(true);
-  };
+  }, []);
 
   const toggleSelectEntry = (id: string) => {
     setSelectedEntryIds(prev => {
@@ -952,15 +1060,34 @@ export default function JournalsPage() {
                                 </div>
                               ) : (
                                 <div className="flex items-center justify-center">
-                                  <CustomTooltip content={
-                                    e.status === 'SZTORNOZOTT'
-                                      ? "Sztornózott tétel (lezárt, nem jelölhető ki tömeges műveletre)"
-                                      : "Lekönyvelt zárt tétel (hivatalos naplószámmal ellátva). Közvetlenül nem jelölhető ki tömeges műveletekre; módosításához használd a sorvégi sztornó vagy helyesbítés ikont."
-                                  }>
-                                    <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors">
-                                      <Lock className="w-3.5 h-3.5" />
-                                    </span>
-                                  </CustomTooltip>
+                                  {(() => {
+                                    if (e.status === 'SZTORNOZOTT') {
+                                      return (
+                                        <CustomTooltip content="Sztornózott tétel (lezárt, nem jelölhető ki tömeges műveletre)">
+                                          <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors">
+                                            <Lock className="w-3.5 h-3.5" />
+                                          </span>
+                                        </CustomTooltip>
+                                      );
+                                    }
+                                    const lock = checkEntryLock(e);
+                                    if (lock.locked) {
+                                      return (
+                                        <CustomTooltip content={`Lekönyvelt zárt tétel (${lock.reason}). Közvetlenül nem módosítható, kizárólag számviteli sztornózással helyesbíthető.`}>
+                                          <span className="inline-flex items-center justify-center cursor-help text-amber-500/80 hover:text-amber-600 transition-colors">
+                                            <Lock className="w-3.5 h-3.5" />
+                                          </span>
+                                        </CustomTooltip>
+                                      );
+                                    }
+                                    return (
+                                      <CustomTooltip content="Lekönyvelt tétel nyitott időszakban. A sorvégi műveleteknél közvetlenül visszanyitható és szerkeszthető, vagy sztornózható.">
+                                        <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors">
+                                          <Lock className="w-3.5 h-3.5" />
+                                        </span>
+                                      </CustomTooltip>
+                                    );
+                                  })()}
                                 </div>
                               )}
                             </TableCell>
@@ -1081,23 +1208,28 @@ export default function JournalsPage() {
 
                                 {e.status === 'KONYVELT' && (
                                   <>
-                                    <CustomTooltip content="Sztornózás">
+                                    <CustomTooltip content="Sztornózás (érvénytelenítés)">
                                       <Button
                                         size="icon"
                                         variant="ghost"
                                         className="w-6 h-6 text-destructive hover:bg-destructive/10"
-                                        onClick={() => handleStorno(e.id, false)}
+                                        onClick={() => handleStorno(e, false)}
                                         aria-label="Bizonylat sztornózása"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </Button>
                                     </CustomTooltip>
-                                    <CustomTooltip content="Javítás / Helyesbítés">
+                                    <CustomTooltip content={checkEntryLock(e).locked ? "Helyesbítés sztornóval (lezárt időszak)" : "Javítás / Visszanyitás"}>
                                       <Button
                                         size="icon"
                                         variant="ghost"
-                                        className="w-6 h-6 text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/30"
-                                        onClick={() => handleStorno(e.id, true)}
+                                        className={cn(
+                                          "w-6 h-6",
+                                          checkEntryLock(e).locked
+                                            ? "text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400"
+                                            : "text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/30"
+                                        )}
+                                        onClick={() => handleStorno(e, true)}
                                         aria-label="Javítás vagy helyesbítés"
                                       >
                                         <CornerDownRight className="w-3.5 h-3.5" />
@@ -1131,17 +1263,25 @@ export default function JournalsPage() {
                                         <FileSpreadsheet className="w-3.5 h-3.5" />
                                       </Button>
                                     </CustomTooltip>
-                                    <CustomTooltip content="Piszkozat törlése">
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="w-6 h-6 text-destructive hover:bg-destructive/10"
-                                        onClick={(ev) => { ev.stopPropagation(); setSingleDeleteTarget({ id: e.id, description: e.description || e.document_id }); }}
-                                        aria-label="Piszkozat törlése"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </Button>
-                                    </CustomTooltip>
+                                    {e.journal_number ? (
+                                      <CustomTooltip content={`A tétel hivatalos bizonylatszámmal rendelkezik (${journalNum}), a bizonylati fegyelem és sorszámfolytonosság védelme miatt nem törölhető. Kérjük könyvelje le vagy sztornózza!`}>
+                                        <span className="inline-flex items-center justify-center w-6 h-6 text-muted-foreground/30 cursor-not-allowed">
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </span>
+                                      </CustomTooltip>
+                                    ) : (
+                                      <CustomTooltip content="Piszkozat törlése">
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="w-6 h-6 text-destructive hover:bg-destructive/10"
+                                          onClick={(ev) => { ev.stopPropagation(); setSingleDeleteTarget({ id: e.id, description: e.description || e.document_id }); }}
+                                          aria-label="Piszkozat törlése"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </CustomTooltip>
+                                    )}
                                   </>
                                 )}
                               </div>
@@ -1337,59 +1477,224 @@ export default function JournalsPage() {
         />
       )}
 
-      {stornoOpen && (
+      {stornoOpen && stornoTarget && (
         <Dialog open={stornoOpen} onOpenChange={setStornoOpen}>
           <DialogContent className="sm:max-w-md bg-card border border-border">
-            <DialogHeader>
-              <DialogTitle className={cn("text-base font-bold", stornoTarget?.correct ? "text-primary" : "text-destructive")}>
-                {stornoTarget?.correct ? 'Bizonylat helyesbítése' : 'Bizonylat sztornózása'}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-1">
-                {stornoTarget?.correct 
-                  ? 'Kérjük, adja meg a helyesbítés indokát. A helyesbítés során egy ellentétes előjelű (storno) tétel, majd egy új, javított kézi piszkozat jön létre.'
-                  : 'Kérjük, adja meg a sztornózás indokát. A sztornózás során egy ellentétes előjelű tétel jön létre, amely lezárja az eredetit.'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-3">
-              <div className="space-y-1.5">
-                <label htmlFor="storno-reason" className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Indoklás <span className="text-destructive">*</span>
-                </label>
-                <Input
-                  id="storno-reason"
-                  value={stornoReason}
-                  onChange={e => setStornoReason(e.target.value)}
-                  placeholder="Pl. Hibás összeg, téves kontírozás..."
-                  className="h-9 text-xs"
-                  autoFocus
-                />
-              </div>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0 border-t border-border/10 pt-3">
-              <Button type="button" variant="outline" size="sm" onClick={() => setStornoOpen(false)} className="h-9 text-xs">
-                Mégse
-              </Button>
-              <Button
-                type="button"
-                variant={stornoTarget?.correct ? 'default' : 'destructive'}
-                size="sm"
-                disabled={!stornoReason.trim() || stornoMutation.isPending}
-                className="h-9 text-xs font-semibold"
-                onClick={() => {
-                  if (stornoTarget) {
-                    stornoMutation.mutate({
-                      headerId: stornoTarget.headerId,
-                      reason: stornoReason,
-                      correct: stornoTarget.correct
-                    });
-                    setStornoOpen(false);
-                  }
-                }}
-              >
-                {stornoMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                {stornoTarget?.correct ? 'Helyesbítés indítása' : 'Sztornózás végrehajtása'}
-              </Button>
-            </DialogFooter>
+            {(() => {
+              const lockInfo = checkEntryLock(stornoTarget.entry);
+              const isCorrection = stornoTarget.correct;
+
+              if (!isCorrection) {
+                // 1. Sztornózás (érvénytelenítés)
+                return (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
+                        <Trash2 className="w-4 h-4" />
+                        Bizonylat sztornózása
+                      </DialogTitle>
+                      <DialogDescription className="text-xs text-muted-foreground mt-1">
+                        Kérjük, adja meg a sztornózás indokát. A sztornózás során egy ellentétes előjelű tétel jön létre, amely érvényteleníti az eredeti tételt.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-3">
+                      <div className="space-y-1.5">
+                        <label htmlFor="storno-reason" className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Indoklás <span className="text-destructive">*</span>
+                        </label>
+                        <Input
+                          id="storno-reason"
+                          value={stornoReason}
+                          onChange={e => setStornoReason(e.target.value)}
+                          placeholder="Pl. Hibás összeg, téves számla..."
+                          className="h-9 text-xs"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0 border-t border-border/10 pt-3">
+                      <Button type="button" variant="outline" size="sm" onClick={() => setStornoOpen(false)} className="h-9 text-xs">
+                        Mégse
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        disabled={!stornoReason.trim() || stornoMutation.isPending}
+                        className="h-9 text-xs font-semibold"
+                        onClick={() => {
+                          stornoMutation.mutate({
+                            headerId: stornoTarget.headerId,
+                            reason: stornoReason,
+                            correct: false
+                          });
+                          setStornoOpen(false);
+                        }}
+                      >
+                        {stornoMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                        Sztornózás végrehajtása
+                      </Button>
+                    </DialogFooter>
+                  </>
+                );
+              }
+
+              if (lockInfo.locked) {
+                // 2. Lezárt időszak helyesbítése (storno kötelező)
+                return (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="text-base font-bold text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                        <Lock className="w-4 h-4" />
+                        Bizonylat helyesbítése (Lezárt időszak)
+                      </DialogTitle>
+                      <DialogDescription className="text-xs text-muted-foreground mt-1">
+                        Az érintett időszak zárt: <span className="font-semibold text-foreground">{lockInfo.reason}</span>.
+                        Számviteli szabályok szerint lezárt időszakban közvetlen módosítás nem lehetséges; a javítás ellentétes előjelű sztornó bizonylattal és új helyesbítő másolattal történik.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-3">
+                      <div className="space-y-1.5">
+                        <label htmlFor="storno-reason" className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Helyesbítés indoklása <span className="text-destructive">*</span>
+                        </label>
+                        <Input
+                          id="storno-reason"
+                          value={stornoReason}
+                          onChange={e => setStornoReason(e.target.value)}
+                          placeholder="Pl. Hibás főkönyvi szám javítása..."
+                          className="h-9 text-xs"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0 border-t border-border/10 pt-3">
+                      <Button type="button" variant="outline" size="sm" onClick={() => setStornoOpen(false)} className="h-9 text-xs">
+                        Mégse
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        disabled={!stornoReason.trim() || stornoMutation.isPending}
+                        className="h-9 text-xs font-semibold"
+                        onClick={() => {
+                          stornoMutation.mutate({
+                            headerId: stornoTarget.headerId,
+                            reason: stornoReason,
+                            correct: true
+                          });
+                          setStornoOpen(false);
+                        }}
+                      >
+                        {stornoMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                        Helyesbítés indítása sztornóval
+                      </Button>
+                    </DialogFooter>
+                  </>
+                );
+              }
+
+              // 3. Nyitott időszak javítása (Közvetlen visszanyitás vs Sztornó)
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle className="text-base font-bold text-primary flex items-center gap-2">
+                      <Undo2 className="w-4 h-4" />
+                      Könyvelt tétel javítása
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-muted-foreground mt-1">
+                      Az időszak nyitott (nincs lezárva és az ÁFA bevallás sincs véglegesítve). Válassza ki a javítás kívánt módját:
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3 py-2">
+                    <div className="space-y-1.5">
+                      <label htmlFor="storno-reason" className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Megjegyzés / Indoklás (opcionális)
+                      </label>
+                      <Input
+                        id="storno-reason"
+                        value={stornoReason}
+                        onChange={e => setStornoReason(e.target.value)}
+                        placeholder="Pl. Kontírozási javítás..."
+                        className="h-9 text-xs"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="rounded-lg border border-primary/25 bg-primary/5 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                          Közvetlen visszanyitás és javítás
+                        </span>
+                        <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30">
+                          Ajánlott
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        A tétel visszanyílik szerkeszthető piszkozattá az eredeti bizonylatszám megőrzésével. Nem jön létre felesleges sztornó bizonylat, és azonnal megnyílik a szerkesztőfelület.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        disabled={unpostMutation.isPending}
+                        className="w-full h-8 text-xs font-semibold mt-1"
+                        onClick={() => {
+                          unpostMutation.mutate({
+                            headerId: stornoTarget.headerId,
+                            reason: stornoReason.trim() || undefined
+                          });
+                          setStornoOpen(false);
+                        }}
+                      >
+                        {unpostMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                        Visszanyitás és szerkesztés
+                      </Button>
+                    </div>
+
+                    <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+                      <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <CornerDownRight className="w-3.5 h-3.5 text-muted-foreground" />
+                        Számviteli sztornózás és új bizonylat
+                      </span>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        Külön ellentétes előjelű sztornó bizonylat készül és egy új javító piszkozat jön létre (szigorú számviteli nyomvonal esetén).
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={!stornoReason.trim() || stornoMutation.isPending}
+                        className="w-full h-8 text-xs font-medium"
+                        onClick={() => {
+                          stornoMutation.mutate({
+                            headerId: stornoTarget.headerId,
+                            reason: stornoReason,
+                            correct: true
+                          });
+                          setStornoOpen(false);
+                        }}
+                      >
+                        {stornoMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                        Sztornózás és javító másolat
+                      </Button>
+                      {!stornoReason.trim() && (
+                        <p className="text-[10px] text-muted-foreground/70 italic text-center">
+                          (Sztornózáshoz kötelező indoklást megadni a fenti mezőben)
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <DialogFooter className="border-t border-border/10 pt-3">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setStornoOpen(false)} className="h-8 text-xs text-muted-foreground">
+                      Mégse
+                    </Button>
+                  </DialogFooter>
+                </>
+              );
+            })()}
           </DialogContent>
         </Dialog>
       )}

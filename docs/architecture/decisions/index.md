@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-11  
-> **Összesen:** 117 döntés | ✅ Decided: 115 | ⛔ Superseded: 2
+> **Összesen:** 118 döntés | ✅ Decided: 116 | ⛔ Superseded: 2
 
 ---
 
@@ -109,6 +109,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-100 | Banki Tranzakció Egyediségi Megkötés Bővítése Összeggel és Csendes Duplikátum-kezelés | ✅ Decided | [A-100](./A-100-transaction-unique-constraint-amount-inclusion.md) |
 | A-103 | Accounty RLS Teljesítményoptimalizálás és Postgres Hibanapló Stabilizálás | ✅ Decided | [A-103](./A-103-accounty-rls-performance-optimization-and-error-guarding.md) |
 | A-110 | Bérszámfejtési Főkönyvi Számlatükör Pagináció, Cégprofilos Kontírozás Perzisztencia és Kattintási Outline Védelem | ✅ Decided | [A-110](./A-110-payroll-gl-preset-pagination-and-mapping-persistence.md) |
+| A-111 | Közvetlen Bizonylat-visszanyitás (Unpost), Főkönyvi Sztornó Kioltás és Sorszámfolytonossági Védelem | ✅ Decided | [A-111](./A-111-accounting-journal-unpost-gl-storno-and-numbering-integrity.md) |
 
 ## 🖥️ Frontend
 

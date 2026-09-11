@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketDetailView.tsx": {
-    "mtime": 1789099088.5399191,
-    "ast_hash": "f466a399060b1e6b39ecb04fa3e370d9",
+    "mtime": 1789105201.0398843,
+    "ast_hash": "c498cbfe93ff40a247569130ac950cab",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
@@ -1030,8 +1030,8 @@
     "semantic_hash": "64181f0f0c553cc19a7165ffe6353303"
   },
   "src/hooks/useTickets.ts": {
-    "mtime": 1789098297.9681146,
-    "ast_hash": "aa23970d6a5bde4b713c3203b18dc277",
+    "mtime": 1789105209.6686447,
+    "ast_hash": "fa74ae10ab7c7d320ed1cfc9d5593d57",
     "semantic_hash": ""
   },
   "src/hooks/useTimeEntries.ts": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1788972837.8332536,
-    "ast_hash": "bba1726f2265fcc790d51f2aa0ab3fdd",
+    "mtime": 1789106886.6129994,
+    "ast_hash": "d8bb56b587af2f3b20e22b81db9ef630",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -3080,8 +3080,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-018-ticket-system.md": {
-    "mtime": 1789099244.3530524,
-    "ast_hash": "187750e201162c56d7324ec1e572cfe6",
+    "mtime": 1789105494.542313,
+    "ast_hash": "9a00e90784028e4e71e9f446e3b99b1e",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
@@ -3555,8 +3555,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1789099238.0021136,
-    "ast_hash": "faa99a54b779eb6774a23e4b36fc05ef",
+    "mtime": 1789105471.0115733,
+    "ast_hash": "cab688a5aa5270ee63b6b1d405f86bc7",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1789080097.869218,
-    "ast_hash": "e5102f6449ab60eef4e2703de742ae90",
+    "mtime": 1789107812.1486416,
+    "ast_hash": "91078fde3be1ea82f64b2653329daf1d",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -8660,8 +8660,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useBulkImportPayroll.ts": {
-    "mtime": 1789104255.5136375,
-    "ast_hash": "9cc6faf8a4a5c2237f56ea84e4b041a6",
+    "mtime": 1789104580.0791364,
+    "ast_hash": "a26274484e279b857e395298c8011034",
     "semantic_hash": ""
   },
   "src/lib/payroll/nav08XmlParser.ts": {
@@ -10430,8 +10430,8 @@
     "semantic_hash": ""
   },
   "src/test/tickets/ticketNotFound.test.tsx": {
-    "mtime": 1789099164.2194579,
-    "ast_hash": "c0e8a56389e70fc7d76a093851e3f724",
+    "mtime": 1789105160.4661193,
+    "ast_hash": "629c100d033eed63b50791b1a611eccb",
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/payslipPreviewAndDownload.test.ts": {
@@ -10442,6 +10442,21 @@
   "src/lib/payroll/__tests__/nav08KivaAndEfoImport.test.ts": {
     "mtime": 1789104068.729088,
     "ast_hash": "250a2d90fcc4790d6a006880509c541e",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/useMarkTicketRead.test.tsx": {
+    "mtime": 1789105241.815835,
+    "ast_hash": "9c7e8e60869ea20f2b039470a68fe88e",
+    "semantic_hash": ""
+  },
+  "src/components/journals/__tests__/JournalsUnpostStorno.test.tsx": {
+    "mtime": 1789107822.096566,
+    "ast_hash": "65fd915575b271268718041bd0f7dff0",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260911100000_fix_gl_storno_and_enable_unpost.sql": {
+    "mtime": 1789107769.47544,
+    "ast_hash": "90f0187bb7ffae4d1e22055e493316d2",
     "semantic_hash": ""
   }
 }

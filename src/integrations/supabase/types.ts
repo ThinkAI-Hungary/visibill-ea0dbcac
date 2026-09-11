@@ -10695,6 +10695,14 @@ export type Database = {
         }
         Returns: string
       }
+      acc_unpost_journal_entry: {
+        Args: {
+          p_header_id: string
+          p_user_id: string
+          p_reason?: string | null
+        }
+        Returns: boolean
+      }
       acc_seed_default_journals: {
         Args: {
           p_company_id: string
