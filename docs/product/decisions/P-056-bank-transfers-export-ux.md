@@ -2,6 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-07-23  
+**Utoljára frissítve:** 2026-09-11  
 **Category:** UI / Payments / Workflow  
 
 ---
@@ -21,7 +22,8 @@ Hogyan nézzen ki a kifizetésre váró szállítói számlák kiválasztása, a
    - **Szűrőfülek:** Összes (`all`), Lejárt (`overdue`), Ma esedékes (`due_today`).
    - **Csoportosítási Kapcsoló (Switch):** „Összevonás partnerenként” toggle – összeadja az azonos partnerhez tartozó összegeket.
    - **Interaktív Táblázat:** Checkbox-os többszörös kijelölés, forrás (`NAV` / `Kézi`), számlaszám, partner, esedékesség, összeg, deviza, bankszámlaszám.
-   - **Inline Számlaszám Szerkesztés & Hibajelzés:** Piros figyelmeztetés jelenik meg érvénytelen CDV vagy IBAN formátum esetén, a cellában közvetlenül javítható a számlaszám.
+   - **Inline Számlaszám Szerkesztés & Törzsadat Perzisztencia:** Piros figyelmeztetés jelenik meg érvénytelen CDV vagy IBAN formátum esetén, a cellában közvetlenül javítható a számlaszám. A javítás azonnal elmentődik a `partners.bank_account_number` mezőbe, automatikusan feloldva a partner jövőbeli számláit is.
+   - **Közvetlen Kézi Kiegyenlítés (Manual Settlement):** Ha a számla nem átutalással rendeződött (pl. készpénzben vagy kompenzációval), a felhasználó egyetlen kattintással megjelölheti kiegyenlítettként (`is_manual_payment = true`), eltávolítva a kifizetendő tételek közül.
 
 3. **Export Varázsló Dialógus (`ExportDialog`):**
    - Indító bankszámla kiválasztása (`company_bank_accounts`).
@@ -42,8 +44,11 @@ Hogyan nézzen ki a kifizetésre váró szállítói számlák kiválasztása, a
 
 - Egyértelmű vizuális visszajelzés a hiányzó bankszámlaszámokról az utalási csomag összeállítása előtt.
 - Megkönnyíti a cégvezetőknek a banki feladást anélkül, hogy manuálisan kellene adatokat másolniuk a számlákról.
+- A bankszámlák közvetlen törzsadat-mentése megelőzi az ismételt kézi adatbevitelt.
 
 ## Kapcsolódó
 - **ADR:** [A-058: Banki Utalások Architektúra](../../architecture/decisions/A-058-bank-transfers-architecture.md)
+- **ADR:** [A-112: Futár Kompenzációs Értesítő Automatikus Beszámítás](../../architecture/decisions/A-112-courier-compensation-inbound-invoice-auto-settlement.md)
 - **BRD:** [044: Banki Utalások](../../business/decisions/044-bank-transfers.md)
 - **DB Schema:** [06-transactions-bank.md](../../architecture/database/06-transactions-bank.md)
+- **DB Schema:** [21-master-data.md](../../architecture/database/21-master-data.md)

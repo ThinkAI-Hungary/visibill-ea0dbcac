@@ -75,6 +75,7 @@
 | default_project_id | uuid | ✓ |  |
 | email | text | ✓ |  |
 | exclude_from_accounting | boolean | — | `false` |
+| bank_account_number | text | ✓ |  | ← Alapértelmezett bankszámlaszám utalási csomag generálásához (Transfers) |
 
 **FK:** `company_id` → `companies.id`, `default_project_id` → `projects.id`
 
@@ -147,6 +148,13 @@
 **FK:** `company_id` → `companies.id`, `matched_nav_invoice_id` → `nav_invoices.id`, `matched_transaction_id` → `transactions.id`, `upload_id` → `report_uploads.id`
 
 **Indexek:** `idx_courier_reports_company`, `idx_courier_reports_match_status`, `idx_courier_reports_matched_nav_invoice`, `idx_courier_reports_matched_transaction`, `idx_courier_reports_upload`
+
+**row_type és összesítő logika:**
+- `'item'`: Normál tételsor (egyedi csomag utánvét, kézbesítési dátummal és címzettel).
+- `'total'`: Összesítő sor (pl. GLS heti zárás vagy számla kompenzációs tétel). A riport importálásakor az összesítő sor örökli a csomagok összegét és a jóváírást; a felület a total sorból származtatja a jutalékot és a nettó kifizetést (lásd [A-112](../decisions/A-112-courier-compensation-inbound-invoice-auto-settlement.md)).
+
+**Triggerek:**
+- `trg_courier_reports_auto_settle_compensation` (`AFTER INSERT OR UPDATE ON courier_reports`): Ha `report_type = 'compensation'`, automatikusan megkeresi a futárcég (pl. GLS) nyitott bejövő számláit (`nav_invoices`), amelyek csomagszám/megjegyzés vagy pontos összeg alapján megegyeznek, és azonnal kiegyenlítettként jelöli meg őket (`manual_payment_type = 'compensation'`, `is_manual_payment = true`). Lásd: [A-112](../decisions/A-112-courier-compensation-inbound-invoice-auto-settlement.md).
 
 ---
 

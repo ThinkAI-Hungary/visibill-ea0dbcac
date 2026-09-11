@@ -78,17 +78,20 @@ A **Tranzakciók** modul a vállalkozás pénzforgalmi mozgásainak digitális k
   5. Kattintson a **„Könyvelés”** gombra.
   - **Eredmény:** A tétel lekönyvelődik a vegyes naplóban és a főkönyvben anélkül, hogy számlához lenne rendelve.
 
-### 3.5 Futár és SZÉP Kártya Riportok Munkaterület
-- **Hogy hívják:** „Futár riportok” és „SZÉP Kártya” lapfülek
-- **Mire való:** E-kereskedelmi utánvétes gyűjtőátutalások (GLS, MPL, Mixpack stb.) automatikus szétbontása csomagszám szerint számlákra és futárdíjakra, valamint SZÉP kártyás alszámlák elszámolása.
+### 3.5 Futár Riportok, Kompenzációs Értesítők és SZÉP Kártya Munkaterület
+- **Hogy hívják:** „Futár riportok” és „SZÉP Kártya” lapfülek, valamint automatikus kompenzációs számlarendezés
+- **Mire való:** E-kereskedelmi utánvétes gyűjtőátutalások (GLS, MPL, Mixpack stb.) automatikus szétbontása csomagszám szerint számlákra és futárdíjakra, kompenzációs értesítők általi bejövő futárszámla-rendezés, valamint SZÉP kártyás alszámlák elszámolása.
 - **Hol található a felületen:** A tranzakciós képernyő felső részén elhelyezkedő nézetváltó fülek.
 - **Hogyan használhatja a felhasználó:**
-  1. Kattintson a **„Futár riportok”** fülre.
-  2. Töltse fel a futárszolgálattól kapott CSV vagy Excel elszámolást.
-  3. A rendszer összekapcsolja a gyűjtő jóváírást a futárfájlban lévő csomagokkal és számlákkal.
-  4. Tekintse át az egyeztető táblázatot, amely kimutatja a levont utánvétkezelési díjat és a nettó kifizetést.
-  5. Kattintson a **„Kötegelt párosítás jóváhagyása”** gombra.
-  - **Eredmény:** A futár által beszedett utánvétek egyetlen kattintással lezárják az összes érintett vevői számlát, a levont jutalék pedig költségként könyvelődik.
+  1. **Utánvétes elszámolások feldolgozása:**
+     - Kattintson a **„Futár riportok”** fülre, és töltse fel a futárszolgálattól kapott CSV vagy Excel elszámolást.
+     - A rendszer összekapcsolja a banki jóváírást a futárfájlban lévő csomagokkal és számlákkal. A magyar készpénzkerekítési szabályok miatti legfeljebb ±5 Ft-os eltérést a párosító algoritmus automatikusan tolerálja.
+     - Tekintse át az egyeztető táblázatot (utánvét, levont jutalék, nettó kifizetés), majd kattintson a **„Kötegelt párosítás jóváhagyása”** gombra.
+  2. **Kompenzációs értesítők (GLS beszámítások) automatikus számlarendezése:**
+     - Amikor a futárcég kompenzációs értesítőt állít ki (azaz a szállítási díjszámláit közvetlenül levonja a beszedett utánvétekből), töltse fel a kompenzációs jegyzőkönyvet a futár riportokhoz.
+     - A rendszer a háttérben automatikusan azonosítja az értesítőben szereplő számlahivatkozásokat vagy egyező összegeket, és a futárcég (pl. GLS Hungary Kft.) nyitott bejövő számláit azonnal kiegyenlítettként jelöli meg (`manual_payment_type = 'compensation'`).
+     - A Számlák listáján ezek a számlák azonnal zöld fizetett státuszra váltanak, megelőzve, hogy tévesen nyitott szállítói tartozásként jelenjenek meg az utalásoknál vagy a könyvelésben.
+  - **Eredmény:** A futár által beszedett utánvétek lezárják a vevői számlákat, a futárszolgálat saját díjszámlái pedig automatikusan kompenzálásra kerülnek banki utalás nélkül.
 
 ### 3.6 Párosítási Szabályok Kezelése
 - **Hogy hívják:** „Automatikus szabályok” gomb

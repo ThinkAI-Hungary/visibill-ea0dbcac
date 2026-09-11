@@ -1,6 +1,6 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-09-07  
+> **Utoljára frissítve:** 2026-09-11  
 > **Összesen:** 180 aktív alkalmazás-tábla (181 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
@@ -34,7 +34,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [📄 Könyvelési Naplók](./database/22-accounting-journals.md) — 6 tábla, ~58702 sor
 
 **Kiegészítő katalógusok:**
-- [⚡ PostgreSQL RPC Katalógus (132 RPC + 72 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
+- [⚡ PostgreSQL RPC Katalógus (132 RPC + 73 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
 - [🌐 Supabase Edge Functions Katalógus (59 Deno EF)](./edge-functions.md) — NAV szinkron, email, AI és webhook szervermentes funkciók
 
 ---

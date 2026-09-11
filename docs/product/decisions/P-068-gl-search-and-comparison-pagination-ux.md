@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-04  
-**Utoljára frissítve:** 2026-09-04  
+**Utoljára frissítve:** 2026-09-11  
 **Category:** General Ledger / Search / Table UX / Pagination / Terminology  
 **Érintett felületek:** [GeneralLedgerPage.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/pages/GeneralLedgerPage.tsx), [GeneralLedgerTable.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/general-ledger/GeneralLedgerTable.tsx), [GeneralLedgerComparisonTable.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/general-ledger/GeneralLedgerComparisonTable.tsx), [JournalView.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/general-ledger/JournalView.tsx), [GlSearchAutocomplete.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/general-ledger/GlSearchAutocomplete.tsx), [unified-pagination.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/ui/unified-pagination.tsx)  
 
@@ -36,6 +36,16 @@ A Főkönyvi kivonat fejlécében bevezetésre került egy valós idejű, deboun
 - **Intelligens Fa-Navigáció (`handleNavigateToEntity`):**
   - Számlára kattintva azonnal legörget a számlához és kék pulzáló kerettel kiemeli.
   - Tételre kattintva automatikusan lenyitja a szülő főkönyvi számlát, szükség esetén beilleszti a tételt a betöltött listába, a sorra görget (`scrollIntoView`) és 2.5 másodpercig sárga/kiemelő háttérrel fókuszba helyezi.
+
+### 1.1 Főkönyvi Kivonat Fa Valós Idejű Szűrése és Ág-Autokibontás (`GeneralLedgerTable`)
+A globális kereső mellett a Főkönyvi kivonat táblázata valós idejű fa-szűrést és automatikus nézetkibontást kapott:
+- **Keresési kifejezés szinkronizáció (`searchQuery` & `searchResults`):** A fejléc keresőmezőjébe gépelt szöveg azonnal átadódik a táblázat komponensnek.
+- **Hierarchikus szűrés és fa-struktúra megőrzése:**
+  - Ha egy főkönyvi szám (pl. `521`) vagy számla neve megegyezik a kereséssel, a számla, annak szülői (5. Költségnemek, 52. Igénybevett szolgáltatások) és gyermek-analitikái láthatóak maradnak.
+  - Ha egy könyvelési tétel egyezik (partner neve, bizonylatszám, tétel megnevezése, összeg, dátum), a rendszer megőrzi a szülő számlát és annak összes ősét a gyökérig, garantálva a számviteli kontextust.
+- **Automatikus ágkibontás (`branch auto-expansion`):** Keresési állapotban (`isSearchActive`) a releváns sorok automatikusan láthatóvá válnak (`isVisibleOnScreen = true`), így a könyvelőnek nem kell egyenként lenyitogatnia a mappákat a találatok megtekintéséhez. A keresés törlésekor a táblázat zökkenőmentesen visszaáll a korábbi kézi lenyitási állapotba.
+- **On-Demand Analitikus Tétellekérés (`fetchAccountItemsOnDemand`):** Amennyiben a backend adatbázis-keresés (`searchResults`) olyan tételeket azonosít, amelyeknek a számlája még nincs betöltve a kliens memóriájába, a táblázat automatikusan lekéri az adott számlához tartozó könyvelési tételeket a Supabase-ből.
+- **Informatív Üres Állapot (Empty State):** Ha a megadott kifejezésre egyetlen számla vagy tétel sem található, a tábla nem csupasz üres képernyőt mutat, hanem központi keresőikonnal és a keresett kifejezést kiemelő segítő üzenettel látja el a felhasználót.
 
 ### 2. Összehasonlító Tábla Újratervezése és Paginációja (`GeneralLedgerComparisonTable`)
 Az Összehasonlítás nézetet a Naplófőkönyv standardjához igazítottuk:

@@ -39,7 +39,20 @@ A **Főkönyv** modul a kettős könyvvitelt vezető gazdasági társaságok leg
   4. Tekintse át a Tartozik és Követel forgalmakat, valamint a záróegyenlegeket.
   - **Eredmény:** Azonnal láthatóvá válnak az időszaki vagyon- és eredménymozgások, a táblázat alján pedig a rendszer igazolja a Tartozik = Követel egyezőséget.
 
-### 3.2 Főkönyvi Karton Megnyitása és Bizonylatszintű Mélyfúrás
+### 3.2 Főkönyvi Gyorskereső és Valós Idejű Fa-Szűrés
+- **Hogy hívják:** Főkönyvi gyorskereső autocomplete (`GlSearchAutocomplete`) és intelligens fa-szűrő
+- **Mire való:** Bármely főkönyvi számlaszám, számla megnevezés, partner neve, bizonylatszám vagy konkrét forintösszeg azonnali megkeresése anélkül, hogy a számlatükör fát kézzel végig kellene kattintani.
+- **Hol található a felületen:** A Főkönyvi kivonat fejlécében elhelyezkedő keresősáv, valamint a hierarchikus táblázat feletti szűrő.
+- **Hogyan használhatja a felhasználó:**
+  1. Kezdje el gépelni a keresett kifejezést a fejléc keresőmezőjébe (pl. *partner neve*, *521*, bizonylatszám vagy összeg).
+  2. A felugró autocomplete panelen valós időben megjelennek a találatok kék (`Főkönyvi számla`) és zöld (`Tétel`) badge-ekkel, partnerrel, számlaszámmal és formázott forintösszeggel.
+  3. A billentyűzet nyilakkal navigálhat a találatok között, és az `Enter` billentyűvel kiválaszthatja a kívánt elemet (vagy egérrel rákattinthat).
+  4. A táblázatban a keresés beírásával párhuzamosan valós időben szűrődik a fa: a rendszer a találati ágakat automatikusan kinyitja (`branch auto-expansion`), megőrizve a szülő számlaosztályokat a számviteli összefüggések áttekinthetősége érdekében. Ha a tétel még nincs a memóriában, a rendszer a háttérben automatikusan lekéri az adott számla analitikus tételeit.
+  5. A sorra görgetve a rendszer pulzáló kiemeléssel mutatja a megtalált számlát vagy tételt.
+  6. A keresőmező törlésével (`X` gomb vagy `Escape`) a tábla zökkenőmentesen visszaáll az eredeti kézi lenyitási állapotba.
+  - **Eredmény:** Másodpercek alatt megtalálható bármely könyvelési tétel több tízezer bizonylat közül.
+
+### 3.3 Főkönyvi Karton Megnyitása és Bizonylatszintű Mélyfúrás
 - **Hogy hívják:** „Karton megnyitása” funkció és Karton nézet fül
 - **Mire való:** Egyetlen kiválasztott főkönyvi számla (pl. 381 Pénztár vagy 454 Szállítók) teljes időrendi történetének, nyitó egyenlegének, valamint valamennyi könyvelt tételének megtekintése az ellenszámlákkal.
 - **Hol található a felületen:** A kivonat táblázatának bármely számlasorára kattintva, vagy a felső **„Karton nézet”** lapfülön.
@@ -50,7 +63,7 @@ A **Főkönyv** modul a kettős könyvvitelt vezető gazdasági társaságok leg
   4. Kattintson bármely bizonylatszámra a kapcsolódó számla vagy banki tranzakció eredeti képének megnyitásához.
   - **Eredmény:** Teljeskörű ellenőrizhetőség és auditálhatóság a bizonylattól a főkönyvig.
 
-### 3.3 Audit XML (SAF-T) Feltöltése és Adatimport
+### 3.4 Audit XML (SAF-T) Feltöltése és Adatimport
 - **Hogy hívják:** „Audit XML feltöltése” gomb és varázsló ablak
 - **Mire való:** Korábbi évekből vagy más könyvelőszoftverekből (RLB, Novitax, Kulcs-Soft stb.) exportált hatósági szabványos könyvelési XML betöltése, a korábbi könyvelési előzmények azonnali átemelése.
 - **Hol található a felületen:** A fejléc jobb szélén található zöld **„Audit XML feltöltése”** gomb.
@@ -61,7 +74,7 @@ A **Főkönyv** modul a kettős könyvvitelt vezető gazdasági társaságok leg
   4. Kattintson az **„Importálás jóváhagyása”** gombra.
   - **Eredmény:** A korábbi évek könyvelése és számlatükre bekerül az adatbázisba, biztosítva a folytonos bázisidőszaki összehasonlítást.
 
-### 3.4 Új Vegyes Könyvelési Tétel Rögzítése
+### 3.5 Új Vegyes Könyvelési Tétel Rögzítése
 - **Hogy hívják:** „Új vegyes tétel” gomb és kontírozó ablak
 - **Mire való:** Nem számlához és nem közvetlen banki tételhez kapcsolódó könyvelési tételek felvitele (pl. bérfeladások, havi értékcsökkenés, időbeli elhatárolások, év végi zárás/nyitás).
 - **Hol található a felületen:** A fejléc jobb oldalán lévő **„+ Új vegyes tétel”** gomb.
@@ -74,7 +87,7 @@ A **Főkönyv** modul a kettős könyvvitelt vezető gazdasági társaságok leg
   6. Kattintson a **„Könyvelés mentése”** gombra.
   - **Eredmény:** A vegyes tétel azonnal beépül a főkönyvbe és a kartonokra.
 
-### 3.5 Mesterséges Intelligencia Kontírozási Asszisztens Futtatása
+### 3.6 Mesterséges Intelligencia Kontírozási Asszisztens Futtatása
 - **Hogy hívják:** „AI Kontírozás futtatása” gomb
 - **Mire való:** A számlatükörben még be nem sorolt vagy félkönyvelt számlák gépi tanuláson alapuló automatikus főkönyvi osztályozása.
 - **Hol található a felületen:** A fejléc műveleti sávjában található csillag/robot ikonnal jelölt **„AI Kontírozás”** gomb.
@@ -85,7 +98,7 @@ A **Főkönyv** modul a kettős könyvvitelt vezető gazdasági társaságok leg
   4. Kattintson a **„Javaslatok elfogadása”** gombra.
   - **Eredmény:** A rendszer kötegelten lekönyveli a számlákat a megfelelő 5-ös, 8-as vagy 9-es számlaosztályokba.
 
-### 3.6 Hivatalos Főkönyvi Kivonat Exportálása
+### 3.7 Hivatalos Főkönyvi Kivonat Exportálása
 - **Hogy hívják:** „Export (PDF / Excel)” gombok
 - **Mire való:** Hivatalos, pecsételhető főkönyvi kivonat generálása banki hiteligényléshez, könyvvizsgálathoz vagy NAV adóellenőrzéshez.
 - **Hol található a felületen:** A táblázat jobb felső szélén elhelyezkedő export gombok.

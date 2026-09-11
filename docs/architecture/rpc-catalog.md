@@ -1,7 +1,7 @@
 # PostgreSQL RPC és Függvény Katalógus
 
-> **Utoljára frissítve:** 2026-09-07  
-> **Összesen:** 132 hívható RPC függvény | 72 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-11  
+> **Összesen:** 132 hívható RPC függvény | 73 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod és eaisyBooks rendszerekben használt összes PostgreSQL tárolt eljárást és RPC (Remote Procedure Call) függvényt tartalmazza. Részletezi a függvény szignatúráját, biztonsági környezetét (`SECURITY DEFINER` vs `INVOKER`), hívó komponensét és funkcionális szerepét.
 A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-schema.md), a szervermentes funkciókat az [Edge Functions Katalógus](./edge-functions.md), a lekérdezési stratégiát pedig az [A-016: PostgreSQL Query Stratégia](./decisions/A-016-postgresql-query-strategy.md) mutatja be.
@@ -18,7 +18,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 6. [⚡ Queue, Worker és Job Management (PGMQ) RPC-k (14 db)](#6-️-queue-worker-és-job-management-pgmq-rpc-k)
 7. [🛠️ Platform és Management Üzemeltetési RPC-k (13 db)](#7-️-platform-és-management-üzemeltetési-rpc-k)
 8. [📧 Email Fiókok, Vault és Hitelesítő Adatok (15 db)](#8--email-fiókok-vault-és-hitelesítő-adatok)
-9. [⚙️ PostgreSQL Trigger Függvények (72 db)](#9-️-postgresql-trigger-függvények)
+9. [⚙️ PostgreSQL Trigger Függvények (73 db)](#9-️-postgresql-trigger-függvények)
 
 ---
 
@@ -259,6 +259,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `rls_auto_enable()` | `DEFINER` | `event_trigger` | Integritás és automatikus üzleti szabály trigger. |
 | `set_invoice_feldolgozva_on_upload_link()` | `DEFINER` | `trigger` | Számla, fizetés vagy feltöltés státuszának tranzakcionális állapotgép kezelése. |
 | `set_nav_invoice_items_company_id()` | `DEFINER` | `trigger` | Számla, fizetés vagy feltöltés státuszának tranzakcionális állapotgép kezelése. |
+| `settle_compensation_for_courier_report()` | `DEFINER` | `trigger` | Futár kompenzációs értesítő esetén a kapcsolódó bejövő számlák automatikus kiegyenlítése (A-112). |
 | `sync_accounty_assignment_to_cache()` | `DEFINER` | `trigger` | Táblák közötti automatikus státusz, párosítás vagy FK szinkronizáció. |
 | `sync_accounty_employee_to_rates()` | `DEFINER` | `trigger` | Táblák közötti automatikus státusz, párosítás vagy FK szinkronizáció. |
 | `sync_accounty_employment_to_rates()` | `DEFINER` | `trigger` | Táblák közötti automatikus státusz, párosítás vagy FK szinkronizáció. |

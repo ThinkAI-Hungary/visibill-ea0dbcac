@@ -57,7 +57,7 @@
 | ti_calculation_method | text | ✓ |  |
 | is_manual_payment | boolean | ✓ | `false` |
 | manual_payment_date | date | ✓ |  |
-| manual_payment_type | text | ✓ |  | ← `'storno_settled'` sztornó kézi lezárásnál |
+| manual_payment_type | text | ✓ |  | ← `'storno_settled'` (sztornó lezárás) vagy `'compensation'` (futár kompenzáció) |
 | manual_payment_note | text | ✓ |  |
 | original_invoice_number | text | ✓ |  | ← NAV XML `<originalInvoiceNumber>` — STORNO számlák esetén |
 
@@ -66,8 +66,8 @@
 **Indexek:** `idx_nav_invoices_cash_payment`, `idx_nav_invoices_category_id`, `idx_nav_invoices_company_date`, `idx_nav_invoices_company_direction_date`, `idx_nav_invoices_company_dir_date_desc`, `idx_nav_invoices_company_payment`, `idx_nav_invoices_exclude`, `idx_nav_invoices_gl_account_id`, `idx_nav_invoices_outbound_unpaid`, `idx_nav_invoices_project_id`, `idx_nav_invoices_reverse_charge`, `idx_nav_invoices_search_trgm` (GIN trigram), `idx_nav_invoices_supplier_partner`, `idx_nav_invoices_transaction_id`, `idx_nav_invoices_user_id`, `nav_invoices_company_id_invoice_number_key`
 
 **Kézi fizetés logika (`is_manual_payment`):**  
-Ha `manual_payment_type = 'storno_settled'` → a sztornó láncolatot a user manuálisan zárta le (`mark_storno_group_settled` RPC). A sor zöldre vált a frontenden, visszavonható (`unmark_storno_group_settled`).  
-Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-architecture.md)
+- Ha `manual_payment_type = 'storno_settled'` → a sztornó láncolatot a user manuálisan zárta le (`mark_storno_group_settled` RPC). A sor zöldre vált a frontenden, visszavonható (`unmark_storno_group_settled`). Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-architecture.md)
+- Ha `manual_payment_type = 'compensation'` → futárszolgálati kompenzációs értesítő (pl. GLS beszámítási jegyzőkönyv) alapján automatikusan kiegyenlített bejövő számla. A `trg_courier_reports_auto_settle_compensation` trigger hozza létre. A számla fizetettként jelenik meg banki utalás nélkül. Lásd: [A-112: Futár Kompenzációs Értesítő Automatikus Beszámítás](../decisions/A-112-courier-compensation-inbound-invoice-auto-settlement.md)
 
 ---
 
