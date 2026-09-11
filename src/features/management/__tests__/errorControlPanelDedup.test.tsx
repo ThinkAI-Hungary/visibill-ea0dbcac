@@ -105,4 +105,64 @@ describe('ErrorControlPanel Deduplication & Fallback Chain', () => {
     expect(screen.getByText('invoice_uploads')).toBeInTheDocument();
     expect(screen.getByText('report_uploads')).toBeInTheDocument();
   });
+
+  it('renders Edge Function and Auth source badges with pastel styles and nowrap', async () => {
+    vi.mocked(fetchManagementData).mockResolvedValue({
+      totalErrors: 2,
+      last24hErrors: 2,
+      mostAffectedCompany: null,
+      mostAffectedUser: null,
+      topErrorCategory: null,
+      totalRows: 2,
+      errors: [
+        {
+          id: 'ef-1',
+          created_at: new Date().toISOString(),
+          error_timestamp: new Date().toISOString(),
+          source: 'app_error_logs:edge_function',
+          source_label: 'Edge Function',
+          error_category: 'Application',
+          error_category_label: 'Application',
+          error_message: 'Edge Function timed out',
+          file_name: null,
+          file_url: null,
+          company_id: null,
+          company_name: null,
+          user_id: null,
+          user_name: null,
+          context: null,
+        },
+        {
+          id: 'auth-1',
+          created_at: new Date().toISOString(),
+          error_timestamp: new Date().toISOString(),
+          source: 'app_error_logs:auth',
+          source_label: 'Auth',
+          error_category: 'Application',
+          error_category_label: 'Application',
+          error_message: 'Auth token invalid',
+          file_name: null,
+          file_url: null,
+          company_id: null,
+          company_name: null,
+          user_id: null,
+          user_name: null,
+          context: null,
+        },
+      ],
+    });
+
+    renderWithProviders(<ErrorControlPanel onOpenCompany={vi.fn()} allUsers={[]} />);
+
+    const edgeFunctionBadge = await screen.findByText('Edge Function');
+    expect(edgeFunctionBadge).toBeInTheDocument();
+    expect(edgeFunctionBadge.className).toContain('whitespace-nowrap');
+    expect(edgeFunctionBadge.className).toContain('bg-violet-500/15');
+    expect(edgeFunctionBadge.className).toContain('text-violet-700');
+
+    const authBadge = screen.getByText('Auth');
+    expect(authBadge).toBeInTheDocument();
+    expect(authBadge.className).toContain('whitespace-nowrap');
+    expect(authBadge.className).toContain('bg-rose-500/15');
+  });
 });

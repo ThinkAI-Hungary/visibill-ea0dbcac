@@ -1,6 +1,6 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-09-08  
+> **Utoljára frissítve:** 2026-09-11  
 > **Összesen:** 55 döntés | ✅ Decided: 40 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 6
 
 ---

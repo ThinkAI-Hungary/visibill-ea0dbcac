@@ -33,64 +33,66 @@ export function ControlCenter({
   };
 
   return (
-    <div className="space-y-6 page-animate overflow-hidden">
-      {/* Tab bar */}
-      <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 w-fit gap-1">
-        <button
-          onClick={() => setTab('errors')}
-          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
-            tab === 'errors'
-              ? 'bg-primary/10 text-primary border-primary/20'
-              : 'text-muted-foreground hover:text-foreground border-transparent'
-          }`}
-        >
-          <AlertTriangle className="h-3.5 w-3.5" />
-          Hibák
-        </button>
-        <button
-          onClick={() => setTab('files')}
-          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
-            tab === 'files'
-              ? 'bg-primary/10 text-primary border-primary/20'
-              : 'text-muted-foreground hover:text-foreground border-transparent'
-          }`}
-        >
-          <FolderOpen className="h-3.5 w-3.5" />
-          Fájlok
-        </button>
-        <button
-          onClick={() => setTab('worker')}
-          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
-            tab === 'worker'
-              ? 'bg-primary/10 text-primary border-primary/20'
-              : 'text-muted-foreground hover:text-foreground border-transparent'
-          }`}
-        >
-          <Server className="h-3.5 w-3.5" />
-          Worker
-        </button>
-        <button
-          onClick={() => setTab('users')}
-          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
-            tab === 'users'
-              ? 'bg-primary/10 text-primary border-primary/20'
-              : 'text-muted-foreground hover:text-foreground border-transparent'
-          }`}
-        >
-          <Users className="h-3.5 w-3.5" />
-          Felhasználók
-        </button>
-        <button
-          onClick={() => setTab('permissions')}
-          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
-            tab === 'permissions'
-              ? 'bg-primary/10 text-primary border-primary/20'
-              : 'text-muted-foreground hover:text-foreground border-transparent'
-          }`}
-        >
-          <ShieldCheck className="h-3.5 w-3.5" />
-          Jogosultságok
-        </button>
+    <div className="space-y-4 page-animate">
+      {/* Tab bar (sticky) */}
+      <div className="sticky top-0 z-30 -mx-6 px-6 -mt-2.5 pt-2.5 pb-2 bg-background/95 backdrop-blur-md border-b border-border/50">
+        <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 w-fit gap-1 overflow-x-auto max-w-full">
+          <button
+            onClick={() => setTab('errors')}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+              tab === 'errors'
+                ? 'bg-primary/10 text-primary border-primary/20'
+                : 'text-muted-foreground hover:text-foreground border-transparent'
+            }`}
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Hibák
+          </button>
+          <button
+            onClick={() => setTab('files')}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+              tab === 'files'
+                ? 'bg-primary/10 text-primary border-primary/20'
+                : 'text-muted-foreground hover:text-foreground border-transparent'
+            }`}
+          >
+            <FolderOpen className="h-3.5 w-3.5" />
+            Fájlok
+          </button>
+          <button
+            onClick={() => setTab('worker')}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+              tab === 'worker'
+                ? 'bg-primary/10 text-primary border-primary/20'
+                : 'text-muted-foreground hover:text-foreground border-transparent'
+            }`}
+          >
+            <Server className="h-3.5 w-3.5" />
+            Worker
+          </button>
+          <button
+            onClick={() => setTab('users')}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+              tab === 'users'
+                ? 'bg-primary/10 text-primary border-primary/20'
+                : 'text-muted-foreground hover:text-foreground border-transparent'
+            }`}
+          >
+            <Users className="h-3.5 w-3.5" />
+            Felhasználók
+          </button>
+          <button
+            onClick={() => setTab('permissions')}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
+              tab === 'permissions'
+                ? 'bg-primary/10 text-primary border-primary/20'
+                : 'text-muted-foreground hover:text-foreground border-transparent'
+            }`}
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Jogosultságok
+          </button>
+        </div>
       </div>
 
       {/* Tab content */}

@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { TicketTimeline } from "./TicketTimeline";
 import { ImageGalleryModal } from "./ImageGalleryModal";
+import { TicketNotFoundView } from "./TicketNotFoundView";
 import {
   Select,
   SelectContent,
@@ -46,11 +47,13 @@ import {
   CircleDot,
   UserCheck,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { uploadTicketImage, isAllowedTicketFile } from "@/lib/upload-ticket-image";
 import { TicketStatusBadge } from "./TicketStatusBadge";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { ThinkAiBadge, ThinkAiIcon } from "./ThinkAiBadge";
+import { TicketResolutionBanner } from "./TicketResolutionBanner";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import {
@@ -68,6 +71,7 @@ import {
   useSupportAgents,
   useDeleteTicket,
   useUpdateTicketAttachments,
+  useRequestTicketResolution,
 } from "@/hooks/useTickets";
 import {
   AlertDialog,
@@ -96,11 +100,12 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const eaisybillBasePath = useScopedBasePath();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { data, isLoading: isTicketLoading } = useTicketDetail(feedbackId);
+  const { data, isLoading: isTicketLoading, isError: isTicketError } = useTicketDetail(feedbackId);
   const ticket = data?.ticket;
   const comments = data?.comments || [];
   const { data: ticketEvents = [], isLoading: isEventsLoading } = useTicketEvents(feedbackId);
   const { mutate: addComment, isPending: isCommenting } = useAddComment();
+  const { mutate: requestResolution, isPending: isRequestingResolution } = useRequestTicketResolution();
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateTicketStatus();
   const { mutate: markRead } = useMarkTicketRead();
   const { data: isAdmin, isLoading: isAdminLoading } = useIsSupportAdmin();
@@ -110,6 +115,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const { mutateAsync: updateTicketAttachments, isPending: isUpdatingAttachments } = useUpdateTicketAttachments();
   const [comment, setComment] = useState("");
   const [isInternal, setIsInternal] = useState(false);
+  const [requestResolutionChecked, setRequestResolutionChecked] = useState(false);
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -154,7 +160,10 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
 
   // Detect if we're in Accounty context
   const isAccounty = location.pathname.startsWith("/eaisybooks");
-  const ticketsBase = isAccounty ? "/eaisybooks/tickets" : `${eaisybillBasePath}/tickets`;
+  const isStandalone = location.pathname.startsWith("/tickets");
+  const ticketsBase = isAccounty 
+    ? "/eaisybooks/tickets" 
+    : (isStandalone ? "/tickets" : `${eaisybillBasePath}/tickets`);
 
   // Mark as read on mount
   useEffect(() => {
@@ -174,29 +183,65 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
 
   const handleSubmit = async () => {
     const isTextEmpty = !comment || comment.replace(/<[^>]*>/g, '').trim() === '';
-    if ((isTextEmpty && commentFiles.length === 0) || !feedbackId || !user) return;
+    const hasFiles = commentFiles.length > 0;
+    if ((isTextEmpty && !hasFiles && !requestResolutionChecked) || !feedbackId || !user) return;
 
     try {
       // Upload comment attachments to {ticketId}/{userId}/ path
       let attachmentUrls: string[] = [];
-      if (commentFiles.length > 0) {
+      if (hasFiles) {
         const uploadPromises = commentFiles.map(file => uploadTicketImage(file, user.id, feedbackId));
         attachmentUrls = await Promise.all(uploadPromises);
       }
 
-      addComment(
-        { feedbackId, message: comment, attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined, isInternal },
-        {
-          onSuccess: () => {
-            setComment("");
-            setCommentFiles([]);
-            setIsInternal(false);
-            setEditorKey(k => k + 1);
-            markRead(feedbackId);
-            shouldScrollRef.current = true;
+      if (requestResolutionChecked) {
+        requestResolution(
+          {
+            feedbackId,
+            comment: isTextEmpty ? undefined : comment,
+            attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined,
           },
-        }
-      );
+          {
+            onSuccess: () => {
+              setComment("");
+              setCommentFiles([]);
+              setIsInternal(false);
+              setRequestResolutionChecked(false);
+              setEditorKey(k => k + 1);
+              markRead(feedbackId);
+              shouldScrollRef.current = true;
+              toast({
+                title: isTextEmpty && !hasFiles ? "Megerősítés-kérés elküldve" : "Válasz és megerősítés-kérés elküldve",
+                description: isTextEmpty && !hasFiles
+                  ? "A hibajegy állapota visszaigazolásra váróra váltott."
+                  : "A felhasználó értesítést kapott a javasolt megoldásról.",
+              });
+            },
+            onError: (err: any) => {
+              toast({
+                variant: "destructive",
+                title: "Hiba a küldéskor",
+                description: err?.message || "Nem sikerült elküldeni a kérést.",
+              });
+            },
+          }
+        );
+      } else {
+        addComment(
+          { feedbackId, message: comment, attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined, isInternal },
+          {
+            onSuccess: () => {
+              setComment("");
+              setCommentFiles([]);
+              setIsInternal(false);
+              setRequestResolutionChecked(false);
+              setEditorKey(k => k + 1);
+              markRead(feedbackId);
+              shouldScrollRef.current = true;
+            },
+          }
+        );
+      }
     } catch (err: any) {
       toast({ variant: "destructive", title: "Kép feltöltési hiba", description: err?.message || "Ismeretlen hiba" });
     }
@@ -262,14 +307,12 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     setCommentFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Navigate back: use browser history if available, otherwise go to /tickets
+  // Navigate back: use onBack if provided, or navigate to ticketsBase
   const goBack = () => {
     if (onBack) {
       onBack();
-    } else if (window.history.length > 1) {
-      navigate(-1);
     } else {
-      navigate("/tickets");
+      navigate(ticketsBase);
     }
   };
 
@@ -339,9 +382,10 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     };
   }, [allImages, isTicketLoading, isEventsLoading, isAdminLoading, data?.ticket]);
 
-  const isLoading = isTicketLoading || isEventsLoading || isAdminLoading || !imagesLoaded;
+  const isTicketNotFound = !isTicketLoading && (!data?.ticket || isTicketError);
+  const isLoading = isTicketLoading || (!isTicketNotFound && (!imagesLoaded || isAdminLoading || isEventsLoading));
 
-  if (isLoading || !data?.ticket) {
+  if (isTicketLoading || (isLoading && !isTicketNotFound)) {
     return (
       <div className="space-y-6 p-2 sm:p-0 page-animate">
         {/* Back + ticket header skeleton */}
@@ -510,6 +554,10 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     );
   }
 
+  if (isTicketNotFound || !ticket) {
+    return <TicketNotFoundView onBack={goBack} ticketsBase={ticketsBase} />;
+  }
+
   // Declared at top
 
   const openGalleryForUrl = (url: string) => {
@@ -550,7 +598,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
             )}
             <h1 className="text-xl font-bold tracking-tight">{ticket.ticket_number || "—"}</h1>
             <TicketPriorityBadge priority={ticket.priority} />
-            <TicketStatusBadge status={ticket.status} />
+            <TicketStatusBadge status={ticket.status} waitingForConfirmation={ticket.waiting_for_user_confirmation} />
           </div>
           {/* Delete button — management only */}
           {isAdmin && isManagement && (
@@ -770,49 +818,82 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                   <Separator className="flex-1" />
                 </div>
 
-                {comments.map((c) => (
-                  <Card
-                    key={c.id}
-                    className={`rounded-none shadow-none ${
-                      c.is_internal
-                        ? "border-amber-500/30 bg-amber-500/[0.03]"
-                        : c.is_admin
-                        ? "border-primary/20 bg-primary/[0.02]"
-                        : ""
-                    }`}
-                  >
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div
-                          className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                            c.is_internal
-                              ? "bg-amber-500/15 text-amber-500"
-                              : c.is_admin
-                              ? "bg-primary/15 text-primary"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {(c.user_name || c.user_email || "?")[0]?.toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium truncate">
-                              {c.user_name || c.user_email}
-                            </p>
-                            {c.is_internal ? (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-medium">
-                                Belső feljegyzés (kliens elől rejtve)
-                              </span>
-                            ) : c.is_admin ? (
-                              <ThinkAiBadge size="xs" />
-                            ) : null}
+                {comments.map((c) => {
+                  const isResolutionConfirmation = Boolean(
+                    c.message && (
+                      c.message.includes('megerősítette a megoldást') ||
+                      c.message.includes('megoldás megerősítve') ||
+                      c.message.includes('A javasolt megoldás megerősítve') ||
+                      c.message.includes('megoldás visszaigazolva') ||
+                      c.message.includes('Az ügyfél megerősítette') ||
+                      c.message.includes('probléma megoldódott')
+                    )
+                  );
+
+                  if (isResolutionConfirmation) {
+                    return (
+                      <div
+                        key={c.id}
+                        className="rounded-none border border-emerald-500/30 bg-emerald-500/[0.04] p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-3 my-2"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="h-6 w-6 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDate(c.created_at)}
-                          </p>
+                          <span className="text-xs font-medium text-emerald-950 dark:text-emerald-200">
+                            Az ügyfél megerősítette: a probléma megoldódott. A hibajegy automatikusan lezárásra került.
+                          </span>
                         </div>
+                        <span className="text-[11px] text-muted-foreground shrink-0 whitespace-nowrap">
+                          {formatDate(c.created_at)}
+                        </span>
                       </div>
-                      <RichTextContent content={c.message} />
+                    );
+                  }
+
+                  return (
+                    <Card
+                      key={c.id}
+                      className={`rounded-none shadow-none ${
+                        c.is_internal
+                          ? "border-amber-500/30 bg-amber-500/[0.03]"
+                          : c.is_admin
+                          ? "border-primary/20 bg-primary/[0.02]"
+                          : ""
+                      }`}
+                    >
+                      <CardContent className="pt-4 pb-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div
+                            className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                              c.is_internal
+                                ? "bg-amber-500/15 text-amber-500"
+                                : c.is_admin
+                                ? "bg-primary/15 text-primary"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {(c.user_name || c.user_email || "?")[0]?.toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium truncate">
+                                {c.user_name || c.user_email}
+                              </p>
+                              {c.is_internal ? (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-medium">
+                                  Belső feljegyzés (kliens elől rejtve)
+                                </span>
+                              ) : c.is_admin ? (
+                                <ThinkAiBadge size="xs" />
+                              ) : null}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDate(c.created_at)}
+                            </p>
+                          </div>
+                        </div>
+                        <RichTextContent content={c.message} />
                       {/* Comment attachments */}
                       {c.attachments && c.attachments.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2 pl-11">
@@ -857,12 +938,25 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       )}
                     </CardContent>
                   </Card>
-                ))}
+                );
+              })}
               </div>
             )}
 
             {/* Scroll anchor */}
             <div ref={bottomRef} />
+
+            {/* Resolution confirmation banner (if waiting for user confirmation) */}
+            <TicketResolutionBanner
+              ticketId={ticket.id}
+              isReporter={user?.id === ticket.user_id}
+              isAdmin={Boolean(isAdmin || isManagement)}
+              waitingForConfirmation={Boolean(ticket.waiting_for_user_confirmation)}
+              resolutionRequestedAt={ticket.resolution_requested_at}
+              onSuccess={() => {
+                markRead(ticket.id);
+              }}
+            />
 
             {/* Comment input */}
             {ticket.status === "resolved" ? (
@@ -1050,30 +1144,58 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                           <span className="text-[11px] text-muted-foreground">{commentFiles.length}/5</span>
                         )}
                         {isAdmin && (
-                          <label className={`flex items-center gap-1.5 ml-2 text-xs text-amber-500 font-medium select-none ${ticket?.assigned_to ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}>
-                            <input
-                              type="checkbox"
-                              checked={isInternal}
-                              onChange={(e) => setIsInternal(e.target.checked)}
-                              className="rounded border-amber-500/30 accent-amber-500"
-                              disabled={!ticket?.assigned_to}
-                            />
-                            Belső feljegyzés
-                          </label>
+                          <div className="flex items-center gap-3 ml-2">
+                            <label className={`flex items-center gap-1.5 text-xs text-amber-500 font-medium select-none ${ticket?.assigned_to ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}>
+                              <input
+                                type="checkbox"
+                                checked={isInternal}
+                                onChange={(e) => {
+                                  setIsInternal(e.target.checked);
+                                  if (e.target.checked) setRequestResolutionChecked(false);
+                                }}
+                                className="rounded border-amber-500/30 accent-amber-500"
+                                disabled={!ticket?.assigned_to}
+                              />
+                              Belső feljegyzés
+                            </label>
+
+                            {!ticket?.waiting_for_user_confirmation && (
+                              <label className={`flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium select-none ${ticket?.assigned_to ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={requestResolutionChecked}
+                                  onChange={(e) => {
+                                    setRequestResolutionChecked(e.target.checked);
+                                    if (e.target.checked) setIsInternal(false);
+                                  }}
+                                  className="rounded border-emerald-500/30 accent-emerald-500"
+                                  disabled={!ticket?.assigned_to || isInternal}
+                                />
+                                Megoldás visszaigazolás kérése
+                              </label>
+                            )}
+                          </div>
                         )}
                       </div>
                       <Button
                         size="sm"
                         onClick={handleSubmit}
-                        disabled={!ticket?.assigned_to || ((!comment || comment.replace(/<[^>]*>/g, '').trim() === '') && commentFiles.length === 0) || isCommenting}
-                        className="gap-1.5"
+                        disabled={
+                          !ticket?.assigned_to ||
+                          (!requestResolutionChecked && ((!comment || comment.replace(/<[^>]*>/g, '').trim() === '') && commentFiles.length === 0)) ||
+                          isCommenting ||
+                          isRequestingResolution
+                        }
+                        className={`gap-1.5 ${requestResolutionChecked ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
                       >
-                        {isCommenting ? (
+                        {isCommenting || isRequestingResolution ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : requestResolutionChecked ? (
+                          <Sparkles className="h-3.5 w-3.5" />
                         ) : (
                           <Send className="h-3.5 w-3.5" />
                         )}
-                        Küldés
+                        {requestResolutionChecked ? "Küldés és megerősítés kérése" : "Küldés"}
                       </Button>
                     </div>
                   </div>
@@ -1083,7 +1205,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
           </div>
 
           {/* Oldalsáv: Részletek + Jegy története */}
-          <div className="lg:col-span-5 xl:col-span-4 2xl:col-span-4 space-y-4 min-w-0 xl:sticky xl:top-6">
+          <div className="lg:col-span-5 xl:col-span-4 2xl:col-span-4 space-y-4 min-w-0 xl:sticky xl:top-[3.75rem]">
             <Card className="rounded-none shadow-none">
               <CardContent className="pt-6 space-y-4">
                 <h3 className="text-sm font-semibold">Részletek</h3>
@@ -1159,8 +1281,10 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                           <p className={`text-xs font-bold leading-tight truncate ${bannerConfig.titleClass}`}>
                             {bannerConfig.title}
                           </p>
-                          <p className={`text-[11px] leading-tight truncate mt-0.5 ${bannerConfig.subClass}`}>
-                            {bannerConfig.sub}
+                          <p className={`text-[11px] leading-tight truncate mt-0.5 ${ticket.waiting_for_user_confirmation && ticket.status !== "resolved" ? "text-sky-600 dark:text-sky-400 font-medium" : bannerConfig.subClass}`}>
+                            {ticket.waiting_for_user_confirmation && ticket.status !== "resolved"
+                              ? "Megoldás visszaigazolásra vár az ügyféltől"
+                              : bannerConfig.sub}
                           </p>
                         </div>
                       </div>
@@ -1188,12 +1312,76 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                             </SelectContent>
                           </Select>
                         ) : (
-                          <TicketStatusBadge status={ticket.status} />
+                          <TicketStatusBadge status={ticket.status} waitingForConfirmation={ticket.waiting_for_user_confirmation} />
                         )}
                       </div>
                     </div>
                   );
                 })()}
+
+                {/* Admin quick resolution confirmation controls in sidebar */}
+                {isAdmin && ticket.status !== "resolved" && (
+                  <div className="pt-0.5">
+                    {ticket.waiting_for_user_confirmation ? (
+                      <div className="flex items-center justify-between p-2 rounded-none bg-sky-500/10 border border-sky-500/25 text-xs text-sky-700 dark:text-sky-300">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Clock className="h-3.5 w-3.5 text-sky-500" />
+                          Visszaigazolásra vár
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[11px] text-muted-foreground hover:text-foreground px-1.5"
+                          disabled={isUpdating}
+                          onClick={() =>
+                            updateStatus({
+                              feedbackId: ticket.id,
+                              status: "in_progress" as TicketStatus,
+                            })
+                          }
+                        >
+                          Kérés visszavonása
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs h-8 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 gap-1.5"
+                        disabled={!ticket.assigned_to || isRequestingResolution}
+                        onClick={() =>
+                          requestResolution(
+                            { feedbackId: ticket.id },
+                            {
+                              onSuccess: () => {
+                                toast({
+                                  title: "Megerősítés-kérés elküldve",
+                                  description: "A hibajegy állapota visszaigazolásra váróra váltott.",
+                                });
+                              },
+                              onError: (err: any) => {
+                                toast({
+                                  variant: "destructive",
+                                  title: "Hiba",
+                                  description: err?.message || "Nem sikerült elküldeni a kérést.",
+                                });
+                              },
+                            }
+                          )
+                        }
+                      >
+                        {isRequestingResolution ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
+                        )}
+                        Megoldás visszaigazolás kérése
+                      </Button>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-3 text-xs">
                   <div className="flex items-center gap-2 text-muted-foreground">

@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { CompanyMemberRow, CompanyRow, ProfileRow } from "../types.ts";
 import { roleLabel, startOfMonthIso, listAllAuthUsers } from "../utils/common.ts";
 import { getProjectClients } from "../utils/multiProject.ts";
+import { collectDeduplicatedErrors } from "./errorsHandler.ts";
 
 export async function fetchMultiProjectMonthlyLlm(admin: ReturnType<typeof createClient>, monthStart: string) {
   const projectClients = getProjectClients(admin);
@@ -62,8 +63,13 @@ export async function fetchMultiProjectMonthlyLlm(admin: ReturnType<typeof creat
 export async function buildOverview(admin: ReturnType<typeof createClient>) {
   const monthStart = startOfMonthIso();
 
-  const [companiesRes, membersRes, profilesRes, countsRes, monthlyLlmRes, emailByUserId,
-    errInvoicesRes, errTxRes, errReportsRes, errGlRes, errNavRes, errBankRes, errAppRes,
+  const [
+    companiesRes,
+    membersRes,
+    profilesRes,
+    countsRes,
+    monthlyLlmRes,
+    emailByUserId,
     accountyAssignmentsRes,
   ] = await Promise.all([
     admin.from("companies").select("id, name, tax_number, created_at").order("created_at", { ascending: false }),
@@ -72,13 +78,6 @@ export async function buildOverview(admin: ReturnType<typeof createClient>) {
     admin.rpc("get_company_counts"),
     fetchMultiProjectMonthlyLlm(admin, monthStart),
     listAllAuthUsers(admin),
-    admin.from("invoice_uploads").select("company_id, user_id").eq("processing_status", "error"),
-    admin.from("transaction_uploads").select("company_id, user_id").eq("processing_status", "error"),
-    admin.from("report_uploads").select("company_id, user_id").eq("processing_status", "error"),
-    admin.from("gl_upload_notifications").select("company_id").eq("processing_status", "error"),
-    admin.from("nav_sync_logs").select("company_id").eq("status", "error"),
-    admin.from("bank_statement_uploads").select("company_id, user_id").eq("processing_status", "error"),
-    admin.from("app_error_logs").select("company_id, user_id").eq("severity", "error").order("created_at", { ascending: false }).limit(500),
     admin.from("accounty_assignments").select("company_id"),
   ]);
 
@@ -94,6 +93,13 @@ export async function buildOverview(admin: ReturnType<typeof createClient>) {
   const members = (membersRes.data || []) as CompanyMemberRow[];
   const profiles = (profilesRes.data || []) as (ProfileRow & { created_at: string })[];
   const monthlyLlm = monthlyLlmRes.data || [];
+
+  // Authoritative deduplicated error collection matching Errors Control Center
+  const errSummary = await collectDeduplicatedErrors(admin, {
+    companies,
+    profiles,
+    emailByUserId,
+  });
 
   const rawCounts = (countsRes.data as { invoices: Record<string, number>; nav_invoices: Record<string, number>; transactions: Record<string, number>; salary: Record<string, number> }) || { invoices: {}, nav_invoices: {}, transactions: {}, salary: {} };
   const invoiceCounts   = new Map(Object.entries(rawCounts.invoices   || {}));
@@ -171,78 +177,17 @@ export async function buildOverview(admin: ReturnType<typeof createClient>) {
       };
     }
   }
-
-  const invoiceErrors = errInvoicesRes.data || [];
-  const txErrors = errTxRes.data || [];
-  const reportErrors = errReportsRes.data || [];
-  const glErrors = errGlRes.data || [];
-  const navErrors = errNavRes.data || [];
-  const bankErrors = errBankRes.data || [];
-  const appErrors = errAppRes.data || [];
-
-  const totalErrors = invoiceErrors.length + txErrors.length + reportErrors.length 
-    + glErrors.length + navErrors.length + bankErrors.length + appErrors.length;
-
-  const companyErrorCounts = new Map<string, number>();
-  const userErrorCounts = new Map<string, number>();
-
-  const addError = (companyId?: string | null, userId?: string | null) => {
-    if (companyId) {
-      companyErrorCounts.set(companyId, (companyErrorCounts.get(companyId) || 0) + 1);
-    }
-    if (userId && profileByUserId.get(userId)?.name !== "Törölt Felhasználó") {
-      userErrorCounts.set(userId, (userErrorCounts.get(userId) || 0) + 1);
-    }
-  };
-
-  invoiceErrors.forEach((e: any) => addError(e.company_id, e.user_id));
-  txErrors.forEach((e: any) => addError(e.company_id, e.user_id));
-  reportErrors.forEach((e: any) => addError(e.company_id, e.user_id));
-  glErrors.forEach((e: any) => addError(e.company_id, null));
-  navErrors.forEach((e: any) => addError(e.company_id, null));
-  bankErrors.forEach((e: any) => addError(e.company_id, e.user_id));
-  appErrors.forEach((e: any) => addError(e.company_id, e.user_id));
-
-  let maxCompanyId = "";
-  let maxCompanyCount = 0;
-  for (const [cid, count] of companyErrorCounts.entries()) {
-    if (count > maxCompanyCount) {
-      maxCompanyCount = count;
-      maxCompanyId = cid;
-    }
-  }
-
-  let maxUserId = "";
-  let maxUserCount = 0;
-  for (const [uid, count] of userErrorCounts.entries()) {
-    if (count > maxUserCount) {
-      maxUserCount = count;
-      maxUserId = uid;
-    }
-  }
-
-  const companyById = new Map(companies.map(c => [c.id, c.name]));
-  const profileNameByUserId = new Map(profiles.map(p => [p.user_id, p.name]));
-
-  const mostErrorCompany = maxCompanyId && maxCompanyCount > 0 ? {
-    id: maxCompanyId,
-    name: companyById.get(maxCompanyId) || "Ismeretlen cég",
-    errorCount: maxCompanyCount
-  } : null;
-
-  const mostErrorUser = maxUserId && maxUserCount > 0 ? {
-    id: maxUserId,
-    name: profileNameByUserId.get(maxUserId) || "Ismeretlen felhasználó",
-    email: emailByUserId.get(maxUserId) || "—",
-    errorCount: maxUserCount
-  } : null;
-
   return {
     usersCount: profiles.filter((profile) => profile.role !== "management" && profile.role !== "thinkai" && profile.name !== "Törölt Felhasználó").length,
     companiesCount: companies.length,
-    totalErrors,
-    mostErrorCompany,
-    mostErrorUser,
+    totalErrors: errSummary.totalErrors,
+    mostErrorCompany: errSummary.mostAffectedCompany,
+    mostErrorUser: errSummary.mostAffectedUser ? {
+      id: errSummary.mostAffectedUser.id,
+      name: errSummary.mostAffectedUser.name,
+      email: errSummary.mostAffectedUser.email || (emailByUserId.get(errSummary.mostAffectedUser.id) || "—"),
+      errorCount: errSummary.mostAffectedUser.errorCount,
+    } : null,
     companies: companySummaries,
     users: profiles
       .filter((profile) => profile.role !== "management" && profile.role !== "thinkai" && profile.name !== "Törölt Felhasználó")

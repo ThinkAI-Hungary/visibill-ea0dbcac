@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getClientForProject } from "../utils/multiProject.ts";
+import { listAllAuthUsers } from "../utils/common.ts";
 
 export function categorizeError(msg: string | null): string {
   if (!msg) return "Worker";
@@ -27,31 +28,42 @@ export const APP_LOG_CATEGORY_MAP: Record<string, string> = {
 };
 
 export function categoryLabel(cat: string): string {
-  if (APP_LOG_CATEGORY_MAP[cat]) return APP_LOG_CATEGORY_MAP[cat];
-  if (cat === "Application" || cat === "Mailgun" || cat === "Worker") return cat;
-  return "Worker";
+  if (cat === "Worker") return "Worker";
+  if (cat === "Mailgun") return "Mailgun";
+  return "Application";
 }
 
 export const UPLOAD_SOURCES = new Set([
-  "invoice_uploads", "transaction_uploads", "report_uploads",
-  "gl_upload_notifications", "nav_sync_logs", "bank_statement_uploads",
+  "invoice_uploads",
+  "transaction_uploads",
+  "report_uploads",
+  "bank_statement_uploads",
 ]);
 
 export const SOURCE_LABELS: Record<string, string> = {
-  invoice_uploads:          "Feltöltés",
-  transaction_uploads:      "Feltöltés",
-  report_uploads:           "Feltöltés",
-  gl_upload_notifications:  "Feltöltés",
-  nav_sync_logs:            "Feltöltés",
-  bank_statement_uploads:   "Feltöltés",
+  invoice_uploads:        "Feltöltés",
+  transaction_uploads:    "Feltöltés",
+  report_uploads:         "Feltöltés",
+  gl_upload_notifications:"Feltöltés",
+  nav_sync_logs:          "NAV",
+  bank_statement_uploads: "Bank",
+  app_error_logs:         "Frontend",
   "app_error_logs:frontend": "Frontend",
-  "app_error_logs:worker":   "Worker",
+  "app_error_logs:edge_function": "Edge Function",
   "app_error_logs:mailgun":  "Mailgun",
+  "app_error_logs:auth":     "Auth",
 };
 
 export function appLogSubSource(errorType: string): string {
-  if (errorType === "worker") return "app_error_logs:worker";
-  if (["webhook", "mailgun", "email_alias"].includes(errorType)) return "app_error_logs:mailgun";
+  if (errorType === "webhook" || errorType === "mailgun" || errorType === "email_alias") {
+    return "app_error_logs:mailgun";
+  }
+  if (errorType === "auth") {
+    return "app_error_logs:auth";
+  }
+  if (errorType === "api_call" || errorType === "db_query") {
+    return "app_error_logs:edge_function";
+  }
   return "app_error_logs:frontend";
 }
 
@@ -84,22 +96,39 @@ export type ErrorRow = {
   }>;
 };
 
-export async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
-  const page = Math.max(0, Number(url.searchParams.get("page") || 0));
-  const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get("pageSize") || 25)));
-  const sortBy = url.searchParams.get("sortBy") || "created_at";
-  const sortDir = url.searchParams.get("sortDir") || "desc";
-  const search = (url.searchParams.get("search") || "").trim().toLowerCase();
-  const filterCompanyId = url.searchParams.get("companyId") || "";
-  const filterSource = url.searchParams.get("source") || "";
-  const filterCategory = url.searchParams.get("category") || "";
-  const filterUserId = url.searchParams.get("userId") || "";
-  const dateFrom = url.searchParams.get("dateFrom") || "";
-  const dateTo = url.searchParams.get("dateTo") || "";
+export interface ErrorSummary {
+  allErrors: ErrorRow[];
+  totalErrors: number;
+  last24hErrors: number;
+  mostAffectedCompany: { id: string; name: string; errorCount: number } | null;
+  mostAffectedUser: { id: string; name: string; email?: string; errorCount: number } | null;
+  topErrorCategory: { category: string; label: string; count: number } | null;
+}
 
-  const [companiesRes, profilesRes, ...errorResults] = await Promise.all([
-    admin.from("companies").select("id, name"),
-    admin.from("profiles").select("user_id, name"),
+/**
+ * Single source of truth for deduplicated error collection across the Management platform.
+ * Used by both buildErrors (Errors Panel) and buildOverview (Overview Bento Card).
+ */
+export async function collectDeduplicatedErrors(
+  admin: ReturnType<typeof createClient>,
+  preloaded?: {
+    companies?: Array<{ id: string; name: string }>;
+    profiles?: Array<{ user_id: string; name: string }>;
+    emailByUserId?: Map<string, string>;
+  }
+): Promise<ErrorSummary> {
+  const companyById = preloaded?.companies
+    ? new Map(preloaded.companies.map((c: any) => [c.id, c.name]))
+    : null;
+  const profileByUserId = preloaded?.profiles
+    ? new Map(preloaded.profiles.map((p: any) => [p.user_id, p.name]))
+    : null;
+  const emailMap = preloaded?.emailByUserId ?? null;
+
+  const [companiesRes, profilesRes, emailsRes, ...errorResults] = await Promise.all([
+    companyById ? Promise.resolve({ data: null, error: null }) : admin.from("companies").select("id, name"),
+    profileByUserId ? Promise.resolve({ data: null, error: null }) : admin.from("profiles").select("user_id, name"),
+    emailMap ? Promise.resolve(null) : listAllAuthUsers(admin),
     admin.from("invoice_uploads")
       .select("id, created_at, updated_at, error_message, file_name, file_url, company_id, user_id, metadata")
       .eq("processing_status", "error"),
@@ -120,13 +149,14 @@ export async function buildErrors(admin: ReturnType<typeof createClient>, url: U
       .eq("processing_status", "error"),
     admin.from("app_error_logs")
       .select("id, created_at, message, error_type, component, action, company_id, user_id, context, stack_trace, url, severity")
-      .in("severity", ["error", "warning"])
+      .eq("severity", "error")
       .order("created_at", { ascending: false })
       .limit(500),
   ]);
 
-  const companyById = new Map((companiesRes.data || []).map((c: any) => [c.id, c.name]));
-  const profileByUserId = new Map((profilesRes.data || []).map((p: any) => [p.user_id, p.name]));
+  const finalCompanyById = companyById || new Map((companiesRes.data || []).map((c: any) => [c.id, c.name]));
+  const finalProfileByUserId = profileByUserId || new Map((profilesRes.data || []).map((p: any) => [p.user_id, p.name]));
+  const finalEmailMap = emailMap || (emailsRes as Map<string, string>) || new Map<string, string>();
 
   const sourceNames = [
     "invoice_uploads", "transaction_uploads", "report_uploads",
@@ -144,22 +174,6 @@ export async function buildErrors(admin: ReturnType<typeof createClient>, url: U
     const source = sourceNames[i];
     for (const row of res.data || []) {
       const isAppLog = source === "app_error_logs";
-
-      // Filter warning severity: only include Számlázz.hu & Billingo related warnings to avoid table flooding
-      if (isAppLog && row.severity === 'warning') {
-        const isInvoiceLinkError =
-          row.error_type === 'szamlazz_agent_api' ||
-          row.action?.toLowerCase().includes('szamlazz') ||
-          row.action?.toLowerCase().includes('billingo') ||
-          row.message?.toLowerCase().includes('számlázz') ||
-          row.message?.toLowerCase().includes('szamlazz') ||
-          row.message?.toLowerCase().includes('billingo');
-
-        if (!isInvoiceLinkError) {
-          continue;
-        }
-      }
-
       const isMailgunComponent = isAppLog && row.component === 'process-mailgun-webhook';
       const cat = isMailgunComponent
         ? 'Mailgun'
@@ -193,13 +207,13 @@ export async function buildErrors(admin: ReturnType<typeof createClient>, url: U
         file_name: isAppLog ? (row.component || null) : (row.file_name || null),
         file_url: isAppLog ? null : (row.file_url || null),
         company_id: row.company_id || null,
-        company_name: row.company_id ? (companyById.get(row.company_id) as string || null) : null,
+        company_name: row.company_id ? (finalCompanyById.get(row.company_id) as string || null) : null,
         user_id: row.user_id || null,
         user_name: (isAppLog && row.component === 'process-mailgun-webhook')
           ? 'Mailgun'
           : (!isAppLog && row.metadata?.source === 'email_alias')
             ? 'Mailgun'
-            : (row.user_id ? (profileByUserId.get(row.user_id) as string || null) : null),
+            : (row.user_id ? (finalProfileByUserId.get(row.user_id) as string || null) : null),
         context: isAppLog ? (row.context || null) : null,
         stack_trace: isAppLog ? (row.stack_trace || null) : null,
         url: isAppLog ? (row.url || null) : null,
@@ -263,17 +277,25 @@ export async function buildErrors(admin: ReturnType<typeof createClient>, url: U
     }
   }
 
-  const userErrorCounts = new Map<string, { id: string; name: string; count: number }>();
+  const userErrorCounts = new Map<string, { id: string; name: string; email?: string; count: number }>();
   for (const e of allErrors) {
     if (!e.user_id) continue;
+    if (e.user_name === "Törölt Felhasználó") continue;
     const existing = userErrorCounts.get(e.user_id);
     if (existing) existing.count++;
-    else userErrorCounts.set(e.user_id, { id: e.user_id, name: e.user_name || "—", count: 1 });
+    else {
+      userErrorCounts.set(e.user_id, {
+        id: e.user_id,
+        name: e.user_name || "—",
+        email: finalEmailMap.get(e.user_id) || "—",
+        count: 1
+      });
+    }
   }
-  let mostAffectedUser: { id: string; name: string; errorCount: number } | null = null;
+  let mostAffectedUser: { id: string; name: string; email?: string; errorCount: number } | null = null;
   for (const v of userErrorCounts.values()) {
     if (!mostAffectedUser || v.count > mostAffectedUser.errorCount) {
-      mostAffectedUser = { id: v.id, name: v.name, errorCount: v.count };
+      mostAffectedUser = { id: v.id, name: v.name, email: v.email || "—", errorCount: v.count };
     }
   }
 
@@ -287,6 +309,32 @@ export async function buildErrors(admin: ReturnType<typeof createClient>, url: U
       topErrorCategory = { category: cat, label: categoryLabel(cat), count: cnt };
     }
   }
+
+  return {
+    allErrors,
+    totalErrors,
+    last24hErrors,
+    mostAffectedCompany,
+    mostAffectedUser,
+    topErrorCategory,
+  };
+}
+
+export async function buildErrors(admin: ReturnType<typeof createClient>, url: URL) {
+  const page = Math.max(0, Number(url.searchParams.get("page") || 0));
+  const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get("pageSize") || 25)));
+  const sortBy = url.searchParams.get("sortBy") || "created_at";
+  const sortDir = url.searchParams.get("sortDir") || "desc";
+  const search = (url.searchParams.get("search") || "").trim().toLowerCase();
+  const filterCompanyId = url.searchParams.get("companyId") || "";
+  const filterSource = url.searchParams.get("source") || "";
+  const filterCategory = url.searchParams.get("category") || "";
+  const filterUserId = url.searchParams.get("userId") || "";
+  const dateFrom = url.searchParams.get("dateFrom") || "";
+  const dateTo = url.searchParams.get("dateTo") || "";
+
+  const summary = await collectDeduplicatedErrors(admin);
+  let allErrors = [...summary.allErrors];
 
   if (filterCompanyId) allErrors = allErrors.filter(e => e.company_id === filterCompanyId);
   if (filterUserId) allErrors = allErrors.filter(e => e.user_id === filterUserId);
@@ -333,11 +381,15 @@ export async function buildErrors(admin: ReturnType<typeof createClient>, url: U
   const paged = allErrors.slice(page * pageSize, page * pageSize + pageSize);
 
   return {
-    totalErrors,
-    last24hErrors,
-    mostAffectedCompany,
-    mostAffectedUser,
-    topErrorCategory,
+    totalErrors: summary.totalErrors,
+    last24hErrors: summary.last24hErrors,
+    mostAffectedCompany: summary.mostAffectedCompany,
+    mostAffectedUser: summary.mostAffectedUser ? {
+      id: summary.mostAffectedUser.id,
+      name: summary.mostAffectedUser.name,
+      errorCount: summary.mostAffectedUser.errorCount,
+    } : null,
+    topErrorCategory: summary.topErrorCategory,
     totalRows,
     errors: paged,
   };

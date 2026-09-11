@@ -6,6 +6,9 @@ import {
   Clock,
   Loader2,
   Headset,
+  CheckCircle2,
+  XCircle,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTicketEvents, type TicketEvent } from "@/hooks/useTickets";
@@ -51,6 +54,18 @@ function EventIcon({ type, isStaff }: { type: TicketEvent["event_type"]; isStaff
     case "assignee_changed":
       icon = <Headset className="h-4 w-4" />;
       colorClasses = "bg-blue-600/10 border-blue-600/30 text-blue-600";
+      break;
+    case "resolution_requested":
+      icon = <Sparkles className="h-4 w-4" />;
+      colorClasses = "bg-sky-500/10 border-sky-500/30 text-sky-500";
+      break;
+    case "resolution_confirmed":
+      icon = <CheckCircle2 className="h-4 w-4" />;
+      colorClasses = "bg-emerald-500/10 border-emerald-500/30 text-emerald-500";
+      break;
+    case "resolution_rejected":
+      icon = <XCircle className="h-4 w-4" />;
+      colorClasses = "bg-amber-500/10 border-amber-500/30 text-amber-500";
       break;
   }
 
@@ -152,6 +167,47 @@ function EventContent({
           </div>
         </div>
       );
+
+    case "resolution_requested":
+      return (
+        <div>
+          <p className="text-sm">
+            <span className="font-medium">{actorName}</span>
+            {isAdmin && <ThinkAiBadge size="xs" className="ml-1.5" />}
+            {" "}
+            <span className="text-muted-foreground">megoldás-visszaigazolást kért</span>
+          </p>
+          <p className="text-xs text-sky-600 dark:text-sky-400 mt-0.5">
+            Várakozás az ügyfél megerősítésére
+          </p>
+        </div>
+      );
+
+    case "resolution_confirmed":
+      return (
+        <div>
+          <p className="text-sm">
+            <span className="font-medium">{actorName}</span>{" "}
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">megerősítette a megoldást</span>
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            A hibajegy automatikusan lezárásra került
+          </p>
+        </div>
+      );
+
+    case "resolution_rejected":
+      return (
+        <div>
+          <p className="text-sm">
+            <span className="font-medium">{actorName}</span>{" "}
+            <span className="text-amber-600 dark:text-amber-400">jelezte, hogy a probléma még fennáll</span>
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            A vizsgálat folytatódik
+          </p>
+        </div>
+      );
   }
 }
 
@@ -163,7 +219,8 @@ interface TicketTimelineProps {
 export function TicketTimeline({ feedbackId, isStaffInitiated }: TicketTimelineProps) {
   const { data: events = [], isLoading } = useTicketEvents(feedbackId);
 
-  // Deduplicate events: keep only 1 'created' event (prefer staff metadata), remove duplicate IDs
+  // Deduplicate events: keep only 1 'created' event (prefer staff metadata), remove duplicate IDs,
+  // and suppress redundant 'comment_added' events generated automatically alongside 'resolution_confirmed'
   const displayEvents = React.useMemo(() => {
     let hasCreated = false;
     const seenIds = new Set<string>();
@@ -178,6 +235,11 @@ export function TicketTimeline({ feedbackId, isStaffInitiated }: TicketTimelineP
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
 
+    // Collect timestamps of all resolution_confirmed events
+    const resolutionConfirmedEvents = sorted.filter(
+      (e) => e.event_type === "resolution_confirmed"
+    );
+
     return sorted.filter((event) => {
       if (seenIds.has(event.id)) return false;
       seenIds.add(event.id);
@@ -186,6 +248,27 @@ export function TicketTimeline({ feedbackId, isStaffInitiated }: TicketTimelineP
         if (hasCreated) return false;
         hasCreated = true;
       }
+
+      // If this is a comment_added event generated right alongside a resolution_confirmed event,
+      // hide it so it doesn't appear as a redundant "hozzászólást írt" event.
+      if (event.event_type === "comment_added") {
+        const isPairedWithConfirmation = resolutionConfirmedEvents.some((rc) => {
+          const timeDiff = Math.abs(
+            new Date(event.created_at).getTime() - new Date(rc.created_at).getTime()
+          );
+          // Within 15 seconds of confirmation and same actor
+          const sameActor =
+            (rc.actor_id && rc.actor_id === event.actor_id) ||
+            (rc.actor_email && rc.actor_email === event.actor_email) ||
+            (rc.actor_name && rc.actor_name === event.actor_name);
+          return timeDiff <= 15000 && sameActor;
+        });
+
+        if (isPairedWithConfirmation) {
+          return false;
+        }
+      }
+
       return true;
     });
   }, [events]);
@@ -218,11 +301,8 @@ export function TicketTimeline({ feedbackId, isStaffInitiated }: TicketTimelineP
 
         {/* Timeline */}
         <div className="relative max-h-[50vh] overflow-y-auto pr-1">
-          {/* Vertical line */}
-          <div className="absolute left-[15px] top-4 bottom-4 w-px bg-border" />
-
           <div className="space-y-0">
-            {displayEvents.map((event) => {
+            {displayEvents.map((event, index) => {
               const isStaffCreated =
                 event.event_type === "created" &&
                 Boolean(
@@ -237,13 +317,21 @@ export function TicketTimeline({ feedbackId, isStaffInitiated }: TicketTimelineP
                   key={event.id}
                   className="relative flex gap-3 pb-6 last:pb-0 group"
                 >
+                  {/* Per-item connecting line to next event - connects continuously regardless of scroll height */}
+                  {index < displayEvents.length - 1 && (
+                    <div
+                      className="absolute left-4 top-4 -bottom-2 w-px bg-border -translate-x-1/2 z-0"
+                      aria-hidden="true"
+                    />
+                  )}
+
                   {/* Icon */}
                   <div className="relative z-10 shrink-0">
                     <EventIcon type={event.event_type} isStaff={isStaffCreated} />
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0 pt-0.5">
+                  <div className="flex-1 min-w-0 pt-0.5 z-10">
                     <EventContent
                       event={event}
                       isStaffInitiatedTicket={isStaffInitiated}

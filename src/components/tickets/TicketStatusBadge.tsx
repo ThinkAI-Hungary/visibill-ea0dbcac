@@ -29,10 +29,22 @@ const statusConfig = {
 
 interface TicketStatusBadgeProps {
   status: string;
+  waitingForConfirmation?: boolean;
   className?: string;
 }
 
-export function TicketStatusBadge({ status, className }: TicketStatusBadgeProps) {
+export function TicketStatusBadge({ status, waitingForConfirmation, className }: TicketStatusBadgeProps) {
+  if (waitingForConfirmation && status !== "resolved") {
+    return (
+      <Badge
+        variant="outline"
+        className={`w-auto min-w-[96px] whitespace-nowrap justify-center text-center shrink-0 rounded-full font-medium bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30 px-3 py-0.5 ${className || ""}`}
+      >
+        Visszaigazolásra vár
+      </Badge>
+    );
+  }
+
   const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.created;
 
   return (
@@ -41,4 +53,3 @@ export function TicketStatusBadge({ status, className }: TicketStatusBadgeProps)
     </Badge>
   );
 }
-

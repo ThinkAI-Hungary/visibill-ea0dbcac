@@ -1,7 +1,7 @@
 # A-018: Hibajegy Rendszer Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12 (utolsó frissítés: 2026-09-01)
+**Date:** 2025-12 (utolsó frissítés: 2026-09-11)
 
 ## Context
 
@@ -28,6 +28,11 @@ feedback (fő tábla)
 ├── attachments: text[] (Storage URL-ek)
 ├── ticket_number: text (trigger generálja)
 ├── assigned_to: uuid (FK → auth.users, felelős support agent)
+├── created_by: uuid (FK → profiles, staff-initiated jegy esetén)
+├── waiting_for_user_confirmation: boolean (megoldás-visszaigazolás folyamatban)
+├── resolution_requested_at: timestamptz (megoldás kérés ideje)
+├── resolution_requested_by: uuid (FK → profiles, megerősítést kérő admin)
+├── resolution_confirmed_at: timestamptz (ügyfél megerősítés ideje)
 ├── slack_sent: boolean + slack_sent_at: timestamptz
 ├── created_at / updated_at: timestamptz
 │
@@ -43,7 +48,7 @@ feedback (fő tábla)
 │
 ├── ticket_events (1:N, audit trail)
 │   ├── feedback_id: uuid (FK → feedback)
-│   ├── event_type: text ('created' | 'status_changed' | 'comment_added' | 'assignee_changed')
+│   ├── event_type: text ('created' | 'status_changed' | 'comment_added' | 'assignee_changed' | 'resolution_requested' | 'resolution_confirmed' | 'resolution_rejected')
 │   ├── actor_id, actor_email, actor_name: user info
 │   ├── old_value, new_value: text (pl. 'created' → 'in_progress')
 │   ├── metadata: jsonb
@@ -76,9 +81,11 @@ CREATE FUNCTION create_ticket_status_event()  -- AFTER UPDATE ON feedback
 --   old/new value a felelős neve (profiles.name lookup)
 -- Actor (módosító user) nevét és emailjét is loggolja
 
--- 4. Komment event
+-- 4. Komment event (duplikáció-védelemmel)
 CREATE FUNCTION create_comment_event()  -- AFTER INSERT ON ticket_comments
 -- Beszúr ticket_events-be: event_type='comment_added'
+-- KIVÉTEL: Az automatikus megoldás-megerősítési rendszerkommenteknél nem szúr be duplikált 'comment_added' eseményt,
+-- mert a 'resolution_confirmed' esemény már önmagában reprezentálja a műveletet az audit trailben.
 
 -- 5. updated_at frissítés
 CREATE FUNCTION update_feedback_updated_at()  -- BEFORE UPDATE ON feedback
@@ -86,6 +93,30 @@ CREATE FUNCTION update_feedback_updated_at()  -- BEFORE UPDATE ON feedback
 ```
 
 Mind az 5 trigger function `SECURITY DEFINER` + `search_path = 'public'`.
+
+### Megoldás-Visszaigazolás és Automatikus Lezárás (2026-09)
+
+A support munkatárs a megoldás elkészülte után megerősítést kérhet az ügyféltől:
+
+1. **Kérés indítása (`request_ticket_resolution` RPC):**
+   - Support admin vagy management munkatárs jogosult meghívni.
+   - Beállítja: `waiting_for_user_confirmation = true`, `resolution_requested_at = NOW()`, `resolution_requested_by = auth.uid()`.
+   - `ticket_events` audit bejegyzést hoz létre: `event_type = 'resolution_requested'`.
+2. **Ügyfél visszajelzés (`respond_to_ticket_resolution` RPC):**
+   - Ügyfél (`user_id = auth.uid()`) vagy support admin hívhatja meg.
+   - **Ha megerősíti (`p_confirmed = true`):**
+     - Automatikusan lezárja a jegyet: `status = 'resolved'`, `waiting_for_user_confirmation = false`, `resolution_confirmed_at = NOW()`.
+     - `ticket_events` bejegyzés: `event_type = 'resolution_confirmed'`.
+     - Rendszerkomment: *"Az ügyfél megerősítette: a probléma megoldódott. A hibajegy automatikusan lezárásra került."*
+   - **Ha elutasítja (`p_confirmed = false`):**
+     - Marad folyamatban: `status = 'in_progress'`, `waiting_for_user_confirmation = false`.
+     - `ticket_events` bejegyzés: `event_type = 'resolution_rejected'`.
+     - Ha megadott indoklást, azt új hozzászólásként beszúrja a szálba.
+3. **Automatikus reset trigger (`trg_ticket_comment_resolution_reset`):**
+   - Ha a jegy bejelentője megerősítésre váró jegyre új normál hozzászólást küld be, a trigger automatikusan visszaállítja a `waiting_for_user_confirmation = false` állapotot.
+4. **Audit esemény deduplikáció:**
+   - A `create_comment_event()` adatbázis trigger kihagyja az automatikus megerősítő rendszerkommenteknél a `comment_added` esemény generálását.
+   - A frontend `TicketTimeline.tsx` további védelmi szűrővel rendelkezik, amely a `resolution_confirmed` eseményhez 15 másodpercen belül tartozó `comment_added` elemeket elrejti, megelőzve a megtévesztő "Üzenetet írt" bejegyzést.
 
 ### RLS Stratégia
 
@@ -100,17 +131,25 @@ Mind az 5 trigger function `SECURITY DEFINER` + `search_path = 'public'`.
 | `ticket_events` SELECT | `USING (true)` | Bárki olvashatja (audit trail) |
 | `ticket_reads` SELECT/INSERT/UPDATE | `user_id = auth.uid()` | Csak saját olvasási állapot |
 
-**Admin hozzáférés:** Az `is_support_admin()` DB function ellenőrzi a `profiles.is_support_admin` flag-et. ~~Ez korábban egy ismert limitáció volt~~ — **megoldva**: dedikált SELECT és UPDATE policy-k biztosítják a support admin hozzáférést.
+**Admin hozzáférés:** Az `is_support_admin()` DB function ellenőrzi a `profiles.is_support_admin` flag-et. Dedikált SELECT és UPDATE policy-k biztosítják a support admin hozzáférést.
 
 ### Olvasatlan Detektálás
 
-```
-ticket_reads.last_read_at  < max(ticket_comments.created_at WHERE user_id ≠ current_user)
+A rendszer két független forrásból származtatja az olvasatlan állapotot mind a `get_unread_ticket_count` RPC-ben, mind a kliensoldali `useTickets.ts` (`has_unread`) logikában:
+
+```sql
+-- 1. Feltétel: Beérkezett új komment más felhasználótól
+ticket_reads.last_read_at IS NULL OR ticket_reads.last_read_at < max(ticket_comments.created_at WHERE user_id ≠ current_user)
+
+-- 2. Feltétel (2026-09): Megoldás-visszaigazolás kérése az ügyféltől
+waiting_for_user_confirmation = true 
+AND resolution_requested_by <> current_user 
+AND (ticket_reads.last_read_at IS NULL OR ticket_reads.last_read_at < feedback.resolution_requested_at)
 ```
 
 - **Upsert pattern:** `ON CONFLICT (feedback_id, user_id) DO UPDATE SET last_read_at = NOW()`
-- A frontend minden jegy megnyitáskor `markRead(feedbackId)` → upsert
-- A sidebar badge a `useUnreadTicketCount` hook-ból jön
+- A frontend minden jegy megnyitásakor `markRead(feedbackId)` → upsert
+- A sidebar badge és a felületi számlálók a `useUnreadTicketCount` hook-ból származnak
 
 ### Real-time Subscription
 
@@ -124,10 +163,26 @@ supabase
   }, () => {
     queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
   })
+  .on('postgres_changes', {
+    event: 'UPDATE',
+    schema: 'public',
+    table: 'feedback',
+  }, () => {
+    queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+  })
   .subscribe();
 ```
 
-Minden új komment → automatikus invalidation → badge frissül.
+Minden új komment és minden feedback módosítás (pl. visszaigazolás kérése vagy megerősítése) azonnali cache invalidationt vált ki, azonnal frissítve az olvasatlan jelvényeket és a listát.
+
+### Idővonal (Timeline) Folyamatos Vonal Architektúra
+
+A korábbi, konténer-szintű egyetlen abszolút függőleges vonal hosszú vagy dinamikusan növekvő jegytörténet és belső görgetés esetén elcsúszhatott vagy megszakadhatott.  
+Az új felépítésben minden egyes idővonal-elem (`TicketTimelineItem`) saját, elemen belüli összekötő vonalat kapott:
+```tsx
+<div className="absolute left-4 top-4 -bottom-2 w-px bg-border -translate-x-1/2 z-0" />
+```
+A vonal az adott elem ikonjától a következőig fut le, és automatikusan rejtve van az utolsó elemnél (`!isLast`). Ez szavatolja, hogy a vonal 100%-ban folytonos marad bármilyen DOM újrarajzolás, dinamikus magasság vagy görgetés esetén is.
 
 ### Storage
 
@@ -159,8 +214,10 @@ idx_ticket_reads_feedback_user  ON ticket_reads(feedback_id, user_id)
 
 **Pozitív:**
 - Trigger-alapú event sourcing → megbízható audit trail, a frontend nem felelős az event írásáért
+- Kétlépcsős lezárási mechanizmus (ügyfél megerősítés) → jobb ügyfélélmény és elkerülhető a hibák idő előtti adminisztratív lezárása
+- Dedikált unread állapot feloldás a megoldás kéréséhez → az ügyfél garantáltan észreveszi az értesítést
 - Upsert-alapú read tracking → egyszerű, idempotens, nincs race condition
-- Supabase Realtime → instant feedback badge frissítés
+- Supabase Realtime több táblán → instant badge és lista szinkronizáció
 - Denormalizált `company_name`, `user_name`, `user_email` → gyors listázás join nélkül
 - Felelős (assignee) változás automatikus logolás → átlátható support workflow
 
@@ -188,8 +245,13 @@ idx_ticket_reads_feedback_user  ON ticket_reads(feedback_id, user_id)
 
 ## Frontend & Architektúra funkciók (2026-09 frissítés)
 
+- **Megoldás-Visszaigazolási Munkafolyamat (`TicketResolutionBanner`):** A support munkatárs megerősítést kérhet a megoldásról ("Megoldás jóváhagyás kérése"). Az ügyfél felületén letisztult, emoji-mentes megerősítő banner jelenik meg: jóváhagyáskor a jegy azonnal lezárul, elutasításkor indoklás adható meg, ami hozzászólásként kerül mentésre és visszateszi a jegyet folyamatban lévő státuszba.
+- **Belső 404 Állapotkezelés (`TicketNotFoundView`):** A `TicketDetailView` szétválasztja az aktív aszinkron betöltési fázist (`isTicketLoading`) és a nem létező / törölt hibajegy állapotát (`!data?.ticket || isTicketError`). Ha a hibajegy törlésre került, a felület nem ragad be a skeleton loader állapotba, hanem a dedikált `TicketNotFoundView` kártyát jeleníti meg, garantálva a hibamentes visszanavigálást a hibajegylistára.
 - **Szabványos Rich Text Szerkesztő (`RichTextEditor`):** TipTap StarterKit alapú szerkesztő félkövér, dőlt, áthúzott, címsor (H2, H3), felsorolás, számozott lista, idézet, inline kód és visszavonás/újra funkciókkal. `Ctrl+Enter` / `Cmd+Enter` gyorsbillentyű támogatással az azonnali beküldéshez (`onSubmit`).
 - **Biztonságos és Tipográfiailag Stílusozott Megjelenítő (`RichTextContent`):** Biztonságos HTML és szöveges renderelés `prose prose-sm dark:prose-invert` osztályokkal. 100%-os visszafelé kompatibilitás a korábbi sima szöveges hibajegyekkel és hozzászólásokkal.
+- **Kezelőkonzol (Console View) Keresés & Ergonómia:** A 2-hasábos konzol nézetben a keresőmező (`matchTicketSearch`) támogatja a `#` előtaggal beírt jegyszámokat (pl. `#EB-0094`), tárgyat, üzenetet, felhasználónevet, emailt és cégnevet. Mindkét keresőmező azonnali törlés (`X`) gombot kapott.
+- **Táblázat és Badge Dizájn Szimmetria:** A "Visszaigazolásra vár" (`waiting_confirmation`) badge `whitespace-nowrap px-3 py-0.5` stílust kapott. A `Státusz` és `Prioritás` oszlopok és badge-ek pontosan a fejlécek alatt középre zártak (`flex justify-center items-center`, `w-[170px] min-w-[165px]`).
+- **ThinkAI Badge Márkajelzés:** A ThinkAI operátorok azonosítására a standardizált `ThinkAiBadge` került bevezetésre.
 - **Közvetlen Csatolmánykezelés Nyitott Hibajegyhez:** A `feedback.attachments` tömb közvetlen módosítása a `useUpdateTicketAttachments` mutációval és a jegy fejlécében elhelyezett `+ Csatolmány hozzáadása` gombbal.
 - **Lebegő Eszköztáras Előnézeti Kártyák:** Új, egységes kártyás preview dizájn a feltöltött csatolmányokhoz (képeknél négyzetes előnézet, jobb felső lebegő kapszulában `Eye` előnézet és `Trash2` törlés gombok; dokumentumoknál dedikált típusjelvény és letöltési/törlési funkció).
 - **Egységes Radix Tooltip Architektúra:** A hibajegy komponensekben (`TicketDetailView`, `FeedbackDialog`, `ImageGalleryModal`, `rich-text-editor`) a natív `title` attribútumok ki lettek váltva `<TooltipProvider delayDuration={200}>` és `<Tooltip>` komponensekkel, biztosítva a finom időzítést és az app dizájnrendszeréhez illeszkedő sötét/világos buborékokat.

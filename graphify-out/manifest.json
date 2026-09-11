@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketDetailView.tsx": {
-    "mtime": 1789011543.7213676,
-    "ast_hash": "48828ee55ae10edd4f26ca40ff4f944e",
+    "mtime": 1789099088.5399191,
+    "ast_hash": "f466a399060b1e6b39ecb04fa3e370d9",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
@@ -485,13 +485,13 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketStatusBadge.tsx": {
-    "mtime": 1789010538.8007727,
-    "ast_hash": "417e9dda63fb60d4446b718ecba63ae0",
+    "mtime": 1789098445.0555775,
+    "ast_hash": "2e96b896850feaa040de231439807e74",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketTimeline.tsx": {
-    "mtime": 1789011826.63656,
-    "ast_hash": "89ddabaaa4af636f15b95f91ba1ea1cd",
+    "mtime": 1789098002.5707998,
+    "ast_hash": "8fc81c874e22cf7c77db552858f4a9ca",
     "semantic_hash": ""
   },
   "src/components/transactions/TransactionFilters.tsx": {
@@ -1030,8 +1030,8 @@
     "semantic_hash": "64181f0f0c553cc19a7165ffe6353303"
   },
   "src/hooks/useTickets.ts": {
-    "mtime": 1788977485.3594058,
-    "ast_hash": "a64f0a27771d028d43b02739fcaf9674",
+    "mtime": 1789098297.9681146,
+    "ast_hash": "aa23970d6a5bde4b713c3203b18dc277",
     "semantic_hash": ""
   },
   "src/hooks/useTimeEntries.ts": {
@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "src/pages/TicketsPage.tsx": {
-    "mtime": 1789080097.8737304,
-    "ast_hash": "33743e306016a7f27f9b4c77c633452f",
+    "mtime": 1789099112.1589034,
+    "ast_hash": "46b09d65b6b6fadcf7dd1ca3c92f60cf",
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {
@@ -3080,8 +3080,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-018-ticket-system.md": {
-    "mtime": 1788393964.3630526,
-    "ast_hash": "72a0cdadaee301b64c73c77bff222f1d",
+    "mtime": 1789099244.3530524,
+    "ast_hash": "187750e201162c56d7324ec1e572cfe6",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
@@ -3305,8 +3305,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/036-ticket-system.md": {
-    "mtime": 1788289902.0532956,
-    "ast_hash": "e87bb36ad68cd25f6cfde75303976864",
+    "mtime": 1789098731.4492486,
+    "ast_hash": "345ba537676ef74ef79a92419128acf2",
     "semantic_hash": ""
   },
   "docs/business/decisions/037-management-dashboard.md": {
@@ -3325,8 +3325,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1788858909.01721,
-    "ast_hash": "784bdf6e7060d12493673a04a703b914",
+    "mtime": 1789098740.855023,
+    "ast_hash": "c054dddeedb02e4689ae3703783d2497",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3555,8 +3555,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1789011985.9309533,
-    "ast_hash": "04dabbd4c640ef5e2f17417016e96211",
+    "mtime": 1789099238.0021136,
+    "ast_hash": "faa99a54b779eb6774a23e4b36fc05ef",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
@@ -7450,8 +7450,8 @@
     "semantic_hash": ""
   },
   "src/features/management/ManagementDashboard.tsx": {
-    "mtime": 1788977695.351094,
-    "ast_hash": "c14b5a225a85f172e8752e46fab4bc4e",
+    "mtime": 1789093828.7785058,
+    "ast_hash": "7647978d3fcdb9e248810987d0b41766",
     "semantic_hash": ""
   },
   "src/features/management/api/managementApi.ts": {
@@ -7465,8 +7465,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/ControlCenter.tsx": {
-    "mtime": 1788135911.061527,
-    "ast_hash": "4aaa2c5a9a449d6340587a2fa546482f",
+    "mtime": 1789093038.2062397,
+    "ast_hash": "0838491b230dfc8a40c3ca4983c4abed",
     "semantic_hash": ""
   },
   "src/features/management/components/common/DatePickerInput.tsx": {
@@ -7510,8 +7510,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/errors/ErrorControlPanel.tsx": {
-    "mtime": 1788492066.1242943,
-    "ast_hash": "1ae7f85433db92174481aab20a2e30c2",
+    "mtime": 1789091592.5634732,
+    "ast_hash": "dab2cfa569371c60f7db32fe3dd25c05",
     "semantic_hash": ""
   },
   "src/features/management/components/files/FilesPanel.tsx": {
@@ -8385,8 +8385,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/errorsHandler.ts": {
-    "mtime": 1788855546.081218,
-    "ast_hash": "0d1a5d8836878b387f14e276c4120146",
+    "mtime": 1789090802.141234,
+    "ast_hash": "ca35eba36194cfdce3de02ca3927346f",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/filesHandler.ts": {
@@ -8400,8 +8400,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/overviewHandler.ts": {
-    "mtime": 1788222140.567541,
-    "ast_hash": "73a0ed2fe1feb47a7dd6bcb65c90683e",
+    "mtime": 1789090841.5803952,
+    "ast_hash": "850bddbdcbb0304985790f0bc5ce1678",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/permissionsHandler.ts": {
@@ -8930,8 +8930,8 @@
     "semantic_hash": ""
   },
   "src/features/management/__tests__/errorControlPanelDedup.test.tsx": {
-    "mtime": 1788491083.415203,
-    "ast_hash": "a8fe2be50b6ed40f3b892d6c1bd8b0a8",
+    "mtime": 1789091617.1465898,
+    "ast_hash": "1e818ea4ae8d381de159aaab2002cdfd",
     "semantic_hash": ""
   },
   "supabase/migrations/20260904140000_cleanup_duplicate_error_uploads.sql": {
@@ -10372,6 +10372,66 @@
   "docs/product/decisions/P-082-payroll-gl-mapping-combobox-and-step8-ux.md": {
     "mtime": 1789088237.726812,
     "ast_hash": "8f91647018a03f159a5b25199d686c84",
+    "semantic_hash": ""
+  },
+  "src/features/management/__tests__/managementDashboardHeader.test.tsx": {
+    "mtime": 1789093838.0203235,
+    "ast_hash": "5722c0c58d8c3ecaa052d75b693a37ba",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketsPageActiveFilter.test.tsx": {
+    "mtime": 1789092225.4542809,
+    "ast_hash": "decdb662899b0467b25576bfa47639bd",
+    "semantic_hash": ""
+  },
+  "src/features/management/__tests__/controlCenterStickyTabs.test.tsx": {
+    "mtime": 1789092985.6790817,
+    "ast_hash": "468c5657ccbfd5968f2117d08213dd16",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketsPageStickyTabs.test.tsx": {
+    "mtime": 1789092726.1458242,
+    "ast_hash": "598ee1a4e8721136f02a2c2025c625a3",
+    "semantic_hash": ""
+  },
+  "src/components/tickets/TicketResolutionBanner.tsx": {
+    "mtime": 1789097092.291316,
+    "ast_hash": "618337fd6bc8eb406da2949b81a2e58f",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketResolutionFlow.test.tsx": {
+    "mtime": 1789097028.3264668,
+    "ast_hash": "c30b4601625e15c51f6aa29473678750",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260911_ticket_resolution_confirmation.sql": {
+    "mtime": 1789098254.7685843,
+    "ast_hash": "699bd0304b30072822caa8dff707d428",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketTimeline.test.tsx": {
+    "mtime": 1789098042.6875887,
+    "ast_hash": "c85c78a124a6d5512bc657243b0b3077",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketsConsoleSearch.test.tsx": {
+    "mtime": 1789097864.9346852,
+    "ast_hash": "2427b07e7428c99a7d3532a293d3d693",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketResolutionUnread.test.tsx": {
+    "mtime": 1789098312.2091565,
+    "ast_hash": "6a9b1ed776b9ed8e6c327c35e784960a",
+    "semantic_hash": ""
+  },
+  "src/components/tickets/TicketNotFoundView.tsx": {
+    "mtime": 1789099140.7581155,
+    "ast_hash": "ebb80f3edf45becbcf4cd28d0f80aef2",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketNotFound.test.tsx": {
+    "mtime": 1789099164.2194579,
+    "ast_hash": "c0e8a56389e70fc7d76a093851e3f724",
     "semantic_hash": ""
   }
 }

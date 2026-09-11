@@ -371,8 +371,12 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
   const sourceOptions = [
     { value: 'uploads', label: 'Feltöltés' },
     { value: 'app_error_logs:frontend', label: 'Frontend' },
+    { value: 'app_error_logs:edge_function', label: 'Edge Function' },
+    { value: 'app_error_logs:auth', label: 'Auth' },
     { value: 'app_error_logs:worker', label: 'Worker' },
     { value: 'app_error_logs:mailgun', label: 'Mailgun' },
+    { value: 'nav_sync_logs', label: 'NAV' },
+    { value: 'bank_statement_uploads', label: 'Bank' },
   ];
 
   const categoryOptions = [
@@ -392,12 +396,24 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
     invoice_uploads: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
     transaction_uploads: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
     report_uploads: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
-    bank_statement_uploads: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    bank_statement_uploads: 'bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/30',
     gl_upload_notifications: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
-    nav_sync_logs: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    nav_sync_logs: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/30',
     'app_error_logs:frontend': 'bg-teal-500/15 text-teal-700 dark:text-teal-400 border-teal-500/30',
+    'app_error_logs:edge_function': 'bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30',
+    'app_error_logs:auth': 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30',
     'app_error_logs:worker': 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
     'app_error_logs:mailgun': 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30',
+    app_error_logs: 'bg-teal-500/15 text-teal-700 dark:text-teal-400 border-teal-500/30',
+    // Fallbacks by label
+    'Edge Function': 'bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30',
+    Frontend: 'bg-teal-500/15 text-teal-700 dark:text-teal-400 border-teal-500/30',
+    Auth: 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30',
+    Feltöltés: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    Mailgun: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30',
+    Worker: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    NAV: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/30',
+    Bank: 'bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/30',
   };
 
   return (
@@ -907,7 +923,7 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
                   <ErrSortTh col="created_at" label="Dátum" />
                   <th className="text-left py-1.5 px-3 font-medium">Cég</th>
                   <th className="text-left py-1.5 px-3 font-medium">User</th>
-                  <ErrSortTh col="source" label="Forrás" width="w-[100px]" />
+                  <ErrSortTh col="source" label="Forrás" width="w-[115px]" />
                   <ErrSortTh col="error_category" label="Típus" width="w-[100px]" />
                   <th className="text-left py-1.5 px-3 font-medium">Fájl</th>
                   <th className="text-left py-1.5 px-3 font-medium">Hibaüzenet</th>
@@ -923,8 +939,8 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
                       <td className="py-1.5 px-3"><Skeleton className="h-4 w-20" /></td>
                       <td className="py-1.5 px-3"><Skeleton className="h-4 w-28" /></td>
                       <td className="py-1.5 px-3"><Skeleton className="h-4 w-24" /></td>
-                      <td className="py-1.5 px-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
-                      <td className="py-1.5 px-3"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                      <td className="py-1.5 px-2 w-[115px]"><Skeleton className="h-5 w-full rounded-sm" /></td>
+                      <td className="py-1.5 px-2 w-[100px]"><Skeleton className="h-5 w-full rounded-sm" /></td>
                       <td className="py-1.5 px-3"><Skeleton className="h-4 w-32" /></td>
                       <td className="py-1.5 px-3"><Skeleton className="h-4 w-40" /></td>
                       <td className="py-1.5 px-2"><Skeleton className="h-4 w-8" /></td>
@@ -986,13 +1002,25 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
                             </button>
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
-                        <td className="py-1.5 px-3 w-[100px]">
-                          <Badge className={`text-[10px] w-full justify-center ${sourceColors[r.source] || 'bg-slate-600 text-white border-transparent dark:bg-slate-500'}`}>
+                        <td className="py-1.5 px-2 w-[115px]">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] w-full justify-center whitespace-nowrap px-1.5 py-0.5 font-medium border",
+                              sourceColors[r.source] || sourceColors[r.source_label] || 'bg-muted/60 text-muted-foreground border-border'
+                            )}
+                          >
                             {r.source_label}
                           </Badge>
                         </td>
-                        <td className="py-1.5 px-3 w-[100px]">
-                          <Badge className={`text-[10px] w-full justify-center ${categoryColors[r.error_category_label] || categoryColors[r.error_category] || 'bg-slate-600 text-white border-transparent'}`}>
+                        <td className="py-1.5 px-2 w-[100px]">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] w-full justify-center whitespace-nowrap px-1.5 py-0.5 font-medium border",
+                              categoryColors[r.error_category_label] || categoryColors[r.error_category] || 'bg-muted/60 text-muted-foreground border-border'
+                            )}
+                          >
                             {r.error_category_label}
                           </Badge>
                         </td>

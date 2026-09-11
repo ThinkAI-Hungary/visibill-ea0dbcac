@@ -49,6 +49,10 @@ export interface Ticket {
   created_by?: string | null;
   created_by_name?: string | null;
   created_by_is_staff?: boolean;
+  waiting_for_user_confirmation?: boolean;
+  resolution_requested_at?: string | null;
+  resolution_requested_by?: string | null;
+  resolution_confirmed_at?: string | null;
 }
 
 export interface TicketComment {
@@ -186,6 +190,26 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           ['thinkai', 'management'].includes(createdByProfile?.role)
         );
 
+        const isConfirmationRequestedByOther = Boolean(
+          (t as any).waiting_for_user_confirmation &&
+          (t as any).resolution_requested_by &&
+          (t as any).resolution_requested_by !== user.id
+        );
+        const confirmationRequestedAt = (t as any).resolution_requested_at || null;
+
+        let hasUnread = false;
+        if (latestOther && (!lastRead || latestOther > lastRead)) {
+          hasUnread = true;
+        } else if (isCreatedByOther && (!lastRead || t.created_at > lastRead)) {
+          hasUnread = true;
+        } else if (
+          isConfirmationRequestedByOther &&
+          confirmationRequestedAt &&
+          (!lastRead || confirmationRequestedAt > lastRead)
+        ) {
+          hasUnread = true;
+        }
+
         return {
           id: t.id,
           ticket_number: t.ticket_number,
@@ -205,14 +229,16 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           attachments: t.attachments || null,
           comment_count: commentCountMap.get(t.id) || 0,
           latest_comment_at: latestOther,
-          has_unread: latestOther
-            ? !lastRead || latestOther > lastRead
-            : (isCreatedByOther ? (!lastRead || t.created_at > lastRead) : false),
+          has_unread: hasUnread,
           assigned_to: t.assigned_to,
           assigned_to_name: (t as any).assigned_to_profile?.name || null,
           created_by: t.created_by || null,
           created_by_name: createdByProfile?.name || null,
           created_by_is_staff: isCreatedByStaff,
+          waiting_for_user_confirmation: Boolean((t as any).waiting_for_user_confirmation),
+          resolution_requested_at: (t as any).resolution_requested_at || null,
+          resolution_requested_by: (t as any).resolution_requested_by || null,
+          resolution_confirmed_at: (t as any).resolution_confirmed_at || null,
         };
       });
     },
@@ -225,7 +251,7 @@ export function useUnreadTicketCount() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Subscribe to realtime changes on ticket_comments
+  // Subscribe to realtime changes on ticket_comments and feedback
   useEffect(() => {
     if (!user) return;
 
@@ -240,6 +266,19 @@ export function useUnreadTicketCount() {
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+          queryClient.invalidateQueries({ queryKey: ["tickets"] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'feedback',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+          queryClient.invalidateQueries({ queryKey: ["tickets"] });
         }
       )
       .subscribe();
@@ -273,7 +312,14 @@ export function useUnreadTicketCount() {
 export interface TicketEvent {
   id: string;
   feedback_id: string;
-  event_type: "created" | "status_changed" | "comment_added" | "assignee_changed";
+  event_type:
+    | "created"
+    | "status_changed"
+    | "comment_added"
+    | "assignee_changed"
+    | "resolution_requested"
+    | "resolution_confirmed"
+    | "resolution_rejected";
   actor_id: string | null;
   actor_email: string | null;
   actor_name: string | null;
@@ -340,6 +386,10 @@ export function useTicketDetail(feedbackId: string | null) {
           assigned_to_name: (ticket as any).assigned_to_profile?.name || null,
           created_by_name: createdByProfile?.name || null,
           created_by_is_staff: isCreatedByStaff,
+          waiting_for_user_confirmation: Boolean((ticket as any).waiting_for_user_confirmation),
+          resolution_requested_at: (ticket as any).resolution_requested_at || null,
+          resolution_requested_by: (ticket as any).resolution_requested_by || null,
+          resolution_confirmed_at: (ticket as any).resolution_confirmed_at || null,
         },
         comments: (comments || []) as TicketComment[],
       };
@@ -625,4 +675,69 @@ export function useUpdateTicketAttachments() {
     },
   });
 }
+
+// ── Mutation: Request ticket resolution confirmation ──────────
+export function useRequestTicketResolution() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      feedbackId,
+      comment,
+      attachments,
+    }: {
+      feedbackId: string;
+      comment?: string;
+      attachments?: string[];
+    }) => {
+      const { data, error } = await (supabase.rpc as any)("request_ticket_resolution", {
+        p_feedback_id: feedbackId,
+        p_comment: comment || null,
+        p_attachments: attachments && attachments.length > 0 ? attachments : null,
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, { feedbackId }) => {
+      queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket_events", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+    },
+  });
+}
+
+// ── Mutation: Respond to ticket resolution confirmation ───────
+export function useRespondTicketResolution() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      feedbackId,
+      confirmed,
+      comment,
+    }: {
+      feedbackId: string;
+      confirmed: boolean;
+      comment?: string;
+    }) => {
+      const { data, error } = await (supabase.rpc as any)("respond_to_ticket_resolution", {
+        p_feedback_id: feedbackId,
+        p_confirmed: confirmed,
+        p_comment: comment || null,
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, { feedbackId }) => {
+      queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket_events", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+    },
+  });
+}
+
 
