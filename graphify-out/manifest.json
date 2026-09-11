@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1789080498.547752,
-    "ast_hash": "81ed93bcf1c60f6b6034c823f839d546",
+    "mtime": 1789088255.4637141,
+    "ast_hash": "d7e7ae4a02f576a7b0b75af1644d9889",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3545,8 +3545,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-033-payroll-cycle.md": {
-    "mtime": 1788645579.0651145,
-    "ast_hash": "40d9d3d80e727977cffe85915919c041",
+    "mtime": 1789088281.280632,
+    "ast_hash": "1103c507ecd8cc9c84cfb25f0bbfdeec",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-034-approval-queue.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1789080511.7990422,
-    "ast_hash": "b80cb5fd68ba319b722cd9de7ce6fdf9",
+    "mtime": 1789088272.500848,
+    "ast_hash": "8aa1c01c6f6b52b0350aa2ce9b588977",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -4625,8 +4625,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep8.tsx": {
-    "mtime": 1788964430.6383932,
-    "ast_hash": "d8e2de90c3bf25a528a46bc9b32f8586",
+    "mtime": 1789087975.058185,
+    "ast_hash": "eadd36de27aea2a3a8cc3674854b316e",
     "semantic_hash": ""
   },
   "src/components/partners/PartnerInvoiceDetailDialog.tsx": {
@@ -9550,8 +9550,8 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/payrollAutoPoster.ts": {
-    "mtime": 1788964430.6433058,
-    "ast_hash": "2101e1dda6c9de736191670df06da02e",
+    "mtime": 1789085120.257722,
+    "ast_hash": "21e6fdd43b853495b1aab0bfcf3815cb",
     "semantic_hash": ""
   },
   "supabase/migrations/20260908150000_soft_delete_ai_chat_sessions.sql": {
@@ -10357,6 +10357,21 @@
   "src/test/accounty/sidebarSkeletonBug.test.tsx": {
     "mtime": 1789081122.5238934,
     "ast_hash": "af6fb1ca999a2f3ae2f8099061a06b20",
+    "semantic_hash": ""
+  },
+  "src/components/accounty/payroll/PayrollGlAccountSelector.tsx": {
+    "mtime": 1789087559.5119882,
+    "ast_hash": "1a224a8932bfe479d966bfa9346a00b0",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-110-payroll-gl-preset-pagination-and-mapping-persistence.md": {
+    "mtime": 1789088228.69325,
+    "ast_hash": "428b3421bba3b52177c29e96c4a43375",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-082-payroll-gl-mapping-combobox-and-step8-ux.md": {
+    "mtime": 1789088237.726812,
+    "ast_hash": "8f91647018a03f159a5b25199d686c84",
     "semantic_hash": ""
   }
 }

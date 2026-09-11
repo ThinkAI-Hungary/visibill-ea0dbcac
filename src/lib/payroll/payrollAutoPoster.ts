@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 
 export interface PayrollPostingSummary {
   cycleId: string;
@@ -26,42 +27,57 @@ export async function getPayrollPostingSummary(cycleId: string): Promise<Payroll
     .eq('id', cycleId)
     .single();
 
-  if (cycleErr || !cycle) return null;
+  if (cycleErr || !cycle) {
+    console.error('Error fetching payroll cycle for posting:', cycleErr);
+    return null;
+  }
 
-  const { data: taxProfile } = await supabase
-    .from('accounty_tax_profiles')
-    .select('is_kiva')
-    .eq('company_id', cycle.company_id)
-    .maybeSingle();
-
-  const isKiva = !!taxProfile?.is_kiva;
-
-  const { data: calcs = [] } = await supabase
+  const { data: calcs = [], error: calcsErr } = await supabase
     .from('accounty_payroll_calculations')
     .select('*')
     .eq('cycle_id', cycleId);
 
-  let totalGross = 0;
-  let totalSzocho = 0;
-  let totalSzja = 0;
-  let totalTb = 0;
-  let totalDeductions = 0;
-  let totalNet = 0;
-  let totalCommute = 0;
-
-  for (const c of calcs) {
-    totalGross += Number(c.gross_salary || 0);
-    totalSzocho += isKiva ? 0 : Number(c.szocho_amount || 0);
-    totalSzja += Number(c.szja_amount || 0);
-    totalTb += Number(c.tb_amount || 0);
-    totalDeductions += Number(c.total_deductions || 0);
-    totalNet += Number(c.net_salary || 0);
-    totalCommute += Number((c.metadata as any)?.travel_reimbursement || 0);
+  if (calcsErr) {
+    console.error('Error fetching calculations for posting:', calcsErr);
+    return null;
   }
 
-  const totalDebit = totalGross + totalSzocho + totalCommute;
-  const totalCredit = totalSzocho + totalSzja + totalTb + totalDeductions + (totalGross - totalSzja - totalTb - totalDeductions + totalCommute);
-  const isBalanced = Math.abs(totalDebit - totalCredit) < 1;
+  const { data: employments = [] } = await supabase
+    .from('accounty_employments')
+    .select('id')
+    .eq('company_id', cycle.company_id);
+
+  const employmentIds = employments.map(e => e.id);
+  let cafeteriaItems: any[] = [];
+  if (employmentIds.length > 0) {
+    const { data: cafe } = await supabase
+      .from('accounty_cafeteria')
+      .select('*')
+      .in('employment_id', employmentIds);
+    cafeteriaItems = cafe || [];
+  }
+
+  const getHomeOffice = (empId: string) => {
+    const item = cafeteriaItems.find(
+      c => c.employment_id === empId && (c.sub_type === 'home_office' || c.benefit_type === 'home_office')
+    );
+    return item ? Number(item.amount) : 0;
+  };
+
+  const getCommute = (calc: any) => Number((calc?.metadata as any)?.travel_reimbursement || 0);
+
+  const totalGross = calcs.reduce((s, c) => s + (c.gross_salary || 0), 0);
+  const totalSzocho = calcs.reduce((s, c) => s + (c.szocho_amount || 0), 0);
+  const totalSzja = calcs.reduce((s, c) => s + (c.szja_amount || 0), 0);
+  const totalTb = calcs.reduce((s, c) => s + (c.tb_amount || 0), 0);
+  const totalDeductions = calcs.reduce((s, c) => s + (c.total_deductions || 0), 0);
+  const totalHomeOffice = calcs.reduce((s, c) => s + getHomeOffice(c.employment_id), 0);
+  const totalCommute = calcs.reduce((s, c) => s + getCommute(c), 0);
+  const totalNet = calcs.reduce((s, c) => s + (c.net_salary || 0), 0) + totalHomeOffice;
+
+  const totalDebits = totalGross + totalCommute + totalSzocho;
+  const totalCredits = totalSzocho + totalSzja + totalTb + totalDeductions + totalNet + totalCommute;
+  const isBalanced = Math.abs(totalDebits - totalCredits) < 1;
 
   return {
     cycleId,
@@ -93,11 +109,22 @@ export interface PayrollGlMapping {
 
 /**
  * Resolves GL accounts for payroll posting taking into account:
- * 1. Company's active custom or generic chart of accounts preset (`chart_of_accounts_presets`).
- * 2. Company-specific `gl_accounts` entries.
- * 3. Multi-tier fallback matching (Exact prefix -> Short name keyword -> Broad prefix).
+ * 1. Saved custom mappings in `accounty_tax_profiles.payroll_settings.gl_mapping`.
+ * 2. Company's active custom or generic chart of accounts preset (`chart_of_accounts_presets`).
+ * 3. Company-specific `gl_accounts` entries.
+ * 4. Multi-tier fallback matching (Exact prefix -> Short name keyword -> Broad prefix).
  */
 export async function resolveCompanyGlAccounts(companyId: string): Promise<PayrollGlMapping> {
+  // 1. Fetch saved payroll settings / custom GL mapping if previously saved
+  const { data: taxProfile } = await supabase
+    .from('accounty_tax_profiles')
+    .select('payroll_settings')
+    .eq('company_id', companyId)
+    .maybeSingle();
+
+  const savedMapping: Partial<PayrollGlMapping> = (taxProfile?.payroll_settings as any)?.gl_mapping || {};
+
+  // 2. Resolve active chart of accounts preset for company
   const { data: presets } = await supabase
     .from('chart_of_accounts_presets')
     .select('id, name, company_id, is_active, type');
@@ -109,19 +136,32 @@ export async function resolveCompanyGlAccounts(companyId: string): Promise<Payro
 
   const activePresetId = activePreset?.id;
 
-  let query = supabase
-    .from('gl_accounts')
-    .select('id, gl_number, short_name, description, preset_id, company_id');
-
-  if (activePresetId && companyId) {
-    query = query.or(`preset_id.eq.${activePresetId},company_id.eq.${companyId}`);
-  } else if (companyId) {
-    query = query.eq('company_id', companyId);
-  } else if (activePresetId) {
-    query = query.eq('preset_id', activePresetId);
+  // 3. Fetch GL accounts with pagination to prevent PostgREST 1000 row truncation
+  let glAccounts: any[] = [];
+  if (activePresetId) {
+    try {
+      glAccounts = await fetchAllGlAccountsByPreset(activePresetId);
+    } catch (err) {
+      console.warn('Failed to fetch paginated GL accounts by preset, falling back to direct query:', err);
+    }
   }
 
-  const { data: glAccounts = [] } = await query;
+  if (glAccounts.length === 0) {
+    let query = supabase
+      .from('gl_accounts')
+      .select('id, gl_number, short_name, description, preset_id, company_id');
+
+    if (activePresetId && companyId) {
+      query = query.or(`preset_id.eq.${activePresetId},company_id.eq.${companyId}`);
+    } else if (companyId) {
+      query = query.eq('company_id', companyId);
+    } else if (activePresetId) {
+      query = query.eq('preset_id', activePresetId);
+    }
+
+    const { data = [] } = await query;
+    glAccounts = data || [];
+  }
 
   const findGlId = (prefixes: string[], keywords: string[], broadPrefix?: string) => {
     for (const prefix of prefixes) {
@@ -146,14 +186,42 @@ export async function resolveCompanyGlAccounts(companyId: string): Promise<Payro
     return null;
   };
 
-  const gl541 = findGlId(['541', '5410', '5411', '540'], ['munkabér', 'bruttó bér', 'alapbér', 'bérköltség'], '54');
-  const gl551 = findGlId(['551', '5510', '5511', '550'], ['személyi jellegű egyéb', 'utazási költségtérítés', 'munkába járás', 'kiküldetés'], '55');
-  const gl561 = findGlId(['561', '5610', '5611', '560'], ['szocho', 'szociális hozzájárulási'], '56');
-  const gl463 = findGlId(['463', '4630', '4631'], ['szocho kötelezettség', 'szocho adó'], '463');
-  const gl462 = findGlId(['462', '4620', '4621'], ['szja kötelezettség', 'szja', 'személyi jövedelemadó'], '462');
-  const gl464 = findGlId(['464', '4640', '4641'], ['tb kötelezettség', 'társadalombiztosítás', 'tb járulék'], '464');
-  const gl479 = findGlId(['479', '4790', '4791'], ['letiltás', 'előleg', 'bérből levont'], '47');
-  const gl471 = findGlId(['471', '4710', '4711'], ['nettó bér', 'munkabér kötelezettség', 'kifizetendő bér'], '471');
+  const isIdValid = (id: string | null | undefined) => {
+    if (!id) return false;
+    return glAccounts.some((a: any) => a.id === id);
+  };
+
+  const gl541 = isIdValid(savedMapping.gl541)
+    ? savedMapping.gl541!
+    : findGlId(['541', '5410', '5411', '540'], ['munkabér', 'bruttó bér', 'alapbér', 'bérköltség'], '54');
+
+  const gl551 = isIdValid(savedMapping.gl551)
+    ? savedMapping.gl551!
+    : findGlId(['551', '5510', '5511', '550'], ['személyi jellegű egyéb', 'utazási költségtérítés', 'munkába járás', 'kiküldetés'], '55');
+
+  const gl561 = isIdValid(savedMapping.gl561)
+    ? savedMapping.gl561!
+    : findGlId(['561', '5610', '5611', '560'], ['szocho', 'szociális hozzájárulási'], '56');
+
+  const gl463 = isIdValid(savedMapping.gl463)
+    ? savedMapping.gl463!
+    : findGlId(['463', '4630', '4631'], ['szocho kötelezettség', 'szocho adó'], '463');
+
+  const gl462 = isIdValid(savedMapping.gl462)
+    ? savedMapping.gl462!
+    : findGlId(['462', '4620', '4621'], ['szja kötelezettség', 'szja', 'személyi jövedelemadó'], '462');
+
+  const gl464 = isIdValid(savedMapping.gl464)
+    ? savedMapping.gl464!
+    : findGlId(['464', '4640', '4641'], ['tb kötelezettség', 'társadalombiztosítás', 'tb járulék'], '464');
+
+  const gl479 = isIdValid(savedMapping.gl479)
+    ? savedMapping.gl479!
+    : findGlId(['479', '4790', '4791'], ['letiltás', 'előleg', 'bérből levont'], '47');
+
+  const gl471 = isIdValid(savedMapping.gl471)
+    ? savedMapping.gl471!
+    : findGlId(['471', '4710', '4711'], ['nettó bér', 'munkabér kötelezettség', 'kifizetendő bér'], '471');
 
   return {
     activePresetId,
@@ -167,6 +235,39 @@ export async function resolveCompanyGlAccounts(companyId: string): Promise<Payro
     gl479,
     gl471,
   };
+}
+
+/**
+ * Persists customized payroll GL mapping to company tax profile settings
+ */
+export async function saveCompanyPayrollGlMapping(companyId: string, mapping: PayrollGlMapping): Promise<void> {
+  const { data: taxProfile } = await supabase
+    .from('accounty_tax_profiles')
+    .select('id, payroll_settings')
+    .eq('company_id', companyId)
+    .maybeSingle();
+
+  if (!taxProfile) return;
+
+  const currentSettings = (taxProfile.payroll_settings as any) || {};
+  const updatedSettings = {
+    ...currentSettings,
+    gl_mapping: {
+      gl541: mapping.gl541,
+      gl551: mapping.gl551,
+      gl561: mapping.gl561,
+      gl463: mapping.gl463,
+      gl462: mapping.gl462,
+      gl464: mapping.gl464,
+      gl479: mapping.gl479,
+      gl471: mapping.gl471,
+    },
+  };
+
+  await supabase
+    .from('accounty_tax_profiles')
+    .update({ payroll_settings: updatedSettings })
+    .eq('id', taxProfile.id);
 }
 
 /**

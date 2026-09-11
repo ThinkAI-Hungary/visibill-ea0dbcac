@@ -1305,8 +1305,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountyLayout.tsx": {
-    "mtime": 1788969456.5757554,
-    "ast_hash": "b16fe7f2a6cf834052d06e94b56b1320",
+    "mtime": 1789081803.9570732,
+    "ast_hash": "07b56aeb9ddb63bb8e6f5840f093aaf6",
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountyRoleContext.tsx": {
@@ -1315,13 +1315,13 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/ApprovalQueuePage.tsx": {
-    "mtime": 1785923358.7265582,
-    "ast_hash": "8dd3a758c2fab2e44d8ec6aa3af4e3a7",
+    "mtime": 1789081998.3447878,
+    "ast_hash": "df7db820c4ecc4fd8714267c751e3171",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientDetailsPage.tsx": {
-    "mtime": 1787568622.8713362,
-    "ast_hash": "ca8ddb1c419bc1f700f5a8eabc04a239",
+    "mtime": 1789082014.6826384,
+    "ast_hash": "a56f9c628196ad069895d624fff109be",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientInvoicesPage.tsx": {
@@ -1330,8 +1330,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientMissingInvoicesPage.tsx": {
-    "mtime": 1788369143.555757,
-    "ast_hash": "48960b3ab0615df20040a638e5f6dc84",
+    "mtime": 1789082006.3242538,
+    "ast_hash": "4e166f9d2fc4232a02c3530a0951e952",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientMissingInvoicesReportPage.tsx": {
@@ -1345,8 +1345,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientReportsPage.tsx": {
-    "mtime": 1787753315.831876,
-    "ast_hash": "b89deaae63bca74b60f4de257b8c066e",
+    "mtime": 1789082010.2835388,
+    "ast_hash": "4a1ed8371109f8c21e190f51130abdf0",
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeDetailsPage.tsx": {
@@ -1370,8 +1370,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/HelpPage.tsx": {
-    "mtime": 1782621606.7912283,
-    "ast_hash": "9b707b591e3463fb4b4185addb11d2bd",
+    "mtime": 1789082002.1774845,
+    "ast_hash": "7088b5008cbfdbb3eafe868c3503a553",
     "semantic_hash": ""
   },
   "src/pages/Accounty/MissingInvoicesPage.tsx": {
@@ -1385,18 +1385,18 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/NewClientPage.tsx": {
-    "mtime": 1788212014.2251077,
-    "ast_hash": "0cd7eb23b1aa123184eca8e98cde5101",
+    "mtime": 1789082037.3740046,
+    "ast_hash": "1d21694b484120928897ac1cd36602b5",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollCyclePage.tsx": {
-    "mtime": 1788964430.6463034,
-    "ast_hash": "78a1ae88984fca3b6d4fbf3d1086d9e6",
+    "mtime": 1789081254.405718,
+    "ast_hash": "3308c60c123eee11e07d2dcacd8af875",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollDashboardPage.tsx": {
-    "mtime": 1788305323.1767817,
-    "ast_hash": "e2f4b5e87bded887eca60d6871cdde99",
+    "mtime": 1789081234.6903052,
+    "ast_hash": "beb297144ccc11641a31afe43c636cda",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollReportsPage.tsx": {
@@ -3360,8 +3360,8 @@
     "semantic_hash": ""
   },
   "docs/design/05-layout-navigation.md": {
-    "mtime": 1789080546.233629,
-    "ast_hash": "6657bc3211afed7bc5a6868ff07b805e",
+    "mtime": 1789082264.256693,
+    "ast_hash": "2a79fd07dd894ba5bc1abcd0e509859c",
     "semantic_hash": ""
   },
   "docs/design/07-loading-patterns.md": {
@@ -3370,8 +3370,8 @@
     "semantic_hash": ""
   },
   "docs/design/08-interactions-animations.md": {
-    "mtime": 1788130896.143462,
-    "ast_hash": "cf63bc7e5a274b07f95ee8b7bff64b50",
+    "mtime": 1789082246.845927,
+    "ast_hash": "beffcabe0be969af598ed6812ac1cb96",
     "semantic_hash": ""
   },
   "docs/design/09-error-handling-feedback.md": {
@@ -4585,8 +4585,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/layout/AccountySidebar.tsx": {
-    "mtime": 1788969456.5747557,
-    "ast_hash": "f0162a53d0daac0cb480b8f9f2691fed",
+    "mtime": 1789081194.2107322,
+    "ast_hash": "a7c4bfd5bcacf66db2cdd6edabd094bb",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep1.tsx": {
@@ -4905,8 +4905,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/missing-invoices/HistoryView.tsx": {
-    "mtime": 1782599622.784431,
-    "ast_hash": "89821c0e1d5883734c498525a3dda6d5",
+    "mtime": 1789082018.9801552,
+    "ast_hash": "7686f759237dc539ef24038bbd71d385",
     "semantic_hash": ""
   },
   "src/pages/Accounty/missing-invoices/InvoiceDetailModal.tsx": {
@@ -4920,13 +4920,13 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/new-client/ClientDetailsStep.tsx": {
-    "mtime": 1788212014.2261126,
-    "ast_hash": "e41a514608059ffe1d3584aafaae7ba4",
+    "mtime": 1789082025.8630576,
+    "ast_hash": "ab4e9a4c45ed4e609c84559c74376f5d",
     "semantic_hash": ""
   },
   "src/pages/Accounty/new-client/IntegrationStep.tsx": {
-    "mtime": 1787753315.841499,
-    "ast_hash": "f0e087aedef1be16d8f5adf640daef37",
+    "mtime": 1789082031.4475248,
+    "ast_hash": "bd30135b8136cbed1116480398da9b03",
     "semantic_hash": ""
   },
   "src/pages/Accounty/reports/ReportHelpers.tsx": {
@@ -10352,6 +10352,11 @@
   "docs/product/decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md": {
     "mtime": 1789080478.9010391,
     "ast_hash": "3e0ef6762103c3fb4ce1a66d8776b42a",
+    "semantic_hash": ""
+  },
+  "src/test/accounty/sidebarSkeletonBug.test.tsx": {
+    "mtime": 1789081122.5238934,
+    "ast_hash": "af6fb1ca999a2f3ae2f8099061a06b20",
     "semantic_hash": ""
   }
 }

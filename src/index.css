@@ -309,7 +309,8 @@ All colors MUST be HSL.
   }
 
   /* Remove mouse/JS focus rings — preserve keyboard focus-visible for a11y (§1 focus-states) */
-  *:focus:not(:focus-visible) {
+  *:focus:not(:focus-visible),
+  *:active:not(:focus-visible) {
     outline: none !important;
   }
 
@@ -317,11 +318,6 @@ All colors MUST be HSL.
   *:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
-  }
-
-  /* Kill visual flash on mouse/touch clicks */
-  *:focus:not(:focus-visible) {
-    box-shadow: none !important;
   }
 
   /* Prevent border/color changes on programmatic or mouse focus (e.g. password manager autofill).

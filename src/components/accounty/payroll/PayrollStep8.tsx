@@ -3,7 +3,9 @@ import { Play, Printer, Loader2, CheckCircle2, RotateCcw, Clock } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { resolveCompanyGlAccounts, type PayrollGlMapping } from '@/lib/payroll/payrollAutoPoster';
+import { resolveCompanyGlAccounts, saveCompanyPayrollGlMapping, type PayrollGlMapping } from '@/lib/payroll/payrollAutoPoster';
+import { fetchAllGlAccountsByPreset, type GlAccountRow } from '@/lib/glData';
+import { PayrollGlAccountSelector } from './PayrollGlAccountSelector';
 
 export interface PayrollStep8Props {
   calculations: any[];
@@ -37,7 +39,8 @@ export default function PayrollStep8({
   const [isKiva, setIsKiva] = React.useState(false);
   const [localCafeteriaItems, setLocalCafeteriaItems] = React.useState<any[]>([]);
   const [glMapping, setGlMapping] = React.useState<PayrollGlMapping | null>(null);
-  const [allGlAccounts, setAllGlAccounts] = React.useState<any[]>([]);
+  const [allGlAccounts, setAllGlAccounts] = React.useState<GlAccountRow[]>([]);
+  const [isLoadingGl, setIsLoadingGl] = React.useState(true);
   const cafeteriaItems = propCafeteriaItems ?? localCafeteriaItems;
 
   React.useEffect(() => {
@@ -51,17 +54,28 @@ export default function PayrollStep8({
         if (data?.is_kiva) setIsKiva(true);
       });
 
-    resolveCompanyGlAccounts(companyId).then((mapping) => {
-      setGlMapping(mapping);
-      if (onGlMappingChange) onGlMappingChange(mapping);
-    });
+    setIsLoadingGl(true);
+    resolveCompanyGlAccounts(companyId)
+      .then(async (mapping) => {
+        setGlMapping(mapping);
+        if (onGlMappingChange) onGlMappingChange(mapping);
 
-    supabase
-      .from('gl_accounts')
-      .select('id, gl_number, short_name, description')
-      .order('gl_number', { ascending: true })
-      .then(({ data }) => {
-        if (data) setAllGlAccounts(data);
+        if (mapping.activePresetId) {
+          try {
+            const accounts = await fetchAllGlAccountsByPreset(mapping.activePresetId);
+            setAllGlAccounts(accounts);
+          } catch (err) {
+            console.error('Error fetching GL accounts for preset:', err);
+          } finally {
+            setIsLoadingGl(false);
+          }
+        } else {
+          setIsLoadingGl(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Error resolving company GL mapping:', err);
+        setIsLoadingGl(false);
       });
   }, [companyId]);
 
@@ -70,9 +84,13 @@ export default function PayrollStep8({
       if (!prev) return prev;
       const updated = { ...prev, [field]: value };
       if (onGlMappingChange) onGlMappingChange(updated);
+      saveCompanyPayrollGlMapping(companyId, updated).catch(err => {
+        console.warn('Failed to persist payroll GL mapping:', err);
+      });
       return updated;
     });
   };
+
 
   const activeEmploymentIdsKey = React.useMemo(() => {
     return allEmployments
@@ -343,329 +361,292 @@ export default function PayrollStep8({
           </div>
 
           {/* General Ledger Payroll Journal Posting Preview */}
-          <div className="bg-slate-900 text-slate-100 rounded-xl p-5 border border-slate-800 space-y-4 shadow-lg">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="bg-card text-card-foreground rounded-xl p-5 border border-border space-y-4 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-semibold uppercase">
+                  <span className="text-xs font-mono bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full font-semibold uppercase">
                     Automatikus Főkönyvi Bérfeladás
                   </span>
-                  <span className="text-xs font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-semibold">
+                  <span className="text-xs font-mono bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-2.5 py-0.5 rounded-full font-semibold">
                     Vegyes (VE) Napló
                   </span>
                   {isKiva ? (
-                    <span className="text-xs font-mono bg-orange-500/20 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded font-semibold">
+                    <span className="text-xs font-mono bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full font-semibold">
                       KIVA Adózó (SZOCHO Mentes: 0 Ft)
                     </span>
                   ) : glMapping?.presetName && (
-                    <span className="text-xs font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-semibold">
+                    <span className="text-xs font-mono bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full font-semibold">
                       Aktív számlatükör: {glMapping.presetName}
                     </span>
                   )}
                 </div>
-                <h3 className="text-base font-bold text-white mt-1">Főkönyvi Kontírozási Mátrix & Előnézet (Szerkeszthető)</h3>
+                <h3 className="text-base font-bold text-foreground mt-2">Főkönyvi Kontírozási Mátrix & Előnézet (Szerkeszthető)</h3>
               </div>
               <div className="text-right">
-                <span className="text-xs text-slate-400">Tett elszámolás:</span>
-                <p className="text-sm font-bold font-mono text-emerald-400">
+                <span className="text-xs text-muted-foreground">Tett elszámolás:</span>
+                <p className="text-sm font-bold font-mono text-primary">
                   BER-{cycle?.year}-{String(cycle?.month || 1).padStart(2, '0')}
                 </p>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs font-mono">
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400">
-                    <th className="px-3 py-2 text-left">Főkönyvi Számlaszám Választó & Megnevezés</th>
-                    <th className="px-3 py-2 text-center">T / K</th>
-                    <th className="px-3 py-2 text-right">Tartozik (T) Ft</th>
-                    <th className="px-3 py-2 text-right">Követel (K) Ft</th>
+                  <tr className="border-b border-border bg-muted/50 text-muted-foreground">
+                    <th className="px-3.5 py-2.5 text-left font-semibold">Gazdasági esemény</th>
+                    <th className="px-3.5 py-2.5 text-left font-semibold">Főkönyvi számlaszám választó</th>
+                    <th className="px-3.5 py-2.5 text-center font-semibold">T / K</th>
+                    <th className="px-3.5 py-2.5 text-right font-semibold">Tartozik (T) Ft</th>
+                    <th className="px-3.5 py-2.5 text-right font-semibold">Követel (K) Ft</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-border/60">
                   {/* T 541 Bruttó bér */}
-                  <tr>
-                    <td className="px-3 py-2 text-slate-200">
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={glMapping?.gl541 || ''}
-                          onChange={(e) => handleSelectGlAccount('gl541', e.target.value)}
-                          className="bg-slate-800 text-blue-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[220px]"
-                        >
-                          {allGlAccounts.length > 0 ? (
-                            allGlAccounts.map(a => (
-                              <option key={a.id} value={a.id}>
-                                {a.gl_number} — {a.short_name || a.description}
-                              </option>
-                            ))
-                          ) : (
-                            <option value="">541 — Munkabér költség</option>
-                          )}
-                        </select>
-                        <span className="text-slate-400 text-[11px]">Munkabér költség (bruttó bér)</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 text-center font-bold text-blue-400">T</td>
-                    <td className="px-3 py-2 text-right font-bold text-blue-400">
-                      {calculations.reduce((s, c) => s + (c.gross_salary || 0), 0).toLocaleString('hu-HU')} Ft
-                    </td>
-                    <td className="px-3 py-2 text-right text-slate-600">-</td>
-                  </tr>
+                  {(() => {
+                    const grossTotal = calculations.reduce((s, c) => s + (c.gross_salary || 0), 0);
+                    const szochoTotal = isKiva ? 0 : calculations.reduce((s, c) => s + getSzocho(c), 0);
+                    const szjaTotal = calculations.reduce((s, c) => s + (c.szja_amount || 0), 0);
+                    const tbTotal = calculations.reduce((s, c) => s + (c.tb_amount || 0), 0);
+                    const deductionsTotal = calculations.reduce((s, c) => s + (c.total_deductions || 0), 0);
+                    const netTotal = grossTotal - szjaTotal - tbTotal - deductionsTotal + totalCommute;
+                    const totalDebits = grossTotal + szochoTotal + totalCommute;
+                    const totalCredits = szochoTotal + szjaTotal + tbTotal + deductionsTotal + netTotal;
 
-                  {/* T 561 SZOCHO költség (kizárólag nem-KIVA cégeknél) */}
-                  {!isKiva && calculations.reduce((s, c) => s + getSzocho(c), 0) > 0 && (
-                    <tr>
-                      <td className="px-3 py-2 text-slate-200">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={glMapping?.gl561 || ''}
-                            onChange={(e) => handleSelectGlAccount('gl561', e.target.value)}
-                            className="bg-slate-800 text-blue-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[220px]"
-                          >
-                            {allGlAccounts.length > 0 ? (
-                              allGlAccounts.map(a => (
-                                <option key={a.id} value={a.id}>
-                                  {a.gl_number} — {a.short_name || a.description}
-                                </option>
-                              ))
-                            ) : (
-                              <option value="">561 — Szociális hozzájárulási adó költség</option>
-                            )}
-                          </select>
-                          <span className="text-slate-400 text-[11px]">Szociális hozzájárulási adó költség</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-center font-bold text-blue-400">T</td>
-                      <td className="px-3 py-2 text-right font-bold text-blue-400">
-                        {calculations.reduce((s, c) => s + getSzocho(c), 0).toLocaleString('hu-HU')} Ft
-                      </td>
-                      <td className="px-3 py-2 text-right text-slate-600">-</td>
-                    </tr>
-                  )}
+                    return (
+                      <>
+                        <tr className="hover:bg-muted/30 transition-colors">
+                          <td className="px-3.5 py-2.5 font-medium text-foreground">
+                            Munkabér költség (bruttó bér)
+                          </td>
+                          <td className="px-3.5 py-2.5">
+                            <PayrollGlAccountSelector
+                              value={glMapping?.gl541 || ''}
+                              allAccounts={allGlAccounts}
+                              isLoading={isLoadingGl}
+                              preferredClass="5"
+                              defaultLabel="541 — Munkabér költség"
+                              onSelect={(id) => handleSelectGlAccount('gl541', id)}
+                              className="w-full max-w-[320px]"
+                            />
+                          </td>
+                          <td className="px-3.5 py-2.5 text-center font-mono font-bold text-blue-600 dark:text-blue-400">T</td>
+                          <td className="px-3.5 py-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
+                            {grossTotal.toLocaleString('hu-HU')} Ft
+                          </td>
+                          <td className="px-3.5 py-2.5 text-right text-muted-foreground font-mono">-</td>
+                        </tr>
 
-                  {/* T 551 Munkába járás költségtérítés (adómentes) */}
-                  {totalCommute > 0 && (
-                    <tr>
-                      <td className="px-3 py-2 text-slate-200">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={glMapping?.gl551 || ''}
-                            onChange={(e) => handleSelectGlAccount('gl551', e.target.value)}
-                            className="bg-slate-800 text-blue-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[220px]"
-                          >
-                            {allGlAccounts.length > 0 ? (
-                              allGlAccounts.map(a => (
-                                <option key={a.id} value={a.id}>
-                                  {a.gl_number} — {a.short_name || a.description}
-                                </option>
-                              ))
-                            ) : (
-                              <option value="">551 — Egyéb személyi jellegű kifizetések</option>
-                            )}
-                          </select>
-                          <span className="text-slate-400 text-[11px]">Munkába járás költségtérítés (adómentes)</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-center font-bold text-blue-400">T</td>
-                      <td className="px-3 py-2 text-right font-bold text-blue-400">
-                        {totalCommute.toLocaleString('hu-HU')} Ft
-                      </td>
-                      <td className="px-3 py-2 text-right text-slate-600">-</td>
-                    </tr>
-                  )}
+                        {/* T 561 SZOCHO költség (kizárólag nem-KIVA cégeknél) */}
+                        {!isKiva && szochoTotal > 0 && (
+                          <tr className="hover:bg-muted/30 transition-colors">
+                            <td className="px-3.5 py-2.5 font-medium text-foreground">
+                              Szociális hozzájárulási adó költség
+                            </td>
+                            <td className="px-3.5 py-2.5">
+                              <PayrollGlAccountSelector
+                                value={glMapping?.gl561 || ''}
+                                allAccounts={allGlAccounts}
+                                isLoading={isLoadingGl}
+                                preferredClass="5"
+                                defaultLabel="561 — Szociális hozzájárulási adó költség"
+                                onSelect={(id) => handleSelectGlAccount('gl561', id)}
+                                className="w-full max-w-[320px]"
+                              />
+                            </td>
+                            <td className="px-3.5 py-2.5 text-center font-mono font-bold text-blue-600 dark:text-blue-400">T</td>
+                            <td className="px-3.5 py-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
+                              {szochoTotal.toLocaleString('hu-HU')} Ft
+                            </td>
+                            <td className="px-3.5 py-2.5 text-right text-muted-foreground font-mono">-</td>
+                          </tr>
+                        )}
 
-                  {/* K 463 SZOCHO kötelezettség (kizárólag nem-KIVA cégeknél) */}
-                  {!isKiva && calculations.reduce((s, c) => s + getSzocho(c), 0) > 0 && (
-                    <tr>
-                      <td className="px-3 py-2 text-slate-200">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={glMapping?.gl463 || ''}
-                            onChange={(e) => handleSelectGlAccount('gl463', e.target.value)}
-                            className="bg-slate-800 text-purple-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[220px]"
-                          >
-                            {allGlAccounts.length > 0 ? (
-                              allGlAccounts.map(a => (
-                                <option key={a.id} value={a.id}>
-                                  {a.gl_number} — {a.short_name || a.description}
-                                </option>
-                              ))
-                            ) : (
-                              <option value="">463 — SZOCHO fizetési kötelezettség</option>
-                            )}
-                          </select>
-                          <span className="text-slate-400 text-[11px]">SZOCHO fizetési kötelezettség</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
-                      <td className="px-3 py-2 text-right text-slate-600">-</td>
-                      <td className="px-3 py-2 text-right font-bold text-purple-400">
-                        {calculations.reduce((s, c) => s + getSzocho(c), 0).toLocaleString('hu-HU')} Ft
-                      </td>
-                    </tr>
-                  )}
+                        {/* T 551 Munkába járás költségtérítés (adómentes) */}
+                        {totalCommute > 0 && (
+                          <tr className="hover:bg-muted/30 transition-colors">
+                            <td className="px-3.5 py-2.5 font-medium text-foreground">
+                              Munkába járás költségtérítés (adómentes)
+                            </td>
+                            <td className="px-3.5 py-2.5">
+                              <PayrollGlAccountSelector
+                                value={glMapping?.gl551 || ''}
+                                allAccounts={allGlAccounts}
+                                isLoading={isLoadingGl}
+                                preferredClass="5"
+                                defaultLabel="551 — Egyéb személyi jellegű kifizetések"
+                                onSelect={(id) => handleSelectGlAccount('gl551', id)}
+                                className="w-full max-w-[320px]"
+                              />
+                            </td>
+                            <td className="px-3.5 py-2.5 text-center font-mono font-bold text-blue-600 dark:text-blue-400">T</td>
+                            <td className="px-3.5 py-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
+                              {totalCommute.toLocaleString('hu-HU')} Ft
+                            </td>
+                            <td className="px-3.5 py-2.5 text-right text-muted-foreground font-mono">-</td>
+                          </tr>
+                        )}
 
-                  {/* K 462 SZJA kötelezettség */}
-                  {calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) > 0 && (
-                    <tr>
-                      <td className="px-3 py-2 text-slate-200">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={glMapping?.gl462 || ''}
-                            onChange={(e) => handleSelectGlAccount('gl462', e.target.value)}
-                            className="bg-slate-800 text-purple-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[220px]"
-                          >
-                            {allGlAccounts.length > 0 ? (
-                              allGlAccounts.map(a => (
-                                <option key={a.id} value={a.id}>
-                                  {a.gl_number} — {a.short_name || a.description}
-                                </option>
-                              ))
-                            ) : (
-                              <option value="">462 — Levont SZJA kötelezettség</option>
-                            )}
-                          </select>
-                          <span className="text-slate-400 text-[11px]">Levont SZJA kötelezettség</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
-                      <td className="px-3 py-2 text-right text-slate-600">-</td>
-                      <td className="px-3 py-2 text-right font-bold text-purple-400">
-                        {calculations.reduce((s, c) => s + (c.szja_amount || 0), 0).toLocaleString('hu-HU')} Ft
-                      </td>
-                    </tr>
-                  )}
+                        {/* K 463 SZOCHO kötelezettség (kizárólag nem-KIVA cégeknél) */}
+                        {!isKiva && szochoTotal > 0 && (
+                          <tr className="hover:bg-muted/30 transition-colors">
+                            <td className="px-3.5 py-2.5 font-medium text-foreground">
+                              SZOCHO fizetési kötelezettség
+                            </td>
+                            <td className="px-3.5 py-2.5">
+                              <PayrollGlAccountSelector
+                                value={glMapping?.gl463 || ''}
+                                allAccounts={allGlAccounts}
+                                isLoading={isLoadingGl}
+                                preferredClass="4"
+                                defaultLabel="463 — SZOCHO fizetési kötelezettség"
+                                onSelect={(id) => handleSelectGlAccount('gl463', id)}
+                                className="w-full max-w-[320px]"
+                              />
+                            </td>
+                            <td className="px-3.5 py-2.5 text-center font-mono font-bold text-purple-600 dark:text-purple-400">K</td>
+                            <td className="px-3.5 py-2.5 text-right text-muted-foreground font-mono">-</td>
+                            <td className="px-3.5 py-2.5 text-right font-mono font-bold text-purple-600 dark:text-purple-400">
+                              {szochoTotal.toLocaleString('hu-HU')} Ft
+                            </td>
+                          </tr>
+                        )}
 
-                  {/* K 464 TB kötelezettség */}
-                  {calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) > 0 && (
-                    <tr>
-                      <td className="px-3 py-2 text-slate-200">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={glMapping?.gl464 || ''}
-                            onChange={(e) => handleSelectGlAccount('gl464', e.target.value)}
-                            className="bg-slate-800 text-purple-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[220px]"
-                          >
-                            {allGlAccounts.length > 0 ? (
-                              allGlAccounts.map(a => (
-                                <option key={a.id} value={a.id}>
-                                  {a.gl_number} — {a.short_name || a.description}
-                                </option>
-                              ))
-                            ) : (
-                              <option value="">464 — Levont TB járulék kötelezettség</option>
-                            )}
-                          </select>
-                          <span className="text-slate-400 text-[11px]">Levont TB járulék kötelezettség</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
-                      <td className="px-3 py-2 text-right text-slate-600">-</td>
-                      <td className="px-3 py-2 text-right font-bold text-purple-400">
-                        {calculations.reduce((s, c) => s + (c.tb_amount || 0), 0).toLocaleString('hu-HU')} Ft
-                      </td>
-                    </tr>
-                  )}
+                        {/* K 462 SZJA kötelezettség */}
+                        {szjaTotal > 0 && (
+                          <tr className="hover:bg-muted/30 transition-colors">
+                            <td className="px-3.5 py-2.5 font-medium text-foreground">
+                              Levont SZJA kötelezettség
+                            </td>
+                            <td className="px-3.5 py-2.5">
+                              <PayrollGlAccountSelector
+                                value={glMapping?.gl462 || ''}
+                                allAccounts={allGlAccounts}
+                                isLoading={isLoadingGl}
+                                preferredClass="4"
+                                defaultLabel="462 — Levont SZJA kötelezettség"
+                                onSelect={(id) => handleSelectGlAccount('gl462', id)}
+                                className="w-full max-w-[320px]"
+                              />
+                            </td>
+                            <td className="px-3.5 py-2.5 text-center font-mono font-bold text-purple-600 dark:text-purple-400">K</td>
+                            <td className="px-3.5 py-2.5 text-right text-muted-foreground font-mono">-</td>
+                            <td className="px-3.5 py-2.5 text-right font-mono font-bold text-purple-600 dark:text-purple-400">
+                              {szjaTotal.toLocaleString('hu-HU')} Ft
+                            </td>
+                          </tr>
+                        )}
 
-                  {/* K 479 Letiltások */}
-                  {calculations.reduce((s, c) => s + (c.total_deductions || 0), 0) > 0 && (
-                    <tr>
-                      <td className="px-3 py-2 text-slate-200">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={glMapping?.gl479 || ''}
-                            onChange={(e) => handleSelectGlAccount('gl479', e.target.value)}
-                            className="bg-slate-800 text-purple-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[220px]"
-                          >
-                            {allGlAccounts.length > 0 ? (
-                              allGlAccounts.map(a => (
-                                <option key={a.id} value={a.id}>
-                                  {a.gl_number} — {a.short_name || a.description}
-                                </option>
-                              ))
-                            ) : (
-                              <option value="">479 — Bérből levont letiltások és előlegek</option>
-                            )}
-                          </select>
-                          <span className="text-slate-400 text-[11px]">Bérből levont letiltások és előlegek</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
-                      <td className="px-3 py-2 text-right text-slate-600">-</td>
-                      <td className="px-3 py-2 text-right font-bold text-purple-400">
-                        {calculations.reduce((s, c) => s + (c.total_deductions || 0), 0).toLocaleString('hu-HU')} Ft
-                      </td>
-                    </tr>
-                  )}
+                        {/* K 464 TB kötelezettség */}
+                        {tbTotal > 0 && (
+                          <tr className="hover:bg-muted/30 transition-colors">
+                            <td className="px-3.5 py-2.5 font-medium text-foreground">
+                              Levont TB járulék kötelezettség
+                            </td>
+                            <td className="px-3.5 py-2.5">
+                              <PayrollGlAccountSelector
+                                value={glMapping?.gl464 || ''}
+                                allAccounts={allGlAccounts}
+                                isLoading={isLoadingGl}
+                                preferredClass="4"
+                                defaultLabel="464 — Levont TB járulék kötelezettség"
+                                onSelect={(id) => handleSelectGlAccount('gl464', id)}
+                                className="w-full max-w-[320px]"
+                              />
+                            </td>
+                            <td className="px-3.5 py-2.5 text-center font-mono font-bold text-purple-600 dark:text-purple-400">K</td>
+                            <td className="px-3.5 py-2.5 text-right text-muted-foreground font-mono">-</td>
+                            <td className="px-3.5 py-2.5 text-right font-mono font-bold text-purple-600 dark:text-purple-400">
+                              {tbTotal.toLocaleString('hu-HU')} Ft
+                            </td>
+                          </tr>
+                        )}
 
-                  {/* K 471 Nettó munkabér kötelezettség */}
-                  <tr>
-                    <td className="px-3 py-2 text-slate-200">
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={glMapping?.gl471 || ''}
-                          onChange={(e) => handleSelectGlAccount('gl471', e.target.value)}
-                          className="bg-slate-800 text-purple-400 font-bold border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[220px]"
-                        >
-                          {allGlAccounts.length > 0 ? (
-                            allGlAccounts.map(a => (
-                              <option key={a.id} value={a.id}>
-                                {a.gl_number} — {a.short_name || a.description}
-                              </option>
-                            ))
-                          ) : (
-                            <option value="">471 — Kifizetendő nettó munkabér kötelezettség</option>
-                          )}
-                        </select>
-                        <span className="text-slate-400 text-[11px]">Kifizetendő nettó munkabér kötelezettség</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 text-center font-bold text-purple-400">K</td>
-                    <td className="px-3 py-2 text-right text-slate-600">-</td>
-                    <td className="px-3 py-2 text-right font-bold text-purple-400">
-                      {(
-                        calculations.reduce((s, c) => s + (c.gross_salary || 0), 0) -
-                        calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) -
-                        calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) -
-                        calculations.reduce((s, c) => s + (c.total_deductions || 0), 0) +
-                        totalCommute
-                      ).toLocaleString('hu-HU')} Ft
-                    </td>
-                  </tr>
+                        {/* K 479 Letiltások */}
+                        {deductionsTotal > 0 && (
+                          <tr className="hover:bg-muted/30 transition-colors">
+                            <td className="px-3.5 py-2.5 font-medium text-foreground">
+                              Bérből levont letiltások és előlegek
+                            </td>
+                            <td className="px-3.5 py-2.5">
+                              <PayrollGlAccountSelector
+                                value={glMapping?.gl479 || ''}
+                                allAccounts={allGlAccounts}
+                                isLoading={isLoadingGl}
+                                preferredClass="4"
+                                defaultLabel="479 — Bérből levont letiltások és előlegek"
+                                onSelect={(id) => handleSelectGlAccount('gl479', id)}
+                                className="w-full max-w-[320px]"
+                              />
+                            </td>
+                            <td className="px-3.5 py-2.5 text-center font-mono font-bold text-purple-600 dark:text-purple-400">K</td>
+                            <td className="px-3.5 py-2.5 text-right text-muted-foreground font-mono">-</td>
+                            <td className="px-3.5 py-2.5 text-right font-mono font-bold text-purple-600 dark:text-purple-400">
+                              {deductionsTotal.toLocaleString('hu-HU')} Ft
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* K 471 Nettó munkabér kötelezettség */}
+                        <tr className="hover:bg-muted/30 transition-colors">
+                          <td className="px-3.5 py-2.5 font-medium text-foreground">
+                            Kifizetendő nettó munkabér kötelezettség
+                          </td>
+                          <td className="px-3.5 py-2.5">
+                            <PayrollGlAccountSelector
+                              value={glMapping?.gl471 || ''}
+                              allAccounts={allGlAccounts}
+                              isLoading={isLoadingGl}
+                              preferredClass="4"
+                              defaultLabel="471 — Kifizetendő nettó munkabér kötelezettség"
+                              onSelect={(id) => handleSelectGlAccount('gl471', id)}
+                              className="w-full max-w-[320px]"
+                            />
+                          </td>
+                          <td className="px-3.5 py-2.5 text-center font-mono font-bold text-purple-600 dark:text-purple-400">K</td>
+                          <td className="px-3.5 py-2.5 text-right text-muted-foreground font-mono">-</td>
+                          <td className="px-3.5 py-2.5 text-right font-mono font-bold text-purple-600 dark:text-purple-400">
+                            {netTotal.toLocaleString('hu-HU')} Ft
+                          </td>
+                        </tr>
+                      </>
+                    );
+                  })()}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t border-slate-700 font-bold bg-slate-800/40 text-emerald-400">
-                    <td className="px-3 py-2.5">ÖSSZESEN (Könyvelési Egyensúly)</td>
-                    <td className="px-3 py-2.5 text-center">T = K</td>
-                    <td className="px-3 py-2.5 text-right font-extrabold text-blue-400">
-                      {(
-                        calculations.reduce((s, c) => s + (c.gross_salary || 0), 0) +
-                        calculations.reduce((s, c) => s + getSzocho(c), 0) +
-                        totalCommute
-                      ).toLocaleString('hu-HU')} Ft
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-extrabold text-purple-400">
-                      {(
-                        calculations.reduce((s, c) => s + getSzocho(c), 0) +
-                        calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) +
-                        calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) +
-                        calculations.reduce((s, c) => s + (c.total_deductions || 0), 0) +
-                        (
-                          calculations.reduce((s, c) => s + (c.gross_salary || 0), 0) -
-                          calculations.reduce((s, c) => s + (c.szja_amount || 0), 0) -
-                          calculations.reduce((s, c) => s + (c.tb_amount || 0), 0) -
-                          calculations.reduce((s, c) => s + (c.total_deductions || 0), 0) +
-                          totalCommute
-                        )
-                      ).toLocaleString('hu-HU')} Ft
-                    </td>
-                  </tr>
+                  {(() => {
+                    const grossTotal = calculations.reduce((s, c) => s + (c.gross_salary || 0), 0);
+                    const szochoTotal = isKiva ? 0 : calculations.reduce((s, c) => s + getSzocho(c), 0);
+                    const szjaTotal = calculations.reduce((s, c) => s + (c.szja_amount || 0), 0);
+                    const tbTotal = calculations.reduce((s, c) => s + (c.tb_amount || 0), 0);
+                    const deductionsTotal = calculations.reduce((s, c) => s + (c.total_deductions || 0), 0);
+                    const netTotal = grossTotal - szjaTotal - tbTotal - deductionsTotal + totalCommute;
+                    const totalDebits = grossTotal + szochoTotal + totalCommute;
+                    const totalCredits = szochoTotal + szjaTotal + tbTotal + deductionsTotal + netTotal;
+
+                    return (
+                      <tr className="border-t border-border bg-muted/40 font-bold">
+                        <td colSpan={2} className="px-3.5 py-2.5 text-foreground font-bold">
+                          ÖSSZESEN (Könyvelési Egyensúly)
+                        </td>
+                        <td className="px-3.5 py-2.5 text-center font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                          T = K
+                        </td>
+                        <td className="px-3.5 py-2.5 text-right font-extrabold text-blue-600 dark:text-blue-400 font-mono">
+                          {totalDebits.toLocaleString('hu-HU')} Ft
+                        </td>
+                        <td className="px-3.5 py-2.5 text-right font-extrabold text-purple-600 dark:text-purple-400 font-mono">
+                          {totalCredits.toLocaleString('hu-HU')} Ft
+                        </td>
+                      </tr>
+                    );
+                  })()}
                 </tfoot>
               </table>
             </div>
-            <p className="text-[11px] text-slate-400 italic">
-              * A főkönyvi számlaszámok a legördülő menüből felülbírálhatók a cikluszárás előtt. A ciklus lezárásakor ezen tételek a kiválasztott főkönyvi számlákkal automatikusan bekerülnek a főkönyvi bizonylatba (`acc_journal_headers` + `acc_journal_lines`) és megjelennek a Napló modulban (`/journals`).
+            <p className="text-[11px] text-muted-foreground italic">
+              * A főkönyvi számlaszámok a fenti választókból szabadon módosíthatók a cikluszárás előtt. A ciklus lezárásakor a tételek a kiválasztott főkönyvi számlákkal automatikusan bekerülnek a könyvelésbe, és közvetlenül megtekinthetők a Napló menüpont alatt.
             </p>
           </div>
         </>
