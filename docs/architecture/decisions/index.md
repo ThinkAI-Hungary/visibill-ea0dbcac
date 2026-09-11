@@ -153,6 +153,9 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-107 | ÁFA Levonhatóság Szinkronizálása a Könyvelési Naplóval és Főkönyvvel, Valós Idejű Trigger és Zárt Tételek Védelme | ✅ Decided | [A-107](./A-107-vat-deductibility-journal-and-gl-sync.md) |
 | A-108 | Bérszámfejtési Munkába Járás Költségtérítés (39/2010 Korm. rend.) és Dolgozó-Központú Munkalap (Employee Worksheet View) | ✅ Decided | [A-108](./A-108-payroll-commute-reimbursement-and-employee-worksheet.md) |
 | A-109 | Eaisybill Horvát Lokalizáció, /hr/ Scoped Route Architektúra és Helyi Tároló Mentes Nyelvkezelés | ✅ Decided | [A-109](./A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) |
+| A-110 | Bérszámfejtési Számlatükör Sablon Lapozás és Leképezés Perzisztencia | ✅ Decided | [A-110](./A-110-payroll-gl-preset-pagination-and-mapping-persistence.md) |
+| A-111 | Közvetlen Bizonylat-visszanyitás (Unpost), Főkönyvi Sztornó Kioltás és Sorszámfolytonossági Védelem | ✅ Decided | [A-111](./A-111-accounting-journal-unpost-gl-storno-and-numbering-integrity.md) |
+| A-112 | Futárszolgálati Kompenzációs Értesítők Automatikus Bejövő Számla Rendezése (GLS / Courier Compensation Auto-Settlement) | ✅ Decided | [A-112](./A-112-courier-compensation-inbound-invoice-auto-settlement.md) |
 
 ## 💳 Fizetés
 
