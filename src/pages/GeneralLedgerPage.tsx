@@ -14,12 +14,13 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck } from 'lucide-react';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus } from 'lucide-react';
 import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
 import GeneralLedgerTable, { GeneralLedgerTableRef } from '@/components/general-ledger/GeneralLedgerTable';
 import { GlSearchAutocomplete } from '@/components/general-ledger/GlSearchAutocomplete';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
+import { AddGlAccountModal } from '@/components/general-ledger/AddGlAccountModal';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
 import JournalView from '@/components/general-ledger/JournalView'; // F7
@@ -51,6 +52,7 @@ export default function GeneralLedgerPage() {
   
   const [partnerBreakdown, setPartnerBreakdown] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [addGlAccountOpen, setAddGlAccountOpen] = useState(false);
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [auditXmlModalOpen, setAuditXmlModalOpen] = useState(false);
   const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
@@ -453,6 +455,10 @@ export default function GeneralLedgerPage() {
               </Button>
             </div>
             <div className="border-l pl-3 border-border/60 flex items-center gap-2">
+              <Button onClick={() => setAddGlAccountOpen(true)} size="sm" variant="outline" className="h-9 gap-2">
+                <Plus className="w-4 h-4" />
+                <span>Új főkönyvi szám</span>
+              </Button>
               <Button onClick={handleOpenUpload} size="sm" className="h-9 gap-2">
                 <UploadCloud className="w-4 h-4" />
                 <span>Új sablon feltöltése</span>
@@ -840,6 +846,14 @@ export default function GeneralLedgerPage() {
         onOpenChange={setManualEntryOpen}
         companyId={selectedCompany?.id}
         presetId={activePresetId}
+      />
+
+      <AddGlAccountModal
+        open={addGlAccountOpen}
+        onOpenChange={setAddGlAccountOpen}
+        presetId={activePresetId}
+        presetName={presets?.find(p => p.id === activePresetId)?.name}
+        companyId={selectedCompany?.id}
       />
 
       {/* F5: Print Preview Dialog */}

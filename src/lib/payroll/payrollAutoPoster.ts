@@ -221,7 +221,7 @@ export async function resolveCompanyGlAccounts(companyId: string): Promise<Payro
 
   const gl471 = isIdValid(savedMapping.gl471)
     ? savedMapping.gl471!
-    : findGlId(['471', '4710', '4711'], ['nettó bér', 'munkabér kötelezettség', 'kifizetendő bér'], '471');
+    : findGlId(['4711', '4710', '471'], ['nettó bér', 'munkabér kötelezettség', 'kifizetendő bér'], '471');
 
   return {
     activePresetId,

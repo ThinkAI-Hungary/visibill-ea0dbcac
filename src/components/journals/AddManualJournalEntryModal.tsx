@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
@@ -17,6 +17,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { DatePicker } from '@/components/ui/date-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
+import { Badge } from '@/components/ui/badge';
 
 interface AddManualJournalEntryModalProps {
   open: boolean;
@@ -102,6 +103,20 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     },
     enabled: !!activePresetId,
   });
+
+  // Identify parent/synthetic accounts that have sub-accounts (children)
+  const parentAccountIds = useMemo(() => {
+    const clean = (num: string) => String(num || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const set = new Set<string>();
+    glAccounts.forEach((gl: any) => {
+      const cid = clean(gl.gl_number);
+      if (!cid) return;
+      if (glAccounts.some((sub: any) => sub.id !== gl.id && clean(sub.gl_number).startsWith(cid))) {
+        set.add(gl.id);
+      }
+    });
+    return set;
+  }, [glAccounts]);
 
   const { data: partners = [] } = useQuery({
     queryKey: ['partners-lookup', selectedCompany?.id],
@@ -362,6 +377,16 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
       toast({ title: "Figyelmeztetés", description: "Az összeg csak pozitív szám lehet!", variant: "destructive" });
       return;
     }
+    const parentAccountLine = lines.find(l => l.gl_account_id && parentAccountIds.has(l.gl_account_id));
+    if (parentAccountLine) {
+      const gl = glAccounts.find((g: any) => g.id === parentAccountLine.gl_account_id);
+      toast({
+        title: "Érvénytelen főkönyvi szám",
+        description: `A(z) ${gl?.gl_number || ''} — ${gl?.short_name || ''} egy gyűjtő számla, amely alá van bontva. Kérjük, válasszon analitikus (alszám) tételt!`,
+        variant: "destructive"
+      });
+      return;
+    }
     saveMutation.mutate();
   };
 
@@ -604,7 +629,11 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                   {line.gl_account_id
                                     ? (() => {
                                         const gl = glAccounts.find((g: any) => g.id === line.gl_account_id);
-                                        return gl ? `${gl.gl_number} - ${gl.short_name}` : 'Válasszon főkönyvet...';
+                                        if (!gl) return 'Válasszon főkönyvet...';
+                                        const isParent = parentAccountIds.has(gl.id);
+                                        return isParent
+                                          ? `${gl.gl_number} - ${gl.short_name} ⚠️ (Gyűjtő)`
+                                          : `${gl.gl_number} - ${gl.short_name}`;
                                       })()
                                     : 'Válasszon főkönyvet...'}
                                 </span>
@@ -632,23 +661,47 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                         !searchQuery || 
                                         `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(searchQuery.toLowerCase())
                                       )
-                                      .map((gl: any) => (
-                                        <CommandItem
-                                          key={gl.id}
-                                          value={`${gl.gl_number} ${gl.short_name}`}
-                                          onSelect={() => {
-                                            handleUpdateLine(index, 'gl_account_id', gl.id);
-                                            setOpenDropdownIndex(null);
-                                            setSearchQuery('');
-                                            setTimeout(() => {
-                                              document.getElementById(`dc-type-trigger-${index}`)?.focus();
-                                            }, 50);
-                                          }}
-                                          className="font-mono text-xs cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                                        >
-                                          {gl.gl_number} - {gl.short_name}
-                                        </CommandItem>
-                                      ))}
+                                      .map((gl: any) => {
+                                        const isParent = parentAccountIds.has(gl.id);
+                                        return (
+                                          <CommandItem
+                                            key={gl.id}
+                                            value={`${gl.gl_number} ${gl.short_name} ${isParent ? '(Gyűjtő - nem könyvelhető)' : ''}`}
+                                            disabled={isParent}
+                                            onSelect={() => {
+                                              if (isParent) return;
+                                              handleUpdateLine(index, 'gl_account_id', gl.id);
+                                              setOpenDropdownIndex(null);
+                                              setSearchQuery('');
+                                              setTimeout(() => {
+                                                document.getElementById(`dc-type-trigger-${index}`)?.focus();
+                                              }, 50);
+                                            }}
+                                            className={cn(
+                                              "font-mono text-xs flex items-center justify-between py-1.5",
+                                              isParent
+                                                ? "opacity-50 cursor-not-allowed bg-muted/20 text-muted-foreground"
+                                                : "cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                                            )}
+                                          >
+                                            <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                                              <span className={cn("font-semibold shrink-0", isParent && "text-muted-foreground")}>
+                                                {gl.gl_number}
+                                              </span>
+                                              <span className="truncate">{gl.short_name}</span>
+                                              {isParent && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="text-[9px] px-1.5 py-0 text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10 ml-auto shrink-0 font-sans"
+                                                >
+                                                  Gyűjtő — nem könyvelhető
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            {line.gl_account_id === gl.id && <Check className="h-4 w-4 text-primary shrink-0" />}
+                                          </CommandItem>
+                                        );
+                                      })}
                                   </CommandGroup>
                                 </CommandList>
                               </Command>

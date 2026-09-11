@@ -1060,7 +1060,7 @@ serve(async (req) => {
         'youtube', 'banner', 'spacer', 'icon', 'footer', 'pixel', 'tracking',
         'badge', 'visa', 'mastercard', 'paypal', 'amex', 'diners',
         'header', 'button', 'social', 'branding', 'template',
-        'unsubscribe', 'emailbg', 'bg_', 'divider', 'receipt',
+        'unsubscribe', 'emailbg', 'bg_', 'divider',
         // Hungarian equivalents (accent-sensitive — fileName is lowercased but not normalized)
         'aláírás', 'alairas', 'szignó', 'szigno',        // signature
         'fejléc', 'fejlec', 'lábléc', 'lablec',           // header / footer
@@ -1079,10 +1079,11 @@ serve(async (req) => {
         return false;
       }
 
-      // Generic unnamed attachments: attachment-1, attachment-2, etc. (email client default names)
-      // These are typically inline images or embedded content without meaningful filenames
-      if (/^attachment-\d+(\.\w+)?$/.test(fileName)) {
-        console.log(`Skipping generic attachment: ${file.name}`);
+      // Generic unnamed attachments: attachment-1.png, attachment-2.jpg, etc.
+      // These are typically inline images without meaningful filenames.
+      // Genuine documents (e.g. attachment-1.pdf, attachment-2.xlsx) from forwarded emails are kept!
+      if (/^attachment-\d+(\.(png|jpe?g|gif|bmp))?$/i.test(fileName)) {
+        console.log(`Skipping generic inline attachment: ${file.name}`);
         return false;
       }
 
@@ -1367,6 +1368,20 @@ serve(async (req) => {
         } else {
           // Regular (non-archive) attachment
           if (!isValidInvoiceAttachment(attachment)) {
+            // If it's a PDF or tabular document that got skipped by size/name heuristics, log for support audit
+            const fnLower = attachment.name.toLowerCase();
+            if (fnLower.endsWith('.pdf') || fnLower.endsWith('.xlsx') || fnLower.endsWith('.csv')) {
+              await logError(supabase, {
+                error_type: 'email_attachment_skipped',
+                severity: 'warning',
+                component: 'process-mailgun-webhook',
+                action: 'attachment_filter',
+                message: `Melléklet kiszűrve a heurisztika alapján: ${attachment.name} (${attachment.size} bytes)`,
+                user_id: alias.user_id,
+                company_id: alias.company_id,
+                context: { fileName: attachment.name, fileSize: attachment.size, fileType: attachment.type, sender, recipient },
+              });
+            }
             continue;
           }
           const rawBytes = new Uint8Array(await attachment.arrayBuffer());

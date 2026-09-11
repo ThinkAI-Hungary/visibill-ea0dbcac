@@ -16,9 +16,10 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Trash2, Edit2, Check, X, Database, AlertTriangle, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Loader2, Trash2, Edit2, Check, X, Database, AlertTriangle, ArrowRight, ShieldAlert, CheckCircle2, Plus } from 'lucide-react';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { invalidateGlQueries } from '@/lib/cache';
+import { AddGlAccountModal } from '@/components/general-ledger/AddGlAccountModal';
 
 interface Preset {
   id: string;
@@ -59,6 +60,7 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [checkingUsageId, setCheckingUsageId] = useState<string | null>(null);
+  const [addAccountPreset, setAddAccountPreset] = useState<Preset | null>(null);
 
   const [confirmDialogState, setConfirmDialogState] = useState<{
     preset: Preset;
@@ -278,6 +280,18 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
                         </>
                       ) : (
                         <>
+                          <CustomTooltip content="Új főkönyvi szám vagy alábontás hozzáadása ehhez a sablonhoz">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Új főkönyvi szám felvitele: ${preset.name}`}
+                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              onClick={() => setAddAccountPreset(preset)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </CustomTooltip>
+
                           <Button
                             variant="ghost"
                             size="icon"
@@ -448,6 +462,14 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AddGlAccountModal
+        open={!!addAccountPreset}
+        onOpenChange={(isOpen) => !isOpen && setAddAccountPreset(null)}
+        presetId={addAccountPreset?.id}
+        presetName={addAccountPreset?.name}
+        companyId={companyId}
+      />
     </>
   );
 }

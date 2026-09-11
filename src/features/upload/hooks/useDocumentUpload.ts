@@ -221,6 +221,10 @@ export function useDocumentUpload(channelId: UploadChannelId) {
     const duplicates = await checkDatabaseDuplicates(fileNames, config.targetTable, selectedCompany.id);
 
     if (duplicates.length > 0) {
+      toast({
+        title: 'Már feltöltött fájlok észlelve',
+        description: `${duplicates.length} fájl már korábban fel lett töltve. Kérjük, válaszd ki a felugró ablakban az újratöltendő tételeket!`,
+      });
       setDbDuplicateFileNames(duplicates);
       setSelectedDbDuplicates(new Set(duplicates));
       pendingDbUploadCallbackRef.current = (reuploadNames: Set<string>) => {

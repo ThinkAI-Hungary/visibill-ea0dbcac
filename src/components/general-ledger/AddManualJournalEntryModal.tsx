@@ -243,7 +243,7 @@ export function AddManualJournalEntryModal({
 
             <div className="space-y-2">
               <Label className="font-semibold">Tartozik számla (Debit)</Label>
-              <Popover open={debitComboOpen} onOpenChange={setDebitComboOpen}>
+              <Popover open={debitComboOpen} onOpenChange={setDebitComboOpen} modal={true}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -254,14 +254,23 @@ export function AddManualJournalEntryModal({
                     <span className="truncate">{getGlLabel(debitAccount)}</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[450px] p-0 z-[1200]">
+                <PopoverContent 
+                  className="w-[450px] p-0 z-[1200]"
+                  align="start"
+                  onWheel={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                >
                   <Command shouldFilter={false}>
                     <CommandInput
                       placeholder="Tartozik főkönyvi szám keresése..."
                       value={debitSearch}
                       onValueChange={setDebitSearch}
                     />
-                    <CommandList>
+                    <CommandList 
+                      className="max-h-[280px] overflow-y-auto overscroll-contain"
+                      onWheel={(e) => e.stopPropagation()}
+                      onTouchMove={(e) => e.stopPropagation()}
+                    >
                       <CommandEmpty>Nincs találat.</CommandEmpty>
                       <CommandGroup>
                         {leafAccounts
@@ -287,7 +296,7 @@ export function AddManualJournalEntryModal({
 
             <div className="space-y-2">
               <Label className="font-semibold">Követel számla (Credit)</Label>
-              <Popover open={creditComboOpen} onOpenChange={setCreditComboOpen}>
+              <Popover open={creditComboOpen} onOpenChange={setCreditComboOpen} modal={true}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -298,14 +307,23 @@ export function AddManualJournalEntryModal({
                     <span className="truncate">{getGlLabel(creditAccount)}</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[450px] p-0 z-[1200]">
+                <PopoverContent 
+                  className="w-[450px] p-0 z-[1200]"
+                  align="start"
+                  onWheel={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                >
                   <Command shouldFilter={false}>
                     <CommandInput
                       placeholder="Követel főkönyvi szám keresése..."
                       value={creditSearch}
                       onValueChange={setCreditSearch}
                     />
-                    <CommandList>
+                    <CommandList 
+                      className="max-h-[280px] overflow-y-auto overscroll-contain"
+                      onWheel={(e) => e.stopPropagation()}
+                      onTouchMove={(e) => e.stopPropagation()}
+                    >
                       <CommandEmpty>Nincs találat.</CommandEmpty>
                       <CommandGroup>
                         {leafAccounts

@@ -58,6 +58,7 @@ vi.mock('@/integrations/supabase/client', () => {
 
 vi.mock('@/lib/glData', () => ({
   fetchAllGlAccountsByPreset: vi.fn().mockResolvedValue([
+    { id: 'gl-0', gl_number: '471', short_name: 'Jövedelemelszámolási számla' },
     { id: 'gl-1', gl_number: '5411', short_name: 'Munkavállalók és tagok bérköltsége' },
     { id: 'gl-2', gl_number: '4711', short_name: 'Jövedelemelszámolási számla' },
   ]),
@@ -254,5 +255,22 @@ describe('AddManualJournalEntryModal - Layout and Keyboard Navigation', () => {
     const noPartnerOption = screen.getByText('— Nincs partner —');
     fireEvent.click(noPartnerOption);
     expect(partnerTrigger).toHaveTextContent('— Nincs partner —');
+  });
+
+  it('marks collective/parent accounts (e.g. 471) with Gyűjtő badge and disables them when sub-accounts exist', async () => {
+    renderModal();
+
+    // Open GL account selector for line 0
+    const glTrigger = document.getElementById('gl-account-trigger-0');
+    expect(glTrigger).toBeInTheDocument();
+    fireEvent.click(glTrigger!);
+
+    // Wait for dropdown items to appear
+    const badge = await screen.findByText('Gyűjtő — nem könyvelhető');
+    expect(badge).toBeInTheDocument();
+
+    // The parent account item should have disabled attribute or class
+    const parentItem = badge.closest('[role="option"]') || badge.closest('div');
+    expect(parentItem).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -185,7 +185,7 @@ export default function TicketsPage({
   }, [managementUsers, overviewData?.users]);
 
   // Helper: update search params without overwriting parent dashboard params
-  const updateParams = (updates: Record<string, string | null>) => {
+  const updateParams = useCallback((updates: Record<string, string | null>) => {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
       for (const [k, v] of Object.entries(updates)) {
@@ -197,7 +197,7 @@ export default function TicketsPage({
       }
       return next;
     });
-  };
+  }, [setSearchParams]);
 
   // Triage state
   const [selectedTicketIds, setSelectedTicketIds] = useState<Set<string>>(new Set());
@@ -1014,10 +1014,7 @@ export default function TicketsPage({
               <TicketDetailView
                 feedbackId={ticketId}
                 onBack={() => updateParams({ id: null })}
-                onDeleted={() => {
-                  refetch();
-                  updateParams({ id: null });
-                }}
+                onDeleted={handleTicketDeleted}
               />
             </div>
           ) : (
@@ -1290,7 +1287,7 @@ export default function TicketsPage({
   };
 
   // Helper to return to the tickets list across all contexts
-  const handleBackToList = () => {
+  const handleBackToList = useCallback(() => {
     if (embeddedInManagement) {
       updateParams({ id: null, subView: null });
     } else if (isAccounty) {
@@ -1300,7 +1297,12 @@ export default function TicketsPage({
     } else {
       navigate(`${eaisybillBasePath}/tickets`);
     }
-  };
+  }, [embeddedInManagement, updateParams, isAccounty, isStandalone, eaisybillBasePath, navigate]);
+
+  const handleTicketDeleted = useCallback(() => {
+    refetch();
+    handleBackToList();
+  }, [refetch, handleBackToList]);
 
   // ────────────────────────────────────────────────────────
   // RENDER: Main Router / Layout
@@ -1311,10 +1313,7 @@ export default function TicketsPage({
       <TicketDetailView
         feedbackId={ticketId}
         onBack={handleBackToList}
-        onDeleted={() => {
-          refetch();
-          handleBackToList();
-        }}
+        onDeleted={handleTicketDeleted}
       />
     );
   }

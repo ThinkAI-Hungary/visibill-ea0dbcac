@@ -165,9 +165,13 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     ? "/eaisybooks/tickets" 
     : (isStandalone ? "/tickets" : `${eaisybillBasePath}/tickets`);
 
-  // Mark as read only when ticket has loaded and actually exists
+  // Mark as read only once per ticket ID when loaded
+  const markedReadRef = useRef<string | null>(null);
   useEffect(() => {
-    if (ticket?.id) markRead(ticket.id);
+    if (ticket?.id && markedReadRef.current !== ticket.id) {
+      markedReadRef.current = ticket.id;
+      markRead(ticket.id);
+    }
   }, [ticket?.id, markRead]);
 
   // Track whether to auto-scroll (only after user sends a comment)
@@ -340,6 +344,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     return imgs;
   }, [data?.ticket?.attachments, data?.comments]);
 
+  const imagesKey = allImages.join('|');
   // Preload images to avoid half-loaded image pop-in
   useEffect(() => {
     if (isTicketLoading || isEventsLoading || isAdminLoading || !data?.ticket) {
@@ -380,7 +385,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     return () => {
       active = false;
     };
-  }, [allImages, isTicketLoading, isEventsLoading, isAdminLoading, data?.ticket]);
+  }, [imagesKey, isTicketLoading, isEventsLoading, isAdminLoading, data?.ticket?.id]);
 
   const isTicketNotFound = !isTicketLoading && (!data?.ticket || isTicketError);
   const isLoading = isTicketLoading || (!isTicketNotFound && (!imagesLoaded || isAdminLoading || isEventsLoading));
