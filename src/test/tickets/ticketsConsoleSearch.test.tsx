@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -13,6 +13,10 @@ vi.mock('@/hooks/useTickets', () => ({
   useUpdateTicketAssignee: vi.fn(() => ({ mutateAsync: vi.fn() })),
   useUpdateTicketStatus: vi.fn(() => ({ mutateAsync: vi.fn() })),
   resolveEffectiveTicketStatus: (status: string) => status,
+}));
+
+vi.mock('@/components/tickets/TicketDetailView', () => ({
+  TicketDetailView: ({ feedbackId }: any) => <div data-testid="detail-view">{feedbackId}</div>,
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
@@ -47,6 +51,7 @@ const mockTickets: Ticket[] = [
     message: 'TÁRGY: E-mail Integráció / Generálás hiba',
     status: 'created',
     priority: 'high',
+    page_url: null,
     company_name: 'Mauroni Events KFT.',
     company_id: 'c-1',
     user_email: 'mauroni@test.com',
@@ -68,6 +73,7 @@ const mockTickets: Ticket[] = [
     message: 'Ismeretlen okból nem párosítja össze a tételeket',
     status: 'in_progress',
     priority: 'medium',
+    page_url: null,
     company_name: 'Sanctus Könyvelőiroda Kft.',
     company_id: 'c-2',
     user_email: 'gergo@sanctus.hu',
@@ -89,6 +95,7 @@ const mockTickets: Ticket[] = [
     message: 'Bank hibás beolvasása. Feltöltött kivonat.',
     status: 'resolved',
     priority: 'medium',
+    page_url: null,
     company_name: 'VBV Vision Kft.',
     company_id: 'c-3',
     user_email: 'vbv@vision.hu',
@@ -110,6 +117,7 @@ const mockTickets: Ticket[] = [
     message: 'Másik admin által kezelt folyamatban lévő jegy',
     status: 'in_progress',
     priority: 'medium',
+    page_url: null,
     company_name: 'Other Admin Kft.',
     company_id: 'c-4',
     user_email: 'other@admin.hu',
@@ -131,6 +139,7 @@ const mockTickets: Ticket[] = [
     message: 'Gazdátlan nyitott jegy',
     status: 'created',
     priority: 'low',
+    page_url: null,
     company_name: 'New Client Kft.',
     company_id: 'c-5',
     user_email: 'new@client.hu',
@@ -143,6 +152,28 @@ const mockTickets: Ticket[] = [
     latest_comment_at: null,
     has_unread: false,
     assigned_to: null,
+  },
+  {
+    id: 't-6',
+    ticket_number: 'EB-0090',
+    type: 'question',
+    service: 'eaisybill',
+    message: 'Másik adminhoz rendelt, de még nyitott jegy',
+    status: 'created',
+    priority: 'high',
+    page_url: null,
+    company_name: 'Alpha Beta Kft.',
+    company_id: 'c-6',
+    user_email: 'alpha@beta.hu',
+    user_name: 'Kiss József',
+    user_id: 'u-6',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    attachments: null,
+    comment_count: 0,
+    latest_comment_at: null,
+    has_unread: false,
+    assigned_to: 'admin-2',
   },
 ];
 
@@ -256,15 +287,16 @@ describe('TicketsPage Console View Search', () => {
     expect(screen.getByText('#EB-0094')).toBeInTheDocument();
   });
 
-  it('filters console tickets to only own and unassigned by default, and reveals other agents tickets when "Összes jegy" is checked', () => {
+  it('filters console tickets to only own, unassigned and open tickets by default, and reveals all other in-progress tickets when "Összes jegy" is checked', () => {
     renderConsole();
 
-    // Default: own (EB-0095, EB-0094) and unassigned (EB-0091) must be visible
+    // Default: own (EB-0095, EB-0094), unassigned (EB-0091), and open ticket even if assigned to admin-2 (EB-0090) must be visible
     expect(screen.getByText('#EB-0095')).toBeInTheDocument();
     expect(screen.getByText('#EB-0094')).toBeInTheDocument();
     expect(screen.getByText('#EB-0091')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0090')).toBeInTheDocument();
 
-    // EB-0092 is assigned to admin-2, so it should be hidden by default
+    // EB-0092 is in_progress assigned to admin-2, so it should be hidden by default
     expect(screen.queryByText('#EB-0092')).not.toBeInTheDocument();
 
     // Find the "Összes jegy" checkbox in the console view
@@ -275,14 +307,26 @@ describe('TicketsPage Console View Search', () => {
     // Check "Összes jegy"
     fireEvent.click(allCheckbox);
 
-    // Now EB-0092 (assigned to admin-2) should also be visible!
+    // Now EB-0092 (in_progress assigned to admin-2) should also be visible!
     expect(screen.getByText('#EB-0092')).toBeInTheDocument();
     expect(screen.getByText('#EB-0095')).toBeInTheDocument();
     expect(screen.getByText('#EB-0094')).toBeInTheDocument();
     expect(screen.getByText('#EB-0091')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0090')).toBeInTheDocument();
 
     // Uncheck "Összes jegy" again
     fireEvent.click(allCheckbox);
     expect(screen.queryByText('#EB-0092')).not.toBeInTheDocument();
+  });
+
+  it('displays the "Nyitott" and "Folyamatban" status badges on console cards', () => {
+    renderConsole();
+
+    // Open tickets (EB-0095, EB-0091, EB-0090) should display "Nyitott" status badge
+    const nyitottBadges = screen.getAllByText('Nyitott');
+    expect(nyitottBadges.length).toBeGreaterThanOrEqual(3);
+
+    // In-progress ticket (EB-0094) should display "Folyamatban" status badge
+    expect(screen.getByText('Folyamatban')).toBeInTheDocument();
   });
 });

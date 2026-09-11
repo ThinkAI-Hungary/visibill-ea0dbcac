@@ -33,6 +33,7 @@
   - *Szekciók & Táblázat forma:* Felhasználói oldalon a táblázat és a jegy részletes nézetének (`TicketDetailView`) kártyái, szekciói éles, szögletes (`rounded-none shadow-none`) formavilágot követnek.
 - Ticket prioritás: alacsony/közepes/magas/kritikus — user választhatja beküldéskor
 - Ticket lista: kereshető (jegyszám, üzenet, cég, email), szűrhető (multi-status: Nyitott, Hozzárendelt, Folyamatban, Megoldva, prioritás, platform)
+  - **Olvasatlan jegyek rendezése (`sortTicketsByUnreadAndDate`):** A hibajegyek listájában (mind a táblázatos főnézetben, mind a Kezelőkonzol oldalsávban) mindig az **olvasatlan üzenetet tartalmazó jegyek (`has_unread === true`) jelennek meg legfelül**, egymás között a legfrissebb aktivitás/komment szerint csökkenő sorrendben. Az olvasott jegyek ezután következnek létrehozási dátum szerint csökkenő sorrendben.
   - Olvasatlan jegyek vizuális kiemelése: az olvasatlan sorok finom elsődleges színkiemelést (`bg-primary/[0.06] hover:bg-primary/[0.12]`) és pulzáló pontot kapnak.
   - Oszlop-elrendezés és középre igazítás: A `Státusz` és `Prioritás` oszlopok fejlécei és adatcellái tökéletesen szimmetrikusan középre zártak (`text-center flex justify-center items-center`). A `Státusz` oszlop `w-[170px] min-w-[165px]` szélességet kapott, biztosítva, hogy a hosszabb badge-ek is kényelmesen, egy sorban, pontosan a felirat alatt helyezkedjenek el.
   - Felelős oszlop: fix szélességű (`w-[180px] min-w-[170px]`), megtiltva a nevek sortörését (`whitespace-nowrap`).

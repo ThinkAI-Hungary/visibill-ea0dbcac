@@ -240,6 +240,20 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           resolution_requested_by: (t as any).resolution_requested_by || null,
           resolution_confirmed_at: (t as any).resolution_confirmed_at || null,
         };
+      }).sort((a, b) => {
+        // 1. Olvasatlan jegyek mindig legfelül
+        if (a.has_unread && !b.has_unread) return -1;
+        if (!a.has_unread && b.has_unread) return 1;
+
+        // 2. Olvasatlan jegyek között: legfrissebb aktivitás szerint csökkenő
+        if (a.has_unread && b.has_unread) {
+          const timeA = new Date(a.latest_comment_at || a.created_at).getTime();
+          const timeB = new Date(b.latest_comment_at || b.created_at).getTime();
+          if (timeB !== timeA) return timeB - timeA;
+        }
+
+        // 3. Olvasott jegyek között: létrehozás dátuma szerint csökkenő
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
     },
     enabled: !!user,

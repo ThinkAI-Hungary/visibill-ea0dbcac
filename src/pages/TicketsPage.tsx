@@ -112,6 +112,24 @@ export const matchTicketSearch = (t: Ticket, rawSearch: string): boolean => {
   );
 };
 
+export const sortTicketsByUnreadAndDate = (ticketList: Ticket[]): Ticket[] => {
+  return [...ticketList].sort((a, b) => {
+    // 1. Olvasatlan jegyek mindig legfelül
+    if (a.has_unread && !b.has_unread) return -1;
+    if (!a.has_unread && b.has_unread) return 1;
+
+    // 2. Olvasatlan jegyek között: legfrissebb aktivitás (komment vagy létrehozás) szerint csökkenő
+    if (a.has_unread && b.has_unread) {
+      const timeA = new Date(a.latest_comment_at || a.created_at).getTime();
+      const timeB = new Date(b.latest_comment_at || b.created_at).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+    }
+
+    // 3. Olvasott jegyek között: létrehozás dátuma szerint csökkenő
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+};
+
 interface TicketsPageProps {
   embeddedInManagement?: boolean;
   managementUsers?: ManagementUserOption[];
@@ -187,9 +205,9 @@ export default function TicketsPage({
   const [batchStatus, setBatchStatus] = useState<string>("");
   const [batchUpdating, setBatchUpdating] = useState(false);
 
-  // Filters for Global Tickets List
+  // Filters and Sorting for Global Tickets List
   const filteredTickets = useMemo(() => {
-    return tickets.filter((t) => {
+    const filtered = tickets.filter((t) => {
       const matchesSearch = matchTicketSearch(t, search);
 
       const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
@@ -201,24 +219,30 @@ export default function TicketsPage({
             return t.status === s;
           });
 
-      // Support admins default to showing only own & unassigned tickets
+      // Support admins default to showing only own, unassigned & open tickets
+      const isNyitott = t.status === "created" || t.status === "new" || t.status === "open";
       const matchesOwner = !isAdmin || showAllTickets || !user ||
-        t.assigned_to === user.id || t.assigned_to === null;
+        t.assigned_to === user.id || t.assigned_to === null || isNyitott;
 
       return matchesSearch && matchesPriority && matchesService && matchesStatus && matchesOwner;
     });
+
+    return sortTicketsByUnreadAndDate(filtered);
   }, [tickets, search, priorityFilter, serviceFilter, selectedStatuses, isAdmin, showAllTickets, user]);
 
-  // Tickets for Console View (Unresolved tickets filtered by search and owner)
+  // Tickets for Console View (Unresolved tickets filtered by search and owner, sorted with unread first)
   const consoleTickets = useMemo(() => {
-    return tickets
+    const filtered = tickets
       .filter((t) => t.status !== "resolved")
       .filter((t) => {
+        const isNyitott = t.status === "created" || t.status === "new" || t.status === "open";
         const matchesOwner = !isAdmin || showAllTickets || !user ||
-          t.assigned_to === user.id || t.assigned_to === null;
+          t.assigned_to === user.id || t.assigned_to === null || isNyitott;
         return matchesOwner;
       })
       .filter((t) => matchTicketSearch(t, search));
+
+    return sortTicketsByUnreadAndDate(filtered);
   }, [tickets, search, isAdmin, showAllTickets, user]);
 
   const [page, setPage] = useState(1);
@@ -369,11 +393,26 @@ export default function TicketsPage({
     }
   };
 
+  // When in console view and no ticket is selected yet, automatically select the top prioritized ticket (unread first)
+  const initialConsoleSelectedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (subView === 'console') {
+      if (!ticketId && !initialConsoleSelectedRef.current && consoleTickets.length > 0) {
+        initialConsoleSelectedRef.current = true;
+        updateParams({ subView: 'console', id: consoleTickets[0].id });
+      } else if (ticketId) {
+        initialConsoleSelectedRef.current = true;
+      }
+    } else {
+      initialConsoleSelectedRef.current = false;
+    }
+  }, [subView, ticketId, consoleTickets]);
+
   // Switch Sub-Tab
   const setSubTab = (tab: 'list' | 'console' | 'analytics' | 'assignment') => {
-    if (tab === 'console' && !ticketId && tickets.length > 0) {
-      // Auto-load first active ticket in console view
-      const active = tickets.find(t => t.status !== 'resolved') || tickets[0];
+    if (tab === 'console' && !ticketId && (consoleTickets.length > 0 || tickets.length > 0)) {
+      // Auto-load first prioritized active ticket in console view (unread/open first)
+      const active = consoleTickets[0] || tickets.find(t => t.status !== 'resolved') || tickets[0];
       updateParams({ subView: "console", id: active.id });
     } else {
       updateParams({ subView: tab, id: null });
@@ -922,11 +961,23 @@ export default function TicketsPage({
                       <span className="font-mono text-[10px] font-bold text-primary">
                         #{t.ticket_number || t.id.slice(0, 8)}
                       </span>
-                      {t.waiting_for_user_confirmation && (
+                      {t.waiting_for_user_confirmation ? (
                         <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25">
                           Visszaigazolásra vár
                         </span>
-                      )}
+                      ) : (t.status === "created" || t.status === "new" || t.status === "open") ? (
+                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25">
+                          Nyitott
+                        </span>
+                      ) : t.status === "assigned" ? (
+                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
+                          Hozzárendelt
+                        </span>
+                      ) : t.status === "in_progress" ? (
+                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/30">
+                          Folyamatban
+                        </span>
+                      ) : null}
                     </div>
                     <span className="text-[10px] text-muted-foreground">
                       {formatDate(t.created_at)}
