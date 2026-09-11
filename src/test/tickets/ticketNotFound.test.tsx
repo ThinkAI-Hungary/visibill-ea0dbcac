@@ -29,6 +29,7 @@ vi.mock('@/hooks/useTickets', () => ({
   useUpdateTicketAssignee: vi.fn(() => ({ mutate: vi.fn(), mutateAsync: vi.fn() })),
   useSupportAgents: vi.fn(() => ({ data: [], isLoading: false })),
   useUpdateTicketAttachments: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useRespondTicketResolution: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useIsManagementRole: vi.fn(() => ({ data: false })),
   useDeleteTicket: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useTickets: vi.fn(() => ({ data: [], isLoading: false, refetch: vi.fn() })),
@@ -164,6 +165,69 @@ describe('Ticket 404 / Not Found Handling', () => {
       );
 
       expect(screen.getByText('A hibajegy nem található')).toBeInTheDocument();
+    });
+
+    it('does not call markRead when ticket does not exist (deleted or 404)', () => {
+      const markReadMock = vi.fn();
+      vi.mocked(useTicketsHooks.useMarkTicketRead).mockReturnValue({ mutate: markReadMock } as any);
+      vi.mocked(useTicketsHooks.useTicketDetail).mockReturnValue({
+        data: null,
+        isLoading: false,
+        isError: false,
+      } as any);
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <TicketDetailView feedbackId="deleted-ticket-id" />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      expect(markReadMock).not.toHaveBeenCalled();
+    });
+
+    it('does not call markRead while ticket is still loading', () => {
+      const markReadMock = vi.fn();
+      vi.mocked(useTicketsHooks.useMarkTicketRead).mockReturnValue({ mutate: markReadMock } as any);
+      vi.mocked(useTicketsHooks.useTicketDetail).mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+      } as any);
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <TicketDetailView feedbackId="loading-ticket-id" />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      expect(markReadMock).not.toHaveBeenCalled();
+    });
+
+    it('calls markRead when ticket exists and finishes loading', () => {
+      const markReadMock = vi.fn();
+      vi.mocked(useTicketsHooks.useMarkTicketRead).mockReturnValue({ mutate: markReadMock } as any);
+      vi.mocked(useTicketsHooks.useTicketDetail).mockReturnValue({
+        data: {
+          ticket: { id: 'valid-ticket-id', status: 'in_progress' } as any,
+          comments: [],
+        },
+        isLoading: false,
+        isError: false,
+      } as any);
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <TicketDetailView feedbackId="valid-ticket-id" />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      expect(markReadMock).toHaveBeenCalledWith('valid-ticket-id');
     });
   });
 

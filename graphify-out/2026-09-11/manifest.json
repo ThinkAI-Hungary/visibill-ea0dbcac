@@ -3980,8 +3980,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeImportPage.tsx": {
-    "mtime": 1788476318.149676,
-    "ast_hash": "556a19dd3391c75694fc2e024d6700ea",
+    "mtime": 1789104327.8802238,
+    "ast_hash": "a13ed0f0a2249de668947a8d4e77f279",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ExitDocumentsPage.tsx": {
@@ -8655,23 +8655,23 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollReconstructionDialog.tsx": {
-    "mtime": 1788476283.5955775,
-    "ast_hash": "4155bd8db411df4aeef752dee8af8153",
+    "mtime": 1789104442.4238677,
+    "ast_hash": "fc6a1304b072f891db2eadb84648cafd",
     "semantic_hash": ""
   },
   "src/hooks/useBulkImportPayroll.ts": {
-    "mtime": 1788476271.8310483,
-    "ast_hash": "3b9a1e6b73833cf48336ee228bec7589",
+    "mtime": 1789104255.5136375,
+    "ast_hash": "9cc6faf8a4a5c2237f56ea84e4b041a6",
     "semantic_hash": ""
   },
   "src/lib/payroll/nav08XmlParser.ts": {
-    "mtime": 1788476259.3905957,
-    "ast_hash": "6ba94a4c8da5377a64504fd8656e688c",
+    "mtime": 1789104152.0356364,
+    "ast_hash": "3f004cfa6c5f574a8784b8325b8ba6ef",
     "semantic_hash": ""
   },
   "src/lib/payroll/payrollReconstructionEngine.ts": {
-    "mtime": 1788304276.743338,
-    "ast_hash": "da32d57791af7c9ddb1b7db040679a15",
+    "mtime": 1789104166.306242,
+    "ast_hash": "ca302f13e1bc19ae1748011e086060c5",
     "semantic_hash": ""
   },
   "src/test/payroll/nav08XmlParser.test.ts": {
@@ -10437,6 +10437,11 @@
   "src/lib/documents/__tests__/payslipPreviewAndDownload.test.ts": {
     "mtime": 1789102925.3647034,
     "ast_hash": "85d66d87cbaec5f6b097515f96318c33",
+    "semantic_hash": ""
+  },
+  "src/lib/payroll/__tests__/nav08KivaAndEfoImport.test.ts": {
+    "mtime": 1789104068.729088,
+    "ast_hash": "250a2d90fcc4790d6a006880509c541e",
     "semantic_hash": ""
   }
 }

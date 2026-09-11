@@ -148,7 +148,7 @@ AND (ticket_reads.last_read_at IS NULL OR ticket_reads.last_read_at < feedback.r
 ```
 
 - **Upsert pattern:** `ON CONFLICT (feedback_id, user_id) DO UPDATE SET last_read_at = NOW()`
-- A frontend minden jegy megnyitásakor `markRead(feedbackId)` → upsert
+- **Biztonságos olvasási életciklus (2026-09):** A frontend (`TicketDetailView`) az olvasottá jelölést (`markRead`) kizárólag a jegy sikeres betöltődése és validitása (`ticket?.id`) után futtatja le, elkerülve a törölt vagy nem létező azonosítókra indított mutációkat. A `useMarkTicketRead` hook csendben elnyeli a PostgreSQL `23503` (Foreign Key violation) hibakódot az esetleges versenyhelyzetek kezelésére.
 - A sidebar badge és a felületi számlálók a `useUnreadTicketCount` hook-ból származnak
 
 ### Real-time Subscription
@@ -250,6 +250,7 @@ idx_ticket_reads_feedback_user  ON ticket_reads(feedback_id, user_id)
 - **Szabványos Rich Text Szerkesztő (`RichTextEditor`):** TipTap StarterKit alapú szerkesztő félkövér, dőlt, áthúzott, címsor (H2, H3), felsorolás, számozott lista, idézet, inline kód és visszavonás/újra funkciókkal. `Ctrl+Enter` / `Cmd+Enter` gyorsbillentyű támogatással az azonnali beküldéshez (`onSubmit`).
 - **Biztonságos és Tipográfiailag Stílusozott Megjelenítő (`RichTextContent`):** Biztonságos HTML és szöveges renderelés `prose prose-sm dark:prose-invert` osztályokkal. 100%-os visszafelé kompatibilitás a korábbi sima szöveges hibajegyekkel és hozzászólásokkal.
 - **Kezelőkonzol (Console View) Keresés & Ergonómia:** A 2-hasábos konzol nézetben a keresőmező (`matchTicketSearch`) támogatja a `#` előtaggal beírt jegyszámokat (pl. `#EB-0094`), tárgyat, üzenetet, felhasználónevet, emailt és cégnevet. Mindkét keresőmező azonnali törlés (`X`) gombot kapott.
+- **Kezelőkonzol Felelős-szűrés és „Összes jegy” Kapcsoló:** A Kezelőkonzol bal oldali listája (`consoleTickets`) a táblázathoz hasonlóan alapértelmezetten a `matchesOwner` szabályt követi (kizárólag a bejelentkezett operátor saját és a gazdátlan/nyitott jegyei jelennek meg). A bal oldali sáv tetején lévő „Összes jegy” jelölőnégyzettel (`Checkbox`) a szűrés azonnal feloldható a teljes queue-ra.
 - **Táblázat és Badge Dizájn Szimmetria:** A "Visszaigazolásra vár" (`waiting_confirmation`) badge `whitespace-nowrap px-3 py-0.5` stílust kapott. A `Státusz` és `Prioritás` oszlopok és badge-ek pontosan a fejlécek alatt középre zártak (`flex justify-center items-center`, `w-[170px] min-w-[165px]`).
 - **ThinkAI Badge Márkajelzés:** A ThinkAI operátorok azonosítására a standardizált `ThinkAiBadge` került bevezetésre.
 - **Közvetlen Csatolmánykezelés Nyitott Hibajegyhez:** A `feedback.attachments` tömb közvetlen módosítása a `useUpdateTicketAttachments` mutációval és a jegy fejlécében elhelyezett `+ Csatolmány hozzáadása` gombbal.

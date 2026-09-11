@@ -165,10 +165,10 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     ? "/eaisybooks/tickets" 
     : (isStandalone ? "/tickets" : `${eaisybillBasePath}/tickets`);
 
-  // Mark as read on mount
+  // Mark as read only when ticket has loaded and actually exists
   useEffect(() => {
-    if (feedbackId) markRead(feedbackId);
-  }, [feedbackId, markRead]);
+    if (ticket?.id) markRead(ticket.id);
+  }, [ticket?.id, markRead]);
 
   // Track whether to auto-scroll (only after user sends a comment)
   const shouldScrollRef = useRef(false);

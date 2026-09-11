@@ -596,6 +596,8 @@ export function useMarkTicketRead() {
     mutationFn: async (feedbackId: string) => {
       if (!user) throw new Error("Not authenticated");
 
+      if (!feedbackId) return;
+
       const { error } = await supabase
         .from("ticket_reads")
         .upsert(
@@ -607,7 +609,13 @@ export function useMarkTicketRead() {
           { onConflict: "feedback_id,user_id" }
         );
 
-      if (error) throw error;
+      if (error) {
+        // If ticket does not exist or was deleted, ignore foreign key constraint (23503) gracefully
+        if (error.code === "23503") {
+          return;
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
