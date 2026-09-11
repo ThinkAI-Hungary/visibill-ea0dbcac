@@ -253,7 +253,7 @@ export default function TransfersPage() {
       // Fetch NAV inbound invoices
       const { data: navData, error: navErr } = await supabase
         .from('nav_invoices')
-        .select('id, invoice_number, supplier_name, supplier_tax_number, payment_date, invoice_issue_date, fulfillment_date, invoice_gross_amount, currency, transaction_id, paid, payment_method, is_manual_payment')
+        .select('id, invoice_number, supplier_name, supplier_tax_number, payment_date, invoice_issue_date, invoice_delivery_date, invoice_gross_amount, currency, transaction_id, paid, payment_method, is_manual_payment')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'INBOUND')
         .is('transaction_id', null)
@@ -557,7 +557,7 @@ export default function TransfersPage() {
             ? new Date(inv.payment_date).toISOString().split('T')[0]
             : (inv.invoice_issue_date
               ? new Date(inv.invoice_issue_date).toISOString().split('T')[0]
-              : (inv.fulfillment_date ? new Date(inv.fulfillment_date).toISOString().split('T')[0] : today)),
+              : (inv.invoice_delivery_date ? new Date(inv.invoice_delivery_date).toISOString().split('T')[0] : today)),
           amount: inv.invoice_gross_amount || 0,
           currency: inv.currency || 'HUF',
           partner_bank_account: resolvedAccount,
